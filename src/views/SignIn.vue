@@ -77,7 +77,7 @@ async function signIn() {
 
       <p class="text-center text-sm text-gray-500">
         {{ $t('signIn.noAccount') }}
-        <a href="/signup" class="text-blue-400 hover:underline">{{ $t('signIn.register') }}</a>
+        <router-link to="/signup" class="text-blue-400 hover:underline">{{ $t('signIn.register') }}</router-link>
       </p>
     </div>
   </div>

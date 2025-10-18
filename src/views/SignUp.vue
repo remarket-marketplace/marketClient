@@ -187,7 +187,7 @@ function handleKeyDown(event: KeyboardEvent, index: number) {
 
       <p class="text-center text-sm text-gray-500">
         {{ $t('signUp.haveAccount') }}
-        <a href="/signin" class="text-blue-400 hover:underline">{{ $t('signUp.login') }}</a>
+        <router-link to="/signin" class="text-blue-400 hover:underline">{{ $t('signUp.login') }}</router-link>
       </p>
     </div>
   </div>
