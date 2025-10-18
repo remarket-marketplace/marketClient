@@ -1,0 +1,49 @@
+// Карта ошибок для фронтенда
+// error_code => ключ для i18n
+
+export const errorCodeMap: Record<string, string> = {
+  CATEGORY_ALREADY_EXISTS: 'errors.CATEGORY_ALREADY_EXISTS',
+  CATEGORY_NOT_FOUND: 'errors.CATEGORY_NOT_FOUND',
+  PARENT_CATEGORY_NOT_FOUND: 'errors.PARENT_CATEGORY_NOT_FOUND',
+  CATEGORY_NAME_ALREADY_EXISTS: 'errors.CATEGORY_NAME_ALREADY_EXISTS',
+  DATABASE_ERROR: 'errors.DATABASE_ERROR',
+  PRODUCT_ID_REQUIRED: 'errors.PRODUCT_ID_REQUIRED',
+  MAXIMUM_NUMBER_PHOTOS_EXCEEDED: 'errors.MAXIMUM_NUMBER_PHOTOS_EXCEEDED',
+  USER_NOT_FOUND: 'errors.USER_NOT_FOUND',
+  PRODUCT_NOT_FOUND: 'errors.PRODUCT_NOT_FOUND',
+  TOKEN_NOT_FOUND: 'errors.TOKEN_NOT_FOUND',
+  INVALID_TOKEN: 'errors.INVALID_TOKEN',
+  TOKEN_IS_EXPIRED: 'errors.TOKEN_IS_EXPIRED',
+  TOKEN_IS_INVALID: 'errors.TOKEN_IS_INVALID',
+  TOKEN_IS_REVOKED: 'errors.TOKEN_IS_REVOKED',
+  USER_IS_BANNED: 'errors.USER_IS_BANNED',
+  INSUFFICIENT_PERMISSIONS: 'errors.INSUFFICIENT_PERMISSIONS',
+  CREATE_PRODUCT_ERROR: 'errors.CREATE_PRODUCT_ERROR',
+  SELLER_NOT_FOUND: 'errors.SELLER_NOT_FOUND',
+  REGISTRATION_FAILED: 'errors.REGISTRATION_FAILED',
+  WRONG_VERIFICATION_CODE: 'errors.WRONG_VERIFICATION_CODE',
+  FAILED_TO_SEND_VERIFICATION_CODE: 'errors.FAILED_TO_SEND_VERIFICATION_CODE',
+  WRONG_IMAGE_FORMAT: 'errors.WRONG_IMAGE_FORMAT',
+  WRONG_FILE_TYPE: 'errors.WRONG_FILE_TYPE',
+  IMAGE_TOO_LARGE: 'errors.IMAGE_TOO_LARGE',
+  WRONG_IMAGE_URL: 'errors.WRONG_IMAGE_URL',
+  USERNAME_ALREADY_EXISTS: 'errors.USERNAME_ALREADY_EXISTS',
+  NOT_ENOUGH_BALANCE: 'errors.NOT_ENOUGH_BALANCE',
+  SERVER_ERROR: 'errors.SERVER_ERROR',
+  PAYLOAD_IS_EMPTY: 'errors.PAYLOAD_IS_EMPTY',
+  INVALID_REFRESH_TOKEN: 'errors.INVALID_REFRESH_TOKEN',
+  INCORRECT_EMAIL_OR_PASSWORD: 'errors.INCORRECT_EMAIL_OR_PASSWORD',
+  EMAIL_ALREADY_EXISTS: 'errors.EMAIL_ALREADY_EXISTS',
+  EMAIL_VERIFICATION_MAX_COUNT_OF_TRIES_EXCEEDED: 'errors.EMAIL_VERIFICATION_MAX_COUNT_OF_TRIES_EXCEEDED',
+}
+
+// Пример функции для получения текста ошибки через i18n
+// errorDetail = { error_code: 'TOKEN_NOT_FOUND', error_message: 'Token not found' }
+export function getErrorMessage(errorDetail: { error_code: string, error_message?: string }, t: (key: string) => string): string {
+  const i18nKey = errorCodeMap[errorDetail.error_code]
+  if (i18nKey) {
+    return t(i18nKey)
+  }
+  // fallback: если нет ключа, вернуть оригинальное сообщение
+  return errorDetail.error_message || errorDetail.error_code
+}
