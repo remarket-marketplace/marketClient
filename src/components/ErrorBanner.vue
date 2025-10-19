@@ -50,11 +50,8 @@ const errorText = computed(() => {
   border-radius: 1rem;
   box-shadow: 0 4px 16px 0 rgba(239, 68, 68, 0.15);
   padding: 1rem 1.5rem;
-  font-size: 1.15rem;
-  font-weight: 700;
   letter-spacing: 0.01em;
   margin-bottom: 1rem;
-  animation: pop-in 0.4s cubic-bezier(0.42, 0, 0.58, 1);
 }
 .error-banner .icon {
   display: flex;
@@ -65,27 +62,5 @@ const errorText = computed(() => {
   flex: 1;
   text-align: left;
   word-break: break-word;
-}
-@keyframes pop-in {
-  0% {
-    transform: scale(0.95);
-    opacity: 0;
-  }
-  80% {
-    transform: scale(1.03);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
 }
 </style>

@@ -60,7 +60,7 @@ async function signIn() {
         <div>
           <label for="password" class="mb-1 block text-sm text-gray-300">{{ $t('signIn.password') }}</label>
           <input
-            id="password" v-model="password" type="password" required placeholder="••••••••"
+            id="password" v-model="password" type="password" required placeholder="Password"
             class="w-full rounded-lg bg-dark-500 border border-dark-200 px-4 py-2 text-white transition focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
           >
         </div>

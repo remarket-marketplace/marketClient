@@ -45,24 +45,28 @@ const navItems = computed(() => [
 </script>
 
 <template>
-  <div class="h-screen w-screen flex flex-col overflow-hidden bg-dark-900 text-white">
-    <header class="flex-none border-b border-gray-700 bg-dark-900">
-      <div class="mx-auto h-16 max-w-5xl w-full flex items-center justify-between px-4 lg:px-8">
-        <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-white font-semibold" @click="router.push('/')">
-          remarket
-        </div>
+  <div class="h-screen flex flex-col overflow-hidden bg-dark-900 text-white">
+    <header class="flex-none">
+      <div class="mx-auto h-16 max-w-5xl w-full flex items-center justify-between ">
+        <div class="w-full border-b border-dark-800 bg-dark-900  px-6 py-4">
+          <div class="flex items-center justify-between">
+            <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-white font-semibold" @click="router.push('/')">
+              remarket
+            </div>
 
-        <nav class="hidden items-center gap-6 md:flex">
-          <router-link
-            v-for="item in navItems"
-            :key="item.to"
-            :to="item.to"
-            class="flex items-center gap-1 text-white hover:text-gray-300"
-          >
-            <Icon :icon="item.icon" :class="item.sell ? 'text-2xl' : 'text-xl'" />
-            <span>{{ item.title }}</span>
-          </router-link>
-        </nav>
+            <nav class="hidden items-center gap-6 md:flex">
+              <router-link
+                v-for="item in navItems"
+                :key="item.to"
+                :to="item.to"
+                class="flex items-center gap-1 text-white hover:text-gray-300"
+              >
+                <Icon :icon="item.icon" :class="item.sell ? 'text-2xl' : 'text-xl'" />
+                <span>{{ item.title }}</span>
+              </router-link>
+            </nav>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -125,7 +129,6 @@ const navItems = computed(() => [
   height: 22px;
   max-width: 22px;
   max-height: 22px;
-  vertical-align: middle;
   margin: 0;
 }
 

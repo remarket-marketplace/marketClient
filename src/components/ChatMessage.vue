@@ -160,7 +160,7 @@ function handleConfirmDeal() {
 
     <div
       v-else-if="chatMessage"
-      class="max-w-[70%] rounded-xl px-4 py-2 text-sm whitespace-pre-wrap break-all" 
+      class="max-w-[70%] rounded-xl px-4 py-2 text-sm whitespace-pre-wrap break-words" 
       :class="[
         chatMessage.sender_id === user?.id
           ? 'bg-blue-600 text-white rounded-br-none self-end' // Стили для моего сообщения (синий, справа)

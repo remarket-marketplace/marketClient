@@ -153,9 +153,9 @@ const en = {
     invalidCode: 'Invalid code or registration error',
   },
   signIn: {
-    title: 'Sign In',
+    title: 'Sign in',
     password: 'Password',
-    login: 'Log In',
+    login: 'Log in',
     noAccount: 'No account?',
     register: 'Register',
   },
