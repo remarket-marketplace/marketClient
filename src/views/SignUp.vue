@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { authService } from '@/api/auth/AuthService'
 import ErrorBanner from '@/components/ErrorBanner.vue'
+import TheInput from '@/components/TheInput.vue'
 import { Icon } from '@iconify/vue'
 import { nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
+import TheButton from './forms/TheButton.vue'
 
 const { t } = useI18n()
-
 const router = useRouter()
 
 // Данные регистрации
@@ -16,14 +17,14 @@ const password = ref('')
 const passwordRepeat = ref('')
 const username = ref('')
 
+// Состояния отправки форм
 const sended = ref(false)
+
 const showCodeInput = ref(false)
 const codeDigits = ref<string[]>(['', '', '', '', '', ''])
 const codeInputs = ref<(HTMLInputElement | null)[]>([])
 const errorMessage = ref('')
-
 const passwordHidden = ref(true)
-
 
 async function sendCode() {
   if (await passwordsEquals()) {
@@ -32,21 +33,20 @@ async function sendCode() {
     const result = await authService.sendVerificationCode(email.value, username.value)
     if (result) {
       showCodeInput.value = true
-    }
-    else {
-      errorMessage.value = t('signUp.errorSendCode')
+    } else {
+      errorMessage.value = t('pages.auth.signUp.errorSendCode')
     }
     sended.value = false
   }
 }
 
-async function switchPasswordVisibility() {
+function switchPasswordVisibility() {
   passwordHidden.value = !passwordHidden.value
 }
 
 async function passwordsEquals(): Promise<boolean> {
   if (password.value !== passwordRepeat.value) {
-    errorMessage.value = t('signUp.passwordsMismatch')
+    errorMessage.value = t('pages.auth.signUp.passwordsMismatch')
     return false
   }
   return true
@@ -56,7 +56,7 @@ async function completeSignUp() {
   if (await passwordsEquals()) {
     const code = codeDigits.value.join('')
     if (!code || code.length !== 6) {
-      errorMessage.value = t('signUp.invalidCode')
+      errorMessage.value = t('pages.auth.signUp.invalidCode')
       return
     }
     errorMessage.value = ''
@@ -64,9 +64,8 @@ async function completeSignUp() {
     const result = await authService.signUp(email.value, password.value, username.value, code)
     if (result) {
       router.push('/')
-    }
-    else {
-      errorMessage.value = t('signUp.invalidCode')
+    } else {
+      errorMessage.value = t('pages.auth.signUp.invalidCode')
     }
     sended.value = false
   }
@@ -87,7 +86,6 @@ function handleCodeInput(event: Event, index: number) {
   }
 }
 
-
 function handleKeyDown(event: KeyboardEvent, index: number) {
   if (event.key === 'Backspace' && !codeDigits.value[index] && index > 0) {
     event.preventDefault()
@@ -99,68 +97,95 @@ function handleKeyDown(event: KeyboardEvent, index: number) {
 </script>
 
 <template>
-  <div class="h-full w-full flex items-center justify-center bg-dark-900 px-4">
-    <div class="max-w-sm w-full border border-dark-700 rounded-2xl bg-dark-800/90 p-8 backdrop-blur-md space-y-6">
-      <h1 class="text-center text-3xl text-white font-bold">
-        {{ $t('signUp.title') }}
+  <div class="h-full w-full flex items-center justify-center px-4">
+    <div class="max-w-sm w-full border border-dark-700 rounded-2xl bg-background p-8 backdrop-blur-md space-y-6">
+      <h1 class="text-center text-3xl text-mainText font-bold">
+        {{ $t('pages.auth.signUp.title') }}
       </h1>
 
-      <p v-if="errorMessage" class="text-center text-red-500">
+      <p v-if="errorMessage" class="text-center text-error-text">
         {{ errorMessage }}
       </p>
 
       <!-- Форма регистрации -->
-      <form v-if="!showCodeInput" class="space-y-4" @submit.prevent="sendCode">
+      <form v-if="!showCodeInput" class="space-y-4">
         <ErrorBanner :message="errorMessage" />
+        
+        <!-- Username -->
         <div>
-          <label for="username" class="mb-1 block text-sm text-gray-300">{{ $t('signUp.username') }}</label>
-          <input
-            id="username" v-model="username" type="text" required :placeholder="$t('signUp.usernamePlaceholder')"
-            class="w-full rounded-lg bg-dark-500 border border-dark-200 px-4 py-2 text-white transition focus:outline-none focus:ring-2 focus:ring-blue-500"
+          <label for="username" class="mb-1 block text-sm text-text-secondary">{{ $t('common.username') }}</label>
+          <TheInput
+            id="username"
+            v-model="username"
+            type="text"
+            :placeholder="$t('pages.auth.signUp.usernamePlaceholder')"
+            required
+          />
+        </div>
+
+        <!-- Email -->
+        <div>
+          <label for="email" class="mb-1 block text-sm text-text-secondary">{{ $t('common.email') }}</label>
+          <TheInput
+            id="email"
+            v-model="email"
+            type="email"
+            :placeholder="$t('common.email')"
+            required
+          />
+        </div>
+
+        <!-- Password с иконкой глаза -->
+        <div>
+          <label for="password" class="mb-1 block text-sm text-text-secondary">{{ $t('common.password') }}</label>
+          <TheInput
+            id="password"
+            v-model="password"
+            :type="passwordHidden ? 'password' : 'text'"
+            placeholder="••••••••"
+            required
+            :minlength="8"
           >
+            <template #append>
+              <button
+                type="button"
+                class="text-gray-400 hover:text-gray-300 transition-colors focus:outline-none p-1"
+                @click="switchPasswordVisibility"
+              >
+                <Icon 
+                  icon="ei:eye"
+                  class="text-xl" 
+                />
+              </button>
+            </template>
+          </TheInput>
         </div>
 
+        <!-- Confirm Password -->
         <div>
-          <label for="email" class="mb-1 block text-sm text-gray-300">Email</label>
-          <input
-            id="email" v-model="email" type="email" required placeholder="Email"
-            class="w-full rounded-lg bg-dark-500 border border-dark-200 px-4 py-2 text-white transition focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
-          >
+          <label for="passwordRepeat" class="mb-1 block text-sm text-text-secondary">{{ $t('pages.auth.signUp.confirmPassword') }}</label>
+          <TheInput
+            id="passwordRepeat"
+            v-model="passwordRepeat"
+            type="password"
+            placeholder="••••••••"
+            required
+            :minlength="8"
+          />
         </div>
 
-        <div>
-          <label for="password" class="mb-1 block text-sm text-gray-300">{{ $t('signUp.password') }}</label>
-          <div class="flex items-center">
-            <input
-              id="password" v-model="password" :type="passwordHidden === true ? 'password' : 'text'" required minlength="8"
-              placeholder="••••••••"
-              class="w-full rounded-lg bg-dark-500 border border-dark-200 px-4 py-2 text-white transition focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
-            >
-            <Icon icon="ei:eye" class="mx-3 text-3xl" @click="switchPasswordVisibility" />
-          </div>
-        </div>
-
-        <div>
-          <label for="passwordRepeat" class="mb-1 block text-sm text-gray-300">{{ $t('signUp.confirmPassword') }}</label>
-          <input
-            id="passwordRepeat" v-model="passwordRepeat" type="password" required minlength="8" placeholder="••••••••"
-            class="w-full rounded-lg bg-dark-500 border border-dark-200 px-4 py-2 text-white transition focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
-          >
-        </div>
-
-        <button
-          type="submit" :disabled="sended"
-          class="w-full rounded-lg bg-blue-600 py-2 text-white font-semibold transition-colors duration-200 hover:bg-blue-700"
-        >
-          {{ $t('signUp.getCode') }}
-        </button>
+        <TheButton
+          @click="sendCode"
+          :button-text="sended ? $t('common.sending') : $t('pages.auth.signUp.getCode')"
+          :sended="sended"
+        />
       </form>
 
       <!-- Форма ввода кода -->
-      <form v-else class="space-y-4" @submit.prevent="completeSignUp">
-        <div>
-          <label class="mb-1 block text-sm text-gray-300">{{ $t('signUp.enterCode') }}</label>
-          <div class="flex justify-center space-x-2">
+      <form v-if="showCodeInput" class="space-y-4">
+        <div class="space-y-2">
+          <label class="block text-sm text-text-secondary">{{ $t('pages.auth.signUp.enterCode') }}</label>
+          <div class="grid grid-cols-6 gap-2">
             <input
               v-for="(digit, index) in 6"
               :key="index"
@@ -170,24 +195,25 @@ function handleKeyDown(event: KeyboardEvent, index: number) {
               maxlength="1"
               inputmode="numeric"
               pattern="[0-9]*"
-              class="h-12 w-12 border-2 border-dark-600 rounded-lg bg-dark-500 text-center text-lg text-white font-bold transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="flex-1 aspect-square min-w-0 border border-1 border-dark-700 rounded-lg bg-dark-600 text-center text-lg text-mainText font-bold transition-all focus:border-blue-500 focus:outline-none"
               @input="handleCodeInput($event, index)"
               @keydown="handleKeyDown($event, index)"
             >
           </div>
         </div>
 
-        <button
-          type="submit" :disabled="sended"
-          class="w-full rounded-lg bg-green-600 py-2 text-white font-semibold transition-colors duration-200 hover:bg-green-700"
-        >
-          {{ $t('signUp.completeRegistration') }}
-        </button>
+        <TheButton
+          @click="completeSignUp"
+          :button-text="$t('pages.auth.signUp.completeRegistration')"
+          :sended="sended"
+        />
       </form>
 
-      <p class="text-center text-sm text-gray-500">
-        {{ $t('signUp.haveAccount') }}
-        <router-link to="/signin" class="text-blue-400 hover:underline">{{ $t('signUp.login') }}</router-link>
+      <p class="text-center text-sm text-text-secondaryDark">
+        {{ $t('pages.auth.signUp.haveAccount') }}
+        <router-link to="/signin" class="text-text-link hover:underline">
+          {{ $t('pages.auth.signUp.login') }}
+        </router-link>
       </p>
     </div>
   </div>

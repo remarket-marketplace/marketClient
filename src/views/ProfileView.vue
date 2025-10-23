@@ -8,7 +8,9 @@ import type { PublicProfileData, UserRead } from '@/validation/user/userRead'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const store = useUserStore()
@@ -42,13 +44,13 @@ onMounted(loadProfileData)
 
 <template>
   <div class="h-full w-full flex flex-col items-center justify-center">
-    <div v-if="isLoading" class="text-gray-400">Загрузка профиля...</div>
+    <div v-if="isLoading" class="text-gray-400">{{ $t('common.loading') }}</div>
     <ProfilePage
       v-else-if="profileData"
       :profile-data="profileData"
       :is-owner="isOwner"
       :Products="profileProducts"
     />
-    <div v-else class="text-gray-400">Профиль не найден</div>
+    <div v-else class="text-gray-400">{{ $t('pages.profile.profileNotFound') }}</div>
   </div>
 </template>

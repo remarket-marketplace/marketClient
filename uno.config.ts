@@ -20,6 +20,6 @@ export default defineConfig({
   },
   shortcuts: {
     // удобно создавать собственные комбинации классов
-    'btn': 'px-4 py-2 rounded-lg bg-brand text-white hover:bg-brand/80 transition-colors',
+    'btn': 'px-4 py-2 rounded-lg bg-brand text-mainText hover:bg-brand/80 transition-colors',
   },
 })

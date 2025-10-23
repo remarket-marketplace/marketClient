@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import router from '@/router';
 import type { Product } from '@/validation/product/product';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   product: Product
@@ -11,7 +14,6 @@ const emit = defineEmits<{
 }>()
 
 const API_HOST = import.meta.env.VITE_API_HOST
-
 
 function onClick() {
   emit('click', props.product.id)
@@ -37,10 +39,10 @@ function goToSeller() {
       v-else
       class="mb-3 h-36 w-full flex items-center justify-center rounded bg-gray-700 text-sm text-gray-300"
     >
-      {{ $t('index.noImage') }}
+      {{ $t('common.noImage') }}
     </div>
 
-    <h3 class="truncate text-lg text-white font-bold">
+    <h3 class="truncate text-lg text-mainText font-bold">
       {{ product.title }}
     </h3>
 
@@ -58,7 +60,7 @@ function goToSeller() {
     </div>
 
     <div class="mt-3 flex items-center justify-between">
-      <span class="text-lg text-white sm:text-xl">{{ product.price }}₽</span>
+      <span class="text-lg text-mainText sm:text-xl">{{ product.price }}₽</span>
     </div>
   </div>
 </template>

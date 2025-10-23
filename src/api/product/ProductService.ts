@@ -127,7 +127,7 @@ export const productService = {
           'Content-Type': 'multipart/form-data',
         },
       })
-      return response.data
+      return response.status === 200
     }
     catch (error) {
       console.error('Ошибка создания товара:', error)

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 interface Option {
   label: string
@@ -19,6 +20,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string | number | null): void
 }>()
+
+const { t } = useI18n()
 
 // Состояния
 const isOpen = ref(false)
@@ -51,7 +54,7 @@ function selectOption(value: string | number) {
     <label v-if="label" class="mb-2 block text-sm text-gray-300">{{ label }}</label>
     <button
       type="button"
-      class="w-full flex items-center justify-between gap-3 bg-dark-600 border border-dark-700 rounded-lg px-4 py-2 text-white transition disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      class="w-full flex items-center justify-between gap-3 bg-dark-600 border border-dark-700 rounded-lg px-4 py-2 text-mainText transition disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
       :aria-expanded="isOpen"
       :disabled="disabled"
       @click="toggle"
@@ -61,7 +64,7 @@ function selectOption(value: string | number) {
           {{ options.find(opt => opt.value === modelValue)?.label }}
         </template>
         <template v-else>
-          <span class="text-gray-400">{{ placeholder ?? 'Выберите' }}</span>
+          <span class="text-gray-400">{{ placeholder ?? t('common.select') }}</span>
         </template>
       </span>
 
@@ -82,13 +85,13 @@ function selectOption(value: string | number) {
           v-if="!options.length"
           class="select-none px-4 py-2 text-sm text-gray-400"
         >
-          {{ $t('index.noOptions') }}
+          {{ $t('common.noOptions') }}
         </li>
 
         <li
           v-for="opt in options"
           :key="opt.value"
-          class="flex cursor-pointer items-center justify-between px-4 py-2 text-sm text-white hover:bg-dark-700"
+          class="flex cursor-pointer items-center justify-between px-4 py-2 text-sm text-mainText hover:bg-dark-700"
           :class="{ 'bg-dark-700': modelValue === opt.value }"
           @click="selectOption(opt.value)"
         >

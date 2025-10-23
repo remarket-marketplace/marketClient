@@ -52,7 +52,7 @@ onMounted(() => {
     :class="{ 'opacity-100': isOpen, 'opacity-0': !isOpen }"
   >
     <div class="mx-4 max-w-md w-full rounded-xl bg-dark-800 p-6 shadow-xl md:max-w-lg md:p-8 focus:outline-none">
-      <h3 class="mb-4 flex items-center text-2xl text-white font-semibold">
+      <h3 class="mb-4 flex items-center text-2xl text-mainText font-semibold">
         <svg class="mr-2 h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v.01M12 21v0" />
         </svg>
@@ -63,13 +63,13 @@ onMounted(() => {
       </p>
       <div class="flex justify-end gap-3">
         <button
-          class="rounded bg-gray-700 px-4 py-2 text-white transition duration-200 ease-in-out disabled:cursor-not-allowed active:bg-gray-500 hover:bg-gray-600 disabled:opacity-50"
+          class="rounded bg-gray-700 px-4 py-2 text-mainText transition duration-200 ease-in-out disabled:cursor-not-allowed active:bg-gray-500 hover:bg-gray-600 disabled:opacity-50"
           @click="handleCancel"
         >
           {{ cancelText }}
         </button>
         <button
-          class="rounded bg-red-600 px-4 py-2 text-white transition duration-200 ease-in-out disabled:cursor-not-allowed active:bg-red-500 hover:bg-red-700 disabled:opacity-50"
+          class="rounded bg-red-600 px-4 py-2 text-mainText transition duration-200 ease-in-out disabled:cursor-not-allowed active:bg-red-500 hover:bg-red-700 disabled:opacity-50"
           :disabled="isLoading"
           @click="handleConfirm"
         >

@@ -33,7 +33,7 @@ onMounted(async () => {
   }
   catch (err) {
     console.error('Ошибка загрузки категорий:', err)
-    errorMessage.value = t('createProduct.errorLoadingCategories')
+    errorMessage.value = t('pages.forms.createProduct.errorLoadingCategories')
   }
 })
 
@@ -50,7 +50,7 @@ watch(selectedCategoryId, async (newCategory) => {
   }
   catch (err) {
     console.error('Ошибка загрузки подкатегорий:', err)
-    errorMessage.value = t('createProduct.errorLoadingSubcategories')
+    errorMessage.value = t('pages.forms.createProduct.errorLoadingSubcategories')
   }
 })
 
@@ -65,17 +65,17 @@ async function createProduct() {
   errorMessage.value = ''
 
   if (!selectedSubcategoryId.value || !title.value || !description.value || !price.value || !productData.value || !images.value.length) {
-    errorMessage.value = t('createProduct.fillAllFields')
+    errorMessage.value = t('pages.forms.createProduct.fillAllFields')
     return
   }
 
   if (title.value.length < 10 || description.value.length < 10 || productData.value.length < 10) {
-    errorMessage.value = t('createProduct.minLength')
+    errorMessage.value = t('pages.forms.createProduct.minLength')
     return
   }
 
   if (Number(price.value) <= 0) {
-    errorMessage.value = t('createProduct.pricePositive')
+    errorMessage.value = t('pages.forms.createProduct.pricePositive')
     return
   }
 
@@ -93,16 +93,16 @@ async function createProduct() {
     if (result && user?.username)
       router.push(`/profile/${user?.username}`)
     else
-      errorMessage.value = t('createProduct.errorCreatingProduct')
+      errorMessage.value = t('pages.forms.createProduct.errorCreatingProduct')
   }
   catch (err: any) {
     console.error('Ошибка при создании товара:', err)
     if (err.response?.data?.detail) {
       const errors = err.response.data.detail.map((e: any) => e.msg).join(', ')
-      errorMessage.value = `${t('createProduct.validationErrors')}${errors}`
+      errorMessage.value = `${t('pages.forms.createProduct.validationErrors')}${errors}`
     }
     else {
-      errorMessage.value = t('createProduct.errorCreatingProduct')
+      errorMessage.value = t('pages.forms.createProduct.errorCreatingProduct')
     }
   }
   finally {
@@ -117,8 +117,8 @@ async function createProduct() {
     </div>
 
     <div class="max-w-md w-full border border-dark-700 rounded-2xl p-8 backdrop-blur-md space-y-6">
-      <h1 class="text-center text-3xl text-white font-bold">
-        {{ $t('createProduct.title') }}
+      <h1 class="text-center text-3xl text-mainText font-bold">
+        {{ $t('pages.forms.createProduct.title') }}
       </h1>
 
       <ErrorBanner
@@ -129,8 +129,8 @@ async function createProduct() {
       <CustomSelect
         v-model="selectedCategoryId"
         :options="categories.map(c => ({ label: c.name, value: c.id }))"
-        :label="t('createProduct.category')"
-        :placeholder="t('createProduct.selectCategory')"
+        :label="t('common.category')"
+        :placeholder="t('pages.forms.createProduct.selectCategory')"
       />
 
       <!-- Подкатегория -->
@@ -138,70 +138,70 @@ async function createProduct() {
         v-if="subcategories.length"
         v-model="selectedSubcategoryId"
         :options="subcategories.map(s => ({ label: s.name, value: s.id }))"
-        :label="t('createProduct.subcategory')"
-        :placeholder="t('createProduct.selectSubcategory')"
+        :label="t('common.subcategory')"
+        :placeholder="t('pages.forms.createProduct.selectSubcategory')"
       />
 
       <!-- Остальные поля -->
       <div v-if="selectedSubcategoryId" class="space-y-4">
         <div>
-          <label for="title" class="mb-2 block text-sm text-gray-300">{{ $t('createProduct.productName') }}</label>
+          <label for="title" class="mb-2 block text-sm text-gray-300">{{ $t('pages.forms.createProduct.productName') }}</label>
           <input
             id="title"
             v-model="title"
             type="text"
-            :placeholder="$t('createProduct.namePlaceholder')"
-            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+            :placeholder="$t('pages.forms.createProduct.namePlaceholder')"
+            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
           >
         </div>
 
         <div>
-          <label for="description" class="mb-2 block text-sm text-gray-300">{{ $t('createProduct.description') }}</label>
+          <label for="description" class="mb-2 block text-sm text-gray-300">{{ $t('common.description') }}</label>
           <textarea
             id="description"
             v-model="description"
             rows="4"
-            :placeholder="$t('createProduct.descriptionPlaceholder')"
-            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
-          />
+            :placeholder="$t('pages.forms.createProduct.descriptionPlaceholder')"
+            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+          ></textarea>
         </div>
 
         <div>
-          <label for="price" class="mb-2 block text-sm text-gray-300">{{ $t('createProduct.price') }}</label>
+          <label for="price" class="mb-2 block text-sm text-gray-300">{{ $t('common.price') }}</label>
           <input
             id="price"
             v-model="price"
             type="number"
             step="1"
             min="1"
-            :placeholder="$t('createProduct.pricePlaceholder')"
-            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+            :placeholder="$t('pages.forms.createProduct.pricePlaceholder')"
+            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
           >
         </div>
 
         <div>
-          <label for="productData" class="mb-2 block text-sm text-gray-300">{{ $t('createProduct.productData') }}</label>
+          <label for="productData" class="mb-2 block text-sm text-gray-300">{{ $t('pages.forms.createProduct.productData') }}</label>
           <textarea
             id="productData"
             v-model="productData"
             rows="4"
-            :placeholder="$t('createProduct.productDataPlaceholder')"
-            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
-          />
+            :placeholder="$t('pages.forms.createProduct.productDataPlaceholder')"
+            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+          ></textarea>
         </div>
 
         <div>
-          <label for="images" class="mb-2 block text-sm text-gray-300">{{ $t('createProduct.images') }}</label>
+          <label for="images" class="mb-2 block text-sm text-gray-300">{{ $t('common.images') }}</label>
           <input
             id="images"
             type="file"
             accept="image/*"
             multiple
-            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText focus:outline-none focus:ring-2 focus:ring-blue-500"
             @change="handleImagesChange"
           >
           <p v-if="images.length" class="mt-1 text-sm text-gray-400">
-            {{ $t('createProduct.selectedImagesCount', { count: images.length }) }}
+            {{ $t('pages.forms.createProduct.selectedImagesCount', { count: images.length }) }}
           </p>
         </div>
       </div>
@@ -210,10 +210,10 @@ async function createProduct() {
         v-if="selectedSubcategoryId"
         type="button"
         :disabled="sended"
-        class="w-full rounded-lg bg-blue-600 py-2 text-white font-semibold transition duration-200 hover:bg-blue-700 disabled:opacity-50"
+        class="w-full rounded-lg bg-blue-600 py-2 text-mainText font-semibold transition duration-200 hover:bg-blue-700 disabled:opacity-50"
         @click="createProduct"
       >
-        {{ sended ? $t('createProduct.creating') : $t('createProduct.create') }}
+        {{ sended ? $t('pages.forms.createProduct.creating') : $t('common.create') }}
       </button>
     </div>
   </div>

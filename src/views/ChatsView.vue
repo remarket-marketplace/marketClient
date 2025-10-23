@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { chatsService } from '@/api/chats/chatsService'
-import ChatMessage from '@/components/ChatMessage.vue'
+import ChatItem from '@/components/chats/ChatItem.vue'
+import ChatMessage from '@/components/chats/ChatMessage.vue'
+import SendMessageBar from '@/components/chats/SendMessageBar.vue'
+import Loader from '@/components/Loader.vue'
 import { useUserStore } from '@/stores/user'
 import type { ChatContentUnion } from '@/validation/chat/chatMessage'
 import type { UserRead } from '@/validation/user/userRead'
@@ -39,12 +42,9 @@ onMounted(async () => {
 
     // Инициализируем подключение к сокету без присоединения к комнате
     await chatsService.connectChat()
-    console.warn('Chat service connected')
 
     // Подписываемся на новые сообщения
     chatsService.onNewMessage((message) => {
-      console.warn('Received new message:', message)
-      console.warn('Current chat:', selectedChatId.value)
       if (selectedChatId.value === message.chat_room_id) {
         const messageExists = chatMessages.value.some(m => m.id === message.id)
         if (!messageExists) {
@@ -56,13 +56,11 @@ onMounted(async () => {
 
     // Загружаем список чатов
     chats.value = await chatsService.getChats()
-    console.warn('Chats loaded:', chats.value.length)
 
     await restoreLastChat() // восстанавливаем последний чат при загрузке
   }
   catch (error) {
-    console.error('Error in component mount:', error)
-    errorMessage.value = t('chats.errorLoadingChats')
+    errorMessage.value = t('pages.chats.errorLoadingChats')
   }
   finally {
     isLoading.value = false
@@ -83,12 +81,10 @@ async function restoreLastChat() {
   // Проверяем, существует ли чат
   const existingChat = chats.value.find(c => c.id === savedChatId)
   if (!existingChat) {
-    console.warn('Saved chat not found, clearing storage')
     localStorage.removeItem('selectedChatId')
     return
   }
 
-  console.warn('Restoring last opened chat:', savedChatId)
   await loadChatMessages(savedChatId)
 
   if (window.innerWidth < 768) {
@@ -110,15 +106,12 @@ async function loadChatMessages(chatId: string) {
   try {
     isLoading.value = true
     errorMessage.value = null
-    console.warn('Loading chat messages for:', chatId)
 
     // Подключаемся к комнате чата
     await chatsService.connectChat(chatId)
-    console.warn('Connected to chat room:', chatId)
 
     selectedChatId.value = chatId
     chatMessages.value = await chatsService.getChatMessages(chatId)
-    console.warn('Messages loaded:', chatMessages.value.length)
 
     // сохраняем открытый чат, для сохранения при перезагрузке
     localStorage.setItem('selectedChatId', chatId)
@@ -132,10 +125,10 @@ async function loadChatMessages(chatId: string) {
   catch (e) {
     console.error('Error loading messages:', e)
     if (e instanceof ZodError) {
-      errorMessage.value = t('chats.errorDataStructure')
+      errorMessage.value = t('pages.chats.errorDataStructure')
     }
     else {
-      errorMessage.value = t('chats.errorLoadingMessages')
+      errorMessage.value = t('pages.chats.errorLoadingMessages')
     }
   }
   finally {
@@ -143,30 +136,29 @@ async function loadChatMessages(chatId: string) {
   }
 }
 
-async function sendMessage() {
-  if (!newMessage.value.trim() || !selectedChatId.value)
+async function sendMessage(newMessage: string) {
+  if (!newMessage.trim() || !selectedChatId.value)
     return
 
   try {
-    console.warn('Sending message to chat:', selectedChatId.value)
-    await chatsService.sendMessage(newMessage.value.trim(), selectedChatId.value)
-    console.warn('Message sent successfully')
-
-    newMessage.value = ''
+    await chatsService.sendMessage(newMessage.trim(), selectedChatId.value)
+    newMessage = ''
   }
   catch (error) {
-    console.error('Error in sendMessage:', error)
-    errorMessage.value = t('chats.errorSendMessage')
+    errorMessage.value = t('pages.chats.errorSendMessage')
   }
 }
 </script>
 
 <template>
   <div class="h-full w-full flex flex-col">
+
+    <!-- лоадер -->
     <div v-if="isLoading" class="flex flex-1 items-center justify-center text-gray-300">
-      <div class="h-10 w-10 animate-spin border-4 border-blue-500 border-t-transparent rounded-full" />
+      <Loader/>
     </div>
 
+    <!-- ошибки -->
     <div v-else-if="errorMessage" class="flex flex-1 items-center justify-center text-red-500">
       {{ errorMessage }}
     </div>
@@ -174,7 +166,7 @@ async function sendMessage() {
     <div v-else class="w-full flex flex-1 overflow-hidden">
       <div
         v-if="!isMobile || (isMobile && mobileMode === 'chats')"
-        class="h-full max-w-sm flex flex-col md:pr-5"
+        class="h-full lg:max-w-sm flex flex-col md:pr-5"
         :class="[
           isMobile && mobileMode === 'chats'
             ? 'absolute inset-0 z-20 w-screen'
@@ -182,48 +174,28 @@ async function sendMessage() {
         ]"
       >
         <div
-          class="h-full flex flex-col border-dark-600 p-4 lg:border-1 md:rounded-3xl"
+          class="h-full flex flex-col border-dark-600 lg:border-1 md:rounded-3xl"
           :class="{
             'pb-20': isMobile && mobileMode === 'chats',
             'pt-16': isMobile && mobileMode === 'chats',
           }"
         >
-          <p class="my-4 text-2xl text-white font-semibold">
-            {{ $t('chats.title') }}
+          <p class="my-4 text-2xl px-4 text-mainText font-semibold">
+            {{ $t('pages.chats.title') }}
           </p>
 
           <div class="scrollbar-hidden min-h-0 flex-1 overflow-y-auto">
             <div v-if="chats.length > 0" class="flex flex-col gap-3">
-              <div
-                v-for="chat in chats"
-                :key="chat.id"
-                class="flex cursor-pointer items-center gap-3 rounded-lg py-3 transition hover:bg-dark-800/50"
-                @click="loadChatMessages(chat.id)"
-              >
-                <div class="h-12 w-12 flex items-center justify-center">
-                  <img
-                    v-if="chat.another_user.avatar_url"
-                    :src="`${API_HOST}${chat.another_user.avatar_url}`"
-                    class="h-12 w-12 border-2 border-dark-600 rounded-full object-cover"
-                    :alt="chat.another_user.username"
-                  >
-                  <div
-                    v-else
-                    class="h-12 w-12 flex items-center justify-center rounded-full bg-gray-700 text-lg text-white font-bold uppercase"
-                  >
-                    {{ chat.another_user.username.charAt(0) }}
-                  </div>
-                </div>
-                <div class="flex flex-col truncate">
-                  <p class="truncate text-white font-semibold">
-                    {{ chat.another_user.username }}
-                  </p>
-                </div>
-              </div>
+                <ChatItem
+                  v-for="chat in chats"
+                  :key="chat.id"
+                  :chat="chat"
+                  @load-chat-messages="(n: string) => loadChatMessages(n)"
+                />
             </div>
-            <div v-else>
+            <div v-else class="h-full w-full flex items-center justify-center">
               <p class="text-sm text-gray-400 font-light">
-                {{ $t('chats.emptyChats') }}
+                {{ $t('pages.chats.emptyChats') }}
               </p>
             </div>
           </div>
@@ -264,20 +236,18 @@ async function sendMessage() {
                 </div>
               </div>
 
-              <div v-else class="h-full w-full flex items-center justify-center">
-                <p>{{ $t("chats.emptyChats") }}</p>
+              <div v-else-if="selectedChatId != null && chatMessages.length === 0" class="h-full w-full flex items-center justify-center">
+                <p class="text-gray-400 font-light">{{ $t("pages.chats.emptyMessages") }}</p>
+              </div>
+
+              <div v-else-if="selectedChatId === null" class="h-full w-full flex items-center justify-center">
+                <p class="text-gray-400 font-light">{{ $t('pages.chats.selectChat') }}</p>
               </div>
             </div>
 
-            <div class="flex flex-none">
-              <input
-                v-model="newMessage" type="text" class="flex-1 rounded-l-2xl rounded-r-none bg-dark-600 border border-dark-700 p-3 outline-none" :placeholder="$t('chats.messagePlaceholder')"
-                @keyup.enter="sendMessage"
-              >
-              <button class="rounded-l-none rounded-r-2xl bg-blue-500 px-4 text-sm font-bold" @click="sendMessage">
-                <p>{{ $t("chats.send") }}</p>
-              </button>
-            </div>
+            <SendMessageBar v-if="selectedChatId"
+              @sendMessage="(newMessage: string) => {sendMessage(newMessage)}"
+            />
           </div>
         </div>
       </div>
@@ -286,11 +256,4 @@ async function sendMessage() {
 </template>
 
 <style scoped>
-.scrollbar-hidden {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
-}
-.scrollbar-hidden::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
-}
 </style>

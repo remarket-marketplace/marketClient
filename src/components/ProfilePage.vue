@@ -17,7 +17,7 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const { locale } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 const store = useUserStore()
 const API_HOST = import.meta.env.VITE_API_HOST
@@ -68,7 +68,7 @@ function goToSettings() {
 </script>
 
 <template>
-  <section class="h-full w-full flex flex-col gap-6 py-10 text-white lg:flex-row overflow-scroll lg:overflow-hidden no-scrollbar">
+  <section class="h-full w-full flex flex-col gap-6 py-10 text-mainText lg:flex-row overflow-scroll lg:overflow-hidden no-scrollbar">
     <div class="w-full h-full border border-dark-600 rounded-lg p-6 lg:max-w-sm space-y-4">
       <div class="flex flex-col items-center text-center">
         <div class="w-full flex items-center justify-between">
@@ -77,7 +77,7 @@ function goToSettings() {
           </h1>
 
           <div v-if="isOwner" class="relative">
-            <button class="text-gray-300 hover:text-white" @click.stop="toggleMenu">
+            <button class="text-gray-300 hover:text-mainText" @click.stop="toggleMenu">
               <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
                 <circle cx="12" cy="6" r="1.6" />
                 <circle cx="12" cy="12" r="1.6" />
@@ -87,10 +87,10 @@ function goToSettings() {
 
             <div v-if="showMenu" class="absolute right-0 mt-2 w-40 border border-dark-600 rounded-lg bg-dark-800 shadow-lg">
               <button class="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-dark-700" @click="goToSettings">
-                {{ $t('profile.settings') }}
+                {{ $t('pages.profile.settings') }}
               </button>
               <button class="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-dark-700" @click="logout">
-                {{ $t('profile.logout') }}
+                {{ $t('pages.profile.logout') }}
               </button>
             </div>
           </div>
@@ -115,9 +115,9 @@ function goToSettings() {
 
         <div class="mt-4 text-xs text-gray-300 sm:text-sm">
           <template v-if="!isEditingDescription">
-            <p>{{ currentProfileData.description || $t('profile.descriptionMissing') }}</p>
+            <p>{{ currentProfileData.description || $t('pages.profile.descriptionMissing') }}</p>
             <button v-if="isOwner" class="mt-1 text-xs text-blue-400 hover:underline" @click="isEditingDescription = true">
-              {{ $t('profile.editDescription') }}
+              {{ $t('pages.profile.editDescription') }}
             </button>
           </template>
 
@@ -126,19 +126,19 @@ function goToSettings() {
               v-model="newDescription"
               rows="3"
               maxlength="500"
-              class="w-full border border-gray-600 rounded bg-dark-900 p-2 text-xs text-white"
-              :placeholder="$t('profile.descriptionPlaceholder')"
+              class="w-full border border-gray-600 rounded bg-dark-900 p-2 text-xs text-mainText"
+              :placeholder="$t('pages.profile.descriptionPlaceholder')"
             />
             <div class="mt-2 flex justify-end gap-2 text-xs">
               <button class="text-gray-400 hover:underline" @click="isEditingDescription = false">
-                {{ $t('profile.cancel') }}
+                {{ $t('common.cancel') }}
               </button>
               <button
                 class="text-green-400 hover:underline"
                 :disabled="!newDescription.trim() || newDescription === props.profileData.description"
                 @click="updateProfileDescription(newDescription)"
               >
-                {{ $t('profile.save') }}
+                {{ $t('common.save') }}
               </button>
             </div>
           </template>
@@ -146,7 +146,7 @@ function goToSettings() {
 
         <div v-if="isOwner" class="mt-4 text-sm sm:text-base">
           <p v-if="'balance' in currentProfileData">
-            {{ $t('profile.balance') }}:
+            {{ $t('common.balance') }}:
             <span class="text-green-400">
               {{ (currentProfileData as ProfileData).balance.toFixed(2) }}₽
             </span>
@@ -155,7 +155,7 @@ function goToSettings() {
 
         <p class="mt-2 text-xs text-gray-400 sm:text-sm">
           🌟 {{ currentProfileData.rating.toFixed(1) }} •
-          {{ $t('profile.memberSince') }} {{ formatFullDate(currentProfileData.created_at.toString()) }}
+          {{ $t('common.memberSince') }} {{ formatFullDate(currentProfileData.created_at.toString()) }}
         </p>
       </div>
     </div>
@@ -166,41 +166,41 @@ function goToSettings() {
       <!-- если владелец профиля -->
       <div v-if="isOwner" class="w-full flex">
         <button class="flex-1 hover:bg-dark-500 transition py-4 rounded">
-          {{ $t('profile.products') }}
+          {{ $t('common.products') }}
         </button>
 
         <button class="flex-1 hover:bg-dark-500 transition py-4 rounded">
-          {{ $t('profile.reviews') }}
+          {{ $t('pages.profile.reviews') }}
         </button>
 
         <button class="flex-1 hover:bg-dark-500 transition py-4 rounded">
-          {{ $t('profile.purchases') }}
+          {{ $t('pages.profile.purchases') }}
         </button>
       </div>
 
       <!-- если не владелец профиля -->
       <div v-else class="w-full flex">
         <button class="flex-1 hover:bg-dark-500 transition py-4 rounded">
-          {{ $t('profile.active') }}
+          {{ $t('common.active') }}
         </button>
 
         <button class="flex-1 hover:bg-dark-500 transition py-4 rounded">
-          {{ $t('profile.reviews') }}
+          {{ $t('pages.profile.reviews') }}
         </button>
 
         <button class="flex-1 hover:bg-dark-500 transition py-4 rounded">
-          {{ $t('profile.sold') }}
+          {{ $t('common.sold') }}
         </button>
       </div>
       
 
       <div class="w-full h-full flex-1 pb-5 overflow-scroll no-scrollbar">
-        <div v-if="products.length === 0" class="w-full flex items-center justify-center py-6 text-gray-500">
-          {{ $t('profile.noProducts') }}
+        <div v-if="products.length === 0" class="w-full flex items-center justify-center py-6 text-text-secondaryDark">
+          {{ $t('pages.profile.noProducts') }}
         </div>
 
         <div v-else>
-          <div v-for="product in products" :key="product.id" class="w-full border-b border-dark-600 p-4 hover:bg-dark-800/50 transition">
+          <div v-for="product in products" :key="product.id" class="w-full border-b border-dark-600 hover:bg-dark-800/50 transition">
             <ProfileProductCard
               :product="product"
               :is-owner="isOwner"

@@ -8,13 +8,15 @@ import router from '@/router'
 import type { Category } from '@/validation/category/category'
 import type { Product } from '@/validation/product/product'
 import { onMounted, onUnmounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // Типы
 interface MainCategory {
   id: string
   name: string
 }
-
 
 // Данные
 const mainCategories = ref<MainCategory[]>([])
@@ -183,7 +185,7 @@ async function loadFilteredProducts() {
     >
       <SearchField
         v-model="searchQuery"
-        :placeholder="$t('index.searchPlaceholder')"
+        :placeholder="$t('pages.index.searchPlaceholder')"
         @search-change="debouncedSearch"
       />
 
@@ -191,8 +193,8 @@ async function loadFilteredProducts() {
         <CustomSelect
           v-model="selectedMainCategoryId"
           :options="mainCategories.map((c: { name: any; id: any }) => ({ label: c.name, value: c.id }))"
-          :label="$t('index.category')"
-          :placeholder="$t('index.selectCategory')"
+          :label="$t('common.category')"
+          :placeholder="$t('pages.index.selectCategory')"
           @update:model-value="onMainCategoryChange"
         />
 
@@ -200,8 +202,8 @@ async function loadFilteredProducts() {
           v-if="categories.length > 0"
           v-model="selectedCategoryFilter"
           :options="categories.map((s: { name: any; id: any }) => ({ label: s.name, value: s.id }))"
-          :label="$t('index.subcategory')"
-          :placeholder="$t('index.allSubcategories')"
+          :label="$t('common.subcategory')"
+          :placeholder="$t('pages.index.allSubcategories')"
           @update:model-value="filterCategorySearch"
         />
       </div>
@@ -215,8 +217,8 @@ async function loadFilteredProducts() {
         <CustomSelect
           v-model="selectedMainCategoryId"
           :options="mainCategories.map((c: { name: any; id: any }) => ({ label: c.name, value: c.id }))"
-          :label="$t('index.category')"
-          :placeholder="$t('index.category')"
+          :label="$t('common.category')"
+          :placeholder="$t('common.category')"
           @update:model-value="onMainCategoryChange"
         />
 
@@ -224,18 +226,18 @@ async function loadFilteredProducts() {
           v-if="categories.length > 0"
           v-model="selectedCategoryFilter"
           :options="categories.map((s: { name: any; id: any }) => ({ label: s.name, value: s.id }))"
-          :label="$t('index.subcategory')"
-          :placeholder="$t('index.allSubcategories')"
+          :label="$t('common.subcategory')"
+          :placeholder="$t('pages.index.allSubcategories')"
           @update:model-value="filterCategorySearch"
         />
       </div>
 
-      <div class="mb-2 mt-4 text-xl text-white font-semibold sm:text-2xl">
-        {{ $t('index.products') }}
+      <div class="mb-2 mt-4 text-xl text-mainText font-semibold sm:text-2xl">
+        {{ $t('common.products') }}
       </div>
 
       <div v-if="products.length === 0" class="mt-8 text-center text-gray-400">
-        {{ $t('index.noProducts') }}
+        {{ $t('pages.index.noProducts') }}
       </div>
 
       <div
@@ -255,12 +257,12 @@ async function loadFilteredProducts() {
         class="mt-8 flex items-center justify-center"
       >
         <button
-          class="max-w-lg w-full rounded-lg bg-blue-500 px-6 py-3 text-lg text-white font-semibold shadow-lg transition-all duration-200 active:bg-blue-700 hover:bg-blue-600"
+          class="max-w-lg w-full rounded-lg bg-blue-500 px-6 py-3 text-lg text-mainText font-semibold shadow-lg transition-all duration-200 active:bg-blue-700 hover:bg-blue-600"
           :disabled="isLoadingMore"
           @click="loadMoreProducts"
         >
-          <span v-if="!isLoadingMore">{{ $t('index.loadMore') }}</span>
-          <span v-else>{{ $t('index.loading') }}</span>
+          <span v-if="!isLoadingMore">{{ $t('common.loadMore') }}</span>
+          <span v-else>{{ $t('common.loading') }}</span>
         </button>
       </div>
     </div>

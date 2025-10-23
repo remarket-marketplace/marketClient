@@ -2,17 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Класс, который можно навесить на любой элемент с overflow */
 .no-scrollbar {
   /* Firefox */
   scrollbar-width: none;        /* Firefox 64+ */
   -ms-overflow-style: none;     /* Internet Explorer 10+ / Edge (Legacy) */
-
-  /* Обеспечить прокрутку */
   overflow: auto;
 }
 
 /* WebKit (Chrome, Safari, Opera) */
 .no-scrollbar::-webkit-scrollbar {
   display: none; /* прячет полосу прокрутки в WebKit-браузерах */
+}
+
+
+
+
+:root {
+  /* фон */
+  --background-color: #121212;
+
+  /* текст */
+  --main-text: #ffffff;
+  --link-text: #2563eb;
+  --error-text: #ef4444;
+  --secondary-text: #D1D5DB;
+  --secondary-dark-text: #6B7280;
+
+  /* кнопки */
+  --color-button-primary: #2563eb;
+  --color-button-hover: #1976d2;
+
+  /* инпуты */
+  --color-input: #6B7280;
 }

@@ -36,7 +36,7 @@ function onInput(event: Event) {
       <input
         :value="modelValue"
         type="text"
-        class="w-full h-full border border-dark-200 rounded-md bg-dark-900 py-3 lg:py-2 pl-10 pr-3 text-sm text-white focus:outline-none placeholder-gray-400"
+        class="w-full min-h-[44px] border border-dark-200 rounded-md bg-background py-2 pl-10 pr-3 text-sm text-mainText focus:outline-none placeholder-gray-400"
         :placeholder="placeholder"
         @input="onInput"
       >

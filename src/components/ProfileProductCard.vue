@@ -2,6 +2,9 @@
 import router from '@/router';
 import type { Product } from '@/validation/product/product';
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   product: Product
@@ -52,15 +55,15 @@ function goToSeller() {
       >
       <div
         v-else
-        class="h-24 w-24 sm:h-32 sm:w-32 flex items-center justify-center rounded-lg bg-dark-800 border border-dark-600 text-xs text-gray-500"
+        class="h-24 w-24 sm:h-32 sm:w-32 flex items-center justify-center rounded-lg bg-dark-800 border border-dark-600 text-xs text-text-secondaryDark"
       >
-        {{ $t('index.noImage') }}
+        {{ $t('common.noImage') }}
       </div>
     </div>
 
     <div class="flex flex-col justify-between flex-grow min-w-0">
       <div class="flex justify-between items-start">
-        <h3 class="truncate text-lg text-white font-bold pr-2">
+        <h3 class="truncate text-lg text-mainText font-bold pr-2">
           {{ product.title }}
         </h3>
         
@@ -86,7 +89,7 @@ function goToSeller() {
           </p>
         </div>
         
-        <span class="text-xl text-white font-semibold">
+        <span class="text-xl text-mainText font-semibold">
           {{ product.price }}₽
         </span>
       </div>
