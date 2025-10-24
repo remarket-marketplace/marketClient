@@ -41,6 +41,7 @@ const en = {
     active: 'Active',
     banned: 'Banned',
     sold: 'Sold',
+    moderation: 'Moderation',
     admin: 'Admin',
     user: 'User',
     frozen: '(frozen)',
@@ -51,6 +52,8 @@ const en = {
     loadMore: 'Load more',
     fillAllFields: 'Fill all fields',
     validationErrors: 'Validation errors: ',
+    view: 'View',
+    created: 'Created',
   },
   
   errors: {

@@ -179,17 +179,23 @@ async function loadFilteredProducts() {
 </script>
 
 <template>
-  <section class="h-full w-full flex flex-col gap-6 overflow-hidden lg:flex-row">
+  <section class="h-full w-full flex flex-col overflow-hidden lg:flex-row">
+    <SearchField v-if="isMobile"
+      v-model="searchQuery"
+      :placeholder="$t('pages.index.searchPlaceholder')"
+      @search-change="debouncedSearch"
+    />
+
     <div
       class="no-scrollbar w-full flex flex-col items-center lg:h-full lg:w-3/12 lg:flex-shrink-0 lg:items-start lg:overflow-y-auto lg:pr-4"
     >
-      <SearchField
+      <SearchField v-if="!isMobile"
         v-model="searchQuery"
         :placeholder="$t('pages.index.searchPlaceholder')"
         @search-change="debouncedSearch"
       />
 
-      <div class="mt-6 hidden w-full text-sm lg:block space-y-4">
+      <div class="lg:mt-6 hidden w-full text-sm lg:block lg:space-y-4">
         <CustomSelect
           v-model="selectedMainCategoryId"
           :options="mainCategories.map((c: { name: any; id: any }) => ({ label: c.name, value: c.id }))"

@@ -41,6 +41,7 @@ const ru = {
     active: 'Активно',
     banned: 'Забанен',
     sold: 'Продано',
+    moderation: 'Модерация',
     admin: 'Админ',
     user: 'Пользователь',
     frozen: '(заморожено)',
@@ -51,6 +52,8 @@ const ru = {
     loadMore: 'Прогрузить ещё',
     fillAllFields: 'Заполните все поля',
     validationErrors: 'Ошибки валидации: ',
+    view: "Посмотреть",
+    created: 'Создано',
   },
   
   errors: {

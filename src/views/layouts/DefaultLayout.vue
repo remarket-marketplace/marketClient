@@ -1,4 +1,3 @@
-<!-- layouts/DefaultLayout.vue -->
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import { computed, onMounted, ref } from 'vue'
@@ -9,7 +8,7 @@ import { storeToRefs } from 'pinia'
 import SelectLanguage from '@/components/SelectLanguage.vue'
 
 const store = useUserStore()
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const router = useRouter()
 
 const isDesktop = ref(true)
@@ -26,7 +25,11 @@ onMounted(async () => {
 
 const navItems = computed(() => [
   { title: t('navigation.market.home'), icon: 'mdi:home-outline', to: '/' },
-  { title: t('navigation.market.chats'), icon: 'mdi:chat-outline', to: '/chats' },
+  { 
+    title: t('navigation.market.chats'),
+    icon: 'mdi:chat-outline',
+    to: user && user.value?.username ? '/chats' : '/signin',
+  },
   {
     title: t('navigation.market.sell'), 
     icon: 'mdi:plus-circle-outline',
@@ -42,7 +45,7 @@ const navItems = computed(() => [
 </script>
 
 <template>
-  <div class="h-screen w-screen flex flex-col overflow-hidden bg-background text-mainText">
+  <div class="h-full-dvh w-screen flex flex-col overflow-hidden bg-background text-mainText">
     <header class="flex-none border-b border-gray-700">
       <div class="mx-auto h-16 max-w-5xl w-full flex items-center justify-between px-4">
         <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold" @click="router.push('/')">
@@ -77,7 +80,7 @@ const navItems = computed(() => [
     </main>
 
     <nav
-      class="absolute bottom-0 left-0 right-0 z-30 h-20 border-t border-dark-700 bg-transparent rounded-t-2xl shadow-2xl md:hidden"
+      class="mobile-nav-glass absolute bottom-0 left-0 right-0 z-30 h-20 border-t border-gray-700 md:hidden"
     >
       <div class="mx-auto h-full max-w-5xl w-full flex items-center justify-around">
         <router-link
@@ -99,6 +102,28 @@ const navItems = computed(() => [
 </template>
 
 <style scoped>
+.h-full-dvh {
+  height: 100vh; /* Fallback для старых браузеров */
+  height: 100dvh; /* Используем Dynamic Viewport Height */
+}
+
+/* НОВЫЙ СТИЛЬ: Эффект стекла (Frosted Glass)
+   - backdrop-filter: blur(10px) создает эффект размытия фона.
+   - background-color: rgba(...) делает панель полупрозрачной. 
+*/
+.mobile-nav-glass {
+  /* Предполагая, что у вас темная тема, используем полупрозрачный темный фон */
+  background-color: rgba(23, 23, 23, 0.8); /* dark-900 / 80% прозрачности */
+  -webkit-backdrop-filter: blur(10px); /* Для Safari */
+  backdrop-filter: blur(10px);
+  
+  /* Убираем border-t border-dark-700 из Tailwind и делаем его более subtle */
+  border-top-width: 1px;
+  border-top-color: rgba(255, 255, 255, 0.1); /* Слегка видимая белая линия */
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.2); /* Немного мягкой тени */
+}
+
+
 .icon-box {
   width: 28px;
   height: 28px;

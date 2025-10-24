@@ -121,7 +121,7 @@ function closeDeleteConfirm() {
       <!-- Мета информация, как в профиле -->
       <div class="border-t border-gray-700 pt-4 text-sm text-gray-400 space-y-3">
         <div class="flex items-center gap-2">
-          <span class="text-mainText font-semibold">{{ $t('pages.product.published') }}:</span>
+          <span class="text-mainText font-semibold">{{ $t('common.published') }}:</span>
           <span>{{ formatFullDate(product.created_at) }}</span>
         </div>
         <div class="flex items-center gap-2">
