@@ -4,7 +4,7 @@ import { profileService } from '@/api/profile/ProfileService'
 import { useUserStore } from '@/stores/user'
 import type { Product } from '@/validation/product/product'
 import type { ProfileData, PublicProfileData, UserRead } from '@/validation/user/userRead'
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import ProfileProductCard from './ProfileProductCard.vue'
@@ -17,7 +17,7 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const { t, locale } = useI18n()
+const { locale } = useI18n()
 const router = useRouter()
 const store = useUserStore()
 const API_HOST = import.meta.env.VITE_API_HOST
@@ -26,6 +26,9 @@ const currentProfileData = ref<UserRead | PublicProfileData>(props.profileData)
 const products = ref<Product[]>(props.Products)
 const newDescription = ref('description' in props.profileData ? props.profileData.description ?? '' : '')
 const isEditingDescription = ref(false)
+
+const menuContainerRef = ref<HTMLElement | null>(null)
+const showMenu = ref(false)
 
 
 function formatFullDate(dateStr: string): string {
@@ -47,16 +50,16 @@ async function updateProfileDescription(newValue: string) {
     return
   }
   try {
-    await profileService.updateProfileDescription(newValue)
+    const result = await profileService.updateProfileDescription(newValue)
     store.updateUserProfile({ description: newValue })
     isEditingDescription.value = false
+    if (result)
+      currentProfileData.value = result
   }
   catch (error) {
     console.error('Ошибка при обновлении описания:', error)
   }
 }
-
-const showMenu = ref(false)
 
 function toggleMenu() {
   showMenu.value = !showMenu.value
@@ -65,6 +68,20 @@ function toggleMenu() {
 function goToSettings() {
   router.push('/settings')
 }
+
+function handleClickOutside(event: MouseEvent) {
+  if (showMenu.value && menuContainerRef.value && !menuContainerRef.value.contains(event.target as Node)) {
+    showMenu.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
 <template>
@@ -76,7 +93,8 @@ function goToSettings() {
             {{ currentProfileData.username }}
           </h1>
 
-          <div v-if="isOwner" class="relative">
+          <!-- Контейнер меню -->
+          <div v-if="isOwner" class="relative" ref="menuContainerRef">
             <button class="text-gray-300 hover:text-mainText" @click.stop="toggleMenu">
               <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
                 <circle cx="12" cy="6" r="1.6" />
@@ -85,7 +103,7 @@ function goToSettings() {
               </svg>
             </button>
 
-            <div v-if="showMenu" class="absolute right-0 mt-2 w-40 border border-dark-600 rounded-lg bg-dark-800 shadow-lg">
+            <div v-if="showMenu" class="absolute right-0 z-10 mt-2 w-40 border border-dark-600 rounded-lg bg-dark-800 shadow-lg">
               <button class="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-dark-700" @click="goToSettings">
                 {{ $t('pages.profile.settings') }}
               </button>
@@ -113,7 +131,7 @@ function goToSettings() {
           </div>
         </div>
 
-        <div class="mt-4 text-xs text-gray-300 sm:text-sm">
+        <div class="mt-4 text-xs text-gray-300 sm:text-sm w-full">
           <template v-if="!isEditingDescription">
             <p>{{ currentProfileData.description || $t('pages.profile.descriptionMissing') }}</p>
             <button v-if="isOwner" class="mt-1 text-xs text-blue-400 hover:underline" @click="isEditingDescription = true">
@@ -126,7 +144,7 @@ function goToSettings() {
               v-model="newDescription"
               rows="3"
               maxlength="500"
-              class="w-full border border-gray-600 rounded bg-dark-900 p-2 text-xs text-mainText"
+              class="w-full border border-gray-600 rounded bg-dark-900 p-2 text-xs text-mainText outline-none"
               :placeholder="$t('pages.profile.descriptionPlaceholder')"
             />
             <div class="mt-2 flex justify-end gap-2 text-xs">
@@ -161,9 +179,10 @@ function goToSettings() {
     </div>
 
     <!-- правая колонка с товарами -->
-    <div class="w-full h-max-content lg:h-full border border-dark-600 rounded-lg space-y-4 lg:overflow-hidden">
+    <!-- ИСПРАВЛЕНИЕ 1: Добавлен flex flex-col -->
+    <div class="w-full h-max-content lg:h-full flex flex-col border border-dark-600 rounded-lg space-y-4 lg:overflow-hidden">
 
-      <!-- если владелец профиля -->
+      <!-- Блок с кнопками (фиксированная высота) -->
       <div v-if="isOwner" class="w-full flex">
         <button class="flex-1 hover:bg-dark-500 transition py-4 rounded">
           {{ $t('common.products') }}
@@ -178,7 +197,7 @@ function goToSettings() {
         </button>
       </div>
 
-      <!-- если не владелец профиля -->
+      <!-- Блок с кнопками для гостя (фиксированная высота) -->
       <div v-else class="w-full flex">
         <button class="flex-1 hover:bg-dark-500 transition py-4 rounded">
           {{ $t('common.active') }}
@@ -194,17 +213,22 @@ function goToSettings() {
       </div>
       
 
-      <div class="w-full h-full flex-1 pb-5 overflow-scroll no-scrollbar">
-        <div v-if="products.length === 0" class="w-full flex items-center justify-center py-6 text-text-secondaryDark">
-          {{ $t('pages.profile.noProducts') }}
-        </div>
+      <!-- Прокручиваемая область товаров -->
+      <!-- ИСПРАВЛЕНИЕ 2: Убран h-full, оставлен flex-1 -->
+      <div class="w-full flex-1 overflow-scroll no-scrollbar">
+        <!-- ИСПРАВЛЕНИЕ 3: Добавлен внутренний div с padding для отступов -->
+        <div class="p-4 pb-8">
+          <div v-if="products.length === 0" class="w-full flex items-center justify-center py-6 text-text-secondaryDark">
+            {{ $t('pages.profile.noProducts') }}
+          </div>
 
-        <div v-else>
-          <div v-for="product in products" :key="product.id" class="w-full border-b border-dark-600 hover:bg-dark-800/50 transition">
-            <ProfileProductCard
-              :product="product"
-              :is-owner="isOwner"
-            />
+          <div v-else>
+            <div v-for="product in products" :key="product.id" class="w-full border-b border-dark-600 hover:bg-dark-800/50 transition">
+              <ProfileProductCard
+                :product="product"
+                :is-owner="isOwner"
+              />
+            </div>
           </div>
         </div>
       </div>
