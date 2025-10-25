@@ -7,7 +7,7 @@ const API_HOST = import.meta.env.VITE_API_HOST
 
 
 export const httpClient = axios.create({
-  baseURL: `${API_HOST}/v1`,
+  baseURL: `${API_HOST}`,
   withCredentials: true,
   timeout: 10000,
 })
@@ -76,7 +76,6 @@ httpClient.interceptors.response.use(
         }
         else {
           processQueue(error, null)
-          router.push('signin')
           return Promise.reject(error)
         }
       }
