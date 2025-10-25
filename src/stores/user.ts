@@ -12,7 +12,6 @@ export const useUserStore = defineStore('user', () => {
   }
 
   async function getUser(): Promise<UserRead | null> {
-    console.log('working')
     return user.value
   }
 
