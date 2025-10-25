@@ -20,7 +20,6 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView,
-
     },
     {
       path: '/signin',
@@ -41,6 +40,7 @@ const router = createRouter({
       path: '/product/create',
       name: 'create product',
       component: CreateProductView,
+      meta: { requiredAuthorized: true }
     },
     {
       path: '/product/:productId',
@@ -51,6 +51,7 @@ const router = createRouter({
       path: '/chats',
       name: 'chats',
       component: ChatsView,
+      meta: { requiredAuthorized: true }
     },
     {
       path: '/not-access',
@@ -101,7 +102,14 @@ router.beforeEach(async (to, from, next) => {
     } else {
       next()
     }
-  } else {
+  } else if (to.meta.requiredAuthorized) {
+      const user = await authService.getUser()
+
+      if (user) {
+        next()
+      }
+  }
+  else {
     next()
   }
 })
