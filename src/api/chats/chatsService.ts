@@ -59,18 +59,41 @@ export const chatsService = {
 
 
   connectChat(chatId?: string) {
+
     if (socket) {
-      console.warn('Socket already exists:', socket.id)
+      // 1. Улучшенное логирование для понимания статуса сокета
+      console.warn('Socket already exists. Connected:', socket.connected, 'ID:', socket.id)
+      
+      // 2. КРИТИЧНОЕ ИСПРАВЛЕНИЕ: Если сокет существует, но не подключен, явно вызываем connect()
+      if (!socket.connected) {
+        console.log('Existing socket is disconnected. Forcing reconnect...')
+        socket.connect()
+      }
+      
+      // 3. Отправляем join_room. Это безопасно, т.к. Socket.IO поставит команду в очередь.
       if (chatId) {
+        console.log('Joining room:', chatId)
         socket.emit('join_room', { chat_id: chatId })
       }
-      return
+      return // Сохраняем паттерн синглтона: не создаем новый экземпляр
     }
 
+    // Создание нового сокета, если он равен null
     socket = io(`${API_HOST}`, {
       transports: ['websocket'],
       withCredentials: true,
     })
+    console.log('Connected new socket:', socket)
+
+    // Добавляем обработчик для автоматического присоединения к комнате при успешном подключении
+    // Это гарантирует, что если соединение оборвется и восстановится, мы присоединимся к текущей комнате.
+    if (chatId) {
+        socket.on('connect', () => {
+            console.log('Socket reconnected, joining room:', chatId)
+            socket!.emit('join_room', { chat_id: chatId })
+        })
+    }
+
 
     socket.on('new_message', (data: any) => {
       try {
@@ -102,8 +125,14 @@ export const chatsService = {
     })
 
     socket.on('disconnect', () => {
-      // console.log('Socket disconnected')
+      console.log('Socket disconnected')
     })
+
+    // Выполняем первое присоединение к комнате сразу после создания сокета
+    if (chatId) {
+        console.log('Initial join room after creation:', chatId)
+        socket.emit('join_room', { chat_id: chatId })
+    }
   },
 
   onNewMessage(callback: MessageCallback) {

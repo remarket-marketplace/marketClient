@@ -14,7 +14,7 @@ const newMessage = ref('')
             @keyup.enter="$emit('sendMessage', newMessage)"
         >
         <button class="rounded-l-none rounded-r-2xl bg-button-main px-4 text-sm font-bold" @click="$emit('sendMessage', newMessage)">
-            <p>{{ $t("pages.chats.send") }}</p>
+            <p>{{ $t("common.send") }}</p>
         </button>
     </div>
 </template>

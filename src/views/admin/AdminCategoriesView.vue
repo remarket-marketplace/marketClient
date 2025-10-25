@@ -150,9 +150,8 @@ function handleSubcategoryImage(event: Event) {
 </script>
 
 <template>
-  <section class="h-full w-full flex flex-col gap-6 overflow-hidden">
-    <!-- Заголовок и кнопка добавления -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+  <section class="w-full h-full flex flex-col gap-6 p-4 sm:p-6 overflow-scroll lg:overflow-hidden">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 flex-none">
       <div>
         <h1 class="text-2xl font-bold text-mainText">
           {{ $t('pages.admin.categoriesPage.title') }}
@@ -163,7 +162,7 @@ function handleSubcategoryImage(event: Event) {
       </div>
       
       <button
-        class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+        class="flex items-center justify-center sm:justify-start gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
         @click="showAddCategoryModal = true"
       >
         <Icon icon="mdi:plus" class="text-lg" />
@@ -171,11 +170,12 @@ function handleSubcategoryImage(event: Event) {
       </button>
     </div>
 
-    <!-- Основной контент -->
-    <div class="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden">
-      <!-- Список категорий -->
-      <div class="bg-dark-600 border border-dark-700 rounded-xl p-4 lg:col-span-1 overflow-hidden">
-        <div class="flex items-center justify-between mb-4">
+    <div class="flex flex-col gap-6 lg:flex-1 lg:grid lg:grid-cols-3 lg:gap-6 lg:overflow-hidden flex-1">
+      
+      <div 
+        class="bg-dark-600 border border-dark-700 rounded-xl p-4 lg:col-span-1 min-h-[40vh] lg:h-full flex flex-col"
+      >
+        <div class="flex items-center justify-between mb-4 flex-shrink-0">
           <h2 class="text-lg font-semibold text-mainText">
             {{ $t('pages.admin.categoriesPage.categories') }}
           </h2>
@@ -184,7 +184,7 @@ function handleSubcategoryImage(event: Event) {
           </span>
         </div>
 
-        <div class="space-y-2 overflow-y-auto max-h-[calc(100vh-300px)]">
+        <div class="space-y-2 overflow-y-auto flex-1">
           <div
             v-for="category in categories"
             :key="category.id"
@@ -218,14 +218,7 @@ function handleSubcategoryImage(event: Event) {
               </p>
             </div>
             
-            <!-- Кнопка удаления закомментирована, пока не добавите метод в сервис -->
-            <!-- <button
-              class="text-red-400 hover:text-red-300 p-1 transition-colors"
-              @click.stop="deleteCategory(category.id)"
-            >
-              <Icon icon="mdi:delete-outline" class="text-lg" />
-            </button> -->
-          </div>
+            </div>
 
           <div
             v-if="categories.length === 0 && !isLoading"
@@ -245,9 +238,10 @@ function handleSubcategoryImage(event: Event) {
         </div>
       </div>
 
-      <!-- Подкатегории выбранной категории -->
-      <div class="bg-dark-600 border border-dark-700 rounded-xl p-4 lg:col-span-2 overflow-hidden">
-        <div class="flex items-center justify-between mb-4">
+      <div 
+        class="bg-dark-600 border border-dark-700 rounded-xl p-4 lg:col-span-2 min-h-[40vh] lg:h-full flex flex-col"
+      >
+        <div class="flex items-center justify-between mb-4 flex-shrink-0">
           <div>
             <h2 class="text-lg font-semibold text-mainText">
               {{ selectedCategory ? selectedCategory.name : $t('pages.admin.categoriesPage.selectCategory') }}
@@ -259,7 +253,7 @@ function handleSubcategoryImage(event: Event) {
           
           <button
             v-if="selectedCategory"
-            class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg transition-colors text-sm"
+            class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg transition-colors text-sm flex-shrink-0"
             @click="showAddSubcategoryModal = true"
           >
             <Icon icon="mdi:plus" class="text-base" />
@@ -267,7 +261,7 @@ function handleSubcategoryImage(event: Event) {
           </button>
         </div>
 
-        <div v-if="selectedCategory" class="space-y-3 overflow-y-auto max-h-[calc(100vh-300px)]">
+        <div v-if="selectedCategory" class="space-y-3 overflow-y-auto flex-1">
           <div
             v-for="subcategory in subcategories"
             :key="subcategory.id"
@@ -297,14 +291,7 @@ function handleSubcategoryImage(event: Event) {
               </p>
             </div>
             
-            <!-- Кнопка удаления закомментирована, пока не добавите метод в сервис -->
-            <!-- <button
-              class="text-red-400 hover:text-red-300 p-1 transition-colors"
-              @click="deleteSubcategory(subcategory.id)"
-            >
-              <Icon icon="mdi:delete-outline" class="text-lg" />
-            </button> -->
-          </div>
+            </div>
 
           <div
             v-if="subcategories.length === 0 && selectedCategory"
@@ -317,21 +304,21 @@ function handleSubcategoryImage(event: Event) {
 
         <div
           v-else
-          class="flex flex-col items-center justify-center py-12 text-text-secondary"
+          class="flex flex-col items-center justify-center py-12 text-text-secondary flex-1"
         >
-          <Icon icon="mdi:arrow-left" class="text-4xl mb-4 opacity-50" />
+          <Icon icon="mdi:arrow-up" class="text-4xl mb-4 opacity-50 lg:hidden" />
+          <Icon icon="mdi:arrow-left" class="hidden text-4xl mb-4 opacity-50 lg:block" />
           <p class="text-lg">{{ $t('pages.admin.categoriesPage.selectCategoryPrompt') }}</p>
         </div>
       </div>
     </div>
 
-    <!-- Модальное окно добавления категории -->
     <div
       v-if="showAddCategoryModal"
       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
       @click.self="showAddCategoryModal = false"
     >
-      <div class="bg-dark-600 border border-dark-700 rounded-xl p-6 w-full max-w-md">
+      <div class="bg-dark-600 border border-dark-700 rounded-xl p-6 w-full max-w-sm sm:max-w-md">
         <h3 class="text-xl font-bold text-mainText mb-4">
           {{ $t('pages.admin.categoriesPage.addCategory') }}
         </h3>
@@ -376,15 +363,15 @@ function handleSubcategoryImage(event: Event) {
           </div>
         </div>
         
-        <div class="flex gap-3 mt-6">
+        <div class="flex flex-col sm:flex-row gap-3 mt-6">
           <button
-            class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg transition-colors"
+            class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg transition-colors order-2 sm:order-1"
             @click="showAddCategoryModal = false"
           >
             {{ $t('common.cancel') }}
           </button>
           <button
-            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors"
+            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors order-1 sm:order-2"
             @click="createCategory"
             :disabled="!newCategory.name.trim() || !newCategory.image"
           >
@@ -394,13 +381,12 @@ function handleSubcategoryImage(event: Event) {
       </div>
     </div>
 
-    <!-- Модальное окно добавления подкатегории -->
     <div
       v-if="showAddSubcategoryModal"
       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
       @click.self="showAddSubcategoryModal = false"
     >
-      <div class="bg-dark-600 border border-dark-700 rounded-xl p-6 w-full max-w-md">
+      <div class="bg-dark-600 border border-dark-700 rounded-xl p-6 w-full max-w-sm sm:max-w-md">
         <h3 class="text-xl font-bold text-mainText mb-4">
           {{ $t('pages.admin.categoriesPage.addSubcategory') }}
         </h3>
@@ -445,15 +431,15 @@ function handleSubcategoryImage(event: Event) {
           </div>
         </div>
         
-        <div class="flex gap-3 mt-6">
+        <div class="flex flex-col sm:flex-row gap-3 mt-6">
           <button
-            class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg transition-colors"
+            class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg transition-colors order-2 sm:order-1"
             @click="showAddSubcategoryModal = false"
           >
             {{ $t('common.cancel') }}
           </button>
           <button
-            class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition-colors"
+            class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition-colors order-1 sm:order-2"
             @click="createSubcategory"
             :disabled="!newSubcategory.name.trim() || !newSubcategory.image"
           >

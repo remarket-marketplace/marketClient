@@ -29,6 +29,7 @@ const user = await store.getUser()
 
 onMounted(async () => {
   try {
+    await store.fetchUser()
     categories.value = await categoryService.getAllCategories()
   }
   catch (err) {
@@ -90,8 +91,11 @@ async function createProduct() {
     }
 
     const result = await productService.createProduct(productDataObj, images.value)
-    if (result && user?.username)
+    console.log(result)
+    if (result && user?.username) {
+      console.log('working redirect')
       router.push(`/profile/${user?.username}`)
+    }
     else
       errorMessage.value = t('pages.forms.createProduct.errorCreatingProduct')
   }
