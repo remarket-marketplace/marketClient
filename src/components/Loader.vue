@@ -1,10 +1,7 @@
+<script setup lang="ts">
+import { Icon } from '@iconify/vue'
+</script>
+
 <template>
-    <div
-        class=
-        "h-10 w-10
-        animate-spin border-4
-        border-blue-500
-        border-t-transparent
-        rounded-full"
-    ></div>
+    <Icon icon="eos-icons:loading" class="h-8 w-8 animate-spin text-blue-500" />
 </template>

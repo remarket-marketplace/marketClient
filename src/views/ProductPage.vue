@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { productService } from '@/api/product/ProductService'
 import ConfirmDelete from '@/components/ConfirmDelete.vue'
+import Loader from '@/components/Loader.vue'
 import type { Product, ProductImage } from '@/validation/product/product'
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -239,7 +240,7 @@ function closeDeleteConfirm() {
     />
   </section>
 
-  <div v-else class="text-gray-400">
-    {{ $t('pages.product.loading') }}
+  <div v-else class="w-full h-full flex items-center justify-center">
+    <Loader/>
   </div>
 </template>

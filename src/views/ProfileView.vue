@@ -6,9 +6,10 @@ import { useUserStore } from '@/stores/user'
 import type { Product } from '@/validation/product/product'
 import type { PublicProfileData, UserRead } from '@/validation/user/userRead'
 import { storeToRefs } from 'pinia'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import Loader from '@/components/Loader.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -28,7 +29,6 @@ async function loadProfileData() {
     isLoading.value = true
     const data = await profileService.getUserProfileData(username.value)
     profileProducts.value = await productService.getUserProductsByUsername(username.value)
-    if (!data) return router.push('/signin')
     profileData.value = data
   } catch (error: any) {
     console.error('Ошибка при загрузке профиля:', error)
@@ -44,13 +44,14 @@ onMounted(loadProfileData)
 
 <template>
   <div class="h-full w-full flex flex-col items-center justify-center">
-    <div v-if="isLoading" class="text-gray-400">{{ $t('common.loading') }}</div>
+    <div v-if="isLoading" class="flex h-full w-full items-center justify-center">
+      <Loader/>
+    </div>
     <ProfilePage
       v-else-if="profileData"
       :profile-data="profileData"
       :is-owner="isOwner"
       :Products="profileProducts"
     />
-    <div v-else class="text-gray-400">{{ $t('pages.profile.profileNotFound') }}</div>
   </div>
 </template>
