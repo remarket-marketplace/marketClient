@@ -24,7 +24,7 @@ if [ "$choice" = "1" ]; then
   # FIX: Отделяем команду build, чтобы гарантированно передать ей флаг --no-cache.
   docker compose -f docker-compose.dev.yml build --no-cache
   # Запускаем контейнеры из только что собранного образа.
-  docker compose -f docker-compose.dev.yml u
+  docker compose -f docker-compose.dev.yml up -d
 elif [ "$choice" = "2" ]; then
   echo -e "\n\033[1;32m🏗️ Starting production environment (FORCING REBUILD without cache)...\033[0m"
   # FIX: Отделяем команду build, чтобы гарантированно передать ей флаг --no-cache.
