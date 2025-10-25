@@ -105,7 +105,7 @@ async function loadMoreProducts() {
 }
 
 function checkMobile() {
-  isMobile.value = window.innerWidth < 768
+  isMobile.value = window.innerWidth < 1024
 }
 
 onMounted(async () => {
@@ -238,7 +238,7 @@ async function loadFilteredProducts() {
         />
       </div>
 
-      <div class="mb-2 mt-4 text-xl text-mainText font-semibold sm:text-2xl">
+      <div class="mb-2 mt-4 lg:mt-0 text-xl text-mainText font-semibold sm:text-2xl">
         {{ $t('common.products') }}
       </div>
 

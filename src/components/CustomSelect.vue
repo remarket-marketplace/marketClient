@@ -54,7 +54,7 @@ function selectOption(value: string | number) {
     <label v-if="label" class="mb-2 block text-sm text-gray-300">{{ label }}</label>
     <button
       type="button"
-      class="w-full flex items-center justify-between gap-3 bg-dark-600 border border-dark-700 rounded-lg px-4 py-2 text-mainText transition disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      class="w-full flex items-center justify-between gap-3 bg-dark-600 border border-dark-700 rounded-lg px-4 py-2 text-mainText transition disabled:opacity-50 focus:outline-none"
       :aria-expanded="isOpen"
       :disabled="disabled"
       @click="toggle"

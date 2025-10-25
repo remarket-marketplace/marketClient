@@ -24,12 +24,10 @@ async function signIn() {
       router.push('/')
     }
     else {
-      // Если signIn возвращает false, пробуем получить ошибку из httpClient
       errorMessage.value = t('errors.INCORRECT_EMAIL_OR_PASSWORD')
     }
   }
   catch (e: any) {
-    // Если signIn пробрасывает ошибку, парсим её
     if (e?.response?.data?.detail?.error_code) {
       errorMessage.value = getErrorMessage(e.response.data.detail, t)
     }
@@ -83,7 +81,7 @@ async function signIn() {
 
       <p class="text-center text-sm text-text-secondaryDark">
         {{ $t('pages.auth.signIn.noAccount') }}
-        <router-link to="/signup" class="text-blue-400 hover:underline">
+        <router-link to="/signup" class="text-text-link hover:underline">
           {{ $t('pages.auth.signIn.register') }}
         </router-link>
       </p>
