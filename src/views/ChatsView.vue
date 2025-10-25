@@ -18,7 +18,6 @@ const API_HOST = import.meta.env.VITE_API_HOST
 const chats = ref<any[]>([])
 const chatMessages = ref<ChatContentUnion[]>([])
 const selectedChatId = ref<string | null>(null)
-const newMessage = ref('')
 const messageContainerRef = ref<HTMLElement | null>(null)
 const isLoading = ref(false)
 const errorMessage = ref<string | null>(null)
