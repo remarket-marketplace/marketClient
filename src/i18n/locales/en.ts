@@ -35,6 +35,7 @@ const en = {
     rating: 'Rating',
     email: 'Email',
     password: 'Password',
+    repeatPassword: "Repeat password",
     username: 'Username',
     code: 'Code',
     total: 'Total: ',
@@ -151,6 +152,7 @@ const en = {
         login: 'Log In',
         noAccount: 'No account?',
         register: 'Register',
+        forgotPassword: "Forgot password?",
       },
     },
 
@@ -254,7 +256,9 @@ const en = {
         dropImage: 'Drop image here or click to select',
       },
     },
-
+    passwordRecovery: {
+      title: "Password recovery",
+    },
     forms: {
       addSubcategory: {
         title: 'Add Subcategory',

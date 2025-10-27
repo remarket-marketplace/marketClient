@@ -35,6 +35,7 @@ const ru = {
     rating: 'Рейтинг',
     email: 'Email',
     password: 'Пароль',
+    repeatPassword: "Повторите пароль",
     username: 'Имя пользователя',
     code: 'Код',
     total: 'Всего: ',
@@ -151,6 +152,7 @@ const ru = {
         login: 'Войти',
         noAccount: 'Нет аккаунта?',
         register: 'Регистрация',
+        forgotPassword: "Забыли пароль?",
       },
     },
 
@@ -253,7 +255,9 @@ const ru = {
         dropImage: 'Перетащите изображение сюда или кликните для выбора',
       },
     },
-
+    passwordRecovery: {
+      title: "Восстановление пароля"
+    },
     forms: {
       addSubcategory: {
         title: 'Добавить подкатегорию',

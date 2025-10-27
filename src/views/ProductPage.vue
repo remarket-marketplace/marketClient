@@ -68,7 +68,7 @@ function closeDeleteConfirm() {
 </script>
 
 <template>
-  <section v-if="product" class="no-scrollbar h-full max-w-7xl w-full flex flex-col items-start gap-6 overflow-scroll px-4 pb-36 text-mainText lg:flex-row lg:px-0">
+  <section v-if="product" class="no-scrollbar h-full max-w-7xl w-full flex flex-col items-start gap-6 overflow-scroll pb-36 text-mainText lg:flex-row lg:px-0">
     <div class="w-full rounded-lg lg:w-1/2 space-y-4">
       <div v-if="selectedImage" class="flex justify-center">
         <img
@@ -231,10 +231,10 @@ function closeDeleteConfirm() {
 
     <ConfirmDelete
       :is-open="showDeleteConfirm"
-      :title="$t('pages.product.deleteConfirmTitle')"
-      :message="$t('pages.product.deleteConfirmMessage')"
-      :confirm-text="$t('pages.product.deleteConfirm')"
-      :cancel-text="$t('pages.product.deleteCancel')"
+      :title="$t('pages.product.deleteConfirm.title')"
+      :message="$t('pages.product.deleteConfirm.message')"
+      :confirm-text="$t('pages.product.deleteConfirm.confirm')"
+      :cancel-text="$t('pages.product.deleteConfirm.cancel')"
       @confirm="handleDeleteConfirm"
       @cancel="closeDeleteConfirm"
     />
