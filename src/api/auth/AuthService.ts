@@ -35,6 +35,45 @@ export const authService = {
     }
   },
 
+  async sendPasswordResetCode(email: string) {
+    try {
+      const response = await httpClient.post('/auth/password-reset-code', {
+        email,
+      })
+      response.status === 200
+    }
+    catch (e: any) {
+      return e.response.data
+    }
+  },
+
+  async confirmPasswordResetCode(email: string, code: string) {
+    try {
+      const response = await httpClient.post('/auth/confirm-password-reset-code', {
+        email,
+        code
+      })
+      return response.status === 200
+    }
+    catch (e: any) {
+      return e.response.data
+    }
+  },
+
+  async setNewPassword(email: string, fullCode: string, newPassword: string) {
+    try {
+      const response = await httpClient.post('/auth/set-new-password', {
+        email,
+        code: fullCode,
+        new_password: newPassword
+      })
+      return response.status === 200
+    }
+    catch (e: any) {
+      return e.response.data
+    }
+  },
+
   async signIn(email: string, password: string) {
     try {
       const response = await httpClient.post('/auth/login', {
