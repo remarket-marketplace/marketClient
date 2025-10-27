@@ -10,12 +10,6 @@ const props = defineProps<{
   user: any
 }>()
 
-const router = useRouter()
-const API_HOST = import.meta.env.VITE_API_HOST
-
-/**
- * @param message - Объект сообщения или товара.
- */
 function isProduct(message: ChatContentUnion): message is Product {
   return (
     'title' in message
@@ -24,12 +18,10 @@ function isProduct(message: ChatContentUnion): message is Product {
   )
 }
 
-// Вычисляемое свойство: является ли сообщение карточкой товара
 const isProductMessage = computed(() => {
   return isProduct(props.message)
 })
 
-// Вычисляемое свойство: извлекает объект товара, если это товар
 const product = computed(() => {
   if (isProduct(props.message)) {
     return props.message
@@ -37,7 +29,6 @@ const product = computed(() => {
   return null
 })
 
-// Вычисляемое свойство: извлекает объект сообщения, если это не товар
 const chatMessage = computed<ChatMessage | null>(() => {
   if (!isProduct(props.message)) {
     return props.message as ChatMessage
@@ -45,14 +36,11 @@ const chatMessage = computed<ChatMessage | null>(() => {
   return null
 })
 
-// Вычисляемый класс для выравнивания сообщения
 const messageAlignment = computed(() => {
   if (isProduct(props.message)) {
-    // Карточка товара всегда на всю ширину
     return 'w-full self-center'
   }
-  // Обычное сообщение: self-end для владельца, self-start для собеседника
-  return chatMessage.value?.sender_id === props.user?.id ? 'self-end' : 'self-start'
+  return chatMessage.value?.sender_id === props.user?.id ? 'flex justify-end' : 'flex justify-start'
 })
 
 function formatDate(dateStr: string): string {
@@ -79,7 +67,7 @@ function formatDate(dateStr: string): string {
     <!-- текстовое сообщение -->
     <div
       v-else-if="chatMessage"
-      class="max-w-[70%] rounded-xl px-4 py-2 text-sm whitespace-pre-wrap break-all" 
+      class="max-w-[70%] rounded-xl px-4 py-2 text-sm break-normal break-all" 
       :class="[
         chatMessage.sender_id === user?.id
           ? 'bg-blue-600 text-mainText rounded-br-none self-end' // Стили для моего сообщения (синий, справа)
@@ -94,6 +82,3 @@ function formatDate(dateStr: string): string {
     </div>
   </div>
 </template>
-
-<style scoped>
-</style>
