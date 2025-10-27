@@ -13,7 +13,6 @@ import { useI18n } from 'vue-i18n'
 import { ZodError } from 'zod'
 
 const { t } = useI18n()
-const API_HOST = import.meta.env.VITE_API_HOST
 
 const chats = ref<any[]>([])
 const chatMessages = ref<ChatContentUnion[]>([])
@@ -25,6 +24,8 @@ const isMobile = ref(false)
 const mobileMode = ref<'chats' | 'chat'>('chats')
 const store = useUserStore()
 const user = ref<UserRead | null>()
+
+const newMessage = ref<string>('')
 
 function backToChats() {
   if (mobileMode.value === 'chat') {
@@ -39,16 +40,15 @@ onMounted(async () => {
     await store.fetchUser()
     user.value = await store.getUser()
 
-    // Инициализируем подключение к сокету без присоединения к комнате
     await chatsService.connectChat()
 
-    // Подписываемся на новые сообщения
     chatsService.onNewMessage((message) => {
       if (selectedChatId.value === message.chat_room_id) {
         const messageExists = chatMessages.value.some(m => m.id === message.id)
         if (!messageExists) {
           chatMessages.value.push(message)
-          scrollToBottom() // Вызов прокрутки
+          // Прокрутка при получении нового сообщения
+          scrollToBottom()
         }
       }
     })
@@ -56,7 +56,7 @@ onMounted(async () => {
     // Загружаем список чатов
     chats.value = await chatsService.getChats()
 
-    await restoreLastChat() // восстанавливаем последний чат при загрузке
+    await restoreLastChat()
   }
   catch (error) {
     errorMessage.value = t('pages.chats.errorLoadingChats')
@@ -92,11 +92,9 @@ async function restoreLastChat() {
 }
 
 function scrollToBottom() {
-  // nextTick гарантирует, что сообщение уже добавлено в DOM
   nextTick(() => {
     const el = messageContainerRef.value
     if (el)
-      // Прокручиваем контейнер до его полной высоты
       el.scrollTop = el.scrollHeight
   })
 }
@@ -115,6 +113,7 @@ async function loadChatMessages(chatId: string) {
     // сохраняем открытый чат, для сохранения при перезагрузке
     localStorage.setItem('selectedChatId', chatId)
 
+    await nextTick() 
     scrollToBottom()
 
     if (isMobile.value) {
@@ -135,13 +134,14 @@ async function loadChatMessages(chatId: string) {
   }
 }
 
-async function sendMessage(newMessage: string) {
-  if (!newMessage.trim() || !selectedChatId.value)
+async function sendMessage() {
+  if (!newMessage.value.trim() || !selectedChatId.value)
     return
 
   try {
-    await chatsService.sendMessage(newMessage.trim(), selectedChatId.value)
-    newMessage = ''
+    await chatsService.sendMessage(newMessage.value.trim(), selectedChatId.value)
+    // Очистка инпута после успешной отправки
+    newMessage.value = ''
   }
   catch (error) {
     errorMessage.value = t('pages.chats.errorSendMessage')
@@ -224,7 +224,7 @@ async function sendMessage(newMessage: string) {
             </div>
 
             <div ref="messageContainerRef" class="no-scrollbar flex flex-1 flex-col overflow-y-auto">
-              <div v-if="chatMessages.length > 0" class="flex flex-1 flex-col justify-end">
+              <div v-if="chatMessages.length > 0" class="flex flex-1 flex-col justify-start">
                 <div class="flex flex-col gap-3 pr-2">
                   <ChatMessage
                     v-for="message in chatMessages"
@@ -243,9 +243,10 @@ async function sendMessage(newMessage: string) {
                 <p class="text-gray-400 font-light">{{ $t('pages.chats.selectChat') }}</p>
               </div>
             </div>
-
-            <SendMessageBar v-if="selectedChatId"
-              @sendMessage="(newMessage: string) => {sendMessage(newMessage)}"
+            <SendMessageBar
+              v-if="selectedChatId"
+              v-model:newMessage="newMessage"
+              @sendMessage="sendMessage"
             />
           </div>
         </div>
