@@ -8,7 +8,7 @@ import { ChatListSchema } from '@/validation/chat/ChatList'
 let socket: Socket | null = null
 type MessageCallback = (message: ChatMessage) => void
 let onNewMessageCallback: MessageCallback | null = null
-const API_HOST = import.meta.env.VITE_API_HOST
+const WS_API_HOST = import.meta.env.VITE_WS_API_HOST
 
 function isChatMessage(data: ChatContentUnion): data is ChatMessage {
     return 'sender_id' in data && 'text' in data
@@ -61,25 +61,20 @@ export const chatsService = {
   connectChat(chatId?: string) {
 
     if (socket) {
-      // 1. Улучшенное логирование для понимания статуса сокета
-      console.warn('Socket already exists. Connected:', socket.connected, 'ID:', socket.id)
-      
-      // 2. КРИТИЧНОЕ ИСПРАВЛЕНИЕ: Если сокет существует, но не подключен, явно вызываем connect()
       if (!socket.connected) {
         console.log('Existing socket is disconnected. Forcing reconnect...')
         socket.connect()
       }
       
-      // 3. Отправляем join_room. Это безопасно, т.к. Socket.IO поставит команду в очередь.
       if (chatId) {
         console.log('Joining room:', chatId)
         socket.emit('join_room', { chat_id: chatId })
       }
-      return // Сохраняем паттерн синглтона: не создаем новый экземпляр
+      return
     }
 
     // Создание нового сокета, если он равен null
-    socket = io(`${API_HOST}`, {
+    socket = io(`${WS_API_HOST}`, {
       transports: ['websocket'],
       withCredentials: true,
     })
