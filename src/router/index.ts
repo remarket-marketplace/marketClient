@@ -12,6 +12,7 @@ import NotAccess from '@/views/NotAccess.vue'
 import AdminUsersView from '@/views/admin/AdminUsersView.vue'
 import AdminProductsView from '@/views/admin/AdminProductsView.vue'
 import AdminCategoriesView from '@/views/admin/AdminCategoriesView.vue'
+import PasswordResetView from '@/views/PasswordResetView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -30,6 +31,11 @@ const router = createRouter({
       path: '/signup',
       name: 'signUp',
       component: SignUp,
+    },
+    {
+      path: '/password-reset',
+      name: 'password reset',
+      component: PasswordResetView,
     },
     {
       path: '/profile/:username',
