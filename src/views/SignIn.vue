@@ -7,6 +7,7 @@ import { getErrorMessage } from '@/utils/errorsMap'
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import TheButton from './forms/TheButton.vue'
+import { useUserStore } from '@/stores/user'
 
 const sended = ref(false)
 const email = ref('')
@@ -21,7 +22,8 @@ async function signIn() {
   try {
     const success = await authService.signIn(email.value, password.value)
     if (success) {
-      router.push('/')
+      const user = await useUserStore().getUser()
+      user?.role === 'admin' ? router.push('/admin') : router.push('/')
     }
     else {
       errorMessage.value = t('errors.INCORRECT_EMAIL_OR_PASSWORD')
