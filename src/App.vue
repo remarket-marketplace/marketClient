@@ -1,29 +1,27 @@
 <!-- App.vue -->
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { useRouter, useRoute } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useUserStore } from './stores/user'
-import { storeToRefs } from 'pinia'
 import DefaultLayout from './views/layouts/DefaultLayout.vue'
 import AdminLayout from './views/layouts/AdminLayout.vue'
 import Loader from './components/Loader.vue'
+import type { UserRead } from './validation/user/userRead'
 
 const store = useUserStore()
-const { t, locale } = useI18n()
-const router = useRouter()
 const route = useRoute()
 
-const { user } = storeToRefs(store)
+const user = ref<UserRead | null>()
 
 onMounted(async () => {
   await store.fetchUser()
+  user.value = await store.getUser()
 })
 
 // Определяем какой layout использовать
 const layout = computed(() => {
-  // Если путь начинается с /admin - используем админский layout
-  return route.path.startsWith('/admin') ? AdminLayout : DefaultLayout
+  // Если путь начинается с /admin и пользователь admin - используем админский layout
+  return route.path.startsWith('/admin') && (user.value != null && user.value.role === 'admin') ? AdminLayout : DefaultLayout
 })
 </script>
 
