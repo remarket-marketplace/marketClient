@@ -24,22 +24,30 @@ onMounted(async () => {
 })
 
 const navItems = computed(() => [
-  { title: t('navigation.market.home'), icon: 'mdi:home-outline', to: '/' },
   { 
-    title: t('navigation.market.chats'),
-    icon: 'mdi:chat-outline',
-    to: user && user.value?.username ? '/chats' : '/signin',
+    title: t('navigation.admin.main'), 
+    icon: 'mdi:chart-box-outline', 
+    to: '/admin' 
+  },
+  { 
+    title: t('navigation.admin.users'), 
+    icon: 'mdi:account-supervisor-outline', 
+    to: '/admin/users' 
+  },
+  { 
+    title: t('navigation.admin.products'), 
+    icon: 'mdi:cube-outline',
+    to: '/admin/products',
+  },
+  { 
+    title: t('navigation.admin.deals'), 
+    icon: 'mdi:cart-check', 
+    to: '/admin/deals' 
   },
   {
-    title: t('navigation.market.sell'), 
-    icon: 'mdi:plus-circle-outline',
-    to: user && user.value?.username ? '/product/create' : '/signin', 
-    sell: true 
-  },
-  {
-    title: t('navigation.market.profile'),
-    icon: 'mdi:account-circle-outline',
-    to: user && user.value?.username ? `/profile/${user.value.username}` : '/signin',
+    title: t('navigation.admin.categories'),
+    icon: 'mdi:folder-multiple-outline',
+    to: '/admin/categories',
   },
 ])
 </script>
@@ -48,8 +56,9 @@ const navItems = computed(() => [
   <div class="min-h-dvh w-screen flex flex-col bg-background text-mainText no-scrollbar">
     <header class="flex-none border-b border-gray-700">
       <div class="mx-auto h-16 max-w-5xl w-full flex items-center justify-between px-4">
-        <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold" @click="router.push('/')">
-          remarket
+        <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold" @click="router.push('/admin')">
+          <p>remarket</p>
+          <p class="text-gray-300 font-light">Admin</p>
         </div>
 
         <div class="flex gap-6">
@@ -60,7 +69,7 @@ const navItems = computed(() => [
               :to="item.to"
               class="flex items-center gap-1 text-mainText hover:text-gray-300"
             >
-              <Icon :icon="item.icon" :class="item.sell ? 'text-2xl' : 'text-xl'" />
+              <Icon :icon="item.icon" class='text-xl' />
               <span>{{ item.title }}</span>
             </router-link>
           </nav>
@@ -102,18 +111,27 @@ const navItems = computed(() => [
 </template>
 
 <style scoped>
-.min-h-dvh {
-  min-height: 100dvh;
+/* ИСПРАВЛЕНИЕ ВЫСОТЫ VIEWPORT */
+.h-full-dvh {
+  height: 100vh; /* Fallback для старых браузеров */
+  height: 100dvh; /* Используем Dynamic Viewport Height для корректного отображения на iOS */
 }
 
+/* СТИЛЬ APPLE DESIGN (МАТОВОЕ СТЕКЛО) */
 .mobile-nav-glass {
-  background-color: rgba(23, 23, 23, 0.8);
-  -webkit-backdrop-filter: blur(5px);
-  backdrop-filter: blur(5px);
+  /* Предполагая, что у вас темная тема, используем полупрозрачный темный фон */
+  background-color: rgba(23, 23, 23, 0.8); /* dark-900 / 80% прозрачности */
+  
+  /* Эффект матового стекла */
+  -webkit-backdrop-filter: blur(10px); /* Для Safari */
+  backdrop-filter: blur(10px);
+  
+  /* Тонкая белая рамка сверху для имитации iOS */
   border-top-width: 1px;
-  border-top-color: rgba(255, 255, 255, 0.1);
+  border-top-color: rgba(255, 255, 255, 0.1); 
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.2);
 }
+
 
 .icon-box {
   width: 28px;
