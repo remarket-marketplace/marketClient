@@ -20,7 +20,6 @@ onMounted(async () => {
 
 // Определяем какой layout использовать
 const layout = computed(() => {
-  // Если путь начинается с /admin и пользователь admin - используем админский layout
   return route.path.startsWith('/admin') && (user.value != null && user.value.role === 'admin') ? AdminLayout : DefaultLayout
 })
 </script>

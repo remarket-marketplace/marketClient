@@ -13,6 +13,7 @@ import AdminUsersView from '@/views/admin/AdminUsersView.vue'
 import AdminProductsView from '@/views/admin/AdminProductsView.vue'
 import AdminCategoriesView from '@/views/admin/AdminCategoriesView.vue'
 import PasswordResetView from '@/views/PasswordResetView.vue'
+import AdminEditUserView from '@/views/admin/AdminEditUserView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -74,6 +75,12 @@ const router = createRouter({
       path: '/admin/users',
       name: 'admin users',
       component: AdminUsersView,
+      meta: { requiredAdmin: true }
+    },
+    {
+      path: '/admin/users/edit/:id',
+      name: 'admin edit user',
+      component: AdminEditUserView,
       meta: { requiredAdmin: true }
     },
     {

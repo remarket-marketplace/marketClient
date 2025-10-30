@@ -37,6 +37,7 @@ const en = {
     password: 'Password',
     repeatPassword: "Repeat password",
     username: 'Username',
+    role: "Role",
     code: 'Code',
     total: 'Total: ',
     active: 'Active',
@@ -55,6 +56,8 @@ const en = {
     validationErrors: 'Validation errors: ',
     view: 'View',
     created: 'Created',
+    saved: "Saved sucessfully",
+    userId: "User ID",
   },
   
   errors: {
@@ -246,6 +249,16 @@ const en = {
       },
       productsPage: {
         title: "Products",
+      },
+      
+      editUser: {
+        title: "Edit user",
+        editing: "edit",
+        avatarUrl: "avatar url",
+        avatarUrlPlaceholder: "avatar url",
+        errorLoading: "Error load user data",
+        errorSaving: "Error safe user data",
+        frozenBalance: "Frozen balance",
       },
       
       addCategory: {

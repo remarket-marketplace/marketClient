@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { adminService } from '@/api/admin/AdminService';
 import type { UserRead } from '@/validation/user/userRead';
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import { useImages } from '@/composables/useImages';
@@ -15,6 +15,7 @@ const isLoading = ref(true);
 const API_HOST = import.meta.env.VITE_API_HOST
 
 const searchFieldValue = ref<string>('')
+const dropdownOpenId = ref<string | null>(null); // Для отслеживания открытого dropdown
 
 const { images } = useImages()
 
@@ -47,6 +48,10 @@ function navigateToProfile(username: string) {
   router.push(`/profile/${username}`);
 }
 
+function navigateToEditUser(userId: string) {
+  router.push(`/admin/users/edit/${userId}`);
+}
+
 function getStatusBadge(user: UserRead) {
   if (user.is_banned) {
     return { text: 'common.banned', class: 'bg-red-500/20 text-red-400 border-red-500/30' };
@@ -69,6 +74,33 @@ async function banUser(userId: string) {
         await loadUsersList()
     }
 }
+
+// Функции для управления dropdown
+function toggleDropdown(userId: string) {
+  if (dropdownOpenId.value === userId) {
+    dropdownOpenId.value = null;
+  } else {
+    dropdownOpenId.value = userId;
+  }
+}
+
+function closeDropdown() {
+  dropdownOpenId.value = null;
+}
+
+// Закрытие dropdown при клике вне его области
+function setupClickOutside() {
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest('.dropdown-container')) {
+      closeDropdown();
+    }
+  });
+}
+
+onMounted(() => {
+  setupClickOutside();
+});
 </script>
 
 <template>
@@ -158,7 +190,7 @@ async function banUser(userId: string) {
               </div>
             </div>
 
-            <div class="flex-shrink-0 flex gap-2 justify-end sm:justify-start">
+            <div class="flex-shrink-0 flex gap-2 justify-end sm:justify-start items-center">
               <button
                 @click="navigateToProfile(user.username)"
                 class="flex items-center gap-1 sm:gap-2 px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-xs sm:text-sm flex-1 sm:flex-none justify-center"
@@ -175,6 +207,30 @@ async function banUser(userId: string) {
                 <Icon icon="mdi:block-helper" class="w-3 h-3 sm:w-4 sm:h-4" />
                 <span class="">{{ $t("pages.admin.usersPage.ban") }}</span>
               </button>
+
+              <!-- Dropdown меню -->
+              <div class="relative dropdown-container">
+                <button
+                  @click.stop="toggleDropdown(user.id)"
+                  class="flex items-center justify-center w-8 h-8 rounded-lg bg-dark-500 hover:bg-dark-400 transition-colors"
+                >
+                  <Icon icon="mdi:dots-vertical" class="w-4 h-4 text-text-secondary" />
+                </button>
+
+                <!-- Dropdown контент -->
+                <div
+                  v-if="dropdownOpenId === user.id"
+                  class="absolute right-0 top-full mt-1 w-48 bg-dark-700 border border-dark-600 rounded-lg shadow-lg z-10"
+                >
+                  <button
+                    @click="navigateToEditUser(user.id)"
+                    class="flex items-center gap-2 w-full px-4 py-2 text-sm text-mainText hover:bg-dark-600 transition-colors rounded-lg"
+                  >
+                    <Icon icon="mdi:pencil-outline" class="w-4 h-4" />
+                    <span>{{ $t('common.edit') }}</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -182,7 +238,7 @@ async function banUser(userId: string) {
             <div class="flex flex-col xs:flex-row gap-1 xs:gap-2 sm:gap-4">
               <div>{{ $t('common.memberSince') }} {{ new Date(user.created_at).toLocaleDateString('ru-RU') }}</div>
               <div v-if="user.description" class="truncate flex-1 hidden sm:block">
-                {{ $t('common.description') }} {{ user.description }}
+                {{ $t('common.description') }}: {{ user.description }}
               </div>
               <div class="flex items-center gap-1 sm:hidden">
                 <Icon icon="mdi:star-outline" class="w-3 h-3" />

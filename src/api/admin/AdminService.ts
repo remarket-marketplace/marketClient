@@ -14,7 +14,6 @@ export const adminService = {
     }
   },
 
-
   async getAdminProductList() {
     try {
       const response = await httpClient.get('/admin/products')
@@ -76,6 +75,28 @@ export const adminService = {
       if (e instanceof ZodError) {
         console.error(e.issues)
       }
+      return false
+    }
+  },
+
+  async getUserById(userId: string) {
+    try {
+      const response = await httpClient.get(`/admin/user/${userId}`,)
+      return UserReadSchema.parse(response.data)
+    }
+    catch (e) {
+      if (e instanceof ZodError) {
+        console.error(e.issues)
+      }
+      return false
+    }
+  },
+
+  async updateUserData(userId: string, updateData: any) {
+    try {
+      await httpClient.patch(`/admin/user/${userId}`, updateData)
+    }
+    catch (e) {
       return false
     }
   },

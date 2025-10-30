@@ -37,6 +37,7 @@ const ru = {
     password: 'Пароль',
     repeatPassword: "Повторите пароль",
     username: 'Имя пользователя',
+    role: "Роль",
     code: 'Код',
     total: 'Всего: ',
     active: 'Активно',
@@ -55,6 +56,8 @@ const ru = {
     validationErrors: 'Ошибки валидации: ',
     view: "Посмотреть",
     created: 'Создано',
+    saved: "Успешно сохранено",
+    userId: "ID Пользователя",
   },
   
   errors: {
@@ -245,6 +248,16 @@ const ru = {
       },
       productsPage: {
         title: "Товары",
+      },
+
+      editUser: {
+        title: "Редактирование пользователя",
+        editing: "Редактирование",
+        avatarUrl: "URL аватара",
+        avatarUrlPlaceholder: "Введите URL изображения",
+        errorLoading: "Ошибка загрузки данных пользователя",
+        errorSaving: "Ошибка сохранения изменений",
+        frozenBalance: "Баланс заморожен",
       },
       
       addCategory: {
