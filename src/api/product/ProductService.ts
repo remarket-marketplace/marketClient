@@ -298,7 +298,7 @@ export const productService = {
 
   async deleteProduct(productId: string) {
     try {
-      const response = await httpClient.delete('/products', {
+      const response = await httpClient.delete('/products/', {
         params: { product_id: productId },
       })
       return response.status === 200
