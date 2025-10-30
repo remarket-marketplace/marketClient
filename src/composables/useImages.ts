@@ -7,6 +7,9 @@ export function useImages() {
     avatars: {
       default: getImage('profile.png'),
     },
+    chat: {
+      send: getImage('send.svg'),
+    }
   }
 
   return {

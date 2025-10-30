@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { useImages } from '@/composables/useImages';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
+const { images } = useImages()
 
 const props = defineProps<{
     newMessage: string
@@ -22,7 +24,7 @@ const updateMessage = (event: Event) => {
 </script>
 
 <template>
-    <div class="flex flex-none pb-2 lg:pb-0">
+    <div class="flex flex-none">
         <input
             :value="props.newMessage"
             @input="updateMessage"
@@ -35,7 +37,7 @@ const updateMessage = (event: Event) => {
             class="rounded-l-none rounded-r-2xl bg-button-main px-4 text-sm font-bold" 
             @click="handleSendMessage"
         >
-            <p>{{ $t("common.send") }}</p>
+        <img :src="images.chat.send" alt="">
         </button>
     </div>
 </template>

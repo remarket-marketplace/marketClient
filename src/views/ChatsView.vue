@@ -210,14 +210,14 @@ async function sendMessage() {
         ]"
       >
         <div
-          class="flex flex-1 flex-col p-4 md:rounded-xl"
+          class="flex flex-1 flex-col py-4 px-2 md:rounded-xl"
           :class="{
-            'pb-20': isMobile && mobileMode === 'chat',
-            'pt-16': isMobile && mobileMode === 'chat',
+            'pb-18': isMobile && mobileMode === 'chat',
+            'pt-10': isMobile && mobileMode === 'chat',
           }"
         >
-          <div class="flex flex-grow flex-col gap-3 overflow-y-auto">
-            <div v-if="isMobile && mobileMode === 'chat'" class="my-4">
+          <div class="flex flex-grow flex-col overflow-y-auto pt-8">
+            <div v-if="isMobile && mobileMode === 'chat'" class="flex items-center">
               <button class="text-xl font-bold" @click="backToChats">
                 <Icon icon="mdi:arrow-left" class="text-3xl" />
               </button>

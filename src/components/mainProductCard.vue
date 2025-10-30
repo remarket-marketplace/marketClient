@@ -26,13 +26,13 @@ function goToSeller() {
 
 <template>
   <div
-    class="flex flex-col cursor-pointer border-1 border-dark-600 rounded-xl p-4 transition hover:shadow-lg"
+    class="flex flex-col cursor-pointer border-1 border-dark-600 rounded-xl p-2 transition hover:shadow-lg"
     @click="onClick"
   >
     <img
       v-if="product.images.length"
       :src="`${API_HOST}${product.images[0]?.image_url}`"
-      class="mb-3 h-36 w-full rounded object-cover"
+      class="mb-3 h-36 w-full rounded-lg object-cover"
       alt="product image"
     >
     <div
