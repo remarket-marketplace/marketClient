@@ -93,7 +93,6 @@ async function createProduct() {
     const result = await productService.createProduct(productDataObj, images.value)
     console.log(result)
     if (result && user?.username) {
-      console.log('working redirect')
       router.push(`/profile/${user?.username}`)
     }
     else

@@ -89,7 +89,7 @@ const navItems = computed(() => [
     </main>
 
     <nav
-      class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-30 h-20 border-t border-gray-700 md:hidden"
+      class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-30 h-16 border-t border-gray-700 md:hidden"
     >
       <div class="mx-auto h-full max-w-5xl w-full flex items-center justify-around">
         <router-link
