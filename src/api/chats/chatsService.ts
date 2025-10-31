@@ -242,6 +242,7 @@ export const chatsService = {
               is_read: validatedMessage.is_read,
               created_at: validatedMessage.created_at,
               chat_room_id: validatedMessage.chat_room_id,
+              message_type: validatedMessage.message_type
             }
 
             if (onNewMessageCallback) {
