@@ -8,7 +8,7 @@ import { useUserStore } from '@/stores/user'
 import type { ChatContentUnion } from '@/validation/chat/chatMessage'
 import type { UserRead } from '@/validation/user/userRead'
 import { Icon } from '@iconify/vue'
-import { nextTick, onMounted, ref } from 'vue'
+import { nextTick, onMounted, ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ZodError } from 'zod'
 
@@ -26,6 +26,19 @@ const store = useUserStore()
 const user = ref<UserRead | null>()
 
 const newMessage = ref<string>('')
+
+// Вычисляем текущий активный чат
+const currentChat = computed(() => {
+  if (!selectedChatId.value) return null
+  return chats.value.find(chat => chat.id === selectedChatId.value)
+})
+
+// Получаем инициалы для аватарки
+const chatUserInitial = computed(() => {
+  return currentChat.value?.another_user.username.charAt(0).toUpperCase() || ''
+})
+
+const API_HOST = import.meta.env.VITE_API_HOST
 
 function backToChats() {
   if (mobileMode.value === 'chat') {
@@ -210,18 +223,47 @@ async function sendMessage() {
         <div
           class="flex flex-1 flex-col px-2 md:rounded-xl"
           :class="{
-            'pb-18': isMobile && mobileMode === 'chat',
-            'pt-10': isMobile && mobileMode === 'chat',
+            'pb-16': isMobile && mobileMode === 'chat',
+            'pt-16': isMobile && mobileMode === 'chat',
           }"
         >
-          <div class="flex flex-grow flex-col overflow-y-auto pt-8">
-            <div v-if="isMobile && mobileMode === 'chat'" class="flex items-center">
-              <button class="text-xl font-bold" @click="backToChats">
+          <div class="flex flex-grow flex-col overflow-y-auto lg:pb-2">
+            <!-- Шапка чата с кнопкой назад и информацией о пользователе -->
+            <div v-if="isMobile && mobileMode === 'chat'" class="flex items-center gap-2 mb-2 px-2">
+              <button class="text-xl font-bold flex-shrink-0" @click="backToChats">
                 <Icon icon="mdi:arrow-left" class="text-3xl" />
               </button>
+              
+              <!-- Аватар и имя пользователя -->
+              <div class="flex items-center gap-3 flex-1 min-w-0">
+                <div class="h-8 w-8 flex items-center justify-center flex-shrink-0">
+                  <img
+                    v-if="currentChat?.another_user.avatar_url"
+                    :src="`${API_HOST}${currentChat.another_user.avatar_url}`"
+                    class="h-8 w-8 border-2 border-dark-600 rounded-full object-cover"
+                    :alt="currentChat.another_user.username"
+                  >
+                  <div
+                    v-else
+                    class="h-8 w-8 flex items-center justify-center rounded-full bg-gray-700 text-mainText font-bold uppercase"
+                  >
+                    {{ chatUserInitial }}
+                  </div>
+                </div>
+                <div class="flex flex-col truncate">
+                  <p class="truncate text-mainText font-semibold text-lg">
+                    {{ currentChat?.another_user.username }}
+                  </p>
+                  <!-- Можно добавить статус онлайн, если есть в данных -->
+                  <p v-if="currentChat?.another_user.is_online" class="text-xs text-green-500">
+                    онлайн
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <div ref="messageContainerRef" class="no-scrollbar flex flex-1 flex-col overflow-y-auto">
+            <!-- main chat content -->
+            <div ref="messageContainerRef" class="no-scrollbar flex flex-1 flex-col overflow-y-auto pb-2">
               <div v-if="chatMessages.length > 0" class="flex flex-1 flex-col justify-start">
                 <div class="flex flex-col gap-3 pr-2">
                   <ChatMessage
@@ -241,6 +283,8 @@ async function sendMessage() {
                 <p class="text-gray-400 font-light">{{ $t('pages.chats.selectChat') }}</p>
               </div>
             </div>
+
+            <!-- send messages bar -->
             <SendMessageBar
               v-if="selectedChatId"
               v-model:newMessage="newMessage"
