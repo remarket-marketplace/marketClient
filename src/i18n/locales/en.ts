@@ -149,6 +149,14 @@ const en = {
         errorSendCode: 'Failed to send code to email',
         passwordsMismatch: 'Passwords do not match',
         invalidCode: 'Invalid code or registration error',
+        usernameLengthError: "Username must be between 3 and 16 characters long",
+        usernameCharsError: "Username can only contain English letters, numbers and the '_' symbol",
+        invalidEmail: "Please enter a valid email",
+        passwordLengthError: "Password must be at least 8 characters long",
+        passwordUppercaseError: "Password must contain at least one uppercase letter",
+        passwordLowercaseError: "Password must contain at least one lowercase letter",
+        passwordDigitError: "Password must contain at least one digit",
+        passwordSpecialCharError: "Password must contain at least one special character (!@#$%^&*)"
       },
       signIn: {
         title: 'Sign In',
@@ -185,6 +193,7 @@ const en = {
       emptyMessages: 'Messages list is empty',
       selectChat: 'Select a chat',
       confirmReceipt: 'Confirm Receipt',
+      confirmReceipted: "Confirm Receipted",
       report: 'Report',
       messagePlaceholder: 'Enter message...',
       newPurchase: 'New purchase',

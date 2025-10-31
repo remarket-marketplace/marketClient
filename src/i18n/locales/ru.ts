@@ -149,6 +149,14 @@ const ru = {
         errorSendCode: 'Не удалось отправить код на email',
         passwordsMismatch: 'Пароли не совпадают',
         invalidCode: 'Неверный код или ошибка регистрации',
+        usernameLengthError: "Длина имени пользователя должна быть от 3 до 16 символов",
+        usernameCharsError: "Никнейм должен содержать только английские буквы, цифры и символ '_'",
+        invalidEmail: "Введите корректный email",
+        passwordLengthError: "Пароль должен быть не менее 8 символов",
+        passwordUppercaseError: "Пароль должен содержать хотя бы одну заглавную букву",
+        passwordLowercaseError: "Пароль должен содержать хотя бы одну строчную букву",
+        passwordDigitError: "Пароль должен содержать хотя бы одну цифру",
+        passwordSpecialCharError: "Пароль должен содержать хотя бы один специальный символ (!@#$%^&*)"
       },
       signIn: {
         title: 'Вход',
@@ -185,6 +193,7 @@ const ru = {
       emptyMessages: 'Список сообщений пуст',
       selectChat: 'Выберите чат',
       confirmReceipt: 'Подтвердить получение',
+      confirmReceipted: "Получение подтверждено",
       report: 'Пожаловаться',
       messagePlaceholder: 'Введите сообщение...',
       newPurchase: 'Новая покупка',
