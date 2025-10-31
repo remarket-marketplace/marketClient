@@ -224,15 +224,16 @@ export const productService = {
 
   async confirmReceipt(productId: string) {
     try {
-      const response = await httpClient.post(`/products/confirm-receipt`, {
+      const response = await httpClient.patch(`/products/confirm-receipt`, {
         product_id: productId,
       })
-      return response.status === 200 && response.data === true
+      return response.status === 200
     }
     catch {
       return false
     }
   },
+
   async searchProducts(query: string) {
     try {
       const response = await httpClient.get('/products/search', { params: { q: query } })
