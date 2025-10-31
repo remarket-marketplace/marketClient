@@ -24,7 +24,7 @@ const updateMessage = (event: Event) => {
 </script>
 
 <template>
-    <div class="flex flex-none">
+    <div class="flex flex-none mt-2">
         <input
             :value="props.newMessage"
             @input="updateMessage"

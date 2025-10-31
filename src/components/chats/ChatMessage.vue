@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
 import type { ChatContentUnion, ChatMessage } from '@/validation/chat/chatMessage'
 import type { Product } from '@/validation/product/product'
 import NewPurchaseMessage from './NewPurchaseMessage.vue';
