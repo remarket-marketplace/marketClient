@@ -40,8 +40,6 @@ onMounted(async () => {
     await store.fetchUser()
     user.value = await store.getUser()
 
-    await chatsService.connectChat()
-
     chatsService.onNewMessage((message) => {
       if (selectedChatId.value === message.chat_room_id) {
         const messageExists = chatMessages.value.some(m => m.id === message.id)
@@ -210,7 +208,7 @@ async function sendMessage() {
         ]"
       >
         <div
-          class="flex flex-1 flex-col py-4 px-2 md:rounded-xl"
+          class="flex flex-1 flex-col px-2 md:rounded-xl"
           :class="{
             'pb-18': isMobile && mobileMode === 'chat',
             'pt-10': isMobile && mobileMode === 'chat',
