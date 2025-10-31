@@ -9,6 +9,7 @@ export const ChatMessageSchema = z.object({
   is_read: z.boolean(),
   created_at: z.string(),
   chat_room_id: z.string(),
+  message_type: z.string().optional(),
 })
 
 // Схема для отправки сообщений
