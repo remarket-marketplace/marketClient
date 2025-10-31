@@ -26,7 +26,83 @@ const codeInputs = ref<(HTMLInputElement | null)[]>([])
 const errorMessage = ref('')
 const passwordHidden = ref(true)
 
+// Ошибки валидации
+const usernameError = ref('')
+const emailError = ref('')
+const passwordError = ref('')
+
+function validateUsername() {
+  usernameError.value = ''
+  
+  if (username.value.length < 3 || username.value.length > 16) {
+    usernameError.value = t('pages.auth.signUp.usernameLengthError')
+    return false
+  }
+  
+  if (!/^[A-Za-z0-9_]+$/.test(username.value)) {
+    usernameError.value = t('pages.auth.signUp.usernameCharsError')
+    return false
+  }
+  
+  return true
+}
+
+function validateEmail() {
+  emailError.value = ''
+  
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(email.value)) {
+    emailError.value = t('pages.auth.signUp.invalidEmail')
+    return false
+  }
+  
+  return true
+}
+
+function validatePassword() {
+  passwordError.value = ''
+  
+  if (password.value.length < 8) {
+    passwordError.value = t('pages.auth.signUp.passwordLengthError')
+    return false
+  }
+
+  if (!/[A-Z]/.test(password.value)) {
+    passwordError.value = t('pages.auth.signUp.passwordUppercaseError')
+    return false
+  }
+
+  if (!/[a-z]/.test(password.value)) {
+    passwordError.value = t('pages.auth.signUp.passwordLowercaseError')
+    return false
+  }
+
+  if (!/\d/.test(password.value)) {
+    passwordError.value = t('pages.auth.signUp.passwordDigitError')
+    return false
+  }
+
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password.value)) {
+    passwordError.value = t('pages.auth.signUp.passwordSpecialCharError')
+    return false
+  }
+
+  return true
+}
+
+function validateForm() {
+  const isUsernameValid = validateUsername()
+  const isEmailValid = validateEmail()
+  const isPasswordValid = validatePassword()
+  
+  return isUsernameValid && isEmailValid && isPasswordValid
+}
+
 async function sendCode() {
+  if (!validateForm()) {
+    return
+  }
+  
   if (await passwordsEquals()) {
     errorMessage.value = ''
     sended.value = true
@@ -94,6 +170,19 @@ function handleKeyDown(event: KeyboardEvent, index: number) {
     })
   }
 }
+
+// Сброс ошибок при вводе
+function clearUsernameError() {
+  usernameError.value = ''
+}
+
+function clearEmailError() {
+  emailError.value = ''
+}
+
+function clearPasswordError() {
+  passwordError.value = ''
+}
 </script>
 
 <template>
@@ -120,7 +209,10 @@ function handleKeyDown(event: KeyboardEvent, index: number) {
             type="text"
             :placeholder="$t('pages.auth.signUp.usernamePlaceholder')"
             required
+            @blur="validateUsername"
+            @input="clearUsernameError"
           />
+          <p v-if="usernameError" class="text-error-text text-sm mt-1">{{ usernameError }}</p>
         </div>
 
         <!-- Email -->
@@ -132,7 +224,10 @@ function handleKeyDown(event: KeyboardEvent, index: number) {
             type="email"
             :placeholder="$t('common.email')"
             required
+            @blur="validateEmail"
+            @input="clearEmailError"
           />
+          <p v-if="emailError" class="text-error-text text-sm mt-1">{{ emailError }}</p>
         </div>
 
         <!-- Password с иконкой глаза -->
@@ -145,6 +240,8 @@ function handleKeyDown(event: KeyboardEvent, index: number) {
             placeholder="••••••••"
             required
             :minlength="8"
+            @blur="validatePassword"
+            @input="clearPasswordError"
           >
             <template #append>
               <button
@@ -153,12 +250,13 @@ function handleKeyDown(event: KeyboardEvent, index: number) {
                 @click="switchPasswordVisibility"
               >
                 <Icon 
-                  icon="ei:eye"
+                  :icon="passwordHidden ? 'ei:eye' : 'ei:eye-closed'"
                   class="text-xl" 
                 />
               </button>
             </template>
           </TheInput>
+          <p v-if="passwordError" class="text-error-text text-sm mt-1">{{ passwordError }}</p>
         </div>
 
         <!-- Confirm Password -->
