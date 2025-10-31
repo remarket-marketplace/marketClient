@@ -55,7 +55,7 @@ const navItems = computed(() => [
 <template>
   <div class="min-h-dvh w-screen flex flex-col bg-background text-mainText no-scrollbar">
     <header class="flex-none border-b border-gray-700">
-      <div class="mx-auto h-16 max-w-5xl w-full flex items-center justify-between px-4">
+      <div class="mx-auto h-14 max-w-5xl w-full flex items-center justify-between px-4">
         <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold" @click="router.push('/admin')">
           <p>remarket</p>
           <p class="text-gray-300 font-light">Admin</p>
@@ -89,7 +89,7 @@ const navItems = computed(() => [
     </main>
 
     <nav
-      class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-30 h-16 border-t border-gray-700 md:hidden"
+      class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-30 h-14 border-t border-gray-700 md:hidden"
     >
       <div class="mx-auto h-full max-w-5xl w-full flex items-center justify-around">
         <router-link
@@ -101,7 +101,7 @@ const navItems = computed(() => [
           <div class="icon-box flex items-center justify-center">
             <Icon :icon="item.icon" :width="22" :height="22" inline />
           </div>
-          <span class="menu-label mt-[3px] text-center text-[11px] font-medium leading-none">
+          <span class="menu-label mt-[3px] text-center text-xs font-light leading-none">
             {{ item.title }}
           </span>
         </router-link>
