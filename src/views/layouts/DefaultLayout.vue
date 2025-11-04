@@ -24,11 +24,45 @@ function checkDesktop() {
   isDesktop.value = window.innerWidth >= 768
 }
 
-const isActiveRoute = (path: string) => {
-  if (path === '/') {
-    return route.path === '/'
+const isActiveRoute = (item: any) => {
+  const currentPath = route.path
+  
+  // Если мы на странице авторизации, не подсвечиваем пункты меню
+  if (currentPath === '/signin' || currentPath === '/signup') {
+    return false
   }
-  return route.path.startsWith(path)
+  
+  // Для главной страницы - точное совпадение
+  if (item.to === '/') {
+    return currentPath === '/'
+  }
+  
+  // Для чатов - начинается с /chats
+  if (item.to === '/chats') {
+    return currentPath.startsWith('/chats')
+  }
+  
+  // Для создания продукта - точное совпадение
+  if (item.to === '/product/create') {
+    return currentPath === '/product/create'
+  }
+  
+  // Для профиля - начинается с /profile
+  if (item.to.startsWith('/profile')) {
+    return currentPath.startsWith('/profile')
+  }
+  
+  // Для просмотра продукта - начинается с /product (но не создание)
+  if (item.to.startsWith('/product/') && item.to !== '/product/create') {
+    return currentPath.startsWith('/product/') && currentPath !== '/product/create'
+  }
+  
+  return currentPath === item.to
+}
+
+// Для мобильной версии используем ту же логику
+const isActiveRouteMobile = (item: any) => {
+  return isActiveRoute(item)
 }
 
 onMounted(async () => {
@@ -38,22 +72,26 @@ onMounted(async () => {
 
 const navItems = computed(() => [
   { 
+    id: 'home',
     title: t('navigation.market.home'), 
     icon: Home, 
     to: '/' 
   },
   { 
+    id: 'chats',
     title: t('navigation.market.chats'),
     icon: MessageCircle,
     to: user && user.value?.username ? '/chats' : '/signin',
   },
   {
+    id: 'sell',
     title: t('navigation.market.sell'), 
     icon: PlusCircle,
     to: user && user.value?.username ? '/product/create' : '/signin', 
     sell: true 
   },
   {
+    id: 'profile',
     title: t('navigation.market.profile'),
     icon: User,
     to: user && user.value?.username ? `/profile/${user.value.username}` : '/signin',
@@ -73,17 +111,17 @@ const navItems = computed(() => [
           <nav class="hidden items-center gap-6 md:flex">
             <router-link
               v-for="item in navItems"
-              :key="item.to"
+              :key="item.id"
               :to="item.to"
               class="flex items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"
               :class="{
-                'text-white': isActiveRoute(item.to),
-                'text-gray-400': !isActiveRoute(item.to)
+                'text-white': isActiveRoute(item),
+                'text-gray-400': !isActiveRoute(item)
               }"
             >
               <!-- Индикатор активной страницы для десктопа -->
               <div 
-                v-if="isActiveRoute(item.to)"
+                v-if="isActiveRoute(item)"
                 class="absolute -bottom-7 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-white rounded-full transition-all duration-300"
               />
               
@@ -91,7 +129,7 @@ const navItems = computed(() => [
                 :is="item.icon" 
                 :class="[
                   item.sell ? 'text-2xl' : 'text-xl',
-                  isActiveRoute(item.to) ? 'text-white' : 'text-gray-400'
+                  isActiveRoute(item) ? 'text-white' : 'text-gray-400'
                 ]" 
                 :size="item.sell ? 24 : 20"
                 stroke-width="1.5"
@@ -122,22 +160,22 @@ const navItems = computed(() => [
       <div class="mx-auto h-full max-w-5xl w-full flex items-center justify-around">
         <router-link
           v-for="item in navItems"
-          :key="item.to"
+          :key="item.id"
           :to="item.to"
           class="flex flex-col items-center justify-center px-1 transition-all duration-300 relative group"
           :class="{
-            'opacity-100': isActiveRoute(item.to),
-            'opacity-70': !isActiveRoute(item.to)
+            'opacity-100': isActiveRouteMobile(item),
+            'opacity-70': !isActiveRouteMobile(item)
           }"
         >
           <!-- Активный индикатор для мобильных -->
           <div 
-            v-if="isActiveRoute(item.to)"
+            v-if="isActiveRouteMobile(item)"
             class="absolute -top-1 left-1/2 transform -translate-x-1/2 w-6 h-0.5 bg-white rounded-full transition-all duration-300"
           />
           
           <div class="icon-box flex items-center justify-center transition-colors duration-300"
-               :class="isActiveRoute(item.to) ? 'text-white' : 'text-gray-400'">
+               :class="isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400'">
             <component 
               :is="item.icon" 
               :size="22" 
@@ -145,7 +183,7 @@ const navItems = computed(() => [
             />
           </div>
           <span class="menu-label text-center text-xs font-light leading-none mt-1 transition-colors duration-300"
-                :class="isActiveRoute(item.to) ? 'text-white' : 'text-gray-400'">
+                :class="isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400'">
             {{ item.title }}
           </span>
         </router-link>
