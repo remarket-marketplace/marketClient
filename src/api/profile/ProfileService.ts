@@ -41,7 +41,6 @@ export const profileService = {
   async getUserPurchases(userId: string) {
     try {
       const response = await httpClient.get(`/users/${userId}/purchases`)
-      // Предполагаем схему для покупок, пока placeholder
       return response.data || []
     }
     catch (error) {

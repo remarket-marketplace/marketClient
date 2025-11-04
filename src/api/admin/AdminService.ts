@@ -2,6 +2,7 @@ import { ZodError } from 'zod'
 import { httpClient } from '..'
 import { ProductSchema } from '@/validation/product/product'
 import { UserReadSchema } from '@/validation/user/userRead'
+import { DealSchema, DealsList, type Deal } from '@/validation/deal/deal'
 
 export const adminService = {
   async getDashboardData() {
@@ -140,6 +141,79 @@ export const adminService = {
       if (e instanceof ZodError) {
         console.error(e.issues)
       }
+      return false
+    }
+  },
+
+  async getAllDeals(page: number, perPage: number) {
+    try {
+      const response = await httpClient.get('/admin/deals', {
+        params: { page, per_page: perPage },
+      })
+      return DealsList.parse(response.data)
+    }
+    catch (e) {
+      return false
+    }
+  },
+
+  async refundDeal(dealId: string): Promise<Deal | false> {
+    // 
+    // refund deal api request
+    // 
+    try {
+      const response = await httpClient.patch('/admin/deals/refund', {
+        id: dealId,
+      })
+      return DealSchema.parse(response.data)
+    }
+    catch (e) {
+      return false
+    }
+  },
+
+  async cancelDeal(dealId: string): Promise<Deal | false> {
+    // 
+    // cancel deal api request
+    // 
+    try {
+      const response = await httpClient.patch('/admin/deals/cancel', {
+        id: dealId,
+      })
+      return DealSchema.parse(response.data)
+    }
+    catch (e) {
+      return false
+    }
+  },
+
+  async confirmDeal(dealId: string): Promise<Deal | false> {
+    // 
+    // confirm deal api request
+    //
+    try {
+      const response = await httpClient.patch('/admin/deals/confirm', {
+        id: dealId,
+      })
+      return DealSchema.parse(response.data)
+    }
+    catch (e) {
+      return false
+    }
+  },
+
+  async resolveDealDispute(dealId: string, inFavorOf: 'seller' | 'buyer') {
+    // 
+    // resolve deal dispute
+    //
+    try {
+      const response = await httpClient.patch('/admin/deals/resolve-dispute', {
+        deal_id: dealId,
+        resolve_favor: inFavorOf
+      })
+      return DealSchema.parse(response.data)
+    }
+    catch (e) {
       return false
     }
   }

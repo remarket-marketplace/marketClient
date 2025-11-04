@@ -40,10 +40,6 @@ const en = {
     role: "Role",
     code: 'Code',
     total: 'Total: ',
-    active: 'Active',
-    banned: 'Banned',
-    sold: 'Sold',
-    moderation: 'Moderation',
     admin: 'Admin',
     user: 'User',
     frozen: '(frozen)',
@@ -58,6 +54,39 @@ const en = {
     created: 'Created',
     saved: "Saved sucessfully",
     userId: "User ID",
+    online: "Online",
+
+    viewDeal: "View Deal",
+    confirmDeal: "Confirm Deal",
+    cancelDeal: "Cancel Deal",
+    dealCompleted: "Deal Completed",
+    dealCancelled: "Deal Cancelled",
+    refundCompleted: "Refund Completed",
+    resolveForBuyer: "Resolve for Buyer",
+    resolveForSeller: "Resolve for Seller",
+    seller: "Seller",
+    buyer: "Buyer",
+
+    // product statuses
+    productStatuses: {
+      active: "active",
+      moderation:"moderation",
+      rejected: "rejected",
+      purchased: "purchased",
+      completed: "completed",
+      cancelled: "cancelled",
+      disputed: "disputed",
+    },
+
+    // deals statuses
+    dealStatuses: {
+      pending: "Pending",
+      confirmed: "Confirmed",
+      disputed:"disputed",
+      conpleted:"completed",
+      cancelled:"cancelled",
+      refunded:"refunded",
+    }
   },
   
   errors: {
@@ -94,6 +123,7 @@ const en = {
     PAYLOAD_IS_EMPTY: 'Payload is empty',
     INCORRECT_EMAIL_OR_PASSWORD: 'Incorrect email or password',
     EMAIL_VERIFICATION_MAX_COUNT_OF_TRIES_EXCEEDED: 'Max count of tries exceeded. Max tries - {max_tries}',
+    INVALID_PASSWORD: "Invalid password"
   },
 
   navigation: {
@@ -174,6 +204,7 @@ const en = {
       buy: 'Buy',
       modalImage: 'Modal Image',
       loading: 'Loading product...',
+      sold: "Sold",
       deleteConfirm: {
         title: 'Confirm Product Deletion',
         message: 'Are you sure you want to delete this product? This action cannot be undone.',
@@ -199,6 +230,7 @@ const en = {
       newPurchase: 'New purchase',
       viewProduct: "View Product",
       productData: "Product data",
+      reported: "Reported",
     },
 
     profile: {
@@ -221,6 +253,16 @@ const en = {
       confirmed: 'Confirmed',
       profileNotFound: 'Profile not found',
       settings: 'Settings',
+      changePhoto: "Change photo",
+    },
+
+    settingsPage: {
+      title: "Settings",
+      password: "Password",
+      enterCurrentPassword: "Enter current password",
+      enterNewPassword: "Enter new password",
+      changePassword: "Change password",
+      passwordChanged: 'Password successful changed',
     },
 
     admin: {
@@ -258,6 +300,11 @@ const en = {
       },
       productsPage: {
         title: "Products",
+      },
+
+      dealsPage: {
+        title: "Deals",
+        refund: "Refund",
       },
       
       editUser: {

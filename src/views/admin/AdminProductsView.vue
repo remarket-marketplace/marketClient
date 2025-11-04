@@ -5,6 +5,7 @@ import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import { useI18n } from 'vue-i18n';
+import ProductStatusTag from '@/components/ProductStatusTag.vue';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -34,21 +35,6 @@ function navigateToProfile(username: string) {
 
 function navigateToProduct(productId: string) {
   router.push(`/product/${productId}`);
-}
-
-function getStatusBadge(product: Product) {
-  switch (product.status) {
-    case 'moderation':
-      return { text: t('common.moderation'), class: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' };
-    case 'approved':
-      return { text: t('common.active'), class: 'bg-green-500/20 text-green-400 border-green-500/30' };
-    case 'rejected':
-      return { text: t('common.rejected'), class: 'bg-red-500/20 text-red-400 border-red-500/30' };
-    case 'sold':
-      return { text: t('common.sold'), class: 'bg-gray-500/20 text-gray-400 border-gray-500/30' };
-    default:
-      return { text: product.status, class: 'bg-gray-500/20 text-gray-400 border-gray-500/30' };
-  }
 }
 
 async function approveProduct(productId: string) {
@@ -112,7 +98,7 @@ function formatPrice(price: number) {
         </div>
       </div>
 
-      <div v-else class="h-full overflow-y-auto no-scrollbar space-y-2 pr-1 sm:pr-2">
+      <div v-else class="h-full overflow-y-auto no-scrollbar space-y-2">
         <!-- Карточка товара -->
         <div
           v-for="product in products"
@@ -132,12 +118,6 @@ function formatPrice(price: number) {
                     class="w-12 h-12 sm:w-20 sm:h-20 rounded-lg object-cover border border-dark-400 cursor-pointer"
                     @click="navigateToProduct(product.id)"
                   />
-                  <div
-                    v-if="product.is_sold"
-                    class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1 rounded"
-                  >
-                    {{ $t('common.sold') }}
-                  </div>
                 </div>
               </div>
 
@@ -147,18 +127,13 @@ function formatPrice(price: number) {
                   <!-- Заголовок и статус -->
                   <div class="flex flex-col gap-1">
                     <h3 
-                      class="text-sm sm:text-lg font-semibold text-mainText line-clamp-2 cursor-pointer hover:text-blue-400"
+                      class="text-sm sm:text-lg font-semibold text-mainText line-clamp-2 cursor-pointer"
                       @click="navigateToProduct(product.id)"
                     >
                       {{ product.title }}
                     </h3>
                     <div class="flex gap-1 flex-wrap">
-                      <span
-                        class="px-1.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium border"
-                        :class="getStatusBadge(product).class"
-                      >
-                        {{ getStatusBadge(product).text }}
-                      </span>
+                      <ProductStatusTag :product-status="product.status" />
                     </div>
                   </div>
 
@@ -172,7 +147,7 @@ function formatPrice(price: number) {
                     <div class="flex items-center gap-1 text-text-secondary">
                       <Icon icon="mdi:account-outline" class="w-3 h-3 sm:w-4 sm:h-4" />
                       <span 
-                        class="hover:text-blue-400 cursor-pointer truncate"
+                        class="cursor-pointer truncate"
                         @click="navigateToProfile(product.seller.username)"
                       >
                         {{ product.seller.username }}

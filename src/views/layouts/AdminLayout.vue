@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { Icon } from '@iconify/vue'
+import { 
+  BarChart3, 
+  Users, 
+  Package, 
+  ShoppingCart, 
+  Folder 
+} from 'lucide-vue-next'
+
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -26,27 +33,27 @@ onMounted(async () => {
 const navItems = computed(() => [
   { 
     title: t('navigation.admin.main'), 
-    icon: 'mdi:chart-box-outline', 
+    icon: BarChart3,
     to: '/admin' 
   },
   { 
     title: t('navigation.admin.users'), 
-    icon: 'mdi:account-supervisor-outline', 
+    icon: Users,
     to: '/admin/users' 
   },
   { 
     title: t('navigation.admin.products'), 
-    icon: 'mdi:cube-outline',
+    icon: Package,
     to: '/admin/products',
   },
   { 
     title: t('navigation.admin.deals'), 
-    icon: 'mdi:cart-check', 
+    icon: ShoppingCart,
     to: '/admin/deals' 
   },
   {
     title: t('navigation.admin.categories'),
-    icon: 'mdi:folder-multiple-outline',
+    icon: Folder,
     to: '/admin/categories',
   },
 ])
@@ -69,7 +76,13 @@ const navItems = computed(() => [
               :to="item.to"
               class="flex items-center gap-1 text-mainText hover:text-gray-300"
             >
-              <Icon :icon="item.icon" class='text-xl' />
+              <!-- Replace Icon component with dynamic component -->
+              <component 
+                :is="item.icon" 
+                class="text-xl"
+                :size="20"
+                stroke-width="1.5"
+              />
               <span>{{ item.title }}</span>
             </router-link>
           </nav>
@@ -99,7 +112,11 @@ const navItems = computed(() => [
           class="flex flex-col items-center justify-center px-1 transition-all duration-150"
         >
           <div class="icon-box flex items-center justify-center">
-            <Icon :icon="item.icon" :width="22" :height="22" inline />
+            <component
+              :is="item.icon" 
+              :size="22"
+              stroke-width="1.5"
+            />
           </div>
           <span class="menu-label mt-[3px] text-center text-xs font-light leading-none">
             {{ item.title }}
@@ -111,7 +128,6 @@ const navItems = computed(() => [
 </template>
 
 <style scoped>
-/* ИСПРАВЛЕНИЕ ВЫСОТЫ VIEWPORT */
 .h-full-dvh {
   height: 100vh; /* Fallback для старых браузеров */
   height: 100dvh; /* Используем Dynamic Viewport Height для корректного отображения на iOS */

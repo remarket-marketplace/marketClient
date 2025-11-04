@@ -3,6 +3,7 @@ import router from '@/router';
 import type { Product } from '@/validation/product/product';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import ProductStatusTag from './ProductStatusTag.vue';
 
 const { t } = useI18n();
 
@@ -17,18 +18,6 @@ const emit = defineEmits<{
 
 const API_HOST = import.meta.env.VITE_API_HOST
 
-const statusClass = computed(() => {
-  switch (props.product.status) {
-    case 'ACTIVE':
-      return 'text-green-400 bg-green-900/30 border-green-700/50';
-    case 'SOLD':
-      return 'text-red-400 bg-red-900/30 border-red-700/50';
-    case 'PENDING':
-      return 'text-yellow-400 bg-yellow-900/30 border-yellow-700/50';
-    default:
-      return 'text-gray-400 bg-gray-700/30 border-gray-500/50';
-  }
-})
 
 function onClick() {
   router.push(`/product/${props.product.id}`);
@@ -63,16 +52,11 @@ function goToSeller() {
 
     <div class="flex flex-col justify-between flex-grow min-w-0">
       <div class="flex justify-between items-start">
-        <h3 class="truncate text-lg text-mainText font-bold pr-2">
+        <h3 class="truncate text-lg text-mainText font-bold">
           {{ product.title }}
         </h3>
-        
-        <span
-          v-if="isOwner"
-          :class="['text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap border', statusClass]"
-        >
-          {{ product.status }}
-        </span>
+
+        <ProductStatusTag :product-status="product.status"/>
       </div>
 
       <p class="text-sm text-gray-400 line-clamp-2 mt-1 mb-2">

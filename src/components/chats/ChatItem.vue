@@ -1,35 +1,48 @@
 <script setup lang="ts">
 import type { ChatListItem } from '@/validation/chat/ChatList';
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { defineProps } from 'vue'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 
 const props = defineProps<{
     chat: ChatListItem,
+    selectedChatId: string | null
 }>()
 
-const formattedLastMessage = computed(() => {
+const isMobile = ref(false)
+
+const formattedLastMessage = computed((): string | null => {
     if (!props.chat.last_message?.text) {
-        return 'Нет сообщений'
+        return null
     }
     
     const text = props.chat.last_message.text
-    if (text.length > 60) {
-        return text.substring(0, 57) + '...'
-    }
-    return text
+        if (text.length > 60) {
+            return text.substring(0, 57) + '...'
+        }
+        return text
 })
 
+const isSelected = props.chat.id === props.selectedChatId
 const userInitial = computed(() => {
     return props.chat.another_user.username.charAt(0).toUpperCase()
+})
+
+const checkMobile = () => {
+    isMobile.value = window.innerWidth < 768
+}
+
+onMounted(() => {
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
 })
 </script>
 
 <template>
     <div
         :key="chat.id"
-        class="flex cursor-pointer items-center gap-3 py-3 px-4 transition hover:bg-dark-800/50 group"
+        :class="['flex cursor-pointer items-center gap-3 py-3 px-4 transition hover:bg-dark-800/50 group', !isMobile && isSelected ? 'bg-dark-800/50' : '']"
         @click="$emit('loadChatMessages', chat.id)"
     >
         <!-- Аватар -->

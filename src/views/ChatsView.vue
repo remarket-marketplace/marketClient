@@ -5,16 +5,18 @@ import ChatMessage from '@/components/chats/ChatMessage.vue'
 import SendMessageBar from '@/components/chats/SendMessageBar.vue'
 import Loader from '@/components/Loader.vue'
 import { useUserStore } from '@/stores/user'
+import type { ChatListItem } from '@/validation/chat/ChatList'
 import type { ChatContentUnion } from '@/validation/chat/chatMessage'
 import type { UserRead } from '@/validation/user/userRead'
-import { Icon } from '@iconify/vue'
-import { nextTick, onMounted, ref, computed } from 'vue'
+import { nextTick, onMounted, ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ZodError } from 'zod'
 
+import { ArrowLeft } from 'lucide-vue-next'
+
 const { t } = useI18n()
 
-const chats = ref<any[]>([])
+const chats = ref<ChatListItem[]>([])
 const chatMessages = ref<ChatContentUnion[]>([])
 const selectedChatId = ref<string | null>(null)
 const messageContainerRef = ref<HTMLElement | null>(null)
@@ -40,6 +42,14 @@ const chatUserInitial = computed(() => {
 
 const API_HOST = import.meta.env.VITE_API_HOST
 
+// Наблюдатель за изменениями сообщений - автоматическая прокрутка
+watch(chatMessages, async () => {
+  await nextTick()
+  setTimeout(() => {
+    scrollToBottom()
+  }, 100)
+}, { deep: true })
+
 function backToChats() {
   if (mobileMode.value === 'chat') {
     mobileMode.value = 'chats'
@@ -58,15 +68,11 @@ onMounted(async () => {
         const messageExists = chatMessages.value.some(m => m.id === message.id)
         if (!messageExists) {
           chatMessages.value.push(message)
-          // Прокрутка при получении нового сообщения
-          scrollToBottom()
         }
       }
     })
 
-    // Загружаем список чатов
     chats.value = await chatsService.getChats()
-
     await restoreLastChat()
   }
   catch (error) {
@@ -85,10 +91,8 @@ onMounted(async () => {
 
 async function restoreLastChat() {
   const savedChatId = localStorage.getItem('selectedChatId')
-  if (!savedChatId)
-    return
+  if (!savedChatId) return
 
-  // Проверяем, существует ли чат
   const existingChat = chats.value.find(c => c.id === savedChatId)
   if (!existingChat) {
     localStorage.removeItem('selectedChatId')
@@ -96,37 +100,52 @@ async function restoreLastChat() {
   }
 
   await loadChatMessages(savedChatId)
-
   if (window.innerWidth < 768) {
     mobileMode.value = 'chat'
   }
 }
 
 function scrollToBottom() {
-  nextTick(() => {
-    const el = messageContainerRef.value
-    if (el)
+  const el = messageContainerRef.value
+  if (!el) return
+  
+  // Несколько попыток прокрутки для надежности
+  const attemptScroll = (attempts = 0) => {
+    if (attempts > 5) return // Максимум 5 попыток
+    
+    const shouldScroll = el.scrollHeight - el.scrollTop - el.clientHeight > 10
+    
+    if (shouldScroll) {
       el.scrollTop = el.scrollHeight
-  })
+      
+      // Проверяем, достигли ли мы низа, если нет - повторяем
+      setTimeout(() => {
+        const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= 10
+        if (!isAtBottom) {
+          attemptScroll(attempts + 1)
+        }
+      }, 50)
+    }
+  }
+  
+  attemptScroll()
 }
 
 async function loadChatMessages(chatId: string) {
   try {
     isLoading.value = true
     errorMessage.value = null
-
-    // Подключаемся к комнате чата
     await chatsService.connectChat(chatId)
-
     selectedChatId.value = chatId
     chatMessages.value = await chatsService.getChatMessages(chatId)
-
-    // сохраняем открытый чат, для сохранения при перезагрузке
     localStorage.setItem('selectedChatId', chatId)
-
-    await nextTick() 
-    scrollToBottom()
-
+    
+    // Даем время на рендеринг перед прокруткой
+    await nextTick()
+    setTimeout(() => {
+      scrollToBottom()
+    }, 150)
+    
     if (isMobile.value) {
       mobileMode.value = 'chat'
     }
@@ -146,12 +165,9 @@ async function loadChatMessages(chatId: string) {
 }
 
 async function sendMessage() {
-  if (!newMessage.value.trim() || !selectedChatId.value)
-    return
-
+  if (!newMessage.value.trim() || !selectedChatId.value) return
   try {
     await chatsService.sendMessage(newMessage.value.trim(), selectedChatId.value)
-    // Очистка инпута после успешной отправки
     newMessage.value = ''
   }
   catch (error) {
@@ -162,24 +178,22 @@ async function sendMessage() {
 
 <template>
   <div class="h-full w-full flex flex-col">
-
-    <!-- лоадер -->
     <div v-if="isLoading" class="flex flex-1 items-center justify-center text-gray-300">
       <Loader/>
     </div>
 
-    <!-- ошибки -->
     <div v-else-if="errorMessage" class="flex flex-1 items-center justify-center text-red-500">
       {{ errorMessage }}
     </div>
 
     <div v-else class="w-full flex flex-1 overflow-hidden">
+      <!-- Список чатов -->
       <div
         v-if="!isMobile || (isMobile && mobileMode === 'chats')"
-        class="h-full lg:max-w-sm flex flex-col md:pr-5"
+        class="h-full lg:max-w-sm flex flex-col md:pr-5 transition-all duration-300"
         :class="[
           isMobile && mobileMode === 'chats'
-            ? 'absolute inset-0 z-20 w-screen'
+            ? 'fixed inset-0 z-10 w-full bg-background'
             : 'w-3/12',
         ]"
       >
@@ -200,6 +214,7 @@ async function sendMessage() {
                   v-for="chat in chats"
                   :key="chat.id"
                   :chat="chat"
+                  :selected-chat-id="selectedChatId"
                   @load-chat-messages="(n: string) => loadChatMessages(n)"
                 />
             </div>
@@ -212,29 +227,30 @@ async function sendMessage() {
         </div>
       </div>
 
+      <!-- Окно чата -->
       <div
         v-if="!isMobile || (isMobile && mobileMode === 'chat')"
-        class="flex flex-1" :class="[
+        class="flex flex-1 transition-all duration-300"
+        :class="[
           isMobile && mobileMode === 'chat'
-            ? 'absolute inset-0 z-20 h-full w-screen'
+            ? 'fixed inset-0 z-10 w-full bg-background'
             : 'flex-1 w-9/12 border-1 border-dark-400 rounded-xl',
         ]"
       >
         <div
-          class="flex flex-1 flex-col px-2 md:rounded-xl"
+          class="flex flex-1 flex-col px-2 md:rounded-xl w-full"
           :class="{
             'pb-16': isMobile && mobileMode === 'chat',
             'pt-16': isMobile && mobileMode === 'chat',
           }"
         >
-          <div class="flex flex-grow flex-col overflow-y-auto lg:pb-2">
-            <!-- Шапка чата с кнопкой назад и информацией о пользователе -->
-            <div v-if="isMobile && mobileMode === 'chat'" class="flex items-center gap-2 mb-2 px-2">
+          <div class="flex flex-grow flex-col overflow-y-auto lg:pb-2 w-full">
+            <!-- Шапка чата -->
+            <div v-if="isMobile && mobileMode === 'chat'" class="flex items-center gap-2 mb-2 px-2 sticky top-0 bg-background py-2 z-10">
               <button class="text-xl font-bold flex-shrink-0" @click="backToChats">
-                <Icon icon="mdi:arrow-left" class="text-3xl" />
+                <ArrowLeft />
               </button>
               
-              <!-- Аватар и имя пользователя -->
               <div class="flex items-center gap-3 flex-1 min-w-0">
                 <div class="h-8 w-8 flex items-center justify-center flex-shrink-0">
                   <img
@@ -254,18 +270,17 @@ async function sendMessage() {
                   <p class="truncate text-mainText font-semibold text-lg">
                     {{ currentChat?.another_user.username }}
                   </p>
-                  <!-- Можно добавить статус онлайн, если есть в данных -->
-                  <p v-if="currentChat?.another_user.is_online" class="text-xs text-green-500">
-                    онлайн
+                  <p v-if="currentChat?.another_user.is_active" class="text-xs text-green-500">
+                    {{ $t('common.online') }}
                   </p>
                 </div>
               </div>
             </div>
 
-            <!-- main chat content -->
+            <!-- Контент чата -->
             <div ref="messageContainerRef" class="no-scrollbar flex flex-1 flex-col overflow-y-auto pb-2">
               <div v-if="chatMessages.length > 0" class="flex flex-1 flex-col justify-start">
-                <div class="flex flex-col gap-3 pr-2">
+                <div class="flex flex-col gap-3">
                   <ChatMessage
                     v-for="message in chatMessages"
                     :key="message.id"
@@ -298,4 +313,11 @@ async function sendMessage() {
 </template>
 
 <style scoped>
+:deep(header) {
+  z-index: 20 !important;
+}
+
+:deep(.mobile-nav-glass) {
+  z-index: 20 !important;
+}
 </style>

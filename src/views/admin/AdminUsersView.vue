@@ -59,7 +59,7 @@ function getStatusBadge(user: UserRead) {
   if (!user.is_active) {
     return { text: 'pages.admin.usersPage.notActive', class: 'bg-gray-500/20 text-gray-400 border-gray-500/30' };
   }
-  return { text: 'common.active', class: 'bg-green-500/20 text-green-400 border-green-500/30' };
+  return { text: 'common.productStatuses.active', class: 'bg-green-500/20 text-green-400 border-green-500/30' };
 }
 
 function getRoleBadge(user: UserRead) {
@@ -127,7 +127,7 @@ onMounted(() => {
         <span class="ml-2 sm:ml-3 text-base sm:text-lg text-gray-400">{{ $t('common.loading') }}</span>
       </div>
 
-      <div v-else class="h-full overflow-y-auto no-scrollbar space-y-3 pr-1 sm:pr-2">
+      <div v-else class="h-full overflow-y-auto no-scrollbar space-y-3">
         <!-- Карточка пользователя -->
         <div
           v-for="user in users"

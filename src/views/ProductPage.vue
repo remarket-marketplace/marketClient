@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { productService } from '@/api/product/ProductService'
-import ConfirmDelete from '@/components/ConfirmDelete.vue'
+import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import Loader from '@/components/Loader.vue'
+import ProductStatusTag from '@/components/ProductStatusTag.vue'
 import type { Product, ProductImage } from '@/validation/product/product'
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -65,10 +66,21 @@ async function handleDeleteConfirm() {
 function closeDeleteConfirm() {
   showDeleteConfirm.value = false
 }
+
+function getStatusText(status: string) {
+  switch (status) {
+    case 'rejected': return t('common.rejected')
+    case 'moderation': return t('common.moderation')
+    case 'active': return t('common.productStatuses.active')
+    case 'purchased': return t('pages.profile.purchased')
+    default: return status
+  }
+}
 </script>
 
 <template>
-  <section v-if="product" class="no-scrollbar h-full max-w-7xl w-full flex flex-col items-start gap-6 overflow-scroll pb-36 text-mainText lg:flex-row lg:px-0">
+  <section v-if="product" class="h-full max-w-7xl w-full flex flex-col items-start gap-6 overflow-auto pb-36 text-mainText lg:flex-row lg:overflow-visible lg:px-0 lg:pb-6">
+    <!-- Галерея изображений -->
     <div class="w-full rounded-lg lg:w-1/2 space-y-4">
       <div v-if="selectedImage" class="flex justify-center">
         <img
@@ -82,7 +94,7 @@ function closeDeleteConfirm() {
 
       <div
         v-if="product.images && product.images.length > 1"
-        class="scrollbar-width-none flex gap-3 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden"
+        class="flex gap-3 overflow-x-auto pb-2 thumbnails-scroll"
       >
         <img
           v-for="image in product.images"
@@ -104,132 +116,132 @@ function closeDeleteConfirm() {
       </div>
     </div>
 
-    <!-- Информация о товаре, в стиле профиля -->
-    <div class="w-full border-1 border-dark-600 rounded-lg p-6 lg:flex-1 space-y-4">
-      <div class="flex flex-col gap-4">
-        <h1 class="truncate text-2xl text-mainText font-bold sm:text-3xl">
+    <!-- Информация о товаре -->
+    <div class="w-full lg:flex-1 space-y-6">
+      <!-- Заголовок и цена -->
+      <div class="space-y-4">
+        <h1 class="text-2xl lg:text-3xl font-bold text-white leading-tight">
           {{ product.title }}
         </h1>
-        <p class="text-2xl text-green-400 font-bold">
-          {{ product.price }}₽
+        <div class="flex items-center gap-4">
+          <span class="text-2xl lg:text-3xl font-bold text-green-400">
+            {{ product.price }}₽
+          </span>
+          <ProductStatusTag :product-status="product.status"/>
+        </div>
+      </div>
+
+      <!-- Описание -->
+      <div class="py-4">
+        <p class="text-gray-300 leading-relaxed whitespace-pre-line text-sm lg:text-base">
+          {{ product.description || $t('pages.product.descriptionMissing') }}
         </p>
       </div>
 
-      <div class="whitespace-pre-line text-sm text-gray-300 leading-relaxed sm:text-base">
-        {{ product.description || $t('pages.product.descriptionMissing') }}
+      <!-- Мета информация -->
+      <div class="space-y-3 py-4 border-t border-gray-800">
+        <div class="flex items-center gap-3">
+          <span class="text-gray-400 font-medium min-w-20">{{ $t('common.published') }}:</span>
+          <span class="text-white">{{ formatFullDate(product.created_at) }}</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-gray-400 font-medium min-w-20">{{ $t('common.category') }}:</span>
+          <span class="text-white">{{ product.category?.name ?? $t('common.notSpecified') }}</span>
+        </div>
       </div>
 
-      <!-- Мета информация, как в профиле -->
-      <div class="border-t border-gray-700 pt-4 text-sm text-gray-400 space-y-3">
-        <div class="flex items-center gap-2">
-          <span class="text-mainText font-semibold">{{ $t('common.published') }}:</span>
-          <span>{{ formatFullDate(product.created_at) }}</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="text-mainText font-semibold">{{ $t('common.category') }}:</span>
-          <span>{{ product.category?.name ?? $t('common.notSpecified') }}</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="text-mainText font-semibold">{{ $t('common.status') }}:</span>
-          <span
-            v-if="product.status === 'rejected'"
-            class="rounded bg-red-400 px-2 py-1 text-mainText"
-          >
-            {{ $t('common.rejected') }}
-          </span>
-
-          <span
-            v-if="product.status === 'moderation'"
-            class="rounded bg-yellow-600 px-2 py-1 text-mainText"
-          >
-            {{ $t('common.moderation') }}
-          </span>
-
-          <span
-            v-if="product.status === 'active'"
-            class="rounded bg-green-600 px-2 py-1 text-mainText"
-          >
-            {{ $t('common.active') }}
-          </span>
-
-          <span
-            v-if="product.status === 'purchased'"
-            class="rounded bg-gray-600 px-2 py-1 text-mainText"
-          >
-            {{ $t('pages.profile.purchased') }}
-          </span>
-        </div>
-
-        <!-- Информация о продавце -->
-        <div class="flex cursor-pointer items-center gap-3 border-t border-gray-700 pt-2" @click="router.push(`/profile/${product.seller.username}`)">
+      <!-- Продавец -->
+      <div 
+        class="flex items-center gap-4 p-4 rounded-xl bg-dark-600 cursor-pointer transition-all duration-200 hover:bg-dark-600/80 group"
+        @click="router.push(`/profile/${product.seller.username}`)"
+      >
+        <div class="w-12 h-12 rounded-full overflow-hidden bg-gray-600 flex items-center justify-center">
           <img
             v-if="product.seller.avatar_url"
             :src="`${API_HOST}${product.seller.avatar_url}`"
-            class="h-8 w-8 rounded-full object-cover"
+            class="w-full h-full object-cover"
             alt="Seller avatar"
           >
-          <div>
-            <p class="text-sm text-mainText font-semibold">
-              {{ product.seller.username }}
-            </p>
-            <p class="text-xs text-gray-400">
-              {{ $t('common.rating') }}: {{ product.seller.rating.toFixed(1) }}
-            </p>
+          <div v-else class="text-white font-bold text-lg">
+            {{ product.seller.username.charAt(0).toUpperCase() }}
           </div>
+        </div>
+        <div class="flex-1">
+          <p class="text-white font-semibold">
+            {{ product.seller.username }}
+          </p>
+          <div class="flex items-center gap-2 mt-1">
+            <span class="text-yellow-400 text-sm font-medium">
+              {{ product.seller.rating.toFixed(1) }}
+            </span>
+            <span class="text-yellow-400 text-xs">★★★★★</span>
+          </div>
+        </div>
+        <div class="text-gray-400 text-xl transition-transform duration-200 group-hover:translate-x-1">
+          →
         </div>
       </div>
 
-      <!-- Кнопки, стилизованные как в профиле -->
-      <div v-if="!product.is_sold" class="flex flex-col gap-3 border-t border-gray-700 pt-4 sm:flex-row">
-        <div class="w-full flex gap-2" v-if="product.is_owner">
-          <button
-            class="flex-1 rounded-lg bg-yellow-600 px-4 py-2 text-sm text-mainText font-semibold transition hover:bg-yellow-700 sm:px-6"
-            @click="editProduct"
-          >
-            {{ $t('common.edit') }}
-          </button>
-          <button
-            class="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm text-mainText font-semibold transition hover:bg-red-700 sm:px-6"
-            @click="openDeleteConfirm"
-          >
-            {{ $t('common.delete') }}
-          </button>
-        </div>
+      <!-- Кнопки действий -->
+      <div class="pt-6 border-t border-gray-800">
+        <div v-if="!product.is_sold" class="flex flex-col gap-3 sm:flex-row">
+          <div class="w-full flex gap-2" v-if="product.is_owner">
+            <button
+              class="flex-1 rounded-lg bg-yellow-600 px-4 py-2 text-sm text-white font-semibold transition hover:bg-yellow-700 sm:px-6"
+              @click="editProduct"
+            >
+              {{ $t('common.edit') }}
+            </button>
+            <button
+              class="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm text-white font-semibold transition hover:bg-red-700 sm:px-6"
+              @click="openDeleteConfirm"
+            >
+              {{ $t('common.delete') }}
+            </button>
+          </div>
 
-        <template v-else>
           <button
-            class="w-full rounded-lg bg-blue-600 px-6 py-3 text-base text-mainText font-semibold transition sm:w-auto hover:bg-blue-700"
+            v-else
+            class="w-full rounded-lg bg-blue-600 px-6 py-3 text-base text-white font-semibold transition hover:bg-blue-700 sm:w-auto"
             @click="buyProduct(product.id)"
           >
             {{ $t('pages.product.buy') }}
           </button>
-        </template>
+        </div>
+
+        <div v-else class="w-full py-4 text-center bg-gray-700 text-gray-400 rounded-xl font-semibold">
+          {{ $t('pages.product.sold') }}
+        </div>
       </div>
     </div>
 
-    <!-- Модальное окно -->
+    <!-- Модальное окно изображения -->
     <Teleport to="body">
       <div
         v-if="openImageModal && selectedImage"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80"
-        @click.self="openImageModal = false"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 cursor-pointer"
+        @click="openImageModal = false"
       >
-        <img
-          :src="`${API_HOST}${selectedImage.image_url}`"
-          class="max-h-[90vh] max-w-[90vw] rounded-lg object-contain shadow-xl"
-          :alt="`Модальное изображение: ${product.title}`"
-          loading="lazy"
-        >
-        <button
-          class="absolute right-4 top-4 text-3xl text-mainText font-bold hover:text-blue-500"
-          @click="openImageModal = false"
-        >
-          &times;
-        </button>
+        <div class="relative w-full h-full flex items-center justify-center" @click.stop>
+          <img
+            :src="`${API_HOST}${selectedImage.image_url}`"
+            class="max-w-full max-h-full object-contain rounded-lg"
+            :alt="`Модальное изображение: ${product.title}`"
+            loading="lazy"
+          >
+          <button
+            class="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors duration-200 bg-black/50 rounded-full p-2"
+            @click="openImageModal = false"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="w-6 h-6">
+              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </Teleport>
 
-    <ConfirmDelete
+    <ConfirmWindow
       :is-open="showDeleteConfirm"
       :title="$t('pages.product.deleteConfirm.title')"
       :message="$t('pages.product.deleteConfirm.message')"
@@ -244,3 +256,29 @@ function closeDeleteConfirm() {
     <Loader/>
   </div>
 </template>
+
+<style scoped>
+/* Кастомные стили для скроллбара */
+.thumbnails-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #4B5563 #1F2937;
+}
+
+.thumbnails-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.thumbnails-scroll::-webkit-scrollbar-track {
+  background: #1F2937;
+  border-radius: 3px;
+}
+
+.thumbnails-scroll::-webkit-scrollbar-thumb {
+  background: #4B5563;
+  border-radius: 3px;
+}
+
+.thumbnails-scroll::-webkit-scrollbar-thumb:hover {
+  background: #6B7280;
+}
+</style>

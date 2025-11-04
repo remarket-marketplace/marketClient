@@ -60,9 +60,9 @@ function selectLanguage(value: 'en' | 'ru') {
   <div ref="wrapperRef" class="relative w-full">
     <button
       type="button"
-      class="w-full flex items-center justify-between gap-3 bg-dark-600 border border-dark-700 rounded-lg px-2 lg:px-4 py-2 text-mainText transition focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-dark-500"
+      class="w-full flex items-center justify-between gap-3 bg-dark-600 border border-dark-700 rounded-lg px-2 lg:px-4 py-2 text-mainText transition focus:outline-none hover:border-dark-500"
       :aria-expanded="isOpen"
-      @click="toggle"
+    @click="toggle"
     >
       <span class="flex items-center gap-2 truncate text-left">
         <span v-if="currentOption?.flag" class="text-base">{{ currentOption.flag }}</span>

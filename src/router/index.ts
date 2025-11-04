@@ -14,6 +14,9 @@ import AdminProductsView from '@/views/admin/AdminProductsView.vue'
 import AdminCategoriesView from '@/views/admin/AdminCategoriesView.vue'
 import PasswordResetView from '@/views/PasswordResetView.vue'
 import AdminEditUserView from '@/views/admin/AdminEditUserView.vue'
+import AdminDealsView from '@/views/admin/AdminDealsView.vue'
+import WalletView from '@/views/WalletView.vue'
+import SettingsView from '@/views/SettingsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -90,10 +93,28 @@ const router = createRouter({
       meta: { requiredAdmin: true }
     },
     {
+      path: '/admin/deals',
+      name: 'deals',
+      component: AdminDealsView,
+      meta: { requiredAdmin: true }
+    },
+    {
       path: '/admin/categories',
       name: 'categories',
       component: AdminCategoriesView,
       meta: { requiredAdmin: true }
+    },
+    {
+      path: '/wallet',
+      name: 'wallet',
+      component: WalletView,
+      meta: { requiredAuthorized: true }
+    },
+    {
+      path: '/settings',
+      name: 'settings',
+      component: SettingsView,
+      meta: { requiredAuthorized: true }
     },
   ],
 })

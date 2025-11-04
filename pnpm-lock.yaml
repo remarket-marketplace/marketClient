@@ -17,6 +17,9 @@ dependencies:
   lottie-web:
     specifier: ^5.13.0
     version: 5.13.0
+  lucide-vue-next:
+    specifier: ^0.552.0
+    version: 0.552.0(vue@3.5.22)
   pinia:
     specifier: ^3.0.3
     version: 3.0.3(typescript@5.9.3)(vue@3.5.22)
@@ -2191,6 +2194,14 @@ packages:
     dependencies:
       yallist: 3.1.1
     dev: true
+
+  /lucide-vue-next@0.552.0(vue@3.5.22):
+    resolution: {integrity: sha512-xbP3UBwNkGoCl1ezW/zsGHtyJ1rOowPmSpUG1f7V38YvZBlGiV3BxL+4mu9C9i0EjfJ6ca066FpnB3VK+HN92g==}
+    peerDependencies:
+      vue: '>=3.0.1'
+    dependencies:
+      vue: 3.5.22(typescript@5.9.3)
+    dev: false
 
   /magic-string@0.30.19:
     resolution: {integrity: sha512-2N21sPY9Ws53PZvsEpVtNuSW+ScYbQdp4b9qUaL+9QkHUrGFKo56Lg9Emg5s9V/qrtNBmiR01sYhUOwu3H+VOw==}

@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { Icon } from '@iconify/vue'
+import { 
+  Home, 
+  MessageCircle, 
+  PlusCircle, 
+  User 
+} from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 import SelectLanguage from '@/components/SelectLanguage.vue'
@@ -10,6 +15,7 @@ import SelectLanguage from '@/components/SelectLanguage.vue'
 const store = useUserStore()
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 
 const isDesktop = ref(true)
 const { user } = storeToRefs(store)
@@ -18,27 +24,38 @@ function checkDesktop() {
   isDesktop.value = window.innerWidth >= 768
 }
 
+const isActiveRoute = (path: string) => {
+  if (path === '/') {
+    return route.path === '/'
+  }
+  return route.path.startsWith(path)
+}
+
 onMounted(async () => {
   checkDesktop()
   window.addEventListener('resize', checkDesktop)
 })
 
 const navItems = computed(() => [
-  { title: t('navigation.market.home'), icon: 'mdi:home-outline', to: '/' },
+  { 
+    title: t('navigation.market.home'), 
+    icon: Home, 
+    to: '/' 
+  },
   { 
     title: t('navigation.market.chats'),
-    icon: 'mdi:chat-outline',
+    icon: MessageCircle,
     to: user && user.value?.username ? '/chats' : '/signin',
   },
   {
     title: t('navigation.market.sell'), 
-    icon: 'mdi:plus-circle-outline',
+    icon: PlusCircle,
     to: user && user.value?.username ? '/product/create' : '/signin', 
     sell: true 
   },
   {
     title: t('navigation.market.profile'),
-    icon: 'mdi:account-circle-outline',
+    icon: User,
     to: user && user.value?.username ? `/profile/${user.value.username}` : '/signin',
   },
 ])
@@ -46,7 +63,7 @@ const navItems = computed(() => [
 
 <template>
   <div class="h-full-dvh w-screen flex flex-col overflow-hidden bg-background text-mainText">
-    <header class="flex-none border-b border-gray-700">
+    <header class="flex-none border-b border-gray-700 z-30 relative">
       <div class="mx-auto h-14 max-w-5xl w-full flex items-center justify-between px-4">
         <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold" @click="router.push('/')">
           remarket
@@ -58,10 +75,30 @@ const navItems = computed(() => [
               v-for="item in navItems"
               :key="item.to"
               :to="item.to"
-              class="flex items-center gap-1 text-mainText hover:text-gray-300"
+              class="flex items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"
+              :class="{
+                'text-white': isActiveRoute(item.to),
+                'text-gray-400': !isActiveRoute(item.to)
+              }"
             >
-              <Icon :icon="item.icon" :class="item.sell ? 'text-2xl' : 'text-xl'" />
-              <span>{{ item.title }}</span>
+              <!-- Индикатор активной страницы для десктопа -->
+              <div 
+                v-if="isActiveRoute(item.to)"
+                class="absolute -bottom-7 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-white rounded-full transition-all duration-300"
+              />
+              
+              <component 
+                :is="item.icon" 
+                :class="[
+                  item.sell ? 'text-2xl' : 'text-xl',
+                  isActiveRoute(item.to) ? 'text-white' : 'text-gray-400'
+                ]" 
+                :size="item.sell ? 24 : 20"
+                stroke-width="1.5"
+              />
+              <span class="ml-1 transition-colors duration-300">
+                {{ item.title }}
+              </span>
             </router-link>
           </nav>
 
@@ -80,19 +117,35 @@ const navItems = computed(() => [
     </main>
 
     <nav
-      class="mobile-nav-glass absolute bottom-0 left-0 right-0 z-30 h-14 border-t border-gray-700 md:hidden"
+      class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-30 h-14 border-t border-gray-700 md:hidden"
     >
       <div class="mx-auto h-full max-w-5xl w-full flex items-center justify-around">
         <router-link
           v-for="item in navItems"
           :key="item.to"
           :to="item.to"
-          class="flex flex-col items-center justify-center px-1 transition-all duration-150"
+          class="flex flex-col items-center justify-center px-1 transition-all duration-300 relative group"
+          :class="{
+            'opacity-100': isActiveRoute(item.to),
+            'opacity-70': !isActiveRoute(item.to)
+          }"
         >
-          <div class="icon-box flex items-center justify-center">
-            <Icon :icon="item.icon" :width="22" :height="22" inline />
+          <!-- Активный индикатор для мобильных -->
+          <div 
+            v-if="isActiveRoute(item.to)"
+            class="absolute -top-1 left-1/2 transform -translate-x-1/2 w-6 h-0.5 bg-white rounded-full transition-all duration-300"
+          />
+          
+          <div class="icon-box flex items-center justify-center transition-colors duration-300"
+               :class="isActiveRoute(item.to) ? 'text-white' : 'text-gray-400'">
+            <component 
+              :is="item.icon" 
+              :size="22" 
+              stroke-width="1.5"
+            />
           </div>
-          <span class="menu-label text-center text-xs font-light leading-none">
+          <span class="menu-label text-center text-xs font-light leading-none mt-1 transition-colors duration-300"
+                :class="isActiveRoute(item.to) ? 'text-white' : 'text-gray-400'">
             {{ item.title }}
           </span>
         </router-link>
@@ -103,26 +156,18 @@ const navItems = computed(() => [
 
 <style scoped>
 .h-full-dvh {
-  height: 100vh; /* Fallback для старых браузеров */
-  height: 100dvh; /* Используем Dynamic Viewport Height */
+  height: 100vh;
+  height: 100dvh;
 }
 
-/* НОВЫЙ СТИЛЬ: Эффект стекла (Frosted Glass)
-   - backdrop-filter: blur(10px) создает эффект размытия фона.
-   - background-color: rgba(...) делает панель полупрозрачной. 
-*/
 .mobile-nav-glass {
-  /* Предполагая, что у вас темная тема, используем полупрозрачный темный фон */
-  background-color: rgba(23, 23, 23, 0.8); /* dark-900 / 80% прозрачности */
-  -webkit-backdrop-filter: blur(10px); /* Для Safari */
-  backdrop-filter: blur(10px);
-  
-  /* Убираем border-t border-dark-700 из Tailwind и делаем его более subtle */
+  background-color: rgba(23, 23, 23, 0.9);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   border-top-width: 1px;
-  border-top-color: rgba(255, 255, 255, 0.1); /* Слегка видимая белая линия */
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.2); /* Немного мягкой тени */
+  border-top-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
 }
-
 
 .icon-box {
   width: 28px;
@@ -132,22 +177,18 @@ const navItems = computed(() => [
   justify-content: center;
 }
 
-.icon-box svg {
-  display: block;
-  width: 22px;
-  height: 22px;
-  max-width: 22px;
-  max-height: 22px;
-  vertical-align: middle;
-  margin: 0;
-}
-
-.icon-box svg [stroke] {
-  stroke-width: 1.5;
-}
-
 .menu-label {
   display: block;
   line-height: 1;
+}
+
+/* Плавные переходы для всех интерактивных элементов */
+.router-link-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Улучшенный ховер-эффект */
+.group:hover {
+  transform: translateY(-1px);
 }
 </style>

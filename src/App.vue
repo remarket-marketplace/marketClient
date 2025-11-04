@@ -31,7 +31,10 @@ const layout = computed(() => {
 </script>
 
 <template>
-  <Loader v-if="!isUserLoaded" class="flex h-full items-center justify-center" />
+  <div v-if="!isUserLoaded" class="w-screen h-screen flex items-center justify-center">
+    <Loader />
+  </div>
+
   <component v-else :is="layout">
     <RouterView v-slot="{ Component, route }">
       <Suspense>

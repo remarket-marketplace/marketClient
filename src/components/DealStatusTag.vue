@@ -1,0 +1,33 @@
+<script setup lang="ts">
+import { computed } from 'vue';
+
+const props = defineProps<{
+    dealStatus: string
+}>()
+
+const statusClass = computed(() => {
+    switch (props.dealStatus) {
+        case 'pending':
+            return 'text-amber-400 bg-amber-400/10 border-amber-400/20';
+        case 'confirmed':
+            return 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
+        case 'disputed':
+            return 'text-orange-400 bg-orange-400/10 border-orange-400/20';
+        case 'completed':
+            return 'text-blue-400 bg-blue-400/10 border-blue-400/20';
+        case 'cancelled':
+            return 'text-red-400 bg-red-400/10 border-red-400/20';
+        case 'refunded':
+            return 'text-purple-400 bg-purple-400/10 border-purple-400/20';
+        default:
+            return 'text-gray-400 bg-gray-400/10 border-gray-400/20';
+    }
+})
+
+</script>
+
+<template>
+    <span :class='["text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap border transition-all duration-200", statusClass]'>
+        {{ $t(`common.dealStatuses.${dealStatus}`) }}
+    </span>
+</template>

@@ -7,7 +7,6 @@ import { useI18n } from 'vue-i18n';
 import ErrorBanner from '@/components/ErrorBanner.vue';
 import TheInput from '@/components/TheInput.vue';
 import { Icon } from '@iconify/vue';
-import { authService } from '@/api/auth/AuthService';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -267,7 +266,7 @@ onMounted(() => {
                   :false-value="false"
                 />
                 <span class="ml-2 text-sm text-mainText">
-                  {{ $t('common.active') }}
+                  {{ $t('common.productStatuses.active') }}
                 </span>
               </label>
               <label class="flex items-center">

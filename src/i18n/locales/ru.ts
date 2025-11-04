@@ -40,10 +40,6 @@ const ru = {
     role: "Роль",
     code: 'Код',
     total: 'Всего: ',
-    active: 'Активно',
-    banned: 'Забанен',
-    sold: 'Продано',
-    moderation: 'Модерация',
     admin: 'Админ',
     user: 'Пользователь',
     frozen: '(заморожено)',
@@ -58,6 +54,39 @@ const ru = {
     created: 'Создано',
     saved: "Успешно сохранено",
     userId: "ID Пользователя",
+    online: "Онлайн",
+
+    viewDeal: "Просмотр сделки",
+    confirmDeal: "Подтвердить сделку", 
+    cancelDeal: "Отменить сделку",
+    dealCompleted: "Сделка завершена",
+    dealCancelled: "Сделка отменена",
+    refundCompleted: "Возврат выполнен",
+    resolveForBuyer: "В пользу покупателя",
+    resolveForSeller: "В пользу продавца",
+    seller: "Продавец",
+    buyer: "Покупатель",
+
+    // product statuses
+    productStatuses: {
+      active: "Активно",
+      moderation:"Модерация",
+      rejected: "Отклонено",
+      purchased: "Продано",
+      completed: "Завершено",
+      cancelled: "Отменено",
+      disputed: "Спор",
+    },
+
+    // deals statuses
+    dealStatuses: {
+      pending: "Ожидание",
+      confirmed: "Подтверждено",
+      disputed: "Спор", 
+      completed: "Завершено",
+      cancelled:"Отменено",
+      refunded:"Возврат",
+    }
   },
   
   errors: {
@@ -94,6 +123,7 @@ const ru = {
     PAYLOAD_IS_EMPTY: 'Пустой payload',
     INCORRECT_EMAIL_OR_PASSWORD: 'Неверный email или пароль',
     EMAIL_VERIFICATION_MAX_COUNT_OF_TRIES_EXCEEDED: 'Превышено максимальное количество попыток. Макс попыток - {max_tries}',
+    INVALID_PASSWORD: "Неверный пароль"
   },
 
   navigation: {
@@ -174,6 +204,7 @@ const ru = {
       buy: 'Купить',
       modalImage: 'Модальное изображение',
       loading: 'Загрузка товара...',
+      sold: "Продан",
       deleteConfirm: {
         title: 'Подтверждение удаления товара',
         message: 'Вы уверены, что хотите удалить этот товар? Это действие нельзя отменить.',
@@ -199,6 +230,7 @@ const ru = {
       newPurchase: 'Новая покупка',
       viewProduct: "Посмотреть товар",
       productData: "Данные товара",
+      reported: "Жалоба отправлена",
     },
 
     profile: {
@@ -220,6 +252,16 @@ const ru = {
       confirmed: 'Подтверждено',
       profileNotFound: 'Профиль не найден',
       settings: 'Настройки',
+      changePhoto: "Сменить фото",
+    },
+
+    settingsPage: {
+      title: "Настройки",
+      password: "Пароль",
+      enterCurrentPassword: "Введите текущий пароль",
+      enterNewPassword: "Введите новый пароль",
+      changePassword: "Сменить пароль",
+      passwordChanged: 'Пароль успешно изменен',
     },
 
     admin: {
@@ -257,6 +299,11 @@ const ru = {
       },
       productsPage: {
         title: "Товары",
+      },
+
+      dealsPage: {
+        title: "Сделки",
+        refund: "Сделать возврат",
       },
 
       editUser: {

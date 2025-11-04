@@ -234,6 +234,18 @@ export const productService = {
     }
   },
 
+  async sendReport(productId: string) {
+    try {
+      const response = await httpClient.patch(`/products/report`, {
+        product_id: productId,
+      })
+      return response.status === 200
+    }
+    catch {
+      return false
+    }
+  },
+
   async searchProducts(query: string) {
     try {
       const response = await httpClient.get('/products/search', { params: { q: query } })
