@@ -316,7 +316,7 @@ onUnmounted(() => {
                 {{ (currentProfileData as ProfileData).balance.toFixed(2) }}₽
               </span>
             </p>
-            <Wallet class="mx-3 cursor-pointer" @click="router.push('/wallet')"/>
+            <Wallet class="mx-3 w-4 cursor-pointer" @click="router.push('/wallet')"/>
           </div>
 
           <!-- Рейтинг и дата регистрации -->

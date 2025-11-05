@@ -13,6 +13,7 @@ const { t } = useI18n()
 const isLoading = ref<boolean>(false)
 const isSendedChangePassword = ref<boolean>(false)
 
+// состояния смены пароля
 const changingPasswordCurrentPassword = ref('')
 const changingPasswordNewPassword = ref('')
 const passwordIsChanged = ref<boolean>(false)
@@ -51,8 +52,6 @@ async function changePassword() {
       }
     }
   } catch (e: any) {
-    // Эта часть теперь скорее всего не понадобится, 
-    // так как ошибки обрабатываются в settingsService
     console.error('Unexpected error:', e)
     errorMessage.value = t('errors.SERVER_ERROR')
   } finally {
@@ -69,7 +68,7 @@ async function changePassword() {
       </div>
       <div class="my-8 flex flex-col gap-10 rounded-xl border-1 border-dark-600 p-4">
         <!-- блок смены пароля -->
-        <div class="flex flex-col gap-6">
+        <div class="flex flex-col gap-4">
           <p class="text-gray-300 text-lg">{{ $t('pages.settingsPage.password') }}</p>
           <div class="gap-3 flex flex-col md:flex-row">
             <TheInput 
