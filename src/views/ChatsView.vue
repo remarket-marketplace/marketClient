@@ -273,6 +273,9 @@ async function sendMessage() {
                   <p v-if="currentChat?.another_user.is_active" class="text-xs text-green-500">
                     {{ $t('common.online') }}
                   </p>
+                  <p v-else class="text-xs text-gray-500">
+                    {{ $t('common.offline') }}
+                  </p>
                 </div>
               </div>
             </div>

@@ -152,4 +152,9 @@ export const authService = {
       return false
     }
   },
+
+
+  async pingOnlineStatus() {
+    await httpClient.patch("/users/ping-online")
+  }
 }

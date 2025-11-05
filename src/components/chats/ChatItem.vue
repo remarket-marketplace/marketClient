@@ -29,6 +29,11 @@ const userInitial = computed(() => {
     return props.chat.another_user.username.charAt(0).toUpperCase()
 })
 
+// Онлайн статус пользователя
+const isUserOnline = computed(() => {
+    return props.chat.another_user.is_active
+})
+
 const checkMobile = () => {
     isMobile.value = window.innerWidth < 768
 }
@@ -45,20 +50,45 @@ onMounted(() => {
         :class="['flex cursor-pointer items-center gap-3 py-3 px-4 transition hover:bg-dark-800/50 group', !isMobile && isSelected ? 'bg-dark-800/50' : '']"
         @click="$emit('loadChatMessages', chat.id)"
     >
-        <!-- Аватар -->
-        <div class="flex-shrink-0 h-12 w-12 flex items-center justify-center">
-            <img
-                v-if="chat.another_user.avatar_url"
-                :src="`${API_HOST}${chat.another_user.avatar_url}`"
-                class="h-12 w-12 border-2 border-dark-600 rounded-full object-cover"
-                :alt="chat.another_user.username"
+        <!-- Аватар с индикатором онлайн статуса -->
+        <div class="flex-shrink-0 relative">
+            <div class="h-12 w-12 flex items-center justify-center">
+                <img
+                    v-if="chat.another_user.avatar_url"
+                    :src="`${API_HOST}${chat.another_user.avatar_url}`"
+                    class="h-12 w-12 border-2 border-dark-600 rounded-full object-cover"
+                    :alt="chat.another_user.username"
+                >
+                <div
+                    v-else
+                    class="h-12 w-12 flex items-center justify-center rounded-full bg-gray-700 text-lg text-mainText font-bold uppercase"
+                >
+                    {{ userInitial }}
+                </div>
+            </div>
+            
+            <!-- Индикатор онлайн статуса -->
+            <div
+                v-if="isUserOnline"
+                class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-1 border-dark-800 rounded-full"
+                :class="{
+                    'border-white': isSelected && !isMobile,
+                    'border-dark-800': !isSelected || isMobile
+                }"
             >
+                <!-- Анимация пульсации для онлайн статуса -->
+                <div class="w-full h-full bg-green-500 rounded-full animate-ping opacity-75"></div>
+            </div>
+            
+            <!-- Индикатор оффлайн статуса (опционально) -->
             <div
                 v-else
-                class="h-12 w-12 flex items-center justify-center rounded-full bg-gray-700 text-lg text-mainText font-bold uppercase"
-            >
-                {{ userInitial }}
-            </div>
+                class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-gray-500 border-1 border-dark-800 rounded-full"
+                :class="{
+                    'border-white': isSelected && !isMobile,
+                    'border-dark-800': !isSelected || isMobile
+                }"
+            ></div>
         </div>
 
         <!-- Информация о чате -->
@@ -101,5 +131,21 @@ onMounted(() => {
 
 .badge-enter-active {
     transition: all 0.3s ease;
+}
+
+/* Анимация пульсации для онлайн статуса */
+@keyframes ping {
+    0% {
+        transform: scale(1);
+        opacity: 0.75;
+    }
+    75%, 100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+.animate-ping {
+    animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 </style>

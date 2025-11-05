@@ -55,6 +55,8 @@ const en = {
     saved: "Saved sucessfully",
     userId: "User ID",
     online: "Online",
+    offline: "Offline",
+    banned: "Banned",
 
     viewDeal: "View Deal",
     confirmDeal: "Confirm Deal",
@@ -259,6 +261,7 @@ const en = {
     settingsPage: {
       title: "Settings",
       password: "Password",
+      email: "Email",
       enterCurrentPassword: "Enter current password",
       enterNewPassword: "Enter new password",
       changePassword: "Change password",

@@ -55,6 +55,8 @@ const ru = {
     saved: "Успешно сохранено",
     userId: "ID Пользователя",
     online: "Онлайн",
+    offline: "Не в сети",
+    banned: "Забанен",
 
     viewDeal: "Просмотр сделки",
     confirmDeal: "Подтвердить сделку", 
@@ -258,6 +260,7 @@ const ru = {
     settingsPage: {
       title: "Настройки",
       password: "Пароль",
+      email: "Почта",
       enterCurrentPassword: "Введите текущий пароль",
       enterNewPassword: "Введите новый пароль",
       changePassword: "Сменить пароль",

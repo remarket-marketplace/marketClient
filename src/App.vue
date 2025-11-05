@@ -6,6 +6,7 @@ import DefaultLayout from './views/layouts/DefaultLayout.vue'
 import AdminLayout from './views/layouts/AdminLayout.vue'
 import Loader from './components/Loader.vue'
 import { storeToRefs } from 'pinia'
+import { authService } from './api/auth/AuthService'
 
 const store = useUserStore()
 const route = useRoute()
@@ -19,6 +20,11 @@ onMounted(async () => {
   } finally {
     isUserLoaded.value = true
   }
+
+  // пингуем для сохранения статуса онлайн
+  setInterval(() => {
+    authService.pingOnlineStatus()
+  }, 5000)
 })
 
 // Определяем какой layout использовать

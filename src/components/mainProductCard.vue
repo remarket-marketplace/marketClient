@@ -51,12 +51,19 @@ function goToSeller() {
     </p>
 
     <div class="py-1">
-      <p
-        class="w-[max-content] text-blue-200 transition hover:text-blue-300"
-        @click.stop="goToSeller"
-      >
-        {{ product.seller.username }}
-      </p>
+      <div class="flex items-center gap-2">
+        <p
+          class="w-[max-content] text-blue-200 transition hover:text-blue-300"
+          @click.stop="goToSeller"
+        >
+          {{ product.seller.username }}
+        </p>
+        <div
+          v-if="product.seller.is_active"
+          class="w-2 h-2 rounded-full bg-green-500"
+          title="Online"
+        ></div>
+      </div>
     </div>
 
     <div class="mt-3 flex items-center justify-between">
