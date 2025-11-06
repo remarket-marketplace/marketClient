@@ -58,7 +58,7 @@ export const profileService = {
           'Content-Type': 'multipart/form-data',
         },
       })
-      return response.data.avatar_url
+      return response.data
     }
     catch (error) {
       console.error('Ошибка загрузки аватара:', error)
