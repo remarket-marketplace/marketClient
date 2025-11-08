@@ -4,9 +4,10 @@ import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import Loader from '@/components/Loader.vue'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
 import type { Product, ProductImage } from '@/validation/product/product'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import { ChevronLeft, ChevronRight, X } from 'lucide-vue-next'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const route = useRoute('/product/[productId]')
@@ -76,6 +77,59 @@ function getStatusText(status: string) {
     default: return status
   }
 }
+
+function nextImage() {
+  if (!product.value?.images || product.value.images.length === 0 || !selectedImage.value) return
+  
+  const currentIndex = product.value.images.findIndex(img => img.image_url === selectedImage.value?.image_url)
+  if (currentIndex === -1) return
+  
+  const nextIndex = (currentIndex + 1) % product.value.images.length
+  const nextImage = product.value.images[nextIndex]
+  if (nextImage) {
+    selectedImage.value = nextImage
+  }
+}
+
+function prevImage() {
+  if (!product.value?.images || product.value.images.length === 0 || !selectedImage.value) return
+  
+  const currentIndex = product.value.images.findIndex(img => img.image_url === selectedImage.value?.image_url)
+  if (currentIndex === -1) return
+  
+  const prevIndex = (currentIndex - 1 + product.value.images.length) % product.value.images.length
+  const prevImage = product.value.images[prevIndex]
+  if (prevImage) {
+    selectedImage.value = prevImage
+  }
+}
+
+function handleKeydown(event: KeyboardEvent) {
+  if (!openImageModal.value) return
+  
+  switch (event.key) {
+    case 'ArrowLeft':
+      event.preventDefault()
+      prevImage()
+      break
+    case 'ArrowRight':
+      event.preventDefault()
+      nextImage()
+      break
+    case 'Escape':
+      event.preventDefault()
+      openImageModal.value = false
+      break
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeydown)
+})
 </script>
 
 <template>
@@ -222,21 +276,50 @@ function getStatusText(status: string) {
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 cursor-pointer"
         @click="openImageModal = false"
       >
-        <div class="relative w-full h-full flex items-center justify-center" @click.stop>
+        <div class="relative w-full h-full flex items-center justify-center max-w-7xl mx-auto" @click.stop>
+          <!-- Основное изображение -->
           <img
             :src="`${API_HOST}${selectedImage.image_url}`"
             class="max-w-full max-h-full object-contain rounded-lg"
             :alt="`Модальное изображение: ${product.title}`"
             loading="lazy"
-          >
+          />
+          
+          <!-- Кнопка закрытия -->
           <button
-            class="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors duration-200 bg-black/50 rounded-full p-2"
+            class="absolute top-4 right-4 text-white hover:text-gray-300 transition-all duration-200 bg-black/50 rounded-full p-2 hover:bg-black/70"
             @click="openImageModal = false"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="w-6 h-6">
-              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
+            <X class="w-6 h-6" />
           </button>
+
+          <!-- Кнопка предыдущего изображения -->
+          <button
+            v-if="product.images && product.images.length > 1"
+            class="absolute left-4 text-white hover:text-gray-300 transition-all duration-200 bg-black/50 rounded-full p-3 hover:bg-black/70 disabled:opacity-30 disabled:cursor-not-allowed"
+            :disabled="product.images.findIndex(img => img.image_url === selectedImage?.image_url) === 0"
+            @click="prevImage"
+          >
+            <ChevronLeft class="w-6 h-6" />
+          </button>
+
+          <!-- Кнопка следующего изображения -->
+          <button
+            v-if="product.images && product.images.length > 1"
+            class="absolute right-4 text-white hover:text-gray-300 transition-all duration-200 bg-black/50 rounded-full p-3 hover:bg-black/70 disabled:opacity-30 disabled:cursor-not-allowed"
+            :disabled="product.images.findIndex(img => img.image_url === selectedImage?.image_url) === product.images.length - 1"
+            @click="nextImage"
+          >
+            <ChevronRight class="w-6 h-6" />
+          </button>
+
+          <!-- Индикатор текущего изображения -->
+          <div
+            v-if="product.images && product.images.length > 1"
+            class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 rounded-full px-3 py-1 text-white text-sm"
+          >
+            {{ product.images.findIndex(img => img.image_url === selectedImage?.image_url) + 1 }} / {{ product.images.length }}
+          </div>
         </div>
       </div>
     </Teleport>
@@ -280,5 +363,10 @@ function getStatusText(status: string) {
 
 .thumbnails-scroll::-webkit-scrollbar-thumb:hover {
   background: #6B7280;
+}
+
+/* Анимации для кнопок навигации */
+button {
+  transition: all 0.2s ease-in-out;
 }
 </style>
