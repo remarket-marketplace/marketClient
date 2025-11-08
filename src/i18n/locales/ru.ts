@@ -57,6 +57,9 @@ const ru = {
     online: "Онлайн",
     offline: "Не в сети",
     banned: "Забанен",
+    copy: "Скопировать",
+    copied: 'Скопировано',
+    close: "Закрыть",
 
     viewDeal: "Просмотр сделки",
     confirmDeal: "Подтвердить сделку", 
@@ -266,6 +269,10 @@ const ru = {
       settings: 'Настройки',
       wallet: "Кошелек",
       changePhoto: "Сменить фото",
+      shareProfile: "Поделиться профилем",
+      profileLink: "Ссылка на профиль",
+      share: "Поделиться",
+      scanQR: "Сканировать QR код",
     },
 
     settingsPage: {

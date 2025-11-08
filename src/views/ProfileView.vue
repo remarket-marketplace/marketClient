@@ -11,11 +11,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import ProfileProductCard from '@/components/ProfileProductCard.vue'
-import { Settings, LogOut } from 'lucide-vue-next'
-
-import { 
-  Wallet
-} from 'lucide-vue-next'
+import { Settings, LogOut, Share2, Copy, Check, Wallet } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -38,10 +34,22 @@ const newDescription = ref('')
 const isEditingDescription = ref(false)
 
 const menuContainerRef = ref<HTMLElement | null>(null)
+const shareModalRef = ref<HTMLElement | null>(null)
 const showMenu = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const isUploading = ref(false)
 const showAvatarOverlay = ref(false)
+
+const showShareModal = ref(false)
+const isCopied = ref(false)
+const profileUrl = computed(() => `${window.location.origin}/profile/${username.value}`)
+
+const qrCodeSvg = ref('')
+
+function generateQRCode() {
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(profileUrl.value)}`
+  qrCodeSvg.value = qrCodeUrl
+}
 
 // Загрузка данных профиля
 async function loadProfileData() {
@@ -105,9 +113,17 @@ function goToSettings() {
   router.push('/settings')
 }
 
+function goToWallet() {
+  router.push('/wallet')
+}
+
 function handleClickOutside(event: MouseEvent) {
   if (showMenu.value && menuContainerRef.value && !menuContainerRef.value.contains(event.target as Node)) {
     showMenu.value = false
+  }
+  
+  if (showShareModal.value && shareModalRef.value && !shareModalRef.value.contains(event.target as Node)) {
+    closeShareModal()
   }
 }
 
@@ -125,12 +141,10 @@ async function handleAvatarUpload(event: Event) {
   if (!file || !isOwner.value) return
 
   if (!file.type.startsWith('image/')) {
-    alert('Пожалуйста, выберите изображение')
     return
   }
 
   if (file.size > 5 * 1024 * 1024) {
-    alert('Размер файла не должен превышать 5MB')
     return
   }
 
@@ -152,7 +166,6 @@ async function handleAvatarUpload(event: Event) {
     }
   } catch (error) {
     console.error('Ошибка загрузки аватара:', error)
-    alert('Произошла ошибка при загрузке аватара')
   } finally {
     isUploading.value = false
     if (target) target.value = ''
@@ -169,8 +182,46 @@ function hideAvatarEdit() {
   showAvatarOverlay.value = false
 }
 
+function openShareModal() {
+  showShareModal.value = true
+  showMenu.value = false
+  isCopied.value = false
+  generateQRCode()
+
+  setTimeout(() => {
+    document.addEventListener('click', handleClickOutside)
+  }, 0)
+}
+
+function closeShareModal() {
+  showShareModal.value = false
+  document.removeEventListener('click', handleClickOutside)
+}
+
+async function copyProfileLink() {
+  try {
+    await navigator.clipboard.writeText(profileUrl.value)
+    isCopied.value = true
+    
+    setTimeout(() => {
+      isCopied.value = false
+    }, 2000)
+  } catch (err) {
+    const textArea = document.createElement('textarea')
+    textArea.value = profileUrl.value
+    document.body.appendChild(textArea)
+    textArea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textArea)
+    isCopied.value = true
+    
+    setTimeout(() => {
+      isCopied.value = false
+    }, 2000)
+  }
+}
+
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
   loadProfileData()
 })
 
@@ -211,15 +262,30 @@ onUnmounted(() => {
                   <Settings class="w-4 h-4"/>
                   {{ $t('pages.profile.settings') }}
                 </button>
-                <button class="w-full flex items-center gap-1 px-4 py-2 text-left text-sm text-gray-300 hover:bg-dark-700" @click="goToSettings">
+                <button class="w-full flex items-center gap-1 px-4 py-2 text-left text-sm text-gray-300 hover:bg-dark-700" @click="goToWallet">
                   <Wallet class="w-4 h-4"/>
                   {{ $t('pages.profile.wallet') }}
+                </button>
+                <button class="w-full flex items-center gap-1 px-4 py-2 text-left text-sm text-gray-300 hover:bg-dark-700" @click="openShareModal">
+                  <Share2 class="w-4 h-4"/>
+                  {{ $t('pages.profile.share') }}
                 </button>
                 <button class="w-full flex items-center gap-1 px-4 py-2 text-left text-sm text-red-400 hover:bg-dark-700" @click="logout">
                   <LogOut class="w-4 h-4" />
                   {{ $t('pages.profile.logout') }}
                 </button>
               </div>
+            </div>
+
+            <!-- Для гостей - отдельная кнопка "Поделиться" -->
+            <div v-else class="relative">
+              <button 
+                class="text-gray-300 hover:text-mainText transition-colors" 
+                @click="openShareModal"
+                :title="$t('pages.profile.share')"
+              >
+                <Share2 class="h-6 w-6" />
+              </button>
             </div>
           </div>
 
@@ -378,5 +444,89 @@ onUnmounted(() => {
         </div>
       </div>
     </section>
+
+    <!-- Модальное окно "Поделиться профилем" -->
+    <Teleport to="body">
+      <div
+        v-if="showShareModal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 cursor-pointer"
+      >
+        <div 
+          class="relative w-full max-w-md border border-dark-600 rounded-lg bg-dark-800 p-6 cursor-default"
+          ref="shareModalRef"
+          @click.stop
+        >
+          <!-- Заголовок -->
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-white">
+              {{ $t('pages.profile.shareProfile') }}
+            </h3>
+            <button
+              class="text-gray-400 hover:text-white transition-colors"
+              @click="closeShareModal"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="w-5 h-5">
+                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- QR код -->
+          <div class="flex flex-col items-center mb-6">
+            <div class="bg-white p-4 rounded-lg mb-4">
+              <img
+                v-if="qrCodeSvg"
+                :src="qrCodeSvg"
+                alt="QR Code"
+                class="w-48 h-48"
+              />
+              <div v-else class="w-48 h-48 flex items-center justify-center bg-white">
+                <div class="text-center text-gray-500 text-sm">
+                  <div class="mb-2">Загрузка QR кода...</div>
+                </div>
+              </div>
+            </div>
+            <p class="text-sm text-gray-300 text-center">
+              {{ $t('pages.profile.scanQR') }}
+            </p>
+          </div>
+
+          <!-- Ссылка для копирования -->
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-300 mb-2">
+              {{ $t('pages.profile.profileLink') }}
+            </label>
+            <div class="flex gap-2">
+              <input
+                type="text"
+                :value="profileUrl"
+                readonly
+                class="flex-1 px-3 py-2 bg-dark-700 border border-dark-600 rounded text-sm text-white focus:outline-none focus:border-blue-500"
+              />
+              <button
+                @click="copyProfileLink"
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors flex items-center gap-2"
+                :class="{ 'bg-green-600 hover:bg-green-700': isCopied }"
+              >
+                <Check v-if="isCopied" class="w-4 h-4" />
+                <Copy v-else class="w-4 h-4" />
+                {{ isCopied ? $t('common.copied') : $t('common.copy') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
+
+<style scoped>
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+</style>

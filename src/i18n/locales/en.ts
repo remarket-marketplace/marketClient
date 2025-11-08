@@ -57,6 +57,9 @@ const en = {
     online: "Online",
     offline: "Offline",
     banned: "Banned",
+    copy: "Copy",
+    copied: 'Copied',
+    close: "Close",
 
     viewDeal: "View Deal",
     confirmDeal: "Confirm Deal",
@@ -267,6 +270,10 @@ const en = {
       settings: 'Settings',
       wallet: "Wallet",
       changePhoto: "Change photo",
+      shareProfile: "Share profile",
+      profileLink: "Profile link",
+      share: "Share",
+      scanQR: "Scan QR",
     },
 
     settingsPage: {
