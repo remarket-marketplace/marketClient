@@ -3,7 +3,21 @@ import { adminService } from '@/api/admin/AdminService';
 import type { Product } from '@/validation/product/product';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { Icon } from '@iconify/vue';
+import { 
+  Eye, 
+  DollarSign, 
+  User, 
+  Image, 
+  Folder,
+  Loader2,
+  Check,
+  X,
+  Package,
+  Search,
+  Shield,
+  ThumbsUp,
+  ThumbsDown
+} from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 import ProductStatusTag from '@/components/ProductStatusTag.vue';
 
@@ -78,22 +92,26 @@ function formatPrice(price: number) {
   <section class="h-full w-full flex flex-col gap-3 sm:gap-6 overflow-hidden">
     <!-- Заголовок -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-      <h1 class="text-lg sm:text-2xl font-bold text-mainText">{{ $t('pages.admin.productsPage.title') }}</h1>
-      <div class="text-xs sm:text-base text-text-secondary">
-        {{ $t('common.total') }} {{ products.length }}
+      <div class="flex items-center gap-2">
+        <Shield class="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
+        <h1 class="text-lg sm:text-2xl font-bold text-mainText">{{ $t('pages.admin.productsPage.title') }}</h1>
+      </div>
+      <div class="flex items-center gap-2 text-xs sm:text-base text-text-secondary">
+        <Package class="h-4 w-4" />
+        <span>{{ $t('common.total') }} {{ products.length }}</span>
       </div>
     </div>
 
     <!-- Список товаров -->
     <div class="flex-1 overflow-hidden">
       <div v-if="isLoading" class="flex items-center justify-center h-32">
-        <Icon icon="eos-icons:loading" class="h-5 w-5 sm:h-8 sm:w-8 animate-spin text-blue-500" />
+        <Loader2 class="h-5 w-5 sm:h-8 sm:w-8 animate-spin text-blue-500" />
         <span class="ml-2 text-sm sm:text-lg text-gray-400">{{ $t('common.loading') }}</span>
       </div>
 
       <div v-else-if="products.length === 0" class="flex items-center justify-center h-32">
         <div class="text-center">
-          <Icon icon="mdi:package-variant-closed" class="h-6 w-6 sm:h-12 sm:w-12 text-gray-500 mx-auto mb-1" />
+          <Package class="h-6 w-6 sm:h-12 sm:w-12 text-gray-500 mx-auto mb-1" />
           <p class="text-text-secondary text-xs sm:text-base">{{ $t('common.noData') }}</p>
         </div>
       </div>
@@ -140,12 +158,12 @@ function formatPrice(price: number) {
                   <!-- Цена и продавец -->
                   <div class="flex flex-col gap-1 text-xs sm:text-sm">
                     <div class="flex items-center gap-1 text-green-400 font-semibold">
-                      <Icon icon="mdi:currency-usd" class="w-3 h-3 sm:w-4 sm:h-4" />
+                      <DollarSign class="w-3 h-3 sm:w-4 sm:h-4" />
                       <span>{{ formatPrice(product.price) }}</span>
                     </div>
                     
                     <div class="flex items-center gap-1 text-text-secondary">
-                      <Icon icon="mdi:account-outline" class="w-3 h-3 sm:w-4 sm:h-4" />
+                      <User class="w-3 h-3 sm:w-4 sm:h-4" />
                       <span 
                         class="cursor-pointer truncate"
                         @click="navigateToProfile(product.seller.username)"
@@ -159,28 +177,31 @@ function formatPrice(price: number) {
 
               <div class="hidden lg:flex h-[max-content]">
                 <!-- Кнопки модерации (только для товаров на модерации) -->
-                <div v-if="product.status === 'moderation'" class="flex gap-1">
-                    <button
-                        @click="navigateToProduct(product.id)"
-                        class="flex items-center justify-center gap-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-xs flex-1"
-                    >
-                        <span>{{ $t('common.view') }}</span>
-                    </button>
-                    <button
-                        @click="approveProduct(product.id)"
-                        :disabled="processingProductId === product.id"
-                        class="flex items-center justify-center px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white rounded-lg transition-colors text-xs"
-                    >
-                        <span>{{ $t('common.approve') }}</span>
-                    </button>
-                    
-                    <button
-                        @click="rejectProduct(product.id)"
-                        :disabled="processingProductId === product.id"
-                        class="flex items-center justify-center px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg transition-colors text-xs"
-                    >
-                        <span>{{ $t('common.reject') }}</span>
-                    </button>
+                <div v-if="product.status === 'moderation'" class="flex gap-2">
+                  <button
+                    @click="navigateToProduct(product.id)"
+                    class="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-xs"
+                  >
+                    <Search class="w-4 h-4" />
+                    <span>{{ $t('common.view') }}</span>
+                  </button>
+                  <button
+                    @click="approveProduct(product.id)"
+                    :disabled="processingProductId === product.id"
+                    class="flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white rounded-lg transition-colors text-xs"
+                  >
+                    <ThumbsUp class="w-4 h-4" />
+                    <span>{{ $t('common.approve') }}</span>
+                  </button>
+                  
+                  <button
+                    @click="rejectProduct(product.id)"
+                    :disabled="processingProductId === product.id"
+                    class="flex items-center justify-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg transition-colors text-xs"
+                  >
+                    <ThumbsDown class="w-4 h-4" />
+                    <span>{{ $t('common.reject') }}</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -195,35 +216,43 @@ function formatPrice(price: number) {
               <!-- Кнопка просмотра -->
               <button
                 @click="navigateToProduct(product.id)"
-                class="flex items-center gap-1 px-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-xs justify-center flex-1"
+                class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-xs justify-center flex-1"
               >
-                <Icon icon="mdi:eye-outline" class="w-3 h-3" />
+                <Search class="w-3 h-3" />
                 <span>{{ $t('common.view') }}</span>
               </button>
 
               <!-- Кнопки модерации (только для товаров на модерации) -->
-              <div v-if="product.status === 'moderation'" class="flex gap-1 flex-1">
+              <div v-if="product.status === 'moderation'" class="flex gap-2 flex-1">
                 <button
                   @click="approveProduct(product.id)"
                   :disabled="processingProductId === product.id"
-                  class="flex items-center gap-1 px-2 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white rounded-lg transition-colors text-xs justify-center flex-1"
+                  class="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white rounded-lg transition-colors text-xs justify-center flex-1"
                 >
+                  <ThumbsUp class="w-3 h-3" />
                   <span>{{ $t('common.approve') }}</span>
                 </button>
                 
                 <button
                   @click="rejectProduct(product.id)"
                   :disabled="processingProductId === product.id"
-                  class="flex items-center gap-1 px-2 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg transition-colors text-xs justify-center flex-1"
+                  class="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg transition-colors text-xs justify-center flex-1"
                 >
+                  <ThumbsDown class="w-3 h-3" />
                   <span>{{ $t('common.reject') }}</span>
                 </button>
               </div>
 
               <!-- Статус для уже промодерированных товаров -->
-              <div v-else class="flex items-center justify-center px-2 py-1.5 rounded-lg bg-dark-700 text-text-secondary text-xs flex-1">
-                <span v-if="product.status === 'approved'" class="text-green-400 text-xs">✓ {{ $t('common.approved') }}</span>
-                <span v-else-if="product.status === 'rejected'" class="text-red-400 text-xs">✗ {{ $t('common.rejected') }}</span>
+              <div v-else class="flex items-center justify-center px-3 py-2 rounded-lg bg-dark-700 text-text-secondary text-xs flex-1">
+                <span v-if="product.status === 'approved'" class="text-green-400 text-xs flex items-center gap-2">
+                  <ThumbsUp class="w-3 h-3" />
+                  {{ $t('common.approved') }}
+                </span>
+                <span v-else-if="product.status === 'rejected'" class="text-red-400 text-xs flex items-center gap-2">
+                  <ThumbsDown class="w-3 h-3" />
+                  {{ $t('common.rejected') }}
+                </span>
                 <span v-else class="text-xs">{{ product.status }}</span>
               </div>
             </div>
@@ -234,11 +263,11 @@ function formatPrice(price: number) {
             <div class="flex flex-col xs:flex-row gap-1 xs:gap-2">
               <div class="truncate">{{ $t('common.created') }}: {{ new Date(product.created_at).toLocaleDateString('ru-RU') }}</div>
               <div class="flex items-center gap-1">
-                <Icon icon="mdi:image-multiple" class="w-2 h-2 sm:w-3 sm:h-3" />
+                <Image class="w-2 h-2 sm:w-3 sm:h-3" />
                 <span>{{ $t('common.images') }}: {{ product.images.length }}</span>
               </div>
               <div class="flex items-center gap-1 sm:hidden">
-                <Icon icon="mdi:folder-outline" class="w-2 h-2" />
+                <Folder class="w-2 h-2" />
                 <span class="truncate">{{ product.category.name }}</span>
               </div>
             </div>

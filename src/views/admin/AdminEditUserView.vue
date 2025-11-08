@@ -6,7 +6,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import ErrorBanner from '@/components/ErrorBanner.vue';
 import TheInput from '@/components/TheInput.vue';
-import { Icon } from '@iconify/vue';
+import { Loader2 } from 'lucide-vue-next';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -144,7 +144,7 @@ onMounted(() => {
 
       <!-- Состояние загрузки -->
       <div v-if="isLoading" class="flex items-center justify-center h-32">
-        <Icon icon="eos-icons:loading" class="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-blue-500" />
+        <Loader2 class="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-blue-500" />
         <span class="ml-3 text-text-secondary">{{ $t('common.loading') }}</span>
       </div>
 
@@ -355,9 +355,8 @@ onMounted(() => {
                 :disabled="isSaving"
                 class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
             >
-                <Icon 
+                <Loader2
                 v-if="isSaving" 
-                icon="eos-icons:loading" 
                 class="h-4 w-4 animate-spin" 
                 />
                 {{ isSaving ? $t('common.saving') : $t('common.save') }}
