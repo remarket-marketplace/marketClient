@@ -157,7 +157,6 @@ onUnmounted(() => {
           class="h-16 w-16 flex-shrink-0 cursor-pointer border-2 rounded-lg object-cover transition-all duration-200 hover:opacity-80"
           :alt="`Изображение товара: ${product.title}`"
           :class="{
-            'border-blue-500 ring-2 ring-blue-400': image.image_url === selectedImage?.image_url,
             'border-gray-600': image.image_url !== selectedImage?.image_url,
           }"
           loading="lazy"
