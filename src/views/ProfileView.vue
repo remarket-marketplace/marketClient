@@ -11,6 +11,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import ProfileProductCard from '@/components/ProfileProductCard.vue'
+import { Settings, LogOut } from 'lucide-vue-next'
 
 import { 
   Wallet
@@ -206,10 +207,16 @@ onUnmounted(() => {
               </button>
 
               <div v-if="showMenu" class="absolute right-0 z-10 mt-2 w-40 border border-dark-600 rounded-lg bg-dark-800 shadow-lg">
-                <button class="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-dark-700" @click="goToSettings">
+                <button class="w-full flex items-center gap-1 px-4 py-2 text-left text-sm text-gray-300 hover:bg-dark-700" @click="goToSettings">
+                  <Settings class="w-4 h-4"/>
                   {{ $t('pages.profile.settings') }}
                 </button>
-                <button class="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-dark-700" @click="logout">
+                <button class="w-full flex items-center gap-1 px-4 py-2 text-left text-sm text-gray-300 hover:bg-dark-700" @click="goToSettings">
+                  <Wallet class="w-4 h-4"/>
+                  {{ $t('pages.profile.wallet') }}
+                </button>
+                <button class="w-full flex items-center gap-1 px-4 py-2 text-left text-sm text-red-400 hover:bg-dark-700" @click="logout">
+                  <LogOut class="w-4 h-4" />
                   {{ $t('pages.profile.logout') }}
                 </button>
               </div>

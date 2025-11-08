@@ -2,6 +2,7 @@
 import { Icon } from '@iconify/vue'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { ChevronDown, ChevronUp } from 'lucide-vue-next'
 
 interface Option {
   label: string
@@ -68,10 +69,8 @@ function selectOption(value: string | number) {
         </template>
       </span>
 
-      <Icon
-        :icon="isOpen ? 'mdi:chevron-up' : 'mdi:chevron-down'"
-        class="h-5 w-5 text-gray-300"
-      />
+      <ChevronUp v-if="isOpen" class="h-3 w-3" />
+      <ChevronDown v-else class="h-3 w-3" />
     </button>
 
     <transition name="fade">

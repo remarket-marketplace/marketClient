@@ -2,7 +2,7 @@
 import { authService } from '@/api/auth/AuthService'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import TheInput from '@/components/TheInput.vue'
-import { Icon } from '@iconify/vue'
+import { Eye, EyeOff } from 'lucide-vue-next'
 import { nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -113,6 +113,8 @@ async function sendCode() {
       errorMessage.value = t('pages.auth.signUp.errorSendCode')
     }
     sended.value = false
+  } else {
+    errorMessage.value = t('pages.auth.signUp.passwordsMustEqual')
   }
 }
 
@@ -186,18 +188,14 @@ function clearPasswordError() {
 </script>
 
 <template>
-  <div class="h-full w-full flex items-center justify-center px-4">
-    <div class="max-w-sm w-full border border-dark-700 rounded-2xl bg-background p-8 backdrop-blur-md space-y-6">
+  <div class="no-scrollbar h-full w-full flex flex-col items-center overflow-scroll pb-36">
+    <div class="max-w-sm w-full border border-dark-700 rounded-2xl bg-background p-8 backdrop-blur-md space-y-6 my-auto">
       <h1 class="text-center text-3xl text-mainText font-bold">
         {{ $t('pages.auth.signUp.title') }}
       </h1>
 
-      <p v-if="errorMessage" class="text-center text-error-text">
-        {{ errorMessage }}
-      </p>
-
       <!-- Форма регистрации -->
-      <form v-if="!showCodeInput" class="space-y-4">
+      <form v-if="!showCodeInput" class="space-y-4" @submit.prevent>
         <ErrorBanner :message="errorMessage" />
         
         <!-- Username -->
@@ -212,7 +210,7 @@ function clearPasswordError() {
             @blur="validateUsername"
             @input="clearUsernameError"
           />
-          <p v-if="usernameError" class="text-error-text text-sm mt-1">{{ usernameError }}</p>
+          <p v-if="usernameError" class="text-gray-300 text-sm mt-1">{{ usernameError }}</p>
         </div>
 
         <!-- Email -->
@@ -227,7 +225,7 @@ function clearPasswordError() {
             @blur="validateEmail"
             @input="clearEmailError"
           />
-          <p v-if="emailError" class="text-error-text text-sm mt-1">{{ emailError }}</p>
+          <p v-if="emailError" class="text-gray-300 text-sm mt-1">{{ emailError }}</p>
         </div>
 
         <!-- Password с иконкой глаза -->
@@ -249,14 +247,18 @@ function clearPasswordError() {
                 class="text-gray-400 hover:text-gray-300 transition-colors focus:outline-none p-1"
                 @click="switchPasswordVisibility"
               >
-                <Icon 
-                  :icon="passwordHidden ? 'ei:eye' : 'ei:eye-closed'"
-                  class="text-xl" 
+                <EyeOff 
+                  v-if="passwordHidden"
+                  class="w-5 h-5" 
+                />
+                <Eye 
+                  v-else
+                  class="w-5 h-5" 
                 />
               </button>
             </template>
           </TheInput>
-          <p v-if="passwordError" class="text-error-text text-sm mt-1">{{ passwordError }}</p>
+          <p v-if="passwordError" class="text-gray-300 text-sm mt-1">{{ passwordError }}</p>
         </div>
 
         <!-- Confirm Password -->

@@ -3,7 +3,16 @@ import { adminService } from '@/api/admin/AdminService';
 import type { UserRead } from '@/validation/user/userRead';
 import { onMounted, ref, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
-import { Icon } from '@iconify/vue';
+import { 
+  Eye, 
+  Mail, 
+  DollarSign, 
+  Star,
+  MoreVertical,
+  Edit,
+  Ban,
+  Loader2
+} from 'lucide-vue-next';
 import { useImages } from '@/composables/useImages';
 import SearchField from '@/components/SearchField.vue';
 import { useI18n } from 'vue-i18n';
@@ -123,7 +132,7 @@ onMounted(() => {
     <div class="flex-1 overflow-hidden">
 
       <div v-if="isLoading" class="flex items-center justify-center h-32">
-        <Icon icon="eos-icons:loading" class="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-blue-500" />
+        <Loader2 class="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-blue-500" />
         <span class="ml-2 sm:ml-3 text-base sm:text-lg text-gray-400">{{ $t('common.loading') }}</span>
       </div>
 
@@ -175,11 +184,11 @@ onMounted(() => {
 
                   <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4 text-xs sm:text-sm text-text-secondary">
                     <div class="flex items-center gap-1">
-                      <Icon icon="mdi:email-outline" class="w-3 h-3 sm:w-4 sm:h-4" />
+                      <Mail class="w-3 h-3 sm:w-4 sm:h-4" />
                       <span class="truncate text-xs">{{ user.email }}</span>
                     </div>
                     <div class="flex items-center gap-1">
-                      <Icon icon="mdi:currency-usd" class="w-3 h-3 sm:w-4 sm:h-4" />
+                      <DollarSign class="w-3 h-3 sm:w-4 sm:h-4" />
                       <span :class="user.has_frozen_balance ? 'text-orange-400' : 'text-green-400'">
                         {{ user.balance }}
                         <span v-if="user.has_frozen_balance" class="text-orange-300 text-xs">{{ $t('pages.admin.usersPage.freezedBalance') }}</span>
@@ -195,7 +204,7 @@ onMounted(() => {
                 @click="navigateToProfile(user.username)"
                 class="flex items-center gap-1 sm:gap-2 px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-xs sm:text-sm flex-1 sm:flex-none justify-center"
               >
-                <Icon icon="mdi:eye-outline" class="w-3 h-3 sm:w-4 sm:h-4" />
+                <Eye class="w-3 h-3 sm:w-4 sm:h-4" />
                 <span class="">{{ $t("pages.admin.usersPage.profile") }}</span>
               </button>
               
@@ -204,7 +213,7 @@ onMounted(() => {
                 @click="banUser(user.id)"
                 class="flex items-center gap-1 sm:gap-2 px-2 py-1.5 sm:px-3 sm:py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-xs sm:text-sm flex-1 sm:flex-none justify-center"
               >
-                <Icon icon="mdi:block-helper" class="w-3 h-3 sm:w-4 sm:h-4" />
+                <Ban class="w-3 h-3 sm:w-4 sm:h-4" />
                 <span class="">{{ $t("pages.admin.usersPage.ban") }}</span>
               </button>
 
@@ -214,7 +223,7 @@ onMounted(() => {
                   @click.stop="toggleDropdown(user.id)"
                   class="flex items-center justify-center w-8 h-8 rounded-lg bg-dark-500 hover:bg-dark-400 transition-colors"
                 >
-                  <Icon icon="mdi:dots-vertical" class="w-4 h-4 text-text-secondary" />
+                  <MoreVertical class="w-4 h-4 text-text-secondary" />
                 </button>
 
                 <!-- Dropdown контент -->
@@ -226,7 +235,7 @@ onMounted(() => {
                     @click="navigateToEditUser(user.id)"
                     class="flex items-center gap-2 w-full px-4 py-2 text-sm text-mainText hover:bg-dark-600 transition-colors rounded-lg"
                   >
-                    <Icon icon="mdi:pencil-outline" class="w-4 h-4" />
+                    <Edit class="w-4 h-4" />
                     <span>{{ $t('common.edit') }}</span>
                   </button>
                 </div>
@@ -241,7 +250,7 @@ onMounted(() => {
                 {{ $t('common.description') }}: {{ user.description }}
               </div>
               <div class="flex items-center gap-1 sm:hidden">
-                <Icon icon="mdi:star-outline" class="w-3 h-3" />
+                <Star class="w-3 h-3" />
                 <span>{{ $t('common.rating') }} {{ user.rating }}</span>
               </div>
             </div>

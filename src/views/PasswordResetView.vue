@@ -6,6 +6,7 @@ import router from '@/router'
 import { nextTick, ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import TheButton from './forms/TheButton.vue'
+import { Eye, EyeOff } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const sended = ref(false)
@@ -54,67 +55,66 @@ function handleKeyDown(event: KeyboardEvent, index: number) {
 }
 
 async function sendForm() {
-    errorMessage.value = ''
-    sended.value = true
+  errorMessage.value = ''
+  sended.value = true
 
-    try {
-        if (currentState.value === 'waitEmail') {
-            await sendCode()
-        } else if (currentState.value === 'waitConfirmCode') {
-            await confirmCode()
-        } else if (currentState.value === 'waitNewPassword') {
-            await setNewPassword()
-        }
+  try {
+    if (currentState.value === 'waitEmail') {
+      await sendCode()
+    } else if (currentState.value === 'waitConfirmCode') {
+      await confirmCode()
+    } else if (currentState.value === 'waitNewPassword') {
+      await setNewPassword()
     }
-    finally {
-      sended.value = false
-    }
+  } finally {
+    sended.value = false
+  }
 }
 
 async function sendCode() {
-    if (!email.value) {
-        throw new Error(t('pages.passwordRecovery.emailRequired'))
-    }
+  if (!email.value) {
+    throw new Error(t('pages.passwordRecovery.emailRequired'))
+  }
 
-    const result = await authService.sendPasswordResetCode(email.value)
-    
-    if (result === true) {
-        currentState.value = 'waitConfirmCode'
-    } else {
-      errorMessage.value = result
-    }
+  const result = await authService.sendPasswordResetCode(email.value)
+
+  if (result === true) {
+    currentState.value = 'waitConfirmCode'
+  } else {
+    errorMessage.value = result
+  }
 }
 
 async function confirmCode() {
-    if (fullCode.value.length !== 6) {
-        throw new Error(t('pages.passwordRecovery.codeRequired'))
-    }
+  if (fullCode.value.length !== 6) {
+    throw new Error(t('pages.passwordRecovery.codeRequired'))
+  }
 
-    const result = await authService.confirmPasswordResetCode(email.value, fullCode.value)
-    
-    if (result === true) {
-        currentState.value = 'waitNewPassword'
-    } else {
-      errorMessage.value = result
-    }
+  const result = await authService.confirmPasswordResetCode(email.value, fullCode.value)
+
+  if (result === true) {
+    currentState.value = 'waitNewPassword'
+  } else {
+    errorMessage.value = result
+  }
 }
 
 async function setNewPassword() {
-    if (password.value.length < 8) {
-        throw new Error(t('pages.passwordRecovery.passwordMinLength', { length: 8 }))
-    }
- 
-    if (password.value !== confirmPassword.value) {
-        throw new Error(t('pages.passwordRecovery.passwordsDoNotMatch'))
-    }
+  if (password.value.length < 8) {
+    throw new Error(t('pages.passwordRecovery.passwordMinLength', { length: 8 }))
+  }
 
-    const result = await authService.setNewPassword(email.value, fullCode.value, password.value)
+  if (password.value !== confirmPassword.value) {
+    throw new Error(t('pages.passwordRecovery.passwordsDoNotMatch'))
+  }
 
-    if (result === true) {
-        await router.push('/')
-    } else {
-      errorMessage.value = result
-    }
+  const result = await authService.setNewPassword(email.value, fullCode.value, password.value)
+
+  if (result === true) {
+    await router.push('/')
+  } else {
+    errorMessage.value = result
+  }
 }
 </script>
 
@@ -127,7 +127,7 @@ async function setNewPassword() {
 
       <form class="space-y-4" @submit.prevent>
         <ErrorBanner :error="errorMessage" />
-        
+
         <div v-if="currentState === 'waitEmail'">
           <label for="email" class="mb-1 block text-sm text-gray-300">{{ $t('common.email') }}</label>
           <TheInput
@@ -138,7 +138,7 @@ async function setNewPassword() {
             required
           />
         </div>
-        
+
         <div v-if="currentState === 'waitConfirmCode'">
           <label class="mb-1 block text-sm text-text-secondary">{{ $t('pages.auth.signUp.enterCode') }}</label>
           <div class="grid grid-cols-6 gap-2">
@@ -175,14 +175,12 @@ async function setNewPassword() {
                   class="text-gray-400 hover:text-gray-300 transition-colors focus:outline-none p-1"
                   @click="switchPasswordVisibility"
                 >
-                  <Icon 
-                    icon="ei:eye"
-                    class="text-xl" 
-                  />
+                  <component :is="passwordHidden ? Eye : EyeOff" class="w-5 h-5" />
                 </button>
               </template>
             </TheInput>
           </div>
+
           <div>
             <label for="confirm-password" class="mb-1 block text-sm text-gray-300">{{ $t('common.repeatPassword') }}</label>
             <TheInput
@@ -193,7 +191,17 @@ async function setNewPassword() {
               required
               :minlength="8"
               :error="password !== confirmPassword && confirmPassword.length > 0"
-            />
+            >
+              <template #append>
+                <button
+                  type="button"
+                  class="text-gray-400 hover:text-gray-300 transition-colors focus:outline-none p-1"
+                  @click="switchPasswordVisibility"
+                >
+                  <component :is="passwordHidden ? Eye : EyeOff" class="w-5 h-5" />
+                </button>
+              </template>
+            </TheInput>
           </div>
         </div>
 
@@ -203,7 +211,7 @@ async function setNewPassword() {
           :sended="sended"
         />
       </form>
-      
+
       <p class="text-center text-sm">
         <router-link to="/signin" class="text-text-link hover:underline">
           {{ $t('common.back') }}
