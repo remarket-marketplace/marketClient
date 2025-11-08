@@ -142,13 +142,7 @@ const navItems = computed(() => [
             'opacity-100': isActiveRouteMobile(item),
             'opacity-70': !isActiveRouteMobile(item)
           }"
-        >
-          <!-- Активный индикатор для мобильных -->
-          <div 
-            v-if="isActiveRouteMobile(item)"
-            class="absolute -top-1 left-1/2 transform -translate-x-1/2 w-6 h-0.5 bg-white rounded-full transition-all duration-300"
-          />
-          
+        >          
           <div class="icon-box flex items-center justify-center transition-colors duration-300"
                :class="isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400'">
             <component 
