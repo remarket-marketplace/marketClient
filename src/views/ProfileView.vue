@@ -496,7 +496,7 @@ onUnmounted(() => {
             <label class="block text-sm font-medium text-gray-300 mb-2">
               {{ $t('pages.profile.profileLink') }}
             </label>
-            <div class="flex gap-2">
+            <div class="flex flex-col gap-2">
               <input
                 type="text"
                 :value="profileUrl"
@@ -505,7 +505,7 @@ onUnmounted(() => {
               />
               <button
                 @click="copyProfileLink"
-                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors flex items-center gap-2"
+                class="px-4 py-2 w-[max-content] self-end bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors flex items-center gap-2"
                 :class="{ 'bg-green-600 hover:bg-green-700': isCopied }"
               >
                 <Check v-if="isCopied" class="w-4 h-4" />
