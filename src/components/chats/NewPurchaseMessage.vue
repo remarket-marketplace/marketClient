@@ -44,7 +44,7 @@ function handleViewProduct(productId: string) {
               <img
                 :src="`${API_HOST}${product.images?.[0]?.image_url}`"
                 :alt="product.title"
-                class="h-full w-full object-cover transition-opacity duration-200 hover:opacity-90"
+                class="h-full w-full object-cover"
                 loading="lazy"
               />
             </div>
