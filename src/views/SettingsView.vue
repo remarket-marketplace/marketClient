@@ -33,6 +33,7 @@ async function changePassword() {
   }
 
   try {
+    isSendedChangePassword.value = true
     const response = await settingsService.changePassword(
       changingPasswordCurrentPassword.value, 
       changingPasswordNewPassword.value
@@ -44,7 +45,6 @@ async function changePassword() {
       changingPasswordCurrentPassword.value = ''
       changingPasswordNewPassword.value = ''
     } else {
-      // Ошибка от сервера - используем getErrorMessage
       if (response.error) {
         errorMessage.value = getErrorMessage(response.error, t)
       } else {
@@ -56,6 +56,7 @@ async function changePassword() {
     errorMessage.value = t('errors.SERVER_ERROR')
   } finally {
     isLoading.value = false
+    isSendedChangePassword.value = false
   }
 }
 </script>
@@ -66,12 +67,12 @@ async function changePassword() {
       <div>
         <p class="text-2xl font-bold">{{ $t('pages.settingsPage.title') }}</p>
       </div>
-      <div class="my-8 flex flex-col gap-10 rounded-xl border-1 border-dark-600 p-4">
+      <div class="my-8 flex flex-col gap-10 rounded-xl border-1 border-dark-600 p-4 md:max-w-1/3">
         <!-- блок смены пароля -->
         <div class="flex flex-col gap-4">
           <p class="text-gray-300 text-lg">{{ $t('pages.settingsPage.password') }}</p>
-          <div class="gap-3 flex flex-col md:flex-row">
-            <TheInput 
+          <div class="gap-3 flex flex-col">
+            <TheInput
               v-model="changingPasswordCurrentPassword" 
               :placeholder="$t('pages.settingsPage.enterCurrentPassword')" 
               type="password"

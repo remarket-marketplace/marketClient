@@ -209,7 +209,7 @@ async function sendMessage() {
           </p>
 
           <div class="scrollbar-hidden min-h-0 flex-1 overflow-y-auto">
-            <div v-if="chats.length > 0" class="flex flex-col gap-3">
+            <div v-if="chats.length > 0" class="flex flex-col">
                 <ChatItem
                   v-for="chat in chats"
                   :key="chat.id"

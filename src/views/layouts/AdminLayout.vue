@@ -9,7 +9,7 @@ import {
 
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 import SelectLanguage from '@/components/SelectLanguage.vue'
@@ -17,12 +17,30 @@ import SelectLanguage from '@/components/SelectLanguage.vue'
 const store = useUserStore()
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 
 const isDesktop = ref(true)
 const { user } = storeToRefs(store)
 
 function checkDesktop() {
   isDesktop.value = window.innerWidth >= 768
+}
+
+const isActiveRoute = (item: any) => {
+  const currentPath = route.path
+  
+  // Для главной страницы админки - точное совпадение
+  if (item.to === '/admin') {
+    return currentPath === '/admin'
+  }
+  
+  // Для остальных страниц - начинается с пути
+  return currentPath.startsWith(item.to)
+}
+
+// Для мобильной версии используем ту же логику
+const isActiveRouteMobile = (item: any) => {
+  return isActiveRoute(item)
 }
 
 onMounted(async () => {
@@ -32,26 +50,31 @@ onMounted(async () => {
 
 const navItems = computed(() => [
   { 
+    id: 'dashboard',
     title: t('navigation.admin.main'), 
     icon: BarChart3,
     to: '/admin' 
   },
   { 
+    id: 'users',
     title: t('navigation.admin.users'), 
     icon: Users,
     to: '/admin/users' 
   },
   { 
+    id: 'products',
     title: t('navigation.admin.products'), 
     icon: Package,
     to: '/admin/products',
   },
   { 
+    id: 'deals',
     title: t('navigation.admin.deals'), 
     icon: ShoppingCart,
     to: '/admin/deals' 
   },
   {
+    id: 'categories',
     title: t('navigation.admin.categories'),
     icon: Folder,
     to: '/admin/categories',
@@ -60,8 +83,8 @@ const navItems = computed(() => [
 </script>
 
 <template>
-  <div class="min-h-dvh w-screen flex flex-col bg-background text-mainText no-scrollbar">
-    <header class="flex-none border-b border-gray-700">
+  <div class="h-full-dvh w-screen flex flex-col overflow-hidden bg-background text-mainText">
+    <header class="flex-none z-30 relative">
       <div class="mx-auto h-14 max-w-5xl w-full flex items-center justify-between px-4">
         <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold" @click="router.push('/admin')">
           <p>remarket</p>
@@ -72,18 +95,23 @@ const navItems = computed(() => [
           <nav class="hidden items-center gap-6 md:flex">
             <router-link
               v-for="item in navItems"
-              :key="item.to"
+              :key="item.id"
               :to="item.to"
-              class="flex items-center gap-1 text-mainText hover:text-gray-300"
+              class="flex items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"
+              :class="{
+                'text-white': isActiveRoute(item),
+                'text-gray-400': !isActiveRoute(item)
+              }"
             >
-              <!-- Replace Icon component with dynamic component -->
               <component 
                 :is="item.icon" 
                 class="text-xl"
                 :size="20"
                 stroke-width="1.5"
               />
-              <span>{{ item.title }}</span>
+              <span class="ml-1 transition-colors duration-300">
+                {{ item.title }}
+              </span>
             </router-link>
           </nav>
 
@@ -92,7 +120,7 @@ const navItems = computed(() => [
       </div>
     </header>
 
-    <main class="flex-1 min-h-0">
+    <main class="flex-1 overflow-hidden h-screen">
       <div
         class="mx-auto h-full max-w-5xl w-full px-4 py-6"
         :class="{ 'pb-16': !isDesktop }"
@@ -107,18 +135,30 @@ const navItems = computed(() => [
       <div class="mx-auto h-full max-w-5xl w-full flex items-center justify-around">
         <router-link
           v-for="item in navItems"
-          :key="item.to"
+          :key="item.id"
           :to="item.to"
-          class="flex flex-col items-center justify-center px-1 transition-all duration-150"
+          class="flex flex-col items-center justify-center px-1 transition-all duration-300 relative group"
+          :class="{
+            'opacity-100': isActiveRouteMobile(item),
+            'opacity-70': !isActiveRouteMobile(item)
+          }"
         >
-          <div class="icon-box flex items-center justify-center">
-            <component
+          <!-- Активный индикатор для мобильных -->
+          <div 
+            v-if="isActiveRouteMobile(item)"
+            class="absolute -top-1 left-1/2 transform -translate-x-1/2 w-6 h-0.5 bg-white rounded-full transition-all duration-300"
+          />
+          
+          <div class="icon-box flex items-center justify-center transition-colors duration-300"
+               :class="isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400'">
+            <component 
               :is="item.icon" 
-              :size="22"
+              :size="22" 
               stroke-width="1.5"
             />
           </div>
-          <span class="menu-label mt-[3px] text-center text-xs font-light leading-none">
+          <span class="menu-label text-center text-xs font-light leading-none mt-1 transition-colors duration-300"
+                :class="isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400'">
             {{ item.title }}
           </span>
         </router-link>
@@ -135,19 +175,13 @@ const navItems = computed(() => [
 
 /* СТИЛЬ APPLE DESIGN (МАТОВОЕ СТЕКЛО) */
 .mobile-nav-glass {
-  /* Предполагая, что у вас темная тема, используем полупрозрачный темный фон */
-  background-color: rgba(23, 23, 23, 0.8); /* dark-900 / 80% прозрачности */
-  
-  /* Эффект матового стекла */
-  -webkit-backdrop-filter: blur(10px); /* Для Safari */
-  backdrop-filter: blur(10px);
-  
-  /* Тонкая белая рамка сверху для имитации iOS */
+  background-color: rgba(23, 23, 23, 0.9);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   border-top-width: 1px;
-  border-top-color: rgba(255, 255, 255, 0.1); 
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.2);
+  border-top-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
 }
-
 
 .icon-box {
   width: 28px;
@@ -174,5 +208,15 @@ const navItems = computed(() => [
 .menu-label {
   display: block;
   line-height: 1;
+}
+
+/* Плавные переходы для всех интерактивных элементов */
+.router-link-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Улучшенный ховер-эффект */
+.group:hover {
+  transform: translateY(-1px);
 }
 </style>

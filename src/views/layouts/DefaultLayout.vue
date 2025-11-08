@@ -101,7 +101,7 @@ const navItems = computed(() => [
 
 <template>
   <div class="h-full-dvh w-screen flex flex-col overflow-hidden bg-background text-mainText">
-    <header class="flex-none border-b border-gray-700 z-30 relative">
+    <header class="flex-none z-30 relative">
       <div class="mx-auto h-14 max-w-5xl w-full flex items-center justify-between px-4">
         <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold" @click="router.push('/')">
           remarket
@@ -118,13 +118,7 @@ const navItems = computed(() => [
                 'text-white': isActiveRoute(item),
                 'text-gray-400': !isActiveRoute(item)
               }"
-            >
-              <!-- Индикатор активной страницы для десктопа -->
-              <div 
-                v-if="isActiveRoute(item)"
-                class="absolute -bottom-7 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-white rounded-full transition-all duration-300"
-              />
-              
+            >         
               <component 
                 :is="item.icon" 
                 :class="[

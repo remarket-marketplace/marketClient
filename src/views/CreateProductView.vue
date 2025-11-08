@@ -3,6 +3,7 @@ import { categoryService } from '@/api/category/CategoryService'
 import { productService } from '@/api/product/ProductService'
 import CustomSelect from '@/components/CustomSelect.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
+import FileUploader from '@/components/FileUploader.vue'
 import router from '@/router'
 import { useUserStore } from '@/stores/user'
 import type { Category } from '@/validation/category/category'
@@ -10,73 +11,50 @@ import { onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
-
 const categories = ref<Category[]>([])
 const subcategories = ref<Category[]>([])
-const selectedCategoryId = ref<string>('')
-const selectedSubcategoryId = ref<string>('')
-const title = ref<string>('')
-const description = ref<string>('')
-const price = ref<string>('')
-const productData = ref<string>('')
+const selectedCategoryId = ref('')
+const selectedSubcategoryId = ref('')
+const title = ref('')
+const description = ref('')
+const price = ref('')
+const productData = ref('')
 const images = ref<File[]>([])
 const sended = ref(false)
 const errorMessage = ref('')
 
 const store = useUserStore()
-
 const user = await store.getUser()
 
 onMounted(async () => {
   try {
     await store.fetchUser()
     categories.value = await categoryService.getAllCategories()
-  }
-  catch (err) {
+  } catch (err) {
     console.error('Ошибка загрузки категорий:', err)
     errorMessage.value = t('pages.forms.createProduct.errorLoadingCategories')
   }
 })
 
-/* Подгрузка подкатегорий при выборе категории */
 watch(selectedCategoryId, async (newCategory) => {
   if (!newCategory) {
     subcategories.value = []
     selectedSubcategoryId.value = ''
     return
   }
-
   try {
     subcategories.value = await categoryService.getSubcategories(newCategory)
-  }
-  catch (err) {
+  } catch (err) {
     console.error('Ошибка загрузки подкатегорий:', err)
     errorMessage.value = t('pages.forms.createProduct.errorLoadingSubcategories')
   }
 })
 
-/* Обработка изображений */
-function handleImagesChange(event: Event) {
-  const target = event.target as HTMLInputElement
-  images.value = target.files ? Array.from(target.files) : []
-}
-
-/* Создание товара */
 async function createProduct() {
   errorMessage.value = ''
 
   if (!selectedSubcategoryId.value || !title.value || !description.value || !price.value || !productData.value || !images.value.length) {
     errorMessage.value = t('pages.forms.createProduct.fillAllFields')
-    return
-  }
-
-  if (title.value.length < 10 || description.value.length < 10 || productData.value.length < 10) {
-    errorMessage.value = t('pages.forms.createProduct.minLength')
-    return
-  }
-
-  if (Number(price.value) <= 0) {
-    errorMessage.value = t('pages.forms.createProduct.pricePositive')
     return
   }
 
@@ -91,24 +69,20 @@ async function createProduct() {
     }
 
     const result = await productService.createProduct(productDataObj, images.value)
-    console.log(result)
     if (result && user?.username) {
       router.push(`/profile/${user?.username}`)
-    }
-    else
+    } else {
       errorMessage.value = t('pages.forms.createProduct.errorCreatingProduct')
-  }
-  catch (err: any) {
+    }
+  } catch (err: any) {
     console.error('Ошибка при создании товара:', err)
     if (err.response?.data?.detail) {
       const errors = err.response.data.detail.map((e: any) => e.msg).join(', ')
       errorMessage.value = `${t('pages.forms.createProduct.validationErrors')}${errors}`
-    }
-    else {
+    } else {
       errorMessage.value = t('pages.forms.createProduct.errorCreatingProduct')
     }
-  }
-  finally {
+  } finally {
     sended.value = false
   }
 }
@@ -116,19 +90,13 @@ async function createProduct() {
 
 <template>
   <div class="no-scrollbar h-full w-full flex flex-col items-center overflow-scroll pb-36">
-    <div class="mt-8 max-w-md w-full p-3">
-    </div>
-
     <div class="max-w-md w-full border border-dark-700 rounded-2xl p-8 backdrop-blur-md space-y-6">
       <h1 class="text-center text-3xl text-mainText font-bold">
         {{ $t('pages.forms.createProduct.title') }}
       </h1>
 
-      <ErrorBanner
-        v-if="errorMessage" :message="errorMessage"
-      />
+      <ErrorBanner v-if="errorMessage" :message="errorMessage" />
 
-      <!-- Категория -->
       <CustomSelect
         v-model="selectedCategoryId"
         :options="categories.map(c => ({ label: c.name, value: c.id }))"
@@ -136,7 +104,6 @@ async function createProduct() {
         :placeholder="t('pages.forms.createProduct.selectCategory')"
       />
 
-      <!-- Подкатегория -->
       <CustomSelect
         v-if="subcategories.length"
         v-model="selectedSubcategoryId"
@@ -145,7 +112,6 @@ async function createProduct() {
         :placeholder="t('pages.forms.createProduct.selectSubcategory')"
       />
 
-      <!-- Остальные поля -->
       <div v-if="selectedSubcategoryId" class="space-y-4">
         <div>
           <label for="title" class="mb-2 block text-sm text-gray-300">{{ $t('pages.forms.createProduct.productName') }}</label>
@@ -153,9 +119,8 @@ async function createProduct() {
             id="title"
             v-model="title"
             type="text"
-            :placeholder="$t('pages.forms.createProduct.namePlaceholder')"
-            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
-          >
+            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText"
+          />
         </div>
 
         <div>
@@ -164,8 +129,7 @@ async function createProduct() {
             id="description"
             v-model="description"
             rows="4"
-            :placeholder="$t('pages.forms.createProduct.descriptionPlaceholder')"
-            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText max-h-52"
           ></textarea>
         </div>
 
@@ -175,11 +139,9 @@ async function createProduct() {
             id="price"
             v-model="price"
             type="number"
-            step="1"
             min="1"
-            :placeholder="$t('pages.forms.createProduct.pricePlaceholder')"
-            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
-          >
+            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText"
+          />
         </div>
 
         <div>
@@ -188,24 +150,14 @@ async function createProduct() {
             id="productData"
             v-model="productData"
             rows="4"
-            :placeholder="$t('pages.forms.createProduct.productDataPlaceholder')"
-            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText max-h-36"
           ></textarea>
         </div>
 
+        <!-- Здесь используем наш компонент -->
         <div>
-          <label for="images" class="mb-2 block text-sm text-gray-300">{{ $t('common.images') }}</label>
-          <input
-            id="images"
-            type="file"
-            accept="image/*"
-            multiple
-            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText focus:outline-none focus:ring-2 focus:ring-blue-500"
-            @change="handleImagesChange"
-          >
-          <p v-if="images.length" class="mt-1 text-sm text-gray-400">
-            {{ $t('pages.forms.createProduct.selectedImagesCount', { count: images.length }) }}
-          </p>
+          <label class="mb-2 block text-sm text-gray-300">{{ $t('common.images') }}</label>
+          <FileUploader v-model="images" :max-files="8" />
         </div>
       </div>
 
@@ -213,7 +165,7 @@ async function createProduct() {
         v-if="selectedSubcategoryId"
         type="button"
         :disabled="sended"
-        class="w-full rounded-lg bg-blue-600 py-2 text-mainText font-semibold transition duration-200 hover:bg-blue-700 disabled:opacity-50"
+        class="w-full rounded-lg bg-blue-600 py-2 text-mainText font-semibold hover:bg-blue-700 disabled:opacity-50"
         @click="createProduct"
       >
         {{ sended ? $t('pages.forms.createProduct.creating') : $t('common.create') }}

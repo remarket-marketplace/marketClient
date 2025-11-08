@@ -20,13 +20,17 @@ async function signIn() {
   sended.value = true
   errorMessage.value = ''
   try {
-    const success = await authService.signIn(email.value, password.value)
-    if (success) {
-      const user = await useUserStore().getUser()
-      user?.role === 'admin' ? router.push('/admin') : router.push('/')
-    }
-    else {
-      errorMessage.value = t('errors.INCORRECT_EMAIL_OR_PASSWORD')
+    if (email.value.trim().length > 0 && password.value.trim().length > 0) {
+      const success = await authService.signIn(email.value, password.value)
+      if (success) {
+        const user = await useUserStore().getUser()
+        user?.role === 'admin' ? router.push('/admin') : router.push('/')
+      }
+      else {
+        errorMessage.value = t('errors.INCORRECT_EMAIL_OR_PASSWORD')
+      }
+    } else {
+      errorMessage.value = t('errors.FILL_ALL_INPUTS')
     }
   }
   catch (e: any) {
@@ -42,8 +46,8 @@ async function signIn() {
 </script>
 
 <template>
-  <div class="h-full w-full flex items-center justify-center bg-background px-4">
-    <div class="max-w-sm w-full border border-dark-700 rounded-2xl bg-background p-8 backdrop-blur-md space-y-6">
+  <div class="no-scrollbar h-full w-full flex flex-col items-center overflow-scroll pb-36">
+    <div class="max-w-sm w-full border border-dark-700 rounded-2xl bg-background p-8 backdrop-blur-md space-y-6 my-auto">
       <h1 class="text-center text-3xl text-mainText font-bold">
         {{ $t('pages.auth.signIn.title') }}
       </h1>
