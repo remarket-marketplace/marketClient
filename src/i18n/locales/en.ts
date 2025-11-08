@@ -125,7 +125,16 @@ const en = {
     PAYLOAD_IS_EMPTY: 'Payload is empty',
     INCORRECT_EMAIL_OR_PASSWORD: 'Incorrect email or password',
     EMAIL_VERIFICATION_MAX_COUNT_OF_TRIES_EXCEEDED: 'Max count of tries exceeded. Max tries - {max_tries}',
-    INVALID_PASSWORD: "Invalid password"
+    INVALID_PASSWORD: "Invalid password",
+    FILL_ALL_INPUTS: "Fill all inputs",
+    PASSWORD_SAME_AS_CURRENT: "Cannot change to current password",
+  },
+
+  components: {
+    fileUploader: {
+      upload: 'Drag and drop the images here or click to select',
+      supportOnlyImages: 'Only images are supported',
+    }
   },
 
   navigation: {
@@ -188,7 +197,8 @@ const en = {
         passwordUppercaseError: "Password must contain at least one uppercase letter",
         passwordLowercaseError: "Password must contain at least one lowercase letter",
         passwordDigitError: "Password must contain at least one digit",
-        passwordSpecialCharError: "Password must contain at least one special character (!@#$%^&*)"
+        passwordSpecialCharError: "Password must contain at least one special character (!@#$%^&*)",
+        passwordsMustEqual: "Passwords must be the equal",
       },
       signIn: {
         title: 'Sign In',
@@ -255,6 +265,7 @@ const en = {
       confirmed: 'Confirmed',
       profileNotFound: 'Profile not found',
       settings: 'Settings',
+      wallet: "Wallet",
       changePhoto: "Change photo",
     },
 

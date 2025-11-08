@@ -38,6 +38,7 @@ export const errorCodeMap: Record<string, string> = {
   NETWORK_ERROR: 'errors.NETWORK_ERROR',
   FILL_REQUIRED_FIELDS: 'errors.FILL_REQUIRED_FIELDS',
   INVALID_PASSWORD: 'errors.INVALID_PASSWORD',
+  PASSWORD_SAME_AS_CURRENT: 'errors.PASSWORD_SAME_AS_CURRENT',
 }
 
 // Пример функции для получения текста ошибки через i18n

@@ -125,7 +125,16 @@ const ru = {
     PAYLOAD_IS_EMPTY: 'Пустой payload',
     INCORRECT_EMAIL_OR_PASSWORD: 'Неверный email или пароль',
     EMAIL_VERIFICATION_MAX_COUNT_OF_TRIES_EXCEEDED: 'Превышено максимальное количество попыток. Макс попыток - {max_tries}',
-    INVALID_PASSWORD: "Неверный пароль"
+    INVALID_PASSWORD: "Неверный пароль",
+    FILL_ALL_INPUTS: "Заполните все поля",
+    PASSWORD_SAME_AS_CURRENT: "Нельзя изменить на текущий пароль",
+  },
+
+  components: {
+    fileUploader: {
+      upload: 'Перетащите изображения сюда или нажмите, чтобы выбрать',
+      supportOnlyImages: 'Поддерживаются только изображения',
+    }
   },
 
   navigation: {
@@ -188,7 +197,8 @@ const ru = {
         passwordUppercaseError: "Пароль должен содержать хотя бы одну заглавную букву",
         passwordLowercaseError: "Пароль должен содержать хотя бы одну строчную букву",
         passwordDigitError: "Пароль должен содержать хотя бы одну цифру",
-        passwordSpecialCharError: "Пароль должен содержать хотя бы один специальный символ (!@#$%^&*)"
+        passwordSpecialCharError: "Пароль должен содержать хотя бы один специальный символ (!@#$%^&*)",
+        passwordsMustEqual: "Пароли должны совпадать",
       },
       signIn: {
         title: 'Вход',
@@ -254,6 +264,7 @@ const ru = {
       confirmed: 'Подтверждено',
       profileNotFound: 'Профиль не найден',
       settings: 'Настройки',
+      wallet: "Кошелек",
       changePhoto: "Сменить фото",
     },
 
