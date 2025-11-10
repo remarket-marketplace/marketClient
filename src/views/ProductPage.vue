@@ -133,7 +133,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section v-if="product" class="h-full max-w-7xl w-full flex flex-col items-start gap-6 overflow-auto pb-36 text-mainText lg:flex-row lg:overflow-visible lg:px-0 lg:pb-6">
+  <section v-if="product" class="h-full max-w-7xl w-full flex flex-col items-start gap-6 overflow-auto no-scrollbar pb-36 text-mainText lg:flex-row lg:overflow-visible lg:px-0 lg:pb-6">
     <!-- Галерея изображений -->
     <div class="w-full rounded-lg lg:w-1/2 space-y-4">
       <div v-if="selectedImage" class="flex justify-center">
