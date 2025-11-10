@@ -240,9 +240,6 @@ async function updateProduct() {
               v-model="newImages" 
               :max-files="computedMaxNewFiles" 
             />
-            <p class="text-xs text-gray-400 mt-2">
-              {{ $t('pages.forms.editProduct.totalImagesAfterUpdate', { count: totalImagesAfterUpdate }) }}
-            </p>
           </div>
         </div>
 
