@@ -35,8 +35,12 @@ const user = await store.getUser()
 
 // Максимальное количество новых файлов с учетом существующих
 const computedMaxNewFiles = computed(() => {
-  const currentExisting = existingImages.value.length - imagesToDelete.value.length
+  const currentExisting = existingImages.value.length
   return Math.max(0, 8 - currentExisting)
+})
+
+const totalImagesAfterUpdate = computed(() => {
+  return existingImages.value.length + newImages.value.length
 })
 
 // Удаление существующего изображения
@@ -69,7 +73,6 @@ onMounted(async () => {
 
   } catch (err: any) {
     console.error('Ошибка загрузки данных:', err)
-    // Используем getErrorMessage для обработки ошибок
     if (err?.response?.data?.detail?.error_code) {
       errorMessage.value = getErrorMessage(err.response.data.detail, t)
     } else {
@@ -89,14 +92,14 @@ async function updateProduct() {
     return
   }
 
-  // Проверка количества изображений
-  const totalImages = (existingImages.value.length - imagesToDelete.value.length) + newImages.value.length
-  if (totalImages === 0) {
+  // Проверка количества изображений - должно быть хотя бы одно
+  if (totalImagesAfterUpdate.value === 0) {
     errorMessage.value = t('pages.forms.editProduct.atLeastOneImage')
     return
   }
 
-  if (totalImages > 8) {
+  // Проверка максимального количества изображений
+  if (totalImagesAfterUpdate.value > 8) {
     errorMessage.value = t('pages.forms.editProduct.maxImagesExceeded', { max: 8 })
     return
   }
@@ -207,7 +210,7 @@ async function updateProduct() {
           <!-- Существующие изображения -->
           <div>
             <label class="mb-2 block text-sm text-gray-300">{{ $t('pages.forms.editProduct.currentImages') }}</label>
-            <div class="grid grid-cols-3 gap-2 mb-4">
+            <div v-if="existingImages.length > 0" class="grid grid-cols-3 gap-2 mb-4">
               <div
                 v-for="image in existingImages"
                 :key="image.id"
@@ -227,6 +230,7 @@ async function updateProduct() {
                 </button>
               </div>
             </div>
+            <p v-else class="text-gray-400 text-sm mb-4">{{ $t('pages.forms.editProduct.noCurrentImages') }}</p>
           </div>
 
           <!-- Загрузка новых изображений -->
@@ -236,12 +240,15 @@ async function updateProduct() {
               v-model="newImages" 
               :max-files="computedMaxNewFiles" 
             />
+            <p class="text-xs text-gray-400 mt-2">
+              {{ $t('pages.forms.editProduct.totalImagesAfterUpdate', { count: totalImagesAfterUpdate }) }}
+            </p>
           </div>
         </div>
 
         <button
           type="button"
-          :disabled="sended"
+          :disabled="sended || totalImagesAfterUpdate === 0"
           class="w-full rounded-lg bg-blue-600 py-2 text-mainText font-semibold hover:bg-blue-700 disabled:opacity-50"
           @click="updateProduct"
         >
