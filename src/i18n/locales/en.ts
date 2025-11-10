@@ -137,8 +137,11 @@ const en = {
     INVALID_PASSWORD: "Invalid password",
     FILL_ALL_INPUTS: "Fill all inputs",
     PASSWORD_SAME_AS_CURRENT: "Cannot change to current password",
+    PRODUCT_UPDATE_ERROR: 'Error updating product',
+    PRODUCT_EDIT_PERMISSION_DENIED: 'No permission to edit this product',
+    INVALID_PRODUCT_DATA: 'Invalid product data',
+    PRODUCT_ALREADY_SOLD: 'Product already sold, editing is not possible',
     
-    // New errors for password recovery
     unknownError: 'An unknown error occurred',
     networkError: 'Network error. Please check your internet connection',
     sendCodeFailed: 'Failed to send verification code',
@@ -450,6 +453,9 @@ const en = {
         categoryCannotBeChanged: "Product category cannot be changed",
         newImages: "New images",
         currentImages: "Current images",
+        productNotFound: 'Product not found',
+        atLeastOneImage: 'Add at least one image',
+        maxImagesExceeded: 'Maximum number of images - {max}',
       },
     },
   },

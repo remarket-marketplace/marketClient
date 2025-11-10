@@ -9,7 +9,7 @@ import type { ProductEdit } from '@/validation/product/product'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
-
+import { getErrorMessage } from '@/utils/errorsMap'
 import { X } from 'lucide-vue-next'
 
 const API_HOST = import.meta.env.VITE_API_HOST
@@ -56,7 +56,7 @@ onMounted(async () => {
     productData.value = await productService.getProductEditDataById(productId.value)
     
     if (!productData.value) {
-      errorMessage.value = 'Товар не найден'
+      errorMessage.value = t('pages.forms.editProduct.productNotFound')
       return
     }
 
@@ -67,9 +67,14 @@ onMounted(async () => {
     productDataString.value = productData.value.product_data_string
     existingImages.value = [...productData.value.images]
 
-  } catch (err) {
+  } catch (err: any) {
     console.error('Ошибка загрузки данных:', err)
-    errorMessage.value = 'Ошибка загрузки данных товара'
+    // Используем getErrorMessage для обработки ошибок
+    if (err?.response?.data?.detail?.error_code) {
+      errorMessage.value = getErrorMessage(err.response.data.detail, t)
+    } else {
+      errorMessage.value = t('pages.forms.editProduct.errorLoadingData')
+    }
   } finally {
     isLoadingProduct.value = false
   }
@@ -80,19 +85,19 @@ async function updateProduct() {
 
   // Валидация
   if (!title.value || !description.value || !price.value || !productDataString.value) {
-    errorMessage.value = 'Заполните все обязательные поля'
+    errorMessage.value = t('common.fillAllFields')
     return
   }
 
   // Проверка количества изображений
   const totalImages = (existingImages.value.length - imagesToDelete.value.length) + newImages.value.length
   if (totalImages === 0) {
-    errorMessage.value = 'Добавьте хотя бы одно изображение'
+    errorMessage.value = t('pages.forms.editProduct.atLeastOneImage')
     return
   }
 
   if (totalImages > 8) {
-    errorMessage.value = 'Максимальное количество изображений - 8'
+    errorMessage.value = t('pages.forms.editProduct.maxImagesExceeded', { max: 8 })
     return
   }
 
@@ -116,15 +121,19 @@ async function updateProduct() {
     if (result) {
       router.push(`/product/${productId.value}`)
     } else {
-      errorMessage.value = 'Ошибка при обновлении товара'
+      errorMessage.value = t('pages.forms.editProduct.errorUpdatingProduct')
     }
   } catch (err: any) {
     console.error('Ошибка при обновлении товара:', err)
-    if (err.response?.data?.detail) {
+    // Используем getErrorMessage для обработки ошибок
+    if (err?.response?.data?.detail?.error_code) {
+      errorMessage.value = getErrorMessage(err.response.data.detail, t)
+    } else if (err.response?.data?.detail && Array.isArray(err.response.data.detail)) {
+      // Обработка ошибок валидации в виде массива
       const errors = err.response.data.detail.map((e: any) => e.msg).join(', ')
-      errorMessage.value = `Ошибки валидации: ${errors}`
+      errorMessage.value = `${t('common.validationErrors')} ${errors}`
     } else {
-      errorMessage.value = 'Ошибка при обновлении товара'
+      errorMessage.value = t('pages.forms.editProduct.errorUpdatingProduct')
     }
   } finally {
     sended.value = false
@@ -165,7 +174,7 @@ async function updateProduct() {
           </div>
 
           <div>
-            <label for="description" class="mb-2 block text-sm text-gray-300">{{ $t('common.description') }}</label>
+            <label for="description" class="mb-2 block text-sm text-gray-300">{{ t('common.description') }}</label>
             <textarea
               id="description"
               v-model="description"
@@ -236,7 +245,7 @@ async function updateProduct() {
           class="w-full rounded-lg bg-blue-600 py-2 text-mainText font-semibold hover:bg-blue-700 disabled:opacity-50"
           @click="updateProduct"
         >
-          {{ sended ? 'Сохранение...' : 'Сохранить изменения' }}
+          {{ sended ? t('pages.forms.editProduct.saving') : t('pages.forms.editProduct.save') }}
         </button>
       </template>
     </div>
