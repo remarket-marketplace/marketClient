@@ -72,6 +72,11 @@ const ru = {
     seller: "Продавец",
     buyer: "Покупатель",
 
+    backToSignIn: 'Вернуться к входу',
+    showPassword: 'Показать пароль',
+    hidePassword: 'Скрыть пароль',
+    emailPlaceholder: 'Введите ваш email',
+
     // product statuses
     productStatuses: {
       active: "Активно",
@@ -131,6 +136,19 @@ const ru = {
     INVALID_PASSWORD: "Неверный пароль",
     FILL_ALL_INPUTS: "Заполните все поля",
     PASSWORD_SAME_AS_CURRENT: "Нельзя изменить на текущий пароль",
+    
+    unknownError: 'Произошла неизвестная ошибка',
+    networkError: 'Ошибка сети. Проверьте подключение к интернету',
+    sendCodeFailed: 'Не удалось отправить код подтверждения',
+    invalidCode: 'Неверный код подтверждения',
+    passwordChangeFailed: 'Не удалось изменить пароль',
+  },
+
+  validation: {
+    invalidEmail: 'Введите корректный email адрес',
+    passwordMinLength: 'Пароль должен содержать минимум {length} символов',
+    passwordsDoNotMatch: 'Пароли не совпадают',
+    fieldRequired: 'Это поле обязательно для заполнения'
   },
 
   components: {
@@ -210,6 +228,29 @@ const ru = {
         register: 'Регистрация',
         forgotPassword: "Забыли пароль?",
       },
+    },
+    passwordRecovery: {
+      title: "Восстановление пароля",
+      sendCode: 'Отправить код',
+      verifyCode: 'Подтвердить код',
+      changePassword: 'Изменить пароль',
+      codeSent: 'Код подтверждения отправлен на вашу почту',
+      codeVerified: 'Код успешно подтверждён',
+      passwordChanged: 'Пароль успешно изменён',
+      codeSentTo: 'Код отправлен на',
+      enterCode: 'Введите код подтверждения',
+      resendCode: 'Отправить код повторно',
+      useDifferentEmail: 'Использовать другой email',
+      emailRequired: 'Введите email адрес',
+      invalidEmail: 'Введите корректный email адрес',
+      codeRequired: 'Введите код подтверждения',
+      passwordMinLength: 'Пароль должен содержать минимум {length} символов',
+      passwordsDoNotMatch: 'Пароли не совпадают',
+      codeResent: 'Код отправлен повторно'
+    },
+
+    resetPassword: {
+      title: "Восстановление пароля"
     },
 
     product: {
@@ -345,9 +386,6 @@ const ru = {
         dropImage: 'Перетащите изображение сюда или кликните для выбора',
       },
     },
-    passwordRecovery: {
-      title: "Восстановление пароля"
-    },
     forms: {
       addSubcategory: {
         title: 'Добавить подкатегорию',
@@ -404,6 +442,9 @@ const ru = {
         errorUpdatingProduct: 'Ошибка обновления товара',
         errorLoadingData: 'Ошибка загрузки данных',
         errorLoadingSubcategories: 'Ошибка загрузки подкатегорий',
+        categoryCannotBeChanged: "Категория товара не может быть изменена",
+        newImages: "Новые изображения",
+        currentImages: "Текущие изображения",
       },
     },
   },

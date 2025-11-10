@@ -40,7 +40,7 @@ export const authService = {
       const response = await httpClient.post('/auth/password-reset-code', {
         email,
       })
-      response.status === 200
+      return response.status === 200
     }
     catch (e: any) {
       return e.response.data

@@ -72,6 +72,12 @@ const en = {
     seller: "Seller",
     buyer: "Buyer",
 
+    // New keys for password recovery
+    backToSignIn: 'Back to sign in',
+    showPassword: 'Show password',
+    hidePassword: 'Hide password',
+    emailPlaceholder: 'Enter your email',
+
     // product statuses
     productStatuses: {
       active: "active",
@@ -131,6 +137,20 @@ const en = {
     INVALID_PASSWORD: "Invalid password",
     FILL_ALL_INPUTS: "Fill all inputs",
     PASSWORD_SAME_AS_CURRENT: "Cannot change to current password",
+    
+    // New errors for password recovery
+    unknownError: 'An unknown error occurred',
+    networkError: 'Network error. Please check your internet connection',
+    sendCodeFailed: 'Failed to send verification code',
+    invalidCode: 'Invalid verification code',
+    passwordChangeFailed: 'Failed to change password',
+  },
+
+  validation: {
+    invalidEmail: 'Please enter a valid email address',
+    passwordMinLength: 'Password must be at least {length} characters',
+    passwordsDoNotMatch: 'Passwords do not match',
+    fieldRequired: 'This field is required'
   },
 
   components: {
@@ -210,6 +230,31 @@ const en = {
         register: 'Register',
         forgotPassword: "Forgot password?",
       },
+    },
+
+    // New section for password recovery
+    passwordRecovery: {
+      title: "Password Recovery",
+      sendCode: 'Send Code',
+      verifyCode: 'Verify Code',
+      changePassword: 'Change Password',
+      codeSent: 'Verification code has been sent to your email',
+      codeVerified: 'Code successfully verified',
+      passwordChanged: 'Password successfully changed',
+      codeSentTo: 'Code sent to',
+      enterCode: 'Enter verification code',
+      resendCode: 'Resend code',
+      useDifferentEmail: 'Use different email',
+      emailRequired: 'Please enter email address',
+      invalidEmail: 'Please enter a valid email address',
+      codeRequired: 'Please enter verification code',
+      passwordMinLength: 'Password must be at least {length} characters',
+      passwordsDoNotMatch: 'Passwords do not match',
+      codeResent: 'Code has been resent'
+    },
+
+    resetPassword: {
+      title: "Reset password",
     },
 
     product: {
@@ -346,9 +391,6 @@ const en = {
         dropImage: 'Drop image here or click to select',
       },
     },
-    passwordRecovery: {
-      title: "Password recovery",
-    },
     forms: {
       addSubcategory: {
         title: 'Add Subcategory',
@@ -405,6 +447,9 @@ const en = {
         errorUpdatingProduct: 'Error updating product',
         errorLoadingData: 'Error loading data',
         errorLoadingSubcategories: 'Error loading subcategories',
+        categoryCannotBeChanged: "Product category cannot be changed",
+        newImages: "New images",
+        currentImages: "Current images",
       },
     },
   },
