@@ -130,7 +130,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-full w-full flex items-center justify-center py-6 overflow-auto">
+  <div class="no-scrollbar h-full w-full flex flex-col items-center overflow-scroll pb-36">
     <div class="max-w-md w-full border border-dark-700 rounded-2xl bg-background p-6 sm:p-8 backdrop-blur-md space-y-6">
       <!-- Заголовок -->
       <div class="text-center">
