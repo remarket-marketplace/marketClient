@@ -4,17 +4,13 @@ import type { Product } from '@/validation/product/product';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { 
-  Eye, 
   DollarSign, 
   User, 
   Image, 
   Folder,
   Loader2,
-  Check,
-  X,
   Package,
   Search,
-  Shield,
   ThumbsUp,
   ThumbsDown
 } from 'lucide-vue-next';
@@ -93,7 +89,6 @@ function formatPrice(price: number) {
     <!-- Заголовок -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
       <div class="flex items-center gap-2">
-        <Shield class="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
         <h1 class="text-lg sm:text-2xl font-bold text-mainText">{{ $t('pages.admin.productsPage.title') }}</h1>
       </div>
       <div class="flex items-center gap-2 text-xs sm:text-base text-text-secondary">
@@ -241,19 +236,6 @@ function formatPrice(price: number) {
                   <ThumbsDown class="w-3 h-3" />
                   <span>{{ $t('common.reject') }}</span>
                 </button>
-              </div>
-
-              <!-- Статус для уже промодерированных товаров -->
-              <div v-else class="flex items-center justify-center px-3 py-2 rounded-lg bg-dark-700 text-text-secondary text-xs flex-1">
-                <span v-if="product.status === 'approved'" class="text-green-400 text-xs flex items-center gap-2">
-                  <ThumbsUp class="w-3 h-3" />
-                  {{ $t('common.approved') }}
-                </span>
-                <span v-else-if="product.status === 'rejected'" class="text-red-400 text-xs flex items-center gap-2">
-                  <ThumbsDown class="w-3 h-3" />
-                  {{ $t('common.rejected') }}
-                </span>
-                <span v-else class="text-xs">{{ product.status }}</span>
               </div>
             </div>
           </div>
