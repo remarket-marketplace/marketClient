@@ -140,7 +140,7 @@ export const productService = {
       const formData = new FormData()
       formData.append('product_id', productId)
       if (deletedImageIds.length > 0) {
-        formData.append('deleted_image_ids', JSON.stringify(deletedImageIds))
+        deletedImageIds.forEach((id: string | Blob) => formData.append("deleted_images_ids", id));
       }
       if (productData.title)
         formData.append('title', productData.title)

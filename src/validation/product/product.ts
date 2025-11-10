@@ -4,7 +4,7 @@ export const UUIDSchema = z.string()
 
 export const ProductImageSchema = z.object({
   id: UUIDSchema,
-  image_url: z.string().optional(),
+  image_url: z.string(),
 }).strip()
 
 export const SellerSchema = z.object({
@@ -53,7 +53,7 @@ export const ProductEditDataSchema = z.object({
   seller: SellerSchema,
   images: z.array(ProductImageSchema),
   is_owner: z.boolean().optional(),
-  product_data: z.string(),
+  product_data_string: z.string(),
 }).strip()
 
 // Типы:

@@ -17,6 +17,7 @@ import AdminEditUserView from '@/views/admin/AdminEditUserView.vue'
 import AdminDealsView from '@/views/admin/AdminDealsView.vue'
 import WalletView from '@/views/WalletView.vue'
 import SettingsView from '@/views/SettingsView.vue'
+import UpdateProductView from '@/views/UpdateProductView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -50,6 +51,12 @@ const router = createRouter({
       path: '/product/create',
       name: 'create product',
       component: CreateProductView,
+      meta: { requiredAuthorized: true }
+    },
+    {
+      path: '/product/edit/:productId',
+      name: 'edit product',
+      component: UpdateProductView,
       meta: { requiredAuthorized: true }
     },
     {
