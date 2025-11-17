@@ -6,15 +6,16 @@ import SendMessageBar from '@/components/chats/SendMessageBar.vue'
 import Loader from '@/components/Loader.vue'
 import { useUserStore } from '@/stores/user'
 import type { ChatListItem } from '@/validation/chat/ChatList'
-import type { ChatContentUnion } from '@/validation/chat/chatMessage'
+import type { ChatContentUnion, ChatMessage as ChatMessageType } from '@/validation/chat/chatMessage'
 import type { UserRead } from '@/validation/user/userRead'
-import { nextTick, onMounted, ref, computed, watch } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ZodError } from 'zod'
 
 import { ArrowLeft } from 'lucide-vue-next'
 
 const { t } = useI18n()
+const API_HOST = import.meta.env.VITE_API_HOST
 
 const chats = ref<ChatListItem[]>([])
 const chatMessages = ref<ChatContentUnion[]>([])
@@ -29,26 +30,50 @@ const user = ref<UserRead | null>()
 
 const newMessage = ref<string>('')
 
-// Вычисляем текущий активный чат
+// get current active chat
 const currentChat = computed(() => {
   if (!selectedChatId.value) return null
   return chats.value.find(chat => chat.id === selectedChatId.value)
 })
 
-// Получаем инициалы для аватарки
+// get user initial
 const chatUserInitial = computed(() => {
   return currentChat.value?.another_user.username.charAt(0).toUpperCase() || ''
 })
 
-const API_HOST = import.meta.env.VITE_API_HOST
-
-// Наблюдатель за изменениями сообщений - автоматическая прокрутка
+// scroll to bottom when updated chat messages list
 watch(chatMessages, async () => {
   await nextTick()
   setTimeout(() => {
     scrollToBottom()
   }, 100)
 }, { deep: true })
+
+// handler update chats data
+const handleChatUpdated = (updateData: any) => {
+  const chatIndex = chats.value.findIndex(chat => chat.id === updateData.chat_id)
+  
+  if (chatIndex !== -1) {
+    const chat = chats.value[chatIndex]
+    
+    chat.last_message = {
+      id: chat.last_message?.id,
+      sender_id: chat.last_message?.sender_id || updateData.last_message_sender || '',
+      text: updateData.last_message,
+      is_read: chat.last_message?.is_read || false,
+      created_at: updateData.last_message_time || new Date().toISOString(),
+      chat_room_id: updateData.chat_id,
+      message_type: 'text' as const
+    }
+    
+    chat.unread_count = updateData.unread_count || 0
+    
+    chats.value.splice(chatIndex, 1)
+    chats.value.unshift(chat)
+  } else {
+    loadChats()
+  }
+}
 
 function backToChats() {
   if (mobileMode.value === 'chat') {
@@ -62,8 +87,9 @@ onMounted(async () => {
     isLoading.value = true
     await store.fetchUser()
     user.value = await store.getUser()
-
-    chatsService.onNewMessage((message) => {
+    
+    // subscribe to new messages
+    chatsService.onNewMessage((message: ChatMessageType) => {
       if (selectedChatId.value === message.chat_room_id) {
         const messageExists = chatMessages.value.some(m => m.id === message.id)
         if (!messageExists) {
@@ -72,7 +98,13 @@ onMounted(async () => {
       }
     })
 
-    chats.value = await chatsService.getChats()
+    chatsService.onChatUpdated(handleChatUpdated)
+
+    // load chats and subscribe to chats data update
+    await loadChats()
+    await chatsService.subscribeChatList()
+    
+    // restore last opened chat
     await restoreLastChat()
   }
   catch (error) {
@@ -88,6 +120,21 @@ onMounted(async () => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
 })
+
+onUnmounted(() => {
+  chatsService.unsubscribeChatList()
+  chatsService.onNewMessage(null)
+  chatsService.onChatUpdated(null)
+  chatsService.onChatNotification(null)
+})
+
+async function loadChats() {
+  try {
+    chats.value = await chatsService.getChats()
+  } catch (error) {
+    errorMessage.value = t('pages.chats.errorLoadingChats')
+  }
+}
 
 async function restoreLastChat() {
   const savedChatId = localStorage.getItem('selectedChatId')
@@ -109,16 +156,14 @@ function scrollToBottom() {
   const el = messageContainerRef.value
   if (!el) return
   
-  // Несколько попыток прокрутки для надежности
   const attemptScroll = (attempts = 0) => {
-    if (attempts > 5) return // Максимум 5 попыток
+    if (attempts > 5) return
     
     const shouldScroll = el.scrollHeight - el.scrollTop - el.clientHeight > 10
     
     if (shouldScroll) {
       el.scrollTop = el.scrollHeight
       
-      // Проверяем, достигли ли мы низа, если нет - повторяем
       setTimeout(() => {
         const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= 10
         if (!isAtBottom) {
@@ -135,12 +180,15 @@ async function loadChatMessages(chatId: string) {
   try {
     isLoading.value = true
     errorMessage.value = null
-    await chatsService.connectChat(chatId)
+    
+    // join chat room
+    await chatsService.joinChat(chatId)
     selectedChatId.value = chatId
+    
+    // load messages
     chatMessages.value = await chatsService.getChatMessages(chatId)
     localStorage.setItem('selectedChatId', chatId)
     
-    // Даем время на рендеринг перед прокруткой
     await nextTick()
     setTimeout(() => {
       scrollToBottom()
@@ -167,10 +215,15 @@ async function loadChatMessages(chatId: string) {
 async function sendMessage() {
   if (!newMessage.value.trim() || !selectedChatId.value) return
   try {
-    await chatsService.sendMessage(newMessage.value.trim(), selectedChatId.value)
-    newMessage.value = ''
+    const success = await chatsService.sendMessage(newMessage.value.trim(), selectedChatId.value)
+    if (success) {
+      newMessage.value = ''
+    } else {
+      errorMessage.value = t('pages.chats.errorSendMessage')
+    }
   }
   catch (error) {
+    console.error('Ошибка отправки сообщения:', error)
     errorMessage.value = t('pages.chats.errorSendMessage')
   }
 }
@@ -187,7 +240,7 @@ async function sendMessage() {
     </div>
 
     <div v-else class="w-full flex flex-1 overflow-hidden">
-      <!-- Список чатов -->
+      <!-- chats list -->
       <div
         v-if="!isMobile || (isMobile && mobileMode === 'chats')"
         class="h-full lg:max-w-sm flex flex-col md:pr-5 transition-all duration-300"
@@ -227,7 +280,7 @@ async function sendMessage() {
         </div>
       </div>
 
-      <!-- Окно чата -->
+      <!-- chat screen -->
       <div
         v-if="!isMobile || (isMobile && mobileMode === 'chat')"
         class="flex flex-1 transition-all duration-300"
@@ -245,7 +298,7 @@ async function sendMessage() {
           }"
         >
           <div class="flex flex-grow flex-col overflow-y-auto lg:pb-2 w-full">
-            <!-- Шапка чата -->
+            <!-- chat header -->
             <div v-if="isMobile && mobileMode === 'chat'" class="flex items-center gap-2 mb-2 px-2 sticky top-0 bg-background py-2 z-10">
               <button class="text-xl font-bold flex-shrink-0" @click="backToChats">
                 <ArrowLeft />
@@ -280,7 +333,7 @@ async function sendMessage() {
               </div>
             </div>
 
-            <!-- Контент чата -->
+            <!-- chat content -->
             <div ref="messageContainerRef" class="no-scrollbar flex flex-1 flex-col overflow-y-auto pb-2">
               <div v-if="chatMessages.length > 0" class="flex flex-1 flex-col justify-start">
                 <div class="flex flex-col gap-3">
