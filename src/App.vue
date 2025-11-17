@@ -37,22 +37,24 @@ const layout = computed(() => {
 </script>
 
 <template>
-  <div v-if="!isUserLoaded" class="w-screen h-screen flex items-center justify-center">
-    <Loader />
-  </div>
+  <div class="w-full h-full relative">
+    <div v-if="!isUserLoaded" class="w-screen h-screen flex items-center justify-center relative z-10">
+      <Loader />
+    </div>
 
-  <component v-else :is="layout">
-    <RouterView v-slot="{ Component, route }">
-      <Suspense>
-        <template #default>
-          <component :is="Component" :key="route.path" />
-        </template>
-        <template #fallback>
-          <div class="flex h-full items-center justify-center">
-            <Loader/>
-          </div>
-        </template>
-      </Suspense>
-    </RouterView>
-  </component>
+    <component v-else :is="layout" class="relative z-10">
+      <RouterView v-slot="{ Component, route }">
+        <Suspense>
+          <template #default>
+            <component :is="Component" :key="route.path" />
+          </template>
+          <template #fallback>
+            <div class="flex h-full items-center justify-center">
+              <Loader/>
+            </div>
+          </template>
+        </Suspense>
+      </RouterView>
+    </component>
+  </div>
 </template>
