@@ -54,19 +54,16 @@ const handleChatUpdated = (updateData: any) => {
   const chatIndex = chats.value.findIndex(chat => chat.id === updateData.chat_id)
   
   if (chatIndex !== -1) {
-    const chat = chats.value[chatIndex]
+    const chat = chats.value[chatIndex]!
     
-    chat.last_message = {
-      id: chat.last_message?.id,
-      sender_id: chat.last_message?.sender_id || updateData.last_message_sender || '',
-      text: updateData.last_message,
-      is_read: chat.last_message?.is_read || false,
-      created_at: updateData.last_message_time || new Date().toISOString(),
-      chat_room_id: updateData.chat_id,
-      message_type: 'text' as const
-    }
-    
-    chat.unread_count = updateData.unread_count || 0
+    chat.last_message = chat.last_message || {};
+    chat.last_message.id = chat.last_message?.id || updateData.last_message_id || '';
+    chat.last_message.sender_id = chat.last_message?.sender_id || updateData.last_message_sender || '';
+    chat.last_message.text = updateData.last_message || '';
+    chat.last_message.is_read = chat.last_message?.is_read || false;
+    chat.last_message.created_at = updateData.last_message_time || new Date().toISOString();
+    chat.last_message.chat_room_id = updateData.chat_id;
+    chat.last_message.message_type = 'text' as const;
     
     chats.value.splice(chatIndex, 1)
     chats.value.unshift(chat)
