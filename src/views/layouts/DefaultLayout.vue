@@ -11,6 +11,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 import SelectLanguage from '@/components/SelectLanguage.vue'
+import { chatsService } from '@/api/chats/chatsService'
 
 const store = useUserStore()
 const { t } = useI18n()
@@ -68,6 +69,7 @@ const isActiveRouteMobile = (item: any) => {
 onMounted(async () => {
   checkDesktop()
   window.addEventListener('resize', checkDesktop)
+  await chatsService.connectChatsWebsocket()
 })
 
 const navItems = computed(() => [
