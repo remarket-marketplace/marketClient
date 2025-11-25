@@ -95,8 +95,6 @@ async function createProduct() {
         {{ $t('pages.forms.createProduct.title') }}
       </h1>
 
-      <ErrorBanner v-if="errorMessage" :message="errorMessage" />
-
       <CustomSelect
         v-model="selectedCategoryId"
         :options="categories.map(c => ({ label: c.name, value: c.id }))"
@@ -154,7 +152,6 @@ async function createProduct() {
           ></textarea>
         </div>
 
-        <!-- Здесь используем наш компонент -->
         <div>
           <label class="mb-2 block text-sm text-gray-300">{{ $t('common.images') }}</label>
           <FileUploader v-model="images" :max-files="8" />
@@ -170,6 +167,8 @@ async function createProduct() {
       >
         {{ sended ? $t('pages.forms.createProduct.creating') : $t('common.create') }}
       </button>
+
+      <ErrorBanner v-if="errorMessage" :message="errorMessage" />
     </div>
   </div>
 </template>

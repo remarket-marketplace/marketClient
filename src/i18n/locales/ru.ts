@@ -278,6 +278,7 @@ const ru = {
       errorLoadingChats: 'Ошибка загрузки чатов',
       errorDataStructure: 'Ошибка в структуре данных',
       errorLoadingMessages: 'Ошибка загрузки сообщений',
+      errorSendMessage: "Ошибка отправки сообщения",
       errorConfirm: 'Ошибка подтверждения',
       noMessages: 'Нет сообщений',
       emptyChats: 'Список чатов пуст...',
@@ -291,6 +292,8 @@ const ru = {
       viewProduct: "Посмотреть товар",
       productData: "Данные товара",
       reported: "Жалоба отправлена",
+      newDealStatus: "Новый статус сделки:",
+      updateDealStatus: "Новый статус сделки",
     },
 
     profile: {

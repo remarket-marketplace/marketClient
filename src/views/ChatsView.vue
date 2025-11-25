@@ -6,19 +6,18 @@ import SendMessageBar from '@/components/chats/SendMessageBar.vue'
 import Loader from '@/components/Loader.vue'
 import { useUserStore } from '@/stores/user'
 import type { ChatListItem } from '@/validation/chat/ChatList'
-import type { ChatContentUnion, ChatMessage as ChatMessageType } from '@/validation/chat/chatMessage'
+import type { ChatMessageUnion } from '@/validation/chat/chatMessage'
 import type { UserRead } from '@/validation/user/userRead'
 import { nextTick, onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ZodError } from 'zod'
-
 import { ArrowLeft } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const API_HOST = import.meta.env.VITE_API_HOST
 
 const chats = ref<ChatListItem[]>([])
-const chatMessages = ref<ChatContentUnion[]>([])
+const chatMessages = ref<ChatMessageUnion[]>([])
 const selectedChatId = ref<string | null>(null)
 const messageContainerRef = ref<HTMLElement | null>(null)
 const isLoading = ref(false)
@@ -30,18 +29,15 @@ const user = ref<UserRead | null>()
 
 const newMessage = ref<string>('')
 
-// get current active chat
 const currentChat = computed(() => {
   if (!selectedChatId.value) return null
   return chats.value.find(chat => chat.id === selectedChatId.value)
 })
 
-// get user initial
 const chatUserInitial = computed(() => {
   return currentChat.value?.another_user.username.charAt(0).toUpperCase() || ''
 })
 
-// scroll to bottom when updated chat messages list
 watch(chatMessages, async () => {
   await nextTick()
   setTimeout(() => {
@@ -49,22 +45,18 @@ watch(chatMessages, async () => {
   }, 100)
 }, { deep: true })
 
-// handler update chats data
 const handleChatUpdated = (updateData: any) => {
   const chatIndex = chats.value.findIndex(chat => chat.id === updateData.chat_id)
-  
+
   if (chatIndex !== -1) {
     const chat = chats.value[chatIndex]!
-    
-    chat.last_message = chat.last_message || {};
-    chat.last_message.id = chat.last_message?.id || updateData.last_message_id || '';
-    chat.last_message.sender_id = chat.last_message?.sender_id || updateData.last_message_sender || '';
-    chat.last_message.text = updateData.last_message || '';
-    chat.last_message.is_read = chat.last_message?.is_read || false;
-    chat.last_message.created_at = updateData.last_message_time || new Date().toISOString();
-    chat.last_message.chat_room_id = updateData.chat_id;
-    chat.last_message.message_type = 'text' as const;
-    
+
+    // Нормализуем структуру last_message
+    chat.last_message = {
+      message: updateData.last_message
+    }
+
+    // переносим вверх
     chats.value.splice(chatIndex, 1)
     chats.value.unshift(chat)
   } else {
@@ -84,11 +76,14 @@ onMounted(async () => {
     isLoading.value = true
     await store.fetchUser()
     user.value = await store.getUser()
-    
+
+    // connect websocket
+    await chatsService.connectChatsWebsocket()
+
     // subscribe to new messages
-    chatsService.onNewMessage((message: ChatMessageType) => {
-      if (selectedChatId.value === message.chat_room_id) {
-        const messageExists = chatMessages.value.some(m => m.id === message.id)
+    chatsService.onNewMessage((message: ChatMessageUnion) => {
+      if (selectedChatId.value === message.message.chat_room_id) {
+        const messageExists = chatMessages.value.some(m => m.message.id === message.message.id)
         if (!messageExists) {
           chatMessages.value.push(message)
         }
@@ -100,7 +95,7 @@ onMounted(async () => {
     // load chats and subscribe to chats data update
     await loadChats()
     await chatsService.subscribeChatList()
-    
+
     // restore last opened chat
     await restoreLastChat()
   }
@@ -152,15 +147,15 @@ async function restoreLastChat() {
 function scrollToBottom() {
   const el = messageContainerRef.value
   if (!el) return
-  
+
   const attemptScroll = (attempts = 0) => {
     if (attempts > 5) return
-    
+
     const shouldScroll = el.scrollHeight - el.scrollTop - el.clientHeight > 10
-    
+
     if (shouldScroll) {
       el.scrollTop = el.scrollHeight
-      
+
       setTimeout(() => {
         const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= 10
         if (!isAtBottom) {
@@ -169,7 +164,7 @@ function scrollToBottom() {
       }, 50)
     }
   }
-  
+
   attemptScroll()
 }
 
@@ -177,20 +172,20 @@ async function loadChatMessages(chatId: string) {
   try {
     isLoading.value = true
     errorMessage.value = null
-    
+
     // join chat room
     await chatsService.joinChat(chatId)
     selectedChatId.value = chatId
-    
+
     // load messages
     chatMessages.value = await chatsService.getChatMessages(chatId)
     localStorage.setItem('selectedChatId', chatId)
-    
+
     await nextTick()
     setTimeout(() => {
       scrollToBottom()
     }, 150)
-    
+
     if (isMobile.value) {
       mobileMode.value = 'chat'
     }
@@ -216,6 +211,7 @@ async function sendMessage() {
     if (success) {
       newMessage.value = ''
     } else {
+      console.error('Ошибка отправки сообщения: ')
       errorMessage.value = t('pages.chats.errorSendMessage')
     }
   }
@@ -300,7 +296,7 @@ async function sendMessage() {
               <button class="text-xl font-bold flex-shrink-0" @click="backToChats">
                 <ArrowLeft />
               </button>
-              
+
               <div class="flex items-center gap-3 flex-1 min-w-0">
                 <div class="h-8 w-8 flex items-center justify-center flex-shrink-0">
                   <img
@@ -336,8 +332,8 @@ async function sendMessage() {
                 <div class="flex flex-col gap-3">
                   <ChatMessage
                     v-for="message in chatMessages"
-                    :key="message.id"
-                    :message="message"
+                    :key="message.message.id"
+                    :message="message.message"
                     :user="user"
                   />
                 </div>

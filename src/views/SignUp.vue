@@ -118,6 +118,22 @@ async function sendCode() {
   }
 }
 
+function handlePaste(event: ClipboardEvent) {
+  event.preventDefault()
+  const paste = event.clipboardData?.getData('text') ?? ''
+  const digits = paste.replace(/\D/g, '').slice(0, 6).split('')
+  
+  digits.forEach((digit, i) => {
+    codeDigits.value[i] = digit
+  })
+  
+  nextTick(() => {
+    const nextIndex = digits.length < 6 ? digits.length : 5
+    codeInputs.value[nextIndex]?.focus()
+  })
+}
+
+
 function switchPasswordVisibility() {
   passwordHidden.value = !passwordHidden.value
 }
@@ -196,8 +212,6 @@ function clearPasswordError() {
 
       <!-- Форма регистрации -->
       <form v-if="!showCodeInput" class="space-y-4" @submit.prevent>
-        <ErrorBanner :message="errorMessage" />
-        
         <!-- Username -->
         <div>
           <label for="username" class="mb-1 block text-sm text-text-secondary">{{ $t('common.username') }}</label>
@@ -279,6 +293,8 @@ function clearPasswordError() {
           :button-text="sended ? $t('common.sending') : $t('pages.auth.signUp.getCode')"
           :sended="sended"
         />
+
+        <ErrorBanner :message="errorMessage" />
       </form>
 
       <!-- Форма ввода кода -->
@@ -298,6 +314,7 @@ function clearPasswordError() {
               class="flex-1 aspect-square min-w-0 border border-1 border-dark-700 rounded-lg bg-dark-600 text-center text-lg text-mainText font-bold transition-all focus:border-blue-500 focus:outline-none"
               @input="handleCodeInput($event, index)"
               @keydown="handleKeyDown($event, index)"
+              @paste="handlePaste"
             >
           </div>
         </div>

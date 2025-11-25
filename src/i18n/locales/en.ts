@@ -94,7 +94,7 @@ const en = {
       pending: "Pending",
       confirmed: "Confirmed",
       disputed:"disputed",
-      conpleted:"completed",
+      completed:"completed",
       cancelled:"cancelled",
       refunded:"refunded",
     }
@@ -281,6 +281,7 @@ const en = {
       errorLoadingChats: 'Error loading chats',
       errorDataStructure: 'Error in data structure',
       errorLoadingMessages: 'Error loading messages',
+      errorSendMessage: "Error send message",
       errorConfirm: 'Error confirming',
       noMessages: 'No messages',
       emptyChats: 'Chat list is empty...',
@@ -294,6 +295,8 @@ const en = {
       viewProduct: "View Product",
       productData: "Product data",
       reported: "Reported",
+      newDealStatus: "New deal status:",
+      updateDealStatus: "New deal status",
     },
 
     profile: {

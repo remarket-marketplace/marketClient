@@ -1,4 +1,4 @@
-// Карта ошибок для фронтенда
+// ERRORS MAP
 // error_code => ключ для i18n
 
 export const errorCodeMap: Record<string, string> = {
@@ -45,13 +45,12 @@ export const errorCodeMap: Record<string, string> = {
   PRODUCT_ALREADY_SOLD: 'errors.PRODUCT_ALREADY_SOLD',
 }
 
-// Пример функции для получения текста ошибки через i18n
 // errorDetail = { error_code: 'TOKEN_NOT_FOUND', error_message: 'Token not found' }
 export function getErrorMessage(errorDetail: { error_code: string, error_message?: string }, t: (key: string) => string): string {
   const i18nKey = errorCodeMap[errorDetail.error_code]
   if (i18nKey) {
     return t(i18nKey)
   }
-  // fallback: если нет ключа, вернуть оригинальное сообщение
+  // fallback: don't have key - return original error message
   return errorDetail.error_message || errorDetail.error_code
 }

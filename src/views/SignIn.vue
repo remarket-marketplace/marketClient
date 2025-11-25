@@ -53,7 +53,6 @@ async function signIn() {
       </h1>
 
       <form class="space-y-4" @submit.prevent>
-        <ErrorBanner :message="errorMessage" />
         <div>
           <label for="email" class="mb-1 block text-sm text-gray-300">{{ $t('common.email') }}</label>
           <TheInput
@@ -83,6 +82,8 @@ async function signIn() {
           :sended="sended"
         >
         </TheButton>
+
+        <ErrorBanner :message="errorMessage" />
       </form>
 
       <p class="text-center text-sm text-text-secondaryDark">

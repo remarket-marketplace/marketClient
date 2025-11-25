@@ -1,6 +1,6 @@
 import { ZodError } from 'zod'
 import { httpClient } from '..'
-import { ProductEditDataSchema, ProductSchema, type Product } from '@/validation/product/product'
+import { ProductSchema, type Product } from '@/validation/product/product'
 
 export const productService = {
   async getAllProducts(page: number, perPage: number) {
@@ -60,7 +60,7 @@ export const productService = {
           url: img.url || img.image_url || '',
         })),
       }
-      return ProductEditDataSchema.parse(transformedProduct)
+      return ProductSchema.parse(transformedProduct)
     }
     catch (e) {
       if (e instanceof ZodError)

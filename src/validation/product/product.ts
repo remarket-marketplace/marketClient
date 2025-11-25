@@ -8,7 +8,6 @@ export const ProductImageSchema = z.object({
 }).strip()
 
 export const SellerSchema = z.object({
-  // id: UUIDSchema,
   username: z.string(),
   avatar_url: z.string(),
   is_active: z.boolean(),
@@ -41,22 +40,4 @@ export const ProductSchema = z.object({
   product_data_string: z.string().nullable().optional(),
 }).strip()
 
-export const ProductEditDataSchema = z.object({
-  id: UUIDSchema,
-  title: z.string(),
-  description: z.string(),
-  is_sold: z.boolean(),
-  status: z.string(),
-  category: CategorySchema,
-  price: z.number(),
-  created_at: z.string(),
-  seller: SellerSchema,
-  images: z.array(ProductImageSchema),
-  is_owner: z.boolean().optional(),
-  product_data_string: z.string(),
-}).strip()
-
-// Типы:
 export type Product = z.infer<typeof ProductSchema>
-export type ProductImage = z.infer<typeof ProductImageSchema>
-export type ProductEdit = z.infer<typeof ProductEditDataSchema>

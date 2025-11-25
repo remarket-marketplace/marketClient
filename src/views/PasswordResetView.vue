@@ -11,24 +11,24 @@ import { Eye, EyeOff } from 'lucide-vue-next'
 
 const { t } = useI18n()
 
-// Состояния
+// States
 const currentState = ref<'waitEmail' | 'waitConfirmCode' | 'waitNewPassword'>('waitEmail')
 const sended = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 
-// Данные формы
+// Forms data
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const passwordHidden = ref(true)
 
-// Код подтверждения
+// Verification code
 const codeDigits = ref<string[]>(['', '', '', '', '', ''])
 const codeInputs = ref<(HTMLInputElement | null)[]>([])
 const fullCode = computed(() => codeDigits.value.join(''))
 
-// Валидация
+// Validation
 const emailValid = computed(() => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return emailRegex.test(email.value)
@@ -38,7 +38,7 @@ const passwordValid = computed(() => password.value.length >= 8)
 const passwordsMatch = computed(() => password.value === confirmPassword.value)
 const codeValid = computed(() => fullCode.value.length === 6)
 
-// Автофокус на первое поле при смене состояния
+// Autofocus on first field when change state
 onMounted(() => {
   if (currentState.value === 'waitConfirmCode') {
     nextTick(() => {
@@ -47,7 +47,6 @@ onMounted(() => {
   }
 })
 
-// Обработчики ввода кода
 function handleCodeInput(event: Event, index: number) {
   const target = event.target as HTMLInputElement
   const value = target.value.replace(/\D/g, '')
@@ -61,7 +60,7 @@ function handleCodeInput(event: Event, index: number) {
     })
   }
   
-  // Автоподтверждение при полном вводе кода
+  // Autoconfirm if code is full
   if (fullCode.value.length === 6) {
     nextTick(() => {
       sendForm()
@@ -84,7 +83,7 @@ function handleCodePaste(event: ClipboardEvent) {
   nextTick(() => {
     codeInputs.value[lastFilledIndex]?.focus()
     
-    // Автоподтверждение если код полный
+    // Autoconfirm if code is full
     if (fullCode.value.length === 6) {
       setTimeout(() => sendForm(), 100)
     }
@@ -103,7 +102,7 @@ function handleKeyDown(event: KeyboardEvent, index: number) {
   }
 }
 
-// Основная функция отправки формы
+// main function of send form
 async function sendForm() {
   errorMessage.value = ''
   successMessage.value = ''
@@ -145,7 +144,7 @@ async function sendCode() {
     currentState.value = 'waitConfirmCode'
     successMessage.value = t('pages.passwordRecovery.codeSent')
     
-    // Фокус на первое поле кода
+    // focus on first input field
     nextTick(() => {
       codeInputs.value[0]?.focus()
     })
@@ -165,7 +164,7 @@ async function confirmCode() {
     currentState.value = 'waitNewPassword'
     successMessage.value = t('pages.passwordRecovery.codeVerified')
   } else {
-    // Сброс кода при ошибке
+    // reset code
     codeDigits.value = ['', '', '', '', '', '']
     nextTick(() => {
       codeInputs.value[0]?.focus()
@@ -188,7 +187,7 @@ async function setNewPassword() {
   if (result === true || result?.success) {
     successMessage.value = t('pages.passwordRecovery.passwordChanged')
     
-    // Редирект через секунду
+    // Redirect after second
     setTimeout(async () => {
       await router.push('/signin')
     }, 1000)
@@ -201,7 +200,7 @@ function switchPasswordVisibility() {
   passwordHidden.value = !passwordHidden.value
 }
 
-// Повторная отправка кода
+// Send verification code repeat
 async function resendCode() {
   errorMessage.value = ''
   sended.value = true
@@ -212,7 +211,7 @@ async function resendCode() {
     if (result === true || result?.success) {
       successMessage.value = t('pages.passwordRecovery.codeResent')
       
-      // Сброс полей кода
+      // Reset code fields
       codeDigits.value = ['', '', '', '', '', '']
       nextTick(() => {
         codeInputs.value[0]?.focus()
@@ -231,7 +230,6 @@ async function resendCode() {
   }
 }
 
-// Сброс процесса
 function resetProcess() {
   email.value = ''
   password.value = ''
@@ -251,15 +249,13 @@ function resetProcess() {
       </h1>
 
       <form class="space-y-4" @submit.prevent="sendForm">
-        <!-- Баннер ошибок -->
-        <ErrorBanner v-if="errorMessage" :message="errorMessage" />
         
-        <!-- Баннер успеха -->
+        <!-- Success banner -->
         <div v-if="successMessage" class="p-3 bg-green-500/20 border border-green-500 rounded-lg">
           <p class="text-green-400 text-sm text-center">{{ successMessage }}</p>
         </div>
 
-        <!-- Шаг 1: Email -->
+        <!-- Step 1: Email -->
         <div v-if="currentState === 'waitEmail'">
           <label for="email" class="mb-2 block text-sm text-gray-300">
             {{ $t('common.email') }}
@@ -278,7 +274,7 @@ function resetProcess() {
           </p>
         </div>
 
-        <!-- Шаг 2: Код подтверждения -->
+        <!-- Step 2: Verification code -->
         <div v-if="currentState === 'waitConfirmCode'">
           <div class="text-center mb-4">
             <p class="text-text-secondary text-sm">
@@ -319,7 +315,7 @@ function resetProcess() {
           </div>
         </div>
 
-        <!-- Шаг 3: Новый пароль -->
+        <!-- Step 3: New password -->
         <div v-if="currentState === 'waitNewPassword'" class="space-y-4">
           <div>
             <label for="password" class="mb-2 block text-sm text-gray-300">
@@ -382,7 +378,7 @@ function resetProcess() {
           </div>
         </div>
 
-        <!-- Кнопка отправки -->
+        <!-- Send button -->
         <TheButton
           @click="sendForm"
           :button-text="
@@ -400,7 +396,9 @@ function resetProcess() {
           "
         />
 
-        <!-- Дополнительные действия -->
+        <ErrorBanner v-if="errorMessage" :message="errorMessage" />
+
+        <!-- additional actions -->
         <div class="text-center space-y-2">
           <div v-if="currentState !== 'waitEmail'">
             <button
@@ -424,15 +422,14 @@ function resetProcess() {
 </template>
 
 <style scoped>
-/* Плавные переходы между состояниями */
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.3s ease;
 }
+
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
 }
 
-/* Стили для disabled состояний */
 button:disabled {
   cursor: not-allowed;
   opacity: 0.6;

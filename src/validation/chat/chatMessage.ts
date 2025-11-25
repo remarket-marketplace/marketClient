@@ -1,29 +1,52 @@
 import { z } from 'zod'
-import { ProductSchema } from '../product/product'
+import { ProductSchema } from '@/validation/product/product'
 
-// Схема для входящих сообщений (с сервера)
-export const ChatMessageSchema = z.object({
+// Basic scheme
+export const BaseMessageSchema = z.object({
   id: z.string(),
+  chat_room_id: z.string(),
+  created_at: z.string(),
+  message_type: z.string(),
+})
+// Text message
+export const TextMessageSchema = BaseMessageSchema.extend({
+  message_type: z.literal('text_message'),
   sender_id: z.string(),
   text: z.string(),
   is_read: z.boolean(),
-  created_at: z.string(),
-  chat_room_id: z.string(),
-  message_type: z.string().optional(),
 })
 
-// Схема для отправки сообщений
-export const SendMessageSchema = z.object({
+
+// Purchase message
+export const ProductMessageSchema = BaseMessageSchema.extend({
+  message_type: z.literal('purchase_message'),
+  product: ProductSchema,
+})
+
+
+// Update deal status message
+export const DealStatusMessageSchema = BaseMessageSchema.extend({
+  message_type: z.literal('update_deal_status_message'),
+  new_status: z.string(),
+})
+
+
+// discriminated union по полю message_type
+export const ChatMessageUnionSchema = z.object({
+  message: z.discriminatedUnion('message_type', [
+    TextMessageSchema,
+    ProductMessageSchema,
+    DealStatusMessageSchema,
+  ])
+})
+
+
+export const ChatUpdateSchema = z.object({
   chat_id: z.string(),
-  message: z.string().min(1),
+  last_message: ChatMessageUnionSchema,
+  unread_count: z.number(),
 })
 
-export type ChatMessage = z.infer<typeof ChatMessageSchema>
-
-export const ChatContentUnionSchema = z.union([
-  ProductSchema, // Попробует валидировать как продукт
-  ChatMessageSchema, // Попробует валидировать как сообщение
-])
-
-export type ChatContentUnion = z.infer<typeof ChatContentUnionSchema>
-export const ChatArrayUnionSchema = z.array(ChatContentUnionSchema)
+export type ChatMessageUnion = z.infer<typeof ChatMessageUnionSchema>
+export type ChatUpdateSchema = z.infer<typeof ChatUpdateSchema>
+export const ChatArrayUnionSchema = z.array(ChatMessageUnionSchema)

@@ -47,9 +47,9 @@ const errorText = computed(() => {
   width: 100%;
   background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
   color: #fff;
-  border-radius: 1rem;
+  border-radius: 0.5rem;
   box-shadow: 0 4px 16px 0 rgba(239, 68, 68, 0.15);
-  padding: 1rem 1.5rem;
+  padding: 0.8rem 1.5rem;
   letter-spacing: 0.01em;
   margin-bottom: 1rem;
 }

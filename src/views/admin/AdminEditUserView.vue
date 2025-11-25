@@ -132,7 +132,6 @@ onMounted(() => {
 <template>
   <div class="no-scrollbar h-full w-full flex flex-col items-center overflow-scroll pb-36">
     <div class="max-w-md w-full border border-dark-700 rounded-2xl bg-background p-6 sm:p-8 backdrop-blur-md space-y-6">
-      <!-- Заголовок -->
       <div class="text-center">
         <h1 class="text-2xl sm:text-3xl text-mainText font-bold">
           {{ $t('pages.admin.editUser.title') }}
@@ -148,11 +147,10 @@ onMounted(() => {
         <span class="ml-3 text-text-secondary">{{ $t('common.loading') }}</span>
       </div>
 
-      <!-- Форма редактирования -->
+      <!-- Edit form -->
       <form v-else @submit.prevent="saveUser" class="space-y-4">
-        <ErrorBanner :message="errorMessage" />
         
-        <!-- Сообщение об успехе -->
+        <!-- Success banner -->
         <div v-if="successMessage" class="p-3 bg-green-500/20 border border-green-500/30 rounded-lg text-green-400 text-sm">
           {{ successMessage }}
         </div>
@@ -218,9 +216,9 @@ onMounted(() => {
           />
         </div>
 
-        <!-- Баланс и рейтинг -->
+        <!-- Balance and rating  -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <!-- Баланс -->
+          <!-- Balance -->
           <div>
             <label for="balance" class="mb-1 block text-sm text-text-secondary">
               {{ $t('common.balance') }}
@@ -234,7 +232,7 @@ onMounted(() => {
             />
           </div>
 
-          <!-- Рейтинг -->
+          <!-- Rating -->
           <div>
             <label for="rating" class="mb-1 block text-sm text-text-secondary">
               {{ $t('common.rating') }}
@@ -249,9 +247,9 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- Статус и роль -->
+        <!-- Status and role -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <!-- Статус активности -->
+          <!-- Status -->
           <div>
             <label class="mb-1 block text-sm text-text-secondary">
               {{ $t('common.status') }}
@@ -296,7 +294,7 @@ onMounted(() => {
             </div>
           </div>
 
-          <!-- Роль -->
+          <!-- Role -->
           <div>
             <label class="mb-1 block text-sm text-text-secondary">
               {{ $t('common.role') }}
@@ -328,7 +326,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- Информация только для чтения -->
+        <!-- Readonly info -->
         <div v-if="user" class="border-t border-dark-700 pt-4 space-y-2 text-sm">
           <div class="flex justify-between items-center">
             <span class="text-text-secondary">{{ $t('common.memberSince') }}</span>
@@ -340,7 +338,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- Кнопки действий -->
+        <!-- Action buttons -->
         <div class="flex gap-3 pt-4">
             <button
                 type="button"
@@ -362,6 +360,8 @@ onMounted(() => {
                 {{ isSaving ? $t('common.saving') : $t('common.save') }}
             </button>
             </div>
+
+        <ErrorBanner :message="errorMessage" />
       </form>
     </div>
   </div>

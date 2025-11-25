@@ -113,7 +113,7 @@ function handleViewProduct(productId: string) {
               </button>
               
               <div 
-                v-else 
+                v-else
                 class="flex items-center justify-center gap-2 rounded-lg bg-gray-800 px-6 py-3 text-sm font-semibold text-gray-300 border border-gray-600 min-w-[120px]"
               >
                 <svg class="w-4 h-4 text-red-400" fill="currentColor" viewBox="0 0 20 20">

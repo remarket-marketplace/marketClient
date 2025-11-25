@@ -151,8 +151,6 @@ async function updateProduct() {
         {{ $t('pages.forms.editProduct.title') }}
       </h1>
 
-      <ErrorBanner v-if="errorMessage" :message="errorMessage" />
-
       <Loader v-if="isLoadingProduct"/>
 
       <template v-else>
@@ -251,6 +249,8 @@ async function updateProduct() {
         >
           {{ sended ? t('pages.forms.editProduct.saving') : t('pages.forms.editProduct.save') }}
         </button>
+
+        <ErrorBanner v-if="errorMessage" :message="errorMessage" />
       </template>
     </div>
   </div>

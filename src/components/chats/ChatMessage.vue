@@ -1,50 +1,44 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { ChatContentUnion, ChatMessage } from '@/validation/chat/chatMessage'
+import NewPurchaseMessage from './NewPurchaseMessage.vue'
 import type { Product } from '@/validation/product/product'
-import NewPurchaseMessage from './NewPurchaseMessage.vue';
+import type { ChatMessageUnion } from '@/validation/chat/chatMessage'
 
 const props = defineProps<{
-  message: ChatContentUnion
+  message: ChatMessageUnion
   user: any
 }>()
 
-function isProduct(message: ChatContentUnion): message is Product {
-  return (
-    'title' in message
-    && 'price' in message
-    && 'seller' in message
-  )
-}
+const content = computed(() => props.message ?? null)
 
-const isProductMessage = computed(() => {
-  return isProduct(props.message)
+// message_type
+const type = computed(() => content.value?.message_type ?? null)
+
+
+const isTextMessage = computed(() => type.value === 'text_message')
+const isProductMessage = computed(() => type.value === 'purchase_message')
+const isDealStatusMessage = computed(() => type.value === 'update_deal_status_message')
+
+const textMessage = computed(() => {
+  return isTextMessage.value ? content.value : null
 })
 
-const product = computed(() => {
-  if (isProduct(props.message)) {
-    return props.message
-  }
-  return null
+const product = computed<Product | null>(() => {
+  return isProductMessage.value ? content.value.product : null
 })
 
-const chatMessage = computed<ChatMessage | null>(() => {
-  if (!isProduct(props.message)) {
-    return props.message as ChatMessage
-  }
-  return null
-})
 
 const messageAlignment = computed(() => {
-  if (isProduct(props.message)) {
-    return 'w-full self-center'
-  }
-  return chatMessage.value?.sender_id === props.user?.id ? 'flex justify-end' : 'flex justify-start'
+  if (isProductMessage.value) return 'w-full self-center'
+
+  if (textMessage.value?.sender_id === props.user?.id)
+    return 'flex justify-end'
+
+  return 'flex justify-start'
 })
 
 function formatDate(dateStr: string): string {
-  if (!dateStr)
-    return ''
+  if (!dateStr) return ''
   const date = new Date(dateStr)
   return date.toLocaleString('ru-RU', {
     hour: '2-digit',
@@ -55,29 +49,35 @@ function formatDate(dateStr: string): string {
 
 <template>
   <div :class="messageAlignment">
-    
-    <!-- сообщение о покупке товара -->
+
+    <!-- PRODUCT MESSAGE -->
     <div v-if="isProductMessage && product">
-      <NewPurchaseMessage
-      :product="product"
-      />
+      <NewPurchaseMessage :product="product" />
     </div>
 
-    <!-- текстовое сообщение -->
+    <!-- TEXT MESSAGE -->
     <div
-      v-else-if="chatMessage"
-      class="max-w-[70%] rounded-xl px-4 py-2 text-sm break-normal break-all" 
+      v-else-if="textMessage"
+      class="max-w-[70%] rounded-xl px-4 py-2 text-sm break-normal break-all"
       :class="[
-        chatMessage.sender_id === user?.id
-          ? 'bg-blue-600 text-mainText rounded-br-none self-end' // Стили для моего сообщения (синий, справа)
-          : 'bg-dark-600 text-mainText rounded-bl-none self-start' // Стили для сообщения собеседника (серый, слева)
+        textMessage.sender_id === user?.id
+          ? 'bg-blue-600 text-mainText rounded-br-none self-end'
+          : 'bg-dark-600 text-mainText rounded-bl-none self-start'
       ]"
     >
-      <p>{{ chatMessage.text }}</p>
+      <p>{{ textMessage.text }}</p>
 
       <p class="mt-1 text-right text-xs text-gray-300">
-        {{ formatDate(chatMessage.created_at) }}
+        {{ formatDate(textMessage.created_at) }}
       </p>
+    </div>
+
+    <!-- DEAL STATUS MESSAGE -->
+    <div
+      v-else-if="isDealStatusMessage"
+      class="text-center w-full text-gray-400 text-sm my-2"
+    >
+      {{ $t('pages.chats.newDealStatus') }} {{ $t(`common.dealStatuses.${content?.new_status}`) }}
     </div>
   </div>
 </template>

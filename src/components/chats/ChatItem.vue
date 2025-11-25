@@ -2,26 +2,44 @@
 import type { ChatListItem } from '@/validation/chat/ChatList';
 import { computed, onMounted, ref } from 'vue'
 import { defineProps } from 'vue'
+import { useI18n } from 'vue-i18n';
 
 const API_HOST = import.meta.env.VITE_API_HOST
+
+const { t } = useI18n()
 
 const props = defineProps<{
     chat: ChatListItem,
     selectedChatId: string | null
 }>()
 
+console.log('props console')
+console.log(props.chat)
+
+
 const isMobile = ref(false)
 
 const formattedLastMessage = computed((): string | null => {
-    if (!props.chat.last_message?.text) {
+    if (!props.chat.last_message.message) {
         return null
     }
-    
-    const text = props.chat.last_message.text
-        if (text.length > 60) {
-            return text.substring(0, 57) + '...'
-        }
-        return text
+
+    let text = null;
+    switch (props.chat.last_message.message.message_type) {
+        case "purchase_message":
+            text = t('pages.chats.newPurchase')
+            break
+        case "text_message":
+            text = props.chat.last_message.message.text
+            if (text.length > 60) {
+                text = text.substring(0, 57) + '...'
+            }
+            break
+        case "update_deal_status_message":
+            text = t('pages.chats.updateDealStatus')
+            break
+    }
+    return text
 })
 
 const isSelected = props.chat.id === props.selectedChatId
@@ -97,23 +115,24 @@ onMounted(() => {
                 <p class="truncate text-mainText font-semibold text-base">
                     {{ chat.another_user.username }}
                 </p>
-                <span 
-                    v-if="chat.last_message?.created_at" 
+                <!-- <span 
+                    v-if="chat.last_message?.message.created_at" 
                     class="flex-shrink-0 text-xs text-gray-500 whitespace-nowrap"
                 >
-                    {{new Date(chat.last_message.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}}
-                </span>
+                    {{new Date(chat.last_message.message.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}}
+                </span> -->
             </div>
 
             <div class="flex items-center justify-between gap-2 mt-1">
                 <p 
-                class="truncate text-sm flex-1 min-w-0"
-                :class="{
-                    'text-blue-500 font-light': chat.last_message.message_type === 'purchase_info',
-                    'text-gray-500': chat.last_message.message_type !== 'purchase_info'
-                }"
+                    class="truncate text-sm flex-1 min-w-0"
+                    :class="{
+                        'text-blue-500 font-light': chat.last_message?.message?.message_type === 'purchase_message'
+                        || chat.last_message?.message?.message_type === 'update_deal_status_message',
+                        'text-gray-500': chat.last_message?.message?.message_type === 'text_message'
+                    }"
                 >
-                    {{ chat.last_message.message_type === 'purchase_info' ? $t('pages.chats.newPurchase') : formattedLastMessage }}
+                    {{ formattedLastMessage }}
                 </p>
             </div>
         </div>
