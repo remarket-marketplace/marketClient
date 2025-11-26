@@ -85,11 +85,10 @@ export const chatsService = {
         socket!.emit('subscribe_chat_list')
       })
 
-      /** VALIDATION EVENTS */
       socket.on('new_message', (data: any) => {
-        console.log()
         try {
-          const validated = ChatMessageUnionSchema.parse(data)
+          const payload = data.message ?? data
+          const validated = ChatMessageUnionSchema.parse(payload)
           onNewMessageCallback?.(validated)
         } catch (e) {
           console.error('Ошибка валидации нового сообщения:', e)
@@ -98,9 +97,10 @@ export const chatsService = {
 
       socket.on('chat_updated', (data: any) => {
         try {
+          const lastMsg = data.last_message ? (data.last_message.message ?? data.last_message) : undefined
           const validated: ChatUpdateSchema = {
             chat_id: data.chat_id,
-            last_message: data.last_message,
+            last_message: lastMsg ? ChatMessageUnionSchema.parse(lastMsg) : undefined,
             unread_count: data.unread_count || 0,
           }
           onChatUpdatedCallback?.(validated)

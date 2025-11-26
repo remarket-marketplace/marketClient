@@ -68,7 +68,7 @@ onMounted(async () => {
     title.value = productData.value.title
     description.value = productData.value.description
     price.value = productData.value.price.toString()
-    productDataString.value = productData.value.product_data_string
+    productDataString.value = productData.value.product_data_string ?? ''
     existingImages.value = [...productData.value.images]
 
   } catch (err: any) {

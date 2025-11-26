@@ -1,14 +1,15 @@
 import { z } from 'zod'
 import { ProductSchema } from '@/validation/product/product'
 
-// Basic scheme
+// Базовая схема
 export const BaseMessageSchema = z.object({
   id: z.string(),
   chat_room_id: z.string(),
   created_at: z.string(),
   message_type: z.string(),
 })
-// Text message
+
+// Текстовое сообщение
 export const TextMessageSchema = BaseMessageSchema.extend({
   message_type: z.literal('text_message'),
   sender_id: z.string(),
@@ -16,37 +17,35 @@ export const TextMessageSchema = BaseMessageSchema.extend({
   is_read: z.boolean(),
 })
 
-
-// Purchase message
+// Сообщение о покупке
 export const ProductMessageSchema = BaseMessageSchema.extend({
   message_type: z.literal('purchase_message'),
   product: ProductSchema,
 })
 
-
-// Update deal status message
+// Сообщение об обновлении статуса сделки
 export const DealStatusMessageSchema = BaseMessageSchema.extend({
   message_type: z.literal('update_deal_status_message'),
   new_status: z.string(),
 })
 
-
 // discriminated union по полю message_type
-export const ChatMessageUnionSchema = z.object({
-  message: z.discriminatedUnion('message_type', [
-    TextMessageSchema,
-    ProductMessageSchema,
-    DealStatusMessageSchema,
-  ])
-})
+export const ChatMessageUnionSchema = z.discriminatedUnion('message_type', [
+  TextMessageSchema,
+  ProductMessageSchema,
+  DealStatusMessageSchema,
+])
 
-
+// Схема обновления чата
 export const ChatUpdateSchema = z.object({
   chat_id: z.string(),
-  last_message: ChatMessageUnionSchema,
+  last_message: ChatMessageUnionSchema.optional(),
   unread_count: z.number(),
 })
 
+// Массив сообщений
+export const ChatArrayUnionSchema = z.array(ChatMessageUnionSchema)
+
+// Типы TypeScript
 export type ChatMessageUnion = z.infer<typeof ChatMessageUnionSchema>
 export type ChatUpdateSchema = z.infer<typeof ChatUpdateSchema>
-export const ChatArrayUnionSchema = z.array(ChatMessageUnionSchema)

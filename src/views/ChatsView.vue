@@ -51,10 +51,8 @@ const handleChatUpdated = (updateData: any) => {
   if (chatIndex !== -1) {
     const chat = chats.value[chatIndex]!
 
-    // Нормализуем структуру last_message
-    chat.last_message = {
-      message: updateData.last_message
-    }
+    // теперь last_message уже нормальный объект
+    chat.last_message = updateData.last_message || null
 
     // переносим вверх
     chats.value.splice(chatIndex, 1)
@@ -82,8 +80,8 @@ onMounted(async () => {
 
     // subscribe to new messages
     chatsService.onNewMessage((message: ChatMessageUnion) => {
-      if (selectedChatId.value === message.message.chat_room_id) {
-        const messageExists = chatMessages.value.some(m => m.message.id === message.message.id)
+      if (selectedChatId.value === message.chat_room_id) {
+        const messageExists = chatMessages.value.some(m => m.id === message.id)
         if (!messageExists) {
           chatMessages.value.push(message)
         }
@@ -332,8 +330,8 @@ async function sendMessage() {
                 <div class="flex flex-col gap-3">
                   <ChatMessage
                     v-for="message in chatMessages"
-                    :key="message.message.id"
-                    :message="message.message"
+                    :key="message.id"
+                    :message="message"
                     :user="user"
                   />
                 </div>

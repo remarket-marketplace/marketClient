@@ -41,3 +41,5 @@ export const ProductSchema = z.object({
 }).strip()
 
 export type Product = z.infer<typeof ProductSchema>
+export type ProductImage = z.infer<typeof ProductImageSchema>
+export type ProductEdit = z.infer<typeof ProductSchema>
