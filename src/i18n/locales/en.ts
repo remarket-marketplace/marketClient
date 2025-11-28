@@ -128,6 +128,8 @@ const en = {
     IMAGE_TOO_LARGE: 'Image too large',
     WRONG_IMAGE_URL: 'Wrong image url',
     USERNAME_ALREADY_EXISTS: 'Username already exist',
+    USER_WITH_THIS_EMAIL_ALREADY_EXISTS: 'Email already taken',
+    USER_WITH_THIS_USERNAME_ALREADY_EXISTS: "Username already taken",
     EMAIL_ALREADY_EXISTS: 'Email already exists',
     NOT_ENOUGH_BALANCE: 'Not enough balance',
     SERVER_ERROR: 'Server error',
@@ -147,6 +149,7 @@ const en = {
     sendCodeFailed: 'Failed to send verification code',
     invalidCode: 'Invalid verification code',
     passwordChangeFailed: 'Failed to change password',
+    savingError: "Saving error",
   },
 
   validation: {
@@ -225,6 +228,7 @@ const en = {
         passwordDigitError: "Password must contain at least one digit",
         passwordSpecialCharError: "Password must contain at least one special character (!@#$%^&*)",
         passwordsMustEqual: "Passwords must be the equal",
+        success: "You have successfully registered!",
       },
       signIn: {
         title: 'Sign In',
@@ -232,6 +236,7 @@ const en = {
         noAccount: 'No account?',
         register: 'Register',
         forgotPassword: "Forgot password?",
+        success: "You have successfully logged!",
       },
     },
 

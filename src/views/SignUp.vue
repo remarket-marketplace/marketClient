@@ -7,6 +7,8 @@ import { nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import TheButton from './forms/TheButton.vue'
+import { getErrorMessage } from '@/utils/errorsMap'
+import SuccessMessage from '@/components/SuccessMessage.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -25,6 +27,7 @@ const codeDigits = ref<string[]>(['', '', '', '', '', ''])
 const codeInputs = ref<(HTMLInputElement | null)[]>([])
 const errorMessage = ref('')
 const passwordHidden = ref(true)
+const successShown = ref(false)
 
 // Ошибки валидации
 const usernameError = ref('')
@@ -106,11 +109,13 @@ async function sendCode() {
   if (await passwordsEquals()) {
     errorMessage.value = ''
     sended.value = true
-    const result = await authService.sendVerificationCode(email.value, username.value)
-    if (result) {
+    try {
+      await authService.sendVerificationCode(email.value, username.value)
+
       showCodeInput.value = true
-    } else {
-      errorMessage.value = t('pages.auth.signUp.errorSendCode')
+    } catch (error: any) {
+      const detail = error?.response?.data?.detail
+      errorMessage.value = getErrorMessage(detail, t)
     }
     sended.value = false
   } else {
@@ -157,10 +162,16 @@ async function completeSignUp() {
     sended.value = true
     const result = await authService.signUp(email.value, password.value, username.value, code)
     if (result) {
-      router.push('/')
+      showCodeInput.value = false
+      successShown.value = true
+
+      setTimeout(() => {
+        router.push('/')
+      }, 2000)
     } else {
       errorMessage.value = t('pages.auth.signUp.invalidCode')
     }
+
     sended.value = false
   }
 }
@@ -211,7 +222,7 @@ function clearPasswordError() {
       </h1>
 
       <!-- Форма регистрации -->
-      <form v-if="!showCodeInput" class="space-y-4" @submit.prevent>
+      <form v-if="!showCodeInput && !successShown" class="space-y-4" @submit.prevent>
         <!-- Username -->
         <div>
           <label for="username" class="mb-1 block text-sm text-text-secondary">{{ $t('common.username') }}</label>
@@ -297,8 +308,14 @@ function clearPasswordError() {
         <ErrorBanner :message="errorMessage" />
       </form>
 
+      <SuccessMessage
+        v-if="successShown"
+        :success-message="$t('pages.auth.signUp.success')"
+      />
+
+
       <!-- Форма ввода кода -->
-      <form v-if="showCodeInput" class="space-y-4">
+      <form v-if="showCodeInput && !successShown" class="space-y-4">
         <div class="space-y-2">
           <label class="block text-sm text-text-secondary">{{ $t('pages.auth.signUp.enterCode') }}</label>
           <div class="grid grid-cols-6 gap-2">
@@ -317,6 +334,10 @@ function clearPasswordError() {
               @paste="handlePaste"
             >
           </div>
+        </div>
+
+        <div>
+          <ErrorBanner :message="errorMessage"/>
         </div>
 
         <TheButton

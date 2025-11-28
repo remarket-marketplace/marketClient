@@ -2,6 +2,7 @@ import { ZodError } from 'zod'
 import { httpClient } from '..'
 import { UserReadSchema, type UserRead } from '@/validation/user/userRead'
 import { useUserStore } from '@/stores/user'
+import { getErrorMessage } from '@/utils/errorsMap'
 
 export const authService = {
 
@@ -20,19 +21,10 @@ export const authService = {
   },
 
   async sendVerificationCode(email: string, username: string) {
-    try {
-      const response = await httpClient.post('/auth/send-verification-code', {
-        email,
-        username,
-      })
-      return response.status === 200
-    }
-    catch (e) {
-      if (e instanceof ZodError) {
-        console.error(e.issues)
-      }
-      return false
-    }
+     return await httpClient.post('/auth/send-verification-code', {
+      email,
+      username,
+    })
   },
 
   async sendPasswordResetCode(email: string) {
@@ -75,21 +67,13 @@ export const authService = {
   },
 
   async signIn(email: string, password: string) {
-    try {
-      const response = await httpClient.post('/auth/login', {
-        email,
-        password,
-      })
-      const userData = UserReadSchema.parse(response.data)
-      await useUserStore().setUser(userData)
-      return true
-    }
-    catch (e) {
-      if (e instanceof ZodError) {
-        console.error('Ошибка валидации пользователя:', e.issues)
-      }
-      return false
-    }
+    const response = await httpClient.post('/auth/login', {
+      email,
+      password,
+    })
+    const userData = UserReadSchema.parse(response.data)
+    await useUserStore().setUser(userData)
+    return response
   },
 
   async signUp(email: string, password: string, username: string, code: string) {

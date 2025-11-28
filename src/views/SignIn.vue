@@ -8,40 +8,56 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import TheButton from './forms/TheButton.vue'
 import { useUserStore } from '@/stores/user'
+import SuccessMessage from '@/components/SuccessMessage.vue'
 
 const sended = ref(false)
 const email = ref('')
 const password = ref('')
+
 const errorMessage = ref('')
+const successMessage = ref('')
 
 const { t } = useI18n()
 
 async function signIn() {
+  if (sended.value) return
+
   sended.value = true
   errorMessage.value = ''
+  successMessage.value = ''
+
   try {
-    if (email.value.trim().length > 0 && password.value.trim().length > 0) {
-      const success = await authService.signIn(email.value, password.value)
-      if (success) {
-        const user = await useUserStore().getUser()
-        user?.role === 'admin' ? router.push('/admin') : router.push('/')
-      }
-      else {
-        errorMessage.value = t('errors.INCORRECT_EMAIL_OR_PASSWORD')
-      }
-    } else {
+    if (!email.value.trim() || !password.value.trim()) {
       errorMessage.value = t('errors.FILL_ALL_INPUTS')
+      return
     }
+
+    const success = await authService.signIn(email.value, password.value)
+
+    if (!success) {
+      errorMessage.value = t('errors.INCORRECT_EMAIL_OR_PASSWORD')
+      return
+    }
+
+    successMessage.value = t('pages.auth.signIn.success')
+
+    const user = await useUserStore().getUser()
+
+    setTimeout(() => {
+      if (user?.role === 'admin') router.push('/admin')
+      else router.push('/')
+    }, 800)
   }
   catch (e: any) {
     if (e?.response?.data?.detail?.error_code) {
       errorMessage.value = getErrorMessage(e.response.data.detail, t)
-    }
-    else {
+    } else {
       errorMessage.value = t('errors.SERVER_ERROR')
     }
   }
-  sended.value = false
+  finally {
+    sended.value = false
+  }
 }
 </script>
 
@@ -54,7 +70,9 @@ async function signIn() {
 
       <form class="space-y-4" @submit.prevent>
         <div>
-          <label for="email" class="mb-1 block text-sm text-gray-300">{{ $t('common.email') }}</label>
+          <label for="email" class="mb-1 block text-sm text-gray-300">
+            {{ $t('common.email') }}
+          </label>
           <TheInput
             id="email"
             v-model="email"
@@ -65,7 +83,9 @@ async function signIn() {
         </div>
 
         <div>
-          <label for="password" class="mb-1 block text-sm text-gray-300">{{ $t('common.password') }}</label>
+          <label for="password" class="mb-1 block text-sm text-gray-300">
+            {{ $t('common.password') }}
+          </label>
           <TheInput
             id="password"
             v-model="password"
@@ -80,9 +100,9 @@ async function signIn() {
           @click="signIn"
           :button-text="$t('pages.auth.signIn.login')"
           :sended="sended"
-        >
-        </TheButton>
+        />
 
+        <SuccessMessage v-if="successMessage" :success-message="successMessage"/>
         <ErrorBanner :message="errorMessage" />
       </form>
 

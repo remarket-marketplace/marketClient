@@ -127,6 +127,8 @@ const ru = {
     IMAGE_TOO_LARGE: 'Слишком большое изображение',
     WRONG_IMAGE_URL: 'Неверный URL изображения',
     USERNAME_ALREADY_EXISTS: 'Имя пользователя уже существует',
+    USER_WITH_THIS_EMAIL_ALREADY_EXISTS: 'Почта уже занята',
+    USER_WITH_THIS_USERNAME_ALREADY_EXISTS: "Имя пользователя уже занято",
     EMAIL_ALREADY_EXISTS: 'Email уже существует',
     NOT_ENOUGH_BALANCE: 'Недостаточно средств',
     SERVER_ERROR: 'Ошибка сервера',
@@ -146,6 +148,7 @@ const ru = {
     sendCodeFailed: 'Не удалось отправить код подтверждения',
     invalidCode: 'Неверный код подтверждения',
     passwordChangeFailed: 'Не удалось изменить пароль',
+    savingError: "Ошибка сохранения",
   },
 
   validation: {
@@ -224,6 +227,7 @@ const ru = {
         passwordDigitError: "Пароль должен содержать хотя бы одну цифру",
         passwordSpecialCharError: "Пароль должен содержать хотя бы один специальный символ (!@#$%^&*)",
         passwordsMustEqual: "Пароли должны совпадать",
+        success: "Вы успешно зарегистрировались!",
       },
       signIn: {
         title: 'Вход',
@@ -231,6 +235,7 @@ const ru = {
         noAccount: 'Нет аккаунта?',
         register: 'Регистрация',
         forgotPassword: "Забыли пароль?",
+        success: "Вход успешно выполнен!",
       },
     },
     passwordRecovery: {

@@ -7,6 +7,7 @@ import { useI18n } from 'vue-i18n';
 import ErrorBanner from '@/components/ErrorBanner.vue';
 import TheInput from '@/components/TheInput.vue';
 import { Loader2 } from 'lucide-vue-next';
+import SuccessMessage from '@/components/SuccessMessage.vue'
 
 const { t } = useI18n();
 const route = useRoute();
@@ -87,6 +88,7 @@ async function saveUser() {
       errorMessage.value = t('pages.admin.editUser.ratingIntegerError');
       return;
     }
+
     const userData = {
       email: email.value,
       username: username.value,
@@ -100,12 +102,11 @@ async function saveUser() {
       has_frozen_balance: hasFrozenBalance.value,
     };
 
-    // Вызываем функцию обновления из adminService
     const success = await adminService.updateUserData(userId.value, userData);
-    
+
     if (success !== false) {
       successMessage.value = t('common.saved');
-      // Можно обновить локальные данные или перенаправить
+
       setTimeout(() => {
         router.push('/admin/users');
       }, 1500);
@@ -119,6 +120,7 @@ async function saveUser() {
     isSaving.value = false;
   }
 }
+
 
 function cancel() {
   router.push('/admin/users');
@@ -149,11 +151,6 @@ onMounted(() => {
 
       <!-- Edit form -->
       <form v-else @submit.prevent="saveUser" class="space-y-4">
-        
-        <!-- Success banner -->
-        <div v-if="successMessage" class="p-3 bg-green-500/20 border border-green-500/30 rounded-lg text-green-400 text-sm">
-          {{ successMessage }}
-        </div>
 
         <!-- Email -->
         <div>
@@ -338,6 +335,9 @@ onMounted(() => {
           </div>
         </div>
 
+        <ErrorBanner :message="errorMessage" />
+        <SuccessMessage v-if="successMessage" :success-message="successMessage"/>
+
         <!-- Action buttons -->
         <div class="flex gap-3 pt-4">
             <button
@@ -357,11 +357,9 @@ onMounted(() => {
                 v-if="isSaving" 
                 class="h-4 w-4 animate-spin" 
                 />
-                {{ isSaving ? $t('common.saving') : $t('common.save') }}
+                {{ isSaving ? $t('common.loading') : $t('common.save') }}
             </button>
             </div>
-
-        <ErrorBanner :message="errorMessage" />
       </form>
     </div>
   </div>
