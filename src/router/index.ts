@@ -12,12 +12,16 @@ import NotAccess from '@/views/NotAccess.vue'
 import AdminUsersView from '@/views/admin/AdminUsersView.vue'
 import AdminProductsView from '@/views/admin/AdminProductsView.vue'
 import AdminCategoriesView from '@/views/admin/AdminCategoriesView.vue'
-import PasswordResetView from '@/views/PasswordResetView.vue'
+// import PasswordResetView from '@/views/PasswordResetView.vue'
 import AdminEditUserView from '@/views/admin/AdminEditUserView.vue'
 import AdminDealsView from '@/views/admin/AdminDealsView.vue'
 import WalletView from '@/views/WalletView.vue'
 import SettingsView from '@/views/SettingsView.vue'
 import UpdateProductView from '@/views/UpdateProductView.vue'
+// import PasswordResetView from '@/views/PasswordResetView.vue'
+// import ResetPasswordView from '@/views/resetPassword/ResetPasswordView.vue'
+import EnterResetEmailView from '@/views/resetPassword/EnterResetEmailView.vue'
+import ResetPasswordView from '@/views/resetPassword/ResetPasswordView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -38,9 +42,14 @@ const router = createRouter({
       component: SignUp,
     },
     {
-      path: '/password-reset',
-      name: 'password reset',
-      component: PasswordResetView,
+      path: '/password-reset-email',
+      name: 'password reset email',
+      component: EnterResetEmailView,
+    },
+    {
+      path: '/password-reset-code',
+      name: 'password reset code',
+      component: ResetPasswordView,
     },
     {
       path: '/profile/:username',

@@ -263,6 +263,10 @@ const en = {
 
     resetPassword: {
       title: "Reset password",
+      ResetLetterSuccessSended: "An email with a password recovery link has been successfully sent to the specified email address",
+      enterNewPassword: "Enter new password",
+      resetPasswordTokenIsExpired: "Token is expired, please try again",
+      passwordHasReset: "Password successfully changed!",
     },
 
     product: {

@@ -114,7 +114,7 @@ async function signIn() {
       </p>
 
       <p class="text-center text-sm text-text-secondaryDark">
-        <router-link to="/password-reset" class="text-text-link hover:underline">
+        <router-link to="/password-reset-email" class="text-text-link hover:underline">
           {{ $t('pages.auth.signIn.forgotPassword') }}
         </router-link>
       </p>

@@ -259,7 +259,11 @@ const ru = {
     },
 
     resetPassword: {
-      title: "Восстановление пароля"
+      title: "Восстановление пароля",
+      ResetLetterSuccessSended: "Ссылка для сброса пароля отправлена",
+      enterNewPassword: "Введите новый пароль",
+      resetPasswordTokenIsExpired: "К сожалению токен истек, пожалуйста попробуйте снова",
+      passwordHasReset: "Пароль успешно изменен!",
     },
 
     product: {
