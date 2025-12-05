@@ -74,8 +74,8 @@ function formatDate(dateStr: string): string {
     <TextMessage v-else-if="textMessage" :textMessage="textMessage" :user="user" :formatDate="formatDate" />
 
     <!-- DEAL STATUS MESSAGE -->
-    <DealStatusMessage v-else-if="isDealStatus" :message="message" :product="product" :t="t" :formatDate="formatDate" />
+    <DealStatusMessage v-else-if="isDealStatus" :message="(props.message as Extract<ChatMessageUnion, { message_type: 'update_deal_status_message' }>)" :product="product" :formatDate="formatDate" />
 
-    <ReviewMessage v-else-if="isDealReviewMessage" :review="message.review" :formatDate="formatDate"/>
+    <ReviewMessage v-else-if="isDealReviewMessage" :review="(props.message as Extract<ChatMessageUnion, { message_type: 'review_message' }>).review" :formatDate="formatDate"/>
   </div>
 </template>

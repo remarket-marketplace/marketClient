@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import type { DealStatusMessageSchema } from '@/validation/chat/chatMessage';
+import type { ChatMessageUnion } from '@/validation/chat/chatMessage';
 import type { Product } from '@/validation/product/product';
 import { useI18n } from 'vue-i18n';
 import DealStatusTag from '../DealStatusTag.vue';
 import router from '@/router';
 
 defineProps<{
-    isDealStatus: boolean;
     product: Product | null,
-    message: DealStatusMessageSchema,
+    message: Extract<ChatMessageUnion, { message_type: 'update_deal_status_message' }>,
     formatDate: (dateStr: string) => string;
 }>()
 

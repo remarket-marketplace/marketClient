@@ -1,4 +1,4 @@
-import { boolean, uuid, z } from 'zod'
+import { z } from 'zod'
 import { ProductSchema } from '@/validation/product/product'
 import { ReviewSchema } from '../review/review'
 
