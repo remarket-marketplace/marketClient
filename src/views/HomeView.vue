@@ -155,7 +155,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section class="h-full w-full flex flex-col overflow-hidden">
+  <section class="h-full w-full flex flex-col overflow-hidden overflow-y-auto">
 
     <SearchField v-model="searchQuery" :placeholder="$t('pages.index.searchPlaceholder')"
       @search-change="debouncedSearch" class="w-full" />
