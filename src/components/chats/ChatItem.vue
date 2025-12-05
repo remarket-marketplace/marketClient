@@ -36,6 +36,10 @@ const formattedLastMessage = computed((): string | null => {
         case "update_deal_status_message":
             text = t('pages.chats.updateDealStatus')
             break
+
+        case "review_message":
+            text = t('pages.chats.newReview')
+            break
     }
     return text
 })
@@ -126,7 +130,8 @@ onMounted(() => {
                     class="truncate text-sm flex-1 min-w-0"
                     :class="{
                         'text-blue-500 font-light': chat.last_message?.message_type === 'purchase_message'
-                        || chat.last_message?.message_type === 'update_deal_status_message',
+                        || chat.last_message?.message_type === 'update_deal_status_message'
+                        || chat.last_message?.message_type === 'review_message',
                         'text-gray-500': chat.last_message?.message_type === 'text_message'
                     }"
                 >

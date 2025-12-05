@@ -1,6 +1,7 @@
 import { ProfileDataSchema, PublicProfileDataSchema, type ProfileData, type PublicProfileData } from '@/validation/user/userRead'
 import { ZodError } from 'zod'
 import { httpClient } from '..'
+import { SimpleDealsListSchema } from '@/validation/deal/deal'
 
 export const profileService = {
 
@@ -38,10 +39,10 @@ export const profileService = {
     }
   },
 
-  async getUserPurchases(userId: string) {
+  async getUserPurchases() {
     try {
-      const response = await httpClient.get(`/users/${userId}/purchases`)
-      return response.data || []
+      const response = await httpClient.get(`/deal/`)
+      return SimpleDealsListSchema.parse(response.data)
     }
     catch (error) {
       console.error('Ошибка при загрузке покупок:', error)

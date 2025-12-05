@@ -54,7 +54,7 @@ async function createProduct() {
   errorMessage.value = ''
 
   if (!selectedSubcategoryId.value || !title.value || !description.value || !price.value || !productData.value || !images.value.length) {
-    errorMessage.value = t('pages.forms.createProduct.fillAllFields')
+    errorMessage.value = t('common.fillAllFields')
     return
   }
 

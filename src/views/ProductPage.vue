@@ -4,10 +4,10 @@ import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import Loader from '@/components/Loader.vue'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
 import type { Product, ProductImage } from '@/validation/product/product'
-import { onMounted, ref, onUnmounted } from 'vue'
+import { onMounted, ref, onUnmounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { ChevronLeft, ChevronRight, X } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, X, Star } from 'lucide-vue-next'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const route = useRoute('/product/[productId]')
@@ -68,16 +68,6 @@ function closeDeleteConfirm() {
   showDeleteConfirm.value = false
 }
 
-function getStatusText(status: string) {
-  switch (status) {
-    case 'rejected': return t('common.rejected')
-    case 'moderation': return t('common.moderation')
-    case 'active': return t('common.productStatuses.active')
-    case 'purchased': return t('pages.profile.purchased')
-    default: return status
-  }
-}
-
 function nextImage() {
   if (!product.value?.images || product.value.images.length === 0 || !selectedImage.value) return
   
@@ -130,11 +120,13 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
 })
+
+const filledStars = computed(() => Math.round(product.value?.seller.rating ?? 0))
 </script>
 
 <template>
   <section v-if="product" class="h-full max-w-7xl w-full flex flex-col items-start gap-6 overflow-auto no-scrollbar pb-36 text-mainText lg:flex-row lg:overflow-visible lg:px-0 lg:pb-6">
-    <!-- Галерея изображений -->
+    <!-- Image gallery -->
     <div class="w-full rounded-lg lg:w-1/2 space-y-4">
       <div v-if="selectedImage" class="flex justify-center">
         <img
@@ -155,7 +147,7 @@ onUnmounted(() => {
           :key="image.id"
           :src="`${API_HOST}${image.image_url}`"
           class="h-16 w-16 flex-shrink-0 cursor-pointer border-2 rounded-lg object-cover transition-all duration-200 hover:opacity-80"
-          :alt="`Изображение товара: ${product.title}`"
+          :alt="`Product image: ${product.title}`"
           :class="{
             'border-gray-600': image.image_url !== selectedImage?.image_url,
           }"
@@ -169,9 +161,9 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Информация о товаре -->
+    <!-- Product details -->
     <div class="w-full lg:flex-1 space-y-6">
-      <!-- Заголовок и цена -->
+      <!-- Title and price -->
       <div class="space-y-4">
         <h1 class="text-2xl lg:text-3xl font-bold text-white leading-tight">
           {{ product.title }}
@@ -184,14 +176,14 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- Описание -->
+      <!-- Description -->
       <div class="py-4">
         <p class="text-gray-300 leading-relaxed whitespace-pre-line text-sm lg:text-base">
           {{ product.description || $t('pages.product.descriptionMissing') }}
         </p>
       </div>
 
-      <!-- Мета информация -->
+      <!-- Meta info -->
       <div class="space-y-3 py-4 border-t border-gray-800">
         <div class="flex items-center gap-3">
           <span class="text-gray-400 font-medium min-w-20">{{ $t('common.published') }}:</span>
@@ -203,7 +195,7 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- Продавец -->
+      <!-- Seller -->
       <div 
         class="flex items-center gap-4 p-4 rounded-xl bg-dark-600 cursor-pointer transition-all duration-200 hover:bg-dark-600/80 group"
         @click="router.push(`/profile/${product.seller.username}`)"
@@ -223,11 +215,13 @@ onUnmounted(() => {
           <p class="text-white font-semibold">
             {{ product.seller.username }}
           </p>
-          <div class="flex items-center gap-2 mt-1">
-            <span class="text-yellow-400 text-sm font-medium">
-              {{ product.seller.rating.toFixed(1) }}
-            </span>
-            <span class="text-yellow-400 text-xs">★★★★★</span>
+          <div class="flex items-center gap-1 mt-1">
+            <Star
+              v-for="(_, i) in 5"
+              :key="i"
+              class="w-5 h-5"
+              :class="i < filledStars ? 'text-blue-500 fill-blue-500' : 'text-gray-500'"
+            />
           </div>
         </div>
         <div class="text-gray-400 text-xl transition-transform duration-200 group-hover:translate-x-1">
@@ -235,7 +229,7 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- Кнопки действий -->
+      <!-- Action buttons -->
       <div class="pt-6 border-t border-gray-800">
         <div v-if="!product.is_sold" class="flex flex-col gap-3 sm:flex-row">
           <div class="w-full flex gap-2" v-if="product.is_owner">
@@ -268,7 +262,7 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Модальное окно изображения -->
+    <!-- Image modal -->
     <Teleport to="body">
       <div
         v-if="openImageModal && selectedImage"
@@ -276,15 +270,13 @@ onUnmounted(() => {
         @click="openImageModal = false"
       >
         <div class="relative w-full h-full flex items-center justify-center max-w-7xl mx-auto" @click.stop>
-          <!-- Основное изображение -->
           <img
             :src="`${API_HOST}${selectedImage.image_url}`"
             class="max-w-full max-h-full object-contain rounded-lg"
-            :alt="`Модальное изображение: ${product.title}`"
+            :alt="`Modal image: ${product.title}`"
             loading="lazy"
           />
           
-          <!-- Кнопка закрытия -->
           <button
             class="absolute top-4 right-4 text-white hover:text-gray-300 transition-all duration-200 bg-black/50 rounded-full p-2 hover:bg-black/70"
             @click="openImageModal = false"
@@ -292,7 +284,6 @@ onUnmounted(() => {
             <X class="w-6 h-6" />
           </button>
 
-          <!-- Кнопка предыдущего изображения -->
           <button
             v-if="product.images && product.images.length > 1"
             class="absolute left-4 text-white hover:text-gray-300 transition-all duration-200 bg-black/50 rounded-full p-3 hover:bg-black/70 disabled:opacity-30 disabled:cursor-not-allowed"
@@ -302,7 +293,6 @@ onUnmounted(() => {
             <ChevronLeft class="w-6 h-6" />
           </button>
 
-          <!-- Кнопка следующего изображения -->
           <button
             v-if="product.images && product.images.length > 1"
             class="absolute right-4 text-white hover:text-gray-300 transition-all duration-200 bg-black/50 rounded-full p-3 hover:bg-black/70 disabled:opacity-30 disabled:cursor-not-allowed"
@@ -312,7 +302,6 @@ onUnmounted(() => {
             <ChevronRight class="w-6 h-6" />
           </button>
 
-          <!-- Индикатор текущего изображения -->
           <div
             v-if="product.images && product.images.length > 1"
             class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 rounded-full px-3 py-1 text-white text-sm"
@@ -340,7 +329,7 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* Кастомные стили для скроллбара */
+/* Custom scrollbar for image thumbnails */
 .thumbnails-scroll {
   scrollbar-width: thin;
   scrollbar-color: #4B5563 #1F2937;
@@ -364,7 +353,7 @@ onUnmounted(() => {
   background: #6B7280;
 }
 
-/* Анимации для кнопок навигации */
+/* Button hover animations */
 button {
   transition: all 0.2s ease-in-out;
 }

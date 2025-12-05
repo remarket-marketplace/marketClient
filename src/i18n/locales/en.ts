@@ -306,6 +306,19 @@ const en = {
       reported: "Reported",
       newDealStatus: "New deal status:",
       updateDealStatus: "New deal status",
+      newReview: "New review",
+      leaveReview: "Leave review",
+      writeReview: "Write review",
+      sendReview: "Send review",
+      buyerLeftReview: "Buyer left review",
+      withoutReviewText: "Without message",
+
+      pending: "Deal created. Waiting for confirmation from both parties.",
+      confirmed: "Buyer confirmed the receipt, funds are now available to the seller.",
+      disputed: "Buyer has opened a dispute for this deal.",
+      completed: "Deal successfully completed.",
+      cancelled: "Deal cancelled. Funds have been returned to the balance.",
+      refunded: "Funds have been refunded to the buyer.",
     },
 
     profile: {
@@ -318,7 +331,7 @@ const en = {
       purchases: 'Purchases',
       ads: 'Ads',
       reviews: 'Reviews',
-
+      noReviews: "No reviews",
       noAds: 'No ads',
       noProducts: "No products",
       purchased: 'Purchased',

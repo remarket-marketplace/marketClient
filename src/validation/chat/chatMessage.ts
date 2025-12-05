@@ -1,5 +1,6 @@
-import { z } from 'zod'
+import { boolean, uuid, z } from 'zod'
 import { ProductSchema } from '@/validation/product/product'
+import { ReviewSchema } from '../review/review'
 
 // Базовая схема
 export const BaseMessageSchema = z.object({
@@ -21,12 +22,20 @@ export const TextMessageSchema = BaseMessageSchema.extend({
 export const ProductMessageSchema = BaseMessageSchema.extend({
   message_type: z.literal('purchase_message'),
   product: ProductSchema,
+  deal_id: z.uuid(),
+  has_review: z.boolean(),
 })
 
 // Сообщение об обновлении статуса сделки
 export const DealStatusMessageSchema = BaseMessageSchema.extend({
   message_type: z.literal('update_deal_status_message'),
+  product: ProductSchema,
   new_status: z.string(),
+})
+
+export const ReviewMessageSchema = BaseMessageSchema.extend({
+  message_type: z.literal('review_message'),
+  review: ReviewSchema,
 })
 
 // discriminated union по полю message_type
@@ -34,6 +43,7 @@ export const ChatMessageUnionSchema = z.discriminatedUnion('message_type', [
   TextMessageSchema,
   ProductMessageSchema,
   DealStatusMessageSchema,
+  ReviewMessageSchema,
 ])
 
 // Схема обновления чата
@@ -49,3 +59,5 @@ export const ChatArrayUnionSchema = z.array(ChatMessageUnionSchema)
 // Типы TypeScript
 export type ChatMessageUnion = z.infer<typeof ChatMessageUnionSchema>
 export type ChatUpdateSchema = z.infer<typeof ChatUpdateSchema>
+
+export type DealStatusMessageSchema = z.infer<typeof DealStatusMessageSchema>

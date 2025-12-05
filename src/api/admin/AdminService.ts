@@ -2,7 +2,7 @@ import { ZodError } from 'zod'
 import { httpClient } from '..'
 import { ProductSchema } from '@/validation/product/product'
 import { UserReadSchema } from '@/validation/user/userRead'
-import { DealSchema, DealsList, type Deal } from '@/validation/deal/deal'
+import { DealSchema, DealsListSchema, type Deal } from '@/validation/deal/deal'
 
 export const adminService = {
   async getDashboardData() {
@@ -150,7 +150,7 @@ export const adminService = {
       const response = await httpClient.get('/admin/deals', {
         params: { page, per_page: perPage },
       })
-      return DealsList.parse(response.data)
+      return DealsListSchema.parse(response.data)
     }
     catch (e) {
       return false
@@ -163,7 +163,7 @@ export const adminService = {
     // 
     try {
       const response = await httpClient.patch('/admin/deals/refund', {
-        id: dealId,
+        deal_id: dealId,
       })
       return DealSchema.parse(response.data)
     }
@@ -178,7 +178,7 @@ export const adminService = {
     // 
     try {
       const response = await httpClient.patch('/admin/deals/cancel', {
-        id: dealId,
+        deal_id: dealId,
       })
       return DealSchema.parse(response.data)
     }
@@ -193,7 +193,7 @@ export const adminService = {
     //
     try {
       const response = await httpClient.patch('/admin/deals/confirm', {
-        id: dealId,
+        deal_id: dealId,
       })
       return DealSchema.parse(response.data)
     }

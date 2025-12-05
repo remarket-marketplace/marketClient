@@ -8,9 +8,6 @@ import type { Socket } from 'socket.io-client'
 import { io } from 'socket.io-client'
 import { httpClient } from '..'
 import { ChatListSchema } from '@/validation/chat/ChatList'
-import { da } from 'zod/locales'
-import type { DefaultLocaleMessageSchema } from 'vue-i18n'
-import ChatMessage from '@/components/chats/ChatMessage.vue'
 
 let socket: Socket | null = null
 
@@ -20,11 +17,14 @@ type ChatNotificationCallback = (data: ChatUpdateSchema) => void
 
 const WS_API_HOST = import.meta.env.VITE_WS_API_HOST
 
-let onNewMessageCallback: MessageCallback | null = null
-let onChatUpdatedCallback: ChatUpdatedCallback | null = null
-let onChatNotificationCallback: ChatNotificationCallback | null = null
+const newMessageCallbacks: MessageCallback[] = []
+const chatUpdatedCallbacks: ChatUpdatedCallback[] = []
+const chatNotificationCallbacks: ChatNotificationCallback[] = []
 
 let lastSubscribedChatId: string | null = null
+let heartbeatIntervalHandle: number | null = null
+let onlineHandlerRegistered = false
+let visibilityHandlerRegistered = false
 
 export const chatsService = {
   async getChats() {
@@ -32,17 +32,16 @@ export const chatsService = {
       const response = await httpClient.get('/chats/')
       return ChatListSchema.parse(response.data)
     } catch (e) {
-      console.error('Ошибка получения списка чатов:', e)
+      console.error('Error fetching chat list:', e)
       return []
     }
   },
 
-  /** Проверка подключения */
   isConnected() {
     return socket?.connected === true
   },
 
-  /** Подключение с нормальной обработкой ошибок */
+  /** Connection with proper error handling */
   async connectChatsWebsocket(): Promise<boolean> {
     return new Promise((resolve) => {
       if (socket?.connected) return resolve(true)
@@ -51,32 +50,54 @@ export const chatsService = {
         transports: ['websocket'],
         withCredentials: true,
         reconnection: true,
+        reconnectionAttempts: Infinity,
         reconnectionDelay: 1000,
-        reconnectionAttempts: 5,
+        reconnectionDelayMax: 5000,
+        timeout: 20000,
       })
 
-      /** SUCCESS */
       socket.on('connect', () => {
         console.log('%cWS connected ✓', 'color: green')
         if (lastSubscribedChatId) {
           socket!.emit('join_room', { chat_id: lastSubscribedChatId })
         }
         socket!.emit('subscribe_chat_list')
+        if (!heartbeatIntervalHandle) {
+          heartbeatIntervalHandle = window.setInterval(() => {
+            if (socket?.connected) {
+              socket!.emit('ping_alive')
+            }
+          }, 15000)
+        }
+        if (!onlineHandlerRegistered) {
+          window.addEventListener('online', () => {
+            this.connectChatsWebsocket()
+          })
+          window.addEventListener('offline', () => {
+            console.warn('Network offline')
+          })
+          onlineHandlerRegistered = true
+        }
+        if (!visibilityHandlerRegistered) {
+          document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+              this.connectChatsWebsocket()
+            }
+          })
+          visibilityHandlerRegistered = true
+        }
         resolve(true)
       })
 
-      /** ERROR */
       socket.on('connect_error', (err) => {
         console.error('WS connect error:', err)
         resolve(false)
       })
 
-      /** DISCONNECT */
       socket.on('disconnect', (reason) => {
         console.warn('WS disconnected:', reason)
       })
 
-      /** RECONNECT */
       socket.on('reconnect', () => {
         console.log('%cWS reconnected ✓', 'color: orange')
         if (lastSubscribedChatId) {
@@ -89,9 +110,9 @@ export const chatsService = {
         try {
           const payload = data.message ?? data
           const validated = ChatMessageUnionSchema.parse(payload)
-          onNewMessageCallback?.(validated)
+          newMessageCallbacks.forEach(cb => cb(validated))
         } catch (e) {
-          console.error('Ошибка валидации нового сообщения:', e)
+          console.error('Error validating new message:', e)
         }
       })
 
@@ -103,9 +124,23 @@ export const chatsService = {
             last_message: lastMsg ? ChatMessageUnionSchema.parse(lastMsg) : undefined,
             unread_count: data.unread_count || 0,
           }
-          onChatUpdatedCallback?.(validated)
+          chatUpdatedCallbacks.forEach(cb => cb(validated))
         } catch (e) {
-          console.error('Ошибка валидации обновления чата:', e)
+          console.error('Error validating chat update:', e)
+        }
+      })
+
+      socket.on('chat_notification', (data: any) => {
+        try {
+          const lastMsg = data.last_message ? (data.last_message.message ?? data.last_message) : undefined
+          const validated: ChatUpdateSchema = {
+            chat_id: data.chat_id,
+            last_message: lastMsg ? ChatMessageUnionSchema.parse(lastMsg) : undefined,
+            unread_count: data.unread_count || 0,
+          }
+          chatNotificationCallbacks.forEach(cb => cb(validated))
+        } catch (e) {
+          console.error('Error validating chat notification:', e)
         }
       })
     })
@@ -135,19 +170,18 @@ export const chatsService = {
       const resp = await httpClient.get(`/chats/${chatId}/messages`)
       return ChatArrayUnionSchema.parse(resp.data)
     } catch (e) {
-      console.error('Ошибка получения сообщений:', e)
+      console.error('Error fetching messages:', e)
       return []
     }
   },
 
-  /** Теперь отправка сообщения надёжная */
   async sendMessage(message: string, chatId: string): Promise<boolean> {
     if (!this.isConnected()) {
       console.warn('WS offline → retry in 500ms')
       await new Promise(r => setTimeout(r, 500))
 
       if (!this.isConnected()) {
-        console.error('Socket не подключен даже после retry')
+        console.error('Socket not connected even after retry')
         return false
       }
     }
@@ -156,20 +190,57 @@ export const chatsService = {
       socket!.emit('send_message', { chat_id: chatId, message })
       return true
     } catch (e) {
-      console.error('Ошибка отправки сообщения:', e)
+      console.error('Error sending message:', e)
       return false
     }
   },
 
-  onNewMessage(cb: MessageCallback | null) { onNewMessageCallback = cb },
-  onChatUpdated(cb: ChatUpdatedCallback | null) { onChatUpdatedCallback = cb },
-  onChatNotification(cb: ChatNotificationCallback | null) { onChatNotificationCallback = cb },
+  onNewMessage(cb: MessageCallback | null) {
+    if (cb === null) {
+      newMessageCallbacks.length = 0
+      return () => {}
+    }
+    newMessageCallbacks.push(cb)
+    return () => {
+      const idx = newMessageCallbacks.indexOf(cb)
+      if (idx !== -1) newMessageCallbacks.splice(idx, 1)
+    }
+  },
+
+  onChatUpdated(cb: ChatUpdatedCallback | null) {
+    if (cb === null) {
+      chatUpdatedCallbacks.length = 0
+      return () => {}
+    }
+    chatUpdatedCallbacks.push(cb)
+    return () => {
+      const idx = chatUpdatedCallbacks.indexOf(cb)
+      if (idx !== -1) chatUpdatedCallbacks.splice(idx, 1)
+    }
+  },
+
+  onChatNotification(cb: ChatNotificationCallback | null) {
+    if (cb === null) {
+      chatNotificationCallbacks.length = 0
+      return () => {}
+    }
+    chatNotificationCallbacks.push(cb)
+    return () => {
+      const idx = chatNotificationCallbacks.indexOf(cb)
+      if (idx !== -1) chatNotificationCallbacks.splice(idx, 1)
+    }
+  },
 
   disconnect() {
     socket?.disconnect()
     socket = null
-    onNewMessageCallback = null
-    onChatUpdatedCallback = null
-    onChatNotificationCallback = null
+    newMessageCallbacks.length = 0
+    chatUpdatedCallbacks.length = 0
+    chatNotificationCallbacks.length = 0
+    if (heartbeatIntervalHandle) {
+      clearInterval(heartbeatIntervalHandle)
+      heartbeatIntervalHandle = null
+    }
+    lastSubscribedChatId = null
   },
 }
