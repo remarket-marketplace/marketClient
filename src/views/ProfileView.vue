@@ -2,16 +2,21 @@
 import { authService } from '@/api/auth/AuthService'
 import { productService } from '@/api/product/ProductService'
 import { profileService } from '@/api/profile/ProfileService'
+import { reviewService } from '@/api/review/ReviewService'
 import Loader from '@/components/Loader.vue'
+import ProfileProductCard from '@/components/ProfileProductCard.vue'
 import { useUserStore } from '@/stores/user'
-import type { Product } from '@/validation/product/product'
-import type { ProfileData, PublicProfileData, UserRead } from '@/validation/user/userRead'
 import { storeToRefs } from 'pinia'
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import ProfileProductCard from '@/components/ProfileProductCard.vue'
+import type { Product } from '@/validation/product/product'
+import type { PublicProfileData, UserRead } from '@/validation/user/userRead'
+import type { ReviewSchema } from '@/validation/review/review'
 import { Settings, LogOut, Share2, Copy, Check, Wallet } from 'lucide-vue-next'
+import QrcodeVue from 'qrcode.vue'
+import { SimpleDealsListSchema, } from '@/validation/deal/deal'
+import type { Deal } from '@/validation/deal/deal'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -23,232 +28,165 @@ const API_HOST = import.meta.env.VITE_API_HOST
 const username = computed(() => route.params.username as string)
 const profileData = ref<PublicProfileData | UserRead | null>(null)
 const profileProducts = ref<Product[]>([])
-const isLoading = ref(true)
-
-const isOwner = computed(() => currentUser.value?.username === username.value)
-
-// Данные профиля
 const currentProfileData = ref<UserRead | PublicProfileData | null>(null)
 const products = ref<Product[]>([])
 const newDescription = ref('')
 const isEditingDescription = ref(false)
 
+const showMenu = ref(false)
 const menuContainerRef = ref<HTMLElement | null>(null)
 const shareModalRef = ref<HTMLElement | null>(null)
-const showMenu = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const isUploading = ref(false)
 const showAvatarOverlay = ref(false)
-
 const showShareModal = ref(false)
 const isCopied = ref(false)
+
+const isLoading = ref(true)
+const isOwner = computed(() => currentUser.value?.username === username.value)
 const profileUrl = computed(() => `${window.location.origin}/profile/${username.value}`)
+const activeTab = ref<'products' | 'reviews' | 'purchases'>('products')
+const reviews = ref<ReviewSchema[]>([])
+const purchases = ref<Deal[]>([])
+const isLoadingReviews = ref(false)
+const isLoadingPurchases = ref(false)
 
-const qrCodeSvg = ref('')
-
-function generateQRCode() {
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(profileUrl.value)}`
-  qrCodeSvg.value = qrCodeUrl
+function formatFullDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleString(useI18n().locale.value, { year: 'numeric', month: 'long', day: 'numeric' })
 }
 
-// Загрузка данных профиля
+function formatPrice(price: number) {
+  return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '₽'
+}
+
 async function loadProfileData() {
   try {
     isLoading.value = true
     const data = await profileService.getUserProfileData(username.value)
     const userProducts = await productService.getUserProductsByUsername(username.value)
-
     profileData.value = data
     profileProducts.value = userProducts
     currentProfileData.value = data
     products.value = userProducts
-
-    // Инициализируем описание
-    if (data?.description) {
-      newDescription.value = data.description ?? ''
-    }
+    newDescription.value = data?.description ?? ''
   } catch (error: any) {
-    console.error('Ошибка при загрузке профиля:', error)
-    if (error.response?.status === 404) router.push('/404')
-    else router.push('/error')
+    console.error('Profile load error:', error)
+    router.push(error.response?.status === 404 ? '/404' : '/error')
   } finally {
     isLoading.value = false
   }
 }
 
-function formatFullDate(dateStr: string): string {
-  const d = new Date(dateStr)
-  return d.toLocaleString(useI18n().locale.value, { year: 'numeric', month: 'long', day: 'numeric' })
+async function loadReviews() {
+  try {
+    isLoadingReviews.value = true
+    reviews.value = await reviewService.getUserReviews(username.value)
+  } catch (error) {
+    console.error('Failed to load reviews:', error)
+  } finally {
+    isLoadingReviews.value = false
+  }
+}
+
+async function loadPurchases() {
+  try {
+    isLoadingPurchases.value = true
+    const response = await profileService.getUserPurchases()
+    purchases.value = response
+  } catch (error) {
+    console.error('Failed to load purchases:', error)
+  } finally {
+    isLoadingPurchases.value = false
+  }
 }
 
 async function logout() {
   if (!isOwner.value) return
-  const result = await authService.logout()
-  if (result) {
-    router.push('/signin')
-  }
+  if (await authService.logout()) router.push('/signin')
 }
 
 async function updateProfileDescription(newValue: string) {
   if (!isOwner.value) return
-
   try {
     const result = await profileService.updateProfileDescription(newValue)
     store.updateUserProfile({ description: newValue })
+    currentProfileData.value = result
+    profileData.value = result
     isEditingDescription.value = false
-    if (result) {
-      currentProfileData.value = result
-      profileData.value = result
-    }
   } catch (error) {
-    console.error('Ошибка при обновлении описания:', error)
+    console.error('Description update error:', error)
   }
 }
 
-function toggleMenu() {
-  showMenu.value = !showMenu.value
-}
-
-function goToSettings() {
-  router.push('/settings')
-}
-
-function goToWallet() {
-  router.push('/wallet')
-}
+function toggleMenu() { showMenu.value = !showMenu.value }
+function goToSettings() { router.push('/settings') }
+function goToWallet() { router.push('/wallet') }
 
 function handleClickOutside(event: MouseEvent) {
-  if (showMenu.value && menuContainerRef.value && !menuContainerRef.value.contains(event.target as Node)) {
-    showMenu.value = false
-  }
-
-  if (showShareModal.value && shareModalRef.value && !shareModalRef.value.contains(event.target as Node)) {
-    closeShareModal()
-  }
+  if (showMenu.value && menuContainerRef.value && !menuContainerRef.value.contains(event.target as Node)) showMenu.value = false
+  if (showShareModal.value && shareModalRef.value && !shareModalRef.value.contains(event.target as Node)) closeShareModal()
 }
 
-// Функции для загрузки аватара
-function triggerFileInput() {
-  if (isOwner.value && fileInputRef.value) {
-    fileInputRef.value.click()
-  }
-}
+function triggerFileInput() { if (isOwner.value && fileInputRef.value) fileInputRef.value.click() }
 
 async function handleAvatarUpload(event: Event) {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-
-  if (!file || !isOwner.value) return
-
-  if (!file.type.startsWith('image/')) {
-    return
-  }
-
-  if (file.size > 5 * 1024 * 1024) {
-    return
-  }
-
+  const file = (event.target as HTMLInputElement)?.files?.[0]
+  if (!file || !isOwner.value || !file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) return
   isUploading.value = true
-
   try {
     const avatarUrl = await profileService.uploadAvatar(file)
     if (avatarUrl) {
-      if (currentProfileData.value) {
-        currentProfileData.value.avatar_url = avatarUrl
-      }
-      if (profileData.value) {
-        profileData.value.avatar_url = avatarUrl
-      }
-
-      if (isOwner.value) {
-        store.updateUserProfile({ avatar_url: avatarUrl })
-      }
+      currentProfileData.value!.avatar_url = avatarUrl
+      profileData.value!.avatar_url = avatarUrl
+      if (isOwner.value) store.updateUserProfile({ avatar_url: avatarUrl })
     }
-  } catch (error) {
-    console.error('Ошибка загрузки аватара:', error)
-  } finally {
-    isUploading.value = false
-    if (target) target.value = ''
-  }
+  } catch (error) { console.error('Avatar upload error:', error) }
+  finally { isUploading.value = false; (event.target as HTMLInputElement).value = '' }
 }
 
-function showAvatarEdit() {
-  if (isOwner.value) {
-    showAvatarOverlay.value = true
-  }
-}
-
-function hideAvatarEdit() {
-  showAvatarOverlay.value = false
-}
+function showAvatarEdit() { if (isOwner.value) showAvatarOverlay.value = true }
+function hideAvatarEdit() { showAvatarOverlay.value = false }
 
 function openShareModal() {
   showShareModal.value = true
   showMenu.value = false
   isCopied.value = false
-  generateQRCode()
-
-  setTimeout(() => {
-    document.addEventListener('click', handleClickOutside)
-  }, 0)
+  setTimeout(() => document.addEventListener('click', handleClickOutside), 0)
 }
 
-function closeShareModal() {
-  showShareModal.value = false
-  document.removeEventListener('click', handleClickOutside)
-}
+function closeShareModal() { showShareModal.value = false; document.removeEventListener('click', handleClickOutside) }
 
 async function copyProfileLink() {
-  try {
-    await navigator.clipboard.writeText(profileUrl.value)
-    isCopied.value = true
-
-    setTimeout(() => {
-      isCopied.value = false
-    }, 2000)
-  } catch (err) {
-    const textArea = document.createElement('textarea')
-    textArea.value = profileUrl.value
-    document.body.appendChild(textArea)
-    textArea.select()
-    document.execCommand('copy')
-    document.body.removeChild(textArea)
-    isCopied.value = true
-
-    setTimeout(() => {
-      isCopied.value = false
-    }, 2000)
-  }
+  try { await navigator.clipboard.writeText(profileUrl.value); isCopied.value = true }
+  catch { const ta = document.createElement('textarea'); ta.value = profileUrl.value; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); isCopied.value = true }
+  setTimeout(() => isCopied.value = false, 2000)
 }
 
-onMounted(() => {
-  loadProfileData()
-})
+function switchTab(tab: 'products' | 'reviews' | 'purchases') {
+  activeTab.value = tab
+  if (tab === 'reviews') loadReviews()
+  if (tab === 'purchases') loadPurchases()
+}
 
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
+function goToProduct(productId: string) { router.push(`/product/${productId}`) }
+function goToProfile(username: string) { router.push(`/profile/${username}`) }
+
+onMounted(() => loadProfileData())
+onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 </script>
 
 <template>
   <div class="h-full w-full flex flex-col items-center justify-center">
-    <!-- Состояние загрузки -->
     <div v-if="isLoading" class="flex h-full w-full items-center justify-center">
       <Loader />
     </div>
 
-    <!-- Основной контент профиля -->
     <section v-else-if="currentProfileData"
       class="h-full w-full flex flex-col gap-6 py-10 text-mainText lg:flex-row overflow-scroll lg:overflow-hidden no-scrollbar">
-      <!-- Левая колонка - информация профиля -->
       <div class="w-full h-full border border-dark-600 rounded-lg p-6 lg:max-w-sm space-y-4">
         <div class="flex flex-col items-center text-center">
           <div class="w-full flex items-center justify-between">
-            <h1 class="truncate text-lg font-semibold sm:text-xl">
-              {{ currentProfileData.username }}
-            </h1>
-
-            <!-- Контейнер меню -->
+            <h1 class="truncate text-lg font-semibold sm:text-xl">{{ currentProfileData.username }}</h1>
             <div v-if="isOwner" class="relative" ref="menuContainerRef">
               <button class="text-gray-300 hover:text-mainText" @click.stop="toggleMenu">
                 <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -257,66 +195,51 @@ onUnmounted(() => {
                   <circle cx="12" cy="18" r="1.6" />
                 </svg>
               </button>
-
               <div v-if="showMenu"
                 class="absolute right-0 z-10 mt-2 w-40 border border-dark-600 rounded-lg bg-dark-800 shadow-lg">
                 <button
                   class="w-full flex items-center gap-1 px-4 py-2 text-left text-sm text-gray-300 hover:bg-dark-700"
                   @click="goToSettings">
-                  <Settings class="w-4 h-4" />
-                  {{ $t('pages.profile.settings') }}
+                  <Settings class="w-4 h-4" /> {{ t('pages.profile.settings') }}
                 </button>
                 <button
                   class="w-full flex items-center gap-1 px-4 py-2 text-left text-sm text-gray-300 hover:bg-dark-700"
                   @click="goToWallet">
-                  <Wallet class="w-4 h-4" />
-                  {{ $t('pages.profile.wallet') }}
+                  <Wallet class="w-4 h-4" /> {{ t('pages.profile.wallet') }}
                 </button>
                 <button
                   class="w-full flex items-center gap-1 px-4 py-2 text-left text-sm text-gray-300 hover:bg-dark-700"
                   @click="openShareModal">
-                  <Share2 class="w-4 h-4" />
-                  {{ $t('pages.profile.share') }}
+                  <Share2 class="w-4 h-4" /> {{ t('pages.profile.share') }}
                 </button>
                 <button
                   class="w-full flex items-center gap-1 px-4 py-2 text-left text-sm text-red-400 hover:bg-dark-700"
                   @click="logout">
-                  <LogOut class="w-4 h-4" />
-                  {{ $t('pages.profile.logout') }}
+                  <LogOut class="w-4 h-4" /> {{ t('pages.profile.logout') }}
                 </button>
               </div>
             </div>
-
-            <!-- Для гостей - отдельная кнопка "Поделиться" -->
             <div v-else class="relative">
               <button class="text-gray-300 hover:text-mainText transition-colors" @click="openShareModal"
-                :title="$t('pages.profile.share')">
+                :title="t('pages.profile.share')">
                 <Share2 class="h-6 w-6" />
               </button>
             </div>
           </div>
 
-          <!-- Блок аватара -->
           <div class="relative mt-4 group" @mouseenter="showAvatarEdit" @mouseleave="hideAvatarEdit">
             <div class="relative">
               <img v-if="currentProfileData.avatar_url" :src="`${API_HOST}${currentProfileData.avatar_url}`"
-                class="h-36 w-36 border-2 border-dark-600 rounded-full object-cover transition-all duration-300" :class="{
-                  'brightness-75': showAvatarOverlay && isOwner,
-                  'animate-pulse': isUploading
-                }" alt="Avatar" />
+                class="h-36 w-36 border-2 border-dark-600 rounded-full object-cover transition-all duration-300"
+                :class="{ 'brightness-75': showAvatarOverlay && isOwner, 'animate-pulse': isUploading }" alt="Avatar" />
               <div v-else
                 class="h-36 w-36 flex items-center justify-center border-2 border-dark-600 rounded-full bg-dark-800 transition-all duration-300"
-                :class="{
-                  'brightness-75': showAvatarOverlay && isOwner,
-                  'animate-pulse': isUploading
-                }">
+                :class="{ 'brightness-75': showAvatarOverlay && isOwner, 'animate-pulse': isUploading }">
                 <svg class="h-10 w-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
-
-              <!-- Overlay для загрузки аватара -->
               <div v-if="showAvatarOverlay && isOwner && !isUploading"
                 class="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full cursor-pointer transition-opacity duration-300"
                 @click="triggerFileInput">
@@ -327,153 +250,156 @@ onUnmounted(() => {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  <span class="text-xs font-medium">{{ $t('pages.profile.changePhoto') }}</span>
+                  <span class="text-xs font-medium">{{ t('pages.profile.changePhoto') }}</span>
                 </div>
               </div>
-
-              <!-- Loader поверх аватара -->
               <div v-if="isUploading"
                 class="absolute inset-0 flex items-center justify-center bg-black/30 rounded-full">
                 <Loader />
               </div>
             </div>
-
-            <!-- Скрытый input для выбора файла -->
             <input ref="fileInputRef" type="file" accept="image/*" class="hidden" @change="handleAvatarUpload" />
           </div>
 
-
           <div class="mt-4 text-xs text-gray-300 sm:text-sm w-full">
             <template v-if="!isEditingDescription">
-              <p>{{ currentProfileData.description || $t('pages.profile.descriptionMissing') }}</p>
+              <p>{{ currentProfileData.description || t('pages.profile.descriptionMissing') }}</p>
               <button v-if="isOwner" class="mt-1 text-xs text-blue-400 hover:underline"
-                @click="isEditingDescription = true">
-                {{ $t('pages.profile.editDescription') }}
-              </button>
+                @click="isEditingDescription = true">{{ t('pages.profile.editDescription') }}</button>
             </template>
-
             <template v-else>
               <textarea v-model="newDescription" rows="3" maxlength="500"
                 class="w-full border border-gray-600 rounded bg-dark-900 p-2 text-xs text-mainText outline-none"
-                :placeholder="$t('pages.profile.descriptionPlaceholder')" />
+                :placeholder="t('pages.profile.descriptionPlaceholder')" />
               <div class="mt-2 flex justify-end gap-2 text-xs">
-                <button class="text-gray-400 hover:underline" @click="isEditingDescription = false">
-                  {{ $t('common.cancel') }}
-                </button>
+                <button class="text-gray-400 hover:underline" @click="isEditingDescription = false">{{
+                  t('common.cancel') }}</button>
                 <button class="text-green-400 hover:underline"
                   :disabled="!newDescription.trim() || newDescription === currentProfileData.description"
-                  @click="updateProfileDescription(newDescription)">
-                  {{ $t('common.save') }}
-                </button>
+                  @click="updateProfileDescription(newDescription)">{{ t('common.save') }}</button>
               </div>
             </template>
           </div>
 
-          <!-- Баланс (только для владельца) -->
           <div v-if="isOwner" class="mt-4 text-sm sm:text-base flex">
-            <p v-if="'balance' in currentProfileData">
-              {{ $t('common.balance') }}:
-              <span class="text-green-400">
-                {{ (currentProfileData as ProfileData).balance.toFixed(2) }}₽
-              </span>
-            </p>
+            <p v-if="'balance' in currentProfileData">{{ t('common.balance') }}: <span class="text-green-400">{{
+              (currentProfileData as UserRead).balance.toFixed(2) }}₽</span></p>
             <Wallet class="mx-3 w-4 cursor-pointer" @click="router.push('/wallet')" />
           </div>
 
-          <!-- Рейтинг и дата регистрации -->
-          <p class="mt-2 text-xs text-gray-400 sm:text-sm">
-            🌟 {{ currentProfileData.rating.toFixed(1) }} •
-            {{ $t('common.memberSince') }} {{ formatFullDate(currentProfileData.created_at.toString()) }}
-          </p>
+          <p class="mt-2 text-xs text-gray-400 sm:text-sm">🌟 {{ currentProfileData.rating.toFixed(1) }} • {{
+            t('common.memberSince') }} {{ formatFullDate(currentProfileData.created_at.toString()) }}</p>
         </div>
       </div>
 
-      <!-- Правая колонка с товарами -->
       <div
         class="w-full h-max-content lg:h-full flex flex-col border border-dark-600 rounded-lg space-y-4 lg:overflow-hidden">
-        <!-- Блок с кнопками -->
-        <div v-if="isOwner" class="w-full flex">
-          <button class="flex-1 hover:bg-dark-500 transition py-4 rounded">
-            {{ $t('common.products') }}
-          </button>
-          <button class="flex-1 hover:bg-dark-500 transition py-4 rounded">
-            {{ $t('pages.profile.reviews') }}
-          </button>
-          <button class="flex-1 hover:bg-dark-500 transition py-4 rounded">
-            {{ $t('pages.profile.purchases') }}
-          </button>
+        <div class="w-full flex">
+          <button class="flex-1 hover:bg-dark-500 transition py-4 rounded"
+            :class="{ 'bg-dark-700': activeTab === 'products' }" @click="switchTab('products')">{{ t('common.products')
+            }}</button>
+          <button class="flex-1 hover:bg-dark-500 transition py-4 rounded"
+            :class="{ 'bg-dark-700': activeTab === 'reviews' }" @click="switchTab('reviews')">{{
+              t('pages.profile.reviews') }}</button>
+          <button v-if="isOwner" class="flex-1 hover:bg-dark-500 transition py-4 rounded"
+            :class="{ 'bg-dark-700': activeTab === 'purchases' }" @click="switchTab('purchases')">{{
+              t('pages.profile.purchases') }}</button>
         </div>
 
-        <!-- Блок с кнопками для гостя -->
-        <div v-else class="w-full flex">
-          <button class="flex-1 hover:bg-dark-500 transition py-4 rounded">
-            {{ $t('common.productStatuses.active') }}
-          </button>
-          <button class="flex-1 hover:bg-dark-500 transition py-4 rounded">
-            {{ $t('pages.profile.reviews') }}
-          </button>
-          <button class="flex-1 hover:bg-dark-500 transition py-4 rounded">
-            {{ $t('common.productStatuses.') }}
-          </button>
-        </div>
-
-        <!-- Прокручиваемая область товаров -->
         <div class="w-full flex-1 overflow-scroll no-scrollbar">
           <div class="p-4 pb-8">
-            <div v-if="products.length === 0"
-              class="w-full flex items-center justify-center py-6 text-text-secondaryDark">
-              {{ $t('pages.profile.noProducts') }}
-            </div>
-
-            <div v-else>
-              <div v-for="product in products" :key="product.id"
-                class="w-full border-b border-dark-600 hover:bg-dark-800/50 transition">
-                <ProfileProductCard :product="product" :is-owner="isOwner" />
+            <div v-if="activeTab === 'products'">
+              <div v-if="products.length === 0"
+                class="w-full flex items-center justify-center py-6 text-text-secondaryDark">{{
+                  t('pages.profile.noProducts') }}</div>
+              <div v-else>
+                <div v-for="product in products" :key="product.id"
+                  class="w-full border-b border-dark-600 hover:bg-dark-800/50 transition">
+                  <ProfileProductCard :product="product" :is-owner="isOwner" />
+                </div>
               </div>
             </div>
+
+            <div v-if="activeTab === 'reviews'">
+              <div v-if="isLoadingReviews" class="w-full flex items-center justify-center py-6">
+                <Loader />
+              </div>
+              <div v-else-if="reviews.length === 0"
+                class="w-full flex items-center justify-center py-6 text-text-secondaryDark">{{
+                  t('pages.profile.noReviews')
+                }}</div>
+              <div v-else class="flex flex-col gap-4">
+                <div v-for="review in reviews" :key="review.id"
+                  class="p-4 rounded-lg bg-gray-800/20 border border-gray-700">
+                  <div class="flex justify-between items-center">
+                    <span class="font-medium">{{ review.rating }} ⭐</span>
+                    <span class="text-xs text-gray-400">{{ formatFullDate(review.created_at) }}</span>
+                  </div>
+                  <p class="mt-2 text-sm">{{ review.body }}</p>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="activeTab === 'purchases'">
+              <div v-if="isLoadingPurchases" class="w-full flex items-center justify-center py-6">
+                <Loader />
+              </div>
+              <div v-else-if="purchases.length === 0"
+                class="w-full flex items-center justify-center py-6 text-text-secondaryDark">{{
+                  t('pages.profile.noPurchases')
+                }}</div>
+              <div v-else class="flex flex-col gap-4">
+                <div v-for="deal in purchases" :key="deal.id"
+                  class="border border-dark-600 rounded-lg p-4 hover:bg-dark-700 transition">
+                  <div class="flex justify-between items-center mb-2">
+                    <span class="text-green-400 font-bold">{{ formatPrice(deal.price) }}</span>
+                    <span class="text-xs text-gray-400">{{ formatFullDate(deal.created_at) }}</span>
+                  </div>
+                  <div @click="goToProduct(deal.product.id)" class="flex gap-4 mb-2 cursor-pointer">
+                    <img :src="deal.product.images[0] ? `${API_HOST}${deal.product.images[0].image_url}` : ''" alt=""
+                      class="w-16 h-16 rounded-lg object-cover" />
+                    <div class="flex-1 min-w-0">
+                      <h3 class="text-sm font-semibold truncate cursor-pointer">{{
+                        deal.product.title }}</h3>
+                      <p class="text-xs text-text-secondary line-clamp-2">{{ deal.product.description }}</p>
+                    </div>
+                  </div>
+                  <div class="flex gap-4 text-xs text-text-secondary">
+                    <div @click="goToProfile(deal.seller.username)" class="cursor-pointer hover:underline">🛒 {{
+                      t('common.seller') }}: {{ deal.seller.username }}</div>
+                    <div @click="goToProfile(deal.buyer.username)" class="cursor-pointer hover:underline">🧑 {{
+                      t('common.buyer') }}: {{ deal.buyer.username }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Модальное окно "Поделиться профилем" -->
     <Teleport to="body">
       <div v-if="showShareModal"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 cursor-pointer">
         <div class="relative w-full max-w-md border border-dark-600 rounded-lg bg-dark-800 p-6 cursor-default"
           ref="shareModalRef" @click.stop>
-          <!-- Заголовок -->
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-white">
-              {{ $t('pages.profile.shareProfile') }}
-            </h3>
+            <h3 class="text-lg font-semibold text-white">{{ t('pages.profile.shareProfile') }}</h3>
             <button class="text-gray-400 hover:text-white transition-colors" @click="closeShareModal">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="w-5 h-5">
                 <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
               </svg>
             </button>
           </div>
-
-          <!-- QR код -->
           <div class="flex flex-col items-center mb-6">
             <div class="bg-white p-4 rounded-lg mb-4">
-              <img v-if="qrCodeSvg" :src="qrCodeSvg" alt="QR Code" class="w-48 h-48" />
-              <div v-else class="w-48 h-48 flex items-center justify-center bg-white">
-                <div class="text-center text-gray-500 text-sm">
-                  <div class="mb-2">Загрузка QR кода...</div>
-                </div>
-              </div>
+              <QrcodeVue :value="profileUrl" :size="200" level="H" />
             </div>
-            <p class="text-sm text-gray-300 text-center">
-              {{ $t('pages.profile.scanQR') }}
-            </p>
+            <p class="text-sm text-gray-300 text-center">{{ t('pages.profile.scanQR') }}</p>
           </div>
-
-          <!-- Ссылка для копирования -->
           <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-300 mb-2">
-              {{ $t('pages.profile.profileLink') }}
-            </label>
+            <label class="block text-sm font-medium text-gray-300 mb-2">{{ t('pages.profile.profileLink') }}</label>
             <div class="flex flex-col gap-2">
               <input type="text" :value="profileUrl" readonly
                 class="flex-1 px-3 py-2 bg-dark-700 border border-dark-600 rounded text-sm text-white focus:outline-none focus:border-blue-500" />
@@ -482,7 +408,7 @@ onUnmounted(() => {
                 :class="{ 'bg-green-600 hover:bg-green-700': isCopied }">
                 <Check v-if="isCopied" class="w-4 h-4" />
                 <Copy v-else class="w-4 h-4" />
-                {{ isCopied ? $t('common.copied') : $t('common.copy') }}
+                {{ isCopied ? t('common.copied') : t('common.copy') }}
               </button>
             </div>
           </div>

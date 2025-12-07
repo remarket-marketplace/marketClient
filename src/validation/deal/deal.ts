@@ -14,11 +14,13 @@ export const DealSchema = z.object({
     created_at: z.string(),
 })
 
-export const DealsList = z.object({
+export const DealsListSchema = z.object({
     deals: z.array(DealSchema),
     total: z.number(),
     total_pages: z.number()
 })
 
+export const SimpleDealsListSchema = z.array(DealSchema)
+
 export type Deal = z.infer<typeof DealSchema>
-export type DealsList = z.infer<typeof DealsList>
+export type DealsList = z.infer<typeof DealsListSchema>

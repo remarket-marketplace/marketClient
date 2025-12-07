@@ -51,10 +51,8 @@ const handleChatUpdated = (updateData: any) => {
   if (chatIndex !== -1) {
     const chat = chats.value[chatIndex]!
 
-    // теперь last_message уже нормальный объект
     chat.last_message = updateData.last_message || null
 
-    // переносим вверх
     chats.value.splice(chatIndex, 1)
     chats.value.unshift(chat)
   } else {
@@ -69,6 +67,10 @@ function backToChats() {
   }
 }
 
+let unsubscribeNewMessage: (() => void) | null = null
+let unsubscribeChatUpdated: (() => void) | null = null
+let unsubscribeChatNotification: (() => void) | null = null
+
 onMounted(async () => {
   try {
     isLoading.value = true
@@ -76,10 +78,12 @@ onMounted(async () => {
     user.value = await store.getUser()
 
     // connect websocket
-    await chatsService.connectChatsWebsocket()
+    if (!chatsService.isConnected()) {
+      await chatsService.connectChatsWebsocket()
+    }
 
     // subscribe to new messages
-    chatsService.onNewMessage((message: ChatMessageUnion) => {
+    unsubscribeNewMessage = chatsService.onNewMessage((message: ChatMessageUnion) => {
       if (selectedChatId.value === message.chat_room_id) {
         const messageExists = chatMessages.value.some(m => m.id === message.id)
         if (!messageExists) {
@@ -88,7 +92,11 @@ onMounted(async () => {
       }
     })
 
-    chatsService.onChatUpdated(handleChatUpdated)
+    unsubscribeChatUpdated = chatsService.onChatUpdated(handleChatUpdated)
+
+    unsubscribeChatNotification = chatsService.onChatNotification(() => {
+      // keep placeholder for potential notification handling
+    })
 
     // load chats and subscribe to chats data update
     await loadChats()
@@ -112,10 +120,19 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  chatsService.unsubscribeChatList()
-  chatsService.onNewMessage(null)
-  chatsService.onChatUpdated(null)
-  chatsService.onChatNotification(null)
+  if (unsubscribeNewMessage) {
+    unsubscribeNewMessage()
+    unsubscribeNewMessage = null
+  }
+  if (unsubscribeChatUpdated) {
+    unsubscribeChatUpdated()
+    unsubscribeChatUpdated = null
+  }
+  if (unsubscribeChatNotification) {
+    unsubscribeChatNotification()
+    unsubscribeChatNotification = null
+  }
+  window.removeEventListener('resize', () => {})
 })
 
 async function loadChats() {
@@ -209,12 +226,12 @@ async function sendMessage() {
     if (success) {
       newMessage.value = ''
     } else {
-      console.error('Ошибка отправки сообщения: ')
+      console.error('Message send error')
       errorMessage.value = t('pages.chats.errorSendMessage')
     }
   }
   catch (error) {
-    console.error('Ошибка отправки сообщения:', error)
+    console.error('Message send error:', error)
     errorMessage.value = t('pages.chats.errorSendMessage')
   }
 }
@@ -231,7 +248,6 @@ async function sendMessage() {
     </div>
 
     <div v-else class="w-full flex flex-1 overflow-hidden">
-      <!-- chats list -->
       <div
         v-if="!isMobile || (isMobile && mobileMode === 'chats')"
         class="h-full lg:max-w-sm flex flex-col md:pr-5 transition-all duration-300"
@@ -271,7 +287,6 @@ async function sendMessage() {
         </div>
       </div>
 
-      <!-- chat screen -->
       <div
         v-if="!isMobile || (isMobile && mobileMode === 'chat')"
         class="flex flex-1 transition-all duration-300"
@@ -289,7 +304,6 @@ async function sendMessage() {
           }"
         >
           <div class="flex flex-grow flex-col overflow-y-auto lg:pb-2 w-full">
-            <!-- chat header -->
             <div v-if="isMobile && mobileMode === 'chat'" class="flex items-center gap-2 mb-2 px-2 sticky top-0 bg-background py-2 z-10">
               <button class="text-xl font-bold flex-shrink-0" @click="backToChats">
                 <ArrowLeft />
@@ -324,7 +338,6 @@ async function sendMessage() {
               </div>
             </div>
 
-            <!-- chat content -->
             <div ref="messageContainerRef" class="no-scrollbar flex flex-1 flex-col overflow-y-auto pb-2">
               <div v-if="chatMessages.length > 0" class="flex flex-1 flex-col justify-start">
                 <div class="flex flex-col gap-3">
@@ -346,7 +359,6 @@ async function sendMessage() {
               </div>
             </div>
 
-            <!-- send messages bar -->
             <SendMessageBar
               v-if="selectedChatId"
               v-model:newMessage="newMessage"
