@@ -7,6 +7,7 @@ import AdminLayout from './views/layouts/AdminLayout.vue'
 import Loader from './components/Loader.vue'
 import { storeToRefs } from 'pinia'
 import { authService } from './api/auth/AuthService'
+import MainPageLayout from './views/layouts/MainPageLayout.vue'
 
 const store = useUserStore()
 const route = useRoute()
@@ -26,11 +27,13 @@ onMounted(async () => {
     authService.pingOnlineStatus()
   }, 5000)
 })
-
 // Определяем какой layout использовать
 const layout = computed(() => {
   if (route.path.startsWith('/admin') && user.value?.role === 'admin') {
     return AdminLayout
+  }
+  else if (route.path === '/') {
+    return MainPageLayout
   }
   return DefaultLayout
 })

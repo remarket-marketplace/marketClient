@@ -60,6 +60,7 @@ const en = {
     copy: "Copy",
     copied: 'Copied',
     close: "Close",
+    items: "items",
 
     viewDeal: "View Deal",
     confirmDeal: "Confirm Deal",
@@ -277,12 +278,19 @@ const en = {
       modalImage: 'Modal Image',
       loading: 'Loading product...',
       sold: "Sold",
+      reviews: "Reviews",
       deleteConfirm: {
         title: 'Confirm Product Deletion',
         message: 'Are you sure you want to delete this product? This action cannot be undone.',
         confirm: 'Delete',
         cancel: 'Cancel',
       },
+      buyConfirm: {
+        title: "Purchase confirmation",
+        message: "Are you sure you want to buy this product?",
+        confirm: "Buy",
+        cancel: "Cancel",
+      }
     },
 
     chats: {
@@ -312,6 +320,14 @@ const en = {
       sendReview: "Send review",
       buyerLeftReview: "Buyer left review",
       withoutReviewText: "Without message",
+      selectReason: "Select a reason",
+      late_delivery: "Late delivery",
+      seller_unresponsive: "Seller unresponsive",
+      poor_product_quality: "Poor product quality",
+      scam_or_fraud_suspicion: "Scam or fraud suspicion",
+      wrong_item_received: "Wrong item received",
+      sendReport: "Send",
+      confirmReceiptMessage: "Вы уверены что хотите подтвердить получение?",
 
       pending: "Deal created. Waiting for confirmation from both parties.",
       confirmed: "Buyer confirmed the receipt, funds are now available to the seller.",
@@ -449,6 +465,7 @@ const en = {
         productData: 'Product Data',
         productDataPlaceholder: 'Product Data',
         images: 'Product Images (select multiple)',
+        count: "Count",
         selectedImagesCount: 'Selected images: {count}',
         creating: 'Creating...',
         errorLoadingCategories: 'Error loading categories',

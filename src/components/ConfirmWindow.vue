@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineEmits, defineProps, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n()
@@ -56,7 +56,7 @@ onBeforeUnmount(() => {
 <template>
   <div
     v-if="_props.isOpen"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-dark-900 bg-opacity-50 transition-all duration-300 ease-out"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-85 transition-all duration-300 ease-out"
     :class="{ 'opacity-100': _props.isOpen, 'opacity-0': !_props.isOpen }"
     @click.self="handleCancel" >
     <div class="mx-4 max-w-md w-full rounded-xl bg-dark-800 p-6 shadow-xl md:max-w-lg md:p-8 focus:outline-none">
@@ -71,7 +71,7 @@ onBeforeUnmount(() => {
           {{ _props.cancelText ?? t('common.cancel') }}
         </button>
         <button
-          class="rounded bg-red-600 px-4 py-2 text-mainText transition duration-200 ease-in-out disabled:cursor-not-allowed active:bg-red-500 hover:bg-red-700 disabled:opacity-50"
+          class="rounded bg-blue-600 px-4 py-2 text-mainText transition duration-200 ease-in-out disabled:cursor-not-allowed disabled:opacity-50"
           :disabled="_props.isLoading"
           @click="handleConfirm"
         >

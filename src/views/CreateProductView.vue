@@ -20,6 +20,7 @@ const description = ref('')
 const price = ref('')
 const productData = ref('')
 const images = ref<File[]>([])
+const count = ref<number>(1)
 const sended = ref(false)
 const errorMessage = ref('')
 
@@ -66,6 +67,7 @@ async function createProduct() {
       price: Number(price.value),
       product_data: productData.value,
       category_id: selectedSubcategoryId.value,
+      count: count.value,
     }
 
     const result = await productService.createProduct(productDataObj, images.value)
@@ -95,76 +97,56 @@ async function createProduct() {
         {{ $t('pages.forms.createProduct.title') }}
       </h1>
 
-      <CustomSelect
-        v-model="selectedCategoryId"
-        :options="categories.map(c => ({ label: c.name, value: c.id }))"
-        :label="t('common.category')"
-        :placeholder="t('pages.forms.createProduct.selectCategory')"
-      />
+      <CustomSelect v-model="selectedCategoryId" :options="categories.map(c => ({ label: c.name, value: c.id }))"
+        :label="t('common.category')" :placeholder="t('pages.forms.createProduct.selectCategory')" />
 
-      <CustomSelect
-        v-if="subcategories.length"
-        v-model="selectedSubcategoryId"
-        :options="subcategories.map(s => ({ label: s.name, value: s.id }))"
-        :label="t('common.subcategory')"
-        :placeholder="t('pages.forms.createProduct.selectSubcategory')"
-      />
+      <CustomSelect v-if="subcategories.length" v-model="selectedSubcategoryId"
+        :options="subcategories.map(s => ({ label: s.name, value: s.id }))" :label="t('common.subcategory')"
+        :placeholder="t('pages.forms.createProduct.selectSubcategory')" />
 
       <div v-if="selectedSubcategoryId" class="space-y-4">
         <div>
-          <label for="title" class="mb-2 block text-sm text-gray-300">{{ $t('pages.forms.createProduct.productName') }}</label>
-          <input
-            id="title"
-            v-model="title"
-            type="text"
-            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText"
-          />
+          <label for="title" class="mb-2 block text-sm text-gray-300">{{ $t('pages.forms.createProduct.productName')
+            }}</label>
+          <input id="title" v-model="title" type="text"
+            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText" />
         </div>
 
         <div>
           <label for="description" class="mb-2 block text-sm text-gray-300">{{ $t('common.description') }}</label>
-          <textarea
-            id="description"
-            v-model="description"
-            rows="4"
-            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText max-h-52"
-          ></textarea>
+          <textarea id="description" v-model="description" rows="4"
+            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText max-h-52"></textarea>
         </div>
 
         <div>
           <label for="price" class="mb-2 block text-sm text-gray-300">{{ $t('common.price') }}</label>
-          <input
-            id="price"
-            v-model="price"
-            type="number"
-            min="1"
-            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText"
-          />
+          <input id="price" v-model="price" type="number" min="1"
+            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText" />
         </div>
 
         <div>
-          <label for="productData" class="mb-2 block text-sm text-gray-300">{{ $t('pages.forms.createProduct.productData') }}</label>
-          <textarea
-            id="productData"
-            v-model="productData"
-            rows="4"
-            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText max-h-36"
-          ></textarea>
+          <label for="productData" class="mb-2 block text-sm text-gray-300">{{
+            $t('pages.forms.createProduct.productData') }}</label>
+          <textarea id="productData" v-model="productData" rows="4"
+            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText max-h-36"></textarea>
         </div>
 
         <div>
           <label class="mb-2 block text-sm text-gray-300">{{ $t('common.images') }}</label>
           <FileUploader v-model="images" :max-files="8" />
         </div>
+
+        <div>
+          <label for="count" class="mb-2 block text-sm text-gray-300">{{ $t('pages.forms.createProduct.count')
+            }}</label>
+          <input id="count" v-model="count" type="number" min="1" max="100000"
+            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText" />
+        </div>
       </div>
 
-      <button
-        v-if="selectedSubcategoryId"
-        type="button"
-        :disabled="sended"
+      <button v-if="selectedSubcategoryId" type="button" :disabled="sended"
         class="w-full rounded-lg bg-blue-600 py-2 text-mainText font-semibold hover:bg-blue-700 disabled:opacity-50"
-        @click="createProduct"
-      >
+        @click="createProduct">
         {{ sended ? $t('pages.forms.createProduct.creating') : $t('common.create') }}
       </button>
 
