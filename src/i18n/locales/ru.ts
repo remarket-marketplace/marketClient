@@ -62,6 +62,15 @@ const ru = {
     close: "Закрыть",
     items: "Штук",
 
+    remarket: "Remarket - маркет безопасных сделок",
+    support: "Поддержка",
+    legal: "Юридическая информация",
+    forLegalMatters: "По юридическим вопросам.",
+    information: "Информация",
+    aboutUs: "О нас",
+    privacyPolicy: "Политика конфиденциальности",
+    termsOfService: "Условия использования",
+
     viewDeal: "Просмотр сделки",
     confirmDeal: "Подтвердить сделку", 
     cancelDeal: "Отменить сделку",

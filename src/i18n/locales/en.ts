@@ -62,6 +62,16 @@ const en = {
     close: "Close",
     items: "items",
 
+    remarket: "Remarket - secure transactions market",
+    support: "Support",
+    legal: "Legal",
+    forLegalMatters: "For legal matters.",
+    information: "Information",
+    aboutUs: "About us",
+    privacyPolicy: "Privacy policy",
+    termsOfService: "Terms of service",
+
+
     viewDeal: "View Deal",
     confirmDeal: "Confirm Deal",
     cancelDeal: "Cancel Deal",

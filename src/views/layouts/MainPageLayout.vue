@@ -135,33 +135,34 @@ const navItems = computed(() => [
             </div>
         </header>
 
-        <main class="flex-1 overflow-hidden h-[max-content]">
+        <main class="flex-1 overflow-hidden min-h-screen h-[max-content]">
             <div class="mx-auto h-full max-w-5xl w-full px-4 pb-6" :class="{ 'pb-16': !isDesktop }">
                 <slot />
             </div>
         </main>
 
-        <div class="w-full flex flex-col justify-center items-center">
+        <div class="w-full flex flex-col justify-center items-center border-t border-t-gray-600">
             <footer class="w-full max-w-5xl px-4 py-6 flex flex-col md:flex-row md:justify-between gap-4 text-sm text-gray-300">
                 <div class="flex-1">
-                    <h4 class="font-semibold text-white">Support</h4>
+                    <h4 class="font-semibold text-white">{{ $t('common.remarket') }}</h4>
+                </div>
+
+                <div class="flex-1">
+                    <h4 class="font-semibold text-white">{{ $t('common.support') }}</h4>
                     <p class="mt-1">support@re-market.net</p>
                 </div>
 
                 <div class="flex-1">
-                    <h4 class="font-semibold text-white">Legal</h4>
-                    <p class="mt-1">
-                        Органам государственной власти, правоохранительным органам. Правообладателям. По юридическим вопросам.
-                    </p>
+                    <h4 class="font-semibold text-white">{{ $t('common.legal') }}</h4>
                     <p class="mt-2">legal@re-market.net</p>
                 </div>
 
                 <div class="flex-1">
-                    <h4 class="font-semibold text-white">Information</h4>
+                    <h4 class="font-semibold text-white">{{ $t('common.information') }}</h4>
                     <ul class="mt-1 space-y-1">
-                        <li>About Us</li>
-                        <li>Privacy Policy</li>
-                        <li>Terms of Service</li>
+                        <li>{{ $t('common.aboutUs') }}</li>
+                        <li>{{ $t('common.privacyPolicy') }}</li>
+                        <li>{{ $t('common.termsOfService') }}</li>
                     </ul>
                 </div>
             </footer>
