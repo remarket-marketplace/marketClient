@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { ChatListItem } from '@/validation/chat/ChatList';
 import { computed, onMounted, ref } from 'vue'
-import { defineProps } from 'vue'
 import { useI18n } from 'vue-i18n';
 
 const API_HOST = import.meta.env.VITE_API_HOST

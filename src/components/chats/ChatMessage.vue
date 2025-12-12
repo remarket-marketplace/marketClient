@@ -66,8 +66,8 @@ function formatDate(dateStr: string): string {
 <template>
   <div :class="messageAlignment">
     <!-- PRODUCT MESSAGE -->
-    <div v-if="product && !isDealStatus">
-      <NewPurchaseMessage :product="product" :deal-id="dealId" :has_review="hasReview" />
+    <div v-if="product && !isDealStatus && dealId">
+      <NewPurchaseMessage :product="product" :deal-id="dealId" :deal-status="dealStatus" :has_review="hasReview" />
     </div>
 
     <!-- TEXT MESSAGE -->
