@@ -8,6 +8,7 @@ import type { Socket } from 'socket.io-client'
 import { io } from 'socket.io-client'
 import { httpClient } from '..'
 import { ChatListSchema } from '@/validation/chat/ChatList'
+import { RefusalReasonsListSchema, type RefusalReasonsList } from '@/validation/deal/deal'
 
 let socket: Socket | null = null
 
@@ -193,6 +194,11 @@ export const chatsService = {
       console.error('Error sending message:', e)
       return false
     }
+  },
+
+  async getRefusalReasons(): Promise<RefusalReasonsList> {
+    const response = await httpClient.get(`/deal/refusal-reasons`)
+      return RefusalReasonsListSchema.parse(response.data)
   },
 
   onNewMessage(cb: MessageCallback | null) {

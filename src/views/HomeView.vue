@@ -27,6 +27,7 @@ const searchQuery = ref('')
 const isServerPagination = ref(true)
 const isLoadingMore = ref(false)
 const isMobile = ref(false)
+const isCategoriesLoading = ref(true)
 
 function goToProduct(id: string) {
   router.push({ path: `/product/${id}` })
@@ -100,6 +101,7 @@ async function loadMoreProducts() {
 async function loadMainCategories() {
   const all = await categoryService.getAllCategories()
   mainCategories.value = all.filter((c: { parent_id: any }) => !c.parent_id)
+  isCategoriesLoading.value = false
 }
 
 async function onMainCategoryClick(id: string) {
@@ -160,14 +162,21 @@ onUnmounted(() => {
     <SearchField v-model="searchQuery" :placeholder="$t('pages.index.searchPlaceholder')"
       @search-change="debouncedSearch" class="w-full" />
 
-    <div v-if="mainCategories.length > 0" class="mt-6">
+    <div class="mt-6">
       <div class="text-lg font-semibold mb-2">{{ t('common.category') }}</div>
 
-      <div class="mt-4 flex gap-3 overflow-x-auto no-scrollbar pb-2">
+      <div v-if="isCategoriesLoading" class="mt-4 flex gap-3 overflow-x-auto no-scrollbar pb-2">
+        <div v-for="n in 5" :key="n" class="cursor-pointer min-w-[90px] flex-shrink-0 flex flex-col items-center rounded-lg p-2">
+          <div class="h-20 w-20 animate-pulse rounded-lg"></div>
+          <div class="w-16 h-4 animate-pulse mt-2 rounded"></div>
+        </div>
+      </div>
+
+      <div v-else-if="mainCategories.length > 0" class="mt-4 flex gap-3 overflow-x-auto no-scrollbar pb-2">
         <div v-for="cat in mainCategories" :key="cat.id" @click="onMainCategoryClick(cat.id)"
           class="cursor-pointer min-w-[90px] flex-shrink-0 flex flex-col items-center rounded-lg p-2">
           <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" alt="category"
-            class="h-20 w-20 object-cover rounded-lg" />
+               class="h-16 w-16 object-contain rounded-lg" />
           <span class="text-center text-sm font-medium">{{ cat.name }}</span>
         </div>
       </div>
@@ -179,7 +188,7 @@ onUnmounted(() => {
         <div v-for="sub in subCategories" :key="sub.id" @click="onSubCategoryClick(sub.id)"
           class="cursor-pointer w-[90px] flex flex-col items-center p-2 rounded-lg">
           <img v-if="sub.image_url" :src="`${API_HOST}${sub.image_url}`" alt="subcategory"
-            class="h-20 w-20 object-cover rounded-lg" />
+               class="h-16 w-16 object-contain rounded-lg" />
           <span class="text-center text-sm font-medium">{{ sub.name }}</span>
         </div>
       </div>

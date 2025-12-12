@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { ReviewsListSchema } from '../review/review'
 
 export const UUIDSchema = z.string()
 
@@ -36,6 +37,8 @@ export const ProductSchema = z.object({
   created_at: z.string(),
   seller: SellerSchema,
   images: z.array(ProductImageSchema),
+  count: z.number(),
+  reviews: ReviewsListSchema.nullable().optional(),
   is_owner: z.boolean().optional(),
   product_data_string: z.string().nullable().optional(),
 }).strip()

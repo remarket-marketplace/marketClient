@@ -22,6 +22,7 @@ export const TextMessageSchema = BaseMessageSchema.extend({
 export const ProductMessageSchema = BaseMessageSchema.extend({
   message_type: z.literal('purchase_message'),
   product: ProductSchema,
+  deal_status: z.string(),
   deal_id: z.uuid(),
   has_review: z.boolean(),
 })

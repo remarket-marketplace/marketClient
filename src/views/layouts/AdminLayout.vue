@@ -29,16 +29,16 @@ function checkDesktop() {
 const isActiveRoute = (item: any) => {
   const currentPath = route.path
   
-  // Для главной страницы админки - точное совпадение
+  // For the main admin page - exact match
   if (item.to === '/admin') {
     return currentPath === '/admin'
   }
   
-  // Для остальных страниц - начинается с пути
+  // For other pages - starts with path
   return currentPath.startsWith(item.to)
 }
 
-// Для мобильной версии используем ту же логику
+// For mobile version, use the same logic
 const isActiveRouteMobile = (item: any) => {
   return isActiveRoute(item)
 }
@@ -105,11 +105,12 @@ const navItems = computed(() => [
             >
               <component 
                 :is="item.icon" 
-                class="text-xl"
+                class="text-xl transition-colors duration-300 group-hover:text-white"
+                :class="isActiveRoute(item) ? 'text-white' : 'text-gray-400'"
                 :size="20"
                 stroke-width="1.5"
               />
-              <span class="ml-1 transition-colors duration-300">
+              <span class="ml-1 transition-colors duration-300 group-hover:text-white">
                 {{ item.title }}
               </span>
             </router-link>
@@ -143,7 +144,7 @@ const navItems = computed(() => [
             'opacity-70': !isActiveRouteMobile(item)
           }"
         >          
-          <div class="icon-box flex items-center justify-center transition-colors duration-300"
+          <div class="icon-box flex items-center justify-center transition-colors duration-300 group-hover:text-white"
                :class="isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400'">
             <component 
               :is="item.icon" 
@@ -151,7 +152,7 @@ const navItems = computed(() => [
               stroke-width="1.5"
             />
           </div>
-          <span class="menu-label text-center text-xs font-light leading-none mt-1 transition-colors duration-300"
+          <span class="menu-label text-center text-xs font-light leading-none mt-1 transition-colors duration-300 group-hover:text-white"
                 :class="isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400'">
             {{ item.title }}
           </span>
@@ -163,11 +164,11 @@ const navItems = computed(() => [
 
 <style scoped>
 .h-full-dvh {
-  height: 100vh; /* Fallback для старых браузеров */
-  height: 100dvh; /* Используем Dynamic Viewport Height для корректного отображения на iOS */
+  height: 100vh; /* Fallback for older browsers */
+  height: 100dvh; /* Dynamic Viewport Height for proper iOS display */
 }
 
-/* СТИЛЬ APPLE DESIGN (МАТОВОЕ СТЕКЛО) */
+/* Apple Design Style (Frosted Glass) */
 .mobile-nav-glass {
   background-color: rgba(23, 23, 23, 0.9);
   -webkit-backdrop-filter: blur(20px);
@@ -204,12 +205,12 @@ const navItems = computed(() => [
   line-height: 1;
 }
 
-/* Плавные переходы для всех интерактивных элементов */
+/* Smooth transitions for all interactive elements */
 .router-link-active {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Улучшенный ховер-эффект */
+/* Improved hover effect */
 .group:hover {
   transform: translateY(-1px);
 }

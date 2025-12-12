@@ -292,7 +292,7 @@ function resetNewSubcategoryForm() {
 
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.description') }}</label>
-            <textarea v-model="newCategory.description" rows="3" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите описание" />
+            <textarea v-model="newCategory.description" rows="3" class="w-full max-h-28 bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите описание" />
           </div>
 
           <div>
@@ -330,7 +330,7 @@ function resetNewSubcategoryForm() {
 
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.description') }}</label>
-            <textarea v-model="newSubcategory.description" rows="3" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите описание" />
+            <textarea v-model="newSubcategory.description" rows="3" class="w-full max-h-28 bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите описание" />
           </div>
 
           <div>

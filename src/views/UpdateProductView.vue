@@ -22,6 +22,7 @@ const price = ref('')
 const productDataString = ref('')
 const newImages = ref<File[]>([])
 const existingImages = ref<{ id: string; image_url: string }[]>([])
+const count = ref<number>()
 const imagesToDelete = ref<string[]>([])
 const sended = ref(false)
 const errorMessage = ref('')
@@ -55,10 +56,10 @@ function deleteExistingImage(id: string) {
 onMounted(async () => {
   try {
     await store.fetchUser()
-    
+
     // Загружаем данные товара для редактирования
     productData.value = await productService.getProductEditDataById(productId.value)
-    
+
     if (!productData.value) {
       errorMessage.value = t('pages.forms.editProduct.productNotFound')
       return
@@ -70,6 +71,7 @@ onMounted(async () => {
     price.value = productData.value.price.toString()
     productDataString.value = productData.value.product_data_string ?? ''
     existingImages.value = [...productData.value.images]
+    count.value = productData.value.count
 
   } catch (err: any) {
     console.error('Ошибка загрузки данных:', err)
@@ -112,11 +114,12 @@ async function updateProduct() {
       price: Number(price.value),
       product_data: productDataString.value,
       category_id: productData.value!.category.id,
+      count: count.value
     }
 
     const result = await productService.updateProduct(
       productDataObj,
-      productId.value, 
+      productId.value,
       newImages.value,
       imagesToDelete.value
     )
@@ -151,7 +154,7 @@ async function updateProduct() {
         {{ $t('pages.forms.editProduct.title') }}
       </h1>
 
-      <Loader v-if="isLoadingProduct"/>
+      <Loader v-if="isLoadingProduct" />
 
       <template v-else>
         <!-- Информация о категории (только для просмотра) -->
@@ -165,65 +168,41 @@ async function updateProduct() {
 
         <div class="space-y-4">
           <div>
-            <label for="title" class="mb-2 block text-sm text-gray-300">{{ $t('pages.forms.createProduct.productName') }}</label>
-            <input
-              id="title"
-              v-model="title"
-              type="text"
-              class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText"
-            />
+            <label for="title" class="mb-2 block text-sm text-gray-300">{{ $t('pages.forms.createProduct.productName')
+              }}</label>
+            <input id="title" v-model="title" type="text"
+              class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText" />
           </div>
 
           <div>
             <label for="description" class="mb-2 block text-sm text-gray-300">{{ t('common.description') }}</label>
-            <textarea
-              id="description"
-              v-model="description"
-              rows="4"
-              class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText max-h-52"
-            ></textarea>
+            <textarea id="description" v-model="description" rows="4"
+              class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText max-h-52"></textarea>
           </div>
 
           <div>
             <label for="price" class="mb-2 block text-sm text-gray-300">{{ $t('common.price') }}</label>
-            <input
-              id="price"
-              v-model="price"
-              type="number"
-              min="1"
-              class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText"
-            />
+            <input id="price" v-model="price" type="number" min="1"
+              class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText" />
           </div>
 
           <div>
-            <label for="productData" class="mb-2 block text-sm text-gray-300">{{ $t('pages.forms.createProduct.productData') }}</label>
-            <textarea
-              id="productData"
-              v-model="productDataString"
-              rows="4"
-              class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText max-h-36"
-            ></textarea>
+            <label for="productData" class="mb-2 block text-sm text-gray-300">{{
+              $t('pages.forms.createProduct.productData') }}</label>
+            <textarea id="productData" v-model="productDataString" rows="4"
+              class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText max-h-36"></textarea>
           </div>
 
           <!-- Существующие изображения -->
           <div>
             <label class="mb-2 block text-sm text-gray-300">{{ $t('pages.forms.editProduct.currentImages') }}</label>
             <div v-if="existingImages.length > 0" class="grid grid-cols-3 gap-2 mb-4">
-              <div
-                v-for="image in existingImages"
-                :key="image.id"
-                class="relative group"
-              >
-                <img
-                  :src="`${API_HOST}${image.image_url}`"
-                  class="w-full h-20 object-cover rounded-lg border border-dark-600"
-                  alt="Product image"
-                />
+              <div v-for="image in existingImages" :key="image.id" class="relative group">
+                <img :src="`${API_HOST}${image.image_url}`"
+                  class="w-full h-20 object-cover rounded-lg border border-dark-600" alt="Product image" />
 
-                <button
-                  @click="deleteExistingImage(image.id)"
-                  class="absolute -top-2 -right-2 w-4 h-4 bg-red-600 rounded-full flex items-center justify-center opacity-100 transition-opacity"
-                >
+                <button @click="deleteExistingImage(image.id)"
+                  class="absolute -top-2 -right-2 w-4 h-4 bg-red-600 rounded-full flex items-center justify-center opacity-100 transition-opacity">
                   <X />
                 </button>
               </div>
@@ -234,19 +213,20 @@ async function updateProduct() {
           <!-- Загрузка новых изображений -->
           <div>
             <label class="mb-2 block text-sm text-gray-300">{{ $t('pages.forms.editProduct.newImages') }}</label>
-            <FileUploader 
-              v-model="newImages" 
-              :max-files="computedMaxNewFiles" 
-            />
+            <FileUploader v-model="newImages" :max-files="computedMaxNewFiles" />
+          </div>
+
+          <div>
+            <label for="count" class="mb-2 block text-sm text-gray-300">{{ $t('pages.forms.createProduct.count')
+              }}</label>
+            <input id="count" v-model="count" type="number" min="1" max="100000"
+              class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText" />
           </div>
         </div>
 
-        <button
-          type="button"
-          :disabled="sended || totalImagesAfterUpdate === 0"
+        <button type="button" :disabled="sended || totalImagesAfterUpdate === 0"
           class="w-full rounded-lg bg-blue-600 py-2 text-mainText font-semibold hover:bg-blue-700 disabled:opacity-50"
-          @click="updateProduct"
-        >
+          @click="updateProduct">
           {{ sended ? t('pages.forms.editProduct.saving') : t('pages.forms.editProduct.save') }}
         </button>
 

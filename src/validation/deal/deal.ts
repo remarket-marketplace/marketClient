@@ -20,7 +20,16 @@ export const DealsListSchema = z.object({
     total_pages: z.number()
 })
 
+export const RefusalReasonSchema = z.object({
+    id: UUIDSchema,
+    title: z.string(),
+})
+
 export const SimpleDealsListSchema = z.array(DealSchema)
+export const RefusalReasonsListSchema = z.array(RefusalReasonSchema)
+
 
 export type Deal = z.infer<typeof DealSchema>
 export type DealsList = z.infer<typeof DealsListSchema>
+export type RefusalReason = z.infer<typeof RefusalReasonSchema>
+export type RefusalReasonsList = z.infer<typeof RefusalReasonsListSchema>
