@@ -268,8 +268,8 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 @click="isEditingDescription = true">{{ t('pages.profile.editDescription') }}</button>
             </template>
             <template v-else>
-              <textarea v-model="newDescription" rows="3" maxlength="500"
-                class="w-full border border-gray-600 rounded bg-dark-900 p-2 text-xs text-mainText outline-none"
+              <textarea v-model="newDescription" rows="3" maxlength="200"
+                class="w-full border max-h-28 border-gray-600 rounded bg-dark-900 p-2 text-xs text-mainText outline-none"
                 :placeholder="t('pages.profile.descriptionPlaceholder')" />
               <div class="mt-2 flex justify-end gap-2 text-xs">
                 <button class="text-gray-400 hover:underline" @click="isEditingDescription = false">{{

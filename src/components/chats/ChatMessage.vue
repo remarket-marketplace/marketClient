@@ -40,6 +40,11 @@ const dealId = computed<string | null>(() => {
   return null
 })
 
+const dealStatus = computed<string | null>(() => {
+  if (isProductMessage(props.message)) return props.message.deal_status
+  return null
+})
+
 const hasReview = computed<boolean | null>(() => {
   if (isProductMessage(props.message)) return props.message.has_review
   return null
@@ -67,7 +72,7 @@ function formatDate(dateStr: string): string {
   <div :class="messageAlignment">
     <!-- PRODUCT MESSAGE -->
     <div v-if="product && !isDealStatus">
-      <NewPurchaseMessage :product="product" :deal-id="dealId" :has_review="hasReview" />
+      <NewPurchaseMessage :product="product" :deal-id="dealId" :deal-status="dealStatus" :has_review="hasReview" />
     </div>
 
     <!-- TEXT MESSAGE -->

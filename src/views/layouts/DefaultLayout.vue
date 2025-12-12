@@ -13,6 +13,7 @@ import { storeToRefs } from 'pinia'
 import SelectLanguage from '@/components/SelectLanguage.vue'
 import { chatsService } from '@/api/chats/chatsService'
 
+
 const store = useUserStore()
 const { t } = useI18n()
 const router = useRouter()
@@ -28,32 +29,32 @@ function checkDesktop() {
 const isActiveRoute = (item: any) => {
   const currentPath = route.path
   
-  // Если мы на странице авторизации, не подсвечиваем пункты меню
+  // If we are on the authorization page, do not highlight menu items
   if (currentPath === '/signin' || currentPath === '/signup') {
     return false
   }
   
-  // Для главной страницы - точное совпадение
+  // For the home page - exact match
   if (item.to === '/') {
     return currentPath === '/'
   }
   
-  // Для чатов - начинается с /chats
+  // For chats - starts with /chats
   if (item.to === '/chats') {
     return currentPath.startsWith('/chats')
   }
   
-  // Для создания продукта - точное совпадение
+  // For creating a product - exact match
   if (item.to === '/product/create') {
     return currentPath === '/product/create'
   }
   
-  // Для профиля - начинается с /profile
+  // For profile - starts with /profile
   if (item.to.startsWith('/profile')) {
     return currentPath.startsWith('/profile')
   }
   
-  // Для просмотра продукта - начинается с /product (но не создание)
+  // For product view - starts with /product (but not creation)
   if (item.to.startsWith('/product/') && item.to !== '/product/create') {
     return currentPath.startsWith('/product/') && currentPath !== '/product/create'
   }
@@ -61,7 +62,7 @@ const isActiveRoute = (item: any) => {
   return currentPath === item.to
 }
 
-// Для мобильной версии используем ту же логику
+// For mobile version, use the same logic
 const isActiveRouteMobile = (item: any) => {
   return isActiveRoute(item)
 }
@@ -125,12 +126,13 @@ const navItems = computed(() => [
                 :is="item.icon" 
                 :class="[
                   item.sell ? 'text-2xl' : 'text-xl',
-                  isActiveRoute(item) ? 'text-white' : 'text-gray-400'
+                  isActiveRoute(item) ? 'text-white' : 'text-gray-400',
+                  'transition-colors duration-300 group-hover:text-white'
                 ]" 
                 :size="item.sell ? 24 : 20"
                 stroke-width="1.5"
               />
-              <span class="ml-1 transition-colors duration-300">
+              <span class="ml-1 transition-colors duration-300 group-hover:text-white">
                 {{ item.title }}
               </span>
             </router-link>
@@ -143,7 +145,7 @@ const navItems = computed(() => [
 
     <main class="flex-1 overflow-hidden h-screen">
       <div
-        class="mx-auto h-full max-w-5xl w-full px-4 py-6"
+        class="mx-auto h-full max-w-5xl w-full px-4 pb-6"
         :class="{ 'pb-16': !isDesktop }"
       >
         <slot />
@@ -164,7 +166,7 @@ const navItems = computed(() => [
             'opacity-70': !isActiveRouteMobile(item)
           }"
         >          
-          <div class="icon-box flex items-center justify-center transition-colors duration-300"
+          <div class="icon-box flex items-center justify-center transition-colors duration-300 group-hover:text-white"
                :class="isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400'">
             <component 
               :is="item.icon" 
@@ -172,7 +174,7 @@ const navItems = computed(() => [
               stroke-width="1.5"
             />
           </div>
-          <span class="menu-label text-center text-xs font-light leading-none mt-1 transition-colors duration-300"
+          <span class="menu-label text-center text-xs font-light leading-none mt-1 transition-colors duration-300 group-hover:text-white"
                 :class="isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400'">
             {{ item.title }}
           </span>
@@ -210,12 +212,12 @@ const navItems = computed(() => [
   line-height: 1;
 }
 
-/* Плавные переходы для всех интерактивных элементов */
+/* Smooth transitions for all interactive elements */
 .router-link-active {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Улучшенный ховер-эффект */
+/* Improved hover effect */
 .group:hover {
   transform: translateY(-1px);
 }

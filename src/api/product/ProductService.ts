@@ -119,6 +119,7 @@ export const productService = {
       formData.append('price', productData.price.toString())
       formData.append('product_data', productData.product_data)
       formData.append('category_id', productData.category_id)
+      formData.append('count', productData.count)
       uploadedImages.forEach((image) => {
         formData.append('uploaded_images', image)
       })
@@ -155,6 +156,7 @@ export const productService = {
       uploadedImages.forEach((image) => {
         formData.append('uploaded_images', image)
       })
+      formData.append('count', productData.count)
       const response = await httpClient.patch('/products/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -222,11 +224,9 @@ export const productService = {
     }
   },
 
-  async confirmReceipt(productId: string) {
+  async confirmReceipt(dealId: string) {
     try {
-      const response = await httpClient.patch(`/products/confirm-receipt`, {
-        product_id: productId,
-      })
+      const response = await httpClient.patch(`/products/confirm-receipt/${dealId}`)
       return response.status === 200
     }
     catch {
@@ -234,7 +234,7 @@ export const productService = {
     }
   },
 
-  async sendReport(productId: string) {
+  async sendReport(productId: string, refusalReasonId: string) {
     try {
       const response = await httpClient.patch(`/products/report`, {
         product_id: productId,
@@ -311,9 +311,7 @@ export const productService = {
 
   async deleteProduct(productId: string) {
     try {
-      const response = await httpClient.delete('/products/', {
-        params: { product_id: productId },
-      })
+      const response = await httpClient.delete(`/products/${productId}`)
       return response.status === 200
     }
     catch {

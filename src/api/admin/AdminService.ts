@@ -39,9 +39,7 @@ export const adminService = {
 
   async approveProduct(productId: string) {
     try {
-      const response = await httpClient.post('/admin/products/approve', {
-        product_id: productId,
-      })
+      const response = await httpClient.post(`/admin/products/approve/${productId}`)
       return response.status === 200
     }
     catch (e) {
