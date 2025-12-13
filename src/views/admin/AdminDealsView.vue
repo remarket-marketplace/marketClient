@@ -45,7 +45,7 @@ function goToDeal(id: string) {
 }
 
 function goToProfile(username: string) {
-  router.push(`/profile/${username}`)
+  router.push(`/user/${username}`)
 }
 
 function goToProduct(productId: string) {

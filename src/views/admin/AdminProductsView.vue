@@ -4,7 +4,6 @@ import type { Product } from '@/validation/product/product';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { 
-  DollarSign, 
   User, 
   Image, 
   Folder,
@@ -40,7 +39,7 @@ onMounted(async () => {
 });
 
 function navigateToProfile(username: string) {
-  router.push(`/profile/${username}`);
+  router.push(`/user/${username}`);
 }
 
 function navigateToProduct(productId: string) {
@@ -153,7 +152,6 @@ function formatPrice(price: number) {
                   <!-- Цена и продавец -->
                   <div class="flex flex-col gap-1 text-xs sm:text-sm">
                     <div class="flex items-center gap-1 text-green-400 font-semibold">
-                      <DollarSign class="w-3 h-3 sm:w-4 sm:h-4" />
                       <span>{{ formatPrice(product.price) }}</span>
                     </div>
                     

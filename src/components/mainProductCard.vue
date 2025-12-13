@@ -21,7 +21,7 @@ function onClick() {
 }
 
 function goToSeller() {
-  router.push(`/profile/${props.product.seller.username}`)
+  router.push(`/user/${props.product.seller.username}`)
 }
 </script>
 

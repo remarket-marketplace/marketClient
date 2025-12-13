@@ -204,7 +204,7 @@ const reviews = computed<ReviewSchema[]>(() => {
         <!-- Seller -->
         <div
           class="flex items-center gap-4 p-4 rounded-xl bg-dark-600 cursor-pointer transition-all duration-200 hover:bg-dark-600/80 group"
-          @click="router.push(`/profile/${product.seller.username}`)">
+          @click="router.push(`/user/${product.seller.username}`)">
           <div class="w-12 h-12 rounded-full overflow-hidden bg-gray-600 flex items-center justify-center">
             <img v-if="product.seller.avatar_url" :src="`${API_HOST}${product.seller.avatar_url}`"
               class="w-full h-full object-cover" alt="Seller avatar">

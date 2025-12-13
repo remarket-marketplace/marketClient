@@ -98,7 +98,7 @@ const navItems = computed(() => [
     id: 'profile',
     title: t('navigation.market.profile'),
     icon: User,
-    to: user && user.value?.username ? `/profile/${user.value.username}` : '/signin',
+    to: user && user.value?.username ? `/user/${user.value.username}` : '/signin',
   },
 ])
 </script>

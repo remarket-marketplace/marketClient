@@ -54,7 +54,7 @@ onMounted(async () => {
 });
 
 function navigateToProfile(username: string) {
-  router.push(`/profile/${username}`);
+  router.push(`/user/${username}`);
 }
 
 function navigateToEditUser(userId: string) {

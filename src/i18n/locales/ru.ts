@@ -440,6 +440,14 @@ const ru = {
         selectImage: 'Выберите или перетащите изображение',
         dropImage: 'Перетащите изображение сюда или кликните для выбора',
       },
+      
+      editCategory: {
+        title: "Редактирование категории",
+        editing: "Редактирование",
+        errorSaving: "Ошибка сохранения",
+        noImage: "Нет изображения",
+        imageRequired: "Изображение обязательно",
+      }
     },
     forms: {
       addSubcategory: {

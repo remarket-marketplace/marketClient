@@ -15,7 +15,6 @@ import type { PublicProfileData, UserRead } from '@/validation/user/userRead'
 import type { ReviewSchema } from '@/validation/review/review'
 import { Settings, LogOut, Share2, Copy, Check, Wallet } from 'lucide-vue-next'
 import QrcodeVue from 'qrcode.vue'
-import { SimpleDealsListSchema, } from '@/validation/deal/deal'
 import type { Deal } from '@/validation/deal/deal'
 
 const { t } = useI18n()
@@ -169,7 +168,7 @@ function switchTab(tab: 'products' | 'reviews' | 'purchases') {
 }
 
 function goToProduct(productId: string) { router.push(`/product/${productId}`) }
-function goToProfile(username: string) { router.push(`/profile/${username}`) }
+function goToProfile(username: string) { router.push(`/user/${username}`) }
 
 onMounted(() => loadProfileData())
 onUnmounted(() => document.removeEventListener('click', handleClickOutside))

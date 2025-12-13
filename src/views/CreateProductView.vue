@@ -72,7 +72,7 @@ async function createProduct() {
 
     const result = await productService.createProduct(productDataObj, images.value)
     if (result && user?.username) {
-      router.push(`/profile/${user?.username}`)
+      router.push(`/user/${user?.username}`)
     } else {
       errorMessage.value = t('pages.forms.createProduct.errorCreatingProduct')
     }

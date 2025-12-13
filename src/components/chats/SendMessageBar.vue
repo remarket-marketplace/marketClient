@@ -31,6 +31,7 @@ const updateMessage = (event: Event) => {
             type="text"
             class="flex-1 rounded-l-2xl bg-dark-600 rounded-r-none bg-input-main border border-dark-700 p-3 outline-none" 
             :placeholder="$t('pages.chats.messagePlaceholder')"
+            maxlength="500"
             @keyup.enter="handleSendMessage"
         >
         <button 
