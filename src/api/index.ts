@@ -1,94 +1,88 @@
-import axios from 'axios'
-import { authService } from './auth/AuthService'
-import { useUserStore } from '@/stores/user'
-import router from '@/router'
+import axios from "axios";
+import { authService } from "./auth/AuthService";
+import { useUserStore } from "@/stores/user";
 
-const API_HOST = import.meta.env.VITE_API_HOST
-
+const API_HOST = import.meta.env.VITE_API_HOST;
 
 export const httpClient = axios.create({
   baseURL: `${API_HOST}`,
   withCredentials: true,
   timeout: 10000,
-})
+});
 
-let isRefreshing = false
-let failedQueue: any[] = []
+let isRefreshing = false;
+let failedQueue: any[] = [];
 
 function processQueue(error: any, token: string | null = null) {
   failedQueue.forEach((prom: any) => {
     if (error) {
-      prom.reject(error)
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
     }
-    else {
-      prom.resolve(token)
-    }
-  })
-  failedQueue = []
+  });
+  failedQueue = [];
 }
 
 // Request interceptor
 httpClient.interceptors.request.use(
   (config) => {
-    return config
+    return config;
   },
-  error => Promise.reject(error),
-)
+  (error) => Promise.reject(error)
+);
 
 // Response interceptor
 httpClient.interceptors.response.use(
-  response => response,
+  (response) => response,
   async (error) => {
-    const originalRequest = error.config
+    const originalRequest = error.config;
     if (!error.response) {
-      return Promise.reject(error)
+      return Promise.reject(error);
     }
 
-    const { status } = error.response
+    const { status } = error.response;
 
     if (status === 404) {
-      console.error('ошибка 404')
+      console.error("ошибка 404");
     }
 
     if (status === 500) {
-      console.error('Внутренняя ошибка сервера')
+      console.error("Внутренняя ошибка сервера");
     }
 
     if (status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject })
+          failedQueue.push({ resolve, reject });
         })
           .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`
-            return httpClient(originalRequest)
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return httpClient(originalRequest);
           })
-          .catch(err => Promise.reject(err))
+          .catch((err) => Promise.reject(err));
       }
 
-      originalRequest._retry = true
-      isRefreshing = true
+      originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
-        const refreshed = await authService.refreshTokens()
+        const refreshed = await authService.refreshTokens();
         if (refreshed) {
-          return httpClient(originalRequest)
+          return httpClient(originalRequest);
+        } else {
+          processQueue(error, null);
+          return Promise.reject(error);
         }
-        else {
-          processQueue(error, null)
-          return Promise.reject(error)
-        }
-      }
-      catch (refreshError) {
-        processQueue(error, null)
-        await useUserStore().clearUser()
-        return Promise.reject(refreshError)
-      }
-      finally {
-        isRefreshing = false
+      } catch (refreshError) {
+        processQueue(error, null);
+        await useUserStore().clearUser();
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 
-    return Promise.reject(error)
-  },
-)
+    return Promise.reject(error);
+  }
+);

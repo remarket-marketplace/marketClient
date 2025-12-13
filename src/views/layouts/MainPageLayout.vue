@@ -70,7 +70,8 @@ const isActiveRouteMobile = (item: any) => {
 onMounted(async () => {
     checkDesktop()
     window.addEventListener('resize', checkDesktop)
-    await chatsService.connectChatsWebsocket()
+    if (user.value)
+        await chatsService.connectChatsWebsocket()
 })
 
 const navItems = computed(() => [
@@ -142,7 +143,8 @@ const navItems = computed(() => [
         </main>
 
         <div class="w-full flex flex-col justify-center items-center border-t border-t-gray-600">
-            <footer class="w-full max-w-5xl px-4 py-6 flex flex-col md:flex-row md:justify-between gap-4 text-sm text-gray-300">
+            <footer
+                class="w-full max-w-5xl px-4 py-6 flex flex-col md:flex-row md:justify-between gap-4 text-sm text-gray-300">
                 <div class="flex-1">
                     <h4 class="font-semibold text-white">{{ $t('common.remarket') }}</h4>
                 </div>

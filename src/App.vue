@@ -24,7 +24,8 @@ onMounted(async () => {
 
   // пингуем для сохранения статуса онлайн
   setInterval(() => {
-    authService.pingOnlineStatus()
+    if (user.value)
+      authService.pingOnlineStatus()
   }, 5000)
 })
 // Определяем какой layout использовать
@@ -53,7 +54,7 @@ const layout = computed(() => {
           </template>
           <template #fallback>
             <div class="flex h-full items-center justify-center">
-              <Loader/>
+              <Loader />
             </div>
           </template>
         </Suspense>

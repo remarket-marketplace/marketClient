@@ -43,7 +43,6 @@ export const authService = {
     });
   },
 
-
   async signIn(email: string, password: string) {
     const response = await httpClient.post("/auth/login", {
       email,
