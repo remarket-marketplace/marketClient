@@ -109,7 +109,7 @@ async function signIn() {
 
         <TheButton
           @click="signIn"
-          :button-text="$t('pages.auth.signIn.login')"
+          :button-text="!sended ? $t('pages.auth.signIn.login') : $t('common.sending')"
           :sended="sended"
         />
 
