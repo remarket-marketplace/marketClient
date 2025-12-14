@@ -104,9 +104,9 @@ const navItems = computed(() => [
 </script>
 
 <template>
-    <div class="h-full w-screen flex flex-col overflow-hidden bg-background text-mainText pb-14 lg:pb-0">
-        <header class="flex-none z-30 relative">
-            <div class="mx-auto h-14 max-w-5xl w-full flex items-center justify-between px-4">
+    <div class="h-screen w-screen flex flex-col bg-background text-mainText overflow-hidden">
+        <header class="flex-none z-30 h-14 border-b border-dark-700">
+            <div class="mx-auto h-full max-w-5xl w-full flex items-center justify-between px-4">
                 <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold"
                     @click="router.push('/')">
                     remarket
@@ -136,44 +136,39 @@ const navItems = computed(() => [
             </div>
         </header>
 
-        <main class="flex-1 overflow-hidden min-h-screen h-[max-content]">
-            <div class="mx-auto h-full max-w-5xl w-full px-4 pb-6" :class="{ 'pb-16': !isDesktop }">
+        <main class="flex-1 overflow-y-auto min-h-0 scrollbar-hide">
+            <div class="mx-auto w-full max-w-5xl px-4 py-6" :class="{ 'pb-16': !isDesktop }">
                 <slot />
             </div>
+
+            <div class="w-full flex flex-col justify-center items-center border-t border-t-gray-600">
+                <footer
+                    class="w-full max-w-5xl px-4 py-6 flex flex-col md:flex-row md:justify-between gap-4 text-sm text-gray-300">
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-white">{{ $t('common.remarket') }}</h4>
+                    </div>
+
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-white">{{ $t('common.support') }}</h4>
+                        <p class="mt-1">support@re-market.net</p>
+                    </div>
+
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-white">{{ $t('common.legal') }}</h4>
+                        <p class="mt-2">legal@re-market.net</p>
+                    </div>
+
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-white">{{ $t('common.information') }}</h4>
+                        <ul class="mt-1 space-y-1">
+                            <li>{{ $t('common.aboutUs') }}</li>
+                            <li>{{ $t('common.privacyPolicy') }}</li>
+                            <li>{{ $t('common.termsOfService') }}</li>
+                        </ul>
+                    </div>
+                </footer>
+            </div>
         </main>
-
-        <div class="w-full flex flex-col justify-center items-center border-t border-t-gray-600">
-            <footer
-                class="w-full max-w-5xl px-4 py-6 flex flex-col md:flex-row md:justify-between gap-4 text-sm text-gray-300">
-                <div class="flex-1">
-                    <h4 class="font-semibold text-white">{{ $t('common.remarket') }}</h4>
-                </div>
-
-                <div class="flex-1">
-                    <h4 class="font-semibold text-white">{{ $t('common.support') }}</h4>
-                    <p class="mt-1">support@re-market.net</p>
-                </div>
-
-                <div class="flex-1">
-                    <h4 class="font-semibold text-white">{{ $t('common.legal') }}</h4>
-                    <p class="mt-2">legal@re-market.net</p>
-                </div>
-
-                <div class="flex-1">
-                    <h4 class="font-semibold text-white">{{ $t('common.information') }}</h4>
-                    <ul class="mt-1 space-y-1">
-                        <li>{{ $t('common.aboutUs') }}</li>
-                        <li>{{ $t('common.privacyPolicy') }}</li>
-                        <li>{{ $t('common.termsOfService') }}</li>
-                    </ul>
-                </div>
-            </footer>
-
-            <p class="font-black m-0 p-0 leading-none text-[18vw] select-none pointer-events-none">
-                REMARKET
-            </p>
-        </div>
-
 
         <nav class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-30 h-14 border-t border-gray-700 md:hidden">
             <div class="mx-auto h-full max-w-5xl w-full flex items-center justify-around">
@@ -199,9 +194,14 @@ const navItems = computed(() => [
 </template>
 
 <style scoped>
-.h-full-dvh {
-    height: 100vh;
-    height: 100dvh;
+/* Hide scrollbar while keeping scroll functionality */
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;      /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
 }
 
 .mobile-nav-glass {

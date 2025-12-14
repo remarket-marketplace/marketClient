@@ -4,7 +4,10 @@ import type { Product } from '@/validation/product/product'
 import { onMounted, ref } from 'vue'
 import Loader from '@/components/Loader.vue'
 import FavoriteProductCard from '@/components/FavoriteProductCard.vue'
+import { useRouter } from 'vue-router'
+import { ArrowLeft } from 'lucide-vue-next'
 
+const router = useRouter()
 const products = ref<Product[]>([])
 const isLoading = ref(true)
 
@@ -38,9 +41,18 @@ function onProductRemoved(productId: string) {
       v-else
       class="w-full space-y-4 max-w-5xl border border-dark-600 rounded-lg overflow-hidden pt-2"
     >
-      <h1 class="text-2xl font-bold text-white">
-        {{ $t('pages.favoriteProducts.title') }}
-      </h1>
+      <div class="flex items-center gap-3 px-4 pt-2">
+        <button
+          @click="router.back()"
+          class="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-dark-700 transition-colors text-gray-400 hover:text-white"
+          :title="$t('common.back')"
+        >
+          <ArrowLeft :size="20" stroke-width="2" />
+        </button>
+        <h1 class="text-2xl font-bold text-white">
+          {{ $t('pages.favoriteProducts.title') }}
+        </h1>
+      </div>
 
       <div
         v-if="products.length === 0"
