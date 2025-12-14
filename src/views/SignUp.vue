@@ -275,7 +275,7 @@ function clearPasswordError() {
         <Captcha @verified="(token: string) => captchaToken = token" />
 
         <TheButton @click="sendCode" :button-text="sended ? $t('common.sending') : $t('pages.auth.signUp.getCode')"
-          :sended="sended" :disabled="!captchaToken" class="w-full" />
+          :sended="sended" class="w-full" />
 
         <ErrorBanner :message="errorMessage" />
       </form>

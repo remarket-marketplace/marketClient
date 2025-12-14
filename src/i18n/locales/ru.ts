@@ -245,7 +245,7 @@ const ru = {
           "Пароль должен содержать хотя бы один специальный символ (!@#$%^&*)",
         passwordsMustEqual: "Пароли должны совпадать",
         success: "Вы успешно зарегистрировались!",
-        completeCaptcha: "Пожалуйста пройдите каптчу",
+        completeCaptcha: "Пожалуйста пройдите капчу",
       },
       signIn: {
         title: "Вход",
@@ -254,6 +254,7 @@ const ru = {
         register: "Регистрация",
         forgotPassword: "Забыли пароль?",
         success: "Вход успешно выполнен!",
+        completeCaptcha: "Пожалуйста пройдите капчу",
       },
     },
     passwordRecovery: {

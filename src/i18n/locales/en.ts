@@ -254,6 +254,7 @@ const en = {
         register: "Register",
         forgotPassword: "Forgot password?",
         success: "You have successfully logged!",
+        completeCaptcha: "Please complete captcha",
       },
     },
 

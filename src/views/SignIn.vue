@@ -103,13 +103,14 @@ async function signIn() {
           />
         </div>
 
-        <Captcha @verified="(token: string) => captchaToken = token" />
+        <div>
+          <Captcha @verified="(token: string) => captchaToken = token" />
+        </div>
 
         <TheButton
           @click="signIn"
           :button-text="$t('pages.auth.signIn.login')"
           :sended="sended"
-          :disabled="!captchaToken"
         />
 
         <SuccessMessage v-if="successMessage" :success-message="successMessage"/>
