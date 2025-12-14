@@ -13,7 +13,7 @@ import { useI18n } from 'vue-i18n'
 import type { Product } from '@/validation/product/product'
 import type { PublicProfileData, UserRead } from '@/validation/user/userRead'
 import type { ReviewSchema } from '@/validation/review/review'
-import { Settings, LogOut, Share2, Copy, Check, Wallet } from 'lucide-vue-next'
+import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart } from 'lucide-vue-next'
 import QrcodeVue from 'qrcode.vue'
 import type { Deal } from '@/validation/deal/deal'
 
@@ -289,6 +289,15 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
           <p class="mt-2 text-xs text-gray-400 sm:text-sm">🌟 {{ currentProfileData.rating.toFixed(1) }} • {{
             t('common.memberSince') }} {{ formatFullDate(currentProfileData.created_at.toString()) }}</p>
         </div>
+        <button @click="router.push('/user/products/favorites')" class="mt-4 w-full flex items-center justify-center gap-2 rounded-lg
+         border border-dark-600 bg-dark-800 px-4 py-2
+         text-sm text-gray-300
+         hover:bg-dark-700 hover:text-white
+         transition-colors">
+          <Heart class="w-4 h-4 text-red-400" />
+          <span>{{ $t('pages.profile.favorites') }}</span>
+        </button>
+
       </div>
 
       <div
@@ -309,7 +318,8 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
           <div class="p-4 pb-8">
             <div v-if="activeTab === 'products'">
               <div v-if="products.length === 0"
-                class="w-full flex items-center justify-center py-6 text-text-secondaryDark">{{
+                class="w-full flex items-center justify-center py-6 text-text-secondaryDark">
+                {{
                   t('pages.profile.noProducts') }}</div>
               <div v-else>
                 <div v-for="product in products" :key="product.id"

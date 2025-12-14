@@ -8,7 +8,7 @@ import type { ReviewSchema } from '@/validation/review/review'
 import { onMounted, ref, onUnmounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { ChevronLeft, ChevronRight, X, Star } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, X, Star, Heart } from 'lucide-vue-next'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const route = useRoute('/product/[productId]')
@@ -106,6 +106,24 @@ function prevImage() {
   }
 }
 
+async function likeProduct() {
+  if (product.value) {
+    const result = await productService.addProductLike(product.value.id)
+    if (result) {
+      product.value.is_liked = true
+    }
+  }
+}
+
+async function removeProductLike() {
+  if (product.value) {
+    const result = await productService.removeProductLike(product.value.id)
+    if (result) {
+      product.value.is_liked = false
+    }
+  }
+}
+
 function handleKeydown(event: KeyboardEvent) {
   if (!openImageModal.value) return
 
@@ -135,9 +153,6 @@ onUnmounted(() => {
 
 const filledStars = computed(() => Math.round(product.value?.seller.rating ?? 0))
 
-const reviews = computed<ReviewSchema[]>(() => {
-  return product.value?.reviews ? (product.value.reviews as ReviewSchema[]) : []
-})
 </script>
 
 <template>
@@ -170,16 +185,29 @@ const reviews = computed<ReviewSchema[]>(() => {
       <!-- Product details -->
       <div class="w-full lg:flex-1 space-y-6 pt-4 lg:pt-0">
         <!-- Title and price -->
-        <div class="space-y-4">
-          <h1 class="text-2xl lg:text-3xl font-bold text-white leading-tight">
-            {{ product.title }}
-          </h1>
-          <div class="flex items-center gap-4">
-            <span class="text-2xl lg:text-3xl font-bold text-green-400">
-              {{ product.price }}₽
-            </span>
-            <ProductStatusTag :product-status="product.status" />
+        <div class="flex justify-between">
+          <div class="space-y-4">
+            <h1 class="text-2xl lg:text-3xl font-bold text-white leading-tight">
+              {{ product.title }}
+            </h1>
+            <div class="flex items-center gap-4">
+              <span class="text-2xl lg:text-3xl font-bold text-green-400">
+                {{ product.price }}₽
+              </span>
+              <ProductStatusTag :product-status="product.status" />
+              <div v-if="!product.is_owner">
+                <Heart v-if="product.is_liked" @click="removeProductLike" class="w-6 h-6 text-red-500 cursor-pointer"
+                  :style="{ fill: 'currentColor' }" />
+                <Heart v-else @click="likeProduct" class="cursor-pointer" />
+              </div>
+            </div>
           </div>
+        </div>
+        <div v-if="product.is_owner">
+          <p class="font-bold">
+            {{ $t('pages.product.likesCount') + ":" }}
+            {{ product.likes }}
+          </p>
         </div>
 
         <!-- Description -->
@@ -259,7 +287,8 @@ const reviews = computed<ReviewSchema[]>(() => {
     <div v-if="product.reviews" class="w-full flex flex-col gap-4">
       <p class="text-3xl font-bold">{{ $t('pages.product.reviews') }}</p>
       <div class="flex flex-col gap-2">
-        <div v-for="review in product.reviews" :key="review.id" class="p-4 rounded-lg bg-gray-800/20 border border-gray-700">
+        <div v-for="review in product.reviews" :key="review.id"
+          class="p-4 rounded-lg bg-gray-800/20 border border-gray-700">
           <div class="flex justify-between items-center">
             <span class="font-medium">{{ review.rating }} ⭐</span>
             <span class="text-xs text-gray-400">{{ formatFullDate(review.created_at) }}</span>
@@ -312,13 +341,9 @@ const reviews = computed<ReviewSchema[]>(() => {
       :cancel-text="$t('pages.product.deleteConfirm.cancel')" @confirm="handleDeleteConfirm"
       @cancel="closeDeleteConfirm" />
 
-    <ConfirmWindow :is-open="showBuyConfirm"
-      :title="$t('pages.product.buyConfirm.title')"
-      :message="$t('pages.product.buyConfirm.message')"
-      :confirm-text="$t('pages.product.buyConfirm.confirm')"
-      :cancel-text="$t('pages.product.buyConfirm.cancel')"
-      @confirm="handleBuyConfirm"
-      @cancel="closeBuyConfirm" />
+    <ConfirmWindow :is-open="showBuyConfirm" :title="$t('pages.product.buyConfirm.title')"
+      :message="$t('pages.product.buyConfirm.message')" :confirm-text="$t('pages.product.buyConfirm.confirm')"
+      :cancel-text="$t('pages.product.buyConfirm.cancel')" @confirm="handleBuyConfirm" @cancel="closeBuyConfirm" />
   </section>
 
   <div v-else class="w-full h-full flex items-center justify-center">

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import router from '@/router';
 import type { Product } from '@/validation/product/product';
-import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ProductStatusTag from './ProductStatusTag.vue';
 

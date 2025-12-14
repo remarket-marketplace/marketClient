@@ -9,10 +9,12 @@ import { useI18n } from 'vue-i18n'
 import TheButton from './forms/TheButton.vue'
 import { useUserStore } from '@/stores/user'
 import SuccessMessage from '@/components/SuccessMessage.vue'
+import Captcha from '@/components/Captcha.vue'
 
 const sended = ref(false)
 const email = ref('')
 const password = ref('')
+const captchaToken = ref('')
 
 const errorMessage = ref('')
 const successMessage = ref('')
@@ -21,6 +23,11 @@ const { t } = useI18n()
 
 async function signIn() {
   if (sended.value) return
+
+  if (!captchaToken.value) {
+    errorMessage.value = t('pages.auth.signIn.completeCaptcha')
+    return
+  }
 
   sended.value = true
   errorMessage.value = ''
@@ -32,7 +39,7 @@ async function signIn() {
       return
     }
 
-    const success = await authService.signIn(email.value, password.value)
+    const success = await authService.signIn(email.value, password.value, captchaToken.value)
 
     if (!success) {
       errorMessage.value = t('errors.INCORRECT_EMAIL_OR_PASSWORD')
@@ -96,10 +103,13 @@ async function signIn() {
           />
         </div>
 
+        <Captcha @verified="(token: string) => captchaToken = token" />
+
         <TheButton
           @click="signIn"
           :button-text="$t('pages.auth.signIn.login')"
           :sended="sended"
+          :disabled="!captchaToken"
         />
 
         <SuccessMessage v-if="successMessage" :success-message="successMessage"/>

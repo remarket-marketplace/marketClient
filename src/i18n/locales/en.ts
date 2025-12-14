@@ -245,6 +245,7 @@ const en = {
           "Password must contain at least one special character (!@#$%^&*)",
         passwordsMustEqual: "Passwords must be the equal",
         success: "You have successfully registered!",
+        completeCaptcha: "Please complete captcha",
       },
       signIn: {
         title: "Sign In",
@@ -295,6 +296,7 @@ const en = {
       loading: "Loading product...",
       sold: "Sold",
       reviews: "Reviews",
+      likesCount: "Likes",
       deleteConfirm: {
         title: "Confirm Product Deletion",
         message:
@@ -308,6 +310,10 @@ const en = {
         confirm: "Buy",
         cancel: "Cancel",
       },
+    },
+
+    favoriteProducts: {
+      title: "Favorite products",
     },
 
     chats: {
@@ -381,6 +387,7 @@ const en = {
       profileLink: "Profile link",
       share: "Share",
       scanQR: "Scan QR",
+      favorites: "Favorites",
     },
 
     settingsPage: {
