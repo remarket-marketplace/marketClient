@@ -61,6 +61,7 @@ const ru = {
     copied: "Скопировано",
     close: "Закрыть",
     items: "Штук",
+    buy: "Купить",
 
     remarket: "Remarket - маркет безопасных сделок",
     support: "Поддержка",

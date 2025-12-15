@@ -19,6 +19,7 @@ import { adminService } from '@/api/admin/AdminService'
 import type { Deal, DealsList } from '@/validation/deal/deal'
 import { useImages } from '@/composables/useImages'
 import DealStatusTag from '@/components/DealStatusTag.vue'
+import UserRating from '@/components/UserRating.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -357,10 +358,7 @@ onUnmounted(() => {
                       >
                         {{ deal.seller.username }}
                       </span>
-                      <div class="flex items-center gap-1 text-yellow-400">
-                        <Star class="w-3 h-3 fill-current" />
-                        <span class="text-xs">{{ deal.seller.rating }}</span>
-                      </div>
+                      <UserRating :rating="deal.seller.rating" />
                     </div>
                   </div>
                 </div>
@@ -382,10 +380,7 @@ onUnmounted(() => {
                       >
                         {{ deal.buyer.username }}
                       </span>
-                      <div class="flex items-center gap-1 text-yellow-400">
-                        <Star class="w-3 h-3 fill-current" />
-                        <span class="text-xs">{{ deal.buyer.rating }}</span>
-                      </div>
+                      <UserRating :rating="deal.buyer.rating" />
                     </div>
                   </div>
                 </div>

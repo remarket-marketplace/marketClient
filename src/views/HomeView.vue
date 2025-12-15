@@ -202,7 +202,7 @@ onUnmounted(() => {
       {{ $t('pages.index.noProducts') }}
     </div>
 
-    <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4">
       <MainProductCard v-for="product in products" :key="product.id" :product="product" @click="goToProduct" />
     </div>
 

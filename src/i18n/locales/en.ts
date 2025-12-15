@@ -81,6 +81,7 @@ const en = {
     resolveForSeller: "Resolve for Seller",
     seller: "Seller",
     buyer: "Buyer",
+    buy: "Buy",
 
     // New keys for password recovery
     backToSignIn: "Back to sign in",

@@ -16,6 +16,7 @@ import type { ReviewSchema } from '@/validation/review/review'
 import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart } from 'lucide-vue-next'
 import QrcodeVue from 'qrcode.vue'
 import type { Deal } from '@/validation/deal/deal'
+import UserRating from '@/components/UserRating.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -286,8 +287,12 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
             <Wallet class="mx-3 w-4 cursor-pointer" @click="router.push('/wallet')" />
           </div>
 
-          <p class="mt-2 text-xs text-gray-400 sm:text-sm">🌟 {{ currentProfileData.rating.toFixed(1) }} • {{
-            t('common.memberSince') }} {{ formatFullDate(currentProfileData.created_at.toString()) }}</p>
+          <div class="text-xs mt-2 flex gap-2">
+            <UserRating :rating="currentProfileData.rating" />
+            <p class=" text-gray-400 sm:text-sm">{{
+              t('common.memberSince') }} {{ formatFullDate(currentProfileData.created_at.toString()) }}
+            </p>
+          </div>
         </div>
         <button @click="router.push('/user/products/favorites')" class="mt-4 w-full flex items-center justify-center gap-2 rounded-lg
          border border-dark-600 bg-dark-800 px-4 py-2
@@ -341,7 +346,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 <div v-for="review in reviews" :key="review.id"
                   class="p-4 rounded-lg bg-gray-800/20 border border-gray-700">
                   <div class="flex justify-between items-center">
-                    <span class="font-medium">{{ review.rating }} ⭐</span>
+                    <UserRating :rating="review.rating" />
                     <span class="text-xs text-gray-400">{{ formatFullDate(review.created_at) }}</span>
                   </div>
                   <p class="mt-2 text-sm">{{ review.body }}</p>
