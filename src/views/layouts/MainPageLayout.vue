@@ -107,11 +107,12 @@ const navItems = computed(() => [
     <div class="h-screen w-screen flex items-center flex-col bg-background text-mainText overflow-hidden">
         <div class="flex flex-col 2xl:max-w-6xl overflow-scroll no-scrollbar">
             <header class="flex-none z-30 h-14 border-b border-dark-700">
-                <div class="mx-auto h-full w-full flex items-center justify-between px-4">                <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold"
+                <div class="mx-auto h-full w-full flex items-center justify-between px-4">
+                    <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold"
                         @click="router.push('/')">
                         remarket
                     </div>
-    
+
                     <div class="flex gap-6">
                         <nav class="hidden items-center gap-6 md:flex">
                             <router-link v-for="item in navItems" :key="item.id" :to="item.to"
@@ -130,34 +131,34 @@ const navItems = computed(() => [
                                 </span>
                             </router-link>
                         </nav>
-    
+
                         <SelectLanguage />
                     </div>
                 </div>
             </header>
-    
-            <main class="flex-1 overflow-y-auto min-h-0 no-scrollbar">
-                <div class="mx-auto w-full px-4 py-6" :class="{ 'pb-16': !isDesktop }">
+
+            <main class="flex-1 overflow-y-auto no-scrollbar">
+                <div class="mx-auto w-full px-4 py-6 min-h-screen" :class="{ 'pb-16': !isDesktop }">
                     <slot />
                 </div>
-    
-                <div class="mx-auto w-full flex flex-col justify-center items-center border-t border-t-gray-600">
+
+                <div class="mx-auto pb-16 lg:pb-0 w-full flex flex-col justify-center items-center border-t border-t-gray-600">
                     <footer
                         class="w-full px-4 py-6 flex flex-col md:flex-row md:justify-between gap-4 text-sm text-gray-300">
                         <div class="flex-1">
                             <h4 class="font-semibold text-white">{{ $t('common.remarket') }}</h4>
                         </div>
-    
+
                         <div class="flex-1">
                             <h4 class="font-semibold text-white">{{ $t('common.support') }}</h4>
                             <p class="mt-1">support@re-market.net</p>
                         </div>
-    
+
                         <div class="flex-1">
                             <h4 class="font-semibold text-white">{{ $t('common.legal') }}</h4>
                             <p class="mt-2">legal@re-market.net</p>
                         </div>
-    
+
                         <div class="flex-1">
                             <h4 class="font-semibold text-white">{{ $t('common.information') }}</h4>
                             <ul class="mt-1 space-y-1">
@@ -169,7 +170,7 @@ const navItems = computed(() => [
                     </footer>
                 </div>
             </main>
-    
+
             <nav class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-30 h-14 border-t border-gray-700 md:hidden">
                 <div class="mx-auto h-full w-full flex items-center justify-around">
                     <router-link v-for="item in navItems" :key="item.id" :to="item.to"
@@ -197,12 +198,15 @@ const navItems = computed(() => [
 <style scoped>
 /* Hide scrollbar while keeping scroll functionality */
 .scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;      /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
 }
 
 .scrollbar-hide::-webkit-scrollbar {
-    display: none;  /* Chrome, Safari and Opera */
+    display: none;
+    /* Chrome, Safari and Opera */
 }
 
 .mobile-nav-glass {
