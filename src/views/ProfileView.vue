@@ -182,7 +182,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
     </div>
 
     <section v-else-if="currentProfileData"
-      class="h-full w-full flex flex-col gap-6 py-10 text-mainText lg:flex-row overflow-scroll lg:overflow-hidden no-scrollbar">
+      class="h-full w-full flex flex-col gap-6 text-mainText lg:flex-row overflow-scroll lg:overflow-hidden no-scrollbar">
       <div class="w-full h-full border border-dark-600 rounded-lg p-6 lg:max-w-sm space-y-4">
         <div class="flex flex-col items-center text-center">
           <div class="w-full flex items-center justify-between">

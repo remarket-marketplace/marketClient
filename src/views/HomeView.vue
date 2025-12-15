@@ -175,7 +175,7 @@ onUnmounted(() => {
 
       <div v-else-if="mainCategories.length > 0" class="mt-4 flex gap-3 overflow-x-auto no-scrollbar pb-2">
         <div v-for="cat in mainCategories" :key="cat.id" @click="onMainCategoryClick(cat.id)"
-          class="cursor-pointer min-w-[90px] flex-shrink-0 flex flex-col items-center rounded-lg p-2">
+          class="cursor-pointer min-w-[90px] flex-shrink-0 flex flex-col items-center rounded-lg p-2 gap-1">
           <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" alt="category"
             class="h-16 w-16 object-contain rounded-lg" />
           <span class="text-center text-sm font-medium">{{ cat.name }}</span>

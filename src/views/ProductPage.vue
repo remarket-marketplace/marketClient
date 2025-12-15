@@ -9,6 +9,7 @@ import { onMounted, ref, onUnmounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { ChevronLeft, ChevronRight, X, Star, Heart } from 'lucide-vue-next'
+import UserRating from '@/components/UserRating.vue'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const route = useRoute('/product/[productId]')
@@ -151,8 +152,6 @@ onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
 })
 
-const filledStars = computed(() => Math.round(product.value?.seller.rating ?? 0))
-
 </script>
 
 <template>
@@ -240,13 +239,12 @@ const filledStars = computed(() => Math.round(product.value?.seller.rating ?? 0)
               {{ product.seller.username.charAt(0).toUpperCase() }}
             </div>
           </div>
-          <div class="flex-1">
+          <div class="flex-1 flex flex-col gap-1">
             <p class="text-white font-semibold">
               {{ product.seller.username }}
             </p>
-            <div class="flex items-center gap-1 mt-1">
-              <Star v-for="(_, i) in 5" :key="i" class="w-5 h-5"
-                :class="i < filledStars ? 'text-blue-500 fill-blue-500' : 'text-gray-500'" />
+            <div class="flex">
+              <UserRating :rating="product.seller.rating" />
             </div>
           </div>
           <div class="text-gray-400 text-xl transition-transform duration-200 group-hover:translate-x-1">

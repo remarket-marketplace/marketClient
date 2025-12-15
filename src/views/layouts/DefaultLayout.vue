@@ -138,7 +138,7 @@ const navItems = computed(() => [
       </header>
   
       <main class="flex-1 overflow-hidden h-screen">
-        <div class="mx-auto h-full w-full px-4 pb-6" :class="{ 'pb-16': !isDesktop }">
+        <div class="mx-auto h-full w-full px-4 pb-6 pt-10" :class="{ 'pb-16': !isDesktop }">
           <slot />
         </div>
       </main>
