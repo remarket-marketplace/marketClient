@@ -421,6 +421,7 @@ const en = {
         profile: "Profile",
         freezedBalance: "Freezed",
         notActive: "Not active",
+        confirmBanMessage: "Are you sure want to ban user?",
       },
       categoriesPage: {
         title: "Category Management",

@@ -418,6 +418,7 @@ const ru = {
         profile: "Профиль",
         freezedBalance: "Заморожен",
         notActive: "Неактивен",
+        confirmBanMessage: "Вы уверены что хотите забанить пользователя?",
       },
       categoriesPage: {
         title: "Управление категориями",

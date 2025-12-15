@@ -16,6 +16,7 @@ import {
 } from 'lucide-vue-next';
 import { useImages } from '@/composables/useImages';
 import SearchField from '@/components/SearchField.vue';
+import ConfirmWindow from '@/components/ConfirmWindow.vue';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
@@ -26,6 +27,9 @@ const API_HOST = import.meta.env.VITE_API_HOST
 
 const searchFieldValue = ref<string>('')
 const dropdownOpenId = ref<string | null>(null); // Для отслеживания открытого dropdown
+const confirmWindowOpen = ref(false)
+const userToBan = ref<string | null>(null)
+const isBanning = ref(false)
 
 const { images } = useImages()
 
@@ -86,11 +90,30 @@ function getRoleBadge(user: UserRead) {
     : { text: 'common.user', class: 'bg-blue-500/20 text-blue-400 border-blue-500/30' };
 }
 
-async function banUser(userId: string) {
-    const response = await adminService.banUser(userId)
-    if (response) {
-        await loadUsersList()
+function showBanConfirm(userId: string) {
+    userToBan.value = userId
+    confirmWindowOpen.value = true
+}
+
+async function confirmBan() {
+    if (!userToBan.value) return
+    
+    isBanning.value = true
+    try {
+        const response = await adminService.banUser(userToBan.value)
+        if (response) {
+            await loadUsersList()
+        }
+    } finally {
+        isBanning.value = false
+        confirmWindowOpen.value = false
+        userToBan.value = null
     }
+}
+
+function cancelBan() {
+    confirmWindowOpen.value = false
+    userToBan.value = null
 }
 
 // Функции для управления dropdown
@@ -218,7 +241,7 @@ onMounted(() => {
               
               <button
                 v-if="!user.is_banned && user.role != 'admin'"
-                @click="banUser(user.id)"
+                @click="showBanConfirm(user.id)"
                 class="flex items-center gap-1 sm:gap-2 px-2 py-1.5 sm:px-3 sm:py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-xs sm:text-sm flex-1 sm:flex-none justify-center"
               >
                 <Ban class="w-3 h-3 sm:w-4 sm:h-4" />
@@ -266,6 +289,17 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <ConfirmWindow
+      :is-open="confirmWindowOpen"
+      :title="$t('pages.admin.usersPage.ban')"
+      :message="$t('pages.admin.usersPage.confirmBanMessage')"
+      :confirm-text="$t('pages.admin.usersPage.ban')"
+      :cancel-text="$t('common.cancel')"
+      :is-loading="isBanning"
+      @confirm="confirmBan"
+      @cancel="cancelBan"
+    />
   </section>
 </template>
 
