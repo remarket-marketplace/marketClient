@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { ChevronDown, ChevronUp, Languages, Check } from 'lucide-vue-next'
+import { ChevronDown, ChevronUp, Languages } from 'lucide-vue-next'
 
 interface LanguageOption {
   label: string
@@ -18,11 +18,9 @@ const wrapperRef = ref<HTMLElement | null>(null)
 const getInitialLanguage = (): 'en' | 'ru' => {
   const saved = localStorage.getItem('user-language') as 'en' | 'ru' | null
   if (saved) return saved
-  
-  // Detect system language
-  const lang = navigator.language || (navigator.languages && navigator.languages[0])
-  if (lang && lang.startsWith('ru')) return 'ru'
-  return 'en'
+
+  const lang = navigator.language || navigator.languages?.[0]
+  return lang?.startsWith('ru') ? 'ru' : 'en'
 }
 
 const selectedLanguage = ref<'en' | 'ru'>(getInitialLanguage())
@@ -60,9 +58,7 @@ function selectLanguage(value: 'en' | 'ru') {
   localStorage.setItem('user-language', value)
   isOpen.value = false
 
-  setTimeout(() => {
-    location.reload()
-  }, 100)
+  setTimeout(() => location.reload(), 100)
 }
 </script>
 
@@ -71,7 +67,7 @@ function selectLanguage(value: 'en' | 'ru') {
     <!-- Button -->
     <button
       type="button"
-      class="w-full flex items-center justify-between gap-3 bg-dark-600 border border-dark-700 rounded-lg px-2 lg:px-4 py-2 text-mainText transition hover:border-dark-500 focus:outline-none"
+      class="w-full flex items-center justify-between gap-3 rounded-lg border border-dark-700 bg-dark-600 px-3 lg:px-4 py-2 text-mainText transition hover:border-dark-500 focus:outline-none"
       :aria-expanded="isOpen"
       @click="toggle"
     >
@@ -90,22 +86,20 @@ function selectLanguage(value: 'en' | 'ru') {
     <transition name="fade">
       <ul
         v-show="isOpen"
-        class="absolute right-2 z-50 mt-2 w-max rounded-lg border border-dark-700 bg-dark-800 py-1 shadow-lg"
+        class="absolute right-2 z-50 mt-2 min-w-16 rounded-lg border border-dark-700 bg-dark-800 shadow-xl overflow-hidden"
         role="listbox"
       >
         <li
           v-for="opt in languageOptions"
           :key="opt.value"
-          class="flex cursor-pointer items-center justify-between gap-4 px-4 py-2 text-sm text-mainText transition-colors hover:bg-dark-700"
-          :class="{ 'bg-dark-700': selectedLanguage === opt.value }"
+          class="cursor-pointer px-4 py-2 text-sm transition-colors
+                 first:rounded-t-lg last:rounded-b-lg"
+          :class="selectedLanguage === opt.value
+            ? 'bg-blue-500/10 text-blue-400 font-medium'
+            : 'text-mainText hover:bg-dark-700'"
           @click="selectLanguage(opt.value)"
         >
-          <span>{{ opt.label }}</span>
-
-          <Check
-            v-if="selectedLanguage === opt.value"
-            class="h-4 w-4 text-blue-400"
-          />
+          {{ opt.label }}
         </li>
       </ul>
     </transition>
