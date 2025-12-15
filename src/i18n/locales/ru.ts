@@ -96,6 +96,7 @@ const ru = {
       completed: "Завершено",
       cancelled: "Отменено",
       disputed: "Спор",
+      deleted: "Удален",
     },
 
     // deals statuses

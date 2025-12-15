@@ -97,6 +97,7 @@ const en = {
       completed: "completed",
       cancelled: "cancelled",
       disputed: "disputed",
+      deleted: "deleted",
     },
 
     // deals statuses

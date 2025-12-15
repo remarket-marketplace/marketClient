@@ -11,7 +11,8 @@ import {
   MoreVertical,
   Edit,
   Ban,
-  Loader2
+  Loader2,
+  RussianRuble
 } from 'lucide-vue-next';
 import { useImages } from '@/composables/useImages';
 import SearchField from '@/components/SearchField.vue';
@@ -47,6 +48,14 @@ async function searchUsers(query: string) {
         const data = await adminService.SearchUsers(query);
         users.value = data;
     }
+}
+
+function formatPrice(price: number) {
+  return new Intl.NumberFormat('ru-RU', {
+    style: 'currency',
+    currency: 'RUB',
+    minimumFractionDigits: 0
+  }).format(price)
 }
 
 onMounted(async () => {
@@ -188,9 +197,8 @@ onMounted(() => {
                       <span class="truncate text-xs">{{ user.email }}</span>
                     </div>
                     <div class="flex items-center gap-1">
-                      <DollarSign class="w-3 h-3 sm:w-4 sm:h-4" />
                       <span :class="user.has_frozen_balance ? 'text-orange-400' : 'text-green-400'">
-                        {{ user.balance }}
+                        {{ formatPrice(user.balance) }}
                         <span v-if="user.has_frozen_balance" class="text-orange-300 text-xs">{{ $t('pages.admin.usersPage.freezedBalance') }}</span>
                       </span>
                     </div>
