@@ -56,7 +56,7 @@ function goToSeller() {
     <!-- Bottom section with seller and button -->
     <div class="mt-auto flex items-center justify-between gap-2">
       <!-- Seller info -->
-      <div class="flex items-center gap-1 flex-wrap min-w-0">
+      <div class="flex items-center gap-2 flex-wrap min-w-0">
         <p
           class="text-xs sm:text-sm text-blue-400 transition hover:text-blue-300 underline decoration-transparent hover:decoration-blue-300 truncate"
           @click.stop="goToSeller"
@@ -64,11 +64,11 @@ function goToSeller() {
           {{ product.seller.username }}
         </p>
 
-        <div
+        <span
           v-if="product.seller.is_active"
           class="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"
           title="Online"
-        ></div>
+        ></span>
 
         <!-- Rating -->
         <UserRating :rating="product.seller.rating" />
