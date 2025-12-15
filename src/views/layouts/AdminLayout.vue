@@ -84,7 +84,7 @@ const navItems = computed(() => [
 
 <template>
   <div class="h-full-dvh w-screen flex items-center flex-col overflow-hidden bg-background text-mainText">
-    <div class="flex flex-col xl:w-3/4 w-full overflow-scroll no-scrollbar">
+    <div class="flex flex-col 2xl:w-1/2 w-full overflow-scroll no-scrollbar">
       <header class="flex-none z-30 relative">
         <div class="mx-auto h-14 w-full flex items-center justify-between px-4">
           <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold" @click="router.push('/admin')">
