@@ -104,7 +104,7 @@ const navItems = computed(() => [
 </script>
 
 <template>
-  <div class="h-full-dvh w-screen flex flex-col overflow-hidden bg-background text-mainText">
+  <div class="h-full-dvh w-screen flex items-center flex-col overflow-hidden bg-background text-mainText">
     <div class="flex flex-col 2xl:max-w-6xl overflow-scroll no-scrollbar">
       <header class="flex-none z-30 relative">
         <div class="mx-auto h-14 w-full flex items-center justify-between px-4">
