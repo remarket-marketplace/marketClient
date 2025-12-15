@@ -84,7 +84,7 @@ const navItems = computed(() => [
 
 <template>
   <div class="h-full-dvh w-screen flex items-center flex-col overflow-hidden bg-background text-mainText">
-    <div class="flex flex-col overflow-scroll no-scrollbar">
+    <div class="flex flex-col w-full overflow-scroll no-scrollbar">
       <header class="flex-none z-30 relative">
         <div class="mx-auto h-14 w-full flex items-center justify-between px-4">
           <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold" @click="router.push('/admin')">
@@ -134,7 +134,7 @@ const navItems = computed(() => [
       <nav
         class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-30 h-14 border-t border-gray-700 md:hidden"
       >
-        <div class="mx-auto h-full  w-full flex items-center justify-around">
+        <div class="mx-auto h-full w-full flex items-center justify-around">
           <router-link
             v-for="item in navItems"
             :key="item.id"
