@@ -163,7 +163,7 @@ onUnmounted(() => {
       @search-change="debouncedSearch" class="w-full" />
 
     <div class="mt-6">
-      <div class="text-lg font-semibold mb-2">{{ t('common.category') }}</div>
+      <div class="text-lg font-semibold mb-2">{{ t('common.categories') }}</div>
 
       <div v-if="isCategoriesLoading" class="mt-4 flex gap-3 overflow-x-auto no-scrollbar pb-2">
         <div v-for="n in 5" :key="n"
@@ -185,7 +185,7 @@ onUnmounted(() => {
 
     <div v-if="subCategories.length > 0" class="mt-6">
       <div class="text-lg font-semibold mb-3">
-        {{ t('common.subcategory') }}
+        {{ t('common.subcategories') }}
       </div>
 
       <div class="flex flex-wrap gap-3">

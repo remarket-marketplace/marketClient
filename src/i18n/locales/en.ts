@@ -23,6 +23,8 @@ const en = {
     status: "Status",
     category: "Category",
     subcategory: "Subcategory",
+    categories: "Categories",
+    subcategories: "Subcategories",
     description: "Description",
     name: "Name",
     price: "Price",
@@ -100,6 +102,11 @@ const en = {
       cancelled: "cancelled",
       disputed: "disputed",
       deleted: "deleted",
+    },
+
+    categoryStatuses: {
+      active: "active",
+      inactive: "inactive",
     },
 
     // deals statuses

@@ -11,12 +11,14 @@ import {
   Loader2,
   X,
   Edit,
-  EditIcon
+  EditIcon,
+  Circle
 } from 'lucide-vue-next'
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import FileUploader from '@/components/FileUploader.vue'
 import router from '@/router'
+import CategoryStatusTag from '@/components/CategoryStatusTag.vue'
 
 const { t } = useI18n()
 const API_HOST = import.meta.env.VITE_API_HOST
@@ -164,7 +166,7 @@ function resetNewSubcategoryForm() {
             :class="{
               'border-blue-500 bg-blue-500/10': selectedCategory?.id === category.id
             }" @click="selectCategory(category)">
-            <div class="flex-shrink-0">
+            <div class="flex-shrink-0 relative">
               <img v-if="category.image_url" :src="`${API_HOST}${category.image_url}`"
                 class="w-10 h-10 rounded-lg object-cover" :alt="category.name" />
               <div v-else class="w-10 h-10 rounded-lg bg-dark-700 flex items-center justify-center">
@@ -173,9 +175,12 @@ function resetNewSubcategoryForm() {
             </div>
 
             <div class="flex-1 min-w-0">
-              <h3 class="text-mainText font-medium truncate">
-                {{ category.name }}
-              </h3>
+              <div class="flex items-center gap-2">
+                <h3 class="text-mainText font-medium truncate">
+                  {{ category.name }}
+                </h3>
+                <CategoryStatusTag :is_active="category.is_active" />
+              </div>
               <p class="text-text-secondary text-sm truncate">
                 {{ category.description || t('pages.admin.categoriesPage.noDescription') }}
               </p>
@@ -223,7 +228,7 @@ function resetNewSubcategoryForm() {
         <div v-if="selectedCategory" class="space-y-3 overflow-y-auto flex-1">
           <div v-for="subcategory in subcategories" :key="subcategory.id"
             class="flex items-center gap-3 p-3 rounded-lg border border-dark-700 bg-dark-700/50">
-            <div class="flex-shrink-0">
+            <div class="flex-shrink-0 relative">
               <img v-if="subcategory.image_url" :src="`${API_HOST}${subcategory.image_url}`"
                 class="w-8 h-8 rounded object-cover" :alt="subcategory.name" />
               <div v-else class="w-8 h-8 rounded bg-dark-600 flex items-center justify-center">
@@ -232,9 +237,12 @@ function resetNewSubcategoryForm() {
             </div>
 
             <div class="flex-1 min-w-0">
-              <h3 class="text-mainText font-medium">
-                {{ subcategory.name }}
-              </h3>
+              <div class="flex items-center gap-2">
+                <h3 class="text-mainText font-medium">
+                  {{ subcategory.name }}
+                </h3>
+                <CategoryStatusTag :is_active="subcategory.is_active" />
+              </div>
               <p class="text-text-secondary text-sm">
                 {{ subcategory.description || t('pages.admin.categoriesPage.noDescription') }}
               </p>

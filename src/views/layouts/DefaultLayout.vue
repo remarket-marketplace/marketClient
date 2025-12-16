@@ -173,12 +173,12 @@ const navItems = computed(() => [
 }
 
 .mobile-nav-glass {
-  background-color: rgba(23, 23, 23, 0.9);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
-  border-top-width: 1px;
-  border-top-color: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
+    background-color: rgba(23, 23, 23, 0.8);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(30px);
+    border-top-width: 1px;
+    border-top-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .icon-box {

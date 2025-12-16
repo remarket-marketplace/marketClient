@@ -23,6 +23,8 @@ const ru = {
     status: "Статус",
     category: "Категория",
     subcategory: "Подкатегория",
+    categories: "Категории",
+    subcategories: "Подкатегории",
     description: "Описание",
     name: "Название",
     price: "Цена",
@@ -99,6 +101,11 @@ const ru = {
       cancelled: "Отменено",
       disputed: "Спор",
       deleted: "Удален",
+    },
+
+    categoryStatuses: {
+      active: "Активно",
+      inactive: "Неактивно",
     },
 
     // deals statuses

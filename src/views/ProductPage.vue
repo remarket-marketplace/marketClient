@@ -168,11 +168,11 @@ onUnmounted(() => {
         </div>
 
         <div v-if="product.images && product.images.length > 1"
-          class="flex gap-3 overflow-x-auto pb-2 thumbnails-scroll">
+          class="flex gap-3 overflow-x-auto pb-2 no-scroollbar">
           <img v-for="image in product.images" :key="image.id" :src="`${API_HOST}${image.image_url}`"
             class="h-16 w-16 flex-shrink-0 cursor-pointer border-2 rounded-lg object-cover transition-all duration-200 hover:opacity-80"
             :alt="`Product image: ${product.title}`" :class="{
-              'border-gray-600': image.image_url !== selectedImage?.image_url,
+              'border-dark-700': image.image_url !== selectedImage?.image_url,
             }" loading="lazy" @click="selectImage(image)">
         </div>
 
@@ -217,7 +217,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Meta info -->
-        <div class="space-y-3 py-4 border-t border-gray-800">
+        <div class="space-y-3 py-4 border-t border-dark-700">
           <div class="flex items-center gap-3">
             <span class="text-gray-400 font-medium min-w-20">{{ $t('common.published') }}:</span>
             <span class="text-white">{{ formatFullDate(product.created_at) }}</span>
@@ -286,7 +286,7 @@ onUnmounted(() => {
       <p class="text-3xl font-bold">{{ $t('pages.product.reviews') }}</p>
       <div class="flex flex-col gap-2">
         <div v-for="review in product.reviews" :key="review.id"
-          class="p-4 rounded-lg bg-gray-800/20 border border-gray-700">
+          class="p-4 rounded-lg bg-gray-800/20 border border-dark-700">
           <div class="flex justify-between items-center">
             <span class="font-medium">{{ review.rating }} ⭐</span>
             <span class="text-xs text-gray-400">{{ formatFullDate(review.created_at) }}</span>

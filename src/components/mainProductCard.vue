@@ -51,7 +51,7 @@ function goToSeller() {
       {{ product.title }}
     </h3>
 
-    <hr class="border-dark-600 opacity-40 mb-2 flex-shrink-0" />
+    <hr class="border-dark-700 opacity-80 mb-2 flex-shrink-0" />
 
     <!-- Bottom section with seller and button -->
     <div class="mt-auto flex items-center justify-between gap-2">
