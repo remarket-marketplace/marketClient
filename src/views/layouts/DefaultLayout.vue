@@ -105,7 +105,7 @@ const navItems = computed(() => [
 
 <template>
   <div class="h-full-dvh w-screen flex items-center flex-col overflow-hidden bg-background text-mainText">
-    <div class="flex w-full 2xl:w-1/2 flex-col overflow-scroll no-scrollbar">
+    <div class="flex w-full 2xl:w-1/2 flex-col flex-1 h-full no-scrollbar">
       <header class="flex-none z-30 relative">
         <div class="mx-auto h-14 w-full flex items-center justify-between px-4">
           <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold"
@@ -137,7 +137,7 @@ const navItems = computed(() => [
         </div>
       </header>
   
-      <main class="flex-1 overflow-hidden h-screen">
+      <main class="flex-1 overflow-hidden min-h-0">
         <div class="mx-auto h-full w-full px-4 pb-6 pt-10" :class="{ 'pb-16': !isDesktop }">
           <slot />
         </div>

@@ -217,7 +217,7 @@ export const adminService = {
     }
   },
 
-  async updateCategoryData (categoryId: string, name: string, description: string, newImage: File | null) {
+  async updateCategoryData (categoryId: string, name: string, description: string, isActive: boolean, newImage: File | null) {
     //
     // update category data
     //
@@ -226,6 +226,7 @@ export const adminService = {
 
       formData.append('name', name)
       formData.append('description', description)
+      formData.append('is_active', isActive ? '1' : '0')
       if (newImage) {
         formData.append('uploaded_image', newImage)
       }

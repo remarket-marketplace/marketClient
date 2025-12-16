@@ -61,6 +61,7 @@ const en = {
     copied: "Copied",
     close: "Close",
     items: "items",
+    isActive: "Active",
 
     remarket: "Remarket - secure transactions market",
     support: "Support",

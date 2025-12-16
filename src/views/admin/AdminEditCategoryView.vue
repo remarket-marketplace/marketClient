@@ -29,6 +29,7 @@ const successMessage = ref('')
 
 const name = ref('')
 const description = ref('')
+const isActive = ref<boolean>(false)
 
 const existingImage = ref<string | null>(null)
 const newImage = ref<File[]>([])
@@ -54,6 +55,7 @@ async function loadCategory() {
     name.value = data.name
     description.value = data.description
     existingImage.value = data.image_url
+    isActive.value = data.is_active
   } catch (e) {
     console.error(e)
     errorMessage.value = t('pages.admin.editCategory.errorLoading')
@@ -89,6 +91,7 @@ async function saveCategory() {
       categoryId,
       name.value,
       description.value,
+      isActive.value,
       newImage.value[0] ?? null
     )
 
@@ -168,6 +171,13 @@ onMounted(loadCategory)
           <p v-if="!hasImage" class="text-sm text-red-500 mt-2">
             {{ $t('pages.admin.editCategory.imageRequired') }}
           </p>
+        </div>
+
+        <div>
+          <label class="mb-1 block text-sm text-text-secondary">
+            {{ $t('common.isActive') }}
+          </label>
+          <input type="checkbox" v-model="isActive" :value="isActive" :true-value="true" :false-value="false">
         </div>
 
         <div v-if="category" class="border-t border-dark-700 pt-4 text-sm space-y-2">

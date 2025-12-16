@@ -62,6 +62,7 @@ const ru = {
     close: "Закрыть",
     items: "Штук",
     buy: "Купить",
+    isActive: "Активно",
 
     remarket: "Remarket - маркет безопасных сделок",
     support: "Поддержка",

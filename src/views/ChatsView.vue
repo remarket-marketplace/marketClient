@@ -250,7 +250,7 @@ async function sendMessage() {
     <div v-else class="w-full flex flex-1 overflow-hidden">
       <div
         v-if="!isMobile || (isMobile && mobileMode === 'chats')"
-        class="h-full lg:max-w-sm flex flex-col md:pr-5 transition-all duration-300"
+        class="h-full lg:max-w-sm flex flex-col md:pr-5 transition-all duration-300 min-h-0"
         :class="[
           isMobile && mobileMode === 'chats'
             ? 'fixed inset-0 z-10 w-full bg-background'
@@ -289,7 +289,7 @@ async function sendMessage() {
 
       <div
         v-if="!isMobile || (isMobile && mobileMode === 'chat')"
-        class="flex flex-1 transition-all duration-300"
+        class="flex flex-1 transition-all duration-300 min-h-0"
         :class="[
           isMobile && mobileMode === 'chat'
             ? 'fixed inset-0 z-10 w-full bg-background'
@@ -297,7 +297,7 @@ async function sendMessage() {
         ]"
       >
         <div
-          class="flex flex-1 flex-col px-2 md:rounded-xl w-full"
+          class="flex flex-1 flex-col px-2 md:rounded-xl w-full min-h-0"
           :class="{
             'pb-16': isMobile && mobileMode === 'chat',
             'pt-16': isMobile && mobileMode === 'chat',
