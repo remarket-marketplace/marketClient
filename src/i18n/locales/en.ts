@@ -86,6 +86,20 @@ const en = {
     buyer: "Buyer",
     buy: "Buy",
 
+    trust: {
+      guaranteeTitle: "Safe deal\n guarantee",
+      guaranteeText: "Funds are protected until completion",
+
+      supportTitle: "24/7 support",
+      supportText: "Fast help and answers anytime",
+
+      sellersTitle: "Verified sellers",
+      sellersText: "Reputation, reviews and moderation",
+
+      disputesTitle: "Dispute resolution",
+      disputesText: "Issues are resolved quickly and fairly",
+    },
+
     // New keys for password recovery
     backToSignIn: "Back to sign in",
     showPassword: "Show password",
@@ -308,6 +322,7 @@ const en = {
       sold: "Sold",
       reviews: "Reviews",
       likesCount: "Likes",
+      description: "Description",
       deleteConfirm: {
         title: "Confirm Product Deletion",
         message:

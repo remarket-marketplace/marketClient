@@ -91,6 +91,20 @@ const ru = {
     hidePassword: "Скрыть пароль",
     emailPlaceholder: "Введите ваш email",
 
+    trust: {
+      guaranteeTitle: "Гарантия сделки",
+      guaranteeText: "Деньги защищены до завершения сделки",
+
+      supportTitle: "Поддержка 24/7",
+      supportText: "Быстрая помощь и ответы в любое время",
+
+      sellersTitle: "Проверенные продавцы",
+      sellersText: "Репутация, отзывы и модерация",
+
+      disputesTitle: "Решение споров",
+      disputesText: "Решаем вопросы без лишней бюрократии",
+    },
+
     // product statuses
     productStatuses: {
       active: "Активно",
@@ -306,6 +320,7 @@ const ru = {
       sold: "Продан",
       reviews: "Отзывы",
       likesCount: "Лайки",
+      description: "Описание",
       deleteConfirm: {
         title: "Подтверждение удаления товара",
         message:

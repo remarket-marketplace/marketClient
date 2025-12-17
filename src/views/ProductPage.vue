@@ -4,11 +4,11 @@ import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import Loader from '@/components/Loader.vue'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
 import type { Product, ProductImage } from '@/validation/product/product'
-import type { ReviewSchema } from '@/validation/review/review'
 import { onMounted, ref, onUnmounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { ChevronLeft, ChevronRight, X, Star, Heart } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, X, Heart } from 'lucide-vue-next'
+import { ShieldCheck, Headset, Users, Zap } from 'lucide-vue-next'
 import UserRating from '@/components/UserRating.vue'
 
 const API_HOST = import.meta.env.VITE_API_HOST
@@ -167,8 +167,7 @@ onUnmounted(() => {
             loading="lazy" @click="openImageModal = true">
         </div>
 
-        <div v-if="product.images && product.images.length > 1"
-          class="flex gap-3 overflow-x-auto pb-2 no-scroollbar">
+        <div v-if="product.images && product.images.length > 1" class="flex gap-3 overflow-x-auto pb-2 no-scroollbar">
           <img v-for="image in product.images" :key="image.id" :src="`${API_HOST}${image.image_url}`"
             class="h-16 w-16 flex-shrink-0 cursor-pointer border-2 rounded-lg object-cover transition-all duration-200 hover:opacity-80"
             :alt="`Product image: ${product.title}`" :class="{
@@ -178,6 +177,14 @@ onUnmounted(() => {
 
         <div v-else-if="!selectedImage && product.images?.length" class="py-4 text-center text-gray-400">
           {{ $t('pages.product.noImages') }}
+        </div>
+
+        <!-- Description -->
+        <div class="py-4 space-y-4 hidden lg:block">
+          <h1 class="text-xl font-bold text-white">{{ $t('pages.product.description') }}</h1>
+          <p class="text-gray-300 leading-relaxed whitespace-pre-line text-sm lg:text-base">
+            {{ product.description || $t('pages.product.descriptionMissing') }}
+          </p>
         </div>
       </div>
 
@@ -193,12 +200,7 @@ onUnmounted(() => {
               <span class="text-2xl lg:text-3xl font-bold text-green-400">
                 {{ product.price }}₽
               </span>
-              <ProductStatusTag :product-status="product.status" />
-              <div v-if="!product.is_owner">
-                <Heart v-if="product.is_liked" @click="removeProductLike" class="w-6 h-6 text-red-500 cursor-pointer"
-                  :style="{ fill: 'currentColor' }" />
-                <Heart v-else @click="likeProduct" class="cursor-pointer" />
-              </div>
+              <ProductStatusTag v-if="product.is_owner" :product-status="product.status" />
             </div>
           </div>
         </div>
@@ -210,7 +212,8 @@ onUnmounted(() => {
         </div>
 
         <!-- Description -->
-        <div class="py-4">
+        <div class="space-y-4 lg:hidden">
+          <h1 class="text-xl font-bold text-white">{{ $t('pages.product.description') }}</h1>
           <p class="text-gray-300 leading-relaxed whitespace-pre-line text-sm lg:text-base">
             {{ product.description || $t('pages.product.descriptionMissing') }}
           </p>
@@ -254,7 +257,7 @@ onUnmounted(() => {
 
         <!-- Action buttons -->
         <div class="pt-6 border-t border-gray-800">
-          <div v-if="!product.is_sold" class="flex flex-col gap-3 sm:flex-row">
+          <div v-if="!product.is_sold" class="flex flex-col gap-3 sm:flex-row justify-end">
             <div class="w-full flex gap-2" v-if="product.is_owner">
               <button
                 class="flex-1 rounded-lg bg-yellow-600 px-4 py-2 text-sm text-white font-semibold transition hover:bg-yellow-700 sm:px-6"
@@ -268,15 +271,91 @@ onUnmounted(() => {
               </button>
             </div>
 
-            <button v-else
-              class="w-full rounded-lg bg-blue-600 px-6 py-3 text-base text-white font-semibold transition hover:bg-blue-700 sm:w-auto"
-              @click="openBuyConfirm">
-              {{ $t('pages.product.buy') }}
-            </button>
+            <div v-else class="flex space-x-4 items-center">
+              <button
+                class="w-full rounded-lg bg-blue-600 px-10 py-4 text-base text-white font-semibold transition hover:bg-blue-700 sm:w-auto"
+                @click="openBuyConfirm">
+                {{ $t('pages.product.buy') }}
+              </button>
+              <div>
+                <Heart v-if="product.is_liked" @click="removeProductLike" class="w-6 h-6 text-red-500 cursor-pointer"
+                  :style="{ fill: 'currentColor' }" />
+                <Heart v-else @click="likeProduct" class="cursor-pointer" />
+              </div>
+            </div>
           </div>
 
           <div v-else class="w-full py-4 text-center bg-gray-700 text-gray-400 rounded-xl font-semibold">
             {{ $t('pages.product.sold') }}
+          </div>
+
+        </div>
+
+        <div class="check mt-6 rounded-2xl border border-dark-700 bg-dark-600/40 p-4 lg:p-6">
+          <div class="flex gap-6">
+            <!-- Item -->
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center gap-3">
+                <div
+                  class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600/20 text-blue-400">
+                  <ShieldCheck class="w-5 h-5" />
+                </div>
+                <p class="text-xs font-semibold text-white whitespace-pre-line">
+                  {{ $t('common.trust.guaranteeTitle') }}
+                </p>
+              </div>
+              <p class="text-xs text-gray-400 leading-snug whitespace-pre-line">
+                {{ $t('common.trust.guaranteeText') }}
+              </p>
+            </div>
+
+            <!-- Item -->
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center gap-3">
+                <div
+                  class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600/20 text-blue-400">
+                  <Headset class="w-5 h-5" />
+                </div>
+                <p class="text-xs font-semibold text-white">
+                  {{ $t('common.trust.supportTitle') }}
+                </p>
+              </div>
+              <p class="text-xs text-gray-400 leading-snug">
+                {{ $t('common.trust.supportText') }}
+              </p>
+            </div>
+
+            <!-- Item -->
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center gap-3">
+                <div
+                  class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600/20 text-blue-400">
+                  <Users class="w-5 h-5" />
+                </div>
+                <p class="text-xs font-semibold text-white">
+                  {{ $t('common.trust.sellersTitle') }}
+                </p>
+              </div>
+              <p class="text-xs text-gray-400 leading-snug">
+                {{ $t('common.trust.sellersText') }}
+              </p>
+            </div>
+
+            <!-- Item -->
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center gap-3">
+                <div
+                  class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600/20 text-blue-400">
+                  <Zap class="w-5 h-5" />
+                </div>
+                <p class="text-xs font-semibold text-white">
+                  {{ $t('common.trust.disputesTitle') }}
+                </p>
+              </div>
+              <p class="text-xs text-gray-400 leading-snug">
+                {{ $t('common.trust.disputesText') }}
+              </p>
+            </div>
           </div>
         </div>
       </div>

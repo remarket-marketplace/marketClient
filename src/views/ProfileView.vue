@@ -294,7 +294,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
             </p>
           </div>
         </div>
-        <button @click="router.push('/user/products/favorites')" class="mt-4 w-full flex items-center justify-center gap-2 rounded-lg
+        <button v-if="isOwner" @click="router.push('/user/products/favorites')" class="mt-4 w-full flex items-center justify-center gap-2 rounded-lg
          border border-dark-600 bg-dark-800 px-4 py-2
          text-sm text-gray-300
          hover:bg-dark-700 hover:text-white
