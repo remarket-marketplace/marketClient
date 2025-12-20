@@ -101,7 +101,7 @@ async function saveCategory() {
     }
 
     successMessage.value = t('common.saved')
-    setTimeout(() => router.push('/admin/categories'), 1500)
+    setTimeout(() => router.push('/admin/categories'), 1000)
   } catch (e) {
     console.error(e)
     errorMessage.value = t('pages.admin.editCategory.errorSaving')

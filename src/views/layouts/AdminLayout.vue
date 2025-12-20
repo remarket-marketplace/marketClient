@@ -86,7 +86,7 @@ const navItems = computed(() => [
   <div class="h-full-dvh w-screen flex items-center flex-col overflow-hidden bg-background text-mainText">
     <div class="flex flex-col 2xl:w-1/2 w-full overflow-scroll no-scrollbar">
       <header class="flex-none z-30 relative">
-        <div class="mx-auto h-14 w-full flex items-center justify-between px-4">
+        <div class="mx-auto h-14 w-full flex items-center justify-between px-2 lg:px-4">
           <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold" @click="router.push('/admin')">
             <p>remarket</p>
             <p class="text-gray-300 font-light">Admin</p>
@@ -124,7 +124,7 @@ const navItems = computed(() => [
   
       <main class="flex-1 overflow-hidden h-screen">
         <div
-          class="mx-auto h-full w-full px-4 py-6"
+          class="mx-auto h-full w-full px-2 lg:px-4 py-6"
           :class="{ 'pb-16': !isDesktop }"
         >
           <slot />
@@ -172,7 +172,7 @@ const navItems = computed(() => [
 
 /* Apple Design Style (Frosted Glass) */
 .mobile-nav-glass {
-  background-color: rgba(23, 23, 23, 0.9);
+  background-color: rgba(23, 23, 23, 0.2);
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   border-top-width: 1px;

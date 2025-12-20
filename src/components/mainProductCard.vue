@@ -76,7 +76,7 @@ function goToSeller() {
 
       <!-- Buy button -->
       <button
-        class="group relative overflow-hidden rounded-lg bg-blue-500 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-white transition cursor-pointer flex-shrink-0 whitespace-nowrap hover:bg-blue-600"
+        class="group relative overflow-hidden rounded-lg bg-blue-600 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-white transition cursor-pointer flex-shrink-0 whitespace-nowrap hover:bg-blue-700"
         @click="onClick"
       >
         <span

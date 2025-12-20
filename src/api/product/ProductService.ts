@@ -390,5 +390,19 @@ export const productService = {
       if (e instanceof ZodError) console.error(e.issues);
       return [];
     }
+  },
+
+    async getCommissionInterest() {
+    //
+    // get committion insterest
+    //
+    try {
+      const response = await httpClient.get(
+        `/deal/commission-interest`
+      );
+      return response.data
+    } catch (e) {
+      console.error("error get commission interest")
+    }
   }
 };

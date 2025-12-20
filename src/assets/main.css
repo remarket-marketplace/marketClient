@@ -35,3 +35,49 @@
   /* инпуты */
   --color-input: #6B7280;
 }
+
+
+/* Отключение зума на инпутах на iOS */
+input, textarea, select {
+  font-size: 16px !important; /* Минимальный размер шума для iOS */
+  touch-action: manipulation; /* Отключает двойной тап для зума */
+}
+
+/* Отключение зума на iOS Safari */
+@supports (-webkit-touch-callout: none) {
+  input, textarea, select {
+    font-size: 16px; /* Фиксированный размер для iOS */
+  }
+}
+
+/* Отключение выделения текста при тапе на мобильных */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+/* Отключение зума при двойном тапе */
+html {
+  touch-action: pan-y pinch-zoom; /* Разрешаем только вертикальный скролл и пинч-зум */
+}
+
+/* Для инпутов особые настройки */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+input[type="search"],
+input[type="url"],
+textarea {
+  touch-action: pan-y; /* Только вертикальный скролл, без зума */
+}
+
+/* Отключение увеличения при фокусе на мобильных */
+@media screen and (max-width: 768px) {
+  input:focus,
+  textarea:focus,
+  select:focus {
+    font-size: 16px !important;
+  }
+}

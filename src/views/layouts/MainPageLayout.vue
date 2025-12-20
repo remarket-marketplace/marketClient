@@ -107,7 +107,7 @@ const navItems = computed(() => [
     <div class="h-screen w-screen flex items-center flex-col bg-background text-mainText overflow-hidden">
         <div class="flex flex-col w-full 2xl:w-1/2 overflow-scroll no-scrollbar">
             <header class="flex-none z-30 h-14 border-b border-dark-700">
-                <div class="mx-auto h-full w-full flex items-center justify-between px-4">
+                <div class="mx-auto h-full w-full flex items-center justify-between px-2 lg:px-4">
                     <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold"
                         @click="router.push('/')">
                         remarket
@@ -138,7 +138,7 @@ const navItems = computed(() => [
             </header>
 
             <main class="flex-1 overflow-y-auto no-scrollbar">
-                <div class="mx-auto w-full px-4 py-6 min-h-screen" :class="{ 'pb-16': !isDesktop }">
+                <div class="mx-auto w-full px-2 lg:px-4 py-6 min-h-screen" :class="{ 'pb-16': !isDesktop }">
                     <slot />
                 </div>
 
@@ -210,7 +210,7 @@ const navItems = computed(() => [
 }
 
 .mobile-nav-glass {
-    background-color: rgba(23, 23, 23, 0.8);
+    background-color: rgba(23, 23, 23, 0.2);
     -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(30px);
     border-top-width: 1px;

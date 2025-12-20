@@ -7,9 +7,9 @@ import type { Product, ProductImage } from '@/validation/product/product'
 import { onMounted, ref, onUnmounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { ChevronLeft, ChevronRight, X, Heart } from 'lucide-vue-next'
-import { ShieldCheck, Headset, Users, Zap } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, X, Heart, Trash, Trash2 } from 'lucide-vue-next'
 import UserRating from '@/components/UserRating.vue'
+import TrustComponent from './TrustComponent.vue'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const route = useRoute('/product/[productId]')
@@ -156,15 +156,17 @@ onUnmounted(() => {
 
 <template>
   <section v-if="product"
-    class="h-full max-w-7xl w-full flex flex-col items-start gap-6 overflow-auto no-scrollbar pb-36 text-mainText lg:overflow-visible lg:px-0 lg:pb-6">
+    class="h-full max-w-7xl w-full flex flex-col items-start gap-6 lg:pt-6 overflow-scroll no-scrollbar pb-36 text-mainText lg:px-0 lg:pb-6">
     <!-- Image gallery -->
 
-    <div class="w-full flex flex-col lg:flex-row">
+    <div class="w-full flex flex-col lg:flex-row gap-5">
       <div class="w-full rounded-lg lg:w-1/2 space-y-4">
-        <div v-if="selectedImage" class="flex justify-center">
-          <img :src="`${API_HOST}${selectedImage.image_url}`" :alt="product.title"
-            class="h-96 max-w-md w-full cursor-zoom-in rounded-lg object-cover transition-opacity hover:opacity-90"
-            loading="lazy" @click="openImageModal = true">
+        <div v-if="selectedImage" class="flex justify-center bg-blue-500 rounded-lg overflow-hidden">
+          <div class="w-full h-96 relative flex items-center justify-center">
+            <img :src="`${API_HOST}${selectedImage.image_url}`" :alt="product.title"
+              class="absolute inset-0 w-full h-full object-cover cursor-zoom-in transition-opacity hover:opacity-90"
+              loading="lazy" @click="openImageModal = true" />
+          </div>
         </div>
 
         <div v-if="product.images && product.images.length > 1" class="flex gap-3 overflow-x-auto pb-2 no-scroollbar">
@@ -203,12 +205,6 @@ onUnmounted(() => {
               <ProductStatusTag v-if="product.is_owner" :product-status="product.status" />
             </div>
           </div>
-        </div>
-        <div v-if="product.is_owner">
-          <p class="font-bold">
-            {{ $t('pages.product.likesCount') + ":" }}
-            {{ product.likes }}
-          </p>
         </div>
 
         <!-- Description -->
@@ -258,17 +254,13 @@ onUnmounted(() => {
         <!-- Action buttons -->
         <div class="pt-6 border-t border-gray-800">
           <div v-if="!product.is_sold" class="flex flex-col gap-3 sm:flex-row justify-end">
-            <div class="w-full flex gap-2" v-if="product.is_owner">
+            <div class="w-full flex gap-2 items-center justify-end" v-if="product.is_owner">
               <button
-                class="flex-1 rounded-lg bg-yellow-600 px-4 py-2 text-sm text-white font-semibold transition hover:bg-yellow-700 sm:px-6"
+                class="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white font-semibold transition hover:bg-blue-700 sm:px-6"
                 @click="editProduct">
                 {{ $t('common.edit') }}
               </button>
-              <button
-                class="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm text-white font-semibold transition hover:bg-red-700 sm:px-6"
-                @click="openDeleteConfirm">
-                {{ $t('common.delete') }}
-              </button>
+              <Trash2 @click="openDeleteConfirm" class="cursor-pointer"/>
             </div>
 
             <div v-else class="flex space-x-4 items-center">
@@ -291,72 +283,10 @@ onUnmounted(() => {
 
         </div>
 
-        <div class="check mt-6 rounded-2xl border border-dark-700 bg-dark-600/40 p-4 lg:p-6">
-          <div class="flex gap-6">
-            <!-- Item -->
-            <div class="flex flex-col gap-2">
-              <div class="flex items-center gap-3">
-                <div
-                  class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600/20 text-blue-400">
-                  <ShieldCheck class="w-5 h-5" />
-                </div>
-                <p class="text-xs font-semibold text-white whitespace-pre-line">
-                  {{ $t('common.trust.guaranteeTitle') }}
-                </p>
-              </div>
-              <p class="text-xs text-gray-400 leading-snug whitespace-pre-line">
-                {{ $t('common.trust.guaranteeText') }}
-              </p>
-            </div>
-
-            <!-- Item -->
-            <div class="flex flex-col gap-2">
-              <div class="flex items-center gap-3">
-                <div
-                  class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600/20 text-blue-400">
-                  <Headset class="w-5 h-5" />
-                </div>
-                <p class="text-xs font-semibold text-white">
-                  {{ $t('common.trust.supportTitle') }}
-                </p>
-              </div>
-              <p class="text-xs text-gray-400 leading-snug">
-                {{ $t('common.trust.supportText') }}
-              </p>
-            </div>
-
-            <!-- Item -->
-            <div class="flex flex-col gap-2">
-              <div class="flex items-center gap-3">
-                <div
-                  class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600/20 text-blue-400">
-                  <Users class="w-5 h-5" />
-                </div>
-                <p class="text-xs font-semibold text-white">
-                  {{ $t('common.trust.sellersTitle') }}
-                </p>
-              </div>
-              <p class="text-xs text-gray-400 leading-snug">
-                {{ $t('common.trust.sellersText') }}
-              </p>
-            </div>
-
-            <!-- Item -->
-            <div class="flex flex-col gap-2">
-              <div class="flex items-center gap-3">
-                <div
-                  class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600/20 text-blue-400">
-                  <Zap class="w-5 h-5" />
-                </div>
-                <p class="text-xs font-semibold text-white">
-                  {{ $t('common.trust.disputesTitle') }}
-                </p>
-              </div>
-              <p class="text-xs text-gray-400 leading-snug">
-                {{ $t('common.trust.disputesText') }}
-              </p>
-            </div>
-          </div>
+        <TrustComponent v-if="!product.is_owner" />
+        <div v-else class="w-full flex justify-end gap-2">
+          <Heart/>
+          <span>{{ product.likes }}</span>
         </div>
       </div>
     </div>

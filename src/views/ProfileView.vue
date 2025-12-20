@@ -50,6 +50,7 @@ const reviews = ref<ReviewSchema[]>([])
 const purchases = ref<Deal[]>([])
 const isLoadingReviews = ref(false)
 const isLoadingPurchases = ref(false)
+const isLoadingProducts = ref(false)
 
 function formatFullDate(dateStr: string): string {
   return new Date(dateStr).toLocaleString(useI18n().locale.value, { year: 'numeric', month: 'long', day: 'numeric' })
@@ -61,19 +62,28 @@ function formatPrice(price: number) {
 
 async function loadProfileData() {
   try {
-    isLoading.value = true
     const data = await profileService.getUserProfileData(username.value)
-    const userProducts = await productService.getUserProductsByUsername(username.value)
     profileData.value = data
-    profileProducts.value = userProducts
     currentProfileData.value = data
-    products.value = userProducts
     newDescription.value = data?.description ?? ''
+    return true
   } catch (error: any) {
     console.error('Profile load error:', error)
     router.push(error.response?.status === 404 ? '/404' : '/error')
+    return false
+  }
+}
+
+async function loadUserProducts() {
+  try {
+    isLoadingProducts.value = true
+    const userProducts = await productService.getUserProductsByUsername(username.value)
+    profileProducts.value = userProducts
+    products.value = userProducts
+  } catch (error) {
+    console.error("Failed to load user products:", error)
   } finally {
-    isLoading.value = false
+    isLoadingProducts.value = false
   }
 }
 
@@ -171,13 +181,19 @@ function switchTab(tab: 'products' | 'reviews' | 'purchases') {
 function goToProduct(productId: string) { router.push(`/product/${productId}`) }
 function goToProfile(username: string) { router.push(`/user/${username}`) }
 
-onMounted(() => loadProfileData())
+onMounted(async () => {
+  const profileLoaded = await loadProfileData()
+  if (profileLoaded) {
+    loadUserProducts()
+  }
+})
+
 onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 </script>
 
 <template>
-  <div class="h-full w-full flex flex-col items-center justify-center">
-    <div v-if="isLoading" class="flex h-full w-full items-center justify-center">
+  <div class="h-full w-full flex flex-col items-center justify-center lg:pt-6">
+    <div v-if="!currentProfileData" class="flex h-full w-full items-center justify-center">
       <Loader />
     </div>
 
@@ -322,7 +338,10 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
         <div class="w-full flex-1 overflow-scroll no-scrollbar">
           <div class="p-4 pb-8">
             <div v-if="activeTab === 'products'">
-              <div v-if="products.length === 0"
+              <div v-if="isLoadingProducts" class="w-full flex items-center justify-center py-6">
+                <Loader />
+              </div>
+              <div v-else-if="products.length === 0"
                 class="w-full flex items-center justify-center py-6 text-text-secondaryDark">
                 {{
                   t('pages.profile.noProducts') }}</div>

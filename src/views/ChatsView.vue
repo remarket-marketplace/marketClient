@@ -238,7 +238,7 @@ async function sendMessage() {
 </script>
 
 <template>
-  <div class="h-full w-full flex flex-col">
+  <div class="h-full w-full flex flex-col md:pt-6">
     <div v-if="isLoading" class="flex flex-1 items-center justify-center text-gray-300">
       <Loader/>
     </div>
@@ -293,7 +293,7 @@ async function sendMessage() {
         :class="[
           isMobile && mobileMode === 'chat'
             ? 'fixed inset-0 z-10 w-full bg-background'
-            : 'flex-1 w-9/12 border-1 border-dark-400 rounded-xl',
+            : 'flex-1 w-9/12 border-1 border-dark-400 rounded-3xl',
         ]"
       >
         <div

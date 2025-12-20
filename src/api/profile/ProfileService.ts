@@ -9,12 +9,10 @@ export const profileService = {
     try {
       const response = await httpClient.get(`/users/${username}`)
 
-      // Сначала пытаемся парсить как полные данные (для владельца профиля)
       try {
         return ProfileDataSchema.parse(response.data)
       }
       catch {
-        // Если не получается, парсим как публичные данные (для других пользователей)
         return PublicProfileDataSchema.parse(response.data)
       }
     }

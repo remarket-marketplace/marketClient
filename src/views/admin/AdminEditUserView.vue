@@ -109,7 +109,7 @@ async function saveUser() {
 
       setTimeout(() => {
         router.push('/admin/users');
-      }, 1500);
+      }, 1000);
     } else {
       errorMessage.value = t('pages.admin.editUser.errorSaving');
     }
