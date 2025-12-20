@@ -254,25 +254,25 @@ onUnmounted(() => {
         <!-- Action buttons -->
         <div class="pt-6 border-t border-gray-800">
           <div v-if="!product.is_sold" class="flex flex-col gap-3 sm:flex-row justify-end">
-            <div class="w-full flex gap-2 items-center justify-end" v-if="product.is_owner">
+            <div class="w-full flex gap-6 pr-4 items-center justify-end" v-if="product.is_owner">
               <button
-                class="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white font-semibold transition hover:bg-blue-700 sm:px-6"
+                class="rounded-lg flex-1 lg:flex-none bg-blue-600 px-4 py-4 text-sm text-white font-semibold transition hover:bg-blue-700 sm:px-6"
                 @click="editProduct">
                 {{ $t('common.edit') }}
               </button>
-              <Trash2 @click="openDeleteConfirm" class="cursor-pointer"/>
+              <Trash2 @click="openDeleteConfirm" class="cursor-pointer w-8 h-8"/>
             </div>
 
-            <div v-else class="flex space-x-4 items-center">
+            <div v-else class="flex gap-6 pr-4 items-center">
               <button
                 class="w-full rounded-lg bg-blue-600 px-10 py-4 text-base text-white font-semibold transition hover:bg-blue-700 sm:w-auto"
                 @click="openBuyConfirm">
                 {{ $t('pages.product.buy') }}
               </button>
               <div>
-                <Heart v-if="product.is_liked" @click="removeProductLike" class="w-6 h-6 text-red-500 cursor-pointer"
+                <Heart v-if="product.is_liked" @click="removeProductLike" class="w-8 h-8 text-red-500 cursor-pointer"
                   :style="{ fill: 'currentColor' }" />
-                <Heart v-else @click="likeProduct" class="cursor-pointer" />
+                <Heart v-else @click="likeProduct" class="cursor-pointer w-8 h-8" />
               </div>
             </div>
           </div>
