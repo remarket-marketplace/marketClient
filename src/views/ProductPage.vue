@@ -10,12 +10,17 @@ import { useRoute, useRouter } from 'vue-router'
 import { ChevronLeft, ChevronRight, X, Heart, Trash, Trash2 } from 'lucide-vue-next'
 import UserRating from '@/components/UserRating.vue'
 import TrustComponent from './TrustComponent.vue'
+import { useUserStore } from '@/stores/user'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const route = useRoute('/product/[productId]')
 const router = useRouter()
 const { locale, t } = useI18n()
 const productId = route.params.productId as string
+
+
+const store = useUserStore()
+const user = await store.getUser()
 
 const product = ref<Product | null>(null)
 const selectedImage = ref<ProductImage | null>(null)
@@ -260,21 +265,33 @@ onUnmounted(() => {
                 @click="editProduct">
                 {{ $t('common.edit') }}
               </button>
-              <Trash2 @click="openDeleteConfirm" class="cursor-pointer w-8 h-8"/>
+              <Trash2 @click="openDeleteConfirm" class="cursor-pointer w-8 h-8" />
             </div>
 
             <div v-else class="flex gap-6 pr-4 items-center">
-              <button
-                class="w-full rounded-lg bg-blue-600 px-10 py-4 text-base text-white font-semibold transition hover:bg-blue-700 sm:w-auto"
-                @click="openBuyConfirm">
-                {{ $t('pages.product.buy') }}
-              </button>
+
+              <span v-if="user === null" class="text-sm text-gray-400">
+                {{ $t('pages.product.authRequired') }}
+              </span>
+              <div class="flex flex-col items-end gap-1">
+                <button :disabled="user === null" @click="user !== null && openBuyConfirm()" class="w-full rounded-lg px-10 py-4 text-base font-semibold transition sm:w-auto
+        bg-blue-600 text-white hover:bg-blue-700
+        disabled:bg-blue-600/40
+        disabled:text-white/60
+        disabled:cursor-not-allowed
+        disabled:hover:bg-blue-600/40">
+                  {{ $t('pages.product.buy') }}
+                </button>
+              </div>
+
+
               <div>
                 <Heart v-if="product.is_liked" @click="removeProductLike" class="w-8 h-8 text-red-500 cursor-pointer"
                   :style="{ fill: 'currentColor' }" />
                 <Heart v-else @click="likeProduct" class="cursor-pointer w-8 h-8" />
               </div>
             </div>
+
           </div>
 
           <div v-else class="w-full py-4 text-center bg-gray-700 text-gray-400 rounded-xl font-semibold">
@@ -285,7 +302,7 @@ onUnmounted(() => {
 
         <TrustComponent v-if="!product.is_owner" />
         <div v-else class="w-full flex justify-end gap-2">
-          <Heart/>
+          <Heart />
           <span>{{ product.likes }}</span>
         </div>
       </div>

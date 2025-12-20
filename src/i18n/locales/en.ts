@@ -67,6 +67,7 @@ const en = {
     quantity: "Quantity",
     remaining: "Remaining",
 
+
     remarket: "Remarket - secure transactions market",
     support: "Support",
     legal: "Legal",
@@ -342,6 +343,7 @@ const en = {
         confirm: "Buy",
         cancel: "Cancel",
       },
+      authRequired: "Need to be logged in to buy product",
     },
 
     favoriteProducts: {

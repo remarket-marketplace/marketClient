@@ -340,6 +340,7 @@ const ru = {
         confirm: "Купить",
         cancel: "Отмена",
       },
+      authRequired: "Для покупки товара необходимо авторизироваться",
     },
 
     favoriteProducts: {
