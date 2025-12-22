@@ -228,10 +228,11 @@ export const productService = {
     }
   },
 
-  async sendReport(productId: string, refusalReasonId: string) {
+  async sendReport(dealId: string, reportReasonId: string, report_text: string | null) {
     try {
-      const response = await httpClient.patch(`/products/report`, {
-        product_id: productId,
+      const response = await httpClient.patch(`/deal/report/${dealId}`, {
+        report_reason_id: reportReasonId,
+        report_text: report_text,
       });
       return response.status === 200;
     } catch {
@@ -392,7 +393,7 @@ export const productService = {
     }
   },
 
-    async getCommissionInterest() {
+  async getCommissionInterest() {
     //
     // get committion insterest
     //
@@ -403,6 +404,20 @@ export const productService = {
       return response.data
     } catch (e) {
       console.error("error get commission interest")
+    }
+  },
+
+  async RefundDeal(dealId: string) {
+    //
+    // refund deal
+    //
+    try {
+      const response = await httpClient.patch(
+        `/deal/refund/${dealId}`
+      );
+      return response.status === 200;
+    } catch (e) {
+      return false;
     }
   }
 };

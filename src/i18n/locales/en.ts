@@ -135,6 +135,15 @@ const en = {
       cancelled: "cancelled",
       refunded: "refunded",
     },
+
+    refusalReasons: {
+      productDoesNotMatchDescription: "Product does not match description",
+      productFromScammer: "Product from scammer",
+      productDamagedOrDefective: "Product is damaged or defective",
+      sellerNotResponding: "Seller is not responding",
+      unsatisfactoryQuality: "Unsatisfactory quality",
+      otherReason: "Other reason"
+    }
   },
 
   errors: {
@@ -363,6 +372,8 @@ const en = {
       selectChat: "Select a chat",
       confirmReceipt: "Confirm Receipt",
       confirmReceipted: "Confirm Receipted",
+      refund: "Refund",
+      refundConfirmMessage: "Are you sure you want to refund this deal?",
       report: "Report",
       messagePlaceholder: "Enter message...",
       newPurchase: "New purchase",
@@ -385,6 +396,8 @@ const en = {
       wrong_item_received: "Wrong item received",
       sendReport: "Send",
       confirmReceiptMessage: "Вы уверены что хотите подтвердить получение?",
+      enterCustomReason: "Enter reason",
+      refundCompleted: "Refund completed",
 
       pending: "Deal created. Waiting for confirmation from both parties.",
       confirmed:
@@ -475,6 +488,14 @@ const en = {
       dealsPage: {
         title: "Deals",
         refund: "Refund",
+      },
+
+
+      dealPage: {
+        deal: "Deal",
+        productInfo: "Product info",
+        dealDetails: "Deal details",
+        adminActions: "Actions",
       },
 
       editUser: {

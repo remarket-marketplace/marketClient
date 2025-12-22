@@ -42,7 +42,7 @@ const { images } = useImages()
 
 // Навигация
 function goToDeal(id: string) {
-  router.push({ path: `/deal/${id}` })
+  router.push({ path: `/admin/deal/${id}` })
 }
 
 function goToProfile(username: string) {

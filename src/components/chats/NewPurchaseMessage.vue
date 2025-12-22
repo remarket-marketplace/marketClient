@@ -5,14 +5,16 @@ import { chatsService } from '@/api/chats/chatsService';
 import router from '@/router';
 import type { Product } from '@/validation/product/product';
 import type { RefusalReasonsList } from '@/validation/deal/deal';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Star, X } from 'lucide-vue-next';
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
+import { RefreshCcw } from 'lucide-vue-next';
 
 const API_HOST = import.meta.env.VITE_API_HOST;
 
 const isConfirmed = ref(false);
 const isReported = ref(false);
+const isRefunded = ref(false);
 
 const showReviewForm = ref(false);
 const reviewStars = ref(0);
@@ -21,9 +23,14 @@ const reviewText = ref('');
 const showRefusalModal = ref(false);
 const refusalReasons = ref<RefusalReasonsList>([]);
 const selectedRefusalId = ref<string | null>(null);
+const customReasonText = ref('');
+const MAX_CUSTOM_REASON_LENGTH = 300;
+const otherReasonId = ref<string | null>(null);
 
 const showConfirmModal = ref(false);
+const showRefundModal = ref(false);
 const confirmLoading = ref(false);
+const refundLoading = ref(false);
 
 const props = defineProps<{
   product: Product,
@@ -34,17 +41,31 @@ const props = defineProps<{
 
 const localHasReview = ref(props.has_review ?? false);
 
+// Вычисляемое свойство для проверки, выбрана ли причина "otherReason"
+const isOtherReasonSelected = computed(() => {
+  if (!selectedRefusalId.value || !otherReasonId.value) return false;
+  return selectedRefusalId.value === otherReasonId.value;
+});
+
 async function openRefusalModal() {
   if (refusalReasons.value.length === 0) {
     const reasons = await chatsService.getRefusalReasons();
     refusalReasons.value = reasons;
+    
+    // Находим id причины с title "otherReason"
+    const otherReason = reasons.find(reason => reason.title === 'otherReason');
+    if (otherReason) {
+      otherReasonId.value = otherReason.id;
+    }
   }
   showRefusalModal.value = true;
+  customReasonText.value = '';
 }
 
 function closeRefusalModal() {
   showRefusalModal.value = false;
   selectedRefusalId.value = null;
+  customReasonText.value = '';
 }
 
 async function doConfirmDeal() {
@@ -58,13 +79,36 @@ async function doConfirmDeal() {
   showConfirmModal.value = false;
 }
 
+async function doConfirmRefund() {
+  refundLoading.value = true;
+
+  const response = await productService.RefundDeal(props.dealId);
+
+  refundLoading.value = false;
+  if (response === true) {
+    isRefunded.value = true;
+  }
+  showRefundModal.value = false;
+}
+
 function openConfirmReceiptModal() {
   showConfirmModal.value = true;
 }
 
-async function handleReport(productId: string) {
+function openRefundModal() {
+  showRefundModal.value = true;
+}
+
+async function handleReport(dealId: string) {
   if (!selectedRefusalId.value) return;
-  const response = await productService.sendReport(productId, selectedRefusalId.value);
+  
+  let description = null;
+  // Если выбрана причина "otherReason" и есть текст, отправляем его
+  if (isOtherReasonSelected.value && customReasonText.value.trim()) {
+    description = customReasonText.value.trim();
+  }
+  
+  const response = await productService.sendReport(dealId, selectedRefusalId.value, description);
   if (response === true) {
     isReported.value = true;
     closeRefusalModal();
@@ -92,20 +136,14 @@ async function handleSendReview(productId: string) {
       <div class="flex flex-col gap-4 p-4 sm:flex-row sm:items-start">
         <div class="flex-shrink-0 sm:w-1/3 min-w-0 cursor-pointer" @click="handleViewProduct(product.id)">
           <div class="relative aspect-square rounded-lg overflow-hidden bg-gray-700 border border-gray-600">
-            <img
-              :src="`${API_HOST}${product.images?.[0]?.image_url}`"
-              :alt="product.title"
-              class="h-full w-full object-cover"
-              loading="lazy"
-            />
+            <img :src="`${API_HOST}${product.images?.[0]?.image_url}`" :alt="product.title"
+              class="h-full w-full object-cover" loading="lazy" />
           </div>
         </div>
 
         <div class="flex-1 text-mainText space-y-3 min-w-0">
-          <h3
-            class="cursor-pointer text-lg font-bold text-white transition-colors duration-200 line-clamp-2"
-            @click="handleViewProduct(product.id)"
-          >
+          <h3 class="cursor-pointer text-lg font-bold text-white transition-colors duration-200 line-clamp-2"
+            @click="handleViewProduct(product.id)">
             {{ product.title }}
           </h3>
 
@@ -125,42 +163,65 @@ async function handleSendReview(productId: string) {
       <div class="flex flex-col gap-3 px-4 pb-4 sm:flex-row sm:items-center border-t border-gray-700 mt-4 pt-4">
 
         <template v-if="dealStatus == 'pending' && !isConfirmed && !isReported && !product.is_owner">
-          <button 
-            @click="openConfirmReceiptModal()" 
-            class="flex items-center justify-center gap-2 rounded-lg bg-green-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-green-700 border border-green-500 min-w-[160px]"
-          >
+          <button @click="openConfirmReceiptModal()"
+            class="flex items-center justify-center gap-2 rounded-lg bg-green-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-green-700 border border-green-500 min-w-[160px]">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
             {{ $t('pages.chats.confirmReceipt') }}
           </button>
         </template>
 
         <template v-else-if="isConfirmed || dealStatus === 'confirmed'">
-          <div class="flex items-center justify-center gap-2 rounded-lg bg-gray-800 px-6 py-3 text-sm font-semibold text-gray-300 border border-gray-600 min-w-[160px]">
+          <div
+            class="flex items-center justify-center gap-2 rounded-lg bg-gray-800 px-6 py-3 text-sm font-semibold text-gray-300 border border-gray-600 min-w-[160px]">
             <svg class="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              <path fill-rule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clip-rule="evenodd" />
             </svg>
             {{ $t('pages.chats.confirmReceipted') }}
           </div>
         </template>
 
+        <template v-if="product.is_owner && dealStatus == 'pending'">
+          <template v-if="!isRefunded">
+            <button @click="openRefundModal"
+              class="flex items-center justify-center gap-2 rounded-lg bg-orange-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-orange-700 border border-orange-500 min-w-[160px]">
+              <RefreshCcw class="w-4 h-4" />
+              {{ $t('pages.chats.refund') }}
+            </button>
+          </template>
+          <template v-else>
+            <div
+              class="flex items-center justify-center gap-2 rounded-lg bg-gray-800 px-6 py-3 text-sm font-semibold text-gray-300 border border-gray-600 min-w-[160px]">
+              <svg class="w-4 h-4 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clip-rule="evenodd" />
+              </svg>
+              {{ $t('pages.chats.refundCompleted') }}
+            </div>
+          </template>
+        </template>
+
         <template v-if="!product.is_owner">
           <div class="sm:ml-auto flex flex-col gap-2">
-            <button 
-              v-if="!isReported && dealStatus !== 'disputed'"
-              @click="openRefusalModal()" 
-              class="flex items-center justify-center gap-2 rounded-lg bg-red-600 px-6 py-3 text-sm font-semibold text-white hover:bg-red-700 border border-red-500 min-w-[160px]"
-            >
+            <button v-if="!isReported && dealStatus !== 'disputed'" @click="openRefusalModal()"
+              class="flex items-center justify-center gap-2 rounded-lg bg-red-600 px-6 py-3 text-sm font-semibold text-white hover:bg-red-700 border border-red-500 min-w-[160px]">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
               {{ $t('pages.chats.report') }}
             </button>
 
-            <div v-else class="flex items-center justify-center gap-2 rounded-lg bg-gray-800 px-6 py-3 text-sm font-semibold text-gray-300 border border-gray-600 min-w-[160px]">
+            <div v-else
+              class="flex items-center justify-center gap-2 rounded-lg bg-gray-800 px-6 py-3 text-sm font-semibold text-gray-300 border border-gray-600 min-w-[160px]">
               <svg class="w-4 h-4 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                <path fill-rule="evenodd"
+                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                  clip-rule="evenodd" />
               </svg>
               {{ $t('pages.chats.reported') }}
             </div>
@@ -170,12 +231,9 @@ async function handleSendReview(productId: string) {
 
       <template v-if="(isConfirmed || dealStatus === 'completed') && !localHasReview && !product.is_owner">
         <div class="px-4 pb-4">
-          <button
-            v-if="!showReviewForm"
-            @click="showReviewForm = true"
-            class="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 border border-blue-500 w-full"
-          >
-            <Star class="w-4 h-4"/> {{ $t('pages.chats.leaveReview') }}
+          <button v-if="!showReviewForm" @click="showReviewForm = true"
+            class="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 border border-blue-500 w-full">
+            <Star class="w-4 h-4" /> {{ $t('pages.chats.leaveReview') }}
           </button>
         </div>
       </template>
@@ -183,26 +241,16 @@ async function handleSendReview(productId: string) {
       <template v-if="showReviewForm">
         <div class="w-full bg-gray-800/50 border border-gray-700 p-4 rounded-xl mt-3 space-y-4">
           <div class="flex gap-1 justify-center">
-            <Star
-              v-for="n in 5"
-              :key="n"
-              @click="reviewStars = n"
-              class="cursor-pointer"
-              :class="reviewStars >= n ? 'text-blue-600 w-6 h-6' : 'text-gray-600 w-6 h-6'"
-            />
+            <Star v-for="n in 5" :key="n" @click="reviewStars = n" class="cursor-pointer"
+              :class="reviewStars >= n ? 'text-blue-600 w-6 h-6' : 'text-gray-600 w-6 h-6'" />
           </div>
 
-          <textarea
-            v-model="reviewText"
-            rows="4"
+          <textarea v-model="reviewText" rows="4"
             class="w-full max-h-28 rounded-lg bg-gray-800 border border-gray-700 p-3 text-sm text-gray-200 outline-none focus:border-blue-500"
-            :placeholder="$t('pages.chats.writeReview')"
-          ></textarea>
+            :placeholder="$t('pages.chats.writeReview')"></textarea>
 
-          <button
-            @click="handleSendReview(product.id)"
-            class="w-full rounded-lg bg-green-600 px-6 py-3 text-sm font-semibold text-white hover:bg-green-700 transition border border-green-500"
-          >
+          <button @click="handleSendReview(product.id)"
+            class="w-full rounded-lg bg-green-600 px-6 py-3 text-sm font-semibold text-white hover:bg-green-700 transition border border-green-500">
             {{ $t('pages.chats.sendReview') }}
           </button>
         </div>
@@ -212,36 +260,85 @@ async function handleSendReview(productId: string) {
   </div>
 
   <transition name="fade">
-    <div
-      v-if="showRefusalModal"
-      class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
-      @click.self="closeRefusalModal"
-    >
-      <div class="bg-dark-900 rounded-xl w-96 max-w-full p-6 relative">
-        <button
-          class="absolute top-3 right-3 text-gray-400 hover:text-gray-200"
-          @click="closeRefusalModal"
-        >
-          <X class="w-5 h-5"/>
-        </button>
-        <h3 class="text-lg font-bold text-white mb-4">{{ $t('pages.chats.selectReason') }}</h3>
-        <div class="flex flex-col gap-2 mb-4 max-h-64 overflow-y-auto">
-          <button
-            v-for="reason in refusalReasons"
-            :key="reason.id"
-            @click="selectedRefusalId = reason.id"
-            :class="selectedRefusalId === reason.id ? 'bg-red-700 text-white' : 'bg-gray-700 text-gray-200'"
-            class="px-4 py-2 rounded-lg text-left font-medium hover:bg-red-600 transition"
-          >
-            {{ $t(`pages.chats.${reason.title}`) }}
+    <div v-if="showRefusalModal" class="fixed inset-0 flex items-center justify-center z-50 px-4">
+      <div class="absolute inset-0 bg-black/50" @click="closeRefusalModal"></div>
+
+      <!-- modal window -->
+      <div class="relative bg-dark-800 rounded-2xl w-full max-w-md shadow-2xl border border-gray-800">
+        <!-- title -->
+        <div class="flex items-center justify-between p-6 pb-4 border-b border-gray-700/50">
+          <h3 class="text-xl font-semibold text-white">
+            {{ $t('pages.chats.selectReason') }}
+          </h3>
+          <button @click="closeRefusalModal"
+            class="text-gray-400 hover:text-gray-300 transition-colors p-1 hover:bg-gray-700/30 rounded-lg">
+            <X class="w-5 h-5" />
           </button>
         </div>
-        <div class="flex justify-end gap-3">
-          <button
-            class="px-4 py-2 bg-red-600 rounded-lg text-white hover:bg-red-700 cursor-pointer"
-            @click="handleReport(product.id)"
-            :disabled="!selectedRefusalId"
-          >
+
+        <!-- reasons list -->
+        <div class="p-4">
+          <div class="space-y-2 max-h-80 overflow-y-auto pr-1 no-scrollbar">
+            <button v-for="reason in refusalReasons" :key="reason.id" @click="selectedRefusalId = reason.id" :class="[
+              'w-full text-left px-4 py-3 rounded-xl transition-all duration-200',
+              selectedRefusalId === reason.id
+                ? 'bg-blue-500/10 border border-blue-500/30 text-blue-400'
+                : 'bg-gray-800/50 hover:bg-gray-700/50 border border-transparent text-gray-300'
+            ]">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 mr-3">
+                  <div :class="[
+                    'w-4 h-4 rounded-full border flex items-center justify-center',
+                    selectedRefusalId === reason.id
+                      ? 'border-blue-400 bg-blue-500/20'
+                      : 'border-gray-600'
+                  ]">
+                    <div v-if="selectedRefusalId === reason.id" class="w-2 h-2 rounded-full bg-blue-400"></div>
+                  </div>
+                </div>
+
+                <span class="text-sm leading-relaxed">
+                  {{ $t(`common.refusalReasons.${reason.title}`) }}
+                </span>
+              </div>
+            </button>
+          </div>
+
+          <!-- Custom reason textarea (only shown when "otherReason" is selected) -->
+          <div v-if="isOtherReasonSelected" class="mt-4">
+            <textarea
+              v-model="customReasonText"
+              :maxlength="MAX_CUSTOM_REASON_LENGTH"
+              rows="4"
+              class="w-full rounded-lg bg-gray-800 border border-gray-700 p-3 text-sm text-gray-200 outline-none focus:border-blue-500"
+              :placeholder="$t('pages.chats.enterCustomReason')"
+            ></textarea>
+            <div class="flex justify-between items-center mt-2 text-xs text-gray-400">
+              <span class="text-red-400" v-if="customReasonText.length >= MAX_CUSTOM_REASON_LENGTH">
+                {{ $t('pages.chats.maxCharactersReached') }}
+              </span>
+              <span class="ml-auto">
+                {{ customReasonText.length }}/{{ MAX_CUSTOM_REASON_LENGTH }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- action buttons -->
+        <div class="flex justify-end gap-3 p-6 pt-4 border-t border-gray-700/50">
+          <button @click="closeRefusalModal"
+            class="px-5 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700/50 transition-colors font-medium">
+            {{ $t('common.cancel') }}
+          </button>
+          <button 
+            @click="handleReport(dealId)" 
+            :disabled="!selectedRefusalId || (isOtherReasonSelected && !customReasonText.trim())" 
+            :class="[
+              'px-5 py-2.5 rounded-lg font-medium transition-colors',
+              !selectedRefusalId || (isOtherReasonSelected && !customReasonText.trim())
+                ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
+            ]">
             {{ $t('pages.chats.sendReport') }}
           </button>
         </div>
@@ -249,14 +346,13 @@ async function handleSendReview(productId: string) {
     </div>
   </transition>
 
-  <ConfirmWindow
-    :isOpen="showConfirmModal"
-    :title="$t('pages.chats.confirmReceipt')"
-    :message="$t('pages.chats.confirmReceiptMessage')"
-    :isLoading="confirmLoading"
-    @confirm="doConfirmDeal"
-    @cancel="showConfirmModal = false"
-  />
+  <ConfirmWindow :isOpen="showConfirmModal" :title="$t('pages.chats.confirmReceipt')"
+    :message="$t('pages.chats.confirmReceiptMessage')" :isLoading="confirmLoading" @confirm="doConfirmDeal"
+    @cancel="showConfirmModal = false" />
+
+  <ConfirmWindow :isOpen="showRefundModal" :title="$t('pages.chats.refund')"
+    :message="$t('pages.chats.refundConfirmMessage')" :isLoading="refundLoading" @confirm="doConfirmRefund"
+    @cancel="showRefundModal = false" />
 </template>
 
 <style scoped>
@@ -274,10 +370,13 @@ async function handleSendReview(productId: string) {
   overflow: hidden;
 }
 
-.fade-enter-active, .fade-leave-active {
+.fade-enter-active,
+.fade-leave-active {
   transition: opacity 0.2s;
 }
-.fade-enter-from, .fade-leave-to {
+
+.fade-enter-from,
+.fade-leave-to {
   opacity: 0;
 }
 </style>

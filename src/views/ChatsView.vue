@@ -304,17 +304,17 @@ async function sendMessage() {
           }"
         >
           <div class="flex flex-grow flex-col overflow-y-auto lg:pb-2 w-full">
-            <div v-if="isMobile && mobileMode === 'chat'" class="flex items-center gap-2 mb-2 px-2 sticky top-0 bg-background py-2 z-10">
-              <button class="text-xl font-bold flex-shrink-0" @click="backToChats">
+            <div class="flex items-center gap-2 lg:mb-2 sticky top-0 bg-background px-2 py-2 z-10 ">
+              <button v-if="isMobile" class="text-xl font-bold flex-shrink-0" @click="backToChats">
                 <ArrowLeft />
               </button>
 
               <div class="flex items-center gap-3 flex-1 min-w-0">
-                <div class="h-8 w-8 flex items-center justify-center flex-shrink-0">
+                <div class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
                   <img
                     v-if="currentChat?.another_user.avatar_url"
                     :src="`${API_HOST}${currentChat.another_user.avatar_url}`"
-                    class="h-8 w-8 border-2 border-dark-600 rounded-full object-cover"
+                    class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-dark-600 rounded-full object-cover"
                     :alt="currentChat.another_user.username"
                   >
                   <div

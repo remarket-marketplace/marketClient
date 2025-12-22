@@ -237,4 +237,16 @@ export const adminService = {
       return false;
     }
   },
+
+  async getDealById(dealId: string): Promise<Deal | false> {
+    //
+    // get deal by id
+    //
+    try {
+      const response = await httpClient.get(`/admin/deal/${dealId}`);
+      return DealSchema.parse(response.data);
+    } catch (e) {
+      return false;
+    }
+  }
 };

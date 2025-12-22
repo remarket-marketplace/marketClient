@@ -21,6 +21,7 @@ import EnterResetEmailView from '@/views/resetPassword/EnterResetEmailView.vue'
 import ResetPasswordView from '@/views/resetPassword/ResetPasswordView.vue'
 import AdminEditCategoryView from '@/views/admin/AdminEditCategoryView.vue'
 import FavoritesProductsView from '@/views/FavoritesProductsView.vue'
+import AdminDealView from '@/views/admin/AdminDealView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -116,6 +117,12 @@ const router = createRouter({
       path: '/admin/deals',
       name: 'deals',
       component: AdminDealsView,
+      meta: { requiredAdmin: true }
+    },
+    {
+      path: '/admin/deal/:id',
+      name: 'deal',
+      component: AdminDealView,
       meta: { requiredAdmin: true }
     },
     {

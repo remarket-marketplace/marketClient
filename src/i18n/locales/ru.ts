@@ -133,6 +133,15 @@ const ru = {
       cancelled: "Отменено",
       refunded: "Возврат",
     },
+    
+    refusalReasons: {
+        productDoesNotMatchDescription: "Товар не соответствует описанию",
+        productFromScammer: "Товар от скаммера",
+        productDamagedOrDefective: "Товар поврежден или имеет дефекты",
+        sellerNotResponding: "Продавец не отвечает",
+        unsatisfactoryQuality: "Не устроило качество",
+        otherReason: "Другая причина"
+    },
   },
 
   errors: {
@@ -360,6 +369,8 @@ const ru = {
       selectChat: "Выберите чат",
       confirmReceipt: "Подтвердить получение",
       confirmReceipted: "Получение подтверждено",
+      refund: "Сделать возврат",
+      refundConfirmMessage: "Вы уверены что хотите сделать возврат по этой сделке?",
       report: "Пожаловаться",
       messagePlaceholder: "Введите сообщение...",
       newPurchase: "Новая покупка",
@@ -382,6 +393,8 @@ const ru = {
       wrong_item_received: "Получен неверный товар",
       sendReport: "Отправить",
       confirmReceiptMessage: "Вы уверены что хотите подтвердить получение?",
+      enterCustomReason: "Введите причину",
+      refundCompleted: "Возврат выполнен",
 
       pending: "Сделка создана. Ожидается подтверждение обеими сторонами.",
       confirmed: "Покупатель подтвердил получение, средства на счету продавца.",
@@ -471,6 +484,13 @@ const ru = {
       dealsPage: {
         title: "Сделки",
         refund: "Сделать возврат",
+      },
+
+      dealPage: {
+        title: "Сделка",
+        productInfo: "Детали товара",
+        dealDetails: "Детали сделки",
+        adminActions: "Действия",
       },
 
       editUser: {

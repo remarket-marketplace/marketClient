@@ -118,7 +118,7 @@ async function onMainCategoryClick(id: string) {
     await resetAllFilters()
     return
   }
-  
+
   selectedMainCategoryId.value = id
   selectedSubCategoryId.value = ''
   isSubCategoriesLoading.value = true
@@ -144,7 +144,7 @@ async function onSubCategoryClick(id: string) {
     }
     return
   }
-  
+
   selectedSubCategoryId.value = id
   isProductsLoading.value = true
   try {
@@ -210,8 +210,10 @@ onUnmounted(() => {
 
 <template>
   <section class="w-full flex flex-col">
-    <SearchField v-model="searchQuery" :placeholder="$t('pages.index.searchPlaceholder')"
-      @search-change="debouncedSearch" class="w-full" />
+    <div>
+      <SearchField v-model="searchQuery" :placeholder="$t('pages.index.searchPlaceholder')"
+        @search-change="debouncedSearch" class="w-full lg:max-w-sm" />
+    </div>
 
     <div class="mt-6">
       <div class="text-lg font-semibold mb-2">{{ t('common.categories') }}</div>
@@ -225,15 +227,11 @@ onUnmounted(() => {
       </div>
 
       <div v-else-if="mainCategories.length > 0" class="mt-4 flex gap-3 overflow-x-auto no-scrollbar pb-2">
-        <div 
-          v-for="cat in mainCategories" 
-          :key="cat.id" 
-          @click="onMainCategoryClick(cat.id)"
+        <div v-for="cat in mainCategories" :key="cat.id" @click="onMainCategoryClick(cat.id)"
           class="cursor-pointer min-w-[90px] flex-shrink-0 flex flex-col items-center rounded-lg p-2 gap-1 transition-all duration-200"
           :class="selectedMainCategoryId === cat.id
             ? 'bg-white/15 border border-white/30 text-white shadow-md'
-            : 'hover:bg-dark-700/30'"
-        >
+            : 'hover:bg-dark-700/30'">
           <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" alt="category"
             class="h-16 w-16 object-contain rounded-lg" />
           <span class="text-center text-sm font-medium">{{ cat.name }}</span>
@@ -251,21 +249,14 @@ onUnmounted(() => {
         <!-- Skeleton for subcategories -->
         <div v-if="isSubCategoriesLoading" v-for="n in 5" :key="n"
           class="h-10 bg-dark-600 animate-pulse rounded-full px-4 py-2" style="width: 80px"></div>
-        
+
         <!-- Real subcategories -->
-        <button 
-          v-else 
-          v-for="sub in subCategories" 
-          :key="sub.id" 
-          @click="onSubCategoryClick(sub.id)" 
-          class="relative rounded-full px-4 py-2 text-sm font-medium transition-all
+        <button v-else v-for="sub in subCategories" :key="sub.id" @click="onSubCategoryClick(sub.id)" class="relative rounded-full px-4 py-2 text-sm font-medium transition-all
                  backdrop-blur-md border
                  hover:-translate-y-[1px] hover:shadow-lg
-                 active:translate-y-0" 
-          :class="selectedSubCategoryId === sub.id
-            ? 'bg-white/15 border-white/30 text-white shadow-md'
-            : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'"
-        >
+                 active:translate-y-0" :class="selectedSubCategoryId === sub.id
+                  ? 'bg-white/15 border-white/30 text-white shadow-md'
+                  : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'">
           {{ sub.name }}
         </button>
       </div>
@@ -281,13 +272,13 @@ onUnmounted(() => {
         class="flex flex-col cursor-pointer border border-dark-700 rounded-2xl p-3 hover:shadow-xl hover:border-dark-500 transition duration-200 bg-dark-900 h-full">
         <!-- Image skeleton -->
         <div class="mb-2 aspect-square w-full overflow-hidden rounded-xl bg-dark-600 animate-pulse flex-shrink-0"></div>
-        
+
         <!-- Title skeleton -->
         <div class="h-4 bg-dark-600 rounded animate-pulse mb-2 flex-shrink-0"></div>
         <div class="h-4 bg-dark-600 rounded animate-pulse w-3/4 mb-2 flex-shrink-0"></div>
-        
+
         <hr class="border-dark-700 opacity-80 mb-2 flex-shrink-0" />
-        
+
         <!-- Bottom section skeleton -->
         <div class="mt-auto flex items-center justify-between gap-2">
           <div class="flex items-center gap-2 flex-wrap min-w-0">
@@ -295,7 +286,7 @@ onUnmounted(() => {
             <div class="w-2 h-2 rounded-full bg-dark-600 flex-shrink-0"></div>
             <div class="h-4 bg-dark-600 rounded animate-pulse w-8"></div>
           </div>
-          
+
           <div class="rounded-lg bg-dark-600 px-3 py-2 h-8 w-12 animate-pulse flex-shrink-0 whitespace-nowrap"></div>
         </div>
       </div>
