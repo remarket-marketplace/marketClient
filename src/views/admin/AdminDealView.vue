@@ -2,12 +2,12 @@
 import { onMounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { 
-  ArrowLeft, 
-  CheckCircle, 
-  XCircle, 
-  UserCheck, 
-  Undo2, 
+import {
+  ArrowLeft,
+  CheckCircle,
+  XCircle,
+  UserCheck,
+  Undo2,
   AlertCircle,
   Calendar,
   User,
@@ -89,11 +89,11 @@ function goToProduct(productId: string) {
 async function loadDeal() {
   isLoading.value = true
   errorMessage.value = ''
-  
+
   try {
     const dealId = route.params.id as string
     const response = await adminService.getDealById(dealId)
-    
+
     if (response) {
       deal.value = response
     } else {
@@ -117,7 +117,7 @@ function showConfirmDialog(title: string, message: string, action: () => Promise
 
 async function confirmDealAction() {
   if (!deal.value) return
-  
+
   showConfirmDialog(
     t('common.confirmDeal'),
     t('pages.admin.dealPage.confirmDealMessage'),
@@ -137,7 +137,7 @@ async function confirmDealAction() {
 
 async function refundDealAction() {
   if (!deal.value) return
-  
+
   showConfirmDialog(
     t('pages.admin.dealsPage.refund'),
     t('pages.admin.dealPage.refundDealMessage'),
@@ -157,7 +157,7 @@ async function refundDealAction() {
 
 async function cancelDealAction() {
   if (!deal.value) return
-  
+
   showConfirmDialog(
     t('common.cancelDeal'),
     t('pages.admin.dealPage.cancelDealMessage'),
@@ -177,15 +177,15 @@ async function cancelDealAction() {
 
 async function resolveDispute(inFavorOf: 'buyer' | 'seller') {
   if (!deal.value) return
-  
-  const title = inFavorOf === 'buyer' 
+
+  const title = inFavorOf === 'buyer'
     ? t('common.resolveForBuyer')
     : t('common.resolveForSeller')
-  
+
   const message = inFavorOf === 'buyer'
     ? t('pages.admin.dealPage.resolveForBuyerMessage')
     : t('pages.admin.dealPage.resolveForSellerMessage')
-  
+
   showConfirmDialog(title, message, async () => {
     isActionLoading.value = true
     try {
@@ -273,7 +273,7 @@ onMounted(async () => {
                   <Package class="w-5 h-5 text-blue-400" />
                   {{ $t('pages.admin.dealPage.productInfo') }}
                 </h2>
-                <button @click="goToProduct(deal.product.id)" 
+                <button @click="goToProduct(deal.product.id)"
                   class="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
                   <ExternalLink class="w-4 h-4" />
                   {{ $t('common.view') }}
@@ -283,12 +283,9 @@ onMounted(async () => {
               <div class="flex gap-4">
                 <!-- Product image -->
                 <div class="flex-shrink-0">
-                  <img
-                    :src="getProductImageUrl()"
-                    :alt="deal.product.title"
+                  <img :src="getProductImageUrl()" :alt="deal.product.title"
                     class="w-24 h-24 rounded-lg object-cover border border-dark-400 cursor-pointer"
-                    @click="goToProduct(deal.product.id)"
-                  />
+                    @click="goToProduct(deal.product.id)" />
                 </div>
 
                 <!-- Product details -->
@@ -297,7 +294,7 @@ onMounted(async () => {
                     @click="goToProduct(deal.product.id)">
                     {{ deal.product.title }}
                   </h3>
-                  
+
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                     <div class="flex items-center gap-2 text-sm text-gray-400">
                       <span class="font-medium text-gray-300">{{ $t('common.category') }}:</span>
@@ -313,7 +310,7 @@ onMounted(async () => {
                     </div>
                     <div class="flex items-center gap-2 text-sm text-gray-400">
                       <span class="font-medium text-gray-300">{{ $t('common.status') }}:</span>
-                      <ProductStatusTag :product-status="deal.product.status"/>
+                      <ProductStatusTag :product-status="deal.product.status" />
                     </div>
                   </div>
 
@@ -325,8 +322,10 @@ onMounted(async () => {
 
               <!-- Product data -->
               <div v-if="deal.product.product_data_string" class="mt-4 pt-4 border-t border-dark-700">
-                <h4 class="text-sm font-medium text-gray-300 mb-2">{{ $t('pages.forms.createProduct.productData') }}:</h4>
-                <pre class="text-sm text-gray-400 bg-dark-700/50 p-3 rounded-lg overflow-x-auto whitespace-pre-wrap font-mono">
+                <h4 class="text-sm font-medium text-gray-300 mb-2">{{ $t('pages.forms.createProduct.productData') }}:
+                </h4>
+                <pre
+                  class="text-sm text-gray-400 bg-dark-700/50 p-3 rounded-lg overflow-x-auto whitespace-pre-wrap font-mono">
 {{ deal.product.product_data_string }}
                 </pre>
               </div>
@@ -340,14 +339,11 @@ onMounted(async () => {
                   <User class="w-5 h-5 text-green-400" />
                   {{ $t('common.seller') }}
                 </h3>
-                
+
                 <div class="flex items-center gap-3 mb-4">
-                  <img
-                    :src="getUserAvatarUrl(deal.seller.avatar_url)"
-                    :alt="deal.seller.username"
+                  <img :src="getUserAvatarUrl(deal.seller.avatar_url)" :alt="deal.seller.username"
                     class="w-14 h-14 rounded-full object-cover border-2 border-green-500/30 cursor-pointer"
-                    @click="goToProfile(deal.seller.username)"
-                  />
+                    @click="goToProfile(deal.seller.username)" />
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 mb-1">
                       <span class="text-lg font-semibold text-white truncate cursor-pointer"
@@ -380,14 +376,11 @@ onMounted(async () => {
                   <User class="w-5 h-5 text-blue-400" />
                   {{ $t('common.buyer') }}
                 </h3>
-                
+
                 <div class="flex items-center gap-3 mb-4">
-                  <img
-                    :src="getUserAvatarUrl(deal.buyer.avatar_url)"
-                    :alt="deal.buyer.username"
+                  <img :src="getUserAvatarUrl(deal.buyer.avatar_url)" :alt="deal.buyer.username"
                     class="w-14 h-14 rounded-full object-cover border-2 border-blue-500/30 cursor-pointer"
-                    @click="goToProfile(deal.buyer.username)"
-                  />
+                    @click="goToProfile(deal.buyer.username)" />
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 mb-1">
                       <span class="text-lg font-semibold text-white truncate cursor-pointer"
@@ -430,7 +423,7 @@ onMounted(async () => {
                     <span>{{ formatDate(deal.created_at) }}</span>
                   </div>
                 </div>
-                
+
                 <div class="space-y-2 space-x-2">
                   <span class="text-sm text-gray-400">{{ $t('common.status') }}:</span>
                   <DealStatusTag :deal-status="deal.status" />
@@ -439,7 +432,8 @@ onMounted(async () => {
             </div>
 
             <!-- Report section (only for disputed deals) -->
-            <div v-if="deal.status === 'disputed' && deal.report" class="bg-dark-600 border border-red-500/30 rounded-xl p-5">
+            <div v-if="deal.status === 'disputed' && deal.refusal_reason"
+              class="bg-dark-600 border border-red-500/30 rounded-xl p-5">
               <h3 class="text-lg font-semibold text-white flex items-center gap-2 mb-4">
                 <Shield class="w-5 h-5 text-red-400" />
                 {{ $t('pages.admin.dealPage.reportInfo') }}
@@ -449,20 +443,21 @@ onMounted(async () => {
                 <div>
                   <span class="text-sm text-gray-400">{{ $t('common.reason') }}:</span>
                   <p class="text-white mt-1 font-medium">
-                    {{ $t(`common.refusalReasons.${deal.report.title}`) }}
+                    {{ $t(`common.refusalReasons.${deal.refusal_reason.refusal_reason_title}`) }}
                   </p>
                 </div>
 
-                <div v-if="deal.report.title === 'otherReason' && deal.report.report_reason_text">
+                <div v-if="deal.refusal_reason.refusal_reason_title === 'otherReason' && deal.refusal_reason.text">
                   <span class="text-sm text-gray-400">{{ $t('pages.admin.dealPage.customReason') }}:</span>
                   <div class="mt-2 p-3 bg-dark-700/50 rounded-lg border border-gray-700">
-                    <p class="text-gray-300 whitespace-pre-wrap">{{ deal.report.report_reason_text }}</p>
+                    <p class="text-gray-300 whitespace-pre-wrap">{{ deal.refusal_reason.text }}</p>
                   </div>
                 </div>
 
                 <div class="pt-4 border-t border-dark-700">
                   <div class="flex items-center gap-2 text-sm text-gray-400">
                     <MessageSquare class="w-4 h-4" />
+                    <span>{{ $t('pages.admin.dealPage.reportId') }}: {{ deal.id }}</span>
                   </div>
                 </div>
               </div>
@@ -487,20 +482,14 @@ onMounted(async () => {
               <div class="space-y-3">
                 <!-- Pending deals -->
                 <template v-if="deal.status === 'pending'">
-                  <button
-                    @click="confirmDealAction"
-                    :disabled="isActionLoading"
-                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white rounded-lg transition-colors"
-                  >
+                  <button @click="confirmDealAction" :disabled="isActionLoading"
+                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white rounded-lg transition-colors">
                     <CheckCircle class="w-5 h-5" />
                     <span>{{ $t('common.confirmDeal') }}</span>
                   </button>
-                  
-                  <button
-                    @click="refundDealAction"
-                    :disabled="isActionLoading"
-                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white rounded-lg transition-colors"
-                  >
+
+                  <button @click="refundDealAction" :disabled="isActionLoading"
+                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white rounded-lg transition-colors">
                     <Undo2 class="w-5 h-5" />
                     <span>{{ $t('pages.admin.dealsPage.refund') }}</span>
                   </button>
@@ -508,20 +497,14 @@ onMounted(async () => {
 
                 <!-- Disputed deals -->
                 <template v-else-if="deal.status === 'disputed'">
-                  <button
-                    @click="resolveDispute('buyer')"
-                    :disabled="isActionLoading"
-                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white rounded-lg transition-colors"
-                  >
+                  <button @click="resolveDispute('buyer')" :disabled="isActionLoading"
+                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white rounded-lg transition-colors">
                     <UserCheck class="w-5 h-5" />
                     <span>{{ $t('common.resolveForBuyer') }}</span>
                   </button>
-                  
-                  <button
-                    @click="resolveDispute('seller')"
-                    :disabled="isActionLoading"
-                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg transition-colors"
-                  >
+
+                  <button @click="resolveDispute('seller')" :disabled="isActionLoading"
+                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg transition-colors">
                     <UserCheck class="w-5 h-5" />
                     <span>{{ $t('common.resolveForSeller') }}</span>
                   </button>
@@ -537,9 +520,9 @@ onMounted(async () => {
                       <span>
                         {{
                           deal.status === 'completed' ? $t('common.dealCompleted') :
-                          deal.status === 'refunded' ? $t('common.refundCompleted') :
-                          deal.status === 'cancelled' ? $t('common.dealCancelled') :
-                          $t('common.status') + ': ' + deal.status
+                            deal.status === 'refunded' ? $t('common.refundCompleted') :
+                              deal.status === 'cancelled' ? $t('common.dealCancelled') :
+                                $t('common.status') + ': ' + deal.status
                         }}
                       </span>
                     </div>
@@ -547,12 +530,9 @@ onMounted(async () => {
                 </template>
 
                 <!-- Cancel button (for pending and disputed) -->
-                <button
-                  v-if="['pending', 'disputed'].includes(deal.status)"
-                  @click="cancelDealAction"
+                <button v-if="['pending', 'disputed'].includes(deal.status)" @click="cancelDealAction"
                   :disabled="isActionLoading"
-                  class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg transition-colors"
-                >
+                  class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg transition-colors">
                   <XCircle class="w-5 h-5" />
                   <span>{{ $t('common.cancelDeal') }}</span>
                 </button>
@@ -565,17 +545,11 @@ onMounted(async () => {
   </div>
 
   <!-- Confirm Modal -->
-  <ConfirmWindow
-    :is-open="showConfirmModal"
-    :title="confirmTitle"
-    :message="confirmMessage"
-    :is-loading="isActionLoading"
-    @confirm="async () => {
+  <ConfirmWindow :is-open="showConfirmModal" :title="confirmTitle" :message="confirmMessage"
+    :is-loading="isActionLoading" @confirm="async () => {
       await confirmAction()
       showConfirmModal = false
-    }"
-    @cancel="showConfirmModal = false"
-  />
+    }" @cancel="showConfirmModal = false" />
 </template>
 
 <style>

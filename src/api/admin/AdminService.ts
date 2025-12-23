@@ -248,5 +248,10 @@ export const adminService = {
     } catch (e) {
       return false;
     }
+  },
+
+  async getChatByDealId(dealId: string) {
+
   }
+
 };

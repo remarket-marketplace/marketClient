@@ -11,11 +11,10 @@ export const DealSchema = z.object({
     seller: UserReadSchema,
     buyer: UserReadSchema,
     product: ProductSchema,
-    report: z.object({
-        report_reason_id: UUIDSchema,
-        title: z.string(),
-        report_reason_text: z.string().nullable(),
-        created_at: z.string(),
+    refusal_reason: z.object({
+        deal_id: UUIDSchema,
+        refusal_reason_title: z.string(),
+        text: z.string().nullable(),
     }).nullable().optional(),
     created_at: z.string(),
 })

@@ -19,6 +19,7 @@ import { useI18n } from 'vue-i18n'
 import FileUploader from '@/components/FileUploader.vue'
 import router from '@/router'
 import CategoryStatusTag from '@/components/CategoryStatusTag.vue'
+import BackButton from '@/components/navigation/BackButton.vue'
 
 const { t } = useI18n()
 const API_HOST = import.meta.env.VITE_API_HOST
@@ -132,9 +133,12 @@ function resetNewSubcategoryForm() {
     <!-- Заголовок и кнопка добавления категории -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 flex-none">
       <div>
-        <h1 class="text-2xl font-bold text-mainText">
-          {{ t('pages.admin.categoriesPage.title') }}
-        </h1>
+        <div class="flex gap-2">
+          <BackButton/>
+          <h1 class="text-2xl font-bold text-mainText">
+            {{ t('pages.admin.categoriesPage.title') }}
+          </h1>
+        </div>
         <p class="text-text-secondary mt-1">
           {{ t('pages.admin.categoriesPage.subtitle') }}
         </p>

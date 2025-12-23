@@ -11,6 +11,7 @@ import { ChevronLeft, ChevronRight, X, Heart, Trash, Trash2 } from 'lucide-vue-n
 import UserRating from '@/components/UserRating.vue'
 import TrustComponent from './TrustComponent.vue'
 import { useUserStore } from '@/stores/user'
+import BackButton from '@/components/navigation/BackButton.vue'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const route = useRoute('/product/[productId]')
@@ -161,11 +162,12 @@ onUnmounted(() => {
 
 <template>
   <section v-if="product"
-    class="h-full max-w-7xl w-full flex flex-col items-start gap-6 lg:pt-6 overflow-scroll no-scrollbar pb-36 text-mainText lg:px-0 lg:pb-6">
+    class="h-full w-full flex flex-col items-start gap-2 lg:pt-2 overflow-scroll no-scrollbar pb-36 text-mainText lg:px-0 lg:pb-6">
+    <div class="pt-1"><BackButton/></div>
+    
     <!-- Image gallery -->
-
     <div class="w-full flex flex-col lg:flex-row gap-5">
-      <div class="w-full rounded-lg lg:w-1/2 space-y-4">
+      <div class="w-full rounded-lg lg:w-3/5 space-y-4">
         <div v-if="selectedImage" class="flex justify-center bg-blue-500 rounded-lg overflow-hidden">
           <div class="w-full h-96 relative flex items-center justify-center">
             <img :src="`${API_HOST}${selectedImage.image_url}`" :alt="product.title"
@@ -265,7 +267,7 @@ onUnmounted(() => {
                 @click="editProduct">
                 {{ $t('common.edit') }}
               </button>
-              <Trash2 @click="openDeleteConfirm" class="cursor-pointer w-8 h-8" />
+              <Trash2 @click="openDeleteConfirm" class="cursor-pointer w-6 h-6" />
             </div>
 
             <div v-else class="flex gap-6 pr-4 items-center">
@@ -301,8 +303,8 @@ onUnmounted(() => {
         </div>
 
         <TrustComponent v-if="!product.is_owner" />
-        <div v-else class="w-full flex justify-end gap-2">
-          <Heart />
+        <div v-else class="w-full flex justify-end gap-2 text-gray-400">
+          <Heart/>
           <span>{{ product.likes }}</span>
         </div>
       </div>

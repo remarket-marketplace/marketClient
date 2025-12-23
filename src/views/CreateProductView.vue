@@ -10,6 +10,7 @@ import type { Category } from '@/validation/category/category'
 import { onMounted, ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Percent, Calculator, Info, AlertCircle } from 'lucide-vue-next'
+import BackButton from '@/components/navigation/BackButton.vue'
 
 const { t } = useI18n()
 const categories = ref<Category[]>([])
@@ -124,9 +125,12 @@ async function createProduct() {
   <div class="w-full h-full overflow-scroll no-scrollbar lg:overflow-hidden pb-16 md:pb-0">
     <!-- Mobile header -->
     <div class="mb-6 lg:hidden px-4 pt-4">
-      <h1 class="text-2xl font-bold text-white">
-        {{ $t('pages.forms.createProduct.title') }}
-      </h1>
+      <div class="flex gap-2">
+        <BackButton />
+        <h1 class="text-2xl font-bold text-white">
+          {{ $t('pages.forms.createProduct.title') }}
+        </h1>
+      </div>
       <p class="mt-2 text-sm text-gray-400">
         {{ $t('pages.forms.createProduct.subtitle') }}
       </p>
@@ -139,9 +143,12 @@ async function createProduct() {
         <div class="px-4 lg:px-0 lg:pb-6 space-y-6">
           <!-- Desktop header -->
           <div class="hidden lg:block">
-            <h1 class="text-2xl font-bold text-white">
-              {{ $t('pages.forms.createProduct.title') }}
-            </h1>
+            <div class="flex gap-2">
+              <BackButton/>
+              <h1 class="text-2xl font-bold text-white">
+                {{ $t('pages.forms.createProduct.title') }}
+              </h1>
+            </div>
             <p class="mt-2 text-sm text-gray-400">
               {{ $t('pages.forms.createProduct.subtitle') }}
             </p>

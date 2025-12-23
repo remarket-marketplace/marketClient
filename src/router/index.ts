@@ -22,6 +22,7 @@ import ResetPasswordView from '@/views/resetPassword/ResetPasswordView.vue'
 import AdminEditCategoryView from '@/views/admin/AdminEditCategoryView.vue'
 import FavoritesProductsView from '@/views/FavoritesProductsView.vue'
 import AdminDealView from '@/views/admin/AdminDealView.vue'
+import AdminDealChatView from '@/views/admin/AdminDealChatView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -136,6 +137,12 @@ const router = createRouter({
       name: 'edit category',
       component: AdminEditCategoryView,
       meta: { requiredAuthorized: true }
+    },
+    {
+      path: '/admin/chat/:dealId',
+      name: 'admin chat view',
+      component: AdminDealChatView,
+      meta: { requiredAdmin: true }
     },
     {
       path: '/wallet',

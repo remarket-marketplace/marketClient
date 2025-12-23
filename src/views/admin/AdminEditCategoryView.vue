@@ -10,6 +10,7 @@ import SuccessMessage from '@/components/SuccessMessage.vue'
 import TheInput from '@/components/TheInput.vue'
 import FileUploader from '@/components/FileUploader.vue'
 import { Loader2, X } from 'lucide-vue-next'
+import BackButton from '@/components/navigation/BackButton.vue'
 
 type CategoryRead = z.infer<typeof CategorySchema>
 
@@ -118,9 +119,12 @@ onMounted(loadCategory)
     <div class="max-w-md w-full border border-dark-700 rounded-2xl bg-background p-6 sm:p-8 space-y-6">
 
       <div class="text-center">
-        <h1 class="text-2xl sm:text-3xl font-bold text-mainText">
-          {{ $t('pages.admin.editCategory.title') }}
-        </h1>
+        <div class="flex gap-2">
+          <BackButton/>
+          <h1 class="text-2xl sm:text-3xl font-bold text-mainText">
+            {{ $t('pages.admin.editCategory.title') }}
+          </h1>
+        </div>
         <p v-if="category" class="text-text-secondary mt-2">
           {{ $t('pages.admin.editCategory.editing') }}: {{ category.name }}
         </p>

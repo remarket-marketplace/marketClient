@@ -67,7 +67,9 @@ const ru = {
     isActive: "Активно",
     quantity: "Количество",
     remaining: "Осталось",
-
+    reason: "Причина",
+    toChat: "Перейти в чат",
+    
     remarket: "Remarket - маркет безопасных сделок",
     support: "Поддержка",
     legal: "Юридическая информация",
@@ -491,6 +493,9 @@ const ru = {
         productInfo: "Детали товара",
         dealDetails: "Детали сделки",
         adminActions: "Действия",
+        reportInfo: "Информация о споре",
+        customReason: "Другая причина",
+        reportId: "Id спора"
       },
 
       editUser: {

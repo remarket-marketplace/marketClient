@@ -15,6 +15,7 @@ import {
 } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 import ProductStatusTag from '@/components/ProductStatusTag.vue';
+import BackButton from '@/components/navigation/BackButton.vue';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -88,7 +89,10 @@ function formatPrice(price: number) {
     <!-- Заголовок -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
       <div class="flex items-center gap-2">
-        <h1 class="text-lg sm:text-2xl font-bold text-mainText">{{ $t('pages.admin.productsPage.title') }}</h1>
+        <div class="flex gap-2">
+          <BackButton/>
+          <h1 class="text-lg sm:text-2xl font-bold text-mainText">{{ $t('pages.admin.productsPage.title') }}</h1>
+        </div>
       </div>
       <div class="flex items-center gap-2 text-xs sm:text-base text-text-secondary">
         <Package class="h-4 w-4" />

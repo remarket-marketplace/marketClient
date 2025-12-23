@@ -17,6 +17,7 @@ import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart } from 'lucide-vue
 import QrcodeVue from 'qrcode.vue'
 import type { Deal } from '@/validation/deal/deal'
 import UserRating from '@/components/UserRating.vue'
+import BackButton from '@/components/navigation/BackButton.vue'
 
 const { t } = useI18n()
 const route = useRoute()

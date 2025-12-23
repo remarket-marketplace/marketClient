@@ -66,7 +66,8 @@ const en = {
     isActive: "Active",
     quantity: "Quantity",
     remaining: "Remaining",
-
+    reason: "Reason",
+    toChat: "To chat",
 
     remarket: "Remarket - secure transactions market",
     support: "Support",
@@ -496,6 +497,9 @@ const en = {
         productInfo: "Product info",
         dealDetails: "Deal details",
         adminActions: "Actions",
+        reportInfo: "Report info",
+        customReason: "Custom reason",
+        reportId: "Report id"
       },
 
       editUser: {

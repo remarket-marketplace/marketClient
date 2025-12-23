@@ -304,7 +304,7 @@ async function sendMessage() {
           }"
         >
           <div class="flex flex-grow flex-col overflow-y-auto lg:pb-2 w-full">
-            <div class="flex items-center gap-2 lg:mb-2 sticky top-0 bg-background px-2 py-2 z-10 ">
+            <div class="flex items-center gap-2 sticky top-0 bg-background px-2 py-2 lg:py-3 lg:px-3 z-10 lg:border-b border-dark-700">
               <button v-if="isMobile" class="text-xl font-bold flex-shrink-0" @click="backToChats">
                 <ArrowLeft />
               </button>

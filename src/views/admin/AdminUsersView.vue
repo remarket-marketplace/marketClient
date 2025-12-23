@@ -18,6 +18,7 @@ import { useImages } from '@/composables/useImages';
 import SearchField from '@/components/SearchField.vue';
 import ConfirmWindow from '@/components/ConfirmWindow.vue';
 import { useI18n } from 'vue-i18n';
+import BackButton from '@/components/navigation/BackButton.vue';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -148,7 +149,10 @@ onMounted(() => {
   <section class="h-full w-full flex flex-col gap-4 sm:gap-6 overflow-hidden">
     <!-- Заголовок -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-      <h1 class="text-xl sm:text-2xl font-bold text-mainText">{{ $t('pages.admin.usersPage.title') }}</h1>
+      <div class="flex gap-2">
+        <BackButton/>
+        <h1 class="text-xl sm:text-2xl font-bold text-mainText">{{ $t('pages.admin.usersPage.title') }}</h1>
+      </div>
       <div class="text-sm sm:text-base text-text-secondary">
         {{ $t('common.total') }} {{ users.length }}
       </div>
