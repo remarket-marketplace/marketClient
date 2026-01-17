@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
@@ -8,7 +8,6 @@ import {
   XCircle,
   UserCheck,
   Undo2,
-  AlertCircle,
   Calendar,
   User,
   Package,
@@ -16,7 +15,8 @@ import {
   Shield,
   MessageSquare,
   Loader2,
-  ExternalLink
+  ExternalLink, 
+  MessageCircleMore
 } from 'lucide-vue-next'
 import { adminService } from '@/api/admin/AdminService'
 import type { Deal } from '@/validation/deal/deal'
@@ -60,6 +60,10 @@ function formatDate(dateString: string) {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+function goToChat(dealId: string) {
+  router.push({ name: 'adminChatView', params: { dealId } })
 }
 
 // URL изображений
@@ -535,6 +539,12 @@ onMounted(async () => {
                   class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg transition-colors">
                   <XCircle class="w-5 h-5" />
                   <span>{{ $t('common.cancelDeal') }}</span>
+                </button>
+
+                <button @click="goToChat(deal.id)"
+                  class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-green-800 text-white rounded-lg transition-colors">
+                  <MessageCircleMore class="w-4 h-4" />
+                  <span class="hidden sm:inline">{{ $t('common.toChat') }}</span>
                 </button>
               </div>
             </div>

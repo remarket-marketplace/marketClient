@@ -1,3 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,7 +9,6 @@
   /* Firefox */
   scrollbar-width: none;        /* Firefox 64+ */
   -ms-overflow-style: none;     /* Internet Explorer 10+ / Edge (Legacy) */
-  overflow: auto;
 }
 
 /* WebKit (Chrome, Safari, Opera) */
@@ -80,4 +82,8 @@ textarea {
   select:focus {
     font-size: 16px !important;
   }
+}
+
+.title {
+  font-family: 'Outfit', sans-serif;
 }

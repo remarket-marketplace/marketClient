@@ -1,67 +1,83 @@
-import { ProfileDataSchema, PublicProfileDataSchema, type ProfileData, type PublicProfileData } from '@/validation/user/userRead'
-import { ZodError } from 'zod'
-import { httpClient } from '..'
-import { SimpleDealsListSchema } from '@/validation/deal/deal'
+import {
+  ProfileDataSchema,
+  PublicProfileDataSchema,
+  type ProfileData,
+  type PublicProfileData,
+} from "@/validation/user/userRead";
+import { ZodError } from "zod";
+import { httpClient } from "..";
+import { SimpleDealsListSchema } from "@/validation/deal/deal";
 
 export const profileService = {
-
-  async getUserProfileData(username: string): Promise<PublicProfileData | ProfileData | null> {
+  async getUserProfileData(
+    username: string
+  ): Promise<PublicProfileData | ProfileData | null> {
     try {
-      const response = await httpClient.get(`/users/${username}`)
+      const response = await httpClient.get(`/users/${username}`);
 
       try {
-        return ProfileDataSchema.parse(response.data)
+        return ProfileDataSchema.parse(response.data);
+      } catch {
+        return PublicProfileDataSchema.parse(response.data);
       }
-      catch {
-        return PublicProfileDataSchema.parse(response.data)
-      }
-    }
-    catch (e) {
+    } catch (e) {
       if (e instanceof ZodError)
-        console.error('Ошибка валидации профиля:', e.issues)
-      return null
+        console.error("Ошибка валидации профиля:", e.issues);
+      return null;
     }
   },
 
   async updateProfileDescription(new_description: string) {
     try {
-      const response = await httpClient.post('/users/description', {
+      const response = await httpClient.post("/users/description", {
         description: new_description,
-      })
-      return ProfileDataSchema.parse(response.data)
-    }
-    catch (e) {
-      if (e instanceof ZodError)
-        console.error(e.issues)
-      return null
+      });
+      return ProfileDataSchema.parse(response.data);
+    } catch (e) {
+      if (e instanceof ZodError) console.error(e.issues);
+      return null;
     }
   },
 
-  async getUserPurchases() {
+  async getUserPurchases(page = 1, perPage = 20) {
     try {
-      const response = await httpClient.get(`/deal/`)
-      return SimpleDealsListSchema.parse(response.data)
-    }
-    catch (error) {
-      console.error('Ошибка при загрузке покупок:', error)
-      return []
+      const response = await httpClient.get(`/deal/`, {
+        params: {
+          page,
+          per_page: perPage,
+        },
+      });
+
+      return {
+        deals: SimpleDealsListSchema.parse(
+          response.data.items || response.data.deals
+        ),
+        total: response.data.total,
+        totalPages: response.data.total_pages,
+      };
+    } catch (error) {
+      console.error("Ошибка при загрузке покупок:", error);
+      return {
+        deals: [],
+        total: 0,
+        totalPages: 1,
+      };
     }
   },
 
   async uploadAvatar(file: File) {
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      const response = await httpClient.patch('/users/avatar', formData, {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await httpClient.patch("/users/avatar", formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "multipart/form-data",
         },
-      })
-      return response.data
-    }
-    catch (error) {
-      console.error('Ошибка загрузки аватара:', error)
-      return null
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Ошибка загрузки аватара:", error);
+      return null;
     }
   },
-}
+};

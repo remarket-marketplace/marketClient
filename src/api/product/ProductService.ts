@@ -1,6 +1,7 @@
 import { ZodError } from "zod";
 import { httpClient } from "..";
 import { ProductSchema, type Product } from "@/validation/product/product";
+import { ErrorHandler } from "../errorHandler";
 
 export const productService = {
   async getAllProducts(page: number, perPage: number) {
@@ -63,22 +64,40 @@ export const productService = {
     }
   },
 
-  async getProductsByCategory(categoryId: string) {
+  async getProductsByCategory(
+    categoryId: string,
+    page: number,
+    perPage: number
+  ) {
     try {
-      const response = await httpClient.get(`/products/category/${categoryId}`);
-      return response.data.map((product: any) => {
-        const transformedProduct = {
-          ...product,
-          images: product.images.map((img: any) => ({
-            ...img,
-            url: img.url || img.image_url || "",
-          })),
-        };
-        return ProductSchema.parse(transformedProduct);
-      });
+      const response = await httpClient.get(
+        `/products/category/${categoryId}`,
+        {
+          params: {
+            page,
+            per_page: perPage,
+          },
+        }
+      );
+
+      return {
+        products: response.data.products.map((product: any) => {
+          const transformedProduct = {
+            ...product,
+            images: product.images.map((img: any) => ({
+              ...img,
+              url: img.url || img.image_url || "",
+            })),
+          };
+          return ProductSchema.parse(transformedProduct);
+        }),
+        totalPages: response.data.total_pages,
+        currentPage: response.data.page || page,
+        total: response.data.total,
+      };
     } catch (e) {
       if (e instanceof ZodError) console.error(e.issues);
-      return [];
+      return { products: [], totalPages: 1, currentPage: 1, total: 0 };
     }
   },
 
@@ -191,12 +210,16 @@ export const productService = {
 
   async buyProduct(productId: string) {
     try {
-      const response = await httpClient.post(`/products/buy`, {
+      await httpClient.post(`/products/buy`, {
         product_id: productId,
       });
-      return response.status === 200;
-    } catch {
-      return false;
+      return { success: true };
+    } catch (error) {
+      const apiError = ErrorHandler.handleApiError(error);
+      return {
+        success: false,
+        error: apiError,
+      };
     }
   },
 
@@ -228,7 +251,11 @@ export const productService = {
     }
   },
 
-  async sendReport(dealId: string, reportReasonId: string, report_text: string | null) {
+  async sendReport(
+    dealId: string,
+    reportReasonId: string,
+    report_text: string | null
+  ) {
     try {
       const response = await httpClient.patch(`/deal/report/${dealId}`, {
         report_reason_id: reportReasonId,
@@ -240,24 +267,43 @@ export const productService = {
     }
   },
 
-  async searchProducts(query: string) {
+  async searchProducts(
+    query: string,
+    page: number,
+    perPage: number
+  ): Promise<{
+    products: Product[];
+    currentPage: number;
+    totalPages: number;
+    total: number;
+  }> {
     try {
       const response = await httpClient.get("/products/search", {
-        params: { q: query },
+        params: {
+          q: query,
+          page,
+          per_page: perPage,
+        },
       });
-      return response.data.map((product: any) => {
-        const transformedProduct = {
-          ...product,
-          images: product.images.map((img: any) => ({
-            ...img,
-            url: img.url || img.image_url || "",
-          })),
-        };
-        return ProductSchema.parse(transformedProduct);
-      });
+
+      return {
+        products: response.data.products.map((product: any) => {
+          const transformedProduct = {
+            ...product,
+            images: product.images.map((img: any) => ({
+              ...img,
+              url: img.url || img.image_url || "",
+            })),
+          };
+          return ProductSchema.parse(transformedProduct);
+        }),
+        currentPage: response.data.page || page,
+        totalPages: response.data.total_pages,
+        total: response.data.total,
+      };
     } catch (e) {
       if (e instanceof ZodError) console.error(e.issues);
-      return [];
+      return { products: [], currentPage: 1, totalPages: 1, total: 0 };
     }
   },
 
@@ -280,12 +326,27 @@ export const productService = {
     }
   },
 
-  async getUserProductsByUsername(username: string): Promise<Product[]> {
+  async getUserProductsByUsername(
+    username: string,
+    page = 1,
+    perPage = 20
+  ): Promise<{
+    products: Product[];
+    total: number;
+    totalPages: number;
+  }> {
     try {
       const response = await httpClient.get(
-        `/products/user/by-username/${username}`
+        `/products/user/by-username/${username}`,
+        {
+          params: {
+            page,
+            per_page: perPage,
+          },
+        }
       );
-      return response.data.map((product: any) => {
+
+      const products = response.data.products.map((product: any) => {
         const transformedProduct = {
           ...product,
           images: product.images.map((img: any) => ({
@@ -295,9 +356,19 @@ export const productService = {
         };
         return ProductSchema.parse(transformedProduct);
       });
+
+      return {
+        products,
+        total: response.data.total,
+        totalPages: response.data.total_pages,
+      };
     } catch (e) {
       if (e instanceof ZodError) console.error(e.issues);
-      return [];
+      return {
+        products: [],
+        total: 0,
+        totalPages: 1,
+      };
     }
   },
 
@@ -374,9 +445,7 @@ export const productService = {
     // get favorites products
     //
     try {
-      const response = await httpClient.get(
-        `/products/favorites`
-      );
+      const response = await httpClient.get(`/products/favorites`);
       return response.data.map((product: any) => {
         const transformedProduct = {
           ...product,
@@ -398,12 +467,10 @@ export const productService = {
     // get committion insterest
     //
     try {
-      const response = await httpClient.get(
-        `/deal/commission-interest`
-      );
-      return response.data
+      const response = await httpClient.get(`/deal/commission-interest`);
+      return response.data;
     } catch (e) {
-      console.error("error get commission interest")
+      console.error("error get commission interest");
     }
   },
 
@@ -412,12 +479,10 @@ export const productService = {
     // refund deal
     //
     try {
-      const response = await httpClient.patch(
-        `/deal/refund/${dealId}`
-      );
+      const response = await httpClient.patch(`/deal/refund/${dealId}`);
       return response.status === 200;
     } catch (e) {
       return false;
     }
-  }
+  },
 };

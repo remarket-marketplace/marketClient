@@ -25,9 +25,10 @@ export const authService = {
     });
   },
 
-  async sendPasswordResetLetter(email: string) {
+  async sendPasswordResetLetter(email: string, captchaToken: string) {
     return httpClient.post("/auth/password-reset-letter", {
       email: email,
+      captcha_token: captchaToken
     });
   },
 

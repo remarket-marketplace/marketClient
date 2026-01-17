@@ -7,6 +7,7 @@ import TheInput from '@/components/TheInput.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import Captcha from '@/components/Captcha.vue'
 
 const { t } = useI18n()
 
@@ -16,16 +17,17 @@ const errorMessage = ref('')
 const successMessage = ref('')
 
 const sended = ref(false)
+const captchaToken = ref('')
 
 const emailValid = computed(() => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(email.value)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email.value)
 })
 
 async function sendLetter() {
     try {
         sended.value = true
-        await authService.sendPasswordResetLetter(email.value)
+        await authService.sendPasswordResetLetter(email.value, captchaToken.value)
         successMessage.value = t('pages.resetPassword.ResetLetterSuccessSended')
     } catch (error: any) {
         sended.value = false
@@ -55,16 +57,13 @@ async function sendLetter() {
                         {{ $t('validation.invalidEmail') }}
                     </p>
 
-                    <TheButton
-                        @click="sendLetter"
-                        :button-text="
-                            sended ? $t('common.sending') : 
+                    <div>
+                        <Captcha @verified="(token: string) => captchaToken = token" />
+                    </div>
+
+                    <TheButton @click="sendLetter" :button-text="sended ? $t('common.sending') :
                             $t('pages.passwordRecovery.changePassword')
-                        "
-                        :sended="sended"
-                        :disabled="!emailValid || sended"
-                        class="w-full"
-                    />
+                        " :sended="sended" :disabled="!emailValid || sended" class="w-full" />
                 </div>
 
             </div>

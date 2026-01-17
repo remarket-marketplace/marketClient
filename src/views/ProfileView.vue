@@ -28,9 +28,7 @@ const API_HOST = import.meta.env.VITE_API_HOST
 
 const username = computed(() => route.params.username as string)
 const profileData = ref<PublicProfileData | UserRead | null>(null)
-const profileProducts = ref<Product[]>([])
 const currentProfileData = ref<UserRead | PublicProfileData | null>(null)
-const products = ref<Product[]>([])
 const newDescription = ref('')
 const isEditingDescription = ref(false)
 
@@ -47,11 +45,28 @@ const isLoading = ref(true)
 const isOwner = computed(() => currentUser.value?.username === username.value)
 const profileUrl = computed(() => `${window.location.origin}/profile/${username.value}`)
 const activeTab = ref<'products' | 'reviews' | 'purchases'>('products')
-const reviews = ref<ReviewSchema[]>([])
-const purchases = ref<Deal[]>([])
-const isLoadingReviews = ref(false)
-const isLoadingPurchases = ref(false)
+
+// Пагинация для товаров
+const products = ref<Product[]>([])
+const currentPageProducts = ref(1)
+const totalPagesProducts = ref(1)
+const perPage = ref(20)
 const isLoadingProducts = ref(false)
+const isLoadingMoreProducts = ref(false)
+
+// Пагинация для отзывов
+const reviews = ref<ReviewSchema[]>([])
+const currentPageReviews = ref(1)
+const totalPagesReviews = ref(1)
+const isLoadingReviews = ref(false)
+const isLoadingMoreReviews = ref(false)
+
+// Пагинация для покупок
+const purchases = ref<Deal[]>([])
+const currentPagePurchases = ref(1)
+const totalPagesPurchases = ref(1)
+const isLoadingPurchases = ref(false)
+const isLoadingMorePurchases = ref(false)
 
 function formatFullDate(dateStr: string): string {
   return new Date(dateStr).toLocaleString(useI18n().locale.value, { year: 'numeric', month: 'long', day: 'numeric' })
@@ -75,40 +90,111 @@ async function loadProfileData() {
   }
 }
 
-async function loadUserProducts() {
+// Функция загрузки товаров (оставляем как есть)
+async function loadUserProducts(page = 1, append = false) {
+  if (isLoadingMoreProducts.value) return
+  if (page > totalPagesProducts.value) return
+
+  isLoadingMoreProducts.value = true
+  isLoadingProducts.value = true
+
   try {
-    isLoadingProducts.value = true
-    const userProducts = await productService.getUserProductsByUsername(username.value)
-    profileProducts.value = userProducts
-    products.value = userProducts
+    const res = await productService.getUserProductsByUsername(
+      username.value,
+      page,
+      perPage.value
+    )
+
+    if (append) {
+      products.value = [...products.value, ...res.products]
+    } else {
+      products.value = res.products
+    }
+
+    currentPageProducts.value = page
+    totalPagesProducts.value = res.totalPages
   } catch (error) {
-    console.error("Failed to load user products:", error)
+    console.error('Failed to load user products:', error)
   } finally {
     isLoadingProducts.value = false
+    isLoadingMoreProducts.value = false
   }
 }
 
-async function loadReviews() {
+// Функция загрузки отзывов с пагинацией
+async function loadReviews(page = 1, append = false) {
+  if (isLoadingMoreReviews.value) return
+  if (page > totalPagesReviews.value) return
+
+  isLoadingMoreReviews.value = true
+  isLoadingReviews.value = true
+
   try {
-    isLoadingReviews.value = true
-    reviews.value = await reviewService.getUserReviews(username.value)
+    const res = await reviewService.getUserReviews(
+      username.value,
+      page,
+      perPage.value
+    )
+
+    if (append) {
+      reviews.value = [...reviews.value, ...res.reviews]
+    } else {
+      reviews.value = res.reviews
+    }
+
+    currentPageReviews.value = page
+    totalPagesReviews.value = res.totalPages
   } catch (error) {
     console.error('Failed to load reviews:', error)
   } finally {
     isLoadingReviews.value = false
+    isLoadingMoreReviews.value = false
   }
 }
 
-async function loadPurchases() {
+// Функция загрузки покупок с пагинацией
+async function loadPurchases(page = 1, append = false) {
+  if (!isOwner.value) return
+  if (isLoadingMorePurchases.value) return
+  if (page > totalPagesPurchases.value) return
+
+  isLoadingMorePurchases.value = true
+  isLoadingPurchases.value = true
+
   try {
-    isLoadingPurchases.value = true
-    const response = await profileService.getUserPurchases()
-    purchases.value = response
+    // Обновляем сервис чтобы он принимал параметры пагинации
+    const res = await profileService.getUserPurchases(page, perPage.value)
+
+    if (append) {
+      purchases.value = [...purchases.value, ...res.deals]
+    } else {
+      purchases.value = res.deals
+    }
+
+    currentPagePurchases.value = page
+    totalPagesPurchases.value = res.totalPages
   } catch (error) {
     console.error('Failed to load purchases:', error)
   } finally {
     isLoadingPurchases.value = false
+    isLoadingMorePurchases.value = false
   }
+}
+
+// Функции для подгрузки следующей страницы
+async function loadMoreProducts() {
+  if (currentPageProducts.value >= totalPagesProducts.value) return
+  await loadUserProducts(currentPageProducts.value + 1, true)
+}
+
+async function loadMoreReviews() {
+  if (currentPageReviews.value >= totalPagesReviews.value) return
+  await loadReviews(currentPageReviews.value + 1, true)
+}
+
+async function loadMorePurchases() {
+  if (currentPagePurchases.value >= totalPagesPurchases.value) return
+  await loadPurchases(currentPagePurchases.value + 1, true)
 }
 
 async function logout() {
@@ -175,8 +261,15 @@ async function copyProfileLink() {
 
 function switchTab(tab: 'products' | 'reviews' | 'purchases') {
   activeTab.value = tab
-  if (tab === 'reviews') loadReviews()
-  if (tab === 'purchases') loadPurchases()
+  if (tab === 'products' && products.value.length === 0) {
+    loadUserProducts()
+  }
+  if (tab === 'reviews' && reviews.value.length === 0) {
+    loadReviews()
+  }
+  if (tab === 'purchases' && purchases.value.length === 0) {
+    loadPurchases()
+  }
 }
 
 function goToProduct(productId: string) { router.push(`/product/${productId}`) }
@@ -185,7 +278,7 @@ function goToProfile(username: string) { router.push(`/user/${username}`) }
 onMounted(async () => {
   const profileLoaded = await loadProfileData()
   if (profileLoaded) {
-    loadUserProducts()
+    await loadUserProducts()
   }
 })
 
@@ -338,24 +431,32 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
         <div class="w-full flex-1 overflow-scroll no-scrollbar">
           <div class="p-4 pb-8">
+            <!-- Products Tab -->
             <div v-if="activeTab === 'products'">
-              <div v-if="isLoadingProducts" class="w-full flex items-center justify-center py-6">
+              <div v-if="isLoadingProducts && !products.length" class="w-full flex items-center justify-center py-6">
                 <Loader />
               </div>
               <div v-else-if="products.length === 0"
                 class="w-full flex items-center justify-center py-6 text-text-secondaryDark">
-                {{
-                  t('pages.profile.noProducts') }}</div>
+                {{ t('pages.profile.noProducts') }}</div>
               <div v-else>
                 <div v-for="product in products" :key="product.id"
                   class="w-full border-b border-dark-600 hover:bg-dark-800/50 transition">
                   <ProfileProductCard :product="product" :is-owner="isOwner" />
                 </div>
+
+                <div v-if="currentPageProducts < totalPagesProducts" class="flex justify-center mt-4">
+                  <button class="px-6 py-2 bg-blue-600 rounded-lg text-white" :disabled="isLoadingMoreProducts"
+                    @click="loadMoreProducts">
+                    {{ isLoadingMoreProducts ? t('common.loading') : t('common.loadMore') }}
+                  </button>
+                </div>
               </div>
             </div>
 
+            <!-- Reviews Tab -->
             <div v-if="activeTab === 'reviews'">
-              <div v-if="isLoadingReviews" class="w-full flex items-center justify-center py-6">
+              <div v-if="isLoadingReviews && !reviews.length" class="w-full flex items-center justify-center py-6">
                 <Loader />
               </div>
               <div v-else-if="reviews.length === 0"
@@ -371,11 +472,19 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                   </div>
                   <p class="mt-2 text-sm">{{ review.body }}</p>
                 </div>
+
+                <div v-if="currentPageReviews < totalPagesReviews" class="flex justify-center mt-4">
+                  <button class="px-6 py-2 bg-blue-600 rounded-lg text-white" :disabled="isLoadingMoreReviews"
+                    @click="loadMoreReviews">
+                    {{ isLoadingMoreReviews ? t('common.loading') : t('common.loadMore') }}
+                  </button>
+                </div>
               </div>
             </div>
 
+            <!-- Purchases Tab -->
             <div v-if="activeTab === 'purchases'">
-              <div v-if="isLoadingPurchases" class="w-full flex items-center justify-center py-6">
+              <div v-if="isLoadingPurchases && !purchases.length" class="w-full flex items-center justify-center py-6">
                 <Loader />
               </div>
               <div v-else-if="purchases.length === 0"
@@ -404,6 +513,13 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                     <div @click="goToProfile(deal.buyer.username)" class="cursor-pointer hover:underline">🧑 {{
                       t('common.buyer') }}: {{ deal.buyer.username }}</div>
                   </div>
+                </div>
+
+                <div v-if="currentPagePurchases < totalPagesPurchases" class="flex justify-center mt-4">
+                  <button class="px-6 py-2 bg-blue-600 rounded-lg text-white" :disabled="isLoadingMorePurchases"
+                    @click="loadMorePurchases">
+                    {{ isLoadingMorePurchases ? t('common.loading') : t('common.loadMore') }}
+                  </button>
                 </div>
               </div>
             </div>
@@ -452,6 +568,16 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
   </div>
 </template>
 
+<style scoped>
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+</style>
 <style scoped>
 .no-scrollbar::-webkit-scrollbar {
   display: none;

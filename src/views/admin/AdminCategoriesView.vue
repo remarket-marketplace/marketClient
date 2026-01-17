@@ -10,9 +10,7 @@ import {
   ArrowLeft,
   Loader2,
   X,
-  Edit,
-  EditIcon,
-  Circle
+  EditIcon
 } from 'lucide-vue-next'
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -24,15 +22,14 @@ import BackButton from '@/components/navigation/BackButton.vue'
 const { t } = useI18n()
 const API_HOST = import.meta.env.VITE_API_HOST
 
-// Состояние категорий и подкатегорий
 const categories = ref<Category[]>([])
 const subcategories = ref<Category[]>([])
 const selectedCategory = ref<Category | null>(null)
 const isLoading = ref(false)
+const isLoadingSubcategories = ref(false)
 const showAddCategoryModal = ref(false)
 const showAddSubcategoryModal = ref(false)
 
-// Данные для форм
 const newCategory = ref({
   name: '',
   description: '',
@@ -44,15 +41,27 @@ const newSubcategory = ref({
   image: [] as File[]
 })
 
-// Загрузка категорий при монтировании
+const categoryPage = ref(1)
+const categoryTotalPages = ref(1)
+const subcategoryPage = ref(1)
+const subcategoryTotalPages = ref(1)
+const categoriesPerPage = ref(10)
+
 onMounted(async () => {
   await loadCategories()
 })
 
-async function loadCategories() {
+async function loadCategories(page = 1, append = false) {
   try {
-    isLoading.value = true
-    categories.value = await categoryService.getAllCategories()
+    if (!append) isLoading.value = true
+    const res = await categoryService.getAllCategories(page, categoriesPerPage.value)
+    if (append) {
+      categories.value = [...categories.value, ...res.categories]
+    } else {
+      categories.value = res.categories
+    }
+    categoryPage.value = res.currentPage
+    categoryTotalPages.value = res.totalPages
   } catch (error) {
     console.error('Ошибка загрузки категорий:', error)
   } finally {
@@ -60,34 +69,39 @@ async function loadCategories() {
   }
 }
 
-async function loadSubcategories(categoryId: string) {
+async function loadSubcategories(categoryId: string, page = 1, append = false) {
   try {
-    subcategories.value = await categoryService.getSubcategories(categoryId)
+    isLoadingSubcategories.value = true
+    const res = await categoryService.getSubcategories(categoryId, page, categoriesPerPage.value)
+    if (append) {
+      subcategories.value = [...subcategories.value, ...res.categories]
+    } else {
+      subcategories.value = res.categories
+    }
+    subcategoryPage.value = res.currentPage
+    subcategoryTotalPages.value = res.totalPages
   } catch (error) {
     console.error('Ошибка загрузки подкатегорий:', error)
+  } finally {
+    isLoadingSubcategories.value = false
   }
 }
 
 function selectCategory(category: Category) {
   selectedCategory.value = category
-  loadSubcategories(category.id)
-}
-
-function clearSelection() {
-  selectedCategory.value = null
   subcategories.value = []
+  subcategoryPage.value = 1
+  loadSubcategories(category.id)
 }
 
 async function createCategory() {
   if (!newCategory.value.name.trim() || !newCategory.value.image.length) return
-
   try {
     const success = await categoryService.AddCategory(
       newCategory.value.name,
       newCategory.value.description,
       newCategory.value.image[0] as File
     )
-
     if (success) {
       showAddCategoryModal.value = false
       resetNewCategoryForm()
@@ -100,7 +114,6 @@ async function createCategory() {
 
 async function createSubcategory() {
   if (!newSubcategory.value.name.trim() || !selectedCategory.value || !newSubcategory.value.image.length) return
-
   try {
     const success = await categoryService.AddCategory(
       newSubcategory.value.name,
@@ -108,7 +121,6 @@ async function createSubcategory() {
       newSubcategory.value.image[0] as File,
       selectedCategory.value.id
     )
-
     if (success) {
       showAddSubcategoryModal.value = false
       resetNewSubcategoryForm()
@@ -126,26 +138,30 @@ function resetNewCategoryForm() {
 function resetNewSubcategoryForm() {
   newSubcategory.value = { name: '', description: '', image: [] }
 }
+
+async function loadMoreCategories() {
+  if (categoryPage.value >= categoryTotalPages.value) return
+  await loadCategories(categoryPage.value + 1, true)
+}
+
+async function loadMoreSubcategories() {
+  if (!selectedCategory.value) return
+  if (subcategoryPage.value >= subcategoryTotalPages.value) return
+  await loadSubcategories(selectedCategory.value.id, subcategoryPage.value + 1, true)
+}
 </script>
 
 <template>
   <section class="w-full h-full flex flex-col gap-6 p-4 sm:p-6 overflow-scroll lg:overflow-hidden no-scrollbar">
-    <!-- Заголовок и кнопка добавления категории -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 flex-none">
       <div>
         <div class="flex gap-2">
           <BackButton/>
-          <h1 class="text-2xl font-bold text-mainText">
-            {{ t('pages.admin.categoriesPage.title') }}
-          </h1>
+          <h1 class="text-2xl font-bold text-mainText">{{ t('pages.admin.categoriesPage.title') }}</h1>
         </div>
-        <p class="text-text-secondary mt-1">
-          {{ t('pages.admin.categoriesPage.subtitle') }}
-        </p>
+        <p class="text-text-secondary mt-1">{{ t('pages.admin.categoriesPage.subtitle') }}</p>
       </div>
-
-      <button
-        class="flex items-center justify-center sm:justify-start gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+      <button class="flex items-center justify-center sm:justify-start gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
         @click="showAddCategoryModal = true">
         <Plus class="w-5 h-5" />
         <span>{{ t('pages.admin.categoriesPage.addCategory') }}</span>
@@ -153,43 +169,28 @@ function resetNewSubcategoryForm() {
     </div>
 
     <div class="flex flex-col gap-6 lg:flex-1 lg:grid lg:grid-cols-3 lg:gap-6 lg:overflow-hidden flex-1">
-      <!-- Список категорий -->
       <div class="bg-dark-600 border border-dark-700 rounded-xl p-4 lg:col-span-1 min-h-[40vh] lg:h-full flex flex-col">
         <div class="flex items-center justify-between mb-4 flex-shrink-0">
-          <h2 class="text-lg font-semibold text-mainText">
-            {{ t('pages.admin.categoriesPage.categories') }}
-          </h2>
-          <span class="text-sm text-text-secondary">
-            {{ categories.length }}
-          </span>
+          <h2 class="text-lg font-semibold text-mainText">{{ t('pages.admin.categoriesPage.categories') }}</h2>
+          <span class="text-sm text-text-secondary">{{ categories.length }}</span>
         </div>
-
         <div class="space-y-2 overflow-y-auto flex-1">
           <div v-for="category in categories" :key="category.id"
             class="flex items-center gap-3 p-3 rounded-lg border border-dark-700 cursor-pointer transition-all hover:border-blue-500"
-            :class="{
-              'border-blue-500 bg-blue-500/10': selectedCategory?.id === category.id
-            }" @click="selectCategory(category)">
+            :class="{'border-blue-500 bg-blue-500/10': selectedCategory?.id === category.id}" @click="selectCategory(category)">
             <div class="flex-shrink-0 relative">
-              <img v-if="category.image_url" :src="`${API_HOST}${category.image_url}`"
-                class="w-10 h-10 rounded-lg object-cover" :alt="category.name" />
+              <img v-if="category.image_url" :src="`${API_HOST}${category.image_url}`" class="w-10 h-10 rounded-lg object-cover" :alt="category.name" />
               <div v-else class="w-10 h-10 rounded-lg bg-dark-700 flex items-center justify-center">
                 <Folder class="w-5 h-5 text-gray-400" />
               </div>
             </div>
-
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2">
-                <h3 class="text-mainText font-medium truncate">
-                  {{ category.name }}
-                </h3>
+                <h3 class="text-mainText font-medium truncate">{{ category.name }}</h3>
                 <CategoryStatusTag :is_active="category.is_active" />
               </div>
-              <p class="text-text-secondary text-sm truncate">
-                {{ category.description || t('pages.admin.categoriesPage.noDescription') }}
-              </p>
+              <p class="text-text-secondary text-sm truncate">{{ category.description || t('pages.admin.categoriesPage.noDescription') }}</p>
             </div>
-
             <div @click="router.push(`/admin/categories/edit/${category.id}`)">
               <EditIcon />
             </div>
@@ -206,21 +207,20 @@ function resetNewSubcategoryForm() {
             <Loader2 class="w-6 h-6 mx-auto mb-2 animate-spin" />
             <p>{{ t('common.loading') }}</p>
           </div>
+
+          <button v-if="categoryPage < categoryTotalPages" @click="loadMoreCategories"
+            class="w-full bg-dark-700/40 py-2 rounded-lg text-sm mt-2">
+            {{ t('common.loadMore') }}
+          </button>
         </div>
       </div>
 
-      <!-- Список подкатегорий -->
       <div class="bg-dark-600 border border-dark-700 rounded-xl p-4 lg:col-span-2 min-h-[40vh] lg:h-full flex flex-col">
         <div class="flex items-center justify-between mb-4 flex-shrink-0">
           <div>
-            <h2 class="text-lg font-semibold text-mainText">
-              {{ selectedCategory ? selectedCategory.name : t('pages.admin.categoriesPage.selectCategory') }}
-            </h2>
-            <p class="text-text-secondary text-sm">
-              {{ selectedCategory ? selectedCategory.description : t('pages.admin.categoriesPage.selectCategoryHint') }}
-            </p>
+            <h2 class="text-lg font-semibold text-mainText">{{ selectedCategory ? selectedCategory.name : t('pages.admin.categoriesPage.selectCategory') }}</h2>
+            <p class="text-text-secondary text-sm">{{ selectedCategory ? selectedCategory.description : t('pages.admin.categoriesPage.selectCategoryHint') }}</p>
           </div>
-
           <button v-if="selectedCategory"
             class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg transition-colors text-sm flex-shrink-0"
             @click="showAddSubcategoryModal = true">
@@ -233,36 +233,39 @@ function resetNewSubcategoryForm() {
           <div v-for="subcategory in subcategories" :key="subcategory.id"
             class="flex items-center gap-3 p-3 rounded-lg border border-dark-700 bg-dark-700/50">
             <div class="flex-shrink-0 relative">
-              <img v-if="subcategory.image_url" :src="`${API_HOST}${subcategory.image_url}`"
-                class="w-8 h-8 rounded object-cover" :alt="subcategory.name" />
+              <img v-if="subcategory.image_url" :src="`${API_HOST}${subcategory.image_url}`" class="w-8 h-8 rounded object-cover" :alt="subcategory.name" />
               <div v-else class="w-8 h-8 rounded bg-dark-600 flex items-center justify-center">
                 <Folder class="w-4 h-4 text-gray-400" />
               </div>
             </div>
-
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2">
-                <h3 class="text-mainText font-medium">
-                  {{ subcategory.name }}
-                </h3>
+                <h3 class="text-mainText font-medium">{{ subcategory.name }}</h3>
                 <CategoryStatusTag :is_active="subcategory.is_active" />
               </div>
-              <p class="text-text-secondary text-sm">
-                {{ subcategory.description || t('pages.admin.categoriesPage.noDescription') }}
-              </p>
+              <p class="text-text-secondary text-sm">{{ subcategory.description || t('pages.admin.categoriesPage.noDescription') }}</p>
             </div>
-
             <div class="cursor-pointer" @click="router.push(`/admin/categories/edit/${subcategory.id}`)">
               <EditIcon />
             </div>
           </div>
 
-          <div v-if="subcategories.length === 0 && selectedCategory" class="text-center py-8 text-text-secondary">
+          <div v-if="subcategories.length === 0 && !isLoadingSubcategories" class="text-center py-8 text-text-secondary">
             <div class="w-12 h-12 mx-auto mb-2 opacity-50 flex items-center justify-center">
               <Folders class="w-8 h-8" />
             </div>
             <p>{{ t('pages.admin.categoriesPage.noSubcategories') }}</p>
           </div>
+
+          <div v-if="isLoadingSubcategories" class="text-center py-8 text-text-secondary">
+            <Loader2 class="w-6 h-6 mx-auto mb-2 animate-spin" />
+            <p>{{ t('common.loading') }}</p>
+          </div>
+
+          <button v-if="subcategoryPage < subcategoryTotalPages" @click="loadMoreSubcategories"
+            class="w-full bg-dark-700/40 py-2 rounded-lg text-sm mt-2">
+            {{ t('common.loadMore') }}
+          </button>
         </div>
 
         <div v-else class="flex flex-col items-center justify-center py-12 text-text-secondary flex-1">
@@ -273,9 +276,7 @@ function resetNewSubcategoryForm() {
       </div>
     </div>
 
-    <!-- Модальное окно добавления категории -->
-    <div v-if="showAddCategoryModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-      @click.self="showAddCategoryModal = false">
+    <div v-if="showAddCategoryModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="showAddCategoryModal = false">
       <div class="bg-dark-600 border border-dark-700 rounded-xl p-6 w-full max-w-sm sm:max-w-md">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-xl font-bold text-mainText">{{ t('pages.admin.categoriesPage.addCategory') }}</h3>
@@ -283,46 +284,32 @@ function resetNewSubcategoryForm() {
             <X class="w-5 h-5" />
           </button>
         </div>
-
         <div class="space-y-4">
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.name') }} *</label>
-            <input v-model="newCategory.name" type="text"
-              class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500"
-              placeholder="Введите название" />
+            <input v-model="newCategory.name" type="text" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите название" />
           </div>
-
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.description') }}</label>
-            <textarea v-model="newCategory.description" rows="3"
-              class="w-full max-h-28 bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500"
-              placeholder="Введите описание" />
+            <textarea v-model="newCategory.description" rows="3" class="w-full max-h-28 bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите описание" />
           </div>
-
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.image') }} *</label>
             <FileUploader v-model="newCategory.image" :maxFiles="1" />
           </div>
         </div>
-
         <div class="flex flex-col sm:flex-row gap-3 mt-6">
-          <button
-            class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg transition-colors order-2 sm:order-1"
-            @click="showAddCategoryModal = false">
+          <button class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg transition-colors order-2 sm:order-1" @click="showAddCategoryModal = false">
             {{ t('common.cancel') }}
           </button>
-          <button
-            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors order-1 sm:order-2"
-            @click="createCategory" :disabled="!newCategory.name.trim() || !newCategory.image.length">
+          <button class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors order-1 sm:order-2" @click="createCategory" :disabled="!newCategory.name.trim() || !newCategory.image.length">
             {{ t('common.create') }}
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Модальное окно добавления подкатегории -->
-    <div v-if="showAddSubcategoryModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-      @click.self="showAddSubcategoryModal = false">
+    <div v-if="showAddSubcategoryModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="showAddSubcategoryModal = false">
       <div class="bg-dark-600 border border-dark-700 rounded-xl p-6 w-full max-w-sm sm:max-w-md">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-xl font-bold text-mainText">{{ t('pages.admin.categoriesPage.addSubcategory') }}</h3>
@@ -330,37 +317,25 @@ function resetNewSubcategoryForm() {
             <X class="w-5 h-5" />
           </button>
         </div>
-
         <div class="space-y-4">
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.name') }} *</label>
-            <input v-model="newSubcategory.name" type="text"
-              class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500"
-              placeholder="Введите название" />
+            <input v-model="newSubcategory.name" type="text" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите название" />
           </div>
-
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.description') }}</label>
-            <textarea v-model="newSubcategory.description" rows="3"
-              class="w-full max-h-28 bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500"
-              placeholder="Введите описание" />
+            <textarea v-model="newSubcategory.description" rows="3" class="w-full max-h-28 bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите описание" />
           </div>
-
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.image') }} *</label>
             <FileUploader v-model="newSubcategory.image" :maxFiles="1" />
           </div>
         </div>
-
         <div class="flex flex-col sm:flex-row gap-3 mt-6">
-          <button
-            class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg transition-colors order-2 sm:order-1"
-            @click="showAddSubcategoryModal = false">
+          <button class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg transition-colors order-2 sm:order-1" @click="showAddSubcategoryModal = false">
             {{ t('common.cancel') }}
           </button>
-          <button
-            class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition-colors order-1 sm:order-2"
-            @click="createSubcategory" :disabled="!newSubcategory.name.trim() || !newSubcategory.image.length">
+          <button class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition-colors order-1 sm:order-2" @click="createSubcategory" :disabled="!newSubcategory.name.trim() || !newSubcategory.image.length">
             {{ t('common.create') }}
           </button>
         </div>

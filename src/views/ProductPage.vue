@@ -12,6 +12,7 @@ import UserRating from '@/components/UserRating.vue'
 import TrustComponent from './TrustComponent.vue'
 import { useUserStore } from '@/stores/user'
 import BackButton from '@/components/navigation/BackButton.vue'
+import { getErrorMessage } from '@/utils/errorsMap'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const route = useRoute('/product/[productId]')
@@ -28,6 +29,7 @@ const selectedImage = ref<ProductImage | null>(null)
 const openImageModal = ref(false)
 const showDeleteConfirm = ref(false)
 const showBuyConfirm = ref(false)
+const buyError = ref<string | null>(null)
 
 onMounted(async () => {
   product.value = await productService.getProductById(productId) ?? null
@@ -74,14 +76,21 @@ function openBuyConfirm() {
 }
 
 async function handleBuyConfirm() {
-  if (product.value) {
-    const success = await productService.buyProduct(product.value.id)
-    if (success) {
-      router.push('/chats')
-    }
+  if (!product.value) return
+
+  buyError.value = null
+
+  const result = await productService.buyProduct(product.value.id)
+
+  if (result.success) {
+    router.push('/chats')
+  } else if (result.error) {
+    buyError.value = getErrorMessage(result.error, t)
   }
+
   showBuyConfirm.value = false
 }
+
 
 function closeBuyConfirm() {
   showBuyConfirm.value = false
@@ -163,8 +172,10 @@ onUnmounted(() => {
 <template>
   <section v-if="product"
     class="h-full w-full flex flex-col items-start gap-2 lg:pt-2 overflow-scroll no-scrollbar pb-36 text-mainText lg:px-0 lg:pb-6">
-    <div class="pt-1"><BackButton/></div>
-    
+    <div class="pt-1">
+      <BackButton />
+    </div>
+
     <!-- Image gallery -->
     <div class="w-full flex flex-col lg:flex-row gap-5">
       <div class="w-full rounded-lg lg:w-3/5 space-y-4">
@@ -271,7 +282,6 @@ onUnmounted(() => {
             </div>
 
             <div v-else class="flex gap-6 pr-4 items-center">
-
               <span v-if="user === null" class="text-sm text-gray-400">
                 {{ $t('pages.product.authRequired') }}
               </span>
@@ -294,6 +304,9 @@ onUnmounted(() => {
               </div>
             </div>
 
+            <div v-if="buyError" class="mt-2 text-sm text-red-400">
+              {{ buyError }}
+            </div>
           </div>
 
           <div v-else class="w-full py-4 text-center bg-gray-700 text-gray-400 rounded-xl font-semibold">
@@ -304,7 +317,7 @@ onUnmounted(() => {
 
         <TrustComponent v-if="!product.is_owner" />
         <div v-else class="w-full flex justify-end gap-2 text-gray-400">
-          <Heart/>
+          <Heart />
           <span>{{ product.likes }}</span>
         </div>
       </div>

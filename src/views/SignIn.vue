@@ -10,6 +10,7 @@ import TheButton from './forms/TheButton.vue'
 import { useUserStore } from '@/stores/user'
 import SuccessMessage from '@/components/SuccessMessage.vue'
 import Captcha from '@/components/Captcha.vue'
+import Title from '@/components/Title.vue'
 
 const sended = ref(false)
 const email = ref('')
@@ -71,10 +72,7 @@ async function signIn() {
 <template>
   <div class="no-scrollbar h-full w-full flex flex-col items-center overflow-scroll pb-36">
     <div class="max-w-sm w-full border border-dark-700 rounded-2xl bg-background p-8 backdrop-blur-md space-y-6 my-auto">
-      <h1 class="text-center text-3xl text-mainText font-bold">
-        {{ $t('pages.auth.signIn.title') }}
-      </h1>
-
+      <Title :text="t('pages.auth.signIn.title')" class="text-center text-4xl" />
       <form class="space-y-4" @submit.prevent>
         <div>
           <label for="email" class="mb-1 block text-sm text-gray-300">

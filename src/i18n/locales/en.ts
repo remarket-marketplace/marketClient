@@ -143,8 +143,8 @@ const en = {
       productDamagedOrDefective: "Product is damaged or defective",
       sellerNotResponding: "Seller is not responding",
       unsatisfactoryQuality: "Unsatisfactory quality",
-      otherReason: "Other reason"
-    }
+      otherReason: "Other reason",
+    },
   },
 
   errors: {
@@ -214,7 +214,7 @@ const en = {
       addPhoto: "Add photo",
       clearAll: "Clear all",
       errorOnlyImages: "Please upload only images",
-      errorMaxFiles: "Maximum {maxFiles} images"
+      errorMaxFiles: "Maximum {maxFiles} images",
     },
   },
 
@@ -491,7 +491,6 @@ const en = {
         refund: "Refund",
       },
 
-
       dealPage: {
         deal: "Deal",
         productInfo: "Product info",
@@ -499,7 +498,7 @@ const en = {
         adminActions: "Actions",
         reportInfo: "Report info",
         customReason: "Custom reason",
-        reportId: "Report id"
+        reportId: "Report id",
       },
 
       editUser: {
@@ -527,6 +526,20 @@ const en = {
         noImage: "No image",
         imageRequired: "Image required",
       },
+    },
+    paymentSuccess: {
+      title: "Payment received",
+      description:
+        "We have received the payment information. Funds will be credited to your balance shortly.",
+      toWallet: "Go to wallet",
+      hint: "This usually takes no more than a couple of minutes",
+    },
+    paymentFailed: {
+      title: "Payment not completed",
+      description:
+        "The payment was cancelled or an error occurred. Funds were not credited to your balance.",
+      toWallet: "Go to wallet",
+      hint: "If funds were deducted, they will be refunded automatically",
     },
     forms: {
       addSubcategory: {
@@ -567,7 +580,7 @@ const en = {
           "Name, description and product data must contain at least 10 characters",
         pricePositive: "Price must be greater than 0",
         errorCreatingProduct: "Error creating product",
-                subtitle: "Fill in all the details about your product",
+        subtitle: "Fill in all the details about your product",
         imageHint: "Upload up to 8 images. The first image will be the cover.",
         productNamePlaceholder: "Enter product name",
         productDataHint: "This information will be visible only after purchase",
@@ -575,9 +588,10 @@ const en = {
         totalPrice: "Total price",
         commission: "Platform commission",
         sellerReceives: "You will receive",
-        commissionNote: "The platform commission is {percent}% of the sale amount. The remaining amount will be credited to your balance after the sale.",
+        commissionNote:
+          "The platform commission is {percent}% of the sale amount. The remaining amount will be credited to your balance after the sale.",
         termsNote: "By creating a product, you agree to our ",
-        termsLin: "terms of service"
+        termsLin: "terms of service",
       },
       editProduct: {
         title: "Edit Product",
@@ -605,8 +619,17 @@ const en = {
         errorUpdatingProduct: "Error updating product",
         deleting: "Deleting",
         totalImagesInfo: "Total images",
-      }
+      },
     },
+  },
+
+  hero: {
+    badge: "Secure Digital Asset Trading",
+    mainTitle: "The Marketplace",
+    mainTitleGradient: "Built on Trust",
+    description: "Next-generation trading platform. Buy and sell digital goods with full fund protection and quality guarantee. Verified sellers, fair pricing, honest trading. Your secure place for digital commerce.",
+    exploreCatalog: "Explore Catalog",
+    startSelling: "Start Selling",
   },
 };
 

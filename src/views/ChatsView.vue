@@ -10,10 +10,13 @@ import type { ChatMessageUnion } from '@/validation/chat/chatMessage'
 import type { UserRead } from '@/validation/user/userRead'
 import { nextTick, onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ZodError } from 'zod'
 import { ArrowLeft } from 'lucide-vue-next'
+import { useRoute, useRouter } from 'vue-router'
 
 const { t } = useI18n()
+const route = useRoute()
+const router = useRouter()
+
 const API_HOST = import.meta.env.VITE_API_HOST
 
 const chats = ref<ChatListItem[]>([])
@@ -21,55 +24,46 @@ const chatMessages = ref<ChatMessageUnion[]>([])
 const selectedChatId = ref<string | null>(null)
 const messageContainerRef = ref<HTMLElement | null>(null)
 const isLoading = ref(false)
+const isLoadingMoreMessages = ref(false)
 const errorMessage = ref<string | null>(null)
 const isMobile = ref(false)
 const mobileMode = ref<'chats' | 'chat'>('chats')
 const store = useUserStore()
-const user = ref<UserRead | null>()
+const user = ref<UserRead | null>(null)
+const newMessage = ref('')
 
-const newMessage = ref<string>('')
+const currentPage = ref(1)
+const totalPages = ref(0)
+const perPage = ref(10)
+const hasMoreMessages = ref(true)
 
-const currentChat = computed(() => {
-  if (!selectedChatId.value) return null
-  return chats.value.find(chat => chat.id === selectedChatId.value)
-})
+const currentChat = computed(() =>
+  chats.value.find(chat => chat.id === selectedChatId.value) || null
+)
 
-const chatUserInitial = computed(() => {
-  return currentChat.value?.another_user.username.charAt(0).toUpperCase() || ''
-})
+const chatUserInitial = computed(() =>
+  currentChat.value?.another_user.username.charAt(0).toUpperCase() || ''
+)
 
-watch(chatMessages, async () => {
-  await nextTick()
-  setTimeout(() => {
-    scrollToBottom()
-  }, 100)
-}, { deep: true })
-
-const handleChatUpdated = (updateData: any) => {
-  const chatIndex = chats.value.findIndex(chat => chat.id === updateData.chat_id)
-
-  if (chatIndex !== -1) {
-    const chat = chats.value[chatIndex]!
-
-    chat.last_message = updateData.last_message || null
-
-    chats.value.splice(chatIndex, 1)
-    chats.value.unshift(chat)
-  } else {
-    loadChats()
-  }
+function updateUrlChatId(chatId: string | null) {
+  router.replace({
+    query: {
+      ...route.query,
+      chatId: chatId || undefined
+    }
+  })
 }
 
 function backToChats() {
   if (mobileMode.value === 'chat') {
     mobileMode.value = 'chats'
-    localStorage.removeItem('selectedChatId')
+    selectedChatId.value = null
+    updateUrlChatId(null)
   }
 }
 
 let unsubscribeNewMessage: (() => void) | null = null
 let unsubscribeChatUpdated: (() => void) | null = null
-let unsubscribeChatNotification: (() => void) | null = null
 
 onMounted(async () => {
   try {
@@ -77,38 +71,31 @@ onMounted(async () => {
     await store.fetchUser()
     user.value = await store.getUser()
 
-    // connect websocket
     if (!chatsService.isConnected()) {
       await chatsService.connectChatsWebsocket()
     }
 
-    // subscribe to new messages
-    unsubscribeNewMessage = chatsService.onNewMessage((message: ChatMessageUnion) => {
+    unsubscribeNewMessage = chatsService.onNewMessage(message => {
       if (selectedChatId.value === message.chat_room_id) {
-        const messageExists = chatMessages.value.some(m => m.id === message.id)
-        if (!messageExists) {
+        if (!chatMessages.value.some(m => m.id === message.id)) {
           chatMessages.value.push(message)
+          nextTick(scrollToBottom)
         }
       }
     })
 
-    unsubscribeChatUpdated = chatsService.onChatUpdated(handleChatUpdated)
-
-    unsubscribeChatNotification = chatsService.onChatNotification(() => {
-      // keep placeholder for potential notification handling
-    })
-
-    // load chats and subscribe to chats data update
     await loadChats()
-    await chatsService.subscribeChatList()
 
-    // restore last opened chat
-    await restoreLastChat()
-  }
-  catch (error) {
+    const chatIdFromQuery = route.query.chatId as string | undefined
+    if (chatIdFromQuery) {
+      const exists = chats.value.some(c => c.id === chatIdFromQuery)
+      if (exists) {
+        await loadChatMessages(chatIdFromQuery)
+      }
+    }
+  } catch {
     errorMessage.value = t('pages.chats.errorLoadingChats')
-  }
-  finally {
+  } finally {
     isLoading.value = false
   }
 
@@ -120,122 +107,89 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  if (unsubscribeNewMessage) {
-    unsubscribeNewMessage()
-    unsubscribeNewMessage = null
-  }
-  if (unsubscribeChatUpdated) {
-    unsubscribeChatUpdated()
-    unsubscribeChatUpdated = null
-  }
-  if (unsubscribeChatNotification) {
-    unsubscribeChatNotification()
-    unsubscribeChatNotification = null
-  }
-  window.removeEventListener('resize', () => {})
+  unsubscribeNewMessage?.()
+  // unsubscribeChatUpdated?.()
 })
 
 async function loadChats() {
-  try {
-    chats.value = await chatsService.getChats()
-  } catch (error) {
-    errorMessage.value = t('pages.chats.errorLoadingChats')
-  }
-}
-
-async function restoreLastChat() {
-  const savedChatId = localStorage.getItem('selectedChatId')
-  if (!savedChatId) return
-
-  const existingChat = chats.value.find(c => c.id === savedChatId)
-  if (!existingChat) {
-    localStorage.removeItem('selectedChatId')
-    return
-  }
-
-  await loadChatMessages(savedChatId)
-  if (window.innerWidth < 768) {
-    mobileMode.value = 'chat'
-  }
+  chats.value = await chatsService.getChats()
 }
 
 function scrollToBottom() {
   const el = messageContainerRef.value
-  if (!el) return
+  if (el) el.scrollTop = el.scrollHeight
+}
 
-  const attemptScroll = (attempts = 0) => {
-    if (attempts > 5) return
+async function handleScroll() {
+  const el = messageContainerRef.value
+  if (!el || isLoadingMoreMessages.value || !hasMoreMessages.value) return
+  if (el.scrollTop === 0) await loadMoreMessages()
+}
 
-    const shouldScroll = el.scrollHeight - el.scrollTop - el.clientHeight > 10
+async function loadMoreMessages() {
+  if (!selectedChatId.value) return
 
-    if (shouldScroll) {
-      el.scrollTop = el.scrollHeight
+  isLoadingMoreMessages.value = true
+  const el = messageContainerRef.value
+  const oldHeight = el?.scrollHeight || 0
 
-      setTimeout(() => {
-        const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= 10
-        if (!isAtBottom) {
-          attemptScroll(attempts + 1)
-        }
-      }, 50)
-    }
+  const response = await chatsService.getChatMessages(
+    selectedChatId.value,
+    currentPage.value + 1,
+    perPage.value
+  )
+
+  if (response.messages.length) {
+    chatMessages.value.unshift(...response.messages)
+    currentPage.value++
+    totalPages.value = response.totalPages
+    hasMoreMessages.value = currentPage.value < totalPages.value
+    await nextTick()
+    if (el) el.scrollTop = el.scrollHeight - oldHeight
+  } else {
+    hasMoreMessages.value = false
   }
 
-  attemptScroll()
+  isLoadingMoreMessages.value = false
 }
 
 async function loadChatMessages(chatId: string) {
-  try {
-    isLoading.value = true
-    errorMessage.value = null
+  isLoading.value = true
 
-    // join chat room
-    await chatsService.joinChat(chatId)
-    selectedChatId.value = chatId
+  chatMessages.value = []
+  currentPage.value = 1
+  hasMoreMessages.value = true
 
-    // load messages
-    chatMessages.value = await chatsService.getChatMessages(chatId)
-    localStorage.setItem('selectedChatId', chatId)
+  await chatsService.joinChat(chatId)
+  selectedChatId.value = chatId
+  updateUrlChatId(chatId)
 
-    await nextTick()
-    setTimeout(() => {
-      scrollToBottom()
-    }, 150)
+  const response = await chatsService.getChatMessages(chatId, 1, perPage.value)
+  chatMessages.value = response.messages
+  totalPages.value = response.totalPages
+  hasMoreMessages.value = 1 < totalPages.value
 
-    if (isMobile.value) {
-      mobileMode.value = 'chat'
-    }
-  }
-  catch (e) {
-    console.error('Error loading messages:', e)
-    if (e instanceof ZodError) {
-      errorMessage.value = t('pages.chats.errorDataStructure')
-    }
-    else {
-      errorMessage.value = t('pages.chats.errorLoadingMessages')
-    }
-  }
-  finally {
-    isLoading.value = false
-  }
+  await nextTick()
+  scrollToBottom()
+
+  if (isMobile.value) mobileMode.value = 'chat'
+
+  isLoading.value = false
 }
 
 async function sendMessage() {
   if (!newMessage.value.trim() || !selectedChatId.value) return
-  try {
-    const success = await chatsService.sendMessage(newMessage.value.trim(), selectedChatId.value)
-    if (success) {
-      newMessage.value = ''
-    } else {
-      console.error('Message send error')
-      errorMessage.value = t('pages.chats.errorSendMessage')
-    }
-  }
-  catch (error) {
-    console.error('Message send error:', error)
-    errorMessage.value = t('pages.chats.errorSendMessage')
+  const success = await chatsService.sendMessage(
+    newMessage.value.trim(),
+    selectedChatId.value
+  )
+  if (success) {
+    newMessage.value = ''
+    nextTick(scrollToBottom)
   }
 }
 </script>
+
 
 <template>
   <div class="h-full w-full flex flex-col md:pt-6">
@@ -304,12 +258,11 @@ async function sendMessage() {
           }"
         >
           <div class="flex flex-grow flex-col overflow-y-auto lg:pb-2 w-full">
-            <div class="flex items-center gap-2 sticky top-0 bg-background px-2 py-2 lg:py-3 lg:px-3 z-10 lg:border-b border-dark-700">
+            <div v-if="currentChat" class="flex items-center gap-2 sticky top-0 bg-background px-2 py-2 lg:py-3 lg:px-3 z-10 lg:border-b border-dark-700">
               <button v-if="isMobile" class="text-xl font-bold flex-shrink-0" @click="backToChats">
                 <ArrowLeft />
               </button>
-
-              <div class="flex items-center gap-3 flex-1 min-w-0">
+              <div v-if="currentChat" class="flex items-center gap-3 flex-1 min-w-0">
                 <div class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
                   <img
                     v-if="currentChat?.another_user.avatar_url"
@@ -338,7 +291,15 @@ async function sendMessage() {
               </div>
             </div>
 
-            <div ref="messageContainerRef" class="no-scrollbar flex flex-1 flex-col overflow-y-auto pb-2">
+            <div 
+              ref="messageContainerRef" 
+              class="no-scrollbar flex flex-1 flex-col overflow-y-auto pb-2"
+              @scroll="handleScroll"
+            >
+              <div v-if="isLoadingMoreMessages" class="flex justify-center py-2">
+                <Loader size="sm" />
+              </div>
+              
               <div v-if="chatMessages.length > 0" class="flex flex-1 flex-col justify-start">
                 <div class="flex flex-col gap-3">
                   <ChatMessage

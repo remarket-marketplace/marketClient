@@ -48,7 +48,7 @@ function goToSeller() {
     <!-- Bottom section with seller and button -->
     <div class="mt-auto flex items-center justify-between gap-2">
       <!-- Seller info-->
-      <div class="flex items-center gap-1 flex-wrap min-w-0">
+      <div class="flex items-center gap-1 lg:gap-2 flex-wrap min-w-0">
         <p class="text-xs sm:text-sm text-blue-400 transition hover:text-blue-300 underline decoration-transparent hover:decoration-blue-300 truncate"
           @click.stop="goToSeller">
           {{ product.seller.username }}

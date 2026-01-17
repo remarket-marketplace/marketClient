@@ -22,6 +22,9 @@ import ResetPasswordView from '@/views/resetPassword/ResetPasswordView.vue'
 import AdminEditCategoryView from '@/views/admin/AdminEditCategoryView.vue'
 import FavoritesProductsView from '@/views/FavoritesProductsView.vue'
 import AdminDealView from '@/views/admin/AdminDealView.vue'
+import PaymentSuccessView from '@/views/PaymentSuccessView.vue'
+import PaymentFailedView from '@/views/PaymentFailedView.vue'
+import AdminChatView from '@/views/admin/AdminChatView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -79,7 +82,7 @@ const router = createRouter({
       component: ProductPage,
     },
     {
-      path: '/chats',
+      path: '/chats/:chatId?',
       name: 'chats',
       component: ChatsView,
       meta: { requiredAuthorized: true }
@@ -138,6 +141,12 @@ const router = createRouter({
       meta: { requiredAuthorized: true }
     },
     {
+      path: '/admin/chats/:dealId',
+      name: 'adminChatView',
+      component: AdminChatView,
+      meta: { requiredAdmin: true }
+    },
+    {
       path: '/wallet',
       name: 'wallet',
       component: WalletView,
@@ -150,10 +159,20 @@ const router = createRouter({
       meta: { requiredAuthorized: true }
     },
     {
+      path: '/payment/success',
+      name: 'success payment',
+      component: PaymentSuccessView,
+    },
+    {
+      path: '/payment/failed',
+      name: 'failed payment',
+      component: PaymentFailedView,
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'notFound',
       component: NotAccess,
-    }
+    },
   ],
 })
 

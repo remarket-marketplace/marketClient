@@ -2,6 +2,7 @@ import { ProfileDataSchema } from "@/validation/user/userRead";
 import { ZodError } from "zod";
 import { httpClient } from "..";
 import { ReviewSchema, ReviewsListSchema } from "@/validation/review/review";
+import type { Deal } from "@/validation/deal/deal";
 
 export const reviewService = {
   async createReview(dealId: string, rating: number, body: string) {
@@ -30,23 +31,69 @@ export const reviewService = {
     }
   },
 
-  async getUserPurchases(userId: string) {
+  async getUserPurchases(
+    userId: string,
+    page = 1,
+    perPage = 20
+  ): Promise<{
+    purchases: Deal[];
+    total: number;
+    totalPages: number;
+  }> {
     try {
-      const response = await httpClient.get(`/users/${userId}/purchases`);
-      return response.data || [];
+      const response = await httpClient.get(`/users/${userId}/purchases`, {
+        params: {
+          page,
+          per_page: perPage,
+        },
+      });
+
+      return {
+        purchases: response.data.items,
+        total: response.data.total,
+        totalPages: response.data.total_pages,
+      };
     } catch (error) {
       console.error("Ошибка при загрузке покупок:", error);
-      return [];
+      return {
+        purchases: [],
+        total: 0,
+        totalPages: 1,
+      };
     }
   },
 
-  async getUserReviews(username: string) {
+  async getUserReviews(
+    username: string,
+    page = 1,
+    perPage = 20
+  ): Promise<{
+    reviews: ReviewSchema[];
+    total: number;
+    totalPages: number;
+  }> {
     try {
-      const response = await httpClient.get(`/reviews/${username}`);
-      return ReviewsListSchema.parse(response.data)
+      const response = await httpClient.get(`/reviews/${username}`, {
+        params: {
+          page,
+          per_page: perPage,
+        },
+      });
+
+      return {
+        reviews: ReviewSchema.array().parse(
+          response.data.items || response.data.reviews
+        ),
+        total: response.data.total,
+        totalPages: response.data.total_pages,
+      };
     } catch (error) {
       console.error("Ошибка при загрузке отзывов:", error);
-      return [];
+      return {
+        reviews: [],
+        total: 0,
+        totalPages: 1,
+      };
     }
-  }
+  },
 };
