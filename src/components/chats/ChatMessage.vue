@@ -61,10 +61,17 @@ const messageAlignment = computed(() => {
   return 'flex justify-start'
 })
 
-function formatDate(dateStr: string): string {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  return date.toLocaleString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+function formatDate(dateInput: string | Date): string {
+  if (!dateInput) return '';
+  
+  const date = typeof dateInput === 'string' 
+    ? new Date(dateInput) 
+    : dateInput;
+  
+  return date.toLocaleString('ru-RU', { 
+    hour: '2-digit', 
+    minute: '2-digit',
+  });
 }
 </script>
 

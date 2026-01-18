@@ -6,7 +6,7 @@ import { ReviewSchema } from '../review/review'
 export const BaseMessageSchema = z.object({
   id: z.string(),
   chat_room_id: z.string(),
-  created_at: z.string().transform((str) => new Date(str)),
+  created_at: z.string(),
   message_type: z.string(),
 })
 

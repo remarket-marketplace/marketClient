@@ -59,7 +59,8 @@ const isFormValid = computed(() => {
 onMounted(async () => {
   try {
     await store.fetchUser()
-    categories.value = await categoryService.getAllCategories()
+    const categoriesData = await categoryService.getAllCategories()
+    categories.value = categoriesData.categories
     const commission = await productService.getCommissionInterest()
     commissionInterest.value = Number(commission)
   } catch (err) {
@@ -75,7 +76,8 @@ watch(selectedCategoryId, async (newCategory) => {
     return
   }
   try {
-    subcategories.value = await categoryService.getSubcategories(newCategory)
+    const subcategoriesData = await categoryService.getSubcategories(newCategory)
+    subcategories.value = subcategoriesData.categories
   } catch (err) {
     console.error('Error loading subcategories:', err)
     errorMessage.value = t('pages.forms.createProduct.errorLoadingSubcategories')

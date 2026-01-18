@@ -1,8 +1,18 @@
 <script setup lang="ts">
+interface TextMessageProps {
+  id: string;
+  chat_room_id: string;
+  created_at: string;
+  message_type: "text_message";
+  sender_id: string;
+  text: string;
+  is_read: boolean;
+}
+
 defineProps<{
-	textMessage: { id: string; chat_room_id: string; created_at: string; message_type: "text_message"; sender_id: string; text: string; is_read: boolean; } | null;
-	user: any;
-	formatDate: (dateStr: string) => string;
+  textMessage: TextMessageProps | null;
+  user: any;
+  formatDate: (dateStr: string) => string;
 }>()
 </script>
 
