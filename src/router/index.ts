@@ -12,16 +12,19 @@ import NotAccess from '@/views/NotAccess.vue'
 import AdminUsersView from '@/views/admin/AdminUsersView.vue'
 import AdminProductsView from '@/views/admin/AdminProductsView.vue'
 import AdminCategoriesView from '@/views/admin/AdminCategoriesView.vue'
-// import PasswordResetView from '@/views/PasswordResetView.vue'
 import AdminEditUserView from '@/views/admin/AdminEditUserView.vue'
 import AdminDealsView from '@/views/admin/AdminDealsView.vue'
 import WalletView from '@/views/WalletView.vue'
 import SettingsView from '@/views/SettingsView.vue'
 import UpdateProductView from '@/views/UpdateProductView.vue'
-// import PasswordResetView from '@/views/PasswordResetView.vue'
-// import ResetPasswordView from '@/views/resetPassword/ResetPasswordView.vue'
 import EnterResetEmailView from '@/views/resetPassword/EnterResetEmailView.vue'
 import ResetPasswordView from '@/views/resetPassword/ResetPasswordView.vue'
+import AdminEditCategoryView from '@/views/admin/AdminEditCategoryView.vue'
+import FavoritesProductsView from '@/views/FavoritesProductsView.vue'
+import AdminDealView from '@/views/admin/AdminDealView.vue'
+import PaymentSuccessView from '@/views/PaymentSuccessView.vue'
+import PaymentFailedView from '@/views/PaymentFailedView.vue'
+import AdminChatView from '@/views/admin/AdminChatView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -52,9 +55,14 @@ const router = createRouter({
       component: ResetPasswordView,
     },
     {
-      path: '/profile/:username',
+      path: '/user/:username',
       name: 'profile',
       component: ProfileView,
+    },
+    {
+      path: '/user/products/favorites',
+      name: 'favorites products',
+      component: FavoritesProductsView
     },
     {
       path: '/product/create',
@@ -74,7 +82,7 @@ const router = createRouter({
       component: ProductPage,
     },
     {
-      path: '/chats',
+      path: '/chats/:chatId?',
       name: 'chats',
       component: ChatsView,
       meta: { requiredAuthorized: true }
@@ -115,9 +123,27 @@ const router = createRouter({
       meta: { requiredAdmin: true }
     },
     {
+      path: '/admin/deal/:id',
+      name: 'deal',
+      component: AdminDealView,
+      meta: { requiredAdmin: true }
+    },
+    {
       path: '/admin/categories',
       name: 'categories',
       component: AdminCategoriesView,
+      meta: { requiredAdmin: true }
+    },
+    {
+      path: '/admin/categories/edit/:id',
+      name: 'edit category',
+      component: AdminEditCategoryView,
+      meta: { requiredAuthorized: true }
+    },
+    {
+      path: '/admin/chats/:dealId',
+      name: 'adminChatView',
+      component: AdminChatView,
       meta: { requiredAdmin: true }
     },
     {
@@ -131,6 +157,21 @@ const router = createRouter({
       name: 'settings',
       component: SettingsView,
       meta: { requiredAuthorized: true }
+    },
+    {
+      path: '/payment/success',
+      name: 'success payment',
+      component: PaymentSuccessView,
+    },
+    {
+      path: '/payment/failed',
+      name: 'failed payment',
+      component: PaymentFailedView,
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'notFound',
+      component: NotAccess,
     },
   ],
 })

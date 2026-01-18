@@ -1,34 +1,37 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, computed } from 'vue'
-import { ChevronDown, ChevronUp } from 'lucide-vue-next'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ChevronDown, ChevronUp, Languages } from 'lucide-vue-next'
 
 interface LanguageOption {
   label: string
   value: 'en' | 'ru'
-  flag?: string
 }
 
 const languageOptions: LanguageOption[] = [
-  { label: 'English', value: 'en', flag: '🇺🇸' },
-  { label: 'Русский', value: 'ru', flag: '🇷🇺' }
+  { label: 'English', value: 'en' },
+  { label: 'Русский', value: 'ru' }
 ]
 
-// Состояния
 const isOpen = ref(false)
 const wrapperRef = ref<HTMLElement | null>(null)
 
 const getInitialLanguage = (): 'en' | 'ru' => {
   const saved = localStorage.getItem('user-language') as 'en' | 'ru' | null
-  return saved || 'en'
+  if (saved) return saved
+
+  const lang = navigator.language || navigator.languages?.[0]
+  return lang?.startsWith('ru') ? 'ru' : 'en'
 }
 
-const selectedLanguage = ref(getInitialLanguage())
+const selectedLanguage = ref<'en' | 'ru'>(getInitialLanguage())
 
-const currentOption = computed(() => 
-  languageOptions.find(opt => opt.value === selectedLanguage.value) || languageOptions[0]
-)
+const currentOption = computed(() => {
+  return (
+    languageOptions.find(opt => opt.value === selectedLanguage.value) ??
+    languageOptions[0]
+  )
+})
 
-// Закрытие при клике вне
 function handleClickOutside(e: MouseEvent) {
   const target = e.target as Node
   if (wrapperRef.value && !wrapperRef.value.contains(target)) {
@@ -40,58 +43,63 @@ onMounted(() => {
   document.addEventListener('click', handleClickOutside)
 })
 
-onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 
 function toggle() {
   isOpen.value = !isOpen.value
 }
 
 function selectLanguage(value: 'en' | 'ru') {
+  if (selectedLanguage.value === value) return
+
   selectedLanguage.value = value
   localStorage.setItem('user-language', value)
   isOpen.value = false
-  setTimeout(() => {
-    location.reload()
-  }, 100)
+
+  setTimeout(() => location.reload(), 100)
 }
 </script>
 
 <template>
   <div ref="wrapperRef" class="relative w-full">
+    <!-- Button -->
     <button
       type="button"
-      class="w-full flex items-center justify-between gap-3 bg-dark-600 border border-dark-700 rounded-lg px-2 lg:px-4 py-2 text-mainText transition focus:outline-none hover:border-dark-500"
+      class="w-full flex items-center justify-between gap-3 rounded-lg border border-dark-700 bg-dark-600 px-3 lg:px-4 py-2 text-mainText transition hover:border-dark-500 focus:outline-none"
       :aria-expanded="isOpen"
-    @click="toggle"
+      @click="toggle"
     >
-      <span class="flex items-center gap-2 truncate text-left">
-        <span v-if="currentOption?.flag" class="text-base">{{ currentOption.flag }}</span>
-        <span class="hidden lg:block">{{ currentOption?.label ?? 'Select Language' }}</span>
+      <span class="flex items-center gap-2 truncate">
+        <Languages class="h-4 w-4 text-mainText/70" />
+        <span class="hidden lg:block">
+          {{ currentOption?.label }}
+        </span>
       </span>
 
       <ChevronUp v-if="isOpen" class="h-3 w-3" />
       <ChevronDown v-else class="h-3 w-3" />
     </button>
 
+    <!-- Dropdown -->
     <transition name="fade">
       <ul
         v-show="isOpen"
-        class="absolute right-2 z-50 mt-2 w-[max-content] overflow-auto border border-dark-700 rounded-lg bg-dark-800 py-1 shadow-lg"
+        class="absolute right-2 z-50 mt-2 min-w-16 rounded-lg border border-dark-700 bg-dark-800 shadow-xl overflow-hidden"
         role="listbox"
-        tabindex="-1"
       >
         <li
           v-for="opt in languageOptions"
           :key="opt.value"
-          class="flex cursor-pointer items-center justify-between px-4 py-2 text-sm text-mainText hover:bg-dark-700 transition-colors"
-          :class="{ 'bg-dark-700': selectedLanguage === opt.value }"
+          class="cursor-pointer px-4 py-2 text-sm transition-colors
+                 first:rounded-t-lg last:rounded-b-lg"
+          :class="selectedLanguage === opt.value
+            ? 'bg-blue-500/10 text-blue-400 font-medium'
+            : 'text-mainText hover:bg-dark-700'"
           @click="selectLanguage(opt.value)"
         >
-          <span class="flex items-center gap-2">
-            <span v-if="opt.flag" class="text-base">{{ opt.flag }}</span>
-            <span>{{ opt.label }}</span>
-          </span>
-          <span v-if="selectedLanguage === opt.value" class="text-xs text-blue-400 font-semibold pl-3">✓</span>
+          {{ opt.label }}
         </li>
       </ul>
     </transition>
@@ -101,15 +109,15 @@ function selectLanguage(value: 'en' | 'ru') {
 <style scoped>
 .fade-enter-active,
 .fade-leave-active {
-  transition:
-    opacity 0.15s ease,
-    transform 0.12s ease;
+  transition: opacity 0.15s ease, transform 0.12s ease;
 }
+
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
   transform: translateY(-6px);
 }
+
 .fade-enter-to,
 .fade-leave-from {
   opacity: 1;

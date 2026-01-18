@@ -4,11 +4,15 @@ import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import Loader from '@/components/Loader.vue'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
 import type { Product, ProductImage } from '@/validation/product/product'
-import type { ReviewSchema } from '@/validation/review/review'
 import { onMounted, ref, onUnmounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { ChevronLeft, ChevronRight, X, Star } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, X, Heart, Trash, Trash2 } from 'lucide-vue-next'
+import UserRating from '@/components/UserRating.vue'
+import TrustComponent from './TrustComponent.vue'
+import { useUserStore } from '@/stores/user'
+import BackButton from '@/components/navigation/BackButton.vue'
+import { getErrorMessage } from '@/utils/errorsMap'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const route = useRoute('/product/[productId]')
@@ -16,11 +20,16 @@ const router = useRouter()
 const { locale, t } = useI18n()
 const productId = route.params.productId as string
 
+
+const store = useUserStore()
+const user = await store.getUser()
+
 const product = ref<Product | null>(null)
 const selectedImage = ref<ProductImage | null>(null)
 const openImageModal = ref(false)
 const showDeleteConfirm = ref(false)
 const showBuyConfirm = ref(false)
+const buyError = ref<string | null>(null)
 
 onMounted(async () => {
   product.value = await productService.getProductById(productId) ?? null
@@ -67,14 +76,21 @@ function openBuyConfirm() {
 }
 
 async function handleBuyConfirm() {
-  if (product.value) {
-    const success = await productService.buyProduct(product.value.id)
-    if (success) {
-      router.push('/chats')
-    }
+  if (!product.value) return
+
+  buyError.value = null
+
+  const result = await productService.buyProduct(product.value.id)
+
+  if (result.success) {
+    router.push('/chats')
+  } else if (result.error) {
+    buyError.value = getErrorMessage(result.error, t)
   }
+
   showBuyConfirm.value = false
 }
+
 
 function closeBuyConfirm() {
   showBuyConfirm.value = false
@@ -106,6 +122,24 @@ function prevImage() {
   }
 }
 
+async function likeProduct() {
+  if (product.value) {
+    const result = await productService.addProductLike(product.value.id)
+    if (result) {
+      product.value.is_liked = true
+    }
+  }
+}
+
+async function removeProductLike() {
+  if (product.value) {
+    const result = await productService.removeProductLike(product.value.id)
+    if (result) {
+      product.value.is_liked = false
+    }
+  }
+}
+
 function handleKeydown(event: KeyboardEvent) {
   if (!openImageModal.value) return
 
@@ -133,64 +167,74 @@ onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
 })
 
-const filledStars = computed(() => Math.round(product.value?.seller.rating ?? 0))
-
-const reviews = computed<ReviewSchema[]>(() => {
-  return product.value?.reviews ? (product.value.reviews as ReviewSchema[]) : []
-})
 </script>
 
 <template>
   <section v-if="product"
-    class="h-full max-w-7xl w-full flex flex-col items-start gap-6 overflow-auto no-scrollbar pb-36 text-mainText lg:overflow-visible lg:px-0 lg:pb-6">
-    <!-- Image gallery -->
+    class="h-full w-full flex flex-col items-start gap-2 lg:pt-2 overflow-scroll no-scrollbar pb-36 text-mainText lg:px-0 lg:pb-6">
+    <div class="pt-1">
+      <BackButton />
+    </div>
 
-    <div class="w-full flex flex-col lg:flex-row">
-      <div class="w-full rounded-lg lg:w-1/2 space-y-4">
-        <div v-if="selectedImage" class="flex justify-center">
-          <img :src="`${API_HOST}${selectedImage.image_url}`" :alt="product.title"
-            class="h-96 max-w-md w-full cursor-zoom-in rounded-lg object-cover transition-opacity hover:opacity-90"
-            loading="lazy" @click="openImageModal = true">
+    <!-- Image gallery -->
+    <div class="w-full flex flex-col lg:flex-row gap-5">
+      <div class="w-full rounded-lg lg:w-3/5 space-y-4">
+        <div v-if="selectedImage" class="flex justify-center bg-blue-500 rounded-lg overflow-hidden">
+          <div class="w-full h-96 relative flex items-center justify-center">
+            <img :src="`${API_HOST}${selectedImage.image_url}`" :alt="product.title"
+              class="absolute inset-0 w-full h-full object-cover cursor-zoom-in transition-opacity hover:opacity-90"
+              loading="lazy" @click="openImageModal = true" />
+          </div>
         </div>
 
-        <div v-if="product.images && product.images.length > 1"
-          class="flex gap-3 overflow-x-auto pb-2 thumbnails-scroll">
+        <div v-if="product.images && product.images.length > 1" class="flex gap-3 overflow-x-auto pb-2 no-scroollbar">
           <img v-for="image in product.images" :key="image.id" :src="`${API_HOST}${image.image_url}`"
             class="h-16 w-16 flex-shrink-0 cursor-pointer border-2 rounded-lg object-cover transition-all duration-200 hover:opacity-80"
             :alt="`Product image: ${product.title}`" :class="{
-              'border-gray-600': image.image_url !== selectedImage?.image_url,
+              'border-dark-700': image.image_url !== selectedImage?.image_url,
             }" loading="lazy" @click="selectImage(image)">
         </div>
 
         <div v-else-if="!selectedImage && product.images?.length" class="py-4 text-center text-gray-400">
           {{ $t('pages.product.noImages') }}
         </div>
+
+        <!-- Description -->
+        <div class="py-4 space-y-4 hidden lg:block">
+          <h1 class="text-xl font-bold text-white">{{ $t('pages.product.description') }}</h1>
+          <p class="text-gray-300 leading-relaxed whitespace-pre-line text-sm lg:text-base">
+            {{ product.description || $t('pages.product.descriptionMissing') }}
+          </p>
+        </div>
       </div>
 
       <!-- Product details -->
       <div class="w-full lg:flex-1 space-y-6 pt-4 lg:pt-0">
         <!-- Title and price -->
-        <div class="space-y-4">
-          <h1 class="text-2xl lg:text-3xl font-bold text-white leading-tight">
-            {{ product.title }}
-          </h1>
-          <div class="flex items-center gap-4">
-            <span class="text-2xl lg:text-3xl font-bold text-green-400">
-              {{ product.price }}₽
-            </span>
-            <ProductStatusTag :product-status="product.status" />
+        <div class="flex justify-between">
+          <div class="space-y-4">
+            <h1 class="text-2xl lg:text-3xl font-bold text-white leading-tight">
+              {{ product.title }}
+            </h1>
+            <div class="flex items-center gap-4">
+              <span class="text-2xl lg:text-3xl font-bold text-green-400">
+                {{ product.price }}₽
+              </span>
+              <ProductStatusTag v-if="product.is_owner" :product-status="product.status" />
+            </div>
           </div>
         </div>
 
         <!-- Description -->
-        <div class="py-4">
+        <div class="space-y-4 lg:hidden">
+          <h1 class="text-xl font-bold text-white">{{ $t('pages.product.description') }}</h1>
           <p class="text-gray-300 leading-relaxed whitespace-pre-line text-sm lg:text-base">
             {{ product.description || $t('pages.product.descriptionMissing') }}
           </p>
         </div>
 
         <!-- Meta info -->
-        <div class="space-y-3 py-4 border-t border-gray-800">
+        <div class="space-y-3 py-4 border-t border-dark-700">
           <div class="flex items-center gap-3">
             <span class="text-gray-400 font-medium min-w-20">{{ $t('common.published') }}:</span>
             <span class="text-white">{{ formatFullDate(product.created_at) }}</span>
@@ -204,7 +248,7 @@ const reviews = computed<ReviewSchema[]>(() => {
         <!-- Seller -->
         <div
           class="flex items-center gap-4 p-4 rounded-xl bg-dark-600 cursor-pointer transition-all duration-200 hover:bg-dark-600/80 group"
-          @click="router.push(`/profile/${product.seller.username}`)">
+          @click="router.push(`/user/${product.seller.username}`)">
           <div class="w-12 h-12 rounded-full overflow-hidden bg-gray-600 flex items-center justify-center">
             <img v-if="product.seller.avatar_url" :src="`${API_HOST}${product.seller.avatar_url}`"
               class="w-full h-full object-cover" alt="Seller avatar">
@@ -212,13 +256,12 @@ const reviews = computed<ReviewSchema[]>(() => {
               {{ product.seller.username.charAt(0).toUpperCase() }}
             </div>
           </div>
-          <div class="flex-1">
+          <div class="flex-1 flex flex-col gap-1">
             <p class="text-white font-semibold">
               {{ product.seller.username }}
             </p>
-            <div class="flex items-center gap-1 mt-1">
-              <Star v-for="(_, i) in 5" :key="i" class="w-5 h-5"
-                :class="i < filledStars ? 'text-blue-500 fill-blue-500' : 'text-gray-500'" />
+            <div class="flex">
+              <UserRating :rating="product.seller.rating" />
             </div>
           </div>
           <div class="text-gray-400 text-xl transition-transform duration-200 group-hover:translate-x-1">
@@ -228,30 +271,54 @@ const reviews = computed<ReviewSchema[]>(() => {
 
         <!-- Action buttons -->
         <div class="pt-6 border-t border-gray-800">
-          <div v-if="!product.is_sold" class="flex flex-col gap-3 sm:flex-row">
-            <div class="w-full flex gap-2" v-if="product.is_owner">
+          <div v-if="!product.is_sold" class="flex flex-col gap-3 sm:flex-row justify-end">
+            <div class="w-full flex gap-6 pr-4 items-center justify-end" v-if="product.is_owner">
               <button
-                class="flex-1 rounded-lg bg-yellow-600 px-4 py-2 text-sm text-white font-semibold transition hover:bg-yellow-700 sm:px-6"
+                class="rounded-lg flex-1 lg:flex-none bg-blue-600 px-4 py-4 text-sm text-white font-semibold transition hover:bg-blue-700 sm:px-6"
                 @click="editProduct">
                 {{ $t('common.edit') }}
               </button>
-              <button
-                class="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm text-white font-semibold transition hover:bg-red-700 sm:px-6"
-                @click="openDeleteConfirm">
-                {{ $t('common.delete') }}
-              </button>
+              <Trash2 @click="openDeleteConfirm" class="cursor-pointer w-6 h-6" />
             </div>
 
-            <button v-else
-              class="w-full rounded-lg bg-blue-600 px-6 py-3 text-base text-white font-semibold transition hover:bg-blue-700 sm:w-auto"
-              @click="openBuyConfirm">
-              {{ $t('pages.product.buy') }}
-            </button>
+            <div v-else class="flex gap-6 pr-4 items-center">
+              <span v-if="user === null" class="text-sm text-gray-400">
+                {{ $t('pages.product.authRequired') }}
+              </span>
+              <div class="flex flex-col items-end gap-1">
+                <button :disabled="user === null" @click="user !== null && openBuyConfirm()" class="w-full rounded-lg px-10 py-4 text-base font-semibold transition sm:w-auto
+        bg-blue-600 text-white hover:bg-blue-700
+        disabled:bg-blue-600/40
+        disabled:text-white/60
+        disabled:cursor-not-allowed
+        disabled:hover:bg-blue-600/40">
+                  {{ $t('pages.product.buy') }}
+                </button>
+              </div>
+
+
+              <div>
+                <Heart v-if="product.is_liked" @click="removeProductLike" class="w-8 h-8 text-red-500 cursor-pointer"
+                  :style="{ fill: 'currentColor' }" />
+                <Heart v-else @click="likeProduct" class="cursor-pointer w-8 h-8" />
+              </div>
+            </div>
+
+            <div v-if="buyError" class="mt-2 text-sm text-red-400">
+              {{ buyError }}
+            </div>
           </div>
 
           <div v-else class="w-full py-4 text-center bg-gray-700 text-gray-400 rounded-xl font-semibold">
             {{ $t('pages.product.sold') }}
           </div>
+
+        </div>
+
+        <TrustComponent v-if="!product.is_owner" />
+        <div v-else class="w-full flex justify-end gap-2 text-gray-400">
+          <Heart />
+          <span>{{ product.likes }}</span>
         </div>
       </div>
     </div>
@@ -259,7 +326,8 @@ const reviews = computed<ReviewSchema[]>(() => {
     <div v-if="product.reviews" class="w-full flex flex-col gap-4">
       <p class="text-3xl font-bold">{{ $t('pages.product.reviews') }}</p>
       <div class="flex flex-col gap-2">
-        <div v-for="review in product.reviews" :key="review.id" class="p-4 rounded-lg bg-gray-800/20 border border-gray-700">
+        <div v-for="review in product.reviews" :key="review.id"
+          class="p-4 rounded-lg bg-gray-800/20 border border-dark-700">
           <div class="flex justify-between items-center">
             <span class="font-medium">{{ review.rating }} ⭐</span>
             <span class="text-xs text-gray-400">{{ formatFullDate(review.created_at) }}</span>
@@ -312,13 +380,9 @@ const reviews = computed<ReviewSchema[]>(() => {
       :cancel-text="$t('pages.product.deleteConfirm.cancel')" @confirm="handleDeleteConfirm"
       @cancel="closeDeleteConfirm" />
 
-    <ConfirmWindow :is-open="showBuyConfirm"
-      :title="$t('pages.product.buyConfirm.title')"
-      :message="$t('pages.product.buyConfirm.message')"
-      :confirm-text="$t('pages.product.buyConfirm.confirm')"
-      :cancel-text="$t('pages.product.buyConfirm.cancel')"
-      @confirm="handleBuyConfirm"
-      @cancel="closeBuyConfirm" />
+    <ConfirmWindow :is-open="showBuyConfirm" :title="$t('pages.product.buyConfirm.title')"
+      :message="$t('pages.product.buyConfirm.message')" :confirm-text="$t('pages.product.buyConfirm.confirm')"
+      :cancel-text="$t('pages.product.buyConfirm.cancel')" @confirm="handleBuyConfirm" @cancel="closeBuyConfirm" />
   </section>
 
   <div v-else class="w-full h-full flex items-center justify-center">

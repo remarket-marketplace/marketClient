@@ -17,16 +17,18 @@ export const authService = {
     }
   },
 
-  async sendVerificationCode(email: string, username: string) {
+  async sendVerificationCode(email: string, username: string, captchaToken: string) {
     return await httpClient.post("/auth/send-verification-code", {
       email,
       username,
+      captcha_token: captchaToken
     });
   },
 
-  async sendPasswordResetLetter(email: string) {
+  async sendPasswordResetLetter(email: string, captchaToken: string) {
     return httpClient.post("/auth/password-reset-letter", {
       email: email,
+      captcha_token: captchaToken
     });
   },
 
@@ -43,10 +45,11 @@ export const authService = {
     });
   },
 
-  async signIn(email: string, password: string) {
+  async signIn(email: string, password: string, captchaToken: string) {
     const response = await httpClient.post("/auth/login", {
       email,
       password,
+      captcha_token: captchaToken
     });
     const userData = UserReadSchema.parse(response.data);
     await useUserStore().setUser(userData);

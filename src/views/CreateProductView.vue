@@ -7,8 +7,10 @@ import FileUploader from '@/components/FileUploader.vue'
 import router from '@/router'
 import { useUserStore } from '@/stores/user'
 import type { Category } from '@/validation/category/category'
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Percent, Calculator, Info, AlertCircle } from 'lucide-vue-next'
+import BackButton from '@/components/navigation/BackButton.vue'
 
 const { t } = useI18n()
 const categories = ref<Category[]>([])
@@ -23,17 +25,46 @@ const images = ref<File[]>([])
 const count = ref<number>(1)
 const sended = ref(false)
 const errorMessage = ref('')
+const commissionInterest = ref<number | null>(null)
 
 const store = useUserStore()
 const user = await store.getUser()
+
+// Calculate seller's final amount
+const sellerAmount = computed(() => {
+  if (!price.value || !commissionInterest.value) return 0
+  const total = Number(price.value) * count.value
+  const commission = total * (commissionInterest.value / 100)
+  return Math.max(0, total - commission)
+})
+
+// Price formatting
+const formatPrice = (value: number) => {
+  return value.toLocaleString('ru-RU', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }) + '₽'
+}
+
+// Form validation
+const isFormValid = computed(() => {
+  return selectedSubcategoryId.value &&
+    title.value.trim() &&
+    description.value.trim() &&
+    price.value &&
+    productData.value.trim() &&
+    images.value.length > 0
+})
 
 onMounted(async () => {
   try {
     await store.fetchUser()
     categories.value = await categoryService.getAllCategories()
+    const commission = await productService.getCommissionInterest()
+    commissionInterest.value = Number(commission)
   } catch (err) {
-    console.error('Ошибка загрузки категорий:', err)
-    errorMessage.value = t('pages.forms.createProduct.errorLoadingCategories')
+    console.error('Error loading data for product creation:', err)
+    errorMessage.value = t('common.error')
   }
 })
 
@@ -46,7 +77,7 @@ watch(selectedCategoryId, async (newCategory) => {
   try {
     subcategories.value = await categoryService.getSubcategories(newCategory)
   } catch (err) {
-    console.error('Ошибка загрузки подкатегорий:', err)
+    console.error('Error loading subcategories:', err)
     errorMessage.value = t('pages.forms.createProduct.errorLoadingSubcategories')
   }
 })
@@ -54,7 +85,7 @@ watch(selectedCategoryId, async (newCategory) => {
 async function createProduct() {
   errorMessage.value = ''
 
-  if (!selectedSubcategoryId.value || !title.value || !description.value || !price.value || !productData.value || !images.value.length) {
+  if (!isFormValid.value) {
     errorMessage.value = t('common.fillAllFields')
     return
   }
@@ -72,12 +103,12 @@ async function createProduct() {
 
     const result = await productService.createProduct(productDataObj, images.value)
     if (result && user?.username) {
-      router.push(`/profile/${user?.username}`)
+      router.push(`/user/${user?.username}`)
     } else {
       errorMessage.value = t('pages.forms.createProduct.errorCreatingProduct')
     }
   } catch (err: any) {
-    console.error('Ошибка при создании товара:', err)
+    console.error('Error creating product:', err)
     if (err.response?.data?.detail) {
       const errors = err.response.data.detail.map((e: any) => e.msg).join(', ')
       errorMessage.value = `${t('pages.forms.createProduct.validationErrors')}${errors}`
@@ -91,66 +122,299 @@ async function createProduct() {
 </script>
 
 <template>
-  <div class="no-scrollbar h-full w-full flex flex-col items-center overflow-scroll pb-36">
-    <div class="max-w-md w-full border border-dark-700 rounded-2xl p-8 backdrop-blur-md space-y-6">
-      <h1 class="text-center text-3xl text-mainText font-bold">
-        {{ $t('pages.forms.createProduct.title') }}
-      </h1>
+  <div class="w-full h-full overflow-scroll no-scrollbar lg:overflow-hidden pb-16 md:pb-0">
+    <!-- Mobile header -->
+    <div class="mb-6 lg:hidden px-4 pt-4">
+      <div class="flex gap-2">
+        <BackButton />
+        <h1 class="text-2xl font-bold text-white">
+          {{ $t('pages.forms.createProduct.title') }}
+        </h1>
+      </div>
+      <p class="mt-2 text-sm text-gray-400">
+        {{ $t('pages.forms.createProduct.subtitle') }}
+      </p>
+    </div>
 
-      <CustomSelect v-model="selectedCategoryId" :options="categories.map(c => ({ label: c.name, value: c.id }))"
-        :label="t('common.category')" :placeholder="t('pages.forms.createProduct.selectCategory')" />
+    <!-- Desktop layout -->
+    <div class="lg:flex lg:h-full">
+      <!-- Left column - Main form -->
+      <div class="lg:flex-1 overflow-y-auto no-scrollbar lg:pr-6 lg:pt-6">
+        <div class="px-4 lg:px-0 lg:pb-6 space-y-6">
+          <!-- Desktop header -->
+          <div class="hidden lg:block">
+            <div class="flex gap-2">
+              <BackButton/>
+              <h1 class="text-2xl font-bold text-white">
+                {{ $t('pages.forms.createProduct.title') }}
+              </h1>
+            </div>
+            <p class="mt-2 text-sm text-gray-400">
+              {{ $t('pages.forms.createProduct.subtitle') }}
+            </p>
+          </div>
 
-      <CustomSelect v-if="subcategories.length" v-model="selectedSubcategoryId"
-        :options="subcategories.map(s => ({ label: s.name, value: s.id }))" :label="t('common.subcategory')"
-        :placeholder="t('pages.forms.createProduct.selectSubcategory')" />
+          <!-- Images -->
+          <FileUploader v-model="images" :max-files="8" :hint="$t('pages.forms.createProduct.imageHint')" />
 
-      <div v-if="selectedSubcategoryId" class="space-y-4">
-        <div>
-          <label for="title" class="mb-2 block text-sm text-gray-300">{{ $t('pages.forms.createProduct.productName')
-            }}</label>
-          <input id="title" v-model="title" type="text"
-            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText" />
-        </div>
+          <!-- Categories -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-300">
+                {{ $t('common.category') }}
+                <span class="text-xs text-red-400 ml-1">*</span>
+              </label>
+              <CustomSelect v-model="selectedCategoryId"
+                :options="categories.map(c => ({ label: c.name, value: c.id }))"
+                :placeholder="t('pages.forms.createProduct.selectCategory')" class="w-full" />
+            </div>
 
-        <div>
-          <label for="description" class="mb-2 block text-sm text-gray-300">{{ $t('common.description') }}</label>
-          <textarea id="description" v-model="description" rows="4"
-            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText max-h-52"></textarea>
-        </div>
+            <div v-if="subcategories.length" class="space-y-2">
+              <label class="text-sm font-medium text-gray-300">
+                {{ $t('common.subcategory') }}
+                <span class="text-xs text-red-400 ml-1">*</span>
+              </label>
+              <CustomSelect v-model="selectedSubcategoryId"
+                :options="subcategories.map(s => ({ label: s.name, value: s.id }))"
+                :placeholder="t('pages.forms.createProduct.selectSubcategory')" class="w-full" />
+            </div>
+          </div>
 
-        <div>
-          <label for="price" class="mb-2 block text-sm text-gray-300">{{ $t('common.price') }}</label>
-          <input id="price" v-model="price" type="number" min="1"
-            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText" />
-        </div>
+          <!-- Product information -->
+          <div class="space-y-6">
+            <!-- Title and quantity -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+              <div class="space-y-2">
+                <label for="title" class="text-sm font-medium text-gray-300">
+                  {{ $t('pages.forms.createProduct.productName') }}
+                  <span class="text-xs text-red-400 ml-1">*</span>
+                </label>
+                <input id="title" v-model="title" type="text" maxlength="50" minlength="10"
+                  :placeholder="$t('pages.forms.createProduct.productNamePlaceholder')"
+                  class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white outline-none placeholder-gray-500" />
+                <p class="text-xs text-gray-400 text-right">
+                  {{ title.length }}/50
+                </p>
+              </div>
 
-        <div>
-          <label for="productData" class="mb-2 block text-sm text-gray-300">{{
-            $t('pages.forms.createProduct.productData') }}</label>
-          <textarea id="productData" v-model="productData" rows="4"
-            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText max-h-36"></textarea>
-        </div>
+              <div class="space-y-2">
+                <label for="count" class="text-sm font-medium text-gray-300">
+                  {{ $t('pages.forms.createProduct.count') }}
+                </label>
+                <div class="relative">
+                  <input id="count" v-model.number="count" type="number" min="1" max="100000"
+                    class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white outline-none" />
+                  <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm ">
+                    {{ $t('common.items') }}
+                  </div>
+                </div>
+              </div>
+            </div>
 
-        <div>
-          <label class="mb-2 block text-sm text-gray-300">{{ $t('common.images') }}</label>
-          <FileUploader v-model="images" :max-files="8" />
-        </div>
+            <!-- Product description -->
+            <div class="space-y-2">
+              <label for="description" class="text-sm font-medium text-gray-300">
+                {{ $t('common.description') }}
+                <span class="text-xs text-red-400 ml-1">*</span>
+              </label>
+              <textarea id="description" v-model="description" rows="8" maxlength="500" minlength="10"
+                :placeholder="$t('pages.forms.createProduct.descriptionPlaceholder')"
+                class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-3 text-sm outline-none text-white placeholder-gray-500 resize-none"></textarea>
+              <p class="text-xs text-gray-400 text-right">
+                {{ description.length }}/500
+              </p>
+            </div>
 
-        <div>
-          <label for="count" class="mb-2 block text-sm text-gray-300">{{ $t('pages.forms.createProduct.count')
-            }}</label>
-          <input id="count" v-model="count" type="number" min="1" max="100000"
-            class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-2 text-mainText" />
+            <!-- Product data -->
+            <div class="space-y-2">
+              <div class="flex items-center gap-2">
+                <label for="productData" class="text-sm font-medium text-gray-300">
+                  {{ $t('pages.forms.createProduct.productData') }}
+                  <span class="text-xs text-red-400 ml-1">*</span>
+                </label>
+                <div class="flex items-center gap-1 text-xs text-blue-400">
+                  <Info class="w-3 h-3" />
+                  <span>{{ $t('pages.forms.createProduct.productDataHint') }}</span>
+                </div>
+              </div>
+              <textarea id="productData" v-model="productData" rows="6" maxlength="300"
+                :placeholder="$t('pages.forms.createProduct.productDataPlaceholder')"
+                class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-3 text-sm outline-none text-white placeholder-gray-500 resize-none font-mono"></textarea>
+              <p class="text-xs text-gray-400 text-right">
+                {{ productData.length }}/300
+              </p>
+            </div>
+          </div>
+
+          <!-- Error banner -->
+          <ErrorBanner v-if="errorMessage" :message="errorMessage" />
         </div>
       </div>
 
-      <button v-if="selectedSubcategoryId" type="button" :disabled="sended"
-        class="w-full rounded-lg bg-blue-600 py-2 text-mainText font-semibold hover:bg-blue-700 disabled:opacity-50"
-        @click="createProduct">
-        {{ sended ? $t('pages.forms.createProduct.creating') : $t('common.create') }}
-      </button>
+      <!-- Right sidebar - Fixed on desktop, normal flow on mobile -->
+      <div
+        class="lg:w-96 lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-full lg:border-l border-dark-700 px-4 lg:px-0 lg:pt-6 lg:pl-6 lg:pt-6">
+        <div class="pt-6 lg:pt-0">
+          <div class="space-y-6 pb-6 lg:pb-0">
+            <!-- Product price -->
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <label for="price" class="text-sm font-medium text-gray-300">
+                  {{ $t('common.price') }}
+                  <span class="text-xs text-red-400 ml-1">*</span>
+                </label>
+                <div class="flex items-center gap-2">
+                  <Calculator class="w-4 h-4 text-blue-400" />
+                  <span class="text-xs text-gray-400">₽</span>
+                </div>
+              </div>
+              <div class="relative">
+                <input id="price" v-model.number="price" type="number" min="10" max="1000000"
+                  :placeholder="$t('pages.forms.createProduct.pricePlaceholder')"
+                  class="w-full outline-none rounded-lg bg-dark-600 border border-dark-700 px-4 py-3 text-lg font-semibold text-white" />
+                <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 text-sm font-medium">
+                  ₽
+                </div>
+              </div>
+            </div>
 
-      <ErrorBanner v-if="errorMessage" :message="errorMessage" />
+            <!-- Calculations -->
+            <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-5 space-y-4">
+              <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+                <Percent class="w-4 h-4 text-blue-400" />
+                {{ $t('pages.forms.createProduct.calculations') }}
+              </h3>
+
+              <div class="space-y-3">
+                <!-- Total price -->
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-gray-400">{{ $t('pages.forms.createProduct.totalPrice') }}:</span>
+                  <span class="text-sm font-medium text-white">
+                    {{ formatPrice(Number(price) * count) }}
+                  </span>
+                </div>
+
+                <!-- Platform commission -->
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-gray-400">
+                    {{ $t('pages.forms.createProduct.commission') }}:
+                    <span v-if="commissionInterest" class="text-blue-400 ml-1">
+                      ({{ commissionInterest }}%)
+                    </span>
+                  </span>
+                  <span class="text-sm font-medium text-red-400">
+                    -{{ formatPrice((Number(price) * count) * (commissionInterest! / 100)) }}
+                  </span>
+                </div>
+
+                <!-- Divider -->
+                <div class="border-t border-dark-600 my-2"></div>
+
+                <!-- Seller amount -->
+                <div class="flex items-center justify-between">
+                  <span class="text-sm font-medium text-gray-300">
+                    {{ $t('pages.forms.createProduct.sellerReceives') }}:
+                  </span>
+                  <span class="text-lg font-bold text-green-400">
+                    {{ formatPrice(sellerAmount) }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Commission note -->
+              <div v-if="commissionInterest" class="mt-4 p-3 rounded-lg bg-blue-900/20 border border-blue-800/30">
+                <p class="text-xs text-blue-300 leading-relaxed">
+                  {{ $t('pages.forms.createProduct.commissionNote', { percent: commissionInterest }) }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Create button -->
+            <button type="button" :disabled="sended || !isFormValid"
+              class="w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 py-3.5 text-white font-semibold hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-blue-500/20"
+              @click="createProduct">
+              <span v-if="sended" class="flex items-center justify-center gap-2">
+                <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+                  viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                  </path>
+                </svg>
+                {{ $t('pages.forms.createProduct.creating') }}
+              </span>
+              <span v-else>
+                {{ $t('common.create') }}
+              </span>
+            </button>
+
+            <!-- Terms note -->
+            <div class="text-xs text-gray-400 space-y-2">
+              <div class="flex items-start gap-2 p-3 bg-dark-700/30 rounded-lg">
+                <AlertCircle class="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+                <p>
+                  {{ $t('pages.forms.createProduct.termsNote') }}
+                  <router-link to="/terms" class="text-blue-400 hover:text-blue-300 hover:underline transition-colors">
+                    {{ $t('pages.forms.createProduct.termsLink') }}
+                  </router-link>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
+
+<style>
+/* Remove number input arrows */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Custom scrollbar for left column on desktop */
+@media (min-width: 1024px) {
+  .lg\:overflow-y-auto {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  }
+
+  .lg\:overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .lg\:overflow-y-auto::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 10px 0;
+  }
+
+  .lg\:overflow-y-auto::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+  }
+
+  .lg\:overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+}
+
+/* Ensure proper scrolling on mobile */
+@media (max-width: 1023px) {
+
+  /* Remove fixed heights and allow natural flow */
+  .lg\:h-\[calc\(100vh-140px\)\] {
+    height: auto;
+  }
+
+  .lg\:sticky {
+    position: static;
+  }
+}
+</style>

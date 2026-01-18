@@ -1,17 +1,11 @@
 <script setup lang="ts">
 import { adminService } from '@/api/admin/AdminService'
-import router from '@/router'
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 const isMobile = ref(false)
 const dashboardData = ref<any>()
-
-// Навигация к продукту
-function goToProduct(id: string) {
-  router.push({ path: `/product/${id}` })
-}
 
 function checkMobile() {
   isMobile.value = window.innerWidth < 768

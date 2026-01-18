@@ -15,7 +15,6 @@ const defaultLang = savedLang || getSystemLanguage()
 export const i18n = createI18n({
   legacy: false,
   locale: defaultLang,
-  fallbackLocale: 'en',
   messages: {
     en,
     ru,

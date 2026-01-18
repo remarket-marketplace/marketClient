@@ -22,6 +22,7 @@ export const CategorySchema = z.object({
   name: z.string(),
   slug: z.string(),
   description: z.string(),
+  is_active: z.boolean(),
   image_url: z.string().nullable(),
   parent_id: z.string().nullable(),
 }).strip()
@@ -41,6 +42,8 @@ export const ProductSchema = z.object({
   reviews: ReviewsListSchema.nullable().optional(),
   is_owner: z.boolean().optional(),
   product_data_string: z.string().nullable().optional(),
+  likes: z.number().nullable().optional(),
+  is_liked: z.boolean().nullable().optional(),
 }).strip()
 
 export type Product = z.infer<typeof ProductSchema>

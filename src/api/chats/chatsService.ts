@@ -178,19 +178,78 @@ export const chatsService = {
     socket!.emit("join_room", { chat_id: chatId });
   },
 
-  async getChatMessages(chatId: string) {
+  async getChatMessages(
+    chatId: string,
+    page: number,
+    perPage: number
+  ): Promise<{
+    messages: ChatMessageUnion[];
+    totalPages: number;
+    currentPage: number;
+    total: number;
+  }> {
     try {
-      const resp = await httpClient.get(`/chats/${chatId}/messages`);
-      return ChatArrayUnionSchema.parse(resp.data);
+      const response = await httpClient.get(`/chats/${chatId}/messages`, {
+        params: {
+          page,
+          per_page: perPage,
+        },
+      });
+      const messages = ChatArrayUnionSchema.parse(response.data.messages);
+
+      return {
+        messages: messages.reverse(),
+        totalPages: response.data.total_pages,
+        currentPage: response.data.page || page,
+        total: response.data.total,
+      };
     } catch (e) {
-      console.error("Error fetching messages:", e);
-      return [];
+      return {
+        messages: [],
+        totalPages: 0,
+        currentPage: page,
+        total: 0,
+      };
+    }
+  },
+
+    async getChatMessagesByDealId(
+    dealId: string,
+    page: number,
+    perPage: number
+  ): Promise<{
+    messages: ChatMessageUnion[];
+    totalPages: number;
+    currentPage: number;
+    total: number;
+  }> {
+    try {
+      const response = await httpClient.get(`/chats/messages-by-deal-id/${dealId}`, {
+        params: {
+          page,
+          per_page: perPage,
+        },
+      });
+      const messages = ChatArrayUnionSchema.parse(response.data.messages);
+
+      return {
+        messages: messages.reverse(),
+        totalPages: response.data.total_pages,
+        currentPage: response.data.page || page,
+        total: response.data.total,
+      };
+    } catch (e) {
+      return {
+        messages: [],
+        totalPages: 0,
+        currentPage: page,
+        total: 0,
+      };
     }
   },
 
   async sendMessage(message: string, chatId: string): Promise<boolean> {
     if (!this.isConnected()) {
-      console.warn("WS offline → retry in 500ms");
       await new Promise((r) => setTimeout(r, 500));
 
       if (!this.isConnected()) {

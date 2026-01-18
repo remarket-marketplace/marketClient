@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useI18n } from 'vue-i18n';
+import { useI18n } from 'vue-i18n'
+import { X } from 'lucide-vue-next'
 
 const { t } = useI18n()
 
@@ -18,10 +19,7 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-const isClicked = ref<boolean>(false)
-
 function handleConfirm() {
-  isClicked.value = !isClicked.value
   emit('confirm')
 }
 
@@ -36,11 +34,11 @@ function handleEsc(e: KeyboardEvent) {
 }
 
 watch(() => _props.isOpen, (newVal) => {
-    if (newVal) {
-        document.body.classList.add('modal-open')
-    } else {
-        document.body.classList.remove('modal-open')
-    }
+  if (newVal) {
+    document.body.classList.add('modal-open')
+  } else {
+    document.body.classList.remove('modal-open')
+  }
 }, { immediate: true })
 
 onMounted(() => {
@@ -48,42 +46,88 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => { 
-    document.removeEventListener('keydown', handleEsc)
-    document.body.classList.remove('modal-open') 
+  document.removeEventListener('keydown', handleEsc)
+  document.body.classList.remove('modal-open') 
 })
 </script>
 
 <template>
   <div
     v-if="_props.isOpen"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-85 transition-all duration-300 ease-out"
+    class="fixed inset-0 z-[100] flex items-center justify-center p-4 transition-opacity duration-200"
     :class="{ 'opacity-100': _props.isOpen, 'opacity-0': !_props.isOpen }"
-    @click.self="handleCancel" >
-    <div class="mx-4 max-w-md w-full rounded-xl bg-dark-800 p-6 shadow-xl md:max-w-lg md:p-8 focus:outline-none">
-      <p class="mb-6 text-base text-gray-300 leading-6">
-        {{ message }}
-      </p>
-      <div class="flex justify-end gap-3">
+  >
+    <!-- Backdrop -->
+    <div
+      class="absolute inset-0 bg-black/50"
+      @click="handleCancel"
+    />
+    
+    <!-- Modal -->
+    <div
+      class="relative w-full max-w-md bg-dark-800 rounded-xl shadow-2xl overflow-hidden border border-dark-700"
+    >
+      <!-- Header -->
+      <div class="px-6 py-5 border-b border-dark-700">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-white">
+            {{ title }}
+          </h3>
+          <button
+            @click="handleCancel"
+            class="p-1 text-gray-400 hover:text-gray-300 rounded-full transition-colors duration-150"
+            aria-label="Close"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      <!-- Message -->
+      <div class="px-6 py-5">
+        <p class="text-gray-300 leading-relaxed">
+          {{ message }}
+        </p>
+      </div>
+
+      <!-- Actions -->
+      <div class="px-6 py-4 bg-dark-900/50 flex justify-end gap-3">
         <button
-          class="rounded bg-gray-700 px-4 py-2 text-mainText transition duration-200 ease-in-out disabled:cursor-not-allowed active:bg-gray-500 hover:bg-gray-600 disabled:opacity-50"
+          class="px-5 py-2.5 text-gray-400 font-medium rounded-lg hover:bg-dark-700 hover:text-gray-300 transition-colors duration-150 text-sm"
           @click="handleCancel"
+          :disabled="_props.isLoading"
         >
           {{ _props.cancelText ?? t('common.cancel') }}
         </button>
         <button
-          class="rounded bg-blue-600 px-4 py-2 text-mainText transition duration-200 ease-in-out disabled:cursor-not-allowed disabled:opacity-50"
+          class="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-150 text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           :disabled="_props.isLoading"
           @click="handleConfirm"
         >
-          <svg v-if="_props.isLoading" class="mr-2 h-5 w-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <svg
+            v-if="_props.isLoading"
+            class="w-4 h-4 animate-spin"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            />
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
           </svg>
-          <template v-if="_props.isLoading">
-             {{ t('common.loading') }} 
-          </template>
-          <template v-else>
-             {{ _props.confirmText ?? t('common.confirm') }}
-          </template>
+          <span>
+            {{ _props.confirmText ?? t('common.confirm') }}
+          </span>
         </button>
       </div>
     </div>
@@ -93,5 +137,36 @@ onBeforeUnmount(() => {
 <style scoped>
 .modal-open {
   overflow: hidden;
+}
+
+/* Smooth backdrop animation */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Modal enter animation */
+.modal-enter-active {
+  animation: modal-enter 0.2s ease-out;
+}
+
+.modal-leave-active {
+  animation: modal-enter 0.2s ease-out reverse;
+}
+
+@keyframes modal-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 </style>

@@ -6,7 +6,7 @@ import { ReviewSchema } from '../review/review'
 export const BaseMessageSchema = z.object({
   id: z.string(),
   chat_room_id: z.string(),
-  created_at: z.string(),
+  created_at: z.string().transform((str) => new Date(str)),
   message_type: z.string(),
 })
 
@@ -57,7 +57,6 @@ export const ChatUpdateSchema = z.object({
 // Массив сообщений
 export const ChatArrayUnionSchema = z.array(ChatMessageUnionSchema)
 
-// Типы TypeScript
 export type ChatMessageUnion = z.infer<typeof ChatMessageUnionSchema>
 export type ChatUpdateSchema = z.infer<typeof ChatUpdateSchema>
 

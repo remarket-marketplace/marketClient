@@ -30,7 +30,7 @@ async function resetPassword() {
     if (resetPasswordToken != null) {
       await authService.resetPassword(resetPasswordToken.toString(), newPassword.value)
       successMessage.value = t('pages.resetPassword.passwordHasReset')
-
+      sended.value = false
       setTimeout(() => {
         router.push('/signIn')
       }, 1000)

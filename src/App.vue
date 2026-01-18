@@ -26,7 +26,7 @@ onMounted(async () => {
   setInterval(() => {
     if (user.value)
       authService.pingOnlineStatus()
-  }, 5000)
+  }, 30000)
 })
 // Определяем какой layout использовать
 const layout = computed(() => {

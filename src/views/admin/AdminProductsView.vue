@@ -4,7 +4,6 @@ import type { Product } from '@/validation/product/product';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { 
-  DollarSign, 
   User, 
   Image, 
   Folder,
@@ -16,6 +15,7 @@ import {
 } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 import ProductStatusTag from '@/components/ProductStatusTag.vue';
+import BackButton from '@/components/navigation/BackButton.vue';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -40,7 +40,7 @@ onMounted(async () => {
 });
 
 function navigateToProfile(username: string) {
-  router.push(`/profile/${username}`);
+  router.push(`/user/${username}`);
 }
 
 function navigateToProduct(productId: string) {
@@ -89,7 +89,10 @@ function formatPrice(price: number) {
     <!-- Заголовок -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
       <div class="flex items-center gap-2">
-        <h1 class="text-lg sm:text-2xl font-bold text-mainText">{{ $t('pages.admin.productsPage.title') }}</h1>
+        <div class="flex gap-2">
+          <BackButton/>
+          <h1 class="text-lg sm:text-2xl font-bold text-mainText">{{ $t('pages.admin.productsPage.title') }}</h1>
+        </div>
       </div>
       <div class="flex items-center gap-2 text-xs sm:text-base text-text-secondary">
         <Package class="h-4 w-4" />
@@ -153,7 +156,6 @@ function formatPrice(price: number) {
                   <!-- Цена и продавец -->
                   <div class="flex flex-col gap-1 text-xs sm:text-sm">
                     <div class="flex items-center gap-1 text-green-400 font-semibold">
-                      <DollarSign class="w-3 h-3 sm:w-4 sm:h-4" />
                       <span>{{ formatPrice(product.price) }}</span>
                     </div>
                     

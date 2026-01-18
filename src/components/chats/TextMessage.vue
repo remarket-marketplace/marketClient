@@ -7,7 +7,7 @@ defineProps<{
 </script>
 
 <template>
-	<div v-if="textMessage != null" class="max-w-[70%] rounded-xl px-4 py-2 text-sm break-words" :class="[
+	<div v-if="textMessage != null" class="max-w-[70%] min-w-4 rounded-xl px-4 py-2 text-sm break-words" :class="[
 		textMessage.sender_id === user?.id
 			? 'bg-blue-600 text-mainText rounded-br-none self-end'
 			: 'bg-dark-600 text-mainText rounded-bl-none self-start'

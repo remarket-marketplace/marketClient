@@ -3,216 +3,270 @@ import { categoryService } from '@/api/category/CategoryService'
 import { productService } from '@/api/product/ProductService'
 import MainProductCard from '@/components/mainProductCard.vue'
 import SearchField from '@/components/SearchField.vue'
+import Title from '@/components/Title.vue'
+import HeroSection from '@/components/HeroSection.vue'
 import router from '@/router'
 import type { Category } from '@/validation/category/category'
 import type { Product } from '@/validation/product/product'
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onBeforeUnmount, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Folder } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const API_HOST = import.meta.env.VITE_API_HOST
 
 const mainCategories = ref<Category[]>([])
 const subCategories = ref<Category[]>([])
-const selectedMainCategoryId = ref<string>('')
-const selectedSubCategoryId = ref<string>('')
-
-const fullProducts = ref<Product[]>([])
+const selectedMainCategoryId = ref('')
+const selectedSubCategoryId = ref('')
 const products = ref<Product[]>([])
 const totalPages = ref(1)
 const currentPage = ref(1)
 const perPage = ref(30)
+const categoryPage = ref(1)
+const categoryTotalPages = ref(1)
+const subCategoryPage = ref(1)
+const subCategoryTotalPages = ref(1)
+const categoriesPerPage = ref(30)
 const searchQuery = ref('')
-
 const isServerPagination = ref(true)
+const isCategoryPagination = ref(false)
 const isLoadingMore = ref(false)
-const isMobile = ref(false)
+const isProductsLoading = ref(false)
 const isCategoriesLoading = ref(true)
+const isSubCategoriesLoading = ref(false)
+const isLoadingMoreCategories = ref(false)
+const isLoadingMoreSubCategories = ref(false)
+const isSearchPagination = ref(false)
+
+const loadMoreTrigger = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | null = null
 
 function goToProduct(id: string) {
   router.push({ path: `/product/${id}` })
 }
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
+
 function debouncedSearch() {
   if (searchTimeout) clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
-    currentPage.value = 1
-    if (searchQuery.value.trim()) {
-      searchProducts()
-    } else {
-      loadFilteredProducts()
+  searchTimeout = setTimeout(async () => {
+    if (!searchQuery.value.trim()) {
+      await resetAllFilters()
+      return
     }
+    isProductsLoading.value = true
+    const res = await productService.searchProducts(searchQuery.value.trim(), 1, perPage.value)
+    products.value = res.products
+    currentPage.value = res.currentPage
+    totalPages.value = res.totalPages
+    isSearchPagination.value = true
+    isCategoryPagination.value = false
+    isServerPagination.value = false
+    isProductsLoading.value = false
   }, 300)
 }
 
-async function searchProducts() {
-  let searchResults = await productService.searchProducts(searchQuery.value.trim())
-
-  if (selectedMainCategoryId.value && !selectedSubCategoryId.value) {
-    const subIds = subCategories.value.map(c => c.id)
-    searchResults = searchResults.filter((p: { category: { id: string } }) =>
-      p.category.id === selectedMainCategoryId.value || subIds.includes(p.category.id),
-    )
-  } else if (selectedSubCategoryId.value) {
-    searchResults = searchResults.filter((p: { category: { id: string } }) =>
-      p.category.id === selectedSubCategoryId.value,
-    )
-  }
-
-  fullProducts.value = searchResults
-  totalPages.value = Math.ceil(searchResults.length / perPage.value)
-  isServerPagination.value = false
-  updateDisplayedProducts()
-}
-
-function updateDisplayedProducts() {
-  if (isServerPagination.value) return
-  const start = (currentPage.value - 1) * perPage.value
-  const end = start + perPage.value
-  products.value = fullProducts.value.slice(start, end)
-}
-
 async function loadProducts(page = 1, append = false) {
-  currentPage.value = page
-  const result = await productService.getAllProducts(page, perPage.value)
-  if (append)
-    products.value = [...products.value, ...result.products]
-  else
-    products.value = result.products
-
-  totalPages.value = Number(result.totalPages) || 1
+  if (append && isLoadingMore.value) return
+  isLoadingMore.value = append
+  if (!append) isProductsLoading.value = true
+  const res = await productService.getAllProducts(page, perPage.value)
+  products.value = append ? [...products.value, ...res.products] : res.products
+  currentPage.value = res.currentPage
+  totalPages.value = res.totalPages
   isServerPagination.value = true
+  isCategoryPagination.value = false
+  isLoadingMore.value = false
+  isProductsLoading.value = false
+}
+
+async function loadCategoryProducts(categoryId: string, page = 1, append = false) {
+  if (append && isLoadingMore.value) return
+  isLoadingMore.value = append
+  if (!append) isProductsLoading.value = true
+  const res = await productService.getProductsByCategory(categoryId, page, perPage.value)
+  products.value = append ? [...products.value, ...res.products] : res.products
+  currentPage.value = res.currentPage
+  totalPages.value = res.totalPages
+  isServerPagination.value = true
+  isCategoryPagination.value = true
+  isLoadingMore.value = false
+  isProductsLoading.value = false
 }
 
 async function loadMoreProducts() {
-  if (isLoadingMore.value) return
-  isLoadingMore.value = true
+  if (currentPage.value >= totalPages.value) return
   const nextPage = currentPage.value + 1
-  if (nextPage > totalPages.value) {
-    isLoadingMore.value = false
+  if (isSearchPagination.value) {
+    const res = await productService.searchProducts(searchQuery.value.trim(), nextPage, perPage.value)
+    products.value = [...products.value, ...res.products]
+    currentPage.value = res.currentPage
+    totalPages.value = res.totalPages
+    return
+  }
+  if (isCategoryPagination.value) {
+    const id = selectedSubCategoryId.value || selectedMainCategoryId.value
+    await loadCategoryProducts(id, nextPage, true)
     return
   }
   await loadProducts(nextPage, true)
-  currentPage.value = nextPage
-  isLoadingMore.value = false
 }
 
-async function loadMainCategories() {
-  const all = await categoryService.getAllCategories()
-  mainCategories.value = all.filter((c: { parent_id: any }) => !c.parent_id)
+async function loadMainCategories(page = 1, append = false) {
+  if (!append) isCategoriesLoading.value = true
+  const res = await categoryService.getAllCategories(page, categoriesPerPage.value)
+  mainCategories.value = append ? [...mainCategories.value, ...res.categories] : res.categories.filter((c: { parent_id: any }) => !c.parent_id)
+  categoryPage.value = res.currentPage
+  categoryTotalPages.value = res.totalPages
   isCategoriesLoading.value = false
 }
 
+async function loadMoreMainCategories() {
+  if (isLoadingMoreCategories.value) return
+  if (categoryPage.value >= categoryTotalPages.value) return
+  isLoadingMoreCategories.value = true
+  await loadMainCategories(categoryPage.value + 1, true)
+  isLoadingMoreCategories.value = false
+}
+
 async function onMainCategoryClick(id: string) {
+  if (selectedMainCategoryId.value === id) {
+    await resetAllFilters()
+    return
+  }
   selectedMainCategoryId.value = id
   selectedSubCategoryId.value = ''
-  subCategories.value = await categoryService.getSubcategories(id)
-  await loadFilteredProducts()
+  subCategories.value = []
+  subCategoryPage.value = 1
+  isSubCategoriesLoading.value = true
+  const res = await categoryService.getSubcategories(id, subCategoryPage.value, categoriesPerPage.value)
+  subCategories.value = res.categories
+  subCategoryTotalPages.value = res.totalPages
+  isSubCategoriesLoading.value = false
+  await loadCategoryProducts(id, 1, false)
+}
+
+async function loadMoreSubCategories() {
+  if (isLoadingMoreSubCategories.value) return
+  if (subCategoryPage.value >= subCategoryTotalPages.value) return
+  isLoadingMoreSubCategories.value = true
+  const res = await categoryService.getSubcategories(selectedMainCategoryId.value, subCategoryPage.value + 1, categoriesPerPage.value)
+  subCategories.value = [...subCategories.value, ...res.categories]
+  subCategoryPage.value = res.currentPage
+  isLoadingMoreSubCategories.value = false
 }
 
 async function onSubCategoryClick(id: string) {
-  selectedSubCategoryId.value = id
-  await loadFilteredProducts()
-}
-
-async function loadFilteredProducts() {
-  currentPage.value = 1
-
-  if (selectedSubCategoryId.value) {
-    const res = await productService.getProductsByCategory(selectedSubCategoryId.value)
-    fullProducts.value = res
-  } else if (selectedMainCategoryId.value) {
-    let prods = await productService.getProductsByCategory(selectedMainCategoryId.value)
-    if (subCategories.value.length > 0) {
-      const subReqs = subCategories.value.map(cat => productService.getProductsByCategory(cat.id))
-      const subRes = await Promise.all(subReqs)
-      prods = [...prods, ...subRes.flat()]
-    }
-    fullProducts.value = prods
-  } else {
-    await loadProducts()
+  if (selectedSubCategoryId.value === id) {
+    selectedSubCategoryId.value = ''
+    await loadCategoryProducts(selectedMainCategoryId.value, 1, false)
     return
   }
-
-  isServerPagination.value = false
-  totalPages.value = Math.ceil(fullProducts.value.length / perPage.value)
-  updateDisplayedProducts()
+  selectedSubCategoryId.value = id
+  await loadCategoryProducts(id, 1, false)
 }
 
-function checkMobile() {
-  isMobile.value = window.innerWidth < 1024
+async function resetAllFilters() {
+  selectedMainCategoryId.value = ''
+  selectedSubCategoryId.value = ''
+  subCategories.value = []
+  searchQuery.value = ''
+  isSearchPagination.value = false
+  isCategoryPagination.value = false
+  await loadProducts(1, false)
+}
+
+const categoriesScroll = ref<HTMLDivElement | null>(null)
+const categoriesLoadMoreTrigger = ref<HTMLElement | null>(null)
+let categoriesObserver: IntersectionObserver | null = null
+const subCategoriesScroll = ref<HTMLDivElement | null>(null)
+const subCategoriesLoadMoreTrigger = ref<HTMLElement | null>(null)
+let subCategoriesObserver: IntersectionObserver | null = null
+
+const handleCategoriesWheel = (e: WheelEvent) => {
+  const el = e.currentTarget as HTMLElement
+  if (!el) return
+  if (el.scrollWidth > el.clientWidth) {
+    e.preventDefault()
+    el.scrollLeft += e.deltaY
+  }
 }
 
 onMounted(async () => {
   await loadProducts()
   await loadMainCategories()
-  checkMobile()
-  window.addEventListener('resize', checkMobile)
+  observer = new IntersectionObserver((entries) => { if (entries[0]!.isIntersecting) loadMoreProducts() }, { rootMargin: '300px' })
+  if (loadMoreTrigger.value) observer.observe(loadMoreTrigger.value)
+  categoriesObserver = new IntersectionObserver((entries) => { if (entries[0]!.isIntersecting && categoryPage.value < categoryTotalPages.value) loadMoreMainCategories() }, { root: categoriesScroll.value, threshold: 0.1 })
+  if (categoriesLoadMoreTrigger.value) categoriesObserver.observe(categoriesLoadMoreTrigger.value)
 })
 
-onUnmounted(() => {
-  window.removeEventListener('resize', checkMobile)
+onBeforeUnmount(() => {
+  observer?.disconnect()
+  categoriesObserver?.disconnect()
 })
 </script>
 
 <template>
-  <section class="h-full w-full flex flex-col overflow-hidden overflow-y-auto">
+  <HeroSection />
 
-    <SearchField v-model="searchQuery" :placeholder="$t('pages.index.searchPlaceholder')"
-      @search-change="debouncedSearch" class="w-full" />
+  <div id="catalog-start" class="scroll-mt-24"></div>
 
-    <div class="mt-6">
-      <div class="text-lg font-semibold mb-2">{{ t('common.category') }}</div>
+  <section class="w-full flex flex-col items-center">
+    <div class="relative z-20 flex flex-col items-center mx-auto w-full px-2 lg:px-4 py-6 min-h-screen 2xl:w-1/2">
+        <SearchField v-model="searchQuery" :placeholder="$t('pages.index.searchPlaceholder')"
+          @search-change="debouncedSearch" class="w-full lg:max-w-2xl" />
 
-      <div v-if="isCategoriesLoading" class="mt-4 flex gap-3 overflow-x-auto no-scrollbar pb-2">
-        <div v-for="n in 5" :key="n" class="cursor-pointer min-w-[90px] flex-shrink-0 flex flex-col items-center rounded-lg p-2">
-          <div class="h-20 w-20 animate-pulse rounded-lg"></div>
-          <div class="w-16 h-4 animate-pulse mt-2 rounded"></div>
+        <div class="mt-16 w-full">
+          <Title :text="t('common.categories')" />
+
+          <div v-if="isCategoriesLoading" class="flex gap-3 overflow-x-auto">
+            <div v-for="n in 5" :key="n" class="w-20 h-20 bg-dark-600 animate-pulse rounded-lg" />
+          </div>
+
+          <div v-else ref="categoriesScroll" 
+               @wheel.prevent="handleCategoriesWheel"
+               class="overflow-x-auto overflow-y-hidden no-scrollbar w-full relative cursor-grab active:cursor-grabbing">
+            <div class="flex gap-3 min-w-max py-2">
+              <div v-for="cat in mainCategories" :key="cat.id" @click="onMainCategoryClick(cat.id)"
+                class="flex-shrink-0 cursor-pointer flex flex-col items-center p-2 rounded-lg transition" 
+                :class="selectedMainCategoryId === cat.id ? 'bg-white/20' : 'hover:bg-dark-700/40'">
+                <div class="w-16 h-16 flex items-center justify-center bg-dark-700 rounded-lg overflow-hidden border border-white/5 shadow-inner">
+                  <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="w-full h-full object-cover" />
+                  <Folder v-else class="w-8 h-8 text-gray-400" />
+                </div>
+                <span class="text-sm mt-2 text-center truncate w-16 font-medium">{{ cat.name }}</span>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div v-else-if="mainCategories.length > 0" class="mt-4 flex gap-3 overflow-x-auto no-scrollbar pb-2">
-        <div v-for="cat in mainCategories" :key="cat.id" @click="onMainCategoryClick(cat.id)"
-          class="cursor-pointer min-w-[90px] flex-shrink-0 flex flex-col items-center rounded-lg p-2">
-          <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" alt="category"
-               class="h-16 w-16 object-contain rounded-lg" />
-          <span class="text-center text-sm font-medium">{{ cat.name }}</span>
+        <div v-if="subCategories.length" class="mt-4 w-full">
+          <div class="flex gap-2 flex-wrap">
+            <button v-for="sub in subCategories" :key="sub.id" @click="onSubCategoryClick(sub.id)"
+              class="px-5 py-2.5 rounded-full text-sm font-bold border transition-all hover:scale-105 active:scale-95 backdrop-blur-md"
+              :class="selectedSubCategoryId === sub.id ? 'bg-blue-600 text-white border-blue-500' : 'bg-white/5 text-white border-white/10 hover:bg-white/10'">
+              {{ sub.name }}
+            </button>
+          </div>
         </div>
-      </div>
-    </div>
 
-    <div v-if="subCategories.length > 0" class="mt-6">
-      <div class="text-lg font-semibold mb-2">{{ t('common.subcategory') }}</div>
-      <div class="flex flex-wrap gap-3">
-        <div v-for="sub in subCategories" :key="sub.id" @click="onSubCategoryClick(sub.id)"
-          class="cursor-pointer w-[90px] flex flex-col items-center p-2 rounded-lg">
-          <img v-if="sub.image_url" :src="`${API_HOST}${sub.image_url}`" alt="subcategory"
-               class="h-16 w-16 object-contain rounded-lg" />
-          <span class="text-center text-sm font-medium">{{ sub.name }}</span>
+        <Title class="mt-12 w-full" :text="t('common.products')" />
+
+        <div v-if="isProductsLoading" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 w-full">
+          <div v-for="n in perPage" :key="n" class="h-64 bg-dark-600 animate-pulse rounded-2xl" />
         </div>
-      </div>
+
+        <div v-else-if="products.length === 0" class="text-center text-gray-400 py-20">
+          {{ t('pages.index.noProducts') }}
+        </div>
+
+        <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 w-full">
+          <MainProductCard v-for="product in products" :key="product.id" :product="product" @click="goToProduct" />
+        </div>
     </div>
 
-    <div class="mt-6 mb-2 text-xl font-semibold text-mainText">
-      {{ $t('common.products') }}
-    </div>
-
-    <div v-if="products.length === 0" class="text-center text-gray-400 mt-8">
-      {{ $t('pages.index.noProducts') }}
-    </div>
-
-    <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      <MainProductCard v-for="product in products" :key="product.id" :product="product" @click="goToProduct" />
-    </div>
-
-    <div v-if="isServerPagination && currentPage < totalPages" class="mt-8 flex justify-center">
-      <button
-        class="w-full max-w-lg bg-blue-500 text-white px-6 py-3 rounded-lg shadow font-semibold hover:bg-blue-600 active:bg-blue-700 transition"
-        :disabled="isLoadingMore" @click="loadMoreProducts">
-        <span v-if="!isLoadingMore">{{ t('common.loadMore') }}</span>
-        <span v-else>{{ t('common.loading') }}</span>
-      </button>
-    </div>
+    <div ref="loadMoreTrigger" class="h-10"></div>
   </section>
 </template>
