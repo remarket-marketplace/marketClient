@@ -394,7 +394,7 @@ const getTypeColor = (amount: number) => {
 
             <button
               @click="handleDeposit"
-              :disabled="!depositAmount || parseFloat(depositAmount) < 10 || isLoading"
+              :disabled="!depositAmount || parseFloat(depositAmount) < 1 || isLoading"
               class="w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 py-3.5 text-white font-semibold hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-blue-500/20"
             >
               <span v-if="isLoading" class="flex items-center justify-center gap-2">
@@ -465,7 +465,7 @@ const getTypeColor = (amount: number) => {
 
             <button
               @click="handleWithdraw"
-              :disabled="!withdrawAmount || parseFloat(withdrawAmount) < 10 || parseFloat(withdrawAmount) > balance || isLoading"
+              :disabled="!withdrawAmount || parseFloat(withdrawAmount) < 1 || parseFloat(withdrawAmount) > balance || isLoading"
               class="w-full rounded-xl bg-gradient-to-r from-red-600 to-red-700 py-3.5 text-white font-semibold hover:from-red-700 hover:to-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-red-500/20"
             >
               <span v-if="isLoading" class="flex items-center justify-center gap-2">
