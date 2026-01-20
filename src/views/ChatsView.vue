@@ -75,6 +75,19 @@ onMounted(async () => {
       await chatsService.connectChatsWebsocket()
     }
 
+    unsubscribeChatUpdated = chatsService.onChatUpdated(update => {
+      const chatIndex = chats.value.findIndex(c => c.id === update.chat_id)
+      if (chatIndex === -1) return
+
+      const chat = chats.value[chatIndex]
+
+      if (update.last_message && chat) {
+        chat.last_message = update.last_message
+        chats.value.splice(chatIndex, 1)
+        chats.value.unshift(chat)
+      }
+    })
+
     unsubscribeNewMessage = chatsService.onNewMessage(message => {
       if (selectedChatId.value === message.chat_room_id) {
         if (!chatMessages.value.some(m => m.id === message.id)) {
@@ -108,7 +121,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   unsubscribeNewMessage?.()
-  // unsubscribeChatUpdated?.()
+  unsubscribeChatUpdated?.()
 })
 
 async function loadChats() {

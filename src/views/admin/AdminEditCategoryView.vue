@@ -8,6 +8,7 @@ import { useI18n } from 'vue-i18n'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import SuccessMessage from '@/components/SuccessMessage.vue'
 import TheInput from '@/components/TheInput.vue'
+import Checkbox from '@/components/Checkbox.vue'
 import FileUploader from '@/components/FileUploader.vue'
 import { Loader2, X } from 'lucide-vue-next'
 import BackButton from '@/components/navigation/BackButton.vue'
@@ -178,11 +179,11 @@ onMounted(loadCategory)
           </p>
         </div>
 
-        <div>
-          <label class="mb-1 block text-sm text-text-secondary">
+        <div class="flex items-center gap-3">
+          <Checkbox v-model="isActive" />
+          <label class="text-sm text-text-secondary">
             {{ $t('common.isActive') }}
           </label>
-          <input type="checkbox" v-model="isActive" :value="isActive" :true-value="true" :false-value="false">
         </div>
 
         <div v-if="category" class="border-t border-dark-700 pt-4 text-sm space-y-2">

@@ -71,6 +71,7 @@ const ru = {
     remaining: "Осталось",
     reason: "Причина",
     toChat: "Перейти в чат",
+    sold: "Продано",
     
     remarket: "Remarket - маркет безопасных сделок",
     support: "Поддержка",
@@ -215,6 +216,7 @@ const ru = {
       supportOnlyImages: "Поддерживаются только изображения",
       addPhoto: "Добавить фото",
       clearAll: "Очистить все",
+      singleFileHint: "Загрузите одно изображение",
       errorOnlyImages: "Пожалуйста, загружайте только изображения",
       errorMaxFiles: "Максимум {maxFiles} изображений"
     },
@@ -409,6 +411,7 @@ const ru = {
     },
 
     profile: {
+      title: "Профиль",
       descriptionMissing: "Нет описания.",
       editDescription: "Редактировать описание",
       descriptionPlaceholder: "Введите описание профиля...",
@@ -439,12 +442,50 @@ const ru = {
 
     settingsPage: {
       title: "Настройки",
-      password: "Пароль",
-      email: "Почта",
+      subtitle: "Управление настройками аккаунта",
+      security: "Безопасность",
+      securityHint: "Управление паролем и безопасностью",
+      changePassword: "Сменить пароль",
+      changePasswordHint: "Измените пароль для защиты аккаунта",
+      currentPassword: "Текущий пароль",
+      newPassword: "Новый пароль",
       enterCurrentPassword: "Введите текущий пароль",
       enterNewPassword: "Введите новый пароль",
-      changePassword: "Сменить пароль",
       passwordChanged: "Пароль успешно изменен",
+      passwordRequirements: "Пароль должен содержать минимум 8 символов, включая цифры и буквы",
+      passwordStrength: "Надежность пароля",
+      strengthTip1: "Минимум 8 символов",
+      strengthTip2: "Цифры и буквы",
+      strengthTip3: "Разный регистр",
+      strengthTip4: "Специальные символы",
+      accountSettings: "Настройки аккаунта",
+      notifications: "Уведомления",
+      securityTips: "Советы по безопасности",
+      tip1: "Используйте уникальный пароль",
+      tip2: "Не используйте один пароль на разных сайтах",
+      tip3: "Регулярно меняйте пароль"
+    },
+
+    wallet: {
+      title: "Кошелёк",
+      currentBalance: "Текущий баланс",
+      deposit: "Пополнить",
+      withdraw: "Вывести",
+      instantDeposit: "Мгновенное пополнение",
+      instantDepositHint: "Средства зачисляются сразу",
+      fastWithdrawal: "Быстрый вывод",
+      fastWithdrawalHint: "Вывод в течение 24 часов",
+      transactionHistory: "История операций",
+      totalTransactions: "Всего: {count}",
+      noTransactions: "Нет операций",
+      noTransactionsHint: "Здесь будет отображаться история ваших транзакций",
+      depositAmount: "Сумма пополнения",
+      depositMin: "Минимальная сумма: {amount}",
+      proceedToPayment: "Перейти к оплате",
+      withdrawAmount: "Сумма вывода",
+      available: "Доступно",
+      useAll: "Всё",
+      confirmWithdrawal: "Подтвердить вывод"
     },
 
     admin: {

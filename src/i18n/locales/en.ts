@@ -68,6 +68,7 @@ const en = {
     remaining: "Remaining",
     reason: "Reason",
     toChat: "To chat",
+    sold: "Sold",
 
     remarket: "Remarket - secure transactions market",
     support: "Support",
@@ -213,6 +214,7 @@ const en = {
       supportOnlyImages: "Only images are supported",
       addPhoto: "Add photo",
       clearAll: "Clear all",
+      singleFileHint: "Upload a single image",
       errorOnlyImages: "Please upload only images",
       errorMaxFiles: "Maximum {maxFiles} images",
     },
@@ -299,7 +301,6 @@ const en = {
       },
     },
 
-    // New section for password recovery
     passwordRecovery: {
       title: "Password Recovery",
       sendCode: "Send Code",
@@ -410,6 +411,7 @@ const en = {
     },
 
     profile: {
+      title: "Profile",
       descriptionMissing: "No description.",
       editDescription: "Edit description",
       descriptionPlaceholder: "Enter profile description...",
@@ -440,12 +442,50 @@ const en = {
 
     settingsPage: {
       title: "Settings",
-      password: "Password",
-      email: "Email",
+      subtitle: "Manage your account settings",
+      security: "Security",
+      securityHint: "Manage password and security",
+      changePassword: "Change Password",
+      changePasswordHint: "Change your password to secure your account",
+      currentPassword: "Current Password",
+      newPassword: "New Password",
       enterCurrentPassword: "Enter current password",
       enterNewPassword: "Enter new password",
-      changePassword: "Change password",
-      passwordChanged: "Password successful changed",
+      passwordChanged: "Password changed successfully",
+      passwordRequirements: "Password must contain at least 8 characters, including numbers and letters",
+      passwordStrength: "Password Strength",
+      strengthTip1: "At least 8 characters",
+      strengthTip2: "Numbers and letters",
+      strengthTip3: "Mixed case",
+      strengthTip4: "Special characters",
+      accountSettings: "Account Settings",
+      notifications: "Notifications",
+      securityTips: "Security Tips",
+      tip1: "Use a unique password",
+      tip2: "Don't reuse passwords across sites",
+      tip3: "Change password regularly"
+    },
+
+    wallet: {
+      title: "Wallet",
+      currentBalance: "Current Balance",
+      deposit: "Deposit",
+      withdraw: "Withdraw",
+      instantDeposit: "Instant Deposit",
+      instantDepositHint: "Funds are credited immediately",
+      fastWithdrawal: "Fast Withdrawal",
+      fastWithdrawalHint: "Withdrawal within 24 hours",
+      transactionHistory: "Transaction History",
+      totalTransactions: "Total: {count}",
+      noTransactions: "No transactions",
+      noTransactionsHint: "Your transaction history will appear here",
+      depositAmount: "Deposit Amount",
+      depositMin: "Minimum amount: {amount}",
+      proceedToPayment: "Proceed to Payment",
+      withdrawAmount: "Withdrawal Amount",
+      available: "Available",
+      useAll: "All",
+      confirmWithdrawal: "Confirm Withdrawal"
     },
 
     admin: {

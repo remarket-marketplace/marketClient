@@ -7,6 +7,7 @@ const props = defineProps<{
   maxFiles?: number
   label?: string
   hint?: string
+  compact?: boolean // Новая опция для компактного режима
 }>()
 
 const emit = defineEmits<{
@@ -23,6 +24,7 @@ const maxFiles = props.maxFiles || 8
 const filesCount = computed(() => props.modelValue.length)
 const canAddMore = computed(() => maxFiles === undefined || filesCount.value < maxFiles)
 const remainingSlots = computed(() => maxFiles - filesCount.value)
+const isSingleFileMode = computed(() => maxFiles === 1)
 
 // Генерация превью
 watch(
@@ -105,7 +107,7 @@ function clearAll() {
 </script>
 
 <template>
-  <div class="w-full space-y-3">
+  <div class="w-full space-y-3" :class="{ 'single-file-mode': isSingleFileMode }">
     <!-- Заголовок и счетчик -->
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
@@ -128,17 +130,29 @@ function clearAll() {
     </div>
 
     <!-- Контейнер для превью и кнопки загрузки -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+    <div 
+      class="grid gap-3"
+      :class="[
+        isSingleFileMode 
+          ? 'grid-cols-1 max-w-xs mx-auto' 
+          : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
+      ]"
+      @dragover="isSingleFileMode ? handleDragOver : null"
+      @dragleave="isSingleFileMode ? handleDragLeave : null"
+      @drop="isSingleFileMode ? handleDrop : null"
+    >
       <!-- Превью изображений -->
       <div
         v-for="(src, index) in previews"
         :key="index"
-        class="group relative aspect-square rounded-lg overflow-hidden border border-dark-700 bg-dark-600 transition-all duration-200 hover:border-blue-500"
+        class="group relative rounded-lg overflow-hidden border border-dark-700 bg-dark-600 transition-all duration-200 hover:border-blue-500"
+        :class="isSingleFileMode ? 'w-full' : 'aspect-square'"
       >
         <img 
           :src="src" 
           :alt="`Изображение ${index + 1}`" 
           class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          :class="isSingleFileMode ? 'max-h-64' : ''"
         />
         
         <!-- Номер изображения -->
@@ -163,51 +177,55 @@ function clearAll() {
       <!-- Кнопка загрузки (показывается если есть свободные слоты) -->
       <div
         v-if="canAddMore"
-        class="aspect-square"
-        @dragover="handleDragOver"
-        @dragleave="handleDragLeave"
-        @drop="handleDrop"
+        :class="isSingleFileMode ? 'w-full' : 'aspect-square'"
+        @dragover="!isSingleFileMode ? handleDragOver : null"
+        @dragleave="!isSingleFileMode ? handleDragLeave : null"
+        @drop="!isSingleFileMode ? handleDrop : null"
       >
         <input
           ref="fileInput"
           type="file"
           accept="image/*"
-          :multiple="maxFiles === undefined || maxFiles > 1"
+          :multiple="!isSingleFileMode"
           class="hidden"
           @change="handleChange"
         />
         
-        <!-- Кнопка загрузки (квадрат с плюсом) -->
+        <!-- Кнопка загрузки -->
         <button
           type="button"
           @click="fileInput?.click()"
-          class="w-full h-full flex flex-col items-center justify-center rounded-lg border-2 border-dashed transition-all duration-200"
+          class="w-full h-full flex flex-col items-center justify-center rounded-lg border-2 border-dashed transition-all duration-200 p-6"
           :class="[
             isDragging 
               ? 'border-blue-500 bg-blue-500/10' 
-              : 'border-dark-700 hover:border-blue-500 hover:bg-blue-500/5'
+              : 'border-dark-700 hover:border-blue-500 hover:bg-blue-500/5',
+            isSingleFileMode ? 'min-h-32' : ''
           ]"
           :title="$t('components.fileUploader.upload')"
         >
           <!-- Иконка -->
-          <div class="mb-2">
-            <div class="w-10 h-10 rounded-full bg-dark-700 flex items-center justify-center">
+          <div class="mb-3">
+            <div class="w-12 h-12 rounded-full bg-dark-700 flex items-center justify-center">
               <Upload 
-                class="w-5 h-5" 
+                class="w-6 h-6" 
                 :class="isDragging ? 'text-blue-400' : 'text-gray-400'" 
               />
             </div>
           </div>
           
           <!-- Текст -->
-          <span class="text-xs font-medium" :class="isDragging ? 'text-blue-400' : 'text-gray-400'">
-            {{ $t('components.fileUploader.addPhoto') }}
-          </span>
-          
-          <!-- Дополнительный текст (только для десктопа) -->
-          <span v-if="remainingSlots > 0 && remainingSlots < maxFiles" class="text-xs text-gray-500 mt-1 hidden lg:block">
-            Осталось: {{ remainingSlots }}
-          </span>
+          <div class="text-center">
+            <span class="text-sm font-medium block" :class="isDragging ? 'text-blue-400' : 'text-gray-400'">
+              {{ $t('components.fileUploader.addPhoto') }}
+            </span>
+            <span v-if="isSingleFileMode" class="text-xs text-gray-500 mt-1 block">
+              {{ $t('components.fileUploader.singleFileHint') }}
+            </span>
+            <span v-else-if="remainingSlots > 0 && remainingSlots < maxFiles" class="text-xs text-gray-500 mt-1 hidden lg:block">
+              {{ $t('components.fileUploader.remainingSlots', { count: remainingSlots }) }}
+            </span>
+          </div>
         </button>
       </div>
     </div>
@@ -223,8 +241,8 @@ function clearAll() {
       {{ errorMessage }}
     </div>
 
-    <!-- Информация о поддерживаемых форматах (только на мобиле) -->
-    <div class="lg:hidden text-xs text-gray-400 flex items-center gap-1">
+    <!-- Информация о поддерживаемых форматах -->
+    <div class="text-xs text-gray-400 flex items-center gap-1">
       <Image class="w-3 h-3" />
       {{ $t('components.fileUploader.supportOnlyImages') }}
     </div>
@@ -259,5 +277,10 @@ function clearAll() {
 /* Эффект при наведении на изображение */
 img {
   will-change: transform;
+}
+
+/* Специальные стили для режима одного файла */
+.single-file-mode .grid {
+  max-width: 100%;
 }
 </style>

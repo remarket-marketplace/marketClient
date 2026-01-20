@@ -2,6 +2,8 @@
 import { ArrowRight, Sparkles } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { useUserStore } from '@/stores/user'
+import { storeToRefs } from 'pinia'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -12,6 +14,8 @@ const scrollToCatalog = () => {
     catalogElement.scrollIntoView({ behavior: 'smooth' })
   }
 }
+const store = useUserStore()
+const { user } = storeToRefs(store)
 </script>
 
 <template>
@@ -51,18 +55,17 @@ const scrollToCatalog = () => {
       <div class="flex flex-col sm:flex-row gap-5 animate-fade-in-up animation-delay-300 w-full sm:w-auto px-6">
         <button 
           @click="scrollToCatalog"
-          class="group relative px-10 py-4 bg-blue-600 text-white font-bold rounded-full overflow-hidden transition-all hover:shadow-[0_0_40px_rgba(37,99,235,0.5)] hover:scale-105 active:scale-95"
+          class="group relative px-10 py-4 bg-blue-600 text-white font-bold rounded-xl overflow-hidden transition-all hover:shadow-[0_10px_30px_-5px_rgba(37,99,235,0.3)] hover:scale-[1.02] active:scale-[0.98] duration-300"
         >
-          <div class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shimmer"></div>
           <span class="relative flex items-center justify-center text-lg">
             {{ t('hero.exploreCatalog') }}
-            <ArrowRight class="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
+            <ArrowRight class="w-5 h-5 ml-2 transition-transform duration-300 group-hover:translate-x-1" />
           </span>
         </button>
 
-        <button 
-            @click="router.push('/product/create')"
-            class="px-10 py-4 bg-white/5 text-white border border-white/10 font-bold rounded-full hover:bg-white/10 transition-all hover:scale-105 active:scale-95 backdrop-blur-md text-lg"
+        <button
+            @click="router.push(user && user.username ? '/product/create' : '/signin')"
+            class="px-10 py-4 bg-white/5 text-white border border-white/10 font-bold rounded-xl hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-[0.98] duration-300 backdrop-blur-md text-lg"
         >
           {{ t('hero.startSelling') }}
         </button>
@@ -116,14 +119,6 @@ const scrollToCatalog = () => {
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(30px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-.group-hover\:animate-shimmer {
-    animation: shimmer 1.5s infinite;
-}
-
-@keyframes shimmer {
-    100% { transform: translateX(100%); }
 }
 
 .bg-grid-white\/\[0\.03\] {

@@ -112,12 +112,15 @@ const navItems = computed(() => [
                         remarket
                     </div>
                     <div class="flex gap-6">
-                        <nav class="hidden items-center gap-6 md:flex"> 
+                        <nav class="hidden items-center gap-6 md:flex">
                             <router-link v-for="item in navItems" :key="item.id" :to="item.to"
                                 class="flex items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"
                                 :class="{ 'text-white': isActiveRoute(item), 'text-gray-400': !isActiveRoute(item) }">
-                                <component :is="item.icon" :class="[item.sell ? 'text-2xl' : 'text-xl', isActiveRoute(item) ? 'text-white' : 'text-gray-400', 'transition-colors duration-300 group-hover:text-white']" :size="item.sell ? 24 : 20" stroke-width="1.5" />
-                                <span class="ml-1 transition-colors duration-300 group-hover:text-white">{{ item.title }}</span>
+                                <component :is="item.icon"
+                                    :class="[item.sell ? 'text-2xl' : 'text-xl', isActiveRoute(item) ? 'text-white' : 'text-gray-400', 'transition-colors duration-300 group-hover:text-white']"
+                                    :size="item.sell ? 24 : 20" stroke-width="1.5" />
+                                <span class="ml-1 transition-colors duration-300 group-hover:text-white">{{ item.title
+                                }}</span>
                             </router-link>
                         </nav>
                         <SelectLanguage />
@@ -127,16 +130,54 @@ const navItems = computed(() => [
 
             <main class="flex-1 overflow-y-auto no-scrollbar">
                 <slot />
-                <div class="mx-auto pb-16 lg:pb-0 w-full flex flex-col justify-center items-center border-t border-t-gray-600">
-                    <footer class="w-full px-4 py-6 flex flex-col md:flex-row md:justify-between gap-4 text-sm text-gray-300">
-                        <div class="flex-1"><h4 class="font-semibold text-white">{{ $t('common.remarket') }}</h4></div>
-                        <div class="flex-1"><h4 class="font-semibold text-white">{{ $t('common.support') }}</h4><p class="mt-1">support@re-market.net</p></div>
-                        <div class="flex-1"><h4 class="font-semibold text-white">{{ $t('common.legal') }}</h4><p class="mt-2\">legal@re-market.net</p></div>
-                        <div class="flex-1"><h4 class="font-semibold text-white">{{ $t('common.information') }}</h4><ul class="mt-1 space-y-1"><li>{{ $t('common.aboutUs') }}</li><li>{{ $t('common.privacyPolicy') }}</li><li>{{ $t('common.termsOfService') }}</li></ul></div>
+                <div
+                    class="mx-auto pb-16 lg:pb-0 w-full flex flex-col justify-center items-center border-t border-t-gray-600">
+                    <footer
+                        class="w-full px-4 py-6 flex flex-col md:flex-row md:justify-between gap-4 text-sm text-gray-300">
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-white">{{ $t('common.remarket') }}</h4>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-white">{{ $t('common.support') }}</h4>
+                            <p class="mt-1">support@re-market.net</p>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-white">{{ $t('common.legal') }}</h4>
+                            <p class="mt-2\">legal@re-market.net</p>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-white">{{ $t('common.information') }}</h4>
+                            <ul class="mt-1 space-y-1">
+                                <li>{{ $t('common.aboutUs') }}</li>
+                                <li>{{ $t('common.privacyPolicy') }}</li>
+                                <li>{{ $t('common.termsOfService') }}</li>
+                            </ul>
+                        </div>
                     </footer>
                 </div>
             </main>
-            </div>
+
+            <nav class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-30 h-14 border-t border-gray-700 md:hidden">
+                <div class="mx-auto h-full w-full flex items-center justify-around">
+                    <router-link v-for="item in navItems" :key="item.id" :to="item.to"
+                        class="flex flex-col items-center justify-center px-1 transition-all duration-300 relative group"
+                        :class="{
+                            'opacity-100': isActiveRouteMobile(item),
+                            'opacity-70': !isActiveRouteMobile(item)
+                        }">
+                        <div class="icon-box flex items-center justify-center transition-colors duration-300 group-hover:text-white"
+                            :class="isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400'">
+                            <component :is="item.icon" :size="22" stroke-width="1.5" />
+                        </div>
+                        <span
+                            class="menu-label text-center text-xs font-light leading-none mt-1 transition-colors duration-300 group-hover:text-white"
+                            :class="isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400'">
+                            {{ item.title }}
+                        </span>
+                    </router-link>
+                </div>
+            </nav>
+        </div>
     </div>
 </template>
 <style scoped>

@@ -309,7 +309,7 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div v-else class="w-full py-4 text-center bg-gray-700 text-gray-400 rounded-xl font-semibold">
+          <div v-else class="w-full py-4 text-center bg-dark-600/40 border border-dark-700 text-gray-400 rounded-2xl font-semibold">
             {{ $t('pages.product.sold') }}
           </div>
 
