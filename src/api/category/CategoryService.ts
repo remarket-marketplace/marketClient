@@ -19,7 +19,7 @@ export const categoryService = {
 
   async getAllCategories(page = 1, perPage = 30) {
     try {
-      const response = await httpClient.get("/categories", {
+      const response = await httpClient.get("/categories/", {
         params: {
           page,
           per_page: perPage,
