@@ -4,7 +4,6 @@ import { productService } from '@/api/product/ProductService'
 import { profileService } from '@/api/profile/ProfileService'
 import { reviewService } from '@/api/review/ReviewService'
 import Loader from '@/components/Loader.vue'
-import ProfileProductCard from '@/components/ProfileProductCard.vue'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 import { ref, onMounted, onUnmounted, computed } from 'vue'
@@ -41,9 +40,8 @@ const showAvatarOverlay = ref(false)
 const showShareModal = ref(false)
 const isCopied = ref(false)
 
-const isLoading = ref(true)
 const isOwner = computed(() => currentUser.value?.username === username.value)
-const profileUrl = computed(() => `${window.location.origin}/profile/${username.value}`)
+const profileUrl = computed(() => `${window.location.origin}/user/${username.value}`)
 const activeTab = ref<'products' | 'reviews' | 'purchases'>('products')
 
 // Пагинация для товаров

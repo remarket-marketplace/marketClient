@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { Check } from 'lucide-vue-next'
-
 interface Props {
-  modelValue: boolean
+  modelValue: string
+  value: string
+  name: string
   disabled?: boolean
 }
 
@@ -11,42 +11,51 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void
+  (e: 'update:modelValue', value: string): void
 }>()
 
-function onChange(event: Event) {
-  const target = event.target as HTMLInputElement
-  emit('update:modelValue', target.checked)
+function onChange() {
+  if (!props.disabled) {
+    emit('update:modelValue', props.value)
+  }
 }
 </script>
 
 <template>
   <label
-    class="inline-flex items-center cursor-pointer select-none"
+    class="inline-flex items-center cursor-pointer select-none gap-2"
     :class="{ 'opacity-50 cursor-not-allowed': disabled }"
   >
-    <!-- Настоящий checkbox -->
+    <!-- Настоящий radio -->
     <input
-      type="checkbox"
+      type="radio"
       class="sr-only"
-      :checked="modelValue"
+      :name="name"
+      :value="value"
+      :checked="modelValue === value"
       :disabled="disabled"
       @change="onChange"
     />
 
     <!-- Кастомный UI -->
     <span
-      class="w-5 h-5 flex items-center justify-center rounded border transition-all duration-200
+      class="w-5 h-5 rounded-full border flex items-center justify-center transition-all duration-200
              focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 focus-within:ring-offset-dark-600"
       :class="[
         disabled
           ? 'bg-dark-700 border-dark-600'
-          : modelValue
-            ? 'bg-blue-600 border-blue-600'
+          : modelValue === value
+            ? 'border-blue-600'
             : 'bg-dark-600 border-dark-700 hover:border-blue-500'
       ]"
     >
-      <Check v-if="modelValue" class="w-3.5 h-3.5 text-white" />
+      <span
+        v-if="modelValue === value"
+        class="w-2.5 h-2.5 rounded-full bg-blue-600"
+      />
     </span>
+
+    <!-- Текст -->
+    <slot />
   </label>
 </template>

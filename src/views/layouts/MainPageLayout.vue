@@ -49,9 +49,9 @@ const isActiveRoute = (item: any) => {
         return currentPath === '/product/create'
     }
 
-    // For profile - starts with /profile
-    if (item.to.startsWith('/profile')) {
-        return currentPath.startsWith('/profile')
+    // For profile - starts with /user
+    if (item.to.startsWith('/user')) {
+        return currentPath.startsWith('/user')
     }
 
     // For product view - starts with /product (but not creation)

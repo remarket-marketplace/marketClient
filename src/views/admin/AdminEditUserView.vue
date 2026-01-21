@@ -8,6 +8,8 @@ import ErrorBanner from '@/components/ErrorBanner.vue';
 import TheInput from '@/components/TheInput.vue';
 import { Loader2 } from 'lucide-vue-next';
 import SuccessMessage from '@/components/SuccessMessage.vue'
+import Checkbox from '@/components/Checkbox.vue';
+import RadioButton from '@/components/RadioButton.vue';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -15,8 +17,8 @@ const router = useRouter();
 
 const userId = ref<string>(route.params.id as string);
 const user = ref<UserRead | null>(null);
-const isLoading = ref(true);
-const isSaving = ref(false);
+const isLoading = ref<boolean>(true);
+const isSaving = ref<boolean>(false);
 const errorMessage = ref('');
 const successMessage = ref('');
 
@@ -44,18 +46,18 @@ async function loadUser() {
     const userData = await fetchUser(userId.value);
 
     if (userData !== false) {
-        user.value = userData;
-        
-        email.value = userData.email;
-        username.value = userData.username;
-        description.value = userData.description || '';
-        avatarUrl.value = userData.avatar_url || '';
-        balance.value = userData.balance.toString();
-        rating.value = userData.rating.toString();
-        isBanned.value = userData.is_banned;
-        isActive.value = userData.is_active;
-        role.value = userData.role;
-        hasFrozenBalance.value = userData.has_frozen_balance;
+      user.value = userData;
+
+      email.value = userData.email;
+      username.value = userData.username;
+      description.value = userData.description || '';
+      avatarUrl.value = userData.avatar_url || '';
+      balance.value = userData.balance.toString();
+      rating.value = userData.rating.toString();
+      isBanned.value = userData.is_banned;
+      isActive.value = userData.is_active;
+      role.value = userData.role;
+      hasFrozenBalance.value = userData.has_frozen_balance;
     }
   } catch (error) {
     console.error('Error loading user:', error);
@@ -157,13 +159,7 @@ onMounted(() => {
           <label for="email" class="mb-1 block text-sm text-text-secondary">
             {{ $t('common.email') }}
           </label>
-          <TheInput
-            id="email"
-            v-model="email"
-            type="email"
-            :placeholder="$t('common.email')"
-            required
-          />
+          <TheInput id="email" v-model="email" type="email" :placeholder="$t('common.email')" required />
         </div>
 
         <!-- Username -->
@@ -171,15 +167,8 @@ onMounted(() => {
           <label for="username" class="mb-1 block text-sm text-text-secondary">
             {{ $t('common.username') }}
           </label>
-          <TheInput
-            id="username"
-            v-model="username"
-            type="text"
-            :placeholder="$t('common.username')"
-            required
-            :minlength="5"
-            :maxlength="15"
-          />
+          <TheInput id="username" v-model="username" type="text" :placeholder="$t('common.username')" required
+            :minlength="5" :maxlength="15" />
         </div>
 
         <!-- Description -->
@@ -187,14 +176,9 @@ onMounted(() => {
           <label for="description" class="mb-1 block text-sm text-text-secondary">
             {{ $t('common.description') }}
           </label>
-          <textarea
-            id="description"
-            v-model="description"
-            :placeholder="$t('common.description')"
+          <textarea id="description" v-model="description" :placeholder="$t('common.description')"
             class="w-full max-h-28 px-3 py-2 border border-dark-700 rounded-lg bg-dark-600 text-mainText placeholder-text-secondary focus:outline-none focus:border-blue-500 transition-colors resize-none"
-            rows="3"
-            :maxlength="500"
-          ></textarea>
+            rows="3" :maxlength="500"></textarea>
           <div class="text-xs text-text-secondary mt-1 text-right">
             {{ description.length }}/500
           </div>
@@ -205,12 +189,8 @@ onMounted(() => {
           <label for="avatarUrl" class="mb-1 block text-sm text-text-secondary">
             {{ $t('pages.admin.editUser.avatarUrl') }}
           </label>
-          <TheInput
-            id="avatarUrl"
-            v-model="avatarUrl"
-            type="text"
-            :placeholder="$t('pages.admin.editUser.avatarUrlPlaceholder')"
-          />
+          <TheInput id="avatarUrl" v-model="avatarUrl" type="text"
+            :placeholder="$t('pages.admin.editUser.avatarUrlPlaceholder')" />
         </div>
 
         <!-- Balance and rating  -->
@@ -220,13 +200,8 @@ onMounted(() => {
             <label for="balance" class="mb-1 block text-sm text-text-secondary">
               {{ $t('common.balance') }}
             </label>
-            <TheInput
-              id="balance"
-              v-model="balance"
-              type="text"
-              inputmode="decimal"
-              :placeholder="$t('common.balance')"
-            />
+            <TheInput id="balance" v-model="balance" type="text" inputmode="decimal"
+              :placeholder="$t('common.balance')" />
           </div>
 
           <!-- Rating -->
@@ -234,13 +209,7 @@ onMounted(() => {
             <label for="rating" class="mb-1 block text-sm text-text-secondary">
               {{ $t('common.rating') }}
             </label>
-            <TheInput
-              id="rating"
-              v-model="rating"
-              type="text"
-              inputmode="numeric"
-              :placeholder="$t('common.rating')"
-            />
+            <TheInput id="rating" v-model="rating" type="text" inputmode="numeric" :placeholder="$t('common.rating')" />
           </div>
         </div>
 
@@ -253,37 +222,19 @@ onMounted(() => {
             </label>
             <div class="space-y-2">
               <label class="flex items-center">
-                <input
-                  v-model="isActive"
-                  type="checkbox"
-                  class="rounded border-dark-700 bg-dark-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-dark-600"
-                  :true-value="true"
-                  :false-value="false"
-                />
+                <Checkbox v-model="isActive" />
                 <span class="ml-2 text-sm text-mainText">
                   {{ $t('common.productStatuses.active') }}
                 </span>
               </label>
               <label class="flex items-center">
-                <input
-                  v-model="isBanned"
-                  type="checkbox"
-                  class="rounded border-dark-700 bg-dark-600 text-red-500 focus:ring-red-500 focus:ring-offset-dark-600"
-                  :true-value="true"
-                  :false-value="false"
-                />
+                <Checkbox v-model="isBanned" />
                 <span class="ml-2 text-sm text-mainText">
                   {{ $t('common.banned') }}
                 </span>
               </label>
               <label class="flex items-center">
-                <input
-                  v-model="hasFrozenBalance"
-                  type="checkbox"
-                  class="rounded border-dark-700 bg-dark-600 text-orange-500 focus:ring-orange-500 focus:ring-offset-dark-600"
-                  :true-value="true"
-                  :false-value="false"
-                />
+                <Checkbox v-model="hasFrozenBalance" />
                 <span class="ml-2 text-sm text-mainText">
                   {{ $t('pages.admin.editUser.frozenBalance') }}
                 </span>
@@ -298,26 +249,18 @@ onMounted(() => {
             </label>
             <div class="space-y-2">
               <label class="flex items-center">
-                <input
-                  v-model="role"
-                  type="radio"
-                  value="user"
-                  class="rounded-full border-dark-700 bg-dark-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-dark-600"
-                />
-                <span class="ml-2 text-sm text-mainText">
-                  {{ $t('common.user') }}
-                </span>
+                <RadioButton v-model="role" name="role" value="user">
+                  <span class="text-sm text-mainText">
+                    {{ $t('common.user') }}
+                  </span>
+                </RadioButton>
               </label>
               <label class="flex items-center">
-                <input
-                  v-model="role"
-                  type="radio"
-                  value="admin"
-                  class="rounded-full border-dark-700 bg-dark-600 text-purple-500 focus:ring-purple-500 focus:ring-offset-dark-600"
-                />
-                <span class="ml-2 text-sm text-mainText">
-                  {{ $t('common.admin') }}
-                </span>
+                <RadioButton v-model="role" name="role" value="admin">
+                  <span class="text-sm text-mainText">
+                    {{ $t('common.admin') }}
+                  </span>
+                </RadioButton>
               </label>
             </div>
           </div>
@@ -336,30 +279,21 @@ onMounted(() => {
         </div>
 
         <ErrorBanner :message="errorMessage" />
-        <SuccessMessage v-if="successMessage" :success-message="successMessage"/>
+        <SuccessMessage v-if="successMessage" :success-message="successMessage" />
 
         <!-- Action buttons -->
         <div class="flex gap-3 pt-4">
-            <button
-                type="button"
-                @click="cancel"
-                class="flex-1 px-4 py-2 border border-dark-700 rounded-lg text-mainText hover:bg-dark-600 transition-colors"
-                :disabled="isSaving"
-            >
-                {{ $t('common.cancel') }}
-            </button>
-            <button
-                type="submit"
-                :disabled="isSaving"
-                class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-                <Loader2
-                v-if="isSaving" 
-                class="h-4 w-4 animate-spin" 
-                />
-                {{ isSaving ? $t('common.loading') : $t('common.save') }}
-            </button>
-            </div>
+          <button type="button" @click="cancel"
+            class="flex-1 px-4 py-2 border border-dark-700 rounded-lg text-mainText hover:bg-dark-600 transition-colors"
+            :disabled="isSaving">
+            {{ $t('common.cancel') }}
+          </button>
+          <button type="submit" :disabled="isSaving"
+            class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors flex items-center justify-center gap-2">
+            <Loader2 v-if="isSaving" class="h-4 w-4 animate-spin" />
+            {{ isSaving ? $t('common.loading') : $t('common.save') }}
+          </button>
+        </div>
       </form>
     </div>
   </div>
