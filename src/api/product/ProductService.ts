@@ -67,7 +67,7 @@ export const productService = {
   async getProductsByCategory(
     categoryId: string,
     page: number,
-    perPage: number
+    perPage: number,
   ) {
     try {
       const response = await httpClient.get(
@@ -77,7 +77,7 @@ export const productService = {
             page,
             per_page: perPage,
           },
-        }
+        },
       );
 
       return {
@@ -148,14 +148,14 @@ export const productService = {
     productData: any,
     productId: string,
     uploadedImages: File[] = [],
-    deletedImageIds: string[] = []
+    deletedImageIds: string[] = [],
   ) {
     try {
       const formData = new FormData();
       formData.append("product_id", productId);
       if (deletedImageIds.length > 0) {
         deletedImageIds.forEach((id: string | Blob) =>
-          formData.append("deleted_images_ids", id)
+          formData.append("deleted_images_ids", id),
         );
       }
       if (productData.title) formData.append("title", productData.title);
@@ -243,7 +243,7 @@ export const productService = {
   async confirmReceipt(dealId: string) {
     try {
       const response = await httpClient.patch(
-        `/products/confirm-receipt/${dealId}`
+        `/products/confirm-receipt/${dealId}`,
       );
       return response.status === 200;
     } catch {
@@ -254,7 +254,7 @@ export const productService = {
   async sendReport(
     dealId: string,
     reportReasonId: string,
-    report_text: string | null
+    report_text: string | null,
   ) {
     try {
       const response = await httpClient.patch(`/deal/report/${dealId}`, {
@@ -270,7 +270,7 @@ export const productService = {
   async searchProducts(
     query: string,
     page: number,
-    perPage: number
+    perPage: number,
   ): Promise<{
     products: Product[];
     currentPage: number;
@@ -329,7 +329,7 @@ export const productService = {
   async getUserProductsByUsername(
     username: string,
     page = 1,
-    perPage = 20
+    perPage = 20,
   ): Promise<{
     products: Product[];
     total: number;
@@ -343,7 +343,7 @@ export const productService = {
             page,
             per_page: perPage,
           },
-        }
+        },
       );
 
       const products = response.data.products.map((product: any) => {
@@ -395,22 +395,6 @@ export const productService = {
     }
   },
 
-  async removeProductFromFavorites(product_id: string) {
-    //
-    // remove product from favorites
-    //
-    try {
-      const response = await httpClient.patch(
-        "/products/remove-from-favorites",
-        {
-          product_id: product_id,
-        }
-      );
-      return response.status === 200;
-    } catch (e) {
-      return false;
-    }
-  },
 
   async addProductLike(product_id: string) {
     //
@@ -418,7 +402,7 @@ export const productService = {
     //
     try {
       const response = await httpClient.patch(
-        `/products/add-like/${product_id}`
+        `/products/add-like/${product_id}`,
       );
       return response.status === 200;
     } catch (e) {
@@ -432,7 +416,7 @@ export const productService = {
     //
     try {
       const response = await httpClient.patch(
-        `/products/remove-like/${productId}`
+        `/products/remove-like/${productId}`,
       );
       return response.status === 200;
     } catch (e) {
@@ -441,24 +425,36 @@ export const productService = {
   },
 
   async getFavoritesProducts() {
-    //
-    // get favorites products
-    //
     try {
       const response = await httpClient.get(`/products/favorites`);
-      return response.data.map((product: any) => {
+
+      const productsData = response.data.products || response.data || [];
+
+      const favoriteProducts = productsData.map((product: any) => {
         const transformedProduct = {
           ...product,
-          images: product.images.map((img: any) => ({
-            ...img,
-            url: img.url || img.image_url || "",
-          })),
+          images:
+            product.images?.map((img: any) => ({
+              ...img,
+              url: img.url || img.image_url || "",
+            })) || [],
         };
         return ProductSchema.parse(transformedProduct);
       });
+
+      return {
+        favoriteProducts,
+        total: response.data.total || favoriteProducts.length,
+        totalPages: response.data.total_pages || 1,
+      };
     } catch (e) {
       if (e instanceof ZodError) console.error(e.issues);
-      return [];
+      console.error("Failed to get favorite products:", e);
+      return {
+        favoriteProducts: [],
+        total: 0,
+        totalPages: 1,
+      };
     }
   },
 

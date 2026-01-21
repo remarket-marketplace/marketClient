@@ -358,7 +358,16 @@ const en = {
     },
 
     favoriteProducts: {
-      title: "Favorite products",
+      title: 'Favorites',
+      subtitle: 'Products you have added to favorites',
+      searchPlaceholder: 'Search in favorites...',
+      favorites: 'Favorite products',
+      emptyTitle: 'Favorites are empty',
+      emptyDescription: 'Add products to favorites to find them later',
+      noResults: 'Nothing found',
+      tryDifferentQuery: 'Try changing your search query',
+      browseProducts: 'Browse products',
+      remove: 'Remove from favorites',
     },
 
     chats: {

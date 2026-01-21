@@ -359,7 +359,16 @@ const ru = {
     },
 
     favoriteProducts: {
-      title: "Избранное",
+      title: 'Избранное',
+      subtitle: 'Товары, которые вы добавили в избранное',
+      searchPlaceholder: 'Поиск в избранном...',
+      favorites: 'Избранные товары',
+      emptyTitle: 'Избранное пусто',
+      emptyDescription: 'Добавляйте товары в избранное, чтобы вернуться к ним позже',
+      noResults: 'Ничего не найдено',
+      tryDifferentQuery: 'Попробуйте изменить поисковый запрос',
+      browseProducts: 'Смотреть товары',
+      remove: 'Удалить из избранного',
     },
 
     chats: {
