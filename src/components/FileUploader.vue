@@ -7,14 +7,21 @@ const props = defineProps<{
   maxFiles?: number
   label?: string
   hint?: string
-  compact?: boolean // Новая опция для компактного режима
+  compact?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: File[]): void
 }>()
 
-const previews = ref<string[]>([])
+type PreviewItem = {
+  id: string
+  file: File
+  src: string
+}
+
+const previews = ref<PreviewItem[]>([])
+
 const fileInput = ref<HTMLInputElement | null>(null)
 const errorMessage = ref('')
 const isDragging = ref(false)
@@ -26,18 +33,14 @@ const canAddMore = computed(() => maxFiles === undefined || filesCount.value < m
 const remainingSlots = computed(() => maxFiles - filesCount.value)
 const isSingleFileMode = computed(() => maxFiles === 1)
 
-// Генерация превью
 watch(
   () => props.modelValue,
-  (newFiles) => {
-    previews.value = []
-    for (const file of newFiles) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        previews.value.push(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
+  (files) => {
+    previews.value = files.map((file) => ({
+      id: `${file.name}-${file.size}-${file.lastModified}`,
+      file,
+      src: URL.createObjectURL(file),
+    }))
   },
   { immediate: true }
 )
@@ -143,13 +146,13 @@ function clearAll() {
     >
       <!-- Превью изображений -->
       <div
-        v-for="(src, index) in previews"
-        :key="index"
+        v-for="(item, index) in previews"
+        :key="item.id"
         class="group relative rounded-lg overflow-hidden border border-dark-700 bg-dark-600 transition-all duration-200 hover:border-blue-500"
         :class="isSingleFileMode ? 'w-full' : 'aspect-square'"
       >
         <img 
-          :src="src" 
+          :src="item.src"
           :alt="`Изображение ${index + 1}`" 
           class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           :class="isSingleFileMode ? 'max-h-64' : ''"
@@ -171,7 +174,7 @@ function clearAll() {
         </button>
         
         <!-- Затемнение при наведении -->
-        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200"></div>
+        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 pointer-events-none"></div>
       </div>
 
       <!-- Кнопка загрузки (показывается если есть свободные слоты) -->
@@ -221,9 +224,6 @@ function clearAll() {
             </span>
             <span v-if="isSingleFileMode" class="text-xs text-gray-500 mt-1 block">
               {{ $t('components.fileUploader.singleFileHint') }}
-            </span>
-            <span v-else-if="remainingSlots > 0 && remainingSlots < maxFiles" class="text-xs text-gray-500 mt-1 hidden lg:block">
-              {{ $t('components.fileUploader.remainingSlots', { count: remainingSlots }) }}
             </span>
           </div>
         </button>

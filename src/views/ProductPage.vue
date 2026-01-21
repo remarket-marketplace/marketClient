@@ -220,7 +220,7 @@ onUnmounted(() => {
               <span class="text-2xl lg:text-3xl font-bold text-green-400">
                 {{ product.price }}₽
               </span>
-              <ProductStatusTag v-if="product.is_owner" :product-status="product.status" />
+              <ProductStatusTag v-if="product.is_owner || user?.role === 'admin'" :product-status="product.status" />
             </div>
           </div>
         </div>
@@ -285,7 +285,7 @@ onUnmounted(() => {
               <span v-if="user === null" class="text-sm text-gray-400">
                 {{ $t('pages.product.authRequired') }}
               </span>
-              <div class="flex flex-col items-end gap-1">
+              <div v-if="product.status === 'active'" class="flex flex-col items-end gap-1">
                 <button :disabled="user === null" @click="user !== null && openBuyConfirm()" class="w-full rounded-lg px-10 py-4 text-base font-semibold transition sm:w-auto
         bg-blue-600 text-white hover:bg-blue-700
         disabled:bg-blue-600/40
@@ -296,8 +296,7 @@ onUnmounted(() => {
                 </button>
               </div>
 
-
-              <div>
+              <div v-if="product.status == 'active'">
                 <Heart v-if="product.is_liked" @click="removeProductLike" class="w-8 h-8 text-red-500 cursor-pointer"
                   :style="{ fill: 'currentColor' }" />
                 <Heart v-else @click="likeProduct" class="cursor-pointer w-8 h-8" />

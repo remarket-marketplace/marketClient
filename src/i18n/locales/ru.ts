@@ -218,7 +218,7 @@ const ru = {
       clearAll: "Очистить все",
       singleFileHint: "Загрузите одно изображение",
       errorOnlyImages: "Пожалуйста, загружайте только изображения",
-      errorMaxFiles: "Максимум {maxFiles} изображений"
+      errorMaxFiles: "Максимум {maxFiles} изображений",
     },
   },
 
