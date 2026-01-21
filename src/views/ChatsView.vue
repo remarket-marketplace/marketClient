@@ -34,7 +34,7 @@ const newMessage = ref('')
 
 const currentPage = ref(1)
 const totalPages = ref(0)
-const perPage = ref(10)
+const perPage = ref(30)
 const hasMoreMessages = ref(true)
 
 const currentChat = computed(() =>
