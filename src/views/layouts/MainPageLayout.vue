@@ -3,7 +3,8 @@ import {
     Home,
     MessageCircle,
     PlusCircle,
-    User
+    User,
+    Shield
 } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -12,7 +13,17 @@ import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 import SelectLanguage from '@/components/SelectLanguage.vue'
 import { chatsService } from '@/api/chats/chatsService'
+import type { FunctionalComponent } from 'vue'
+import type { LucideProps } from 'lucide-vue-next'
 
+interface NavItem {
+    id: string;
+    title: string;
+    icon: FunctionalComponent<LucideProps, {}, any, {}>;
+    to: string;
+    sell?: boolean;
+    admin?: boolean;
+}
 
 const store = useUserStore()
 const { t } = useI18n()
@@ -26,7 +37,7 @@ function checkDesktop() {
     isDesktop.value = window.innerWidth >= 768
 }
 
-const isActiveRoute = (item: any) => {
+const isActiveRoute = (item: NavItem) => {
     const currentPath = route.path
 
     // If we are on the authorization page, do not highlight menu items
@@ -59,11 +70,16 @@ const isActiveRoute = (item: any) => {
         return currentPath.startsWith('/product/') && currentPath !== '/product/create'
     }
 
+    // For admin - starts with /admin
+    if (item.to === '/admin') {
+        return currentPath.startsWith('/admin')
+    }
+
     return currentPath === item.to
 }
 
 // For mobile version, use the same logic
-const isActiveRouteMobile = (item: any) => {
+const isActiveRouteMobile = (item: NavItem) => {
     return isActiveRoute(item)
 }
 
@@ -74,34 +90,50 @@ onMounted(async () => {
         await chatsService.connectChatsWebsocket()
 })
 
-const navItems = computed(() => [
-    {
-        id: 'home',
-        title: t('navigation.market.home'),
-        icon: Home,
-        to: '/'
-    },
-    {
-        id: 'chats',
-        title: t('navigation.market.chats'),
-        icon: MessageCircle,
-        to: user && user.value?.username ? '/chats' : '/signin',
-    },
-    {
-        id: 'sell',
-        title: t('navigation.market.sell'),
-        icon: PlusCircle,
-        to: user && user.value?.username ? '/product/create' : '/signin',
-        sell: true
-    },
-    {
-        id: 'profile',
-        title: t('navigation.market.profile'),
-        icon: User,
-        to: user && user.value?.username ? `/user/${user.value.username}` : '/signin',
-    },
-])
+const navItems = computed(() => {
+    const items: NavItem[] = [
+        {
+            id: 'home',
+            title: t('navigation.market.home'),
+            icon: Home,
+            to: '/'
+        },
+        {
+            id: 'chats',
+            title: t('navigation.market.chats'),
+            icon: MessageCircle,
+            to: user && user.value?.username ? '/chats' : '/signin',
+        },
+        {
+            id: 'sell',
+            title: t('navigation.market.sell'),
+            icon: PlusCircle,
+            to: user && user.value?.username ? '/product/create' : '/signin',
+            sell: true
+        },
+        {
+            id: 'profile',
+            title: t('navigation.market.profile'),
+            icon: User,
+            to: user && user.value?.username ? `/user/${user.value.username}` : '/signin',
+        },
+    ]
+
+    // Добавляем админку только если пользователь админ
+    if (user.value?.role === 'admin') {
+        items.push({
+            id: 'admin',
+            title: t('navigation.market.admin'),
+            icon: Shield,
+            to: '/admin',
+            admin: true
+        })
+    }
+
+    return items
+})
 </script>
+
 <template>
     <div class="h-screen w-screen flex items-center flex-col bg-background text-mainText overflow-x-hidden">
         <div class="flex flex-col w-full overflow-hidden">
@@ -115,12 +147,22 @@ const navItems = computed(() => [
                         <nav class="hidden items-center gap-6 md:flex">
                             <router-link v-for="item in navItems" :key="item.id" :to="item.to"
                                 class="flex items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"
-                                :class="{ 'text-white': isActiveRoute(item), 'text-gray-400': !isActiveRoute(item) }">
+                                :class="{
+                                    'text-white': isActiveRoute(item),
+                                    'text-gray-400': !isActiveRoute(item)
+                                }">
                                 <component :is="item.icon"
-                                    :class="[item.sell ? 'text-2xl' : 'text-xl', isActiveRoute(item) ? 'text-white' : 'text-gray-400', 'transition-colors duration-300 group-hover:text-white']"
+                                    :class="[
+                                        item.sell ? 'text-2xl' : 'text-xl',
+                                        item.admin ? 'text-purple-400' : '',
+                                        isActiveRoute(item) ? 'text-white' : 'text-gray-400',
+                                        'transition-colors duration-300 group-hover:text-white'
+                                    ]"
                                     :size="item.sell ? 24 : 20" stroke-width="1.5" />
-                                <span class="ml-1 transition-colors duration-300 group-hover:text-white">{{ item.title
-                                }}</span>
+                                <span class="ml-1 transition-colors duration-300 group-hover:text-white"
+                                    :class="{ 'text-purple-300': item.admin }">
+                                    {{ item.title }}
+                                </span>
                             </router-link>
                         </nav>
                         <SelectLanguage />
@@ -143,7 +185,7 @@ const navItems = computed(() => [
                         </div>
                         <div class="flex-1">
                             <h4 class="font-semibold text-white">{{ $t('common.legal') }}</h4>
-                            <p class="mt-2\">legal@re-market.net</p>
+                            <p class="mt-2">legal@re-market.net</p>
                         </div>
                         <div class="flex-1">
                             <h4 class="font-semibold text-white">{{ $t('common.information') }}</h4>
@@ -166,12 +208,18 @@ const navItems = computed(() => [
                             'opacity-70': !isActiveRouteMobile(item)
                         }">
                         <div class="icon-box flex items-center justify-center transition-colors duration-300 group-hover:text-white"
-                            :class="isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400'">
+                            :class="[
+                                isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400',
+                                item.admin ? 'text-purple-400' : ''
+                            ]">
                             <component :is="item.icon" :size="22" stroke-width="1.5" />
                         </div>
                         <span
                             class="menu-label text-center text-xs font-light leading-none mt-1 transition-colors duration-300 group-hover:text-white"
-                            :class="isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400'">
+                            :class="[
+                                isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400',
+                                item.admin ? 'text-purple-300' : ''
+                            ]">
                             {{ item.title }}
                         </span>
                     </router-link>
@@ -180,16 +228,17 @@ const navItems = computed(() => [
         </div>
     </div>
 </template>
+
 <style scoped>
 /* Hide scrollbar while keeping scroll functionality */
-.scrollbar-hide {
+.no-scrollbar {
     -ms-overflow-style: none;
     /* IE and Edge */
     scrollbar-width: none;
     /* Firefox */
 }
 
-.scrollbar-hide::-webkit-scrollbar {
+.no-scrollbar::-webkit-scrollbar {
     display: none;
     /* Chrome, Safari and Opera */
 }
@@ -209,6 +258,16 @@ const navItems = computed(() => [
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.icon-box svg {
+    display: block;
+    width: 22px;
+    height: 22px;
+    max-width: 22px;
+    max-height: 22px;
+    vertical-align: middle;
+    margin: 0;
 }
 
 .menu-label {

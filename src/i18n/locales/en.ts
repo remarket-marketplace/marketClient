@@ -227,6 +227,7 @@ const en = {
       profile: "Profile",
       sell: "Sell",
       login: "Login",
+      admin: "Admin",
     },
     admin: {
       main: "Main",
@@ -234,6 +235,7 @@ const en = {
       products: "Products",
       deals: "Deals",
       categories: "Categories",
+      backToSite: "Back to site",
     },
     button: {
       about: "About",

@@ -229,6 +229,7 @@ const ru = {
       profile: "Профиль",
       sell: "Продать",
       login: "Войти",
+      admin: "Админка",
     },
     admin: {
       main: "Главная",
@@ -236,6 +237,7 @@ const ru = {
       products: "Товары",
       deals: "Сделки",
       categories: "Категории",
+      backToSite: "Вернуться на сайт",
     },
     button: {
       about: "О шаблоне",
