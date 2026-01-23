@@ -112,7 +112,7 @@ const navItems = computed(() => [
             @click="router.push('/')">
             remarket
           </div>
-  
+
           <div class="flex gap-6">
             <nav class="hidden items-center gap-6 md:flex">
               <router-link v-for="item in navItems" :key="item.id" :to="item.to"
@@ -138,7 +138,7 @@ const navItems = computed(() => [
       </header>
   
       <main class="flex-1 overflow-hidden min-h-0">
-        <div class="mx-auto h-full w-full px-2 lg:px-4 pb-6" :class="{ 'pb-16': !isDesktop }">
+        <div class="mx-auto h-full w-full px-2 lg:px-4" :class="{ 'pb-16': !isDesktop }">
           <slot />
         </div>
       </main>

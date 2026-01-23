@@ -409,6 +409,8 @@ const en = {
       confirmReceiptMessage: "Вы уверены что хотите подтвердить получение?",
       enterCustomReason: "Enter reason",
       refundCompleted: "Refund completed",
+      manualDelivery: "Product delivery by seller",
+      contactSeller: "To receive the product, contact the seller in chat",
 
       pending: "Deal created. Waiting for confirmation from both parties.",
       confirmed:
@@ -621,6 +623,9 @@ const en = {
         productDataPlaceholder: "Product Data",
         images: "Product Images (select multiple)",
         count: "Count",
+        autoDelivery: "Auto delivery",
+        autoDeliveryHint: "Product will be automatically delivered to the buyer after payment",
+        autoDeliveryEnabledHint: "After payment, the buyer will instantly receive the data from the \"Product data\" field",
         selectedImagesCount: "Selected images: {count}",
         creating: "Creating...",
         errorLoadingCategories: "Error loading categories",
@@ -650,6 +655,7 @@ const en = {
         descriptionPlaceholder: "Product Description",
         pricePlaceholder: "Price",
         productData: "Product Data",
+
         productDataPlaceholder: "Product Data",
         currentImages: "Current Images",
         newImages: "New Images",

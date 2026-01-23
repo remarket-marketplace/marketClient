@@ -39,6 +39,7 @@ export const ProductSchema = z.object({
   seller: SellerSchema,
   images: z.array(ProductImageSchema),
   count: z.number(),
+  auto_delivery: z.boolean(),
   reviews: ReviewsListSchema.nullable().optional(),
   is_owner: z.boolean().optional(),
   product_data_string: z.string().nullable().optional(),

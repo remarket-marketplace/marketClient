@@ -11,6 +11,7 @@ import { onMounted, ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Percent, Calculator, Info, AlertCircle } from 'lucide-vue-next'
 import BackButton from '@/components/navigation/BackButton.vue'
+import Checkbox from '@/components/Checkbox.vue'
 
 const { t } = useI18n()
 const categories = ref<Category[]>([])
@@ -26,6 +27,7 @@ const count = ref<number>(1)
 const sended = ref(false)
 const errorMessage = ref('')
 const commissionInterest = ref<number | null>(null)
+const autoDelivery = ref<boolean>(true)
 
 const store = useUserStore()
 const user = await store.getUser()
@@ -101,6 +103,7 @@ async function createProduct() {
       product_data: productData.value,
       category_id: selectedSubcategoryId.value,
       count: count.value,
+      auto_delivery: autoDelivery.value
     }
 
     const result = await productService.createProduct(productDataObj, images.value)
@@ -124,7 +127,7 @@ async function createProduct() {
 </script>
 
 <template>
-  <div class="w-full h-full overflow-scroll no-scrollbar lg:overflow-hidden pb-16 md:pb-0">
+  <div class="w-full h-full overflow-scroll no-scrollbar lg:overflow-hidden md:pb-0">
     <!-- Mobile header -->
     <div class="mb-6 lg:hidden px-4 pt-4">
       <div class="flex gap-2">
@@ -141,12 +144,12 @@ async function createProduct() {
     <!-- Desktop layout -->
     <div class="lg:flex lg:h-full">
       <!-- Left column - Main form -->
-      <div class="lg:flex-1 overflow-y-auto no-scrollbar lg:pr-6 lg:pt-6">
-        <div class="px-4 lg:px-0 lg:pb-6 space-y-6">
+      <div class="lg:flex-1 overflow-y-auto no-scrollbar lg:pr-6 lg:pt-6 pb-6">
+        <div class="px-4 lg:px-0 space-y-6">
           <!-- Desktop header -->
           <div class="hidden lg:block">
             <div class="flex gap-2">
-              <BackButton/>
+              <BackButton />
               <h1 class="text-2xl font-bold text-white">
                 {{ $t('pages.forms.createProduct.title') }}
               </h1>
@@ -227,6 +230,28 @@ async function createProduct() {
               </p>
             </div>
 
+            <!-- Auto delivery -->
+            <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-5 space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="space-y-1">
+                  <h4 class="text-sm font-semibold text-white">
+                    {{ $t('pages.forms.createProduct.autoDelivery') }}
+                  </h4>
+                  <p class="text-xs text-gray-400 leading-relaxed">
+                    {{ $t('pages.forms.createProduct.autoDeliveryHint') }}
+                  </p>
+                </div>
+                <Checkbox v-model="autoDelivery" size="lg" />
+              </div>
+
+              <div v-if="autoDelivery" class="mt-3 p-3 rounded-lg bg-blue-900/20 border border-blue-800/30">
+                <p class="text-xs text-blue-300 leading-relaxed flex items-start gap-2">
+                  <Info class="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  {{ $t('pages.forms.createProduct.autoDeliveryEnabledHint') }}
+                </p>
+              </div>
+            </div>
+
             <!-- Product data -->
             <div class="space-y-2">
               <div class="flex items-center gap-2">
@@ -255,9 +280,9 @@ async function createProduct() {
 
       <!-- Right sidebar - Fixed on desktop, normal flow on mobile -->
       <div
-        class="lg:w-96 lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-full lg:border-l border-dark-700 px-4 lg:px-0 lg:pt-6 lg:pl-6 lg:pt-6">
+        class="lg:w-96 lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-full lg:border-l border-dark-700 px-4 lg:px-0 lg:pl-6 lg:pt-6">
         <div class="pt-6 lg:pt-0">
-          <div class="space-y-6 pb-6 lg:pb-0">
+          <div class="space-y-6 lg:pb-0">
             <!-- Product price -->
             <div class="space-y-3">
               <div class="flex items-center justify-between">

@@ -129,6 +129,7 @@ export const productService = {
       formData.append("product_data", productData.product_data);
       formData.append("category_id", productData.category_id);
       formData.append("count", productData.count);
+      formData.append("auto_delivery", productData.auto_delivery);
       uploadedImages.forEach((image) => {
         formData.append("uploaded_images", image);
       });

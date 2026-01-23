@@ -51,7 +51,7 @@ async function openRefusalModal() {
   if (refusalReasons.value.length === 0) {
     const reasons = await chatsService.getRefusalReasons();
     refusalReasons.value = reasons;
-    
+
     // Находим id причины с title "otherReason"
     const otherReason = reasons.find(reason => reason.title === 'otherReason');
     if (otherReason) {
@@ -101,13 +101,13 @@ function openRefundModal() {
 
 async function handleReport(dealId: string) {
   if (!selectedRefusalId.value) return;
-  
+
   let description = null;
   // Если выбрана причина "otherReason" и есть текст, отправляем его
   if (isOtherReasonSelected.value && customReasonText.value.trim()) {
     description = customReasonText.value.trim();
   }
-  
+
   const response = await productService.sendReport(dealId, selectedRefusalId.value, description);
   if (response === true) {
     isReported.value = true;
@@ -149,12 +149,20 @@ async function handleSendReview(productId: string) {
 
           <p class="text-xl text-green-400 font-bold">{{ product.price }}₽</p>
 
-          <div class="space-y-2">
+          <div v-if="product.auto_delivery" class="space-y-2">
             <p class="text-sm font-semibold text-gray-300 uppercase tracking-wide border-b border-gray-700 pb-2">
               {{ $t('pages.chats.productData') }}
             </p>
             <p class="text-gray-400 text-sm leading-relaxed line-clamp-3">
               {{ product.product_data_string }}
+            </p>
+          </div>
+          <div v-else class="space-y-2">
+            <p class="text-sm font-semibold text-yellow-400 uppercase tracking-wide border-b border-gray-700 pb-2">
+              {{ $t('pages.chats.manualDelivery') }}
+            </p>
+            <p class="text-gray-400 text-sm leading-relaxed">
+              {{ $t('pages.chats.contactSeller') }}
             </p>
           </div>
         </div>
@@ -255,7 +263,6 @@ async function handleSendReview(productId: string) {
           </button>
         </div>
       </template>
-
     </div>
   </div>
 
@@ -306,13 +313,9 @@ async function handleSendReview(productId: string) {
 
           <!-- Custom reason textarea (only shown when "otherReason" is selected) -->
           <div v-if="isOtherReasonSelected" class="mt-4">
-            <textarea
-              v-model="customReasonText"
-              :maxlength="MAX_CUSTOM_REASON_LENGTH"
-              rows="4"
+            <textarea v-model="customReasonText" :maxlength="MAX_CUSTOM_REASON_LENGTH" rows="4"
               class="w-full rounded-lg bg-gray-800 border border-gray-700 p-3 text-sm text-gray-200 outline-none focus:border-blue-500"
-              :placeholder="$t('pages.chats.enterCustomReason')"
-            ></textarea>
+              :placeholder="$t('pages.chats.enterCustomReason')"></textarea>
             <div class="flex justify-between items-center mt-2 text-xs text-gray-400">
               <span class="text-red-400" v-if="customReasonText.length >= MAX_CUSTOM_REASON_LENGTH">
                 {{ $t('pages.chats.maxCharactersReached') }}
@@ -330,10 +333,8 @@ async function handleSendReview(productId: string) {
             class="px-5 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700/50 transition-colors font-medium">
             {{ $t('common.cancel') }}
           </button>
-          <button 
-            @click="handleReport(dealId)" 
-            :disabled="!selectedRefusalId || (isOtherReasonSelected && !customReasonText.trim())" 
-            :class="[
+          <button @click="handleReport(dealId)"
+            :disabled="!selectedRefusalId || (isOtherReasonSelected && !customReasonText.trim())" :class="[
               'px-5 py-2.5 rounded-lg font-medium transition-colors',
               !selectedRefusalId || (isOtherReasonSelected && !customReasonText.trim())
                 ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
