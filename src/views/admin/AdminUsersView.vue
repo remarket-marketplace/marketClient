@@ -172,7 +172,7 @@ onMounted(() => {
         <span class="ml-2 sm:ml-3 text-base sm:text-lg text-gray-400">{{ $t('common.loading') }}</span>
       </div>
 
-      <div v-else class="h-full overflow-y-auto no-scrollbar space-y-3">
+      <div v-else class="h-full overflow-y-auto  space-y-3">
         <!-- Карточка пользователя -->
         <div
           v-for="user in users"

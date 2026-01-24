@@ -1,208 +1,205 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-import SignIn from '@/views/SignIn.vue'
-import SignUp from '@/views/SignUp.vue'
-import ProfileView from '@/views/ProfileView.vue'
-import CreateProductView from '@/views/CreateProductView.vue'
-import ProductPage from '@/views/ProductPage.vue'
-import ChatsView from '@/views/ChatsView.vue'
-import AdminHomeView from '@/views/admin/AdminHomeView.vue'
-import { authService } from '@/api/auth/AuthService'
-import NotAccess from '@/views/NotAccess.vue'
-import AdminUsersView from '@/views/admin/AdminUsersView.vue'
-import AdminProductsView from '@/views/admin/AdminProductsView.vue'
-import AdminCategoriesView from '@/views/admin/AdminCategoriesView.vue'
-import AdminEditUserView from '@/views/admin/AdminEditUserView.vue'
-import AdminDealsView from '@/views/admin/AdminDealsView.vue'
-import WalletView from '@/views/WalletView.vue'
-import SettingsView from '@/views/SettingsView.vue'
-import UpdateProductView from '@/views/UpdateProductView.vue'
-import EnterResetEmailView from '@/views/resetPassword/EnterResetEmailView.vue'
-import ResetPasswordView from '@/views/resetPassword/ResetPasswordView.vue'
-import AdminEditCategoryView from '@/views/admin/AdminEditCategoryView.vue'
-import FavoritesProductsView from '@/views/FavoritesProductsView.vue'
-import AdminDealView from '@/views/admin/AdminDealView.vue'
-import PaymentSuccessView from '@/views/PaymentSuccessView.vue'
-import PaymentFailedView from '@/views/PaymentFailedView.vue'
-import AdminChatView from '@/views/admin/AdminChatView.vue'
+import { createRouter, createWebHistory } from "vue-router";
+import HomeView from "../views/HomeView.vue";
+import SignIn from "@/views/SignIn.vue";
+import SignUp from "@/views/SignUp.vue";
+import ProfileView from "@/views/ProfileView.vue";
+import CreateProductView from "@/views/CreateProductView.vue";
+import ProductPage from "@/views/ProductPage.vue";
+import ChatsView from "@/views/ChatsView.vue";
+import AdminHomeView from "@/views/admin/AdminHomeView.vue";
+import { authService } from "@/api/auth/AuthService";
+import NotAccess from "@/views/NotAccess.vue";
+import AdminUsersView from "@/views/admin/AdminUsersView.vue";
+import AdminProductsView from "@/views/admin/AdminProductsView.vue";
+import AdminCategoriesView from "@/views/admin/AdminCategoriesView.vue";
+import AdminEditUserView from "@/views/admin/AdminEditUserView.vue";
+import AdminDealsView from "@/views/admin/AdminDealsView.vue";
+import WalletView from "@/views/WalletView.vue";
+import SettingsView from "@/views/SettingsView.vue";
+import UpdateProductView from "@/views/UpdateProductView.vue";
+import EnterResetEmailView from "@/views/resetPassword/EnterResetEmailView.vue";
+import ResetPasswordView from "@/views/resetPassword/ResetPasswordView.vue";
+import AdminEditCategoryView from "@/views/admin/AdminEditCategoryView.vue";
+import FavoritesProductsView from "@/views/FavoritesProductsView.vue";
+import AdminDealView from "@/views/admin/AdminDealView.vue";
+import PaymentSuccessView from "@/views/PaymentSuccessView.vue";
+import PaymentFailedView from "@/views/PaymentFailedView.vue";
+import AdminChatView from "@/views/admin/AdminChatView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/',
-      name: 'home',
+      path: "/",
+      name: "home",
       component: HomeView,
     },
     {
-      path: '/signin',
-      name: 'signIn',
+      path: "/signin",
+      name: "signIn",
       component: SignIn,
+      meta: { requiredGuest: true },
     },
     {
-      path: '/signup',
-      name: 'signUp',
+      path: "/signup",
+      name: "signUp",
       component: SignUp,
+      meta: { requiredGuest: true },
     },
     {
-      path: '/password-reset-email',
-      name: 'password reset email',
+      path: "/password-reset-email",
+      name: "password reset email",
       component: EnterResetEmailView,
     },
     {
-      path: '/password-reset-code',
-      name: 'password reset code',
+      path: "/password-reset-code",
+      name: "password reset code",
       component: ResetPasswordView,
     },
     {
-      path: '/user/:username',
-      name: 'profile',
+      path: "/user/:username",
+      name: "profile",
       component: ProfileView,
     },
     {
-      path: '/user/products/favorites',
-      name: 'favorites products',
-      component: FavoritesProductsView
+      path: "/user/products/favorites",
+      name: "favorites products",
+      component: FavoritesProductsView,
     },
     {
-      path: '/product/create',
-      name: 'create product',
+      path: "/product/create",
+      name: "create product",
       component: CreateProductView,
-      meta: { requiredAuthorized: true }
+      meta: { requiredAuthorized: true },
     },
     {
-      path: '/product/edit/:productId',
-      name: 'edit product',
+      path: "/product/edit/:productId",
+      name: "edit product",
       component: UpdateProductView,
-      meta: { requiredAuthorized: true }
+      meta: { requiredAuthorized: true },
     },
     {
-      path: '/product/:productId',
-      name: 'product page',
+      path: "/product/:productId",
+      name: "product page",
       component: ProductPage,
     },
     {
-      path: '/chats/:chatId?',
-      name: 'chats',
+      path: "/chats/:chatId?",
+      name: "chats",
       component: ChatsView,
-      meta: { requiredAuthorized: true }
+      meta: { requiredAuthorized: true },
     },
     {
-      path: '/not-access',
-      name: 'notAccess',
+      path: "/not-access",
+      name: "notAccess",
       component: NotAccess,
     },
     {
-      path: '/admin',
-      name: 'admin',
+      path: "/admin",
+      name: "admin",
       component: AdminHomeView,
-      meta: { requiredAdmin: true }
+      meta: { requiredAdmin: true },
     },
     {
-      path: '/admin/users',
-      name: 'admin users',
+      path: "/admin/users",
+      name: "admin users",
       component: AdminUsersView,
-      meta: { requiredAdmin: true }
+      meta: { requiredAdmin: true },
     },
     {
-      path: '/admin/users/edit/:id',
-      name: 'admin edit user',
+      path: "/admin/users/edit/:id",
+      name: "admin edit user",
       component: AdminEditUserView,
-      meta: { requiredAdmin: true }
+      meta: { requiredAdmin: true },
     },
     {
-      path: '/admin/products',
-      name: 'products',
+      path: "/admin/products",
+      name: "products",
       component: AdminProductsView,
-      meta: { requiredAdmin: true }
+      meta: { requiredAdmin: true },
     },
     {
-      path: '/admin/deals',
-      name: 'deals',
+      path: "/admin/deals",
+      name: "deals",
       component: AdminDealsView,
-      meta: { requiredAdmin: true }
+      meta: { requiredAdmin: true },
     },
     {
-      path: '/admin/deal/:id',
-      name: 'deal',
+      path: "/admin/deal/:id",
+      name: "deal",
       component: AdminDealView,
-      meta: { requiredAdmin: true }
+      meta: { requiredAdmin: true },
     },
     {
-      path: '/admin/categories',
-      name: 'categories',
+      path: "/admin/categories",
+      name: "categories",
       component: AdminCategoriesView,
-      meta: { requiredAdmin: true }
+      meta: { requiredAdmin: true },
     },
     {
-      path: '/admin/categories/edit/:id',
-      name: 'edit category',
+      path: "/admin/categories/edit/:id",
+      name: "edit category",
       component: AdminEditCategoryView,
-      meta: { requiredAuthorized: true }
+      meta: { requiredAuthorized: true },
     },
     {
-      path: '/admin/chats/:dealId',
-      name: 'adminChatView',
+      path: "/admin/chats/:dealId",
+      name: "adminChatView",
       component: AdminChatView,
-      meta: { requiredAdmin: true }
+      meta: { requiredAdmin: true },
     },
     {
-      path: '/wallet',
-      name: 'wallet',
+      path: "/wallet",
+      name: "wallet",
       component: WalletView,
-      meta: { requiredAuthorized: true }
+      meta: { requiredAuthorized: true },
     },
     {
-      path: '/settings',
-      name: 'settings',
+      path: "/settings",
+      name: "settings",
       component: SettingsView,
-      meta: { requiredAuthorized: true }
+      meta: { requiredAuthorized: true },
     },
     {
-      path: '/payment/success',
-      name: 'success payment',
+      path: "/payment/success",
+      name: "success payment",
       component: PaymentSuccessView,
     },
     {
-      path: '/payment/failed',
-      name: 'failed payment',
+      path: "/payment/failed",
+      name: "failed payment",
       component: PaymentFailedView,
     },
     {
-      path: '/:pathMatch(.*)*',
-      name: 'notFound',
+      path: "/:pathMatch(.*)*",
+      name: "notFound",
       component: NotAccess,
     },
   ],
-})
+});
 
-
-// проверка для роутов админки
 router.beforeEach(async (to, from, next) => {
-  if (to.meta.requiredAdmin) {
-    let userIsAdmin = false
-
-    const user = await authService.getUser()
-
-    if (user?.role === 'admin') {
-      userIsAdmin = true
-    }
-    
-    if (!userIsAdmin) {
-      next('/not-access')
-    } else {
-      next()
-    }
-  } else if (to.meta.requiredAuthorized) {
-      const user = await authService.getUser()
-
-      if (user) {
-        next()
-      }
+  const { requiredAdmin, requiredAuthorized, requiredGuest } = to.meta;
+  
+  if (!requiredAdmin && !requiredAuthorized && !requiredGuest) {
+    return next();
   }
-  else {
-    next()
-  }
-})
 
-export default router
+  const user = await authService.getUser();
+
+  if (requiredAdmin) {
+    return user?.role === 'admin' ? next() : next('/not-access');
+  }
+
+  if (requiredAuthorized) {
+    return user ? next() : next('/signin');
+  }
+
+  if (requiredGuest) {
+    return user ? next('/') : next();
+  }
+
+  next();
+});
+
+export default router;

@@ -48,7 +48,6 @@ const userInitial = computed(() => {
     return props.chat.another_user.username.charAt(0).toUpperCase()
 })
 
-// Онлайн статус пользователя
 const isUserOnline = computed(() => {
     return props.chat.another_user.is_active
 })
@@ -69,7 +68,6 @@ onMounted(() => {
         :class="['flex cursor-pointer items-center gap-3 py-3 px-4 transition hover:bg-dark-800/50 group', !isMobile && isSelected ? 'bg-dark-800/50' : '']"
         @click="$emit('loadChatMessages', chat.id)"
     >
-        <!-- Аватар с индикатором онлайн статуса -->
         <div class="flex-shrink-0 relative">
             <div class="h-12 w-12 flex items-center justify-center">
                 <img
@@ -86,7 +84,6 @@ onMounted(() => {
                 </div>
             </div>
             
-            <!-- Индикатор онлайн статуса -->
             <div
                 v-if="isUserOnline"
                 class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-1 border-dark-800 rounded-full"
@@ -95,11 +92,9 @@ onMounted(() => {
                     'border-dark-800': !isSelected || isMobile
                 }"
             >
-                <!-- Анимация пульсации для онлайн статуса -->
                 <div class="w-full h-full bg-green-500 rounded-full animate-ping opacity-75"></div>
             </div>
             
-            <!-- Индикатор оффлайн статуса (опционально) -->
             <div
                 v-else
                 class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-gray-500 border-1 border-dark-800 rounded-full"
@@ -110,7 +105,6 @@ onMounted(() => {
             ></div>
         </div>
 
-        <!-- Информация о чате -->
         <div class="flex flex-col flex-1 min-w-0">
             <div class="flex items-center justify-between gap-2">
                 <p class="truncate text-mainText font-semibold text-base">

@@ -171,7 +171,7 @@ onUnmounted(() => {
 
 <template>
   <section v-if="product"
-    class="h-full w-full flex flex-col items-start gap-2 lg:pt-2 overflow-scroll no-scrollbar pb-36 text-mainText lg:px-0 lg:pb-6">
+    class="h-full w-full flex flex-col items-start gap-2 lg:pt-2 overflow-scroll  pb-36 text-mainText lg:px-0 lg:pb-6">
     <div class="pt-1">
       <BackButton />
     </div>

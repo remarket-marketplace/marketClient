@@ -243,12 +243,13 @@ async function createProduct() {
                 </div>
                 <Checkbox v-model="autoDelivery" size="lg" />
               </div>
-
-              <div v-if="autoDelivery" class="mt-3 p-3 rounded-lg bg-blue-900/20 border border-blue-800/30">
-                <p class="text-xs text-blue-300 leading-relaxed flex items-start gap-2">
-                  <Info class="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  {{ $t('pages.forms.createProduct.autoDeliveryEnabledHint') }}
-                </p>
+              <div v-if="autoDelivery" class="mt-3">
+                <div class="p-3 rounded-lg bg-blue-900/20 border border-blue-800/30">
+                  <p class="text-xs text-blue-300 leading-relaxed flex items-start gap-2">
+                    <Info class="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    {{ $t('pages.forms.createProduct.autoDeliveryEnabledHint') }}
+                  </p>
+                </div>
               </div>
             </div>
 

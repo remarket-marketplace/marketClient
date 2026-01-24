@@ -263,7 +263,7 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div v-else class="h-full overflow-y-auto no-scrollbar space-y-4">
+      <div v-else class="h-full overflow-y-auto  space-y-4">
         <!-- Карточка сделки -->
         <div v-for="deal in deals" :key="deal.id"
           class="bg-dark-600 border border-dark-700 rounded-xl p-4 hover:border-dark-500 transition-all duration-200">
@@ -437,12 +437,12 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
-.no-scrollbar {
+. {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-.no-scrollbar::-webkit-scrollbar {
+.::-webkit-scrollbar {
   display: none;
 }
 

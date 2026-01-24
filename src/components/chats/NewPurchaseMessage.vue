@@ -285,7 +285,7 @@ async function handleSendReview(productId: string) {
 
         <!-- reasons list -->
         <div class="p-4">
-          <div class="space-y-2 max-h-80 overflow-y-auto pr-1 no-scrollbar">
+          <div class="space-y-2 max-h-80 overflow-y-auto pr-1 ">
             <button v-for="reason in refusalReasons" :key="reason.id" @click="selectedRefusalId = reason.id" :class="[
               'w-full text-left px-4 py-3 rounded-xl transition-all duration-200',
               selectedRefusalId === reason.id

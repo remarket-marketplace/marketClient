@@ -116,7 +116,7 @@ onMounted(loadCategory)
 </script>
 
 <template>
-  <div class="no-scrollbar h-full w-full flex flex-col items-center overflow-scroll pb-36">
+  <div class=" h-full w-full flex flex-col items-center overflow-scroll pb-36">
     <div class="w-full">
       <BackButton/>
     </div>

@@ -50,7 +50,7 @@ const formatPrice = (price: number) => {
 </script>
 
 <template>
-  <div class="w-full h-full overflow-y-auto no-scrollbar px-4 pt-4 pb-16">
+  <div class="w-full h-full overflow-y-auto  px-4 pt-4 pb-16">
     <!-- Header -->
     <div class="mb-6">
       <div class="flex gap-2 items-center mb-2">

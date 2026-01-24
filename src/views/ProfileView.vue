@@ -279,7 +279,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 </script>
 
 <template>
-  <div class="w-full h-full overflow-scroll no-scrollbar lg:overflow-hidden pb-16 md:pb-0">
+  <div class="w-full h-full overflow-scroll  lg:overflow-hidden pb-16 md:pb-0">
     <!-- Mobile header -->
     <div class="mb-6 lg:hidden px-4 pt-4">
       <div class="flex gap-2">
@@ -482,7 +482,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
       </div>
 
       <!-- Right column - Content -->
-      <div class="lg:flex-1 overflow-y-auto no-scrollbar mt-6 lg:mt-0 lg:pt-6 lg:pl-6">
+      <div class="lg:flex-1 overflow-y-auto  mt-6 lg:mt-0 lg:pt-6 lg:pl-6">
         <div class="px-4 lg:px-0 lg:pb-6 space-y-6">
           <!-- Tabs -->
           <div class="flex items-center gap-2 rounded-xl bg-dark-700/30 p-1 border border-dark-600">

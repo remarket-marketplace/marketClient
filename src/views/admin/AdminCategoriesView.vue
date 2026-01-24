@@ -152,7 +152,7 @@ async function loadMoreSubcategories() {
 </script>
 
 <template>
-  <section class="w-full h-full flex flex-col gap-6 p-4 sm:p-6 overflow-scroll lg:overflow-hidden no-scrollbar">
+  <section class="w-full h-full flex flex-col gap-6 p-4 sm:p-6 overflow-scroll lg:overflow-hidden ">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 flex-none">
       <div>
         <div class="flex gap-2">

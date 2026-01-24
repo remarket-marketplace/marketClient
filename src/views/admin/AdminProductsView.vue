@@ -114,7 +114,7 @@ function formatPrice(price: number) {
         </div>
       </div>
 
-      <div v-else class="h-full overflow-y-auto no-scrollbar space-y-2">
+      <div v-else class="h-full overflow-y-auto  space-y-2">
         <!-- Карточка товара -->
         <div
           v-for="product in products"

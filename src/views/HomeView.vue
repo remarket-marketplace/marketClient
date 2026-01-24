@@ -180,9 +180,6 @@ async function resetAllFilters() {
 const categoriesScroll = ref<HTMLDivElement | null>(null)
 const categoriesLoadMoreTrigger = ref<HTMLElement | null>(null)
 let categoriesObserver: IntersectionObserver | null = null
-const subCategoriesScroll = ref<HTMLDivElement | null>(null)
-const subCategoriesLoadMoreTrigger = ref<HTMLElement | null>(null)
-let subCategoriesObserver: IntersectionObserver | null = null
 
 const handleCategoriesWheel = (e: WheelEvent) => {
   const el = e.currentTarget as HTMLElement
@@ -227,7 +224,7 @@ onBeforeUnmount(() => {
 
           <div v-else ref="categoriesScroll" 
                @wheel.prevent="handleCategoriesWheel"
-               class="overflow-x-auto overflow-y-hidden no-scrollbar w-full relative cursor-grab active:cursor-grabbing">
+               class="overflow-x-auto overflow-y-hidden  w-full relative cursor-grab active:cursor-grabbing">
             <div class="flex gap-3 min-w-max py-2">
               <div v-for="cat in mainCategories" :key="cat.id" @click="onMainCategoryClick(cat.id)"
                 class="flex-shrink-0 cursor-pointer flex flex-col items-center p-2 rounded-lg transition" 

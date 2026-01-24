@@ -647,7 +647,7 @@ const en = {
         commissionNote:
           "The platform commission is {percent}% of the sale amount. The remaining amount will be credited to your balance after the sale.",
         termsNote: "By creating a product, you agree to our ",
-        termsLin: "terms of service",
+        termsLink: "terms of service",
       },
       editProduct: {
         title: "Edit Product",

@@ -63,7 +63,7 @@ async function changePassword() {
 </script>
 
 <template>
-  <div class="w-full h-full overflow-scroll no-scrollbar lg:overflow-hidden pb-16 md:pb-0">
+  <div class="w-full h-full overflow-scroll  lg:overflow-hidden pb-16 md:pb-0">
     <!-- Mobile header -->
     <div class="mb-6 lg:hidden px-4 pt-4">
       <div class="flex gap-2">
@@ -154,7 +154,7 @@ async function changePassword() {
       </div>
 
       <!-- Right column - Change password form -->
-      <div class="lg:flex-1 overflow-y-auto no-scrollbar mt-6 lg:mt-0 lg:pt-6 lg:pl-6">
+      <div class="lg:flex-1 overflow-y-auto  mt-6 lg:mt-0 lg:pt-6 lg:pl-6">
         <div class="px-4 lg:px-0 lg:pb-6 space-y-6">
           <!-- Security section -->
           <div class="space-y-6">

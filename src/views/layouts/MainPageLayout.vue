@@ -135,45 +135,48 @@ const navItems = computed(() => {
 </script>
 
 <template>
-    <div class="h-screen w-screen flex items-center flex-col bg-background text-mainText overflow-x-hidden">
-        <div class="flex flex-col w-full overflow-hidden">
-            <header class="flex-none z-30 h-14 border-b border-dark-700">
-                <div class="mx-auto 2xl:w-1/2 h-full w-full flex items-center justify-between px-2 lg:px-4">
-                    <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold title"
-                        @click="router.push('/')">
-                        remarket
-                    </div>
-                    <div class="flex gap-6">
-                        <nav class="hidden items-center gap-6 md:flex">
-                            <router-link v-for="item in navItems" :key="item.id" :to="item.to"
-                                class="flex items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"
-                                :class="{
-                                    'text-white': isActiveRoute(item),
-                                    'text-gray-400': !isActiveRoute(item)
-                                }">
-                                <component :is="item.icon"
-                                    :class="[
-                                        item.sell ? 'text-2xl' : 'text-xl',
-                                        item.admin ? 'text-purple-400' : '',
-                                        isActiveRoute(item) ? 'text-white' : 'text-gray-400',
-                                        'transition-colors duration-300 group-hover:text-white'
-                                    ]"
-                                    :size="item.sell ? 24 : 20" stroke-width="1.5" />
-                                <span class="ml-1 transition-colors duration-300 group-hover:text-white"
-                                    :class="{ 'text-purple-300': item.admin }">
-                                    {{ item.title }}
-                                </span>
-                            </router-link>
-                        </nav>
-                        <SelectLanguage />
-                    </div>
+    <div class="min-h-screen w-screen flex flex-col bg-background text-mainText">
+        <header class="fixed top-0 left-0 right-0 z-50 border-b border-dark-700 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div class="mx-auto h-14 w-full flex items-center justify-between px-2 lg:px-4 2xl:w-1/2">
+                <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold title"
+                    @click="router.push('/')">
+                    remarket
                 </div>
-            </header>
+                <div class="flex gap-6">
+                    <nav class="hidden items-center gap-6 md:flex">
+                        <router-link v-for="item in navItems" :key="item.id" :to="item.to"
+                            class="flex items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"
+                            :class="{
+                                'text-white': isActiveRoute(item),
+                                'text-gray-400': !isActiveRoute(item)
+                            }">
+                            <component :is="item.icon"
+                                :class="[
+                                    item.sell ? 'text-2xl' : 'text-xl',
+                                    item.admin ? 'text-purple-400' : '',
+                                    isActiveRoute(item) ? 'text-white' : 'text-gray-400',
+                                    'transition-colors duration-300 group-hover:text-white'
+                                ]"
+                                :size="item.sell ? 24 : 20" stroke-width="1.5" />
+                            <span class="ml-1 transition-colors duration-300 group-hover:text-white"
+                                :class="{ 'text-purple-300': item.admin }">
+                                {{ item.title }}
+                            </span>
+                        </router-link>
+                    </nav>
+                    <SelectLanguage />
+                </div>
+            </div>
+        </header>
 
-            <main class="flex-1 overflow-y-auto no-scrollbar">
-                <slot />
-                <div
-                    class="mx-auto pb-16 lg:pb-0 w-full flex flex-col justify-center items-center border-t border-t-gray-600">
+        <main class="flex-1 pt-14 overflow-y-auto">
+            <div class="mx-auto w-full 2xl:w-1/2">
+                <div class="px-2 lg:px-4" :class="{ 'pb-16': !isDesktop }">
+                    <slot />
+                </div>
+                
+                <!-- Футер -->
+                <div class="mx-auto pb-16 lg:pb-0 w-full flex flex-col justify-center items-center border-t border-t-gray-600">
                     <footer
                         class="w-full px-4 py-6 flex flex-col md:flex-row md:justify-between gap-4 text-sm text-gray-300">
                         <div class="flex-1">
@@ -197,51 +200,40 @@ const navItems = computed(() => {
                         </div>
                     </footer>
                 </div>
-            </main>
+            </div>
+        </main>
 
-            <nav class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-30 h-14 border-t border-gray-700 md:hidden">
-                <div class="mx-auto h-full w-full flex items-center justify-around">
-                    <router-link v-for="item in navItems" :key="item.id" :to="item.to"
-                        class="flex flex-col items-center justify-center px-1 transition-all duration-300 relative group"
-                        :class="{
-                            'opacity-100': isActiveRouteMobile(item),
-                            'opacity-70': !isActiveRouteMobile(item)
-                        }">
-                        <div class="icon-box flex items-center justify-center transition-colors duration-300 group-hover:text-white"
-                            :class="[
-                                isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400',
-                                item.admin ? 'text-purple-400' : ''
-                            ]">
-                            <component :is="item.icon" :size="22" stroke-width="1.5" />
-                        </div>
-                        <span
-                            class="menu-label text-center text-xs font-light leading-none mt-1 transition-colors duration-300 group-hover:text-white"
-                            :class="[
-                                isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400',
-                                item.admin ? 'text-purple-300' : ''
-                            ]">
-                            {{ item.title }}
-                        </span>
-                    </router-link>
-                </div>
-            </nav>
-        </div>
+        <!-- Мобильная навигация -->
+        <nav class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-50 h-14 border-t border-gray-700 md:hidden">
+            <div class="mx-auto h-full w-full max-w-6xl 2xl:max-w-screen-xl flex items-center justify-around">
+                <router-link v-for="item in navItems" :key="item.id" :to="item.to"
+                    class="flex flex-col items-center justify-center px-1 transition-all duration-300 relative group"
+                    :class="{
+                        'opacity-100': isActiveRouteMobile(item),
+                        'opacity-70': !isActiveRouteMobile(item)
+                    }">
+                    <div class="icon-box flex items-center justify-center transition-colors duration-300 group-hover:text-white"
+                        :class="[
+                            isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400',
+                            item.admin ? 'text-purple-400' : ''
+                        ]">
+                        <component :is="item.icon" :size="22" stroke-width="1.5" />
+                    </div>
+                    <span
+                        class="menu-label text-center text-xs font-light leading-none mt-1 transition-colors duration-300 group-hover:text-white"
+                        :class="[
+                            isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400',
+                            item.admin ? 'text-purple-300' : ''
+                        ]">
+                        {{ item.title }}
+                    </span>
+                </router-link>
+            </div>
+        </nav>
     </div>
 </template>
 
 <style scoped>
-/* Hide scrollbar while keeping scroll functionality */
-.no-scrollbar {
-    -ms-overflow-style: none;
-    /* IE and Edge */
-    scrollbar-width: none;
-    /* Firefox */
-}
-
-.no-scrollbar::-webkit-scrollbar {
-    display: none;
-    /* Chrome, Safari and Opera */
-}
 
 .mobile-nav-glass {
     background-color: rgba(23, 23, 23, 0.2);

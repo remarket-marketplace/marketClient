@@ -84,7 +84,7 @@ const navItems = computed(() => [
 
 <template>
   <div class="h-full-dvh w-screen flex items-center flex-col overflow-hidden bg-background text-mainText">
-    <div class="flex flex-col 2xl:w-1/2 w-full overflow-scroll no-scrollbar">
+    <div class="flex flex-col 2xl:w-1/2 w-full overflow-scroll ">
       <header class="flex-none z-30 relative">
         <div class="mx-auto h-14 w-full flex items-center justify-between px-2 lg:px-4">
           <div class="flex items-center gap-4">

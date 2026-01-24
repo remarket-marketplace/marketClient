@@ -210,7 +210,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="w-full h-full overflow-scroll no-scrollbar lg:overflow-hidden pb-16 md:pb-0">
+  <div class="w-full h-full overflow-scroll  lg:overflow-hidden pb-16 md:pb-0">
     <!-- Mobile header -->
     <div class="mb-6 lg:hidden px-4 pt-4">
       <div class="flex items-center gap-3 mb-4">
@@ -232,7 +232,7 @@ onMounted(async () => {
     <!-- Desktop layout -->
     <div class="lg:flex lg:h-full">
       <!-- Left column - Main information -->
-      <div class="lg:flex-1 overflow-y-auto no-scrollbar lg:pr-6 lg:pt-6">
+      <div class="lg:flex-1 overflow-y-auto  lg:pr-6 lg:pt-6">
         <div class="px-4 lg:px-0 lg:pb-6 space-y-6">
           <!-- Desktop header -->
           <div class="hidden lg:flex items-center justify-between mb-6">
@@ -563,12 +563,12 @@ onMounted(async () => {
 </template>
 
 <style>
-.no-scrollbar {
+. {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-.no-scrollbar::-webkit-scrollbar {
+.::-webkit-scrollbar {
   display: none;
 }
 

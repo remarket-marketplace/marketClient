@@ -172,7 +172,7 @@ async function sendMessage() {
                         </p>
                     </div>
 
-                    <div ref="messageContainerRef" class="no-scrollbar flex flex-1 flex-col overflow-y-auto"
+                    <div ref="messageContainerRef" class=" flex flex-1 flex-col overflow-y-auto"
                         @scroll="handleScroll">
                         <ChatMessage v-for="message in chatMessages" :key="message.id" :message="message"
                             :user="user" />

@@ -181,7 +181,7 @@ async function updateProduct() {
     <Loader />
   </div>
 
-  <div v-else-if="productData" class="w-full h-full overflow-scroll no-scrollbar lg:overflow-hidden pb-16 md:pb-0">
+  <div v-else-if="productData" class="w-full h-full overflow-scroll  lg:overflow-hidden pb-16 md:pb-0">
     <!-- Mobile header -->
     <div class="mb-6 lg:hidden px-4 pt-4">
       <h1 class="text-2xl font-bold text-white">
@@ -195,7 +195,7 @@ async function updateProduct() {
     <!-- Desktop layout -->
     <div class="lg:flex lg:h-full">
       <!-- Left column - Main form -->
-      <div class="lg:flex-1 overflow-y-auto no-scrollbar lg:pr-6 lg:pt-6">
+      <div class="lg:flex-1 overflow-y-auto  lg:pr-6 lg:pt-6">
         <div class="px-4 lg:px-0 pb-24 lg:pb-6 space-y-6">
           <!-- Desktop header -->
           <div class="hidden lg:block">
