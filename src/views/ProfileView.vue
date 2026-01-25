@@ -456,7 +456,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 <div class="space-y-1">
                   <div class="text-sm text-blue-300 font-medium">{{ t('common.balance') }}</div>
                   <div class="text-2xl font-bold text-green-400">{{ (currentProfileData as UserRead).balance.toFixed(2)
-                  }}₽</div>
+                    }}₽</div>
                 </div>
                 <button @click="goToWallet"
                   class="w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 transition-colors">
@@ -485,34 +485,46 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
       <div class="lg:flex-1 overflow-y-auto  mt-6 lg:mt-0 lg:pt-6 lg:pl-6">
         <div class="px-4 lg:px-0 lg:pb-6 space-y-6">
           <!-- Tabs -->
-          <div class="flex items-center gap-2 rounded-xl bg-dark-700/30 p-1 border border-dark-600">
+          <div class="flex items-center gap-1 sm:gap-2 rounded-xl bg-dark-700/30 p-1 border border-dark-600">
             <button @click="switchTab('products')"
-              class="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200" :class="activeTab === 'products'
+              class="flex-1 min-w-0 px-2 sm:px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
+              :class="activeTab === 'products'
                 ? 'bg-blue-600 text-white shadow-lg'
                 : 'text-gray-400 hover:text-white hover:bg-dark-700/50'">
-              <div class="flex items-center justify-center gap-2">
-                <Package class="w-4 h-4" />
-                <span>{{ t('common.products') }}</span>
+              <div class="flex items-center justify-center gap-1 sm:gap-2 overflow-hidden">
+                <Package class="w-4 h-4 flex-shrink-0 hidden xs:block" />
+                <span class="truncate">
+                  <span class="hidden sm:inline">{{ t('common.products') }}</span>
+                  <span class="sm:hidden">{{ t('common.productsShort', 'Товары') }}</span>
+                </span>
               </div>
             </button>
 
             <button @click="switchTab('reviews')"
-              class="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200" :class="activeTab === 'reviews'
+              class="flex-1 min-w-0 px-2 sm:px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
+              :class="activeTab === 'reviews'
                 ? 'bg-blue-600 text-white shadow-lg'
                 : 'text-gray-400 hover:text-white hover:bg-dark-700/50'">
-              <div class="flex items-center justify-center gap-2">
-                <MessageSquare class="w-4 h-4" />
-                <span>{{ t('pages.profile.reviews') }}</span>
+              <div class="flex items-center justify-center gap-1 sm:gap-2 overflow-hidden">
+                <MessageSquare class="w-4 h-4 flex-shrink-0 hidden xs:block" />
+                <span class="truncate">
+                  <span class="hidden sm:inline">{{ t('pages.profile.reviews') }}</span>
+                  <span class="sm:hidden">{{ t('common.reviewsShort', 'Отзывы') }}</span>
+                </span>
               </div>
             </button>
 
             <button v-if="isOwner" @click="switchTab('purchases')"
-              class="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200" :class="activeTab === 'purchases'
+              class="flex-1 min-w-0 px-2 sm:px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
+              :class="activeTab === 'purchases'
                 ? 'bg-blue-600 text-white shadow-lg'
                 : 'text-gray-400 hover:text-white hover:bg-dark-700/50'">
-              <div class="flex items-center justify-center gap-2">
-                <ShoppingBag class="w-4 h-4" />
-                <span>{{ t('pages.profile.purchases') }}</span>
+              <div class="flex items-center justify-center gap-1 sm:gap-2 overflow-hidden">
+                <ShoppingBag class="w-4 h-4 flex-shrink-0 hidden xs:block" />
+                <span class="truncate">
+                  <span class="hidden sm:inline">{{ t('pages.profile.purchases') }}</span>
+                  <span class="sm:hidden">{{ t('common.purchasesShort', 'Покупки') }}</span>
+                </span>
               </div>
             </button>
           </div>
