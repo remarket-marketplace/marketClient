@@ -2,6 +2,7 @@
 import type { ChatListItem } from '@/validation/chat/ChatList';
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n';
+import { ShoppingBag } from 'lucide-vue-next';
 
 const API_HOST = import.meta.env.VITE_API_HOST
 
@@ -12,11 +13,13 @@ const props = defineProps<{
     selectedChatId: string | null
 }>()
 
+const emit = defineEmits<{
+    loadChatMessages: [chatId: string]
+}>()
 
 const isMobile = ref(false)
 
 const formattedLastMessage = computed((): string | null => {
-
     if (!props.chat.last_message) {
         return null
     }
@@ -35,7 +38,6 @@ const formattedLastMessage = computed((): string | null => {
         case "update_deal_status_message":
             text = t('pages.chats.updateDealStatus')
             break
-
         case "review_message":
             text = t('pages.chats.newReview')
             break
@@ -43,13 +45,17 @@ const formattedLastMessage = computed((): string | null => {
     return text
 })
 
-const isSelected = props.chat.id === props.selectedChatId
+const isSelected = computed(() => props.chat.id === props.selectedChatId)
 const userInitial = computed(() => {
     return props.chat.another_user.username.charAt(0).toUpperCase()
 })
 
 const isUserOnline = computed(() => {
     return props.chat.another_user.is_active
+})
+
+const isSupportChat = computed(() => {
+    return props.chat.chat_type === 'support_chat'
 })
 
 const checkMobile = () => {
@@ -107,9 +113,18 @@ onMounted(() => {
 
         <div class="flex flex-col flex-1 min-w-0">
             <div class="flex items-center justify-between gap-2">
-                <p class="truncate text-mainText font-semibold text-base">
-                    {{ chat.another_user.username }}
-                </p>
+                <div class="flex items-center gap-2 truncate">
+                    <p class="truncate text-mainText font-semibold text-base">
+                        {{ chat.another_user.username }}
+                    </p>
+                    <!-- Бейдж поддержки -->
+                    <div 
+                        v-if="isSupportChat"
+                        class="flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                    >
+                        {{ t('pages.chats.support') }}
+                    </div>
+                </div>
                 <span 
                     v-if="chat.last_message?.created_at" 
                     class="flex-shrink-0 text-xs text-gray-500 whitespace-nowrap"
@@ -128,7 +143,13 @@ onMounted(() => {
                         'text-gray-500': chat.last_message?.message_type === 'text_message'
                     }"
                 >
-                    {{ formattedLastMessage }}
+                    <!-- Иконка типа сообщения -->
+                    <component
+                        v-if="chat.last_message?.message_type === 'purchase_message'"
+                        :is="ShoppingBag"
+                        class="inline-block w-3 h-3 mr-1.5 -mt-0.5"
+                    />
+                    {{ formattedLastMessage || t('pages.chats.noMessages') }}
                 </p>
             </div>
         </div>

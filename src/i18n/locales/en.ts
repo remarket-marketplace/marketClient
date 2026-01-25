@@ -421,6 +421,8 @@ const en = {
       completed: "Deal successfully completed.",
       cancelled: "Deal cancelled. Funds have been returned to the balance.",
       refunded: "Funds have been refunded to the buyer.",
+      support: "Support",
+      regularChat: "Chat"
     },
 
     profile: {

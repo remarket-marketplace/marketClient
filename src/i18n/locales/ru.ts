@@ -420,6 +420,10 @@ const ru = {
       completed: "Сделка успешно завершена.",
       cancelled: "Сделка отменена. Средства возвращены на баланс.",
       refunded: "Средства возвращены покупателю.",
+      support: "Поддержка",
+      supportChat: "Чат поддержки",
+      dealChat: "Сделка",
+      regularChat: "Чат"
     },
 
     profile: {

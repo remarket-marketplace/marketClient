@@ -171,7 +171,7 @@ onUnmounted(() => {
 
 <template>
   <section v-if="product"
-    class="h-full w-full flex flex-col items-start gap-2 lg:pt-2 overflow-scroll  pb-36 text-mainText lg:px-0 lg:pb-6">
+    class="h-full w-full flex flex-col items-start gap-2 lg:pt-2 overflow-scroll pb-36 text-mainText lg:px-0 lg:pb-6 px-4">
     <div class="pt-1">
       <BackButton />
     </div>
@@ -308,7 +308,8 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div v-else class="w-full py-4 text-center bg-dark-600/40 border border-dark-700 text-gray-400 rounded-2xl font-semibold">
+          <div v-else
+            class="w-full py-4 text-center bg-dark-600/40 border border-dark-700 text-gray-400 rounded-2xl font-semibold">
             {{ $t('pages.product.sold') }}
           </div>
 

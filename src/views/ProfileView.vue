@@ -279,7 +279,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 </script>
 
 <template>
-  <div class="w-full h-full overflow-scroll  lg:overflow-hidden pb-16 md:pb-0">
+  <div class="w-full h-full overflow-scroll lg:overflow-hidden pb-16 md:pb-0">
     <!-- Mobile header -->
     <div class="mb-6 lg:hidden px-4 pt-4">
       <div class="flex gap-2">

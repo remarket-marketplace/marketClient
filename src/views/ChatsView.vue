@@ -37,6 +37,13 @@ const totalPages = ref(0)
 const perPage = ref(30)
 const hasMoreMessages = ref(true)
 
+// Разделяем чаты на support и обычные
+const sortedChats = computed(() => {
+  const supportChats = chats.value.filter(chat => chat.chat_type === 'support_chat')
+  const regularChats = chats.value.filter(chat => chat.chat_type === 'chat')
+  return [...supportChats, ...regularChats]
+})
+
 const currentChat = computed(() =>
   chats.value.find(chat => chat.id === selectedChatId.value) || null
 )
@@ -83,8 +90,18 @@ onMounted(async () => {
 
       if (update.last_message && chat) {
         chat.last_message = update.last_message
-        chats.value.splice(chatIndex, 1)
-        chats.value.unshift(chat)
+        
+        // Для обычных чатов перемещаем наверх, support_chat остаются на месте
+        if (chat.chat_type === 'chat') {
+          chats.value.splice(chatIndex, 1)
+          // Находим позицию после всех support_chat
+          const firstRegularChatIndex = chats.value.findIndex(c => c.chat_type === 'chat')
+          if (firstRegularChatIndex === -1) {
+            chats.value.push(chat)
+          } else {
+            chats.value.splice(firstRegularChatIndex, 0, chat)
+          }
+        }
       }
     })
 
@@ -236,9 +253,9 @@ async function sendMessage() {
           </p>
 
           <div class="scrollbar-hidden min-h-0 flex-1 overflow-y-auto">
-            <div v-if="chats.length > 0" class="flex flex-col">
+            <div v-if="sortedChats.length > 0" class="flex flex-col">
                 <ChatItem
-                  v-for="chat in chats"
+                  v-for="chat in sortedChats"
                   :key="chat.id"
                   :chat="chat"
                   :selected-chat-id="selectedChatId"
