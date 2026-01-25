@@ -331,7 +331,7 @@ async function sendMessage() {
               </div>
               
               <div v-if="chatMessages.length > 0" class="flex flex-1 flex-col justify-start">
-                <div class="flex flex-col gap-3">
+                <div class="flex flex-col gap-3 py-2">
                   <ChatMessage
                     v-for="message in chatMessages"
                     :key="message.id"

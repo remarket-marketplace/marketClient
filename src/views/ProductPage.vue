@@ -180,7 +180,7 @@ onUnmounted(() => {
     <div class="w-full flex flex-col lg:flex-row gap-5">
       <div class="w-full rounded-lg lg:w-3/5 space-y-4">
         <div v-if="selectedImage" class="flex justify-center bg-blue-500 rounded-lg overflow-hidden">
-          <div class="w-full h-96 relative flex items-center justify-center">
+          <div class="w-full h-98 lg:h-[550px] relative flex items-center justify-center">
             <img :src="`${API_HOST}${selectedImage.image_url}`" :alt="product.title"
               class="absolute inset-0 w-full h-full object-cover cursor-zoom-in transition-opacity hover:opacity-90"
               loading="lazy" @click="openImageModal = true" />
@@ -189,8 +189,9 @@ onUnmounted(() => {
 
         <div v-if="product.images && product.images.length > 1" class="flex gap-3 overflow-x-auto pb-2 no-scroollbar">
           <img v-for="image in product.images" :key="image.id" :src="`${API_HOST}${image.image_url}`"
-            class="h-16 w-16 flex-shrink-0 cursor-pointer border-2 rounded-lg object-cover transition-all duration-200 hover:opacity-80"
+            class="h-20 w-20 flex-shrink-0 cursor-pointer border-2 rounded-lg object-cover transition-all duration-200 hover:opacity-80"
             :alt="`Product image: ${product.title}`" :class="{
+              'border-blue-500': image.image_url === selectedImage?.image_url,
               'border-dark-700': image.image_url !== selectedImage?.image_url,
             }" loading="lazy" @click="selectImage(image)">
         </div>
