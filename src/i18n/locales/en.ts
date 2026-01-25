@@ -249,6 +249,9 @@ const en = {
     notFound: {
       pageNotFound: "Sorry, page not found",
       back: "Back",
+      goHome: "Go Home",
+      errorCode: "404 Error",
+      description: "The page you requested does not exist or has been moved. Please check the URL or return to the home page."
     },
     serverError: {
       title: "Something went wrong, try again later",
