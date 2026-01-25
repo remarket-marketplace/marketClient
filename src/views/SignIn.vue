@@ -49,12 +49,9 @@ async function signIn() {
 
     successMessage.value = t('pages.auth.signIn.success')
 
-    const user = await useUserStore().getUser()
-
     setTimeout(() => {
-      if (user?.role === 'admin') router.push('/admin')
-      else router.push('/')
-    }, 800)
+      router.push('/')
+    }, 500)
   }
   catch (e: any) {
     if (e?.response?.data?.detail?.error_code) {

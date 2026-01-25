@@ -174,7 +174,7 @@ async function completeSignUp() {
 
       setTimeout(() => {
         router.push('/')
-      }, 2000)
+      }, 500)
     } else {
       errorMessage.value = t('pages.auth.signUp.invalidCode')
     }
