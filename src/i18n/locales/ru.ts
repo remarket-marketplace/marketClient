@@ -237,6 +237,7 @@ const ru = {
       products: "Товары",
       deals: "Сделки",
       categories: "Категории",
+      chats: "Чаты",
       backToSite: "Вернуться на сайт",
     },
     button: {

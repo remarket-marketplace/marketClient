@@ -4,7 +4,8 @@ import {
   Users,
   Package,
   ShoppingCart,
-  Folder
+  Folder,
+  MessageCircle
 } from 'lucide-vue-next'
 
 import { computed, onMounted, ref } from 'vue'
@@ -29,16 +30,13 @@ function checkDesktop() {
 const isActiveRoute = (item: any) => {
   const currentPath = route.path
 
-  // For the main admin page - exact match
   if (item.to === '/admin') {
     return currentPath === '/admin'
   }
 
-  // For other pages - starts with path
   return currentPath.startsWith(item.to)
 }
 
-// For mobile version, use the same logic
 const isActiveRouteMobile = (item: any) => {
   return isActiveRoute(item)
 }
@@ -60,6 +58,12 @@ const navItems = computed(() => [
     title: t('navigation.admin.users'),
     icon: Users,
     to: '/admin/users'
+  },
+  {
+    id: 'chats',
+    title: t('navigation.admin.chats'),
+    icon: MessageCircle,
+    to: '/admin/chats',
   },
   {
     id: 'products',

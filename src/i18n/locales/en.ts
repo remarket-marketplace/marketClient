@@ -235,6 +235,7 @@ const en = {
       products: "Products",
       deals: "Deals",
       categories: "Categories",
+      chats: "Chats",
       backToSite: "Back to site",
     },
     button: {

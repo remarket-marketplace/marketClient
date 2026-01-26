@@ -12,7 +12,7 @@ const goHome = () => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col items-center justify-center relative overflow-hidden">
+  <div class="h-screen w-screen flex flex-col items-center justify-center relative overflow-hidden">
     
     <!-- Фон с анимированными шарами -->
     <div class="absolute inset-0 w-full h-full z-0 pointer-events-none">
