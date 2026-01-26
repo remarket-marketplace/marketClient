@@ -211,7 +211,7 @@ onBeforeUnmount(() => {
   <div id="catalog-start" class="scroll-mt-24"></div>
 
   <section class="w-full flex flex-col items-center">
-    <div class="relative z-20 flex flex-col items-center mx-auto w-full px-2 lg:px-4 py-6 min-h-screen 2xl:w-1/2">
+    <div class="relative z-20 flex flex-col items-center w-full px-2 lg:px-4 py-6 min-h-screen">
         <SearchField v-model="searchQuery" :placeholder="$t('pages.index.searchPlaceholder')"
           @search-change="debouncedSearch" class="w-full lg:max-w-2xl" />
 

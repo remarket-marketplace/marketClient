@@ -2,10 +2,9 @@
 import type { ChatListItem } from '@/validation/chat/ChatList';
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n';
-import { ShoppingBag } from 'lucide-vue-next';
+import { ShoppingBag, Headphones } from 'lucide-vue-next';
 
 const API_HOST = import.meta.env.VITE_API_HOST
-
 const { t } = useI18n()
 
 const props = defineProps<{
@@ -51,6 +50,9 @@ const userInitial = computed(() => {
 })
 
 const isUserOnline = computed(() => {
+    if (isSupportChat) {
+        return true
+    }
     return props.chat.another_user.is_active
 })
 
@@ -76,54 +78,62 @@ onMounted(() => {
     >
         <div class="flex-shrink-0 relative">
             <div class="h-12 w-12 flex items-center justify-center">
+                <!-- Regular chat avatar -->
                 <img
-                    v-if="chat.another_user.avatar_url"
+                    v-if="!isSupportChat && chat.another_user.avatar_url"
                     :src="`${API_HOST}${chat.another_user.avatar_url}`"
                     class="h-12 w-12 border-2 border-dark-600 rounded-full object-cover"
                     :alt="chat.another_user.username"
                 >
+                <!-- Initials for regular chat -->
                 <div
-                    v-else
+                    v-else-if="!isSupportChat"
                     class="h-12 w-12 flex items-center justify-center rounded-full bg-gray-700 text-lg text-mainText font-bold uppercase"
                 >
                     {{ userInitial }}
                 </div>
+                <!-- Support icon -->
+                <div
+                    v-else
+                    class="h-12 w-12 flex items-center justify-center rounded-full bg-blue-500/20 border-2 border-blue-500/30"
+                >
+                    <Headphones class="w-6 h-6 text-blue-400" />
+                </div>
             </div>
             
+            <!-- Online status indicator -->
             <div
-                v-if="isUserOnline"
-                class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-1 border-dark-800 rounded-full"
+                class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full"
                 :class="{
-                    'border-white': isSelected && !isMobile,
+                    'bg-green-500 border-1 border-dark-800': isUserOnline,
+                    'bg-gray-500 border-1 border-dark-800': !isUserOnline,
                     'border-dark-800': !isSelected || isMobile
                 }"
             >
-                <div class="w-full h-full bg-green-500 rounded-full animate-ping opacity-75"></div>
+                <div 
+                    v-if="isUserOnline"
+                    class="w-full h-full bg-green-500 rounded-full animate-ping opacity-75"
+                ></div>
             </div>
-            
-            <div
-                v-else
-                class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-gray-500 border-1 border-dark-800 rounded-full"
-                :class="{
-                    'border-white': isSelected && !isMobile,
-                    'border-dark-800': !isSelected || isMobile
-                }"
-            ></div>
         </div>
 
         <div class="flex flex-col flex-1 min-w-0">
             <div class="flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2 truncate">
-                    <p class="truncate text-mainText font-semibold text-base">
-                        {{ chat.another_user.username }}
-                    </p>
-                    <!-- Бейдж поддержки -->
-                    <div 
+                    <!-- Show "Support" for support chats -->
+                    <p 
                         v-if="isSupportChat"
-                        class="flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                        class="truncate font-semibold text-base text-blue-500"
                     >
                         {{ t('pages.chats.support') }}
-                    </div>
+                    </p>
+                    <!-- Show username for regular chats -->
+                    <p 
+                        v-else
+                        class="truncate text-mainText font-semibold text-base"
+                    >
+                        {{ chat.another_user.username }}
+                    </p>
                 </div>
                 <span 
                     v-if="chat.last_message?.created_at" 
@@ -143,7 +153,7 @@ onMounted(() => {
                         'text-gray-500': chat.last_message?.message_type === 'text_message'
                     }"
                 >
-                    <!-- Иконка типа сообщения -->
+                    <!-- Message type icon -->
                     <component
                         v-if="chat.last_message?.message_type === 'purchase_message'"
                         :is="ShoppingBag"
@@ -169,7 +179,6 @@ onMounted(() => {
     transition: all 0.3s ease;
 }
 
-/* Анимация пульсации для онлайн статуса */
 @keyframes ping {
     0% {
         transform: scale(1);
