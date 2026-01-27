@@ -525,6 +525,8 @@ const ru = {
       noSubcategories: "Подкатегории для выбранной категории не найдены",
       moderationProducts: "Товары на модерацию",
       noModerationProducts: "Товаров на модерацию нет",
+      noSupportChats: "Нет чатов",
+      selectSupportChat: "Выберите чат",
 
       mainPage: {
         countOfUsers: "Количество пользователей: ",

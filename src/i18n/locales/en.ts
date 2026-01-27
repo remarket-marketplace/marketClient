@@ -535,6 +535,8 @@ const en = {
       noSubcategories: "No subcategories found for selected category",
       moderationProducts: "Products for moderation",
       noModerationProducts: "No products for moderation",
+      noSupportChats: "No chats",
+      selectSupportChat: "Select chat",
 
       mainPage: {
         countOfUsers: "Count of users: ",
