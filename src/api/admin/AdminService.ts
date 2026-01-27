@@ -250,8 +250,35 @@ export const adminService = {
     }
   },
 
-  async getChatByDealId(dealId: string) {
+  async getAdminChats(page = 1, perPage = 20) {
+  try {
+    const response = await httpClient.get('/admin/chats/', {
+      params: {
+        page,
+        per_page: perPage,
+      },
+    })
 
+    return {
+      chats: response.data.chats ?? [],
+      currentPage: page,
+      totalPages: response.data.total_pages ?? 1,
+      total: response.data.total ?? 0,
+    }
+  } catch (e) {
+    if (e instanceof ZodError) {
+      console.error('Validation error:', e.issues)
+    } else {
+      console.error('Error fetching admin chats:', e)
+    }
+
+    return {
+      chats: [],
+      currentPage: 1,
+      totalPages: 1,
+      total: 0,
+    }
   }
+}
 
 };

@@ -19,14 +19,12 @@ const goHome = () => {
         <div class="absolute inset-0 bg-background"></div>
         <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-soft-light"></div>
         
-        <!-- Крупный текст 404 на заднем плане -->
         <div class="absolute inset-0 flex items-center justify-center">
           <div class="text-[30vw] md:text-[25vw] lg:text-[20vw] font-black tracking-tight opacity-[0.03] select-none">
             404
           </div>
         </div>
         
-        <!-- Плавающие элементы как на главной -->
         <div class="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-blue-600/25 rounded-full blur-[100px] animate-blob"></div>
         <div class="absolute top-1/3 right-1/4 w-[350px] h-[350px] bg-cyan-500/20 rounded-full blur-[80px] animate-blob animation-delay-2000"></div>
         <div class="absolute bottom-1/4 left-1/2 w-[450px] h-[450px] bg-blue-700/20 rounded-full blur-[110px] animate-blob animation-delay-4000"></div>
@@ -65,7 +63,7 @@ const goHome = () => {
 
       <!-- Кнопки -->
       <div class="flex flex-col sm:flex-row gap-4 justify-center w-full max-w-sm animate-fade-in-up animation-delay-400">
-        <button 
+        <button
           @click="$router.back()"
           class="group relative px-8 py-3 bg-blue-600 text-white font-semibold rounded-xl overflow-hidden transition-all hover:bg-blue-700 hover:shadow-[0_10px_25px_-5px_rgba(37,99,235,0.4)] hover:scale-[1.02] active:scale-[0.98] duration-300 flex items-center justify-center gap-3"
         >

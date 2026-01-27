@@ -15,6 +15,7 @@ export const TextMessageSchema = BaseMessageSchema.extend({
   message_type: z.literal('text_message'),
   sender_id: z.string(),
   text: z.string(),
+  is_admin_message: z.boolean(),
   is_read: z.boolean(),
 })
 

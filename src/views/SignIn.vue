@@ -11,11 +11,13 @@ import { useUserStore } from '@/stores/user'
 import SuccessMessage from '@/components/SuccessMessage.vue'
 import Captcha from '@/components/Captcha.vue'
 import Title from '@/components/Title.vue'
+import { Eye, EyeOff } from 'lucide-vue-next'
 
 const sended = ref(false)
 const email = ref('')
 const password = ref('')
 const captchaToken = ref('')
+const passwordHidden = ref(true)
 
 const errorMessage = ref('')
 const successMessage = ref('')
@@ -64,6 +66,10 @@ async function signIn() {
     sended.value = false
   }
 }
+
+function switchPasswordVisibility() {
+  passwordHidden.value = !passwordHidden.value
+}
 </script>
 
 <template>
@@ -91,11 +97,19 @@ async function signIn() {
           <TheInput
             id="password"
             v-model="password"
-            type="password"
+            :type="passwordHidden ? 'password' : 'text'"
             placeholder="••••••••"
             required
             :minlength="8"
-          />
+          >
+            <template #append>
+              <button type="button" class="text-gray-400 hover:text-gray-300 transition-colors focus:outline-none p-1"
+                @click="switchPasswordVisibility">
+                <EyeOff v-if="passwordHidden" class="w-5 h-5" />
+                <Eye v-else class="w-5 h-5" />
+              </button>
+            </template>
+          </TheInput>
         </div>
 
         <div>

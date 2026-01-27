@@ -45,8 +45,8 @@ function goToDeal(id: string) {
   router.push({ path: `/admin/deal/${id}` })
 }
 
-function goToChat(dealId: string) {
-  router.push({ name: 'adminChatView', params: { dealId } })
+function goToChat(chatId: string) {
+  router.push({ name: 'adminChatView', params: { chatId } })
 }
 
 function goToProfile(username: string) {
@@ -275,7 +275,7 @@ onUnmounted(() => {
                 <span class="text-xl font-bold text-green-400">{{ formatPrice(deal.price) }}</span>
               </div>
               <div class="flex gap-2">
-                <button @click="goToChat(deal.id)"
+                <button @click="goToChat(deal.chat_room_id)"
                   class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
                   :title="$t('common.viewDeal')">
                   <MessageCircleMore class="w-4 h-4" />
@@ -435,15 +435,6 @@ onUnmounted(() => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-. {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.::-webkit-scrollbar {
-  display: none;
 }
 
 ::-webkit-scrollbar {

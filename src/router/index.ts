@@ -25,6 +25,7 @@ import AdminDealView from "@/views/admin/AdminDealView.vue";
 import PaymentSuccessView from "@/views/PaymentSuccessView.vue";
 import PaymentFailedView from "@/views/PaymentFailedView.vue";
 import AdminChatView from "@/views/admin/AdminChatView.vue";
+import AdminChatsView from "@/views/admin/AdminChatsView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -137,13 +138,19 @@ const router = createRouter({
       meta: { requiredAdmin: true },
     },
     {
+      path: "/admin/support/chats",
+      name: "support chats",
+      component: AdminChatsView,
+      meta: { requiredAdmin: true },
+    },
+    {
       path: "/admin/categories/edit/:id",
       name: "edit category",
       component: AdminEditCategoryView,
       meta: { requiredAuthorized: true },
     },
     {
-      path: "/admin/chats/:dealId",
+      path: "/admin/chats/:chatId",
       name: "adminChatView",
       component: AdminChatView,
       meta: { requiredAdmin: true },

@@ -31,6 +31,7 @@ const codeDigits = ref<string[]>(['', '', '', '', '', ''])
 const codeInputs = ref<(HTMLInputElement | null)[]>([])
 const errorMessage = ref('')
 const passwordHidden = ref(true)
+const passwordRepeatHidden = ref(true)
 const successShown = ref(false)
 
 // Ошибки валидации
@@ -106,27 +107,33 @@ function validateForm() {
 }
 
 async function sendCode() {
-  if (!captchaToken.value) {
-    errorMessage.value = t('pages.auth.signUp.completeCaptcha')
-    return
-  }
-
-  if (!validateForm()) return
-
-  if (await passwordsEquals()) {
-    errorMessage.value = ''
-    sended.value = true
-    try {
-      await authService.sendVerificationCode(email.value, username.value, captchaToken.value)
-      showCodeInput.value = true
-    } catch (error: any) {
-      const detail = error?.response?.data?.detail
-      errorMessage.value = getErrorMessage(detail, t)
-    } finally {
-      sended.value = false
+  try {
+    if (!captchaToken.value) {
+      errorMessage.value = t('pages.auth.signUp.completeCaptcha')
+      return
     }
-  } else {
-    errorMessage.value = t('pages.auth.signUp.passwordsMustEqual')
+
+    if (!validateForm()) return
+
+    if (await passwordsEquals()) {
+      errorMessage.value = ''
+      sended.value = true
+      try {
+        await authService.sendVerificationCode(email.value, username.value, captchaToken.value)
+        showCodeInput.value = true
+      } catch (error: any) {
+        const detail = error?.response?.data?.detail
+        errorMessage.value = getErrorMessage(detail, t)
+      } finally {
+        sended.value = false
+      }
+    } else {
+      errorMessage.value = t('pages.auth.signUp.passwordsMustEqual')
+    }
+  } catch (e) {
+    errorMessage.value = t('errors.SERVER_ERROR')
+  } finally {
+    sended.value = false
   }
 }
 
@@ -148,6 +155,10 @@ function handlePaste(event: ClipboardEvent) {
 
 function switchPasswordVisibility() {
   passwordHidden.value = !passwordHidden.value
+}
+
+function switchPasswordRepeatVisibility() {
+  passwordRepeatHidden.value = !passwordRepeatHidden.value
 }
 
 async function passwordsEquals(): Promise<boolean> {
@@ -264,13 +275,21 @@ function clearPasswordError() {
           <p v-if="passwordError" class="text-gray-300 text-sm mt-1">{{ passwordError }}</p>
         </div>
 
-        <!-- Confirm Password -->
+        <!-- Confirm Password с иконкой глаза -->
         <div>
           <label for="passwordRepeat" class="mb-1 block text-sm text-text-secondary">{{
             $t('pages.auth.signUp.confirmPassword')
-          }}</label>
-          <TheInput id="passwordRepeat" v-model="passwordRepeat" type="password" placeholder="••••••••" required
-            :minlength="8" />
+            }}</label>
+          <TheInput id="passwordRepeat" v-model="passwordRepeat" :type="passwordRepeatHidden ? 'password' : 'text'" placeholder="••••••••" required
+            :minlength="8">
+            <template #append>
+              <button type="button" class="text-gray-400 hover:text-gray-300 transition-colors focus:outline-none p-1"
+                @click="switchPasswordRepeatVisibility">
+                <EyeOff v-if="passwordRepeatHidden" class="w-5 h-5" />
+                <Eye v-else class="w-5 h-5" />
+              </button>
+            </template>
+          </TheInput>
         </div>
         <Captcha @verified="(token: string) => captchaToken = token" />
 

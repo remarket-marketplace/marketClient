@@ -9,8 +9,7 @@ const { t } = useI18n()
 
 const props = defineProps<{
     chat: ChatListItem,
-    selectedChatId: string | null,
-    showSupportAsUser?: boolean
+    selectedChatId: string | null
 }>()
 
 const emit = defineEmits<{
@@ -51,7 +50,7 @@ const userInitial = computed(() => {
 })
 
 const isUserOnline = computed(() => {
-    if (isSupportChat && !props.showSupportAsUser) {
+    if (isSupportChat) {
         return true
     }
     return props.chat.another_user.is_active
@@ -59,38 +58,6 @@ const isUserOnline = computed(() => {
 
 const isSupportChat = computed(() => {
     return props.chat.chat_type === 'support_chat'
-})
-
-// Вычисляемое свойство для отображения имени
-const displayName = computed(() => {
-    if (isSupportChat.value && !props.showSupportAsUser) {
-        return t('pages.chats.support')
-    }
-    return props.chat.another_user.username
-})
-
-// Вычисляемое свойство для цвета имени
-const displayNameColor = computed(() => {
-    if (isSupportChat.value && !props.showSupportAsUser) {
-        return 'text-blue-500'
-    }
-    return 'text-mainText'
-})
-
-// Вычисляемое свойство для аватара
-const displayAvatarUrl = computed(() => {
-    if (isSupportChat.value && !props.showSupportAsUser) {
-        return null
-    }
-    return props.chat.another_user.avatar_url
-})
-
-// Вычисляемое свойство для инициалов
-const displayInitial = computed(() => {
-    if (isSupportChat.value && !props.showSupportAsUser) {
-        return 'S'
-    }
-    return props.chat.another_user.username.charAt(0).toUpperCase()
 })
 
 const checkMobile = () => {
@@ -111,28 +78,27 @@ onMounted(() => {
     >
         <div class="flex-shrink-0 relative">
             <div class="h-12 w-12 flex items-center justify-center">
-                <!-- Support chat with icon -->
+                <!-- Regular chat avatar -->
+                <img
+                    v-if="!isSupportChat && chat.another_user.avatar_url"
+                    :src="`${API_HOST}${chat.another_user.avatar_url}`"
+                    class="h-12 w-12 border-2 border-dark-600 rounded-full object-cover"
+                    :alt="chat.another_user.username"
+                >
+                <!-- Initials for regular chat -->
                 <div
-                    v-if="isSupportChat && !showSupportAsUser"
+                    v-else-if="!isSupportChat"
+                    class="h-12 w-12 flex items-center justify-center rounded-full bg-gray-700 text-lg text-mainText font-bold uppercase"
+                >
+                    {{ userInitial }}
+                </div>
+                <!-- Support icon -->
+                <div
+                    v-else
                     class="h-12 w-12 flex items-center justify-center rounded-full bg-blue-500/20 border-2 border-blue-500/30"
                 >
                     <Headphones class="w-6 h-6 text-blue-400" />
                 </div>
-                <!-- Regular chat avatar (or support chat in admin mode) -->
-                <template v-else>
-                    <img
-                        v-if="displayAvatarUrl"
-                        :src="`${API_HOST}${displayAvatarUrl}`"
-                        class="h-12 w-12 border-2 border-dark-600 rounded-full object-cover"
-                        :alt="displayName"
-                    >
-                    <div
-                        v-else
-                        class="h-12 w-12 flex items-center justify-center rounded-full bg-gray-700 text-lg text-mainText font-bold uppercase"
-                    >
-                        {{ displayInitial }}
-                    </div>
-                </template>
             </div>
             
             <!-- Online status indicator -->
@@ -154,11 +120,19 @@ onMounted(() => {
         <div class="flex flex-col flex-1 min-w-0">
             <div class="flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2 truncate">
-                    <!-- Name based on context -->
+                    <!-- Show "Support" for support chats -->
                     <p 
-                        :class="['truncate font-semibold text-base', displayNameColor]"
+                        v-if="isSupportChat"
+                        class="truncate font-semibold text-base text-blue-500"
                     >
-                        {{ displayName }}
+                        {{ t('pages.chats.support') }}
+                    </p>
+                    <!-- Show username for regular chats -->
+                    <p 
+                        v-else
+                        class="truncate text-mainText font-semibold text-base"
+                    >
+                        {{ chat.another_user.username }}
                     </p>
                 </div>
                 <span 

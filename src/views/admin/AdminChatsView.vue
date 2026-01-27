@@ -1,0 +1,405 @@
+<script setup lang="ts">
+import { chatsService } from '@/api/chats/chatsService'
+import ChatItem from '@/components/chats/ChatItem.vue'
+import ChatMessage from '@/components/chats/ChatMessage.vue'
+import SendMessageBar from '@/components/chats/SendMessageBar.vue'
+import Loader from '@/components/Loader.vue'
+import { useUserStore } from '@/stores/user'
+import type { ChatListItem } from '@/validation/chat/ChatList'
+import type { ChatMessageUnion } from '@/validation/chat/chatMessage'
+import type { UserRead } from '@/validation/user/userRead'
+import { nextTick, onMounted, onUnmounted, ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { ArrowLeft } from 'lucide-vue-next'
+import { useRoute, useRouter } from 'vue-router'
+import { adminService } from '@/api/admin/AdminService'
+
+const route = useRoute()
+const router = useRouter()
+const { t } = useI18n()
+
+const API_HOST = import.meta.env.VITE_API_HOST
+
+// Состояние списка чатов
+const chats = ref<ChatListItem[]>([])
+const chatsCurrentPage = ref(1)
+const chatsTotalPages = ref(1)
+const chatsPerPage = ref(20)
+const isLoadingChats = ref(false)
+const isLoadingMoreChats = ref(false)
+const hasMoreChats = ref(true)
+
+// Состояние сообщений
+const chatMessages = ref<ChatMessageUnion[]>([])
+const selectedChatId = ref<string | null>(null)
+const messageContainerRef = ref<HTMLElement | null>(null)
+const chatsContainerRef = ref<HTMLElement | null>(null)
+const isLoading = ref(false)
+const isLoadingMoreMessages = ref(false)
+const errorMessage = ref<string | null>(null)
+const isMobile = ref(false)
+const mobileMode = ref<'chats' | 'chat'>('chats')
+const store = useUserStore()
+const user = ref<UserRead | null>(null)
+const newMessage = ref('')
+
+const messagesCurrentPage = ref(1)
+const messagesTotalPages = ref(0)
+const messagesPerPage = ref(30)
+const hasMoreMessages = ref(true)
+
+// Все чаты для админа - только support_chat типы
+const sortedChats = computed(() => {
+    return chats.value.sort((a, b) => {
+        const dateA = a.last_message ? new Date(a.last_message.created_at).getTime() : 0
+        const dateB = b.last_message ? new Date(b.last_message.created_at).getTime() : 0
+        return dateB - dateA
+    })
+})
+
+const currentChat = computed(() =>
+    chats.value.find(chat => chat.id === selectedChatId.value) || null
+)
+
+const chatUserInitial = computed(() =>
+    currentChat.value?.another_user.username.charAt(0).toUpperCase() || ''
+)
+
+function updateUrlChatId(chatId: string | null) {
+    router.replace({
+        query: {
+            ...route.query,
+            chatId: chatId || undefined
+        }
+    })
+}
+
+function backToChats() {
+    if (mobileMode.value === 'chat') {
+        mobileMode.value = 'chats'
+        selectedChatId.value = null
+        updateUrlChatId(null)
+    }
+}
+
+let unsubscribeNewMessage: (() => void) | null = null
+let unsubscribeChatUpdated: (() => void) | null = null
+
+onMounted(async () => {
+    try {
+        isLoading.value = true
+        await store.fetchUser()
+        user.value = await store.getUser()
+
+        if (!chatsService.isConnected()) {
+            await chatsService.connectChatsWebsocket()
+        }
+
+        unsubscribeChatUpdated = chatsService.onChatUpdated(update => {
+            const chatIndex = chats.value.findIndex(c => c.id === update.chat_id)
+            if (chatIndex === -1) return
+
+            const chat = chats.value[chatIndex]
+
+            if (update.last_message && chat) {
+                chat.last_message = update.last_message
+                // Перемещаем чат наверх списка при новом сообщении
+                chats.value.splice(chatIndex, 1)
+                chats.value.unshift(chat)
+            }
+        })
+
+        unsubscribeNewMessage = chatsService.onNewMessage(message => {
+            if (selectedChatId.value === message.chat_room_id) {
+                if (!chatMessages.value.some(m => m.id === message.id)) {
+                    chatMessages.value.push(message)
+                    nextTick(scrollToBottom)
+                }
+            }
+        })
+
+        await loadChats()
+
+        const chatIdFromQuery = route.query.chatId as string | undefined
+        if (chatIdFromQuery) {
+            const exists = chats.value.some(c => c.id === chatIdFromQuery)
+            if (exists) {
+                await loadChatMessages(chatIdFromQuery)
+            }
+        }
+    } catch {
+        errorMessage.value = t('pages.chats.errorLoadingChats')
+    } finally {
+        isLoading.value = false
+    }
+
+    const checkMobile = () => {
+        isMobile.value = window.innerWidth < 768
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+})
+
+onUnmounted(() => {
+    unsubscribeNewMessage?.()
+    unsubscribeChatUpdated?.()
+    window.removeEventListener('resize', () => { })
+})
+
+// Загрузка чатов с пагинацией
+async function loadChats() {
+    isLoadingChats.value = true
+
+    const response = await adminService.getAdminChats(1, chatsPerPage.value)
+    chats.value = response.chats
+    chatsCurrentPage.value = response.currentPage
+    chatsTotalPages.value = response.totalPages
+    hasMoreChats.value = response.currentPage < response.totalPages
+
+    isLoadingChats.value = false
+}
+
+// Infinity scroll для чатов
+async function handleChatsScroll() {
+    const el = chatsContainerRef.value
+    if (!el || isLoadingMoreChats.value || !hasMoreChats.value) return
+
+    // Проверяем, достигли ли конца списка
+    const scrollBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    if (scrollBottom < 100) {
+        await loadMoreChats()
+    }
+}
+
+async function loadMoreChats() {
+    if (isLoadingMoreChats.value || !hasMoreChats.value) return
+
+    isLoadingMoreChats.value = true
+
+    const response = await adminService.getAdminChats(
+        chatsCurrentPage.value + 1,
+        chatsPerPage.value
+    )
+
+    if (response.chats.length > 0) {
+        chats.value.push(...response.chats)
+        chatsCurrentPage.value = response.currentPage
+        chatsTotalPages.value = response.totalPages
+        hasMoreChats.value = response.currentPage < response.totalPages
+    } else {
+        hasMoreChats.value = false
+    }
+
+    isLoadingMoreChats.value = false
+}
+
+function scrollToBottom() {
+    const el = messageContainerRef.value
+    if (el) el.scrollTop = el.scrollHeight
+}
+
+async function handleMessagesScroll() {
+    const el = messageContainerRef.value
+    if (!el || isLoadingMoreMessages.value || !hasMoreMessages.value) return
+    if (el.scrollTop === 0) await loadMoreMessages()
+}
+
+async function loadMoreMessages() {
+    if (!selectedChatId.value) return
+
+    isLoadingMoreMessages.value = true
+    const el = messageContainerRef.value
+    const oldHeight = el?.scrollHeight || 0
+
+    const response = await chatsService.getChatMessages(
+        selectedChatId.value,
+        messagesCurrentPage.value + 1,
+        messagesPerPage.value
+    )
+
+    if (response.messages.length) {
+        chatMessages.value.unshift(...response.messages)
+        messagesCurrentPage.value++
+        messagesTotalPages.value = response.totalPages
+        hasMoreMessages.value = messagesCurrentPage.value < messagesTotalPages.value
+        await nextTick()
+        if (el) el.scrollTop = el.scrollHeight - oldHeight
+    } else {
+        hasMoreMessages.value = false
+    }
+
+    isLoadingMoreMessages.value = false
+}
+
+async function loadChatMessages(chatId: string) {
+    isLoading.value = true
+
+    chatMessages.value = []
+    messagesCurrentPage.value = 1
+    hasMoreMessages.value = true
+
+    await chatsService.joinChat(chatId)
+    selectedChatId.value = chatId
+    updateUrlChatId(chatId)
+
+    const response = await chatsService.getChatMessages(chatId, 1, messagesPerPage.value)
+    chatMessages.value = response.messages
+    messagesTotalPages.value = response.totalPages
+    hasMoreMessages.value = 1 < messagesTotalPages.value
+
+    await nextTick()
+    scrollToBottom()
+
+    if (isMobile.value) mobileMode.value = 'chat'
+
+    isLoading.value = false
+}
+
+async function sendMessage() {
+    if (!newMessage.value.trim() || !selectedChatId.value) return
+    const success = await chatsService.sendMessage(
+        newMessage.value.trim(),
+        selectedChatId.value
+    )
+    if (success) {
+        newMessage.value = ''
+        nextTick(scrollToBottom)
+    }
+}
+</script>
+
+<template>
+    <!-- Добавляем md:pt-6 обратно -->
+    <div class="h-full w-full flex flex-col md:pt-6">
+        <div v-if="isLoading && chats.length === 0" class="flex flex-1 items-center justify-center text-gray-300">
+            <Loader />
+        </div>
+
+        <div v-else-if="errorMessage" class="flex flex-1 items-center justify-center text-red-500">
+            {{ errorMessage }}
+        </div>
+
+        <div v-else class="w-full h-full flex flex-1 min-h-0 overflow-hidden">
+            <!-- Список чатов -->
+            <div v-if="!isMobile || (isMobile && mobileMode === 'chats')"
+                class="h-full lg:max-w-sm flex flex-col md:pr-5 transition-all duration-300 min-h-0" :class="[
+                    isMobile && mobileMode === 'chats'
+                        ? 'fixed inset-0 z-10 w-full bg-background'
+                        : 'w-3/12',
+                ]">
+                <!-- Восстанавливаем pt-16 для мобильной версии -->
+                <div class="h-full flex flex-col border-dark-600 lg:border-1 md:rounded-3xl" :class="{
+                    'pb-20': isMobile && mobileMode === 'chats',
+                    'pt-16': isMobile && mobileMode === 'chats',
+                }">
+                    <p class="my-4 text-2xl px-4 text-mainText font-semibold">
+                        {{ $t('pages.admin.supportChats.supportChats') }}
+                    </p>
+
+                    <div ref="chatsContainerRef" class="scrollbar-hidden flex-1 min-h-0 overflow-y-auto"
+                        @scroll="handleChatsScroll">
+                        <div v-if="sortedChats.length > 0" class="flex flex-col">
+                            <ChatItem v-for="chat in sortedChats" :key="chat.id" :chat="chat"
+                                :selected-chat-id="selectedChatId" :show-support-as-user="true"
+                                @load-chat-messages="(n: string) => loadChatMessages(n)" />
+
+                            <!-- Loader для infinity scroll чатов -->
+                            <div v-if="isLoadingMoreChats" class="flex justify-center py-4">
+                                <Loader size="sm" />
+                            </div>
+                        </div>
+                        <div v-else class="h-full w-full flex items-center justify-center">
+                            <p class="text-sm text-gray-400 font-light">
+                                {{ $t('pages.admin.noSupportChats') }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- chat window -->
+            <div v-if="!isMobile || (isMobile && mobileMode === 'chat')"
+                class="h-full flex flex-1 min-h-0 transition-all duration-300" :class="[
+                    isMobile && mobileMode === 'chat'
+                        ? 'fixed inset-0 z-10 w-full bg-background'
+                        : 'flex-1 min-w-0 border-1 border-dark-400 rounded-3xl',
+                ]">
+                <div class="h-full w-full flex flex-col min-h-0 px-2 md:rounded-xl" :class="{
+                    'pb-16': isMobile && mobileMode === 'chat',
+                    'pt-16': isMobile && mobileMode === 'chat',
+                }">
+                    <div class="flex flex-1 flex-col min-h-0 w-full pb-2">
+                        <!-- chat title -->
+                        <div v-if="currentChat"
+                            class="flex items-center gap-2 sticky top-0 bg-background px-2 py-2 lg:py-3 lg:px-3 z-10 lg:border-b border-dark-700">
+                            <button v-if="isMobile" class="text-xl font-bold flex-shrink-0" @click="backToChats">
+                                <ArrowLeft />
+                            </button>
+                            <div class="flex items-center gap-3 flex-1 min-w-0">
+                                <div class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
+                                    <img v-if="currentChat?.another_user.avatar_url"
+                                        :src="`${API_HOST}${currentChat.another_user.avatar_url}`"
+                                        class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-dark-600 rounded-full object-cover"
+                                        :alt="currentChat.another_user.username">
+                                    <div v-else
+                                        class="h-8 w-8 flex items-center justify-center rounded-full bg-gray-700 text-mainText font-bold uppercase">
+                                        {{ chatUserInitial }}
+                                    </div>
+                                </div>
+                                <div class="flex flex-col truncate">
+                                    <p class="truncate text-mainText font-semibold text-lg">
+                                        {{ currentChat?.another_user.username }}
+                                    </p>
+                                    <p v-if="currentChat?.another_user.is_active" class="text-xs text-green-500">
+                                        {{ $t('common.online') }}
+                                    </p>
+                                    <p v-else class="text-xs text-gray-500">
+                                        {{ $t('common.offline') }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- message -->
+                        <div ref="messageContainerRef" class="flex-1 min-h-0 overflow-y-auto pb-2"
+                            @scroll="handleMessagesScroll">
+                            <div v-if="isLoadingMoreMessages" class="flex justify-center py-2">
+                                <Loader size="sm" />
+                            </div>
+
+                            <div v-if="chatMessages.length > 0" class="flex flex-1 flex-col justify-start min-h-0">
+                                <div class="flex flex-col gap-3 py-2">
+                                    <ChatMessage v-for="message in chatMessages" :key="message.id" :message="message"
+                                        :user="user" :showAdminBadge="false" />
+                                </div>
+                            </div>
+
+                            <div v-else-if="selectedChatId != null && chatMessages.length === 0"
+                                class="h-full w-full flex items-center justify-center">
+                                <p class="text-gray-400 font-light">{{ $t("pages.chats.emptyMessages") }}</p>
+                            </div>
+
+                            <div v-else-if="selectedChatId === null"
+                                class="h-full w-full flex items-center justify-center">
+                                <p class="text-gray-400 font-light">{{ $t('pages.admin.selectSupportChat') }}</p>
+                            </div>
+                        </div>
+
+                        <SendMessageBar v-if="selectedChatId" v-model:newMessage="newMessage" @sendMessage="sendMessage"
+                            class="flex-none" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<style scoped>
+:deep(header) {
+    z-index: 20 !important;
+}
+
+:deep(.mobile-nav-glass) {
+    z-index: 20 !important;
+}
+</style>

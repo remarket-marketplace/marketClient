@@ -8,9 +8,9 @@ import { useUserStore } from '@/stores/user'
 import type { ChatListItem } from '@/validation/chat/ChatList'
 import type { ChatMessageUnion } from '@/validation/chat/chatMessage'
 import type { UserRead } from '@/validation/user/userRead'
-import { nextTick, onMounted, onUnmounted, ref, computed, watch } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ArrowLeft } from 'lucide-vue-next'
+import { ArrowLeft, Headphones } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 
 const { t } = useI18n()
@@ -48,9 +48,46 @@ const currentChat = computed(() =>
   chats.value.find(chat => chat.id === selectedChatId.value) || null
 )
 
-const chatUserInitial = computed(() =>
-  currentChat.value?.another_user.username.charAt(0).toUpperCase() || ''
-)
+// Вычисляемое свойство для отображения имени чата
+const chatDisplayName = computed(() => {
+  if (!currentChat.value) return ''
+  if (currentChat.value.chat_type === 'support_chat') {
+    return t('pages.chats.support')
+  }
+  return currentChat.value.another_user.username
+})
+
+// Вычисляемое свойство для статуса чата
+const chatDisplayStatus = computed(() => {
+  if (!currentChat.value) return false
+  if (currentChat.value.chat_type === 'support_chat') {
+    return true // поддержка всегда онлайн
+  }
+  return currentChat.value.another_user.is_active
+})
+
+// Вычисляемое свойство для аватара чата
+const chatDisplayAvatarUrl = computed(() => {
+  if (!currentChat.value) return null
+  if (currentChat.value.chat_type === 'support_chat') {
+    return null // для поддержки используем иконку
+  }
+  return currentChat.value.another_user.avatar_url
+})
+
+// Вычисляемое свойство для инициалов
+const chatUserInitial = computed(() => {
+  if (!currentChat.value) return ''
+  if (currentChat.value.chat_type === 'support_chat') {
+    return 'S' // или другая буква для поддержки
+  }
+  return currentChat.value.another_user.username.charAt(0).toUpperCase()
+})
+
+// Проверяем, является ли текущий чат чатом поддержки
+const isSupportChat = computed(() => {
+  return currentChat.value?.chat_type === 'support_chat'
+})
 
 function updateUrlChatId(chatId: string | null) {
   router.replace({
@@ -90,7 +127,7 @@ onMounted(async () => {
 
       if (update.last_message && chat) {
         chat.last_message = update.last_message
-        
+
         // Для обычных чатов перемещаем наверх, support_chat остаются на месте
         if (chat.chat_type === 'chat') {
           chats.value.splice(chatIndex, 1)
@@ -224,7 +261,7 @@ async function sendMessage() {
 <template>
   <div class="h-full w-full flex flex-col md:pt-6">
     <div v-if="isLoading" class="flex flex-1 items-center justify-center text-gray-300">
-      <Loader/>
+      <Loader />
     </div>
 
     <div v-else-if="errorMessage" class="flex flex-1 items-center justify-center text-red-500">
@@ -232,35 +269,24 @@ async function sendMessage() {
     </div>
 
     <div v-else class="w-full flex flex-1 overflow-hidden">
-      <div
-        v-if="!isMobile || (isMobile && mobileMode === 'chats')"
-        class="h-full lg:max-w-sm flex flex-col md:pr-5 transition-all duration-300 min-h-0"
-        :class="[
+      <div v-if="!isMobile || (isMobile && mobileMode === 'chats')"
+        class="h-full lg:max-w-sm flex flex-col md:pr-5 transition-all duration-300 min-h-0" :class="[
           isMobile && mobileMode === 'chats'
             ? 'fixed inset-0 z-10 w-full bg-background'
             : 'w-3/12',
-        ]"
-      >
-        <div
-          class="h-full flex flex-col border-dark-600 lg:border-1 md:rounded-3xl"
-          :class="{
-            'pb-20': isMobile && mobileMode === 'chats',
-            'pt-16': isMobile && mobileMode === 'chats',
-          }"
-        >
+        ]">
+        <div class="h-full flex flex-col border-dark-600 lg:border-1 md:rounded-3xl" :class="{
+          'pb-20': isMobile && mobileMode === 'chats',
+          'pt-16': isMobile && mobileMode === 'chats',
+        }">
           <p class="my-4 text-2xl px-4 text-mainText font-semibold">
             {{ $t('pages.chats.title') }}
           </p>
 
           <div class="scrollbar-hidden min-h-0 flex-1 overflow-y-auto">
             <div v-if="sortedChats.length > 0" class="flex flex-col">
-                <ChatItem
-                  v-for="chat in sortedChats"
-                  :key="chat.id"
-                  :chat="chat"
-                  :selected-chat-id="selectedChatId"
-                  @load-chat-messages="(n: string) => loadChatMessages(n)"
-                />
+              <ChatItem v-for="chat in sortedChats" :key="chat.id" :chat="chat" :selected-chat-id="selectedChatId"
+                :show-support-as-user="false" @load-chat-messages="(n: string) => loadChatMessages(n)" />
             </div>
             <div v-else class="h-full w-full flex items-center justify-center">
               <p class="text-sm text-gray-400 font-light">
@@ -271,47 +297,50 @@ async function sendMessage() {
         </div>
       </div>
 
-      <div
-        v-if="!isMobile || (isMobile && mobileMode === 'chat')"
-        class="flex flex-1 transition-all duration-300 min-h-0"
-        :class="[
+      <div v-if="!isMobile || (isMobile && mobileMode === 'chat')"
+        class="flex flex-1 transition-all duration-300 min-h-0" :class="[
           isMobile && mobileMode === 'chat'
             ? 'fixed inset-0 z-10 w-full bg-background'
             : 'flex-1 w-9/12 border-1 border-dark-400 rounded-3xl',
-        ]"
-      >
-        <div
-          class="flex flex-1 flex-col px-2 md:rounded-xl w-full min-h-0"
-          :class="{
-            'pb-16': isMobile && mobileMode === 'chat',
-            'pt-16': isMobile && mobileMode === 'chat',
-          }"
-        >
+        ]">
+        <div class="flex flex-1 flex-col px-2 md:rounded-xl w-full min-h-0" :class="{
+          'pb-16': isMobile && mobileMode === 'chat',
+          'pt-16': isMobile && mobileMode === 'chat',
+        }">
           <div class="flex flex-grow flex-col overflow-y-auto lg:pb-2 w-full">
-            <div v-if="currentChat" class="flex items-center gap-2 sticky top-0 bg-background px-2 py-2 lg:py-3 lg:px-3 z-10 lg:border-b border-dark-700">
+            <div v-if="currentChat"
+              class="flex items-center gap-2 sticky top-0 bg-background px-2 py-2 lg:py-3 lg:px-3 z-10 lg:border-b border-dark-700">
               <button v-if="isMobile" class="text-xl font-bold flex-shrink-0" @click="backToChats">
                 <ArrowLeft />
               </button>
               <div v-if="currentChat" class="flex items-center gap-3 flex-1 min-w-0">
+                <!-- Аватар чата -->
                 <div class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
-                  <img
-                    v-if="currentChat?.another_user.avatar_url"
-                    :src="`${API_HOST}${currentChat.another_user.avatar_url}`"
-                    class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-dark-600 rounded-full object-cover"
-                    :alt="currentChat.another_user.username"
-                  >
-                  <div
-                    v-else
-                    class="h-8 w-8 flex items-center justify-center rounded-full bg-gray-700 text-mainText font-bold uppercase"
-                  >
-                    {{ chatUserInitial }}
+                  <!-- Для чата поддержки - иконка на синем фоне -->
+                  <div v-if="isSupportChat"
+                    class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center rounded-full bg-blue-500/20 border-2 border-blue-500/30">
+                    <Headphones class="w-4 h-4 lg:w-5 lg:h-5 text-blue-400" />
                   </div>
+                  <!-- Для обычного чата - фото или инициалы -->
+                  <template v-else>
+                    <img v-if="chatDisplayAvatarUrl" :src="`${API_HOST}${chatDisplayAvatarUrl}`"
+                      class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-dark-600 rounded-full object-cover"
+                      :alt="chatDisplayName">
+                    <div v-else
+                      class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center rounded-full bg-gray-700 text-mainText font-bold uppercase">
+                      {{ chatUserInitial }}
+                    </div>
+                  </template>
                 </div>
+
+                <!-- Информация о чате -->
                 <div class="flex flex-col truncate">
-                  <p class="truncate text-mainText font-semibold text-lg">
-                    {{ currentChat?.another_user.username }}
+                  <!-- Имя чата -->
+                  <p class="truncate font-semibold text-lg" :class="isSupportChat ? 'text-blue-500' : 'text-mainText'">
+                    {{ chatDisplayName }}
                   </p>
-                  <p v-if="currentChat?.another_user.is_active" class="text-xs text-green-500">
+                  <!-- Статус онлайн -->
+                  <p v-if="chatDisplayStatus" class="text-xs text-green-500">
                     {{ $t('common.online') }}
                   </p>
                   <p v-else class="text-xs text-gray-500">
@@ -321,28 +350,26 @@ async function sendMessage() {
               </div>
             </div>
 
-            <div 
-              ref="messageContainerRef" 
-              class="no-scrollbar flex flex-1 flex-col overflow-y-auto pb-2"
-              @scroll="handleScroll"
-            >
+            <div ref="messageContainerRef" class="no-scrollbar flex flex-1 flex-col overflow-y-auto pb-2"
+              @scroll="handleScroll">
               <div v-if="isLoadingMoreMessages" class="flex justify-center py-2">
                 <Loader size="sm" />
               </div>
-              
+
               <div v-if="chatMessages.length > 0" class="flex flex-1 flex-col justify-start">
                 <div class="flex flex-col gap-3 py-2">
-                  <ChatMessage
-                    v-for="message in chatMessages"
-                    :key="message.id"
-                    :message="message"
-                    :user="user"
-                  />
+                  <ChatMessage v-for="message in chatMessages" :key="message.id" :message="message" :user="user" :showAdminBadge="true" />
                 </div>
               </div>
 
-              <div v-else-if="selectedChatId != null && chatMessages.length === 0" class="h-full w-full flex items-center justify-center">
-                <p class="text-gray-400 font-light">{{ $t("pages.chats.emptyMessages") }}</p>
+              <div v-else-if="selectedChatId != null && chatMessages.length === 0"
+                class="h-full w-full flex items-center justify-center">
+                <div v-if="isSupportChat" class="flex flex-col items-center justify-center gap-4 text-center px-4">
+                  <div class="text-4xl">💬</div>
+                  <p class="text-lg text-mainText font-semibold">{{ $t("pages.chats.emptySupport") }}</p>
+                  <p class="text-gray-400 text-sm">{{ $t("pages.chats.emptySupportDesc") }}</p>
+                </div>
+                <p v-else class="text-gray-400 font-light">{{ $t("pages.chats.emptyMessages") }}</p>
               </div>
 
               <div v-else-if="selectedChatId === null" class="h-full w-full flex items-center justify-center">
@@ -350,11 +377,7 @@ async function sendMessage() {
               </div>
             </div>
 
-            <SendMessageBar
-              v-if="selectedChatId"
-              v-model:newMessage="newMessage"
-              @sendMessage="sendMessage"
-            />
+            <SendMessageBar v-if="selectedChatId" v-model:newMessage="newMessage" @sendMessage="sendMessage" />
           </div>
         </div>
       </div>

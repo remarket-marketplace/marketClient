@@ -70,6 +70,7 @@ const en = {
     toChat: "To chat",
     sold: "Sold",
 
+    product: "Product",
     remarket: "Remarket - secure transactions market",
     support: "Support",
     legal: "Legal",
@@ -78,6 +79,12 @@ const en = {
     aboutUs: "About us",
     privacyPolicy: "Privacy policy",
     termsOfService: "Terms of service",
+    tagline: "A modern platform for secure transactions between users.",
+    features: "Features",
+    pricing: "Pricing",
+    helpCenter: "Help Center",
+    community: "Community",
+    rightsReserved: "All rights reserved.",
 
     viewDeal: "View Deal",
     confirmDeal: "Confirm Deal",
@@ -218,6 +225,15 @@ const en = {
       errorOnlyImages: "Please upload only images",
       errorMaxFiles: "Maximum {maxFiles} images",
     },
+  },
+
+  footer: {
+    features: "Features",
+    pricing: "Pricing",
+    helpCenter: "Help Center",
+    community: "Community",
+    privacyPolicy: "Privacy policy",
+    termsOfService: "Terms of service",
   },
 
   navigation: {
@@ -426,7 +442,11 @@ const en = {
       cancelled: "Deal cancelled. Funds have been returned to the balance.",
       refunded: "Funds have been refunded to the buyer.",
       support: "Support",
-      regularChat: "Chat"
+      supportChat: "Support Chat",
+      dealChat: "Deal",
+      regularChat: "Chat",
+      emptySupport: "Hello! Here you can get support from our team",
+      emptySupportDesc: "Write your question or issue, and our team will respond to you as soon as possible. We're here to help you 24/7!"
     },
 
     profile: {
@@ -585,6 +605,10 @@ const en = {
         noImage: "No image",
         imageRequired: "Image required",
       },
+
+      supportChats: {
+        supportChats: "Support Chats",
+      }
     },
     paymentSuccess: {
       title: "Payment received",

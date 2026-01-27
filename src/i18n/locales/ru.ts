@@ -73,6 +73,7 @@ const ru = {
     toChat: "Перейти в чат",
     sold: "Продано",
     
+    product: "Продукт",
     remarket: "Remarket - маркет безопасных сделок",
     support: "Поддержка",
     legal: "Юридическая информация",
@@ -81,6 +82,12 @@ const ru = {
     aboutUs: "О нас",
     privacyPolicy: "Политика конфиденциальности",
     termsOfService: "Условия использования",
+    tagline: "Современная площадка для безопасных сделок между пользователями.",
+    features: "Возможности",
+    pricing: "Тарифы",
+    helpCenter: "Центр помощи",
+    community: "Сообщество",
+    rightsReserved: "Все права защищены.",
 
     viewDeal: "Просмотр сделки",
     confirmDeal: "Подтвердить сделку",
@@ -427,7 +434,9 @@ const ru = {
       support: "Поддержка",
       supportChat: "Чат поддержки",
       dealChat: "Сделка",
-      regularChat: "Чат"
+      regularChat: "Чат",
+      emptySupport: "Привет! Здесь вы можете получить поддержку от команды",
+      emptySupportDesc: "Напишите свой вопрос или проблему, и наша команда ответит вам как можно скорее. Мы готовы помочь вам 24/7!"
     },
 
     profile: {
@@ -586,6 +595,10 @@ const ru = {
         noImage: "Нет изображения",
         imageRequired: "Изображение обязательно",
       },
+
+      supportChats: {
+        supportChats: "Чаты поддержки",
+      }
     },
     paymentSuccess: {
       title: "Платёж принят",

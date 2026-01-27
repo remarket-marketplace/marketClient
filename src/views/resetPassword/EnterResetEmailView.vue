@@ -8,8 +8,10 @@ import { getErrorMessage } from '@/utils/errorsMap'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Captcha from '@/components/Captcha.vue'
+import { useRouter } from 'vue-router'
 
 const { t } = useI18n()
+const router = useRouter()
 
 const email = ref('')
 
@@ -66,6 +68,12 @@ async function sendLetter() {
                         " :sended="sended" :disabled="!emailValid || sended" class="w-full" />
                 </div>
 
+
+            <p class="text-center text-sm text-text-secondaryDark">
+                <router-link to="/signin" class="text-text-link hover:underline">
+                    {{ $t('common.backToSignIn') }}
+                </router-link>
+            </p>
             </div>
         </div>
     </div>

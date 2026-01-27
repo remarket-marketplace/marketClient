@@ -25,6 +25,7 @@ function isReviewMessage(msg: ChatMessageUnion): msg is Extract<ChatMessageUnion
 const props = defineProps<{
   message: ChatMessageUnion
   user: any
+  showAdminBadge?: boolean
 }>()
 
 const { t } = useI18n()
@@ -83,7 +84,7 @@ function formatDate(dateInput: string | Date): string {
     </div>
 
     <!-- TEXT MESSAGE -->
-    <TextMessage v-else-if="textMessage" :textMessage="textMessage" :user="user" :formatDate="formatDate" />
+    <TextMessage v-else-if="textMessage" :textMessage="textMessage" :user="user" :formatDate="formatDate" :showAdminBadge="showAdminBadge" />
 
     <!-- DEAL STATUS MESSAGE -->
     <DealStatusMessage v-else-if="isDealStatus" :message="(props.message as Extract<ChatMessageUnion, { message_type: 'update_deal_status_message' }>)" :product="product" :formatDate="formatDate" />
