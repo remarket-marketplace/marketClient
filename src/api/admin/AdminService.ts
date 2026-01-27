@@ -252,7 +252,7 @@ export const adminService = {
 
   async getAdminChats(page = 1, perPage = 20) {
   try {
-    const response = await httpClient.get('/admin/chats/', {
+    const response = await httpClient.get('/admin/chats', {
       params: {
         page,
         per_page: perPage,
