@@ -215,7 +215,7 @@ async function handleSendReview(productId: string) {
 
         <template v-if="!product.is_owner">
           <div class="sm:ml-auto flex flex-col gap-2">
-            <button v-if="!isReported && dealStatus !== 'disputed'" @click="openRefusalModal()"
+            <button v-if="!isReported && dealStatus !== 'disputed' && dealStatus == 'pending'" @click="openRefusalModal()"
               class="flex items-center justify-center gap-2 rounded-lg bg-red-600 px-6 py-3 text-sm font-semibold text-white hover:bg-red-700 border border-red-500 min-w-[160px]">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

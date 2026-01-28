@@ -50,12 +50,19 @@ const formatPrice = (value: number) => {
 
 // Form validation
 const isFormValid = computed(() => {
-  return selectedSubcategoryId.value &&
+  const baseValidation = selectedSubcategoryId.value &&
     title.value.trim() &&
     description.value.trim() &&
     price.value &&
-    productData.value.trim() &&
     images.value.length > 0
+  
+  // If auto delivery is enabled, product data is required
+  if (autoDelivery.value) {
+    return baseValidation && productData.value.trim()
+  }
+  
+  // If auto delivery is disabled, product data is not required
+  return baseValidation
 })
 
 onMounted(async () => {
@@ -254,7 +261,7 @@ async function createProduct() {
             </div>
 
             <!-- Product data -->
-            <div class="space-y-2">
+            <div v-if="autoDelivery" class="space-y-2">
               <div class="flex items-center gap-2">
                 <label for="productData" class="text-sm font-medium text-gray-300">
                   {{ $t('pages.forms.createProduct.productData') }}

@@ -89,6 +89,11 @@ const isSupportChat = computed(() => {
   return currentChat.value?.chat_type === 'support_chat'
 })
 
+// Показываем админ бейдж только для обычных чатов, не для поддержки
+const shouldShowAdminBadge = computed(() => {
+  return !isSupportChat.value
+})
+
 function updateUrlChatId(chatId: string | null) {
   router.replace({
     query: {
@@ -358,7 +363,7 @@ async function sendMessage() {
 
               <div v-if="chatMessages.length > 0" class="flex flex-1 flex-col justify-start">
                 <div class="flex flex-col gap-3 py-2">
-                  <ChatMessage v-for="message in chatMessages" :key="message.id" :message="message" :user="user" :showAdminBadge="true" />
+                  <ChatMessage v-for="message in chatMessages" :key="message.id" :message="message" :user="user" :showAdminBadge="shouldShowAdminBadge" />
                 </div>
               </div>
 

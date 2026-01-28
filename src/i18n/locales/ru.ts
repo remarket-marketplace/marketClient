@@ -402,6 +402,7 @@ const ru = {
       report: "Пожаловаться",
       messagePlaceholder: "Введите сообщение...",
       newPurchase: "Новая покупка",
+      newAdminMessage: "Новое сообщение от поддержки",
       viewProduct: "Посмотреть товар",
       productData: "Данные товара",
       reported: "Жалоба отправлена",
@@ -569,7 +570,12 @@ const ru = {
         adminActions: "Действия",
         reportInfo: "Информация о споре",
         customReason: "Другая причина",
-        reportId: "Id спора"
+        reportId: "Id спора",
+        confirmDealMessage: "Вы уверены что хотите подтвердить сделку?",
+        refundDealMessage: "Вы уверены что хотите сделать возврат по этой сделке?",
+        cancelDealMessage: "Вы уверены что хотите отменить сделку?",
+        resolveForBuyerMessage: "Вы уверены что хотите решить спор в пользу покупателя?",
+        resolveForSellerMessage: "Вы уверены что хотите решить спор в пользу продавца?"
       },
 
       editUser: {

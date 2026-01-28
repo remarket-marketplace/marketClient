@@ -62,8 +62,8 @@ function formatDate(dateString: string) {
   })
 }
 
-function goToChat(dealId: string) {
-  router.push({ name: 'adminChatView', params: { dealId } })
+function goToChat(chatId: string) {
+  router.push({ name: 'adminChatView', params: { chatId } })
 }
 
 // URL изображений
@@ -541,7 +541,7 @@ onMounted(async () => {
                   <span>{{ $t('common.cancelDeal') }}</span>
                 </button>
 
-                <button @click="goToChat(deal.id)"
+                <button @click="goToChat(deal.chat_room_id)"
                   class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-green-800 text-white rounded-lg transition-colors">
                   <MessageCircleMore class="w-4 h-4" />
                   <span class="hidden sm:inline">{{ $t('common.toChat') }}</span>
@@ -563,15 +563,6 @@ onMounted(async () => {
 </template>
 
 <style>
-. {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.::-webkit-scrollbar {
-  display: none;
-}
-
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;

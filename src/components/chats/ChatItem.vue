@@ -30,9 +30,14 @@ const formattedLastMessage = computed((): string | null => {
             text = t('pages.chats.newPurchase')
             break
         case "text_message":
-            text = props.chat.last_message.text
-            if (text.length > 60) {
-                text = text.substring(0, 57) + '...'
+            // Check if this is an admin message
+            if ((props.chat.last_message as any).is_admin_message && !isSupportChat.value) {
+                text = t('pages.chats.newAdminMessage')
+            } else {
+                text = props.chat.last_message.text
+                if (text.length > 60) {
+                    text = text.substring(0, 57) + '...'
+                }
             }
             break
         case "update_deal_status_message":
@@ -59,6 +64,12 @@ const isUserOnline = computed(() => {
 
 const isSupportChat = computed(() => {
     return props.chat.chat_type === 'support_chat'
+})
+
+const isAdminMessage = computed(() => {
+    return props.chat.last_message?.message_type === 'text_message' 
+        && (props.chat.last_message as any).is_admin_message 
+        && !isSupportChat.value
 })
 
 // Вычисляемое свойство для отображения имени
@@ -175,14 +186,20 @@ onMounted(() => {
                     :class="{
                         'text-blue-500 font-light': chat.last_message?.message_type === 'purchase_message'
                         || chat.last_message?.message_type === 'update_deal_status_message'
-                        || chat.last_message?.message_type === 'review_message',
-                        'text-gray-500': chat.last_message?.message_type === 'text_message'
+                        || chat.last_message?.message_type === 'review_message'
+                        || isAdminMessage,
+                        'text-gray-500': chat.last_message?.message_type === 'text_message' && !isAdminMessage
                     }"
                 >
                     <!-- Message type icon -->
                     <component
                         v-if="chat.last_message?.message_type === 'purchase_message'"
                         :is="ShoppingBag"
+                        class="inline-block w-3 h-3 mr-1.5 -mt-0.5"
+                    />
+                    <component
+                        v-else-if="isAdminMessage"
+                        :is="Headphones"
                         class="inline-block w-3 h-3 mr-1.5 -mt-0.5"
                     />
                     {{ formattedLastMessage || t('pages.chats.noMessages') }}

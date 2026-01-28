@@ -22,6 +22,7 @@ import DealStatusTag from '@/components/DealStatusTag.vue'
 import UserRating from '@/components/UserRating.vue'
 import SearchField from '@/components/SearchField.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
+import ConfirmWindow from '@/components/ConfirmWindow.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -37,6 +38,13 @@ const isLoading = ref(true)
 const processingDealId = ref<string | null>(null)
 const isMobile = ref(false)
 const isFetchingMore = ref(false)
+
+// Confirm dialog
+const showConfirmModal = ref(false)
+const confirmAction = ref<() => Promise<void>>(() => Promise.resolve())
+const confirmTitle = ref('')
+const confirmMessage = ref('')
+const isActionLoading = ref(false)
 
 const { images } = useImages()
 
@@ -189,16 +197,35 @@ async function cancelDeal(dealId: string) {
   }
 }
 
+function showConfirmDialog(title: string, message: string, action: () => Promise<void>) {
+  confirmTitle.value = title
+  confirmMessage.value = message
+  confirmAction.value = action
+  showConfirmModal.value = true
+}
+
 async function resolveDispute(dealId: string, inFavorOf: 'buyer' | 'seller') {
   processingDealId.value = dealId
-  try {
-    await adminService.resolveDealDispute(dealId, inFavorOf)
-    await loadDeals(true)
-  } catch (error) {
-    console.error('Ошибка при решении спора:', error)
-  } finally {
-    processingDealId.value = null
-  }
+  
+  const title = inFavorOf === 'buyer'
+    ? t('common.resolveForBuyer')
+    : t('common.resolveForSeller')
+
+  const message = inFavorOf === 'buyer'
+    ? t('pages.admin.dealPage.resolveForBuyerMessage')
+    : t('pages.admin.dealPage.resolveForSellerMessage')
+
+  showConfirmDialog(title, message, async () => {
+    isActionLoading.value = true
+    try {
+      await adminService.resolveDealDispute(dealId, inFavorOf)
+      await loadDeals(true)
+    } catch (error) {
+      console.error('Ошибка при решении спора:', error)
+    } finally {
+      isActionLoading.value = false
+    }
+  })
 }
 
 let observer: IntersectionObserver
@@ -427,6 +454,13 @@ onUnmounted(() => {
       </div>
     </div>
   </section>
+
+  <!-- Confirm Modal -->
+  <ConfirmWindow :is-open="showConfirmModal" :title="confirmTitle" :message="confirmMessage"
+    :is-loading="isActionLoading" @confirm="async () => {
+      await confirmAction()
+      showConfirmModal = false
+    }" @cancel="showConfirmModal = false" />
 </template>
 
 <style scoped>

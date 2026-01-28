@@ -173,42 +173,44 @@ async function sendMessage() {
         </div>
 
         <div v-else class="w-full flex flex-1 overflow-hidden">
-            <div class="flex flex-1 flex-col w-full min-h-0">
-                <div v-if="currentChatData" class="flex items-center gap-3 sticky top-0 bg-background px-2 py-2 lg:py-3 lg:px-3 z-10 lg:border-b border-dark-700 flex-none">
+            <div class="h-full w-full flex flex-col min-h-0 lg:pb-4">
+                <div class="flex items-center gap-3 sticky top-0 bg-background px-4 py-2 lg:py-3 lg:px-6 z-10 flex-none rounded-t-3xl md:rounded-3xl">
                     <button class="text-xl font-bold flex-shrink-0" @click="router.back()">
                         <ArrowLeft />
                     </button>
-                    <div class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
-                        <img v-if="currentChatData.avatar_url"
-                            :src="`${API_HOST}${currentChatData.avatar_url}`"
-                            class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-dark-600 rounded-full object-cover"
-                            :alt="currentChatData.username">
-                        <div v-else
-                            class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center rounded-full bg-gray-700 text-mainText font-bold uppercase">
-                            {{ chatUserInitial }}
+                    <div v-if="currentChatData" class="flex items-center gap-3 flex-1">
+                        <div class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
+                            <img v-if="currentChatData.avatar_url"
+                                :src="`${API_HOST}${currentChatData.avatar_url}`"
+                                class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-dark-600 rounded-full object-cover"
+                                :alt="currentChatData.username">
+                            <div v-else
+                                class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center rounded-full bg-gray-700 text-mainText font-bold uppercase">
+                                {{ chatUserInitial }}
+                            </div>
                         </div>
-                    </div>
-                    <div class="flex flex-col truncate flex-1">
-                        <p class="truncate text-mainText font-semibold text-lg">
-                            {{ currentChatData.username }}
-                        </p>
-                        <p v-if="currentChatData.is_active" class="text-xs text-green-500">
-                            {{ $t('common.online') }}
-                        </p>
-                        <p v-else class="text-xs text-gray-500">
-                            {{ $t('common.offline') }}
-                        </p>
+                        <div class="flex flex-col truncate flex-1">
+                            <p class="truncate text-mainText font-semibold text-lg">
+                                {{ currentChatData.username }}
+                            </p>
+                            <p v-if="currentChatData.is_active" class="text-xs text-green-500">
+                                {{ $t('common.online') }}
+                            </p>
+                            <p v-else class="text-xs text-gray-500">
+                                {{ $t('common.offline') }}
+                            </p>
+                        </div>
                     </div>
                 </div>
 
-                <div ref="messageContainerRef" class="flex flex-1 flex-col overflow-y-auto pb-2"
+                <div ref="messageContainerRef" class="flex flex-1 flex-col overflow-y-auto pb-2 px-2 lg:px-4"
                     @scroll="handleScroll">
                     <div v-if="isLoadingMoreMessages" class="flex justify-center py-2">
                         <Loader size="sm" />
                     </div>
 
                     <div v-if="chatMessages.length > 0" class="flex flex-1 flex-col justify-start">
-                        <div class="flex flex-col gap-3 py-2">
+                        <div class="flex flex-col gap-3 py-4">
                             <ChatMessage v-for="message in chatMessages" :key="message.id" :message="message"
                                 :user="user" :showAdminBadge="true" />
                         </div>

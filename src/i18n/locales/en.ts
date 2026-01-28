@@ -410,6 +410,7 @@ const en = {
       report: "Report",
       messagePlaceholder: "Enter message...",
       newPurchase: "New purchase",
+      newAdminMessage: "New message from support",
       viewProduct: "View Product",
       productData: "Product data",
       reported: "Reported",
@@ -580,6 +581,11 @@ const en = {
         reportInfo: "Report info",
         customReason: "Custom reason",
         reportId: "Report id",
+        confirmDealMessage: "Are you sure you want to confirm the deal?",
+        refundDealMessage: "Are you sure you want to refund this deal?",
+        cancelDealMessage: "Are you sure you want to cancel this deal?",
+        resolveForBuyerMessage: "Are you sure you want to resolve the dispute in favor of the buyer?",
+        resolveForSellerMessage: "Are you sure you want to resolve the dispute in favor of the seller?"
       },
 
       editUser: {
