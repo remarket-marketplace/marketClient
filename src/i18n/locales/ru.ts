@@ -644,6 +644,14 @@ const ru = {
       toWallet: "Перейти в кошелек",
       hint: "Если средства были списаны — они будут автоматически возвращены"
     },
+    walletTypes: {
+      top_up: "Пополнение",
+      purchase: "Покупка",
+      sale: "Продажа",
+      refund: "Возврат",
+      withdrawal: "Вывод",
+      adjustment: "Корректировка"
+    },
     forms: {
       addSubcategory: {
         title: "Добавить подкатегорию",

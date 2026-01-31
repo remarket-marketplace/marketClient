@@ -5,6 +5,7 @@ import {
   topUpBalanceResponse,
   transactionResponse,
   type Balance,
+  type WalletHistoryResponse,
 } from "@/validation/wallet/wallet";
 
 export const walletService = {
@@ -49,6 +50,18 @@ export const walletService = {
       
     } catch (e) {
       if (e instanceof ZodError) console.error(e.issues);
+      return null;
+    }
+  },
+
+  async getHistory(page = 1, perPage = 20): Promise<WalletHistoryResponse | null> {
+    try {
+      const response = await httpClient.get("/wallet/history", {
+        params: { page, per_page: perPage },
+      });
+      return response.data as WalletHistoryResponse;
+    } catch (e) {
+      if (e instanceof ZodError) console.error(e);
       return null;
     }
   },

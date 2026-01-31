@@ -656,6 +656,14 @@ const en = {
       toWallet: "Go to wallet",
       hint: "If funds were deducted, they will be refunded automatically",
     },
+    walletTypes: {
+      top_up: "Top-up",
+      purchase: "Purchase",
+      sale: "Sale",
+      refund: "Refund",
+      withdrawal: "Withdrawal",
+      adjustment: "Adjustment",
+    },
     forms: {
       addSubcategory: {
         title: "Add Subcategory",

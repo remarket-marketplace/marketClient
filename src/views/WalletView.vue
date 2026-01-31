@@ -16,7 +16,7 @@ import {
   Loader2
 } from 'lucide-vue-next'
 import { walletService } from '@/api/wallet/walletService'
-import type { Balance, Transaction } from '@/validation/wallet/wallet'
+import type { Balance, WalletHistoryItem } from '@/validation/wallet/wallet'
 import BackButton from '@/components/navigation/BackButton.vue'
 
 const { t } = useI18n()
@@ -24,7 +24,7 @@ const { t } = useI18n()
 const balance = ref(0)
 const isLoading = ref(false)
 
-const transactions = ref<Transaction[]>([])
+const historyItems = ref<WalletHistoryItem[]>([])
 const page = ref(1)
 const perPage = 10
 const totalPages = ref(1)
@@ -45,21 +45,21 @@ onMounted(async () => {
     balance.value = userBalance.balance
   }
 
-  await loadTransactions()
+  await loadHistory()
   isLoading.value = false
 })
 
-const loadTransactions = async () => {
+const loadHistory = async () => {
   if (isFetchingTransactions.value) return
   if (page.value > totalPages.value) return
 
   isFetchingTransactions.value = true
 
-  const response = await walletService.GetTransactionsList(page.value, perPage)
+  const response = await walletService.getHistory(page.value, perPage)
 
   if (response) {
-    transactions.value.push(...response.transactions)
-    totalPages.value = response.totalPages
+    historyItems.value.push(...response.items)
+    totalPages.value = response.total_pages
     page.value++
   }
 
@@ -69,7 +69,7 @@ const loadTransactions = async () => {
 const handleScroll = async (event: Event) => {
   const target = event.target as HTMLElement
   if (target.scrollTop + target.clientHeight >= target.scrollHeight - 50) {
-    await loadTransactions()
+    await loadHistory()
   }
 }
 
@@ -123,12 +123,15 @@ const formatDate = (dateString: string) => {
 }
 
 const getStatusIcon = (status: string) => {
-  switch (status) {
+  switch (status.toLowerCase()) {
     case 'completed':
+    case 'confirmed':
       return CheckCircle
     case 'pending':
       return Clock
     case 'rejected':
+    case 'cancelled':
+    case 'canceled':
       return XCircle
     default:
       return Clock
@@ -136,37 +139,58 @@ const getStatusIcon = (status: string) => {
 }
 
 const getStatusColor = (status: string) => {
-  switch (status) {
+  switch (status.toLowerCase()) {
     case 'completed':
+    case 'confirmed':
       return 'text-green-400'
     case 'pending':
       return 'text-yellow-400'
     case 'rejected':
+    case 'cancelled':
+    case 'canceled':
       return 'text-red-400'
     default:
       return 'text-gray-400'
   }
 }
 
-const getStatusText = (status: string) => {
-  switch (status) {
-    case 'completed':
-      return 'Завершено'
-    case 'pending':
-      return 'В обработке'
-    case 'rejected':
-      return 'Отклонено'
-    default:
-      return status
+const getStatusText = (status: string, type: string) => {
+  const map: Record<string, string> = {
+    completed: 'Завершено',
+    confirmed: 'Завершено',
+    pending: 'В обработке',
+    rejected: 'Отклонено',
+    cancelled: 'Отменено',
+    canceled: 'Отменено',
+    refunded: 'Возврат',
   }
+  if (type === 'purchase' && status === 'pending') return 'Заморожено'
+  return map[status.toLowerCase()] ?? status
 }
 
-const getTypeIcon = (amount: number) => {
-  return amount > 0 ? Plus : Minus
+const getTypeIcon = (item: WalletHistoryItem) => {
+  return (item.amount ?? 0) >= 0 ? Plus : Minus
 }
 
-const getTypeColor = (amount: number) => {
-  return amount > 0 ? 'text-green-400' : 'text-red-400'
+const getTypeColor = (item: WalletHistoryItem) => {
+  return (item.amount ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
+}
+
+const formatSigned = (amount: number) => {
+  const sign = amount >= 0 ? '+' : ''
+  return `${sign}${formatCurrency(amount)}`
+}
+
+const typeLabel = (type: string) => {
+  const map: Record<string, string> = {
+    top_up: t('pages.walletTypes.top_up'),
+    purchase: t('pages.walletTypes.purchase'),
+    sale: t('pages.walletTypes.sale'),
+    refund: t('pages.walletTypes.refund'),
+    withdrawal: t('pages.walletTypes.withdrawal'),
+    adjustment: t('pages.walletTypes.adjustment'),
+  }
+  return map[type] ?? type
 }
 </script>
 
@@ -270,7 +294,7 @@ const getTypeColor = (amount: number) => {
               <h2 class="text-xl font-bold text-white">{{ $t('pages.wallet.transactionHistory') }}</h2>
             </div>
             <div class="text-sm text-gray-400">
-              {{ $t('pages.wallet.totalTransactions', { count: transactions.length }) }}
+              {{ $t('pages.wallet.totalTransactions', { count: historyItems.length }) }}
             </div>
           </div>
 
@@ -279,11 +303,11 @@ const getTypeColor = (amount: number) => {
             class="space-y-3 max-h-[calc(100vh-240px)] overflow-y-auto pr-2"
             @scroll="handleScroll"
           >
-            <div v-if="isLoading && transactions.length === 0" class="flex items-center justify-center py-12">
+            <div v-if="isLoading && historyItems.length === 0" class="flex items-center justify-center py-12">
               <Loader2 class="w-6 h-6 animate-spin text-blue-500" />
             </div>
 
-            <div v-else-if="transactions.length === 0" class="text-center py-12">
+            <div v-else-if="historyItems.length === 0" class="text-center py-12">
               <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-dark-700/50 border border-dark-600 flex items-center justify-center">
                 <History class="w-8 h-8 text-gray-500" />
               </div>
@@ -295,7 +319,7 @@ const getTypeColor = (amount: number) => {
 
             <div v-else class="space-y-3">
               <div
-                v-for="tx in transactions"
+                v-for="tx in historyItems"
                 :key="tx.id"
                 class="group border border-dark-700 rounded-xl bg-dark-600/40 hover:bg-dark-600/60 hover:border-blue-500/30 transition-all duration-200 p-4"
               >
@@ -304,8 +328,8 @@ const getTypeColor = (amount: number) => {
                     <div class="relative">
                       <div class="w-10 h-10 rounded-full bg-dark-700 flex items-center justify-center">
                         <component
-                          :is="getTypeIcon(tx.amount)"
-                          :class="`w-5 h-5 ${getTypeColor(tx.amount)}`"
+                          :is="getTypeIcon(tx)"
+                          :class="`w-5 h-5 ${getTypeColor(tx)}`"
                         />
                       </div>
                       <div class="absolute -bottom-1 -right-1">
@@ -318,17 +342,26 @@ const getTypeColor = (amount: number) => {
                     
                     <div class="space-y-1">
                       <div class="text-base font-semibold text-white">
-                        {{ formatCurrency(tx.amount) }}
+                        {{ formatSigned(tx.amount) }}
                       </div>
                       <div class="text-xs text-gray-400">
                         {{ formatDate(tx.created_at) }}
+                      </div>
+                      <div class="text-xs text-gray-500" v-if="tx.title">
+                        <router-link v-if="tx.product_id" :to="`/product/${tx.product_id}`" class="text-blue-400 hover:underline">
+                          {{ tx.title }}
+                        </router-link>
+                        <span v-else>{{ tx.title }}</span>
                       </div>
                     </div>
                   </div>
 
                   <div class="flex items-center gap-2">
                     <span class="text-sm px-2 py-1 rounded-full bg-dark-700 text-gray-300">
-                      {{ getStatusText(tx.status) }}
+                      {{ getStatusText(tx.status, tx.type) }}
+                    </span>
+                    <span class="text-xs px-2 py-1 rounded-full bg-dark-700/60 text-gray-400 border border-dark-600">
+                      {{ typeLabel(tx.type) }}
                     </span>
                   </div>
                 </div>
