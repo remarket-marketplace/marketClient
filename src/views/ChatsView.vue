@@ -5,6 +5,7 @@ import ChatMessage from '@/components/chats/ChatMessage.vue'
 import SendMessageBar from '@/components/chats/SendMessageBar.vue'
 import Loader from '@/components/Loader.vue'
 import { useUserStore } from '@/stores/user'
+import { useChatStore } from '@/stores/chat'
 import type { ChatListItem } from '@/validation/chat/ChatList'
 import type { ChatMessageUnion } from '@/validation/chat/chatMessage'
 import type { UserRead } from '@/validation/user/userRead'
@@ -19,6 +20,7 @@ const router = useRouter()
 
 const API_HOST = import.meta.env.VITE_API_HOST
 
+const chatStore = useChatStore()
 const chats = ref<ChatListItem[]>([])
 const chatMessages = ref<ChatMessageUnion[]>([])
 const selectedChatId = ref<string | null>(null)
@@ -145,6 +147,12 @@ onMounted(async () => {
           }
         }
       }
+      if (chat) {
+        if (typeof update.unread_count === 'number') {
+          chat.unread_count = update.unread_count
+        }
+      }
+      chatStore.updateChatFromSocket(update)
     })
 
     unsubscribeNewMessage = chatsService.onNewMessage(message => {
@@ -152,6 +160,8 @@ onMounted(async () => {
         if (!chatMessages.value.some(m => m.id === message.id)) {
           chatMessages.value.push(message)
           nextTick(scrollToBottom)
+          chatStore.resetUnread(message.chat_room_id)
+          chatsService.markChatRead(message.chat_room_id)
         }
       }
     })
@@ -185,6 +195,7 @@ onUnmounted(() => {
 
 async function loadChats() {
   chats.value = await chatsService.getChats()
+  chatStore.setChats(chats.value)
 }
 
 function scrollToBottom() {
@@ -234,12 +245,15 @@ async function loadChatMessages(chatId: string) {
 
   await chatsService.joinChat(chatId)
   selectedChatId.value = chatId
+  chatStore.setActive(chatId)
   updateUrlChatId(chatId)
 
   const response = await chatsService.getChatMessages(chatId, 1, perPage.value)
   chatMessages.value = response.messages
   totalPages.value = response.totalPages
   hasMoreMessages.value = 1 < totalPages.value
+  chatStore.resetUnread(chatId)
+  await chatsService.markChatRead(chatId)
 
   await nextTick()
   scrollToBottom()

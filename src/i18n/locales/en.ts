@@ -117,6 +117,7 @@ const en = {
     showPassword: "Show password",
     hidePassword: "Hide password",
     emailPlaceholder: "Enter your email",
+    supportAutoReply: "Thanks for reaching out! Your request is being processed and we will reply shortly.",
 
     // product statuses
     productStatuses: {
@@ -540,8 +541,31 @@ const en = {
       selectSupportChat: "Select chat",
 
       mainPage: {
-        countOfUsers: "Count of users: ",
-        countOfProducts: "Count of products: ",
+        title: "Dashboard",
+        overview: "Marketplace overview",
+        totalRevenue: "Revenue",
+        totalDeals: "Deals",
+        totalUsers: "Users",
+        totalProducts: "Products",
+        averageCheck: "Average check",
+        perDeal: "per deal",
+        revenue: "Revenue",
+        newUsers: "New users",
+        newUsersShort: "users",
+        usersShort: "users",
+        deals: "Deals",
+        dealsByStatus: "Deals by status",
+        topCategories: "Top categories by revenue",
+        noCategories: "Not enough data for categories",
+        days: "d",
+        lastDays: "Last {days} days",
+        loadError: "Failed to load data. Please try again.",
+        disputesActive: "Disputes: {count}",
+        onModeration: "On moderation: {count}",
+        activeDisputes: "Active disputes",
+        chartTitleRevenue: "Revenue & signups dynamics",
+        quickStats: "Quick stats",
+        vsPrevDay: "vs prev. day",
       },
       usersPage: {
         title: "User management",

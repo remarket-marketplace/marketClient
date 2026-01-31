@@ -4,13 +4,38 @@ import { CategorySchema, ProductSchema } from "@/validation/product/product";
 import { UserReadSchema } from "@/validation/user/userRead";
 import { DealSchema, DealsListSchema, type Deal } from "@/validation/deal/deal";
 
+export type DashboardStatusBreakdown = { status: string; count: number }
+export type DashboardSeriesPoint = { date: string; value: number }
+export type DashboardCategory = {
+  category_id: string
+  category_name: string
+  total_sales: number
+  total_deals: number
+}
+
+export type DashboardData = {
+  count_of_users: number
+  count_of_products: number
+  count_of_deals: number
+  total_revenue: number
+  active_disputes: number
+  moderation_products: number
+  deals_by_status: DashboardStatusBreakdown[]
+  revenue_by_day: DashboardSeriesPoint[]
+  new_users_by_day: DashboardSeriesPoint[]
+  top_categories: DashboardCategory[]
+}
+
 export const adminService = {
-  async getDashboardData() {
+  async getDashboardData(days = 30): Promise<DashboardData | null> {
     try {
-      const response = await httpClient.get("/admin/dashboard-info");
-      return response.data;
+      const response = await httpClient.get("/admin/dashboard-info", {
+        params: { days },
+      });
+      return response.data as DashboardData;
     } catch (e) {
-      return [];
+      console.error("Failed to load dashboard data", e);
+      return null;
     }
   },
 

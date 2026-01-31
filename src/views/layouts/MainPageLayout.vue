@@ -10,9 +10,9 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { useChatStore } from '@/stores/chat'
 import { storeToRefs } from 'pinia'
 import SelectLanguage from '@/components/SelectLanguage.vue'
-import { chatsService } from '@/api/chats/chatsService'
 import type { FunctionalComponent } from 'vue'
 import type { LucideProps } from 'lucide-vue-next'
 
@@ -26,12 +26,14 @@ interface NavItem {
 }
 
 const store = useUserStore()
+const chatStore = useChatStore()
 const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 
 const isDesktop = ref(true)
 const { user } = storeToRefs(store)
+const { unreadTotal } = storeToRefs(chatStore)
 
 function checkDesktop() {
     isDesktop.value = window.innerWidth >= 768
@@ -86,8 +88,6 @@ const isActiveRouteMobile = (item: NavItem) => {
 onMounted(async () => {
     checkDesktop()
     window.addEventListener('resize', checkDesktop)
-    if (user.value)
-        await chatsService.connectChatsWebsocket()
 })
 
 const navItems = computed(() => {
@@ -151,12 +151,20 @@ const navItems = computed(() => {
                                 'text-white': isActiveRoute(item),
                                 'text-gray-400': !isActiveRoute(item)
                             }">
-                            <component :is="item.icon" :class="[
-                                item.sell ? 'text-2xl' : 'text-xl',
-                                item.admin ? 'text-purple-400' : '',
-                                isActiveRoute(item) ? 'text-white' : 'text-gray-400',
-                                'transition-colors duration-300 group-hover:text-white'
-                            ]" :size="item.sell ? 24 : 20" stroke-width="1.5" />
+                            <div class="relative">
+                                <component :is="item.icon" :class="[
+                                    item.sell ? 'text-2xl' : 'text-xl',
+                                    item.admin ? 'text-purple-400' : '',
+                                    isActiveRoute(item) ? 'text-white' : 'text-gray-400',
+                                    'transition-colors duration-300 group-hover:text-white'
+                                ]" :size="item.sell ? 24 : 20" stroke-width="1.5" />
+                                <span
+                                    v-if="item.id === 'chats' && unreadTotal > 0"
+                                    class="absolute -top-1 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-[10px] text-white font-semibold flex items-center justify-center shadow-lg"
+                                >
+                                    {{ unreadTotal > 99 ? '99+' : unreadTotal }}
+                                </span>
+                            </div>
                             <span class="ml-1 transition-colors duration-300 group-hover:text-white"
                                 :class="{ 'text-purple-300': item.admin }">
                                 {{ item.title }}
@@ -175,6 +183,39 @@ const navItems = computed(() => {
                 </div>
             </div>
         </main>
+
+        <nav class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-50 h-14 border-t border-gray-700 md:hidden">
+            <div class="mx-auto h-full w-full max-w-6xl 2xl:max-w-screen-xl flex items-center justify-around">
+                <router-link v-for="item in navItems" :key="item.id" :to="item.to"
+                    class="flex flex-col items-center justify-center px-1 transition-all duration-300 relative group"
+                    :class="{
+                        'opacity-100': isActiveRouteMobile(item),
+                        'opacity-70': !isActiveRouteMobile(item)
+                    }">
+                    <div class="icon-box flex items-center justify-center transition-colors duration-300 group-hover:text-white relative"
+                        :class="[
+                            isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400',
+                            item.admin ? 'text-purple-400' : ''
+                        ]">
+                        <component :is="item.icon" :size="22" stroke-width="1.5" />
+                        <span
+                            v-if="item.id === 'chats' && unreadTotal > 0"
+                            class="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-[10px] text-white font-semibold flex items-center justify-center shadow-md"
+                        >
+                            {{ unreadTotal > 99 ? '99+' : unreadTotal }}
+                        </span>
+                    </div>
+                    <span
+                        class="menu-label text-center text-xs font-light leading-none mt-1 transition-colors duration-300 group-hover:text-white"
+                        :class="[
+                            isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400',
+                            item.admin ? 'text-purple-300' : ''
+                        ]">
+                        {{ item.title }}
+                    </span>
+                </router-link>
+            </div>
+        </nav>
 
         <!-- footer - outside main to span full width -->
         <footer
@@ -279,12 +320,18 @@ const navItems = computed(() => {
                         'opacity-100': isActiveRouteMobile(item),
                         'opacity-70': !isActiveRouteMobile(item)
                     }">
-                    <div class="icon-box flex items-center justify-center transition-colors duration-300 group-hover:text-white"
+                    <div class="icon-box flex items-center justify-center transition-colors duration-300 group-hover:text-white relative"
                         :class="[
                             isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400',
                             item.admin ? 'text-purple-400' : ''
                         ]">
                         <component :is="item.icon" :size="22" stroke-width="1.5" />
+                        <span
+                            v-if="item.id === 'chats' && unreadTotal > 0"
+                            class="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-[10px] text-white font-semibold flex items-center justify-center shadow-md"
+                        >
+                            {{ unreadTotal > 99 ? '99+' : unreadTotal }}
+                        </span>
                     </div>
                     <span
                         class="menu-label text-center text-xs font-light leading-none mt-1 transition-colors duration-300 group-hover:text-white"

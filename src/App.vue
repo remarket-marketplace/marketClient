@@ -2,6 +2,8 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from './stores/user'
+import { useChatStore } from './stores/chat'
+import { chatsService } from './api/chats/chatsService'
 import DefaultLayout from './views/layouts/DefaultLayout.vue'
 import AdminLayout from './views/layouts/AdminLayout.vue'
 import Loader from './components/Loader.vue'
@@ -10,6 +12,7 @@ import { authService } from './api/auth/AuthService'
 import MainPageLayout from './views/layouts/MainPageLayout.vue'
 
 const store = useUserStore()
+const chatStore = useChatStore()
 const route = useRoute()
 const isUserLoaded = ref(false)
 
@@ -18,6 +21,13 @@ const { user } = storeToRefs(store)
 onMounted(async () => {
   try {
     await store.fetchUser()
+    // init chats if user is logged in
+    if (store.user) {
+      await chatsService.connectChatsWebsocket()
+      const chats = await chatsService.getChats()
+      chatStore.setChats(chats)
+      chatsService.onChatUpdated((update) => chatStore.updateChatFromSocket(update))
+    }
   } finally {
     isUserLoaded.value = true
   }

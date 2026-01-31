@@ -35,6 +35,8 @@ const deal = ref<Deal | null>(null)
 const isLoading = ref(true)
 const isActionLoading = ref(false)
 const errorMessage = ref('')
+const actionError = ref('')
+const actionSuccess = ref('')
 const showConfirmModal = ref(false)
 const confirmAction = ref<() => Promise<void>>(() => Promise.resolve())
 const confirmTitle = ref('')
@@ -192,11 +194,19 @@ async function resolveDispute(inFavorOf: 'buyer' | 'seller') {
 
   showConfirmDialog(title, message, async () => {
     isActionLoading.value = true
+    actionError.value = ''
+    actionSuccess.value = ''
     try {
-      await adminService.resolveDealDispute(deal.value!.id, inFavorOf)
-      await loadDeal()
+      const res = await adminService.resolveDealDispute(deal.value!.id, inFavorOf)
+      if (!res) {
+        actionError.value = t('errors.SERVER_ERROR')
+      } else {
+        actionSuccess.value = t('common.success')
+        await loadDeal()
+      }
     } catch (error) {
       console.error(error)
+      actionError.value = t('errors.SERVER_ERROR')
     } finally {
       isActionLoading.value = false
     }
@@ -211,6 +221,12 @@ onMounted(async () => {
 
 <template>
   <div class="w-full h-full overflow-scroll  lg:overflow-hidden pb-16 md:pb-0">
+    <div v-if="actionError" class="mx-4 mt-4 bg-red-500/15 border border-red-500/30 text-red-100 px-3 py-2 rounded-lg">
+      {{ actionError }}
+    </div>
+    <div v-if="actionSuccess" class="mx-4 mt-2 bg-green-500/15 border border-green-500/30 text-green-100 px-3 py-2 rounded-lg">
+      {{ actionSuccess }}
+    </div>
     <!-- Mobile header -->
     <div class="mb-6 lg:hidden px-4 pt-4">
       <div class="flex items-center gap-3 mb-4">

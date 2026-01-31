@@ -17,6 +17,7 @@ export const TextMessageSchema = BaseMessageSchema.extend({
   text: z.string(),
   is_admin_message: z.boolean(),
   is_read: z.boolean(),
+  data: z.record(z.string(), z.any()).nullable().optional(),
 })
 
 // Сообщение о покупке

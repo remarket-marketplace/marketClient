@@ -34,7 +34,8 @@ const formattedLastMessage = computed((): string | null => {
             if ((props.chat.last_message as any).is_admin_message && !isSupportChat.value) {
                 text = t('pages.chats.newAdminMessage')
             } else {
-                text = props.chat.last_message.text
+                const dataKey = (props.chat.last_message as any).data?.i18n_key
+                text = dataKey ? t(String(dataKey)) : props.chat.last_message.text
                 if (text.length > 60) {
                     text = text.substring(0, 57) + '...'
                 }
@@ -79,6 +80,8 @@ const displayName = computed(() => {
     }
     return props.chat.another_user.username
 })
+
+const unreadCount = computed(() => props.chat.unread_count ?? 0)
 
 // Вычисляемое свойство для цвета имени
 const displayNameColor = computed(() => {
@@ -171,6 +174,12 @@ onMounted(() => {
                     >
                         {{ displayName }}
                     </p>
+                    <span
+                        v-if="unreadCount > 0"
+                        class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-red-500 text-white text-[11px] font-semibold"
+                    >
+                        {{ unreadCount > 99 ? '99+' : unreadCount }}
+                    </span>
                 </div>
                 <span 
                     v-if="chat.last_message?.created_at" 

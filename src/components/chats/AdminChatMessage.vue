@@ -62,7 +62,7 @@ function formatDate(dateInput: string | Date): string {
         </div>
         <div class="flex-1">
           <p class="text-blue-200 font-medium text-xs mb-1">{{ senderName }}</p>
-          <p class="text-gray-100">{{ textMessage.text }}</p>
+          <p class="text-gray-100">{{ textMessage.data?.i18n_key ? t(String(textMessage.data.i18n_key)) : textMessage.text }}</p>
           <p class="mt-2 text-right text-xs text-gray-400">
             {{ formatDate(textMessage.created_at) }}
           </p>

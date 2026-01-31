@@ -8,6 +8,7 @@ interface TextMessageProps {
   text: string;
   is_read: boolean;
   is_admin_message?: boolean;
+  data?: Record<string, any> | null;
 }
 
 defineProps<{
@@ -30,7 +31,7 @@ defineProps<{
 				</div>
 				<div class="flex-1">
 					<p class="text-blue-200 font-medium text-xs mb-1">{{ $t('common.admin') }}</p>
-					<p class="text-gray-100">{{ textMessage.text }}</p>
+					<p class="text-gray-100">{{ textMessage.data?.i18n_key ? $t(String(textMessage.data.i18n_key)) : textMessage.text }}</p>
 					<p class="mt-2 text-right text-xs text-gray-400">
 						{{ formatDate(textMessage.created_at) }}
 					</p>
@@ -45,7 +46,7 @@ defineProps<{
 			? 'bg-blue-600 text-mainText rounded-br-none self-end'
 			: 'bg-dark-600 text-mainText rounded-bl-none self-start'
 	]">
-		<p>{{ textMessage.text }}</p>
+		<p>{{ textMessage.data?.i18n_key ? $t(String(textMessage.data.i18n_key)) : textMessage.text }}</p>
 		<p class="mt-1 text-right text-xs text-gray-300">
 			{{ formatDate(textMessage.created_at) }}
 		</p>

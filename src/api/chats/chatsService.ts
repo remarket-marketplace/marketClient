@@ -213,6 +213,16 @@ export const chatsService = {
     }
   },
 
+  async markChatRead(chatId: string): Promise<boolean> {
+    try {
+      await httpClient.post(`/chats/${chatId}/read`);
+      return true;
+    } catch (e) {
+      console.error("markChatRead error", e);
+      return false;
+    }
+  },
+
     async getChatMessagesByDealId(
     dealId: string,
     page: number,
