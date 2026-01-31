@@ -418,6 +418,8 @@ const en = {
       newDealStatus: "New deal status:",
       updateDealStatus: "New deal status",
       newReview: "New review",
+      disputeResolvedSeller: "Dispute closed in favor of the seller.",
+      disputeResolvedBuyer: "Dispute closed in favor of the buyer.",
       leaveReview: "Leave review",
       writeReview: "Write review",
       sendReview: "Send review",
@@ -456,6 +458,7 @@ const en = {
       descriptionMissing: "No description.",
       editDescription: "Edit description",
       descriptionPlaceholder: "Enter profile description...",
+      ratingPeriodShort: "Rating over the last 30 days",
       logout: "Log out",
       admin: "Administrator",
       sales: "Sales",
@@ -609,7 +612,10 @@ const en = {
         refundDealMessage: "Are you sure you want to refund this deal?",
         cancelDealMessage: "Are you sure you want to cancel this deal?",
         resolveForBuyerMessage: "Are you sure you want to resolve the dispute in favor of the buyer?",
-        resolveForSellerMessage: "Are you sure you want to resolve the dispute in favor of the seller?"
+        resolveForSellerMessage: "Are you sure you want to resolve the dispute in favor of the seller?",
+        disputeReasonLabel: "Resolution reason",
+        disputeReasonPlaceholder: "Briefly explain why you are resolving the dispute this way",
+        reasonRequired: "Please enter at least 5 characters"
       },
 
       editUser: {
@@ -664,6 +670,7 @@ const en = {
       withdrawal: "Withdrawal",
       adjustment: "Adjustment",
     },
+    ratingPeriodShort: "Rating over the last 30 days",
     forms: {
       addSubcategory: {
         title: "Add Subcategory",

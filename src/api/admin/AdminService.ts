@@ -215,7 +215,7 @@ export const adminService = {
     }
   },
 
-  async resolveDealDispute(dealId: string, inFavorOf: "seller" | "buyer") {
+  async resolveDealDispute(dealId: string, inFavorOf: "seller" | "buyer", reason: string) {
     //
     // resolve deal dispute
     //
@@ -223,6 +223,7 @@ export const adminService = {
       const response = await httpClient.patch("/admin/deals/resolve-dispute", {
         deal_id: dealId,
         resolve_favor: inFavorOf,
+        reason,
       });
       return DealSchema.parse(response.data);
     } catch (e) {

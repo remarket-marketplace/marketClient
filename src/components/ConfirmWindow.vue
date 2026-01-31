@@ -84,10 +84,11 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Message -->
-      <div class="px-6 py-5">
+      <div class="px-6 py-5 space-y-4">
         <p class="text-gray-300 leading-relaxed">
           {{ message }}
         </p>
+        <slot name="body"></slot>
       </div>
 
       <!-- Actions -->

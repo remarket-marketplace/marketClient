@@ -31,14 +31,17 @@ const formattedLastMessage = computed((): string | null => {
             break
         case "text_message":
             // Check if this is an admin message
-            if ((props.chat.last_message as any).is_admin_message && !isSupportChat.value) {
-                text = t('pages.chats.newAdminMessage')
+            const last = props.chat.last_message as any
+            const dataKey = last.data?.i18n_key
+            if (dataKey) {
+                const prefix = t(String(dataKey))
+                const reason = last.data?.reason || last.text || ''
+                text = `${prefix} ${reason}`.trim()
             } else {
-                const dataKey = (props.chat.last_message as any).data?.i18n_key
-                text = dataKey ? t(String(dataKey)) : props.chat.last_message.text
-                if (text.length > 60) {
-                    text = text.substring(0, 57) + '...'
-                }
+                text = props.chat.last_message.text
+            }
+            if (text.length > 60) {
+                text = text.substring(0, 57) + '...'
             }
             break
         case "update_deal_status_message":

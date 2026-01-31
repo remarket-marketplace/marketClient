@@ -410,6 +410,8 @@ const ru = {
       newDealStatus: "Новый статус сделки:",
       updateDealStatus: "Новый статус сделки",
       newReview: "Новый отзыв",
+      disputeResolvedSeller: "Спор закрыт в пользу продавца.",
+      disputeResolvedBuyer: "Спор закрыт в пользу покупателя.",
       leaveReview: "Оставить отзыв",
       writeReview: "Напишите отзыв",
       sendReview: "Отправить отзыв",
@@ -446,6 +448,7 @@ const ru = {
       descriptionMissing: "Нет описания.",
       editDescription: "Редактировать описание",
       descriptionPlaceholder: "Введите описание профиля...",
+      ratingPeriodShort: "Рейтинг за последние 30 дней",
       logout: "Выйти",
       admin: "Администратор",
       sales: "Продажи",
@@ -599,7 +602,10 @@ const ru = {
         refundDealMessage: "Вы уверены что хотите сделать возврат по этой сделке?",
         cancelDealMessage: "Вы уверены что хотите отменить сделку?",
         resolveForBuyerMessage: "Вы уверены что хотите решить спор в пользу покупателя?",
-        resolveForSellerMessage: "Вы уверены что хотите решить спор в пользу продавца?"
+        resolveForSellerMessage: "Вы уверены что хотите решить спор в пользу продавца?",
+        disputeReasonLabel: "Причина решения спора",
+        disputeReasonPlaceholder: "Коротко опишите, почему принимаете это решение",
+        reasonRequired: "Введите не менее 5 символов"
       },
 
       editUser: {
@@ -652,6 +658,7 @@ const ru = {
       withdrawal: "Вывод",
       adjustment: "Корректировка"
     },
+    ratingPeriodShort: "Рейтинг за последние 30 дней",
     forms: {
       addSubcategory: {
         title: "Добавить подкатегорию",

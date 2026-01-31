@@ -316,9 +316,14 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <h2 class="text-xl font-bold text-white truncate">{{ currentProfileData.username }}</h2>
-                <div v-if="currentProfileData.rating > 0" class="flex items-center gap-1">
-                  <Star class="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                  <span class="text-sm font-medium text-yellow-400">{{ currentProfileData.rating }}</span>
+                <div v-if="currentProfileData.rating > 0" class="flex items-center gap-2">
+                  <div class="flex items-center gap-1 px-2 py-1 rounded-lg bg-yellow-500/10 border border-yellow-400/30">
+                    <Star class="w-4 h-4 text-yellow-300 fill-yellow-300" />
+                    <span class="text-sm font-semibold text-yellow-200">{{ currentProfileData.rating }}</span>
+                  </div>
+                  <span class="text-[11px] text-gray-400 whitespace-nowrap">
+                    {{ $t('pages.profile.ratingPeriodShort') }}
+                  </span>
                 </div>
               </div>
 
@@ -402,17 +407,17 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
             <!-- Stats -->
             <div class="grid grid-cols-3 gap-3">
-              <div class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600">
+              <div class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600 min-h-[76px] space-y-1">
                 <div class="text-lg font-bold text-white">{{ products.length }}</div>
-                <div class="text-xs text-gray-400 mt-1">{{ t('common.products') }}</div>
+                <div class="text-xs text-gray-400">{{ t('common.products') }}</div>
               </div>
-              <div class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600">
+              <div class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600 min-h-[76px] space-y-1">
                 <div class="text-lg font-bold text-white">{{ reviews.length }}</div>
-                <div class="text-xs text-gray-400 mt-1">{{ t('pages.profile.reviews') }}</div>
+                <div class="text-xs text-gray-400">{{ t('pages.profile.reviews') }}</div>
               </div>
-              <div class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600">
+              <div class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600 min-h-[76px] space-y-1">
                 <div class="text-lg font-bold text-white">{{ currentProfileData.rating }}</div>
-                <div class="text-xs text-gray-400 mt-1">{{ t('common.rating') }}</div>
+                <div class="text-xs text-gray-400">{{ t('common.rating') }}</div>
               </div>
             </div>
 

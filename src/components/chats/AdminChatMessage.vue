@@ -17,6 +17,21 @@ const props = defineProps<{
 const { t } = useI18n()
 
 const textMessage = computed(() => isTextMessage(props.message) ? props.message : null)
+const localizedText = computed(() => {
+  if (!textMessage.value) return ''
+  if (textMessage.value.data?.i18n_key) {
+    const prefix = t(String(textMessage.value.data.i18n_key))
+    return prefix
+  }
+  return textMessage.value.text
+})
+
+const reasonText = computed(() => {
+  if (!textMessage.value) return ''
+  return textMessage.value.data?.reason || textMessage.value.text
+})
+
+const hasReason = computed(() => Boolean(textMessage.value?.data?.reason))
 
 const isCurrentUserMessage = computed(() => {
   if (!textMessage.value) return false
@@ -62,7 +77,13 @@ function formatDate(dateInput: string | Date): string {
         </div>
         <div class="flex-1">
           <p class="text-blue-200 font-medium text-xs mb-1">{{ senderName }}</p>
-          <p class="text-gray-100">{{ textMessage.data?.i18n_key ? t(String(textMessage.data.i18n_key)) : textMessage.text }}</p>
+          <p class="text-gray-100">{{ localizedText }}</p>
+          <div v-if="hasReason" class="mt-2 space-y-2">
+            <p class="font-semibold text-gray-50">{{ t('common.reason') }}</p>
+            <div class="rounded-lg border border-dark-600 bg-dark-900/70 px-3 py-2 text-gray-100">
+              <p class="whitespace-pre-line">{{ reasonText }}</p>
+            </div>
+          </div>
           <p class="mt-2 text-right text-xs text-gray-400">
             {{ formatDate(textMessage.created_at) }}
           </p>
@@ -78,7 +99,13 @@ function formatDate(dateInput: string | Date): string {
           ? 'bg-blue-600 text-mainText rounded-br-none'
           : 'bg-dark-600 text-mainText rounded-bl-none'
       ]">
-        <p>{{ textMessage.text }}</p>
+        <p>{{ textMessage.data?.i18n_key ? localizedText : textMessage.text }}</p>
+        <div v-if="hasReason" class="mt-2 space-y-2">
+          <p class="font-semibold text-gray-50">{{ t('common.reason') }}</p>
+          <div class="rounded-lg border border-dark-700 bg-dark-900/60 px-3 py-2 text-gray-100">
+            <p class="whitespace-pre-line">{{ reasonText }}</p>
+          </div>
+        </div>
         <p class="mt-1 text-right text-xs text-gray-300">
           {{ formatDate(textMessage.created_at) }}
         </p>

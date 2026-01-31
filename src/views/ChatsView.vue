@@ -369,7 +369,7 @@ async function sendMessage() {
               </div>
             </div>
 
-            <div ref="messageContainerRef" class="no-scrollbar flex flex-1 flex-col overflow-y-auto pb-2"
+            <div ref="messageContainerRef" class="no-scrollbar flex flex-1 flex-col overflow-y-auto pb-16"
               @scroll="handleScroll">
               <div v-if="isLoadingMoreMessages" class="flex justify-center py-2">
                 <Loader size="sm" />

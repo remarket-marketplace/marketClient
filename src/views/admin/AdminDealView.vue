@@ -41,6 +41,9 @@ const showConfirmModal = ref(false)
 const confirmAction = ref<() => Promise<void>>(() => Promise.resolve())
 const confirmTitle = ref('')
 const confirmMessage = ref('')
+const showReasonField = ref(false)
+const disputeReason = ref('')
+const reasonError = ref('')
 
 const { images } = useImages()
 const API_HOST = import.meta.env.VITE_API_HOST || ''
@@ -114,9 +117,19 @@ async function loadDeal() {
 }
 
 // Действия администратора
-function showConfirmDialog(title: string, message: string, action: () => Promise<void>) {
+function showConfirmDialog(
+  title: string,
+  message: string,
+  action: () => Promise<void>,
+  options?: { showReason?: boolean }
+) {
   confirmTitle.value = title
   confirmMessage.value = message
+  showReasonField.value = options?.showReason ?? false
+  if (!showReasonField.value) {
+    disputeReason.value = ''
+    reasonError.value = ''
+  }
   confirmAction.value = action
   showConfirmModal.value = true
 }
@@ -132,6 +145,7 @@ async function confirmDealAction() {
       try {
         await adminService.confirmDeal(deal.value!.id)
         await loadDeal()
+        showConfirmModal.value = false
       } catch (error) {
         console.error(error)
       } finally {
@@ -152,6 +166,7 @@ async function refundDealAction() {
       try {
         await adminService.refundDeal(deal.value!.id)
         await loadDeal()
+        showConfirmModal.value = false
       } catch (error) {
         console.error(error)
       } finally {
@@ -172,6 +187,7 @@ async function cancelDealAction() {
       try {
         await adminService.cancelDeal(deal.value!.id)
         await loadDeal()
+        showConfirmModal.value = false
       } catch (error) {
         console.error(error)
       } finally {
@@ -183,6 +199,8 @@ async function cancelDealAction() {
 
 async function resolveDispute(inFavorOf: 'buyer' | 'seller') {
   if (!deal.value) return
+  disputeReason.value = ''
+  reasonError.value = ''
 
   const title = inFavorOf === 'buyer'
     ? t('common.resolveForBuyer')
@@ -197,12 +215,18 @@ async function resolveDispute(inFavorOf: 'buyer' | 'seller') {
     actionError.value = ''
     actionSuccess.value = ''
     try {
-      const res = await adminService.resolveDealDispute(deal.value!.id, inFavorOf)
+      const trimmedReason = disputeReason.value.trim()
+      if (trimmedReason.length < 5) {
+        reasonError.value = t('pages.admin.dealPage.reasonRequired')
+        return
+      }
+      const res = await adminService.resolveDealDispute(deal.value!.id, inFavorOf, trimmedReason)
       if (!res) {
         actionError.value = t('errors.SERVER_ERROR')
       } else {
         actionSuccess.value = t('common.success')
         await loadDeal()
+        showConfirmModal.value = false
       }
     } catch (error) {
       console.error(error)
@@ -210,7 +234,7 @@ async function resolveDispute(inFavorOf: 'buyer' | 'seller') {
     } finally {
       isActionLoading.value = false
     }
-  })
+  }, { showReason: true })
 }
 
 // Инициализация
@@ -571,11 +595,30 @@ onMounted(async () => {
   </div>
 
   <!-- Confirm Modal -->
-  <ConfirmWindow :is-open="showConfirmModal" :title="confirmTitle" :message="confirmMessage"
-    :is-loading="isActionLoading" @confirm="async () => {
-      await confirmAction()
-      showConfirmModal = false
-    }" @cancel="showConfirmModal = false" />
+  <ConfirmWindow
+    :is-open="showConfirmModal"
+    :title="confirmTitle"
+    :message="confirmMessage"
+    :is-loading="isActionLoading"
+    @confirm="confirmAction"
+    @cancel="showConfirmModal = false"
+  >
+    <template #body>
+      <div v-if="showReasonField" class="space-y-2">
+        <label class="block text-sm text-gray-300">
+          {{ $t('pages.admin.dealPage.disputeReasonLabel') }}
+        </label>
+        <textarea
+          v-model="disputeReason"
+          class="w-full rounded-lg bg-dark-900 border border-dark-700 text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[110px]"
+          :placeholder="$t('pages.admin.dealPage.disputeReasonPlaceholder')"
+        />
+        <p v-if="reasonError" class="text-red-400 text-sm">
+          {{ reasonError }}
+        </p>
+      </div>
+    </template>
+  </ConfirmWindow>
 </template>
 
 <style>

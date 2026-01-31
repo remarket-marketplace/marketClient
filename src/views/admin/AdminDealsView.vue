@@ -45,6 +45,9 @@ const confirmAction = ref<() => Promise<void>>(() => Promise.resolve())
 const confirmTitle = ref('')
 const confirmMessage = ref('')
 const isActionLoading = ref(false)
+const showReasonField = ref(false)
+const disputeReason = ref('')
+const reasonError = ref('')
 
 const { images } = useImages()
 
@@ -197,15 +200,27 @@ async function cancelDeal(dealId: string) {
   }
 }
 
-function showConfirmDialog(title: string, message: string, action: () => Promise<void>) {
+function showConfirmDialog(
+  title: string,
+  message: string,
+  action: () => Promise<void>,
+  options?: { showReason?: boolean }
+) {
   confirmTitle.value = title
   confirmMessage.value = message
+  showReasonField.value = options?.showReason ?? false
+  if (!showReasonField.value) {
+    disputeReason.value = ''
+    reasonError.value = ''
+  }
   confirmAction.value = action
   showConfirmModal.value = true
 }
 
 async function resolveDispute(dealId: string, inFavorOf: 'buyer' | 'seller') {
   processingDealId.value = dealId
+  disputeReason.value = ''
+  reasonError.value = ''
   
   const title = inFavorOf === 'buyer'
     ? t('common.resolveForBuyer')
@@ -218,14 +233,21 @@ async function resolveDispute(dealId: string, inFavorOf: 'buyer' | 'seller') {
   showConfirmDialog(title, message, async () => {
     isActionLoading.value = true
     try {
-      await adminService.resolveDealDispute(dealId, inFavorOf)
+      const trimmedReason = disputeReason.value.trim()
+      if (trimmedReason.length < 5) {
+        reasonError.value = t('pages.admin.dealPage.reasonRequired')
+        return
+      }
+      await adminService.resolveDealDispute(dealId, inFavorOf, trimmedReason)
       await loadDeals(true)
+      showConfirmModal.value = false
     } catch (error) {
       console.error('Ошибка при решении спора:', error)
     } finally {
       isActionLoading.value = false
+      processingDealId.value = null
     }
-  })
+  }, { showReason: true })
 }
 
 let observer: IntersectionObserver
@@ -456,11 +478,30 @@ onUnmounted(() => {
   </section>
 
   <!-- Confirm Modal -->
-  <ConfirmWindow :is-open="showConfirmModal" :title="confirmTitle" :message="confirmMessage"
-    :is-loading="isActionLoading" @confirm="async () => {
-      await confirmAction()
-      showConfirmModal = false
-    }" @cancel="showConfirmModal = false" />
+  <ConfirmWindow
+    :is-open="showConfirmModal"
+    :title="confirmTitle"
+    :message="confirmMessage"
+    :is-loading="isActionLoading"
+    @confirm="confirmAction"
+    @cancel="() => { showConfirmModal = false; processingDealId = null }"
+  >
+    <template #body>
+      <div v-if="showReasonField" class="space-y-2">
+        <label class="block text-sm text-gray-300">
+          {{ $t('pages.admin.dealPage.disputeReasonLabel') }}
+        </label>
+        <textarea
+          v-model="disputeReason"
+          class="w-full rounded-lg bg-dark-900 border border-dark-700 text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[110px]"
+          :placeholder="$t('pages.admin.dealPage.disputeReasonPlaceholder')"
+        />
+        <p v-if="reasonError" class="text-red-400 text-sm">
+          {{ reasonError }}
+        </p>
+      </div>
+    </template>
+  </ConfirmWindow>
 </template>
 
 <style scoped>

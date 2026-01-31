@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 interface TextMessageProps {
   id: string;
   chat_room_id: string;
@@ -11,12 +13,41 @@ interface TextMessageProps {
   data?: Record<string, any> | null;
 }
 
-defineProps<{
+const props = defineProps<{
   textMessage: TextMessageProps | null;
   user: any;
   formatDate: (dateStr: string) => string;
   showAdminBadge?: boolean;
 }>()
+
+const { t } = useI18n()
+
+const adminContent = computed(() => {
+  if (!props.textMessage) return ''
+  if (props.textMessage.data?.i18n_key) {
+    const prefix = t(String(props.textMessage.data.i18n_key))
+    return prefix
+  }
+  return props.textMessage.text
+})
+
+const regularContent = computed(() => {
+  if (!props.textMessage) return ''
+  if (props.textMessage.data?.i18n_key) {
+    const prefix = t(String(props.textMessage.data.i18n_key))
+    return prefix
+  }
+  return props.textMessage.text
+})
+
+const reasonText = computed(() => {
+  if (!props.textMessage) return ''
+  return props.textMessage.data?.reason || props.textMessage.text
+})
+
+const hasReason = computed(() => {
+  return Boolean(props.textMessage?.data?.reason)
+})
 </script>
 
 <template>
@@ -31,7 +62,13 @@ defineProps<{
 				</div>
 				<div class="flex-1">
 					<p class="text-blue-200 font-medium text-xs mb-1">{{ $t('common.admin') }}</p>
-					<p class="text-gray-100">{{ textMessage.data?.i18n_key ? $t(String(textMessage.data.i18n_key)) : textMessage.text }}</p>
+					<p class="text-gray-100">{{ adminContent }}</p>
+          <div v-if="hasReason" class="mt-2 space-y-2">
+            <p class="font-semibold text-gray-50">{{ $t('common.reason') }}</p>
+            <div class="rounded-lg border border-dark-600 bg-dark-900/70 px-3 py-2 text-gray-100">
+              <p class="whitespace-pre-line">{{ reasonText }}</p>
+            </div>
+          </div>
 					<p class="mt-2 text-right text-xs text-gray-400">
 						{{ formatDate(textMessage.created_at) }}
 					</p>
@@ -46,7 +83,13 @@ defineProps<{
 			? 'bg-blue-600 text-mainText rounded-br-none self-end'
 			: 'bg-dark-600 text-mainText rounded-bl-none self-start'
 	]">
-		<p>{{ textMessage.data?.i18n_key ? $t(String(textMessage.data.i18n_key)) : textMessage.text }}</p>
+		<p>{{ regularContent }}</p>
+    <div v-if="hasReason" class="mt-2 space-y-2">
+      <p class="font-semibold text-gray-50">{{ $t('common.reason') }}</p>
+      <div class="rounded-lg border border-dark-700 bg-dark-900/60 px-3 py-2 text-gray-100">
+        <p class="whitespace-pre-line">{{ reasonText }}</p>
+      </div>
+    </div>
 		<p class="mt-1 text-right text-xs text-gray-300">
 			{{ formatDate(textMessage.created_at) }}
 		</p>
