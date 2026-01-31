@@ -153,6 +153,13 @@ const revenueOptions = computed<ApexOptions>(() => ({
           ? formatCurrency(val)
           : `${formatNumber(val)} ${t('pages.admin.mainPage.usersShort')}`,
     },
+    theme: 'dark',
+    style: {
+      fontSize: '12px',
+      fontFamily: 'Outfit, sans-serif',
+    },
+    marker: { show: false },
+    onDatasetHover: { highlightDataSeries: true },
   },
 }))
 
@@ -190,11 +197,13 @@ const statusOptions = computed<ApexOptions>(() => {
         formatter: (val: number) => formatNumber(val),
       },
     },
-    grid: { borderColor: 'rgba(255,255,255,0.08)', strokeDashArray: 4 },
-    tooltip: {
-      y: { formatter: (val: number) => formatNumber(val) },
-    },
-  }
+  grid: { borderColor: 'rgba(255,255,255,0.08)', strokeDashArray: 4 },
+  tooltip: {
+    theme: 'dark',
+    style: { fontSize: '12px', fontFamily: 'Outfit, sans-serif' },
+    y: { formatter: (val: number) => formatNumber(val) },
+  },
+}
 })
 
 const statusSeries = computed(() => [
