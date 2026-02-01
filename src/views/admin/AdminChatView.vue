@@ -43,6 +43,13 @@ const senderLabels = computed<Record<string, string>>(() => {
     if (chatParticipants.value?.support_user) labels[chatParticipants.value.support_user.id] = `${chatParticipants.value.support_user.username} (${t('common.admin')})`
     return labels
 })
+const senderRoles = computed<Record<string, 'buyer' | 'seller' | 'admin'>>(() => {
+    const roles: Record<string, 'buyer' | 'seller' | 'admin'> = {}
+    if (chatParticipants.value?.buyer) roles[chatParticipants.value.buyer.id] = 'buyer'
+    if (chatParticipants.value?.seller) roles[chatParticipants.value.seller.id] = 'seller'
+    if (chatParticipants.value?.support_user) roles[chatParticipants.value.support_user.id] = 'admin'
+    return roles
+})
 
 const chatUserInitial = computed(() =>
     currentChatData.value?.username.charAt(0).toUpperCase() || ''
@@ -233,8 +240,16 @@ async function sendMessage() {
 
                     <div v-if="chatMessages.length > 0" class="flex flex-1 flex-col justify-start">
                         <div class="flex flex-col gap-3 py-4">
-                            <ChatMessage v-for="message in chatMessages" :key="message.id" :message="message"
-                                :user="user" :showAdminBadge="true" :sender-labels="senderLabels" />
+                            <ChatMessage
+                              v-for="message in chatMessages"
+                              :key="message.id"
+                              :message="message"
+                              :user="user"
+                              :showAdminBadge="true"
+                              :sender-labels="senderLabels"
+                              :sender-roles="senderRoles"
+                              :force-show-sender="true"
+                            />
                         </div>
                     </div>
 

@@ -19,6 +19,8 @@ const props = defineProps<{
   formatDate: (dateStr: string) => string;
   showAdminBadge?: boolean;
   senderLabel?: string;
+  senderRole?: 'buyer' | 'seller' | 'admin';
+  forceShowSender?: boolean;
 }>()
 
 const { t } = useI18n()
@@ -49,6 +51,36 @@ const reasonText = computed(() => {
 const hasReason = computed(() => {
   return Boolean(props.textMessage?.data?.reason)
 })
+
+const bubbleRoleClass = computed(() => {
+  if (props.textMessage?.sender_id === props.user?.id) {
+    return 'bg-blue-600 text-mainText rounded-br-none self-end'
+  }
+
+  switch (props.senderRole) {
+    case 'buyer':
+      return 'bg-emerald-900/70 border border-emerald-700 text-mainText rounded-bl-none border-l-4 border-l-emerald-500'
+    case 'seller':
+      return 'bg-indigo-900/70 border border-indigo-700 text-mainText rounded-bl-none border-l-4 border-l-indigo-400'
+    case 'admin':
+      return 'bg-blue-800/70 border border-blue-700 text-mainText rounded-bl-none border-l-4 border-l-blue-400'
+    default:
+      return 'bg-dark-600 text-mainText rounded-bl-none'
+  }
+})
+
+const pillClasses = computed(() => {
+  switch (props.senderRole) {
+    case 'buyer':
+      return 'text-emerald-100 bg-emerald-800/70 border border-emerald-600'
+    case 'seller':
+      return 'text-indigo-100 bg-indigo-800/70 border border-indigo-500'
+    case 'admin':
+      return 'text-blue-100 bg-blue-800/70 border border-blue-500'
+    default:
+      return 'text-gray-200 bg-dark-700 border border-dark-600'
+  }
+})
 </script>
 
 <template>
@@ -63,7 +95,7 @@ const hasReason = computed(() => {
 				</div>
 				<div class="flex-1">
 					<p class="text-blue-200 font-medium text-xs mb-1">{{ $t('common.admin') }}</p>
-          <p v-if="senderLabel" class="text-xs text-gray-400 mb-1">{{ senderLabel }}</p>
+          <p v-if="senderLabel || forceShowSender" class="text-xs text-gray-400 mb-1">{{ senderLabel || $t('common.admin') }}</p>
 					<p class="text-gray-100">{{ adminContent }}</p>
           <div v-if="hasReason" class="mt-2 space-y-2">
             <p class="font-semibold text-gray-50">{{ $t('common.reason') }}</p>
@@ -81,11 +113,14 @@ const hasReason = computed(() => {
 
 	<!-- Regular messages -->
 	<div v-else-if="textMessage != null" class="max-w-[70%] min-w-4 rounded-xl px-4 py-2 text-sm break-words" :class="[
-		textMessage.sender_id === user?.id
-			? 'bg-blue-600 text-mainText rounded-br-none self-end'
-			: 'bg-dark-600 text-mainText rounded-bl-none self-start'
+    bubbleRoleClass,
+    textMessage.sender_id === user?.id ? 'self-end' : 'self-start'
 	]">
-    <p v-if="senderLabel" class="text-xs text-gray-400 mb-1">{{ senderLabel }}</p>
+    <div v-if="senderLabel || forceShowSender" class="mb-1 flex items-center gap-2">
+      <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full" :class="pillClasses">
+        {{ senderLabel || $t('common.user') }}
+      </span>
+    </div>
 		<p>{{ regularContent }}</p>
     <div v-if="hasReason" class="mt-2 space-y-2">
       <p class="font-semibold text-gray-50">{{ $t('common.reason') }}</p>

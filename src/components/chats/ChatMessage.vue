@@ -27,6 +27,8 @@ const props = defineProps<{
   user: any
   showAdminBadge?: boolean
   senderLabels?: Record<string, string>
+  senderRoles?: Record<string, 'buyer' | 'seller' | 'admin'>
+  forceShowSender?: boolean
 }>()
 
 const { t } = useI18n()
@@ -85,7 +87,16 @@ function formatDate(dateInput: string | Date): string {
     </div>
 
     <!-- TEXT MESSAGE -->
-    <TextMessage v-else-if="textMessage" :textMessage="textMessage" :user="user" :formatDate="formatDate" :showAdminBadge="showAdminBadge" :sender-label="props.senderLabels?.[textMessage.sender_id]" />
+    <TextMessage
+      v-else-if="textMessage"
+      :textMessage="textMessage"
+      :user="user"
+      :formatDate="formatDate"
+      :showAdminBadge="showAdminBadge"
+      :sender-label="props.senderLabels?.[textMessage.sender_id]"
+      :sender-role="props.senderRoles?.[textMessage.sender_id]"
+      :force-show-sender="props.forceShowSender"
+    />
 
     <!-- DEAL STATUS MESSAGE -->
     <DealStatusMessage v-else-if="isDealStatus" :message="(props.message as Extract<ChatMessageUnion, { message_type: 'update_deal_status_message' }>)" :product="product" :formatDate="formatDate" />
