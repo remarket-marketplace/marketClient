@@ -305,6 +305,21 @@ export const adminService = {
       total: 0,
     }
   }
-}
+},
+
+  async getChatParticipants(chatId: string) {
+    try {
+      const response = await httpClient.get(`/admin/chat/${chatId}/participants`)
+      return response.data as {
+        id: string
+        buyer: { id: string; username: string } | null
+        seller: { id: string; username: string } | null
+        support_user: { id: string; username: string } | null
+      }
+    } catch (e) {
+      console.error('Error fetching chat participants', e)
+      return null
+    }
+  },
 
 };

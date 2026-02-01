@@ -18,6 +18,7 @@ const props = defineProps<{
   user: any;
   formatDate: (dateStr: string) => string;
   showAdminBadge?: boolean;
+  senderLabel?: string;
 }>()
 
 const { t } = useI18n()
@@ -62,6 +63,7 @@ const hasReason = computed(() => {
 				</div>
 				<div class="flex-1">
 					<p class="text-blue-200 font-medium text-xs mb-1">{{ $t('common.admin') }}</p>
+          <p v-if="senderLabel" class="text-xs text-gray-400 mb-1">{{ senderLabel }}</p>
 					<p class="text-gray-100">{{ adminContent }}</p>
           <div v-if="hasReason" class="mt-2 space-y-2">
             <p class="font-semibold text-gray-50">{{ $t('common.reason') }}</p>
@@ -83,6 +85,7 @@ const hasReason = computed(() => {
 			? 'bg-blue-600 text-mainText rounded-br-none self-end'
 			: 'bg-dark-600 text-mainText rounded-bl-none self-start'
 	]">
+    <p v-if="senderLabel" class="text-xs text-gray-400 mb-1">{{ senderLabel }}</p>
 		<p>{{ regularContent }}</p>
     <div v-if="hasReason" class="mt-2 space-y-2">
       <p class="font-semibold text-gray-50">{{ $t('common.reason') }}</p>

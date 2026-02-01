@@ -10,6 +10,7 @@ import { nextTick, onMounted, onUnmounted, ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from 'lucide-vue-next'
+import { adminService } from '@/api/admin/AdminService'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -34,6 +35,14 @@ const hasMoreMessages = ref(true)
 // Информация о чате
 const currentChatId = ref<string | null>(null)
 const currentChatData = ref<{ username: string; avatar_url: string | null; is_active: boolean } | null>(null)
+const chatParticipants = ref<{ buyer?: any; seller?: any; support_user?: any } | null>(null)
+const senderLabels = computed<Record<string, string>>(() => {
+    const labels: Record<string, string> = {}
+    if (chatParticipants.value?.buyer) labels[chatParticipants.value.buyer.id] = `${chatParticipants.value.buyer.username} (${t('common.buyer')})`
+    if (chatParticipants.value?.seller) labels[chatParticipants.value.seller.id] = `${chatParticipants.value.seller.username} (${t('common.seller')})`
+    if (chatParticipants.value?.support_user) labels[chatParticipants.value.support_user.id] = `${chatParticipants.value.support_user.username} (${t('common.admin')})`
+    return labels
+})
 
 const chatUserInitial = computed(() =>
     currentChatData.value?.username.charAt(0).toUpperCase() || ''
@@ -124,6 +133,19 @@ async function loadChatMessages(chatId: string) {
     await chatsService.joinChat(chatId)
     currentChatId.value = chatId
 
+    chatParticipants.value = await adminService.getChatParticipants(chatId)
+    if (chatParticipants.value) {
+        const buyer = chatParticipants.value.buyer?.username
+        const seller = chatParticipants.value.seller?.username
+        if (buyer && seller) {
+            currentChatData.value = {
+                username: `${buyer} / ${seller}`,
+                avatar_url: null,
+                is_active: false
+            }
+        }
+    }
+
     // Получаем информацию о чате из сообщений
     const response = await chatsService.getChatMessages(chatId, 1, perPage.value)
     chatMessages.value = response.messages
@@ -212,7 +234,7 @@ async function sendMessage() {
                     <div v-if="chatMessages.length > 0" class="flex flex-1 flex-col justify-start">
                         <div class="flex flex-col gap-3 py-4">
                             <ChatMessage v-for="message in chatMessages" :key="message.id" :message="message"
-                                :user="user" :showAdminBadge="true" />
+                                :user="user" :showAdminBadge="true" :sender-labels="senderLabels" />
                         </div>
                     </div>
 
