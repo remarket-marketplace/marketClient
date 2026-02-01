@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, nextTick } from 'vue'
+import { computed, onMounted, onUnmounted, ref, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import {
@@ -23,21 +23,25 @@ import UserRating from '@/components/UserRating.vue'
 import SearchField from '@/components/SearchField.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
+import CustomSelect from '@/components/CustomSelect.vue'
 
 const { t } = useI18n()
 const router = useRouter()
 
 // Данные
-const fullDeals = ref<Deal[]>([])
 const deals = ref<Deal[]>([])
 const totalPages = ref(1)
 const currentPage = ref(1)
 const perPage = ref(20)
 const searchQuery = ref('')
+const sortBy = ref('created_desc')
+const statusFilter = ref('all')
 const isLoading = ref(true)
 const processingDealId = ref<string | null>(null)
 const isMobile = ref(false)
 const isFetchingMore = ref(false)
+const totalCount = ref(0)
+const listRef = ref<HTMLElement | null>(null)
 
 // Confirm dialog
 const showConfirmModal = ref(false)
@@ -68,33 +72,66 @@ function goToProduct(productId: string) {
   router.push(`/product/${productId}`)
 }
 
-// ===== Поиск =====
-let searchTimeout: ReturnType<typeof setTimeout> | null = null
-function debouncedSearch() {
-  if (searchTimeout) clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(async () => {
-    currentPage.value = 1
-    if (searchQuery.value.trim()) {
-      const searchResults = fullDeals.value.filter(deal =>
-        deal.product.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        deal.seller.username.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        deal.buyer.username.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        deal.product.category.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+const normalizedQuery = computed(() => searchQuery.value.trim().toLowerCase())
+
+const filteredDeals = computed(() => {
+  return deals.value.filter(deal => {
+    const matchesQuery = normalizedQuery.value
+      ? [
+          deal.product.title,
+          deal.product.description,
+          deal.product.category.name,
+          deal.seller.username,
+          deal.buyer.username,
+          deal.id,
+        ]
+          .join(' ')
+          .toLowerCase()
+          .includes(normalizedQuery.value)
+      : true
+
+    const matchesStatus =
+      statusFilter.value === 'all' ? true : deal.status === statusFilter.value
+
+    return matchesQuery && matchesStatus
+  })
+})
+
+const sortedDeals = computed(() => {
+  const data = [...filteredDeals.value]
+  switch (sortBy.value) {
+    case 'created_asc':
+      return data.sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       )
-      deals.value = searchResults.slice(0, perPage.value)
-      totalPages.value = Math.ceil(searchResults.length / perPage.value)
-    } else {
-      await loadDeals(true)
-    }
-  }, 300)
-}
+    case 'price_desc':
+      return data.sort((a, b) => b.price - a.price)
+    case 'price_asc':
+      return data.sort((a, b) => a.price - b.price)
+    case 'status_asc':
+      return data.sort((a, b) => a.status.localeCompare(b.status))
+    case 'status_desc':
+      return data.sort((a, b) => b.status.localeCompare(a.status))
+    default:
+      return data.sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )
+  }
+})
+
+const displayTotal = computed(() => {
+  if (normalizedQuery.value || statusFilter.value !== 'all') {
+    return filteredDeals.value.length
+  }
+  return totalCount.value || deals.value.length
+})
 
 // ===== Пагинация =====
 async function loadDeals(reset = false) {
   if (reset) {
     currentPage.value = 1
     deals.value = []
-    fullDeals.value = []
+    totalCount.value = 0
   }
 
   isLoading.value = true
@@ -104,21 +141,20 @@ async function loadDeals(reset = false) {
       const dealsData = response.deals || []
       if (reset) {
         deals.value = dealsData
-        fullDeals.value = dealsData
       } else {
         deals.value = [...deals.value, ...dealsData]
-        fullDeals.value = [...fullDeals.value, ...dealsData]
       }
       totalPages.value = response.total_pages || Math.ceil((response.total || 0) / perPage.value)
+      totalCount.value = response.total ?? totalCount.value
     } else {
       deals.value = []
-      fullDeals.value = []
+      totalCount.value = 0
     }
   } catch (error) {
     console.error('Ошибка при загрузке сделок:', error)
     if (reset) {
       deals.value = []
-      fullDeals.value = []
+      totalCount.value = 0
     }
   } finally {
     isLoading.value = false
@@ -277,6 +313,10 @@ onUnmounted(() => {
   window.removeEventListener('resize', checkMobile)
   if (observer && sentinel.value) observer.unobserve(sentinel.value)
 })
+
+watch([searchQuery, sortBy, statusFilter], () => {
+  if (listRef.value) listRef.value.scrollTop = 0
+})
 </script>
 
 <template>
@@ -287,13 +327,40 @@ onUnmounted(() => {
         <h1 class="text-lg sm:text-2xl font-bold text-mainText">{{ $t('pages.admin.dealsPage.title') }}</h1>
       </div>
       <div class="text-xs sm:text-base text-text-secondary">
-        {{ $t('common.total') }} {{ fullDeals.length }}
+        {{ $t('common.total') }} {{ displayTotal }}
       </div>
     </div>
 
     <!-- Поиск -->
-    <div class="w-full">
-      <SearchField v-model="searchQuery" :placeholder="$t('pages.index.searchPlaceholder')" @search-change="debouncedSearch" />
+    <div class="w-full flex flex-col gap-2">
+      <SearchField v-model="searchQuery" :placeholder="$t('pages.index.searchPlaceholder')" />
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <CustomSelect
+          v-model="sortBy"
+          :options="[
+            { value: 'created_desc', label: t('common.sortOptions.newest') },
+            { value: 'created_asc', label: t('common.sortOptions.oldest') },
+            { value: 'price_desc', label: t('common.sortOptions.priceHigh') },
+            { value: 'price_asc', label: t('common.sortOptions.priceLow') },
+            { value: 'status_asc', label: t('common.sortOptions.statusAsc') },
+            { value: 'status_desc', label: t('common.sortOptions.statusDesc') },
+          ]"
+          :placeholder="$t('common.sortBy')"
+        />
+        <CustomSelect
+          v-model="statusFilter"
+          :options="[
+            { value: 'all', label: t('common.all') },
+            { value: 'pending', label: t('common.dealStatuses.pending') },
+            { value: 'confirmed', label: t('common.dealStatuses.confirmed') },
+            { value: 'disputed', label: t('common.dealStatuses.disputed') },
+            { value: 'completed', label: t('common.dealStatuses.completed') },
+            { value: 'cancelled', label: t('common.dealStatuses.cancelled') },
+            { value: 'refunded', label: t('common.dealStatuses.refunded') },
+          ]"
+          :placeholder="$t('common.filters.status')"
+        />
+      </div>
     </div>
 
     <!-- Список сделок -->
@@ -303,7 +370,7 @@ onUnmounted(() => {
         <span class="ml-2 text-sm sm:text-lg text-gray-400">{{ $t('common.loading') }}</span>
       </div>
 
-      <div v-else-if="deals.length === 0" class="flex items-center justify-center h-32">
+      <div v-else-if="sortedDeals.length === 0" class="flex items-center justify-center h-32">
         <div class="text-center">
           <div class="h-6 w-6 sm:h-12 sm:w-12 text-gray-500 mx-auto mb-1 flex items-center justify-center">
             <span class="text-2xl">🤝</span>
@@ -312,9 +379,9 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div v-else class="h-full overflow-y-auto  space-y-4">
+      <div ref="listRef" v-else class="h-full overflow-y-auto space-y-4">
         <!-- Карточка сделки -->
-        <div v-for="deal in deals" :key="deal.id"
+        <div v-for="deal in sortedDeals" :key="deal.id"
           class="bg-dark-600 border border-dark-700 rounded-xl p-4 hover:border-dark-500 transition-all duration-200">
           <div class="flex flex-col gap-4">
             <!-- Заголовок и статус -->

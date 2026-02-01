@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { adminService } from '@/api/admin/AdminService';
 import type { UserRead } from '@/validation/user/userRead';
-import { onMounted, ref, watch, nextTick } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { 
   Eye, 
@@ -16,6 +16,7 @@ import {
 } from 'lucide-vue-next';
 import { useImages } from '@/composables/useImages';
 import SearchField from '@/components/SearchField.vue';
+import CustomSelect from '@/components/CustomSelect.vue';
 import ConfirmWindow from '@/components/ConfirmWindow.vue';
 import { useI18n } from 'vue-i18n';
 import BackButton from '@/components/navigation/BackButton.vue';
@@ -26,7 +27,10 @@ const users = ref<UserRead[]>([]);
 const isLoading = ref(true);
 const API_HOST = import.meta.env.VITE_API_HOST
 
-const searchFieldValue = ref<string>('')
+const searchQuery = ref('')
+const sortBy = ref('created_desc')
+const statusFilter = ref('all')
+const roleFilter = ref('all')
 const dropdownOpenId = ref<string | null>(null); // Для отслеживания открытого dropdown
 const confirmWindowOpen = ref(false)
 const userToBan = ref<string | null>(null)
@@ -34,10 +38,16 @@ const isBanning = ref(false)
 
 const { images } = useImages()
 
+const listRef = ref<HTMLElement | null>(null)
+const sentinelRef = ref<HTMLElement | null>(null)
+const pageSize = 20
+const visibleCount = ref(pageSize)
+let observer: IntersectionObserver | null = null
+
 async function loadUsersList() {
   try {
     const data = await adminService.getAllUsers();
-    users.value = data;
+    users.value = Array.isArray(data) ? data : [];
   } catch (error) {
     console.error('Error loading users:', error);
   } finally {
@@ -45,15 +55,72 @@ async function loadUsersList() {
   }
 }
 
-async function searchUsers(query: string) {
-    if (query === '') {
-        const data = await adminService.getAllUsers();
-        users.value = data;
-    } else {
-        const data = await adminService.SearchUsers(query);
-        users.value = data;
-    }
-}
+const normalizedQuery = computed(() => searchQuery.value.trim().toLowerCase())
+
+const filteredUsers = computed(() => {
+  return users.value.filter(user => {
+    const matchesQuery = normalizedQuery.value
+      ? [
+          user.username,
+          user.email,
+          user.id,
+          user.description ?? '',
+        ]
+          .join(' ')
+          .toLowerCase()
+          .includes(normalizedQuery.value)
+      : true
+
+    const matchesStatus =
+      statusFilter.value === 'all'
+        ? true
+        : statusFilter.value === 'active'
+          ? user.is_active && !user.is_banned
+          : statusFilter.value === 'inactive'
+            ? !user.is_active
+            : user.is_banned
+
+    const matchesRole =
+      roleFilter.value === 'all' ? true : user.role === roleFilter.value
+
+    return matchesQuery && matchesStatus && matchesRole
+  })
+})
+
+const sortedUsers = computed(() => {
+  const data = [...filteredUsers.value]
+  switch (sortBy.value) {
+    case 'created_asc':
+      return data.sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      )
+    case 'balance_desc':
+      return data.sort((a, b) => b.balance - a.balance)
+    case 'balance_asc':
+      return data.sort((a, b) => a.balance - b.balance)
+    case 'rating_desc':
+      return data.sort((a, b) => b.rating - a.rating)
+    case 'rating_asc':
+      return data.sort((a, b) => a.rating - b.rating)
+    case 'name_desc':
+      return data.sort((a, b) => b.username.localeCompare(a.username))
+    case 'name_asc':
+      return data.sort((a, b) => a.username.localeCompare(b.username))
+    default:
+      return data.sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )
+  }
+})
+
+const visibleUsers = computed(() => sortedUsers.value.slice(0, visibleCount.value))
+
+const displayTotal = computed(() => {
+  if (normalizedQuery.value || statusFilter.value !== 'all' || roleFilter.value !== 'all') {
+    return filteredUsers.value.length
+  }
+  return users.value.length
+})
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat('ru-RU', {
@@ -65,7 +132,13 @@ function formatPrice(price: number) {
 
 onMounted(async () => {
     await loadUsersList()
+    resetPagination()
+    nextTick(setupObserver)
 });
+
+onUnmounted(() => {
+  observer?.disconnect()
+})
 
 function navigateToProfile(username: string) {
   router.push(`/user/${username}`);
@@ -117,6 +190,28 @@ function cancelBan() {
     userToBan.value = null
 }
 
+function loadMoreUsers() {
+  if (visibleCount.value >= sortedUsers.value.length) return
+  visibleCount.value = Math.min(visibleCount.value + pageSize, sortedUsers.value.length)
+}
+
+function resetPagination() {
+  visibleCount.value = pageSize
+  if (listRef.value) listRef.value.scrollTop = 0
+}
+
+function setupObserver() {
+  if (!sentinelRef.value) return
+  observer?.disconnect()
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting) loadMoreUsers()
+    },
+    { root: listRef.value, threshold: 0.1 }
+  )
+  observer.observe(sentinelRef.value)
+}
+
 // Функции для управления dropdown
 function toggleDropdown(userId: string) {
   if (dropdownOpenId.value === userId) {
@@ -143,6 +238,17 @@ function setupClickOutside() {
 onMounted(() => {
   setupClickOutside();
 });
+
+watch([searchQuery, sortBy, statusFilter, roleFilter], () => {
+  resetPagination()
+  nextTick(setupObserver)
+})
+
+watch(sortedUsers, () => {
+  if (visibleCount.value > sortedUsers.value.length) {
+    visibleCount.value = sortedUsers.value.length
+  }
+})
 </script>
 
 <template>
@@ -154,15 +260,50 @@ onMounted(() => {
         <h1 class="text-xl sm:text-2xl font-bold text-mainText">{{ $t('pages.admin.usersPage.title') }}</h1>
       </div>
       <div class="text-sm sm:text-base text-text-secondary">
-        {{ $t('common.total') }} {{ users.length }}
+        {{ $t('common.total') }} {{ displayTotal }}
       </div>
     </div>
 
     <SearchField
-        :model-value="searchFieldValue"
+        v-model="searchQuery"
         :placeholder="$t('common.search')"
-        @search-change="searchUsers"
-    ></SearchField>
+    />
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <CustomSelect
+        v-model="sortBy"
+        :options="[
+          { value: 'created_desc', label: t('common.sortOptions.newest') },
+          { value: 'created_asc', label: t('common.sortOptions.oldest') },
+          { value: 'balance_desc', label: t('common.sortOptions.balanceHigh') },
+          { value: 'balance_asc', label: t('common.sortOptions.balanceLow') },
+          { value: 'rating_desc', label: t('common.sortOptions.ratingHigh') },
+          { value: 'rating_asc', label: t('common.sortOptions.ratingLow') },
+          { value: 'name_asc', label: t('common.sortOptions.nameAsc') },
+          { value: 'name_desc', label: t('common.sortOptions.nameDesc') },
+        ]"
+        :placeholder="$t('common.sortBy')"
+      />
+      <CustomSelect
+        v-model="statusFilter"
+        :options="[
+          { value: 'all', label: t('common.all') },
+          { value: 'active', label: t('common.filters.active') },
+          { value: 'inactive', label: t('common.filters.inactive') },
+          { value: 'banned', label: t('common.filters.banned') },
+        ]"
+        :placeholder="$t('common.filters.status')"
+      />
+      <CustomSelect
+        v-model="roleFilter"
+        :options="[
+          { value: 'all', label: t('common.all') },
+          { value: 'admin', label: t('common.admin') },
+          { value: 'user', label: t('common.user') },
+        ]"
+        :placeholder="$t('common.filters.role')"
+      />
+    </div>
 
     <!-- Список пользователей -->
     <div class="flex-1 overflow-hidden">
@@ -172,10 +313,10 @@ onMounted(() => {
         <span class="ml-2 sm:ml-3 text-base sm:text-lg text-gray-400">{{ $t('common.loading') }}</span>
       </div>
 
-      <div v-else class="h-full overflow-y-auto  space-y-3">
+      <div ref="listRef" v-else class="h-full overflow-y-auto space-y-3">
         <!-- Карточка пользователя -->
         <div
-          v-for="user in users"
+          v-for="user in visibleUsers"
           :key="user.id"
           class="bg-dark-600 border border-dark-700 rounded-lg sm:rounded-xl p-3 sm:p-4 hover:border-dark-500 transition-all duration-200"
         >
@@ -291,6 +432,8 @@ onMounted(() => {
             </div>
           </div>
         </div>
+
+        <div ref="sentinelRef" class="h-4 w-full"></div>
       </div>
     </div>
 

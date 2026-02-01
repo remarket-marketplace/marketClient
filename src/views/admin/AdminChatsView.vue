@@ -13,6 +13,8 @@ import { useI18n } from 'vue-i18n'
 import { ArrowLeft } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import { adminService } from '@/api/admin/AdminService'
+import SearchField from '@/components/SearchField.vue'
+import CustomSelect from '@/components/CustomSelect.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -49,12 +51,61 @@ const messagesPerPage = ref(30)
 const hasMoreMessages = ref(true)
 
 // Все чаты для админа - только support_chat типы
-const sortedChats = computed(() => {
-    return chats.value.sort((a, b) => {
-        const dateA = a.last_message ? new Date(a.last_message.created_at).getTime() : 0
-        const dateB = b.last_message ? new Date(b.last_message.created_at).getTime() : 0
-        return dateB - dateA
+const searchQuery = ref('')
+const sortBy = ref('activity_desc')
+const presenceFilter = ref('all')
+const unreadFilter = ref('all')
+
+const normalizedQuery = computed(() => searchQuery.value.trim().toLowerCase())
+
+const filteredChats = computed(() => {
+    return chats.value.filter(chat => {
+        const username = chat.another_user?.username ?? ''
+        const lastMessageText =
+            chat.last_message && 'text' in chat.last_message ? chat.last_message.text : ''
+
+        const matchesQuery = normalizedQuery.value
+            ? [username, lastMessageText, chat.id].join(' ').toLowerCase().includes(normalizedQuery.value)
+            : true
+
+        const matchesPresence =
+            presenceFilter.value === 'all'
+                ? true
+                : presenceFilter.value === 'online'
+                    ? !!chat.another_user?.is_active
+                    : !chat.another_user?.is_active
+
+        const matchesUnread =
+            unreadFilter.value === 'all' ? true : (chat.unread_count ?? 0) > 0
+
+        return matchesQuery && matchesPresence && matchesUnread
     })
+})
+
+const sortedChats = computed(() => {
+    const data = [...filteredChats.value]
+    switch (sortBy.value) {
+        case 'activity_asc':
+            return data.sort((a, b) => {
+                const dateA = a.last_message ? new Date(a.last_message.created_at).getTime() : 0
+                const dateB = b.last_message ? new Date(b.last_message.created_at).getTime() : 0
+                return dateA - dateB
+            })
+        case 'unread_desc':
+            return data.sort((a, b) => (b.unread_count ?? 0) - (a.unread_count ?? 0))
+        case 'unread_asc':
+            return data.sort((a, b) => (a.unread_count ?? 0) - (b.unread_count ?? 0))
+        case 'name_desc':
+            return data.sort((a, b) => (b.another_user?.username ?? '').localeCompare(a.another_user?.username ?? ''))
+        case 'name_asc':
+            return data.sort((a, b) => (a.another_user?.username ?? '').localeCompare(b.another_user?.username ?? ''))
+        default:
+            return data.sort((a, b) => {
+                const dateA = a.last_message ? new Date(a.last_message.created_at).getTime() : 0
+                const dateB = b.last_message ? new Date(b.last_message.created_at).getTime() : 0
+                return dateB - dateA
+            })
+    }
 })
 
 const currentChat = computed(() =>
@@ -64,6 +115,12 @@ const currentChat = computed(() =>
 const chatUserInitial = computed(() =>
     currentChat.value?.another_user.username.charAt(0).toUpperCase() || ''
 )
+
+function openChatProfile() {
+    const username = currentChat.value?.another_user?.username
+    if (!username) return
+    router.push({ name: 'profile', params: { username } })
+}
 
 function updateUrlChatId(chatId: string | null) {
     router.replace({
@@ -144,6 +201,10 @@ onUnmounted(() => {
     unsubscribeNewMessage?.()
     unsubscribeChatUpdated?.()
     window.removeEventListener('resize', () => { })
+})
+
+watch([searchQuery, sortBy, presenceFilter, unreadFilter], () => {
+    if (chatsContainerRef.value) chatsContainerRef.value.scrollTop = 0
 })
 
 // Загрузка чатов с пагинацией
@@ -296,6 +357,43 @@ async function sendMessage() {
                         {{ $t('pages.admin.supportChats.supportChats') }}
                     </p>
 
+                    <div class="px-4 pb-3 flex flex-col gap-2">
+                        <SearchField v-model="searchQuery" :placeholder="$t('common.search')" />
+                        <div class="grid grid-cols-1 gap-2">
+                            <CustomSelect
+                                v-model="sortBy"
+                                :options="[
+                                    { value: 'activity_desc', label: t('common.sortOptions.activityNew') },
+                                    { value: 'activity_asc', label: t('common.sortOptions.activityOld') },
+                                    { value: 'unread_desc', label: t('common.sortOptions.unreadHigh') },
+                                    { value: 'unread_asc', label: t('common.sortOptions.unreadLow') },
+                                    { value: 'name_asc', label: t('common.sortOptions.nameAsc') },
+                                    { value: 'name_desc', label: t('common.sortOptions.nameDesc') },
+                                ]"
+                                :placeholder="$t('common.sortBy')"
+                            />
+                            <div class="grid grid-cols-2 gap-2">
+                                <CustomSelect
+                                    v-model="presenceFilter"
+                                    :options="[
+                                        { value: 'all', label: t('common.all') },
+                                        { value: 'online', label: t('common.online') },
+                                        { value: 'offline', label: t('common.offline') },
+                                    ]"
+                                    :placeholder="$t('common.filters.online')"
+                                />
+                                <CustomSelect
+                                    v-model="unreadFilter"
+                                    :options="[
+                                        { value: 'all', label: t('common.all') },
+                                        { value: 'unread', label: t('common.filters.unread') },
+                                    ]"
+                                    :placeholder="$t('common.filters.unread')"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
                     <div ref="chatsContainerRef" class="scrollbar-hidden flex-1 min-h-0 overflow-y-auto"
                         @scroll="handleChatsScroll">
                         <div v-if="sortedChats.length > 0" class="flex flex-col">
@@ -335,7 +433,11 @@ async function sendMessage() {
                             <button v-if="isMobile" class="text-xl font-bold flex-shrink-0" @click="backToChats">
                                 <ArrowLeft />
                             </button>
-                            <div class="flex items-center gap-3 flex-1 min-w-0">
+                            <button
+                                type="button"
+                                class="flex items-center gap-3 flex-1 min-w-0 text-left rounded-lg transition cursor-pointer bg-transparent border-0 p-0 focus:outline-none"
+                                @click="openChatProfile"
+                            >
                                 <div class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
                                     <img v-if="currentChat?.another_user.avatar_url"
                                         :src="`${API_HOST}${currentChat.another_user.avatar_url}`"
@@ -357,7 +459,7 @@ async function sendMessage() {
                                         {{ $t('common.offline') }}
                                     </p>
                                 </div>
-                            </div>
+                            </button>
                         </div>
 
                         <!-- message -->

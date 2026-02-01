@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { adminService } from '@/api/admin/AdminService';
 import type { Product } from '@/validation/product/product';
-import { onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { 
   User, 
@@ -16,6 +16,8 @@ import {
 import { useI18n } from 'vue-i18n';
 import ProductStatusTag from '@/components/ProductStatusTag.vue';
 import BackButton from '@/components/navigation/BackButton.vue';
+import SearchField from '@/components/SearchField.vue';
+import CustomSelect from '@/components/CustomSelect.vue';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -23,11 +25,19 @@ const products = ref<Product[]>([]);
 const isLoading = ref(true);
 const processingProductId = ref<string | null>(null);
 const API_HOST = import.meta.env.VITE_API_HOST;
+const searchQuery = ref('');
+const sortBy = ref('created_desc');
+const statusFilter = ref('all');
+const pageSize = 20;
+const visibleCount = ref(pageSize);
+const listRef = ref<HTMLElement | null>(null);
+const sentinelRef = ref<HTMLElement | null>(null);
+let observer: IntersectionObserver | null = null;
 
 async function loadProducts() {
   try {
     const data = await adminService.getAdminProductList();
-    products.value = Array.isArray(data) ? data : [data];
+    products.value = Array.isArray(data) ? data : [];
   } catch (error) {
     console.error('Error loading products:', error);
   } finally {
@@ -37,6 +47,12 @@ async function loadProducts() {
 
 onMounted(async () => {
   await loadProducts();
+  resetPagination();
+  nextTick(setupObserver);
+});
+
+onUnmounted(() => {
+  observer?.disconnect();
 });
 
 function navigateToProfile(username: string) {
@@ -82,6 +98,105 @@ function formatPrice(price: number) {
     minimumFractionDigits: 0
   }).format(price);
 }
+
+const normalizedQuery = computed(() => searchQuery.value.trim().toLowerCase());
+
+const filteredProducts = computed(() => {
+  return products.value.filter(product => {
+    const matchesQuery = normalizedQuery.value
+      ? [
+          product.title,
+          product.description,
+          product.seller?.username ?? '',
+          product.category?.name ?? '',
+          product.id,
+        ]
+          .join(' ')
+          .toLowerCase()
+          .includes(normalizedQuery.value)
+      : true;
+
+    const matchesStatus =
+      statusFilter.value === 'all' ? true : product.status === statusFilter.value;
+
+    return matchesQuery && matchesStatus;
+  });
+});
+
+const sortedProducts = computed(() => {
+  const data = [...filteredProducts.value];
+  switch (sortBy.value) {
+    case 'created_asc':
+      return data.sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+    case 'price_desc':
+      return data.sort((a, b) => b.price - a.price);
+    case 'price_asc':
+      return data.sort((a, b) => a.price - b.price);
+    case 'name_desc':
+      return data.sort((a, b) => b.title.localeCompare(a.title));
+    case 'name_asc':
+      return data.sort((a, b) => a.title.localeCompare(b.title));
+    default:
+      return data.sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+  }
+});
+
+const visibleProducts = computed(() => sortedProducts.value.slice(0, visibleCount.value));
+
+const displayTotal = computed(() => {
+  if (normalizedQuery.value || statusFilter.value !== 'all') {
+    return filteredProducts.value.length;
+  }
+  return products.value.length;
+});
+
+const statusOptions = computed(() => {
+  const uniqueStatuses = Array.from(new Set(products.value.map(product => product.status)));
+  return [
+    { value: 'all', label: t('common.all') },
+    ...uniqueStatuses.map(status => ({
+      value: status,
+      label: t(`common.productStatuses.${status}`) ?? status,
+    })),
+  ];
+});
+
+function loadMoreProducts() {
+  if (visibleCount.value >= sortedProducts.value.length) return;
+  visibleCount.value = Math.min(visibleCount.value + pageSize, sortedProducts.value.length);
+}
+
+function resetPagination() {
+  visibleCount.value = pageSize;
+  if (listRef.value) listRef.value.scrollTop = 0;
+}
+
+function setupObserver() {
+  if (!sentinelRef.value) return;
+  observer?.disconnect();
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting) loadMoreProducts();
+    },
+    { root: listRef.value, threshold: 0.1 }
+  );
+  observer.observe(sentinelRef.value);
+}
+
+watch([searchQuery, sortBy, statusFilter], () => {
+  resetPagination();
+  nextTick(setupObserver);
+});
+
+watch(sortedProducts, () => {
+  if (visibleCount.value > sortedProducts.value.length) {
+    visibleCount.value = sortedProducts.value.length;
+  }
+});
 </script>
 
 <template>
@@ -96,7 +211,30 @@ function formatPrice(price: number) {
       </div>
       <div class="flex items-center gap-2 text-xs sm:text-base text-text-secondary">
         <Package class="h-4 w-4" />
-        <span>{{ $t('common.total') }} {{ products.length }}</span>
+        <span>{{ $t('common.total') }} {{ displayTotal }}</span>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <SearchField v-model="searchQuery" :placeholder="$t('common.search')" />
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <CustomSelect
+          v-model="sortBy"
+          :options="[
+            { value: 'created_desc', label: t('common.sortOptions.newest') },
+            { value: 'created_asc', label: t('common.sortOptions.oldest') },
+            { value: 'price_desc', label: t('common.sortOptions.priceHigh') },
+            { value: 'price_asc', label: t('common.sortOptions.priceLow') },
+            { value: 'name_asc', label: t('common.sortOptions.nameAsc') },
+            { value: 'name_desc', label: t('common.sortOptions.nameDesc') },
+          ]"
+          :placeholder="$t('common.sortBy')"
+        />
+        <CustomSelect
+          v-model="statusFilter"
+          :options="statusOptions"
+          :placeholder="$t('common.filters.status')"
+        />
       </div>
     </div>
 
@@ -107,17 +245,17 @@ function formatPrice(price: number) {
         <span class="ml-2 text-sm sm:text-lg text-gray-400">{{ $t('common.loading') }}</span>
       </div>
 
-      <div v-else-if="products.length === 0" class="flex items-center justify-center h-32">
+      <div v-else-if="visibleProducts.length === 0" class="flex items-center justify-center h-32">
         <div class="text-center">
           <Package class="h-6 w-6 sm:h-12 sm:w-12 text-gray-500 mx-auto mb-1" />
           <p class="text-text-secondary text-xs sm:text-base">{{ $t('common.noData') }}</p>
         </div>
       </div>
 
-      <div v-else class="h-full overflow-y-auto  space-y-2">
+      <div ref="listRef" v-else class="h-full overflow-y-auto space-y-2">
         <!-- Карточка товара -->
         <div
-          v-for="product in products"
+          v-for="product in visibleProducts"
           :key="product.id"
           class="bg-dark-600 border border-dark-700 rounded-lg p-2 sm:p-4 hover:border-dark-500 transition-all duration-200"
         >
@@ -262,6 +400,8 @@ function formatPrice(price: number) {
             </div>
           </div>
         </div>
+
+        <div ref="sentinelRef" class="h-4 w-full"></div>
       </div>
     </div>
   </section>
