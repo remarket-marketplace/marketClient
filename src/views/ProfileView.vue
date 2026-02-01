@@ -211,7 +211,9 @@ async function updateProfileDescription(newValue: string) {
 function toggleMenu() { showMenu.value = !showMenu.value }
 function goToSettings() { router.push('/settings') }
 function goToWallet() { router.push('/wallet') }
-function goToChat(chatId: string) { router.push({ name: 'chats', params: { chatId } }) }
+function goToChat(chatId: string) {
+  router.push({ name: 'chats', query: { chatId } })
+}
 
 function handleClickOutside(event: MouseEvent) {
   if (showMenu.value && menuContainerRef.value && !menuContainerRef.value.contains(event.target as Node)) showMenu.value = false
