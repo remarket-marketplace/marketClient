@@ -15,11 +15,12 @@ import {
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import FileUploader from '@/components/FileUploader.vue'
-import router from '@/router'
 import CategoryStatusTag from '@/components/CategoryStatusTag.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
+import { useRouter } from 'vue-router'
 
 const { t } = useI18n()
+const router = useRouter()
 const API_HOST = import.meta.env.VITE_API_HOST
 
 const categories = ref<Category[]>([])
