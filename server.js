@@ -10,7 +10,7 @@ const resolve = (p) => path.resolve(__dirname, p)
 const isProd = process.env.NODE_ENV === 'production'
 const PORT = process.env.PORT || 4173
 const API_BASE = (process.env.API_URL || process.env.VITE_API_HOST || 'http://localhost:8000/v1').replace(/\/$/, '')
-const FILE_BASE = (process.env.FILE_BASE || '').replace(/\/$/, '') || API_BASE.replace(/\/v1$/, '')
+const FILE_BASE = (process.env.FILE_BASE || '').replace(/\/$/, '') || API_BASE
 
 function toAbsolute(urlPath) {
   if (!urlPath) return ''
