@@ -8,9 +8,11 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "run-p type-check \"build-only {@}\" --",
-    "preview": "vite preview",
-    "build-only": "vite build",
+    "dev:ssr": "NODE_ENV=development node server.js",
+    "build": "run-p build:client build:ssr",
+    "build:client": "vite build",
+    "build:ssr": "vite build --ssr src/entry-server.ts --outDir dist/server",
+    "preview": "NODE_ENV=production node server.js",
     "type-check": "vue-tsc --build",
     "tw:init": "tailwindcss init -p"
   },
@@ -30,7 +32,9 @@
     "vue-i18n": "^9.14.5",
     "vue-router": "^4.5.1",
     "vue3-apexcharts": "^1.10.0",
-    "zod": "^4.1.12"
+    "zod": "^4.1.12",
+    "compression": "^1.7.4",
+    "express": "^4.19.2"
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.2",

@@ -1,19 +1,11 @@
 import './assets/main.css'
 import 'uno.css'
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
+import './assets/main.css'
+import 'uno.css'
+import { createVueApp } from './app'
 
-import App from './App.vue'
-import router from './router'
-import { i18n } from './i18n'
+const { app, router } = createVueApp(false)
 
-import VueHcaptcha from '@hcaptcha/vue3-hcaptcha'
-
-const app = createApp(App)
-
-app.use(createPinia())
-app.use(router)
-app.use(i18n)
-app.component('VueHcaptcha', VueHcaptcha)
-
-app.mount('#app')
+router.isReady().then(() => {
+  app.mount('#app')
+})

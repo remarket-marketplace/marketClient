@@ -24,6 +24,11 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: 'dist',
+    outDir: 'dist/client',
+    manifest: true,
+    ssrManifest: true,
   },
+  ssr: {
+    noExternal: ['@hcaptcha/vue3-hcaptcha']
+  }
 })

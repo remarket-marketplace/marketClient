@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from "vue-router";
+import { createRouter, createWebHistory, createMemoryHistory } from "vue-router";
 import HomeView from "../views/HomeView.vue";
 import SignIn from "@/views/SignIn.vue";
 import SignUp from "@/views/SignUp.vue";
@@ -27,9 +27,7 @@ import PaymentFailedView from "@/views/PaymentFailedView.vue";
 import AdminChatView from "@/views/admin/AdminChatView.vue";
 import AdminChatsView from "@/views/admin/AdminChatsView.vue";
 
-const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [
+const routes = [
     {
       path: "/",
       name: "home",
@@ -182,8 +180,17 @@ const router = createRouter({
       name: "notFound",
       component: NotAccess,
     },
-  ],
-});
+  ]
+
+export function createAppRouter(isSSR = false) {
+  const history = isSSR ? createMemoryHistory() : createWebHistory(import.meta.env.BASE_URL)
+  return createRouter({
+    history,
+    routes,
+  })
+}
+
+const router = createAppRouter(false);
 
 router.beforeEach(async (to, from, next) => {
   const { requiredAdmin, requiredAuthorized, requiredGuest } = to.meta;
