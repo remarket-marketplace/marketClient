@@ -38,7 +38,7 @@ async function createServer() {
         render = (await vite.ssrLoadModule('/src/entry-server.ts')).render
       } else {
         template = fs.readFileSync(resolve('dist/client/index.html'), 'utf-8')
-        manifest = JSON.parse(fs.readFileSync(resolve('dist/client/ssr-manifest.json'), 'utf-8'))
+        manifest = JSON.parse(fs.readFileSync(resolve('dist/client/.vite/ssr-manifest.json'), 'utf-8'))
         render = (await import('./dist/server/entry-server.js')).render
       }
 
