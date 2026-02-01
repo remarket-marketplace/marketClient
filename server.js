@@ -14,11 +14,10 @@ const FILE_BASE = (process.env.FILE_BASE || '').replace(/\/$/, '') || API_BASE
 
 function toAbsolute(urlPath) {
   if (!urlPath) return ''
-  try {
-    return new URL(urlPath, FILE_BASE + '/').toString()
-  } catch {
-    return urlPath
-  }
+  if (urlPath.startsWith('http://') || urlPath.startsWith('https://')) return urlPath
+  const normalizedBase = FILE_BASE.endsWith('/') ? FILE_BASE.slice(0, -1) : FILE_BASE
+  const normalizedPath = urlPath.startsWith('/') ? urlPath : `/${urlPath}`
+  return `${normalizedBase}${normalizedPath}`
 }
 
 async function buildMeta(url, reqHost, reqProto = 'http') {
