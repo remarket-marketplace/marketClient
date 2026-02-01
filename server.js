@@ -20,13 +20,14 @@ function toAbsolute(urlPath) {
   }
 }
 
-async function buildMeta(url, reqHost) {
-  const u = new URL(url, `http://${reqHost}`)
+async function buildMeta(url, reqHost, reqProto = 'http') {
+  const u = new URL(url, `${reqProto}://${reqHost}`)
   const pathParts = u.pathname.split('/').filter(Boolean)
+  console.log('[meta]', u.toString(), 'API_BASE:', API_BASE, 'parts:', pathParts)
   let meta = {
     title: 'remarket — цифровые товары',
     description: 'Маркетплейс цифровых товаров, аккаунтов и услуг.',
-    image: toAbsolute('/logo.png'),
+    image: `${reqProto}://${reqHost}/logo.png`,
     url: u.toString(),
     type: 'website',
   }
@@ -34,19 +35,21 @@ async function buildMeta(url, reqHost) {
   try {
     if (pathParts[0] === 'product' && pathParts[1]) {
       const res = await fetch(`${API_BASE}/products/${pathParts[1]}`)
+      console.log('[meta] product fetch status', res.status)
       if (res.ok) {
         const data = await res.json()
         const img = data.images?.[0]?.image_url || data.images?.[0]?.url
         meta = {
           title: `${data.title} — купить на remarket`,
           description: (data.description || '').slice(0, 180) || meta.description,
-          image: toAbsolute(img),
+          image: img ? toAbsolute(img) : meta.image,
           url: u.toString(),
           type: 'product',
         }
       }
     } else if (pathParts[0] === 'user' && pathParts[1]) {
       const res = await fetch(`${API_BASE}/users/${pathParts[1]}`)
+      console.log('[meta] user fetch status', res.status)
       if (res.ok) {
         const data = await res.json()
         const avatar = data.avatar_url || data.avatar || ''
@@ -78,6 +81,8 @@ async function buildMeta(url, reqHost) {
 
 async function createServer() {
   const app = express()
+  // trust x-forwarded-* headers from reverse proxy
+  app.set('trust proxy', true)
   app.use(compression())
 
   let vite
@@ -95,6 +100,7 @@ async function createServer() {
     try {
       const url = req.originalUrl
       const reqHost = req.headers.host || 'localhost'
+      const reqProto = (req.headers['x-forwarded-proto'] || req.protocol || 'http').split(',')[0]
 
       let template
       let render
@@ -110,7 +116,7 @@ async function createServer() {
         render = (await import('./dist/server/entry-server.js')).render
       }
 
-      const metaTags = await buildMeta(url, reqHost)
+      const metaTags = await buildMeta(url, reqHost, reqProto)
 
       const { html, preloadLinks } = await render(url, manifest)
       const htmlResp = template
