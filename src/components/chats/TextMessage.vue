@@ -57,30 +57,10 @@ const bubbleRoleClass = computed(() => {
     return 'bg-blue-600 text-mainText rounded-br-none self-end'
   }
 
-  switch (props.senderRole) {
-    case 'buyer':
-      return 'bg-emerald-900/70 border border-emerald-700 text-mainText rounded-bl-none border-l-4 border-l-emerald-500'
-    case 'seller':
-      return 'bg-indigo-900/70 border border-indigo-700 text-mainText rounded-bl-none border-l-4 border-l-indigo-400'
-    case 'admin':
-      return 'bg-blue-800/70 border border-blue-700 text-mainText rounded-bl-none border-l-4 border-l-blue-400'
-    default:
-      return 'bg-dark-600 text-mainText rounded-bl-none'
-  }
+  return 'bg-dark-600 text-mainText rounded-bl-none'
 })
 
-const pillClasses = computed(() => {
-  switch (props.senderRole) {
-    case 'buyer':
-      return 'text-emerald-100 bg-emerald-800/70 border border-emerald-600'
-    case 'seller':
-      return 'text-indigo-100 bg-indigo-800/70 border border-indigo-500'
-    case 'admin':
-      return 'text-blue-100 bg-blue-800/70 border border-blue-500'
-    default:
-      return 'text-gray-200 bg-dark-700 border border-dark-600'
-  }
-})
+const pillClasses = computed(() => 'text-gray-200 bg-dark-700/80 border border-dark-600')
 </script>
 
 <template>
