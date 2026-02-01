@@ -10,11 +10,12 @@ const resolve = (p) => path.resolve(__dirname, p)
 const isProd = process.env.NODE_ENV === 'production'
 const PORT = process.env.PORT || 4173
 const API_BASE = (process.env.API_URL || process.env.VITE_API_HOST || 'http://localhost:8000/v1').replace(/\/$/, '')
+const FILE_BASE = API_BASE.replace(/\/v1$/, '')
 
 function toAbsolute(urlPath) {
   if (!urlPath) return ''
   try {
-    return new URL(urlPath, API_BASE.replace(/\/v1$/, '') + '/').toString()
+    return new URL(urlPath, FILE_BASE + '/').toString()
   } catch {
     return urlPath
   }
@@ -94,6 +95,19 @@ async function createServer() {
     app.use(vite.middlewares)
   } else {
     app.use('/assets', express.static(resolve('dist/client/assets'), { maxAge: '1y' }))
+    // проксируем статику /uploads на API хост (картинки товаров)
+    app.use('/uploads', async (req, res) => {
+      const target = `${FILE_BASE}${req.originalUrl}`
+      try {
+        const upstream = await fetch(target)
+        if (!upstream.ok) return res.sendStatus(upstream.status)
+        upstream.headers.forEach((v, k) => res.setHeader(k, v))
+        upstream.body.pipe(res)
+      } catch (e) {
+        console.warn('Upload proxy error', target, e?.message || e)
+        res.sendStatus(502)
+      }
+    })
   }
 
   app.use('*', async (req, res, next) => {
