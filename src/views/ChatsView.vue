@@ -96,6 +96,13 @@ const shouldShowAdminBadge = computed(() => {
   return !isSupportChat.value
 })
 
+function openChatProfile() {
+  if (!currentChat.value || isSupportChat.value) return
+  const username = currentChat.value.another_user?.username
+  if (!username) return
+  router.push({ name: 'profile', params: { username } })
+}
+
 function updateUrlChatId(chatId: string | null) {
   router.replace({
     query: {
@@ -332,7 +339,14 @@ async function sendMessage() {
               <button v-if="isMobile" class="text-xl font-bold flex-shrink-0" @click="backToChats">
                 <ArrowLeft />
               </button>
-              <div v-if="currentChat" class="flex items-center gap-3 flex-1 min-w-0">
+              <button
+                v-if="currentChat"
+                type="button"
+                class="flex items-center gap-3 flex-1 min-w-0 text-left rounded-lg transition bg-transparent border-0 p-0"
+                :class="isSupportChat ? 'cursor-default' : 'cursor-pointer focus:outline-none'"
+                :disabled="isSupportChat"
+                @click="openChatProfile"
+              >
                 <!-- Аватар чата -->
                 <div class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
                   <!-- Для чата поддержки - иконка на синем фоне -->
@@ -366,7 +380,7 @@ async function sendMessage() {
                     {{ $t('common.offline') }}
                   </p>
                 </div>
-              </div>
+              </button>
             </div>
 
             <div ref="messageContainerRef" class="no-scrollbar flex flex-1 flex-col overflow-y-auto pb-16"
