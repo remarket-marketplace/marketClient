@@ -563,6 +563,7 @@ const en = {
         days: "d",
         lastDays: "Last {days} days",
         loadError: "Failed to load data. Please try again.",
+        chartsLoading: "Loading charts...",
         disputesActive: "Disputes: {count}",
         onModeration: "On moderation: {count}",
         activeDisputes: "Active disputes",

@@ -11,14 +11,14 @@ import {
   Users,
 } from 'lucide-vue-next'
 import type { ApexOptions } from 'apexcharts'
-import { computed, onMounted, ref, watch } from 'vue'
-import VueApexCharts from 'vue3-apexcharts'
+import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 type Trend = { diff: number; percent: number; isUp: boolean; isFlat: boolean }
 
 const { t } = useI18n()
-const ApexChart = VueApexCharts
+const ApexChart = shallowRef<any>(null)
+const apexReady = computed(() => !!ApexChart.value)
 
 const dashboardData = ref<DashboardData | null>(null)
 const isLoading = ref(true)
@@ -306,7 +306,13 @@ const loadDashboard = async () => {
   isLoading.value = false
 }
 
-onMounted(loadDashboard)
+onMounted(async () => {
+  if (!ApexChart.value) {
+    const mod = await import('vue3-apexcharts')
+    ApexChart.value = mod.default
+  }
+  await loadDashboard()
+})
 watch(selectedRange, loadDashboard)
 </script>
 
@@ -393,12 +399,17 @@ watch(selectedRange, loadDashboard)
               <p class="text-xs text-gray-500">{{ t('pages.admin.mainPage.lastDays', { days: selectedRange }) }}</p>
             </div>
           </div>
-          <ApexChart
+          <component
+            v-if="apexReady"
+            :is="ApexChart"
             height="320"
             type="line"
             :options="revenueOptions"
             :series="revenueSeries"
           />
+          <div v-else class="flex h-[320px] items-center justify-center text-gray-500 text-sm">
+            {{ t('pages.admin.mainPage.chartsLoading') }}
+          </div>
         </div>
 
         <div class="rounded-2xl border border-dark-500/50 bg-dark-700/70 p-4">
@@ -407,12 +418,17 @@ watch(selectedRange, loadDashboard)
               {{ t('pages.admin.mainPage.dealsByStatus') }}
             </p>
           </div>
-          <ApexChart
+          <component
+            v-if="apexReady"
+            :is="ApexChart"
             height="320"
             type="bar"
             :options="statusOptions"
             :series="statusSeries"
           />
+          <div v-else class="flex h-[320px] items-center justify-center text-gray-500 text-sm">
+            {{ t('pages.admin.mainPage.chartsLoading') }}
+          </div>
         </div>
       </div>
 
@@ -424,12 +440,17 @@ watch(selectedRange, loadDashboard)
             </p>
           </div>
           <div v-if="topCategories.length" class="min-h-[320px]">
-            <ApexChart
+            <component
+              v-if="apexReady"
+              :is="ApexChart"
               height="320"
               type="bar"
               :options="topCategoriesOptions"
               :series="topCategoriesSeries"
             />
+            <div v-else class="flex h-[320px] items-center justify-center text-gray-500 text-sm">
+              {{ t('pages.admin.mainPage.chartsLoading') }}
+            </div>
           </div>
           <div v-else class="flex h-[320px] items-center justify-center text-gray-500 text-sm">
             {{ t('pages.admin.mainPage.noCategories') }}

@@ -553,6 +553,7 @@ const ru = {
         days: "дн.",
         lastDays: "За {days} дн.",
         loadError: "Не удалось загрузить данные. Попробуйте еще раз.",
+        chartsLoading: "Загружаем графики...",
         disputesActive: "Споров: {count}",
         onModeration: "На модерации: {count}",
         activeDisputes: "Активные споры",
