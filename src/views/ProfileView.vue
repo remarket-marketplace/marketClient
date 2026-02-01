@@ -211,6 +211,7 @@ async function updateProfileDescription(newValue: string) {
 function toggleMenu() { showMenu.value = !showMenu.value }
 function goToSettings() { router.push('/settings') }
 function goToWallet() { router.push('/wallet') }
+function goToChat(chatId: string) { router.push({ name: 'chats', params: { chatId } }) }
 
 function handleClickOutside(event: MouseEvent) {
   if (showMenu.value && menuContainerRef.value && !menuContainerRef.value.contains(event.target as Node)) showMenu.value = false
@@ -683,6 +684,15 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                         <span class="truncate">{{ deal.buyer.username }}</span>
                       </div>
                     </div>
+
+                    <button
+                      v-if="deal.chat_room_id"
+                      @click.stop="goToChat(deal.chat_room_id)"
+                      class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-sm"
+                    >
+                      <MessageSquare class="w-4 h-4" />
+                      <span>{{ t('common.toChat') }}</span>
+                    </button>
                   </div>
 
                   <!-- Карточка товара -->
