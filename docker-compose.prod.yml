@@ -8,3 +8,7 @@ services:
       - "80:4173"
     environment:
       - NODE_ENV=production
+      - API_URL=https://re-market.net/v1
+      - FILE_BASE=http://host.docker.internal:8000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
