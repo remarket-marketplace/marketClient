@@ -3,11 +3,78 @@ import path from 'path'
 import express from 'express'
 import compression from 'compression'
 import { fileURLToPath } from 'url'
+import fetch from 'node-fetch'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const resolve = (p) => path.resolve(__dirname, p)
 const isProd = process.env.NODE_ENV === 'production'
 const PORT = process.env.PORT || 4173
+const API_BASE = (process.env.API_URL || process.env.VITE_API_HOST || 'http://localhost:8000/v1').replace(/\/$/, '')
+
+function toAbsolute(urlPath) {
+  if (!urlPath) return ''
+  try {
+    return new URL(urlPath, API_BASE.replace(/\/v1$/, '') + '/').toString()
+  } catch {
+    return urlPath
+  }
+}
+
+async function buildMeta(url, reqHost) {
+  const u = new URL(url, `http://${reqHost}`)
+  const pathParts = u.pathname.split('/').filter(Boolean)
+  let meta = {
+    title: 'remarket — цифровые товары',
+    description: 'Маркетплейс цифровых товаров, аккаунтов и услуг.',
+    image: toAbsolute('/logo.png'),
+    url: u.toString(),
+    type: 'website',
+  }
+
+  try {
+    if (pathParts[0] === 'product' && pathParts[1]) {
+      const res = await fetch(`${API_BASE}/products/${pathParts[1]}`)
+      if (res.ok) {
+        const data = await res.json()
+        const img = data.images?.[0]?.image_url || data.images?.[0]?.url
+        meta = {
+          title: `${data.title} — купить на remarket`,
+          description: (data.description || '').slice(0, 180) || meta.description,
+          image: toAbsolute(img),
+          url: u.toString(),
+          type: 'product',
+        }
+      }
+    } else if (pathParts[0] === 'user' && pathParts[1]) {
+      const res = await fetch(`${API_BASE}/users/${pathParts[1]}`)
+      if (res.ok) {
+        const data = await res.json()
+        const avatar = data.avatar_url || data.avatar || ''
+        meta = {
+          title: `${data.username} — профиль на remarket`,
+          description: (data.description || 'Профиль пользователя на remarket.').slice(0, 180),
+          image: toAbsolute(avatar) || toAbsolute('/logo.png'),
+          url: u.toString(),
+          type: 'profile',
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('OG meta fetch failed', e?.message || e)
+  }
+
+  return `
+    <meta property="og:title" content="${meta.title}">
+    <meta property="og:description" content="${meta.description}">
+    <meta property="og:image" content="${meta.image}">
+    <meta property="og:url" content="${meta.url}">
+    <meta property="og:type" content="${meta.type}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="${meta.title}">
+    <meta name="twitter:description" content="${meta.description}">
+    <meta name="twitter:image" content="${meta.image}">
+  `
+}
 
 async function createServer() {
   const app = express()
@@ -27,6 +94,7 @@ async function createServer() {
   app.use('*', async (req, res, next) => {
     try {
       const url = req.originalUrl
+      const reqHost = req.headers.host || 'localhost'
 
       let template
       let render
@@ -42,8 +110,11 @@ async function createServer() {
         render = (await import('./dist/server/entry-server.js')).render
       }
 
+      const metaTags = await buildMeta(url, reqHost)
+
       const { html, preloadLinks } = await render(url, manifest)
       const htmlResp = template
+        .replace('<!--meta-tags-->', metaTags)
         .replace('<!--preload-links-->', preloadLinks || '')
         .replace('<!--ssr-outlet-->', html)
 
