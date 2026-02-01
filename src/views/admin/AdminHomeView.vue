@@ -234,6 +234,8 @@ const topCategoriesOptions = computed<ApexOptions>(() => ({
   colors: ['#34d399'],
   grid: { borderColor: 'rgba(255,255,255,0.08)', strokeDashArray: 4 },
   tooltip: {
+    theme: 'dark',
+    style: { fontSize: '12px', fontFamily: 'Outfit, sans-serif' },
     y: { formatter: (val: number) => formatCurrency(val) },
   },
 }))
