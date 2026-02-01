@@ -5,6 +5,6 @@ services:
       dockerfile: Dockerfile.prod
     container_name: force-market-frontend-prod
     ports:
-      - "80:80"
+      - "80:4173"
     environment:
       - NODE_ENV=production
