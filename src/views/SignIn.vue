@@ -2,7 +2,7 @@
 import { authService } from '@/api/auth/AuthService'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import TheInput from '@/components/TheInput.vue'
-import router from '@/router'
+import { useRouter } from 'vue-router'
 import { getErrorMessage } from '@/utils/errorsMap'
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -23,6 +23,7 @@ const errorMessage = ref('')
 const successMessage = ref('')
 
 const { t } = useI18n()
+const router = useRouter()
 
 async function signIn() {
   if (sended.value) return

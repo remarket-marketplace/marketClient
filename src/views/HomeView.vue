@@ -5,7 +5,7 @@ import MainProductCard from '@/components/mainProductCard.vue'
 import SearchField from '@/components/SearchField.vue'
 import Title from '@/components/Title.vue'
 import HeroSection from '@/components/HeroSection.vue'
-import router from '@/router'
+import { useRouter } from 'vue-router'
 import type { Category } from '@/validation/category/category'
 import type { Product } from '@/validation/product/product'
 import { onMounted, onBeforeUnmount, ref } from 'vue'
@@ -13,6 +13,7 @@ import { useI18n } from 'vue-i18n'
 import { Folder } from 'lucide-vue-next'
 
 const { t } = useI18n()
+const router = useRouter()
 const API_HOST = import.meta.env.VITE_API_HOST
 
 const mainCategories = ref<Category[]>([])

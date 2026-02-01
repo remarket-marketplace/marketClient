@@ -4,7 +4,7 @@ import { productService } from '@/api/product/ProductService'
 import CustomSelect from '@/components/CustomSelect.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import FileUploader from '@/components/FileUploader.vue'
-import router from '@/router'
+import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import type { Category } from '@/validation/category/category'
 import { onMounted, ref, watch, computed } from 'vue'
@@ -14,6 +14,7 @@ import BackButton from '@/components/navigation/BackButton.vue'
 import Checkbox from '@/components/Checkbox.vue'
 
 const { t } = useI18n()
+const router = useRouter()
 const categories = ref<Category[]>([])
 const subcategories = ref<Category[]>([])
 const selectedCategoryId = ref('')

@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import router from '@/router'
+import { useRouter } from 'vue-router'
 import type { Product } from '@/validation/product/product'
 import { useI18n } from 'vue-i18n'
 import UserRating from './UserRating.vue'
 
 const { t } = useI18n()
+const router = useRouter()
 
 const props = defineProps<{
   product: Product

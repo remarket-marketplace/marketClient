@@ -2,7 +2,7 @@
 import { productService } from '@/api/product/ProductService';
 import { reviewService } from '@/api/review/ReviewService';
 import { chatsService } from '@/api/chats/chatsService';
-import router from '@/router';
+import { useRouter } from 'vue-router';
 import type { Product } from '@/validation/product/product';
 import type { RefusalReasonsList } from '@/validation/deal/deal';
 import { ref, computed } from 'vue';
@@ -13,6 +13,7 @@ import { useUserStore } from '@/stores/user';
 
 const API_HOST = import.meta.env.VITE_API_HOST;
 
+const router = useRouter();
 const isConfirmed = ref(false);
 const isReported = ref(false);
 const isRefunded = ref(false);

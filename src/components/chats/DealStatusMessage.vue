@@ -3,7 +3,7 @@ import type { ChatMessageUnion } from '@/validation/chat/chatMessage';
 import type { Product } from '@/validation/product/product';
 import { useI18n } from 'vue-i18n';
 import DealStatusTag from '../DealStatusTag.vue';
-import router from '@/router';
+import { useRouter } from 'vue-router';
 
 defineProps<{
     product: Product | null,
@@ -13,6 +13,7 @@ defineProps<{
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const { t } = useI18n()
+const router = useRouter()
 
 function handleViewProduct(productId: string) {
   router.push(`/product/${productId}`)

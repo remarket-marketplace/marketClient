@@ -184,15 +184,12 @@ const routes = [
 
 export function createAppRouter(isSSR = false) {
   const history = isSSR ? createMemoryHistory() : createWebHistory(import.meta.env.BASE_URL)
-  return createRouter({
+  const router = createRouter({
     history,
     routes,
   })
-}
 
-const router = createAppRouter(false);
-
-router.beforeEach(async (to, from, next) => {
+  router.beforeEach(async (to, from, next) => {
   const { requiredAdmin, requiredAuthorized, requiredGuest } = to.meta;
   
   if (!requiredAdmin && !requiredAuthorized && !requiredGuest) {
@@ -214,6 +211,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   next();
-});
+  });
 
-export default router;
+  return router
+}

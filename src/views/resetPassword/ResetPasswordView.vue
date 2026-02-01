@@ -7,13 +7,12 @@ import TheInput from '@/components/TheInput.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import Loader from '@/components/Loader.vue'
-import router from '@/router'
 
 const { t } = useI18n()
-
 const route = useRoute()
+const router = useRouter()
 const resetPasswordToken = route.query.reset_token
 
 const errorMessage = ref('')

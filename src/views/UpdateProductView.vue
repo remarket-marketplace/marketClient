@@ -3,18 +3,18 @@ import { productService } from '@/api/product/ProductService'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import FileUploader from '@/components/FileUploader.vue'
 import Loader from '@/components/Loader.vue'
-import router from '@/router'
+import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import type { ProductEdit } from '@/validation/product/product'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
 import { getErrorMessage } from '@/utils/errorsMap'
 import { X, Info, AlertCircle, Tag, Package, Percent, Calculator } from 'lucide-vue-next'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const route = useRoute()
+const router = useRouter()
 const { t } = useI18n()
 
 const title = ref('')

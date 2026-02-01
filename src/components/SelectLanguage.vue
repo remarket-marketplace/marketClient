@@ -15,7 +15,10 @@ const languageOptions: LanguageOption[] = [
 const isOpen = ref(false)
 const wrapperRef = ref<HTMLElement | null>(null)
 
+const isClient = typeof window !== 'undefined'
+
 const getInitialLanguage = (): 'en' | 'ru' => {
+  if (!isClient) return 'en'
   const saved = localStorage.getItem('user-language') as 'en' | 'ru' | null
   if (saved) return saved
 
@@ -55,10 +58,11 @@ function selectLanguage(value: 'en' | 'ru') {
   if (selectedLanguage.value === value) return
 
   selectedLanguage.value = value
-  localStorage.setItem('user-language', value)
+  if (isClient) {
+    localStorage.setItem('user-language', value)
+    setTimeout(() => location.reload(), 100)
+  }
   isOpen.value = false
-
-  setTimeout(() => location.reload(), 100)
 }
 </script>
 
