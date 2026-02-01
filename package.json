@@ -12,7 +12,11 @@
     "build": "run-p build:client build:ssr",
     "build:client": "vite build",
     "build:ssr": "vite build --ssr src/entry-server.ts --outDir dist/server",
+    "build:client:watch": "vite build --watch",
+    "build:ssr:watch": "vite build --ssr src/entry-server.ts --outDir dist/server --watch",
     "preview": "NODE_ENV=production node server.js",
+    "preview:watch": "run-p build:client:watch build:ssr:watch preview:watch:server",
+    "preview:watch:server": "NODE_ENV=production node --watch --watch-path=dist/server --watch-path=dist/client server.js",
     "type-check": "vue-tsc --build",
     "tw:init": "tailwindcss init -p"
   },
