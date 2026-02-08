@@ -5,17 +5,26 @@
     <link rel="icon" href="/logo.ico">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8VFFGBX963"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      window.gtag = function(){window.dataLayer.push(arguments);}
-      const __gaDebug = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-      window.gtag('js', new Date());
-      window.gtag('config', 'G-8VFFGBX963', {
-        debug_mode: __gaDebug,
-      });
+    <!-- Yandex.Metrika counter -->
+    <script type="text/javascript">
+        (function(m,e,t,r,i,k,a){
+            m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+            m[i].l=1*new Date();
+            for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+            k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+        })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=106722008', 'ym');
+
+        ym(106722008, 'init', {
+            defer:true,
+            clickmap:true,
+            trackLinks:true,
+            accurateTrackBounce:true,
+            webvisor:true,
+            ecommerce:"dataLayer"
+        });
     </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/106722008" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+    <!-- /Yandex.Metrika counter -->
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <title>remarket</title>

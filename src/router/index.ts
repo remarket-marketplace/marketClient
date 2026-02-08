@@ -32,6 +32,8 @@ import AdminFeedbackView from "@/views/admin/AdminFeedbackView.vue";
 import BecomeSellerView from "@/views/BecomeSellerView.vue";
 import AboutView from "@/views/AboutView.vue";
 
+const YANDEX_METRIKA_COUNTER_ID = 106722008;
+
 const routes = [
     {
       path: "/",
@@ -246,15 +248,22 @@ export function createAppRouter(isSSR = false) {
   next();
   });
 
-  router.afterEach((to) => {
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'page_view', {
-        page_path: to.fullPath,
-        page_title: document.title,
-        page_location: window.location.href,
-        debug_mode: import.meta.env.DEV,
-      });
+  router.afterEach((to, from) => {
+    if (typeof window === 'undefined' || typeof (window as any).ym !== 'function') {
+      return;
     }
+
+    (window as any).ym(
+      YANDEX_METRIKA_COUNTER_ID,
+      'hit',
+      window.location.href,
+      {
+        title: document.title,
+        referer: from.fullPath
+          ? `${window.location.origin}${from.fullPath}`
+          : document.referrer,
+      }
+    );
   });
 
   return router
