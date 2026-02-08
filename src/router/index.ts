@@ -246,5 +246,16 @@ export function createAppRouter(isSSR = false) {
   next();
   });
 
+  router.afterEach((to) => {
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'page_view', {
+        page_path: to.fullPath,
+        page_title: document.title,
+        page_location: window.location.href,
+        debug_mode: import.meta.env.DEV,
+      });
+    }
+  });
+
   return router
 }
