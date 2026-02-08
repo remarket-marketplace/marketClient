@@ -259,12 +259,12 @@ const navItems = computed(() => {
                                 <li><a href="#"
                                         class="text-gray-400 hover:text-white transition-colors duration-300 font-light">{{
                                             $t('footer.features', 'Возможности') }}</a></li>
-                                <li><a href="#"
+                                <li><router-link :to="{ path: '/chats', query: { support: '1' } }"
                                         class="text-gray-400 hover:text-white transition-colors duration-300 font-light">{{
-                                            $t('footer.pricing', 'Тарифы') }}</a></li>
-                                <li><a href="#"
+                                            $t('footer.support', 'Поддержка') }}</router-link></li>
+                                <li><router-link to="/about"
                                         class="text-gray-400 hover:text-white transition-colors duration-300 font-light">{{
-                                            $t('common.aboutUs', 'О нас') }}</a></li>
+                                            $t('common.aboutUs', 'О нас') }}</router-link></li>
                             </ul>
                         </div>
                         <div>
@@ -273,12 +273,12 @@ const navItems = computed(() => {
                                 <li><a href="mailto:support@re-market.net"
                                         class="text-gray-400 hover:text-white transition-colors duration-300 font-light">support@re-market.net</a>
                                 </li>
-                                <li><a href="#"
+                                <li><router-link to="/feedback"
                                         class="text-gray-400 hover:text-white transition-colors duration-300 font-light">{{
-                                            $t('footer.helpCenter', 'Центр помощи') }}</a></li>
-                                <li><a href="#"
+                                            $t('footer.feedback', 'Обратная связь') }}</router-link></li>
+                                <li><router-link to="/become-seller"
                                         class="text-gray-400 hover:text-white transition-colors duration-300 font-light">{{
-                                            $t('footer.community', 'Сообщество') }}</a></li>
+                                            $t('footer.becomeSeller', 'Стать продавцом') }}</router-link></li>
                             </ul>
                         </div>
                         <div>

@@ -5,7 +5,10 @@ import MainProductCard from '@/components/mainProductCard.vue'
 import SearchField from '@/components/SearchField.vue'
 import Title from '@/components/Title.vue'
 import HeroSection from '@/components/HeroSection.vue'
+import { useUserStore } from '@/stores/user'
+import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
+import type { ProductsFilterParams } from '@/api/product/ProductService'
 import type { Category } from '@/validation/category/category'
 import type { Product } from '@/validation/product/product'
 import { onMounted, onBeforeUnmount, ref } from 'vue'
@@ -15,6 +18,8 @@ import { Folder } from 'lucide-vue-next'
 const { t } = useI18n()
 const router = useRouter()
 const API_HOST = import.meta.env.VITE_API_HOST
+const userStore = useUserStore()
+const { user } = storeToRefs(userStore)
 
 const mainCategories = ref<Category[]>([])
 const subCategories = ref<Category[]>([])
@@ -39,6 +44,8 @@ const isSubCategoriesLoading = ref(false)
 const isLoadingMoreCategories = ref(false)
 const isLoadingMoreSubCategories = ref(false)
 const isSearchPagination = ref(false)
+const minPriceFilter = ref('')
+const maxPriceFilter = ref('')
 
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
@@ -48,6 +55,7 @@ function goToProduct(id: string) {
 }
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
+let filterTimeout: ReturnType<typeof setTimeout> | null = null
 
 function debouncedSearch() {
   if (searchTimeout) clearTimeout(searchTimeout)
@@ -57,7 +65,12 @@ function debouncedSearch() {
       return
     }
     isProductsLoading.value = true
-    const res = await productService.searchProducts(searchQuery.value.trim(), 1, perPage.value)
+    const res = await productService.searchProducts(
+      searchQuery.value.trim(),
+      1,
+      perPage.value,
+      getProductFiltersParams(),
+    )
     products.value = res.products
     currentPage.value = res.currentPage
     totalPages.value = res.totalPages
@@ -72,7 +85,11 @@ async function loadProducts(page = 1, append = false) {
   if (append && isLoadingMore.value) return
   isLoadingMore.value = append
   if (!append) isProductsLoading.value = true
-  const res = await productService.getAllProducts(page, perPage.value)
+  const res = await productService.getAllProducts(
+    page,
+    perPage.value,
+    getProductFiltersParams(),
+  )
   products.value = append ? [...products.value, ...res.products] : res.products
   currentPage.value = res.currentPage
   totalPages.value = res.totalPages
@@ -86,7 +103,12 @@ async function loadCategoryProducts(categoryId: string, page = 1, append = false
   if (append && isLoadingMore.value) return
   isLoadingMore.value = append
   if (!append) isProductsLoading.value = true
-  const res = await productService.getProductsByCategory(categoryId, page, perPage.value)
+  const res = await productService.getProductsByCategory(
+    categoryId,
+    page,
+    perPage.value,
+    getProductFiltersParams(),
+  )
   products.value = append ? [...products.value, ...res.products] : res.products
   currentPage.value = res.currentPage
   totalPages.value = res.totalPages
@@ -100,7 +122,12 @@ async function loadMoreProducts() {
   if (currentPage.value >= totalPages.value) return
   const nextPage = currentPage.value + 1
   if (isSearchPagination.value) {
-    const res = await productService.searchProducts(searchQuery.value.trim(), nextPage, perPage.value)
+    const res = await productService.searchProducts(
+      searchQuery.value.trim(),
+      nextPage,
+      perPage.value,
+      getProductFiltersParams(),
+    )
     products.value = [...products.value, ...res.products]
     currentPage.value = res.currentPage
     totalPages.value = res.totalPages
@@ -173,9 +200,89 @@ async function resetAllFilters() {
   selectedSubCategoryId.value = ''
   subCategories.value = []
   searchQuery.value = ''
+  clearProductFilters()
   isSearchPagination.value = false
   isCategoryPagination.value = false
   await loadProducts(1, false)
+}
+
+function parseFilterNumber(value: string | number | null | undefined): number | undefined {
+  if (value === null || value === undefined) return undefined
+
+  if (typeof value === 'number') {
+    return Number.isNaN(value) ? undefined : value
+  }
+
+  const normalizedValue = value.trim()
+  if (normalizedValue === '') return undefined
+
+  const parsed = Number(normalizedValue)
+  return Number.isNaN(parsed) ? undefined : parsed
+}
+
+function getProductFiltersParams(): ProductsFilterParams {
+  const minPriceRaw = parseFilterNumber(minPriceFilter.value)
+  const maxPriceRaw = parseFilterNumber(maxPriceFilter.value)
+
+  if (minPriceRaw !== undefined && maxPriceRaw !== undefined && minPriceRaw > maxPriceRaw) {
+    return {
+      minPrice: maxPriceRaw,
+      maxPrice: minPriceRaw,
+    }
+  }
+
+  return {
+    minPrice: minPriceRaw,
+    maxPrice: maxPriceRaw,
+  }
+}
+
+function clearProductFilters() {
+  minPriceFilter.value = ''
+  maxPriceFilter.value = ''
+}
+
+async function applyProductFilters() {
+  const query = searchQuery.value.trim()
+  if (query) {
+    isProductsLoading.value = true
+    const res = await productService.searchProducts(
+      query,
+      1,
+      perPage.value,
+      getProductFiltersParams(),
+    )
+    products.value = res.products
+    currentPage.value = res.currentPage
+    totalPages.value = res.totalPages
+    isSearchPagination.value = true
+    isCategoryPagination.value = false
+    isServerPagination.value = false
+    isProductsLoading.value = false
+    return
+  }
+
+  if (selectedSubCategoryId.value || selectedMainCategoryId.value) {
+    const categoryId = selectedSubCategoryId.value || selectedMainCategoryId.value
+    await loadCategoryProducts(categoryId, 1, false)
+    isSearchPagination.value = false
+    return
+  }
+
+  isSearchPagination.value = false
+  await loadProducts(1, false)
+}
+
+function debouncedApplyProductFilters() {
+  if (filterTimeout) clearTimeout(filterTimeout)
+  filterTimeout = setTimeout(() => {
+    applyProductFilters()
+  }, 300)
+}
+
+async function onResetProductFilters() {
+  clearProductFilters()
+  await applyProductFilters()
 }
 
 const categoriesScroll = ref<HTMLDivElement | null>(null)
@@ -185,10 +292,15 @@ let categoriesObserver: IntersectionObserver | null = null
 const handleCategoriesWheel = (e: WheelEvent) => {
   const el = e.currentTarget as HTMLElement
   if (!el) return
-  if (el.scrollWidth > el.clientWidth) {
-    e.preventDefault()
-    el.scrollLeft += e.deltaY
-  }
+  const canScrollX = el.scrollWidth > el.clientWidth
+  if (!canScrollX) return
+
+  const isHorizontalIntent = Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey
+  if (!isHorizontalIntent) return
+
+  e.preventDefault()
+  const delta = e.shiftKey && e.deltaX === 0 ? e.deltaY : (e.deltaX || e.deltaY)
+  el.scrollLeft += delta
 }
 
 onMounted(async () => {
@@ -201,13 +313,15 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  if (filterTimeout) clearTimeout(filterTimeout)
   observer?.disconnect()
   categoriesObserver?.disconnect()
 })
 </script>
 
 <template>
-  <HeroSection />
+  <HeroSection v-if="!user" />
 
   <div id="catalog-start" class="scroll-mt-24"></div>
 
@@ -224,7 +338,7 @@ onBeforeUnmount(() => {
           </div>
 
           <div v-else ref="categoriesScroll" 
-               @wheel.prevent="handleCategoriesWheel"
+               @wheel="handleCategoriesWheel"
                class="overflow-x-auto overflow-y-hidden  w-full relative cursor-grab active:cursor-grabbing">
             <div class="flex gap-3 min-w-max py-2">
               <div v-for="cat in mainCategories" :key="cat.id" @click="onMainCategoryClick(cat.id)"
@@ -247,6 +361,47 @@ onBeforeUnmount(() => {
               :class="selectedSubCategoryId === sub.id ? 'bg-blue-600 text-white border-blue-500' : 'bg-white/5 text-white border-white/10 hover:bg-white/10'">
               {{ sub.name }}
             </button>
+          </div>
+        </div>
+
+        <div class="mt-6 w-full rounded-xl border border-dark-700 bg-dark-600/30 p-4 md:p-5">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="text-sm font-semibold text-white">{{ t('pages.index.filtersTitle') }}</h3>
+            <button
+              type="button"
+              class="text-xs text-gray-300 hover:text-white transition"
+              @click="onResetProductFilters"
+            >
+              {{ t('pages.index.resetFilters') }}
+            </button>
+          </div>
+
+          <div class="mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            <div>
+              <label class="mb-1 block text-xs text-gray-400">{{ t('pages.index.priceFrom') }}</label>
+              <input
+                v-model="minPriceFilter"
+                type="number"
+                min="0"
+                inputmode="decimal"
+                class="w-full rounded-lg bg-dark-600 border border-dark-700 px-3 py-2 text-sm text-white outline-none placeholder-gray-500"
+                :placeholder="t('pages.index.priceFrom')"
+                @input="debouncedApplyProductFilters"
+              />
+            </div>
+
+            <div>
+              <label class="mb-1 block text-xs text-gray-400">{{ t('pages.index.priceTo') }}</label>
+              <input
+                v-model="maxPriceFilter"
+                type="number"
+                min="0"
+                inputmode="decimal"
+                class="w-full rounded-lg bg-dark-600 border border-dark-700 px-3 py-2 text-sm text-white outline-none placeholder-gray-500"
+                :placeholder="t('pages.index.priceTo')"
+                @input="debouncedApplyProductFilters"
+              />
+            </div>
           </div>
         </div>
 

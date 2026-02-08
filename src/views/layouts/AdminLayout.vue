@@ -5,7 +5,8 @@ import {
   Package,
   ShoppingCart,
   Folder,
-  MessageCircle
+  MessageCircle,
+  MessageSquareText
 } from 'lucide-vue-next'
 
 import { computed, onMounted, ref } from 'vue'
@@ -64,6 +65,12 @@ const navItems = computed(() => [
     title: t('navigation.admin.chats'),
     icon: MessageCircle,
     to: '/admin/support/chats',
+  },
+  {
+    id: 'feedback',
+    title: t('navigation.admin.feedback'),
+    icon: MessageSquareText,
+    to: '/admin/feedback',
   },
   {
     id: 'products',

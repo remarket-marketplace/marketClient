@@ -35,7 +35,22 @@ const hasMoreMessages = ref(true)
 // Информация о чате
 const currentChatId = ref<string | null>(null)
 const currentChatData = ref<{ username: string; avatar_url: string | null; is_active: boolean } | null>(null)
-const chatParticipants = ref<{ buyer?: any; seller?: any; support_user?: any } | null>(null)
+
+type ChatParticipantData = {
+    id: string
+    username: string
+    avatar_url: string | null
+    is_active: boolean
+}
+
+type ChatParticipantsData = {
+    id: string
+    buyer: ChatParticipantData | null
+    seller: ChatParticipantData | null
+    support_user: ChatParticipantData | null
+}
+
+const chatParticipants = ref<ChatParticipantsData | null>(null)
 const senderLabels = computed<Record<string, string>>(() => {
     const labels: Record<string, string> = {}
     if (chatParticipants.value?.buyer) labels[chatParticipants.value.buyer.id] = `${chatParticipants.value.buyer.username} (${t('common.buyer')})`
@@ -54,6 +69,39 @@ const senderRoles = computed<Record<string, 'buyer' | 'seller' | 'admin'>>(() =>
 const chatUserInitial = computed(() =>
     currentChatData.value?.username.charAt(0).toUpperCase() || ''
 )
+
+function resolveCurrentChatData(participants: ChatParticipantsData) {
+    const meId = user.value?.id ?? null
+    const buyer = participants.buyer
+    const seller = participants.seller
+    const supportUser = participants.support_user
+
+    if (meId && supportUser?.id === meId) {
+        if (buyer) return buyer
+        if (seller) return seller
+    }
+
+    if (meId && buyer?.id === meId) {
+        if (supportUser) return supportUser
+        if (seller) return seller
+    }
+
+    if (meId && seller?.id === meId) {
+        if (supportUser) return supportUser
+        if (buyer) return buyer
+    }
+
+    if (buyer && seller) {
+        return {
+            id: '',
+            username: `${buyer.username} / ${seller.username}`,
+            avatar_url: null,
+            is_active: buyer.is_active || seller.is_active,
+        }
+    }
+
+    return buyer || seller || supportUser
+}
 
 
 let unsubscribeNewMessage: (() => void) | null = null
@@ -136,41 +184,34 @@ async function loadChatMessages(chatId: string) {
     chatMessages.value = []
     currentPage.value = 1
     hasMoreMessages.value = true
+    currentChatData.value = null
 
     await chatsService.joinChat(chatId)
     currentChatId.value = chatId
 
     chatParticipants.value = await adminService.getChatParticipants(chatId)
     if (chatParticipants.value) {
-        const buyer = chatParticipants.value.buyer?.username
-        const seller = chatParticipants.value.seller?.username
-        if (buyer && seller) {
+        const resolved = resolveCurrentChatData(chatParticipants.value)
+        if (resolved) {
             currentChatData.value = {
-                username: `${buyer} / ${seller}`,
-                avatar_url: null,
-                is_active: false
+                username: resolved.username,
+                avatar_url: resolved.avatar_url,
+                is_active: resolved.is_active,
             }
         }
     }
+    if (!currentChatData.value) {
+        currentChatData.value = {
+            username: t('common.user'),
+            avatar_url: null,
+            is_active: false,
+        }
+    }
 
-    // Получаем информацию о чате из сообщений
     const response = await chatsService.getChatMessages(chatId, 1, perPage.value)
     chatMessages.value = response.messages
     totalPages.value = response.totalPages
     hasMoreMessages.value = 1 < totalPages.value
-
-    // Пытаемся получить информацию о чате из первого сообщения
-    if (response.messages && response.messages.length > 0) {
-        const firstMessage = response.messages[0]
-        if (firstMessage && 'sender_id' in firstMessage) {
-            // Установим временное имя, которое может быть заменено позже
-            currentChatData.value = {
-                username: 'User',
-                avatar_url: null,
-                is_active: false
-            }
-        }
-    }
 
     await nextTick()
     scrollToBottom()
@@ -202,69 +243,72 @@ async function sendMessage() {
         </div>
 
         <div v-else class="w-full flex flex-1 overflow-hidden">
-            <div class="h-full w-full flex flex-col min-h-0 lg:pb-4">
-                <div class="flex items-center gap-3 sticky top-0 bg-background px-4 py-2 lg:py-3 lg:px-6 z-10 flex-none rounded-t-3xl md:rounded-3xl">
-                    <button class="text-xl font-bold flex-shrink-0" @click="router.back()">
-                        <ArrowLeft />
-                    </button>
-                    <div v-if="currentChatData" class="flex items-center gap-3 flex-1">
-                        <div class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
-                            <img v-if="currentChatData.avatar_url"
-                                :src="`${API_HOST}${currentChatData.avatar_url}`"
-                                class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-dark-600 rounded-full object-cover"
-                                :alt="currentChatData.username">
-                            <div v-else
-                                class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center rounded-full bg-gray-700 text-mainText font-bold uppercase">
-                                {{ chatUserInitial }}
+            <div class="flex flex-1 transition-all duration-300 min-h-0 border-1 border-dark-400 rounded-3xl">
+                <div class="flex flex-1 flex-col px-2 md:rounded-xl w-full min-h-0">
+                    <div class="flex flex-grow flex-col overflow-y-auto lg:pb-2 w-full">
+                        <div v-if="currentChatData"
+                            class="flex items-center gap-2 sticky top-0 bg-background px-2 py-2 lg:py-3 lg:px-3 z-10 lg:border-b border-dark-700">
+                            <button class="text-xl font-bold flex-shrink-0" @click="router.back()">
+                                <ArrowLeft />
+                            </button>
+                            <div class="flex items-center gap-3 flex-1">
+                                <div class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
+                                    <img v-if="currentChatData.avatar_url"
+                                        :src="`${API_HOST}${currentChatData.avatar_url}`"
+                                        class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-dark-600 rounded-full object-cover"
+                                        :alt="currentChatData.username">
+                                    <div v-else
+                                        class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center rounded-full bg-gray-700 text-mainText font-bold uppercase">
+                                        {{ chatUserInitial }}
+                                    </div>
+                                </div>
+                                <div class="flex flex-col truncate flex-1">
+                                    <p class="truncate text-mainText font-semibold text-lg">
+                                        {{ currentChatData.username }}
+                                    </p>
+                                    <p v-if="currentChatData.is_active" class="text-xs text-green-500">
+                                        {{ $t('common.online') }}
+                                    </p>
+                                    <p v-else class="text-xs text-gray-500">
+                                        {{ $t('common.offline') }}
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                        <div class="flex flex-col truncate flex-1">
-                            <p class="truncate text-mainText font-semibold text-lg">
-                                {{ currentChatData.username }}
-                            </p>
-                            <p v-if="currentChatData.is_active" class="text-xs text-green-500">
-                                {{ $t('common.online') }}
-                            </p>
-                            <p v-else class="text-xs text-gray-500">
-                                {{ $t('common.offline') }}
-                            </p>
+
+                        <div ref="messageContainerRef" class="flex-1 min-h-0 overflow-y-auto pb-2" @scroll="handleScroll">
+                            <div v-if="isLoadingMoreMessages" class="flex justify-center py-2">
+                                <Loader size="sm" />
+                            </div>
+
+                            <div v-if="chatMessages.length > 0" class="flex flex-1 flex-col justify-start">
+                                <div class="flex flex-col gap-3 py-2">
+                                    <ChatMessage
+                                    v-for="message in chatMessages"
+                                    :key="message.id"
+                                    :message="message"
+                                    :user="user"
+                                    :showAdminBadge="true"
+                                    :sender-labels="senderLabels"
+                                    :sender-roles="senderRoles"
+                                    :force-show-sender="true"
+                                    />
+                                </div>
+                            </div>
+
+                            <div v-else-if="currentChatId != null && chatMessages.length === 0"
+                                class="h-full w-full flex items-center justify-center">
+                                <p class="text-gray-400 font-light">{{ $t("pages.chats.emptyMessages") }}</p>
+                            </div>
+
+                            <div v-else class="h-full w-full flex items-center justify-center">
+                                <p class="text-gray-400 font-light">{{ $t('pages.chats.selectChat') }}</p>
+                            </div>
                         </div>
+
+                        <SendMessageBar v-if="currentChatId" v-model:newMessage="newMessage" @sendMessage="sendMessage" />
                     </div>
                 </div>
-
-                <div ref="messageContainerRef" class="flex flex-1 flex-col overflow-y-auto pb-2 px-2 lg:px-4"
-                    @scroll="handleScroll">
-                    <div v-if="isLoadingMoreMessages" class="flex justify-center py-2">
-                        <Loader size="sm" />
-                    </div>
-
-                    <div v-if="chatMessages.length > 0" class="flex flex-1 flex-col justify-start">
-                        <div class="flex flex-col gap-3 py-4">
-                            <ChatMessage
-                              v-for="message in chatMessages"
-                              :key="message.id"
-                              :message="message"
-                              :user="user"
-                              :showAdminBadge="true"
-                              :sender-labels="senderLabels"
-                              :sender-roles="senderRoles"
-                              :force-show-sender="true"
-                            />
-                        </div>
-                    </div>
-
-                    <div v-else-if="currentChatId != null && chatMessages.length === 0"
-                        class="h-full w-full flex items-center justify-center">
-                        <p class="text-gray-400 font-light">{{ $t("pages.chats.emptyMessages") }}</p>
-                    </div>
-
-                    <div v-else
-                        class="h-full w-full flex items-center justify-center">
-                        <p class="text-gray-400 font-light">{{ $t('pages.chats.selectChat') }}</p>
-                    </div>
-                </div>
-
-                <SendMessageBar v-if="currentChatId" v-model:newMessage="newMessage" @sendMessage="sendMessage" />
             </div>
         </div>
     </div>

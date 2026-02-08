@@ -32,8 +32,17 @@ const showBuyConfirm = ref(false)
 const buyError = ref<string | null>(null)
 
 onMounted(async () => {
-  product.value = await productService.getProductById(productId) ?? null
-  selectedImage.value = product.value?.images?.[0] ?? null
+  try {
+    product.value = await productService.getProductById(productId) ?? null
+    selectedImage.value = product.value?.images?.[0] ?? null
+  } catch (error: any) {
+    if (error?.response?.status === 404) {
+      await router.replace({ name: 'notAccess' })
+      return
+    }
+
+    console.error('Failed to load product:', error)
+  }
 })
 
 function selectImage(image: ProductImage) {

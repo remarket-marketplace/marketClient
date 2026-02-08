@@ -30,6 +30,15 @@ const errorMessage = ref('')
 const commissionInterest = ref<number | null>(null)
 const autoDelivery = ref<boolean>(true)
 
+const PRODUCT_LIMITS = {
+  title: { min: 10, max: 50 },
+  description: { min: 10, max: 256 },
+  productData: { min: 10, max: 128 },
+  price: { min: 10, max: 1000000 },
+  count: { min: 1, max: 5000 },
+  images: { min: 1, max: 8 }
+}
+
 const store = useUserStore()
 const user = await store.getUser()
 
@@ -51,19 +60,29 @@ const formatPrice = (value: number) => {
 
 // Form validation
 const isFormValid = computed(() => {
-  const baseValidation = selectedSubcategoryId.value &&
-    title.value.trim() &&
-    description.value.trim() &&
-    price.value &&
-    images.value.length > 0
-  
-  // If auto delivery is enabled, product data is required
-  if (autoDelivery.value) {
-    return baseValidation && productData.value.trim()
-  }
-  
-  // If auto delivery is disabled, product data is not required
-  return baseValidation
+  const normalizedTitle = title.value.trim()
+  const normalizedDescription = description.value.trim()
+  const normalizedProductData = productData.value.trim()
+  const priceValue = Number(price.value)
+  const countValue = Number(count.value)
+
+  return Boolean(
+    selectedSubcategoryId.value &&
+    normalizedTitle.length >= PRODUCT_LIMITS.title.min &&
+    normalizedTitle.length <= PRODUCT_LIMITS.title.max &&
+    normalizedDescription.length >= PRODUCT_LIMITS.description.min &&
+    normalizedDescription.length <= PRODUCT_LIMITS.description.max &&
+    normalizedProductData.length >= PRODUCT_LIMITS.productData.min &&
+    normalizedProductData.length <= PRODUCT_LIMITS.productData.max &&
+    Number.isFinite(priceValue) &&
+    priceValue >= PRODUCT_LIMITS.price.min &&
+    priceValue <= PRODUCT_LIMITS.price.max &&
+    Number.isFinite(countValue) &&
+    countValue >= PRODUCT_LIMITS.count.min &&
+    countValue <= PRODUCT_LIMITS.count.max &&
+    images.value.length >= PRODUCT_LIMITS.images.min &&
+    images.value.length <= PRODUCT_LIMITS.images.max
+  )
 })
 
 onMounted(async () => {
@@ -104,11 +123,15 @@ async function createProduct() {
 
   sended.value = true
   try {
+    const normalizedTitle = title.value.trim()
+    const normalizedDescription = description.value.trim()
+    const normalizedProductData = productData.value.trim()
+
     const productDataObj = {
-      title: title.value,
-      description: description.value,
+      title: normalizedTitle,
+      description: normalizedDescription,
       price: Number(price.value),
-      product_data: productData.value,
+      product_data: normalizedProductData,
       category_id: selectedSubcategoryId.value,
       count: count.value,
       auto_delivery: autoDelivery.value
@@ -168,7 +191,7 @@ async function createProduct() {
           </div>
 
           <!-- Images -->
-          <FileUploader v-model="images" :max-files="8" :hint="$t('pages.forms.createProduct.imageHint')" />
+          <FileUploader v-model="images" :max-files="PRODUCT_LIMITS.images.max" :hint="$t('pages.forms.createProduct.imageHint')" />
 
           <!-- Categories -->
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
@@ -202,11 +225,11 @@ async function createProduct() {
                   {{ $t('pages.forms.createProduct.productName') }}
                   <span class="text-xs text-red-400 ml-1">*</span>
                 </label>
-                <input id="title" v-model="title" type="text" maxlength="50" minlength="10"
+                <input id="title" v-model="title" type="text" :maxlength="PRODUCT_LIMITS.title.max" :minlength="PRODUCT_LIMITS.title.min"
                   :placeholder="$t('pages.forms.createProduct.productNamePlaceholder')"
                   class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white outline-none placeholder-gray-500" />
                 <p class="text-xs text-gray-400 text-right">
-                  {{ title.length }}/50
+                  {{ title.length }}/{{ PRODUCT_LIMITS.title.max }}
                 </p>
               </div>
 
@@ -215,7 +238,7 @@ async function createProduct() {
                   {{ $t('pages.forms.createProduct.count') }}
                 </label>
                 <div class="relative">
-                  <input id="count" v-model.number="count" type="number" min="1" max="100000"
+                  <input id="count" v-model.number="count" type="number" :min="PRODUCT_LIMITS.count.min" :max="PRODUCT_LIMITS.count.max"
                     class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white outline-none" />
                   <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm ">
                     {{ $t('common.items') }}
@@ -230,11 +253,11 @@ async function createProduct() {
                 {{ $t('common.description') }}
                 <span class="text-xs text-red-400 ml-1">*</span>
               </label>
-              <textarea id="description" v-model="description" rows="8" maxlength="500" minlength="10"
+              <textarea id="description" v-model="description" rows="8" :maxlength="PRODUCT_LIMITS.description.max" :minlength="PRODUCT_LIMITS.description.min"
                 :placeholder="$t('pages.forms.createProduct.descriptionPlaceholder')"
                 class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-3 text-sm outline-none text-white placeholder-gray-500 resize-none"></textarea>
               <p class="text-xs text-gray-400 text-right">
-                {{ description.length }}/500
+                {{ description.length }}/{{ PRODUCT_LIMITS.description.max }}
               </p>
             </div>
 
@@ -262,7 +285,7 @@ async function createProduct() {
             </div>
 
             <!-- Product data -->
-            <div v-if="autoDelivery" class="space-y-2">
+            <div class="space-y-2">
               <div class="flex items-center gap-2">
                 <label for="productData" class="text-sm font-medium text-gray-300">
                   {{ $t('pages.forms.createProduct.productData') }}
@@ -273,11 +296,11 @@ async function createProduct() {
                   <span>{{ $t('pages.forms.createProduct.productDataHint') }}</span>
                 </div>
               </div>
-              <textarea id="productData" v-model="productData" rows="6" maxlength="300"
+              <textarea id="productData" v-model="productData" rows="6" :maxlength="PRODUCT_LIMITS.productData.max" :minlength="PRODUCT_LIMITS.productData.min"
                 :placeholder="$t('pages.forms.createProduct.productDataPlaceholder')"
                 class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-3 text-sm outline-none text-white placeholder-gray-500 resize-none font-mono"></textarea>
               <p class="text-xs text-gray-400 text-right">
-                {{ productData.length }}/300
+                {{ productData.length }}/{{ PRODUCT_LIMITS.productData.max }}
               </p>
             </div>
           </div>
@@ -305,7 +328,7 @@ async function createProduct() {
                 </div>
               </div>
               <div class="relative">
-                <input id="price" v-model.number="price" type="number" min="10" max="1000000"
+                <input id="price" v-model.number="price" type="number" :min="PRODUCT_LIMITS.price.min" :max="PRODUCT_LIMITS.price.max"
                   :placeholder="$t('pages.forms.createProduct.pricePlaceholder')"
                   class="w-full outline-none rounded-lg bg-dark-600 border border-dark-700 px-4 py-3 text-lg font-semibold text-white" />
                 <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 text-sm font-medium">

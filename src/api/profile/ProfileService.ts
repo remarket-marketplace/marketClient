@@ -1,3 +1,4 @@
+import axios from "axios";
 import {
   ProfileDataSchema,
   PublicProfileDataSchema,
@@ -21,6 +22,9 @@ export const profileService = {
         return PublicProfileDataSchema.parse(response.data);
       }
     } catch (e) {
+      if (axios.isAxiosError(e) && e.response?.status === 404) {
+        throw e;
+      }
       if (e instanceof ZodError)
         console.error("Ошибка валидации профиля:", e.issues);
       return null;

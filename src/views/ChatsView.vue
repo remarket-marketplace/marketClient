@@ -107,6 +107,7 @@ function updateUrlChatId(chatId: string | null) {
   router.replace({
     query: {
       ...route.query,
+      support: undefined,
       chatId: chatId || undefined
     }
   })
@@ -180,6 +181,15 @@ onMounted(async () => {
       const exists = chats.value.some(c => c.id === chatIdFromQuery)
       if (exists) {
         await loadChatMessages(chatIdFromQuery)
+      }
+      return
+    }
+
+    const supportFromQuery = route.query.support as string | undefined
+    if (supportFromQuery === '1' || supportFromQuery === 'true') {
+      const supportChat = chats.value.find(chat => chat.chat_type === 'support_chat')
+      if (supportChat) {
+        await loadChatMessages(supportChat.id)
       }
     }
   } catch {

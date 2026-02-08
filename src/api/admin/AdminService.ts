@@ -3,6 +3,11 @@ import { httpClient } from "..";
 import { CategorySchema, ProductSchema } from "@/validation/product/product";
 import { UserReadSchema } from "@/validation/user/userRead";
 import { DealSchema, DealsListSchema, type Deal } from "@/validation/deal/deal";
+import {
+  AdminFeedbackListSchema,
+  AdminFeedbackSchema,
+  type AdminFeedback,
+} from "@/validation/feedback/adminFeedback";
 
 export type DashboardStatusBreakdown = { status: string; count: number }
 export type DashboardSeriesPoint = { date: string; value: number }
@@ -307,14 +312,61 @@ export const adminService = {
   }
 },
 
+  async getAdminFeedbacks(page = 1, perPage = 20) {
+    try {
+      const response = await httpClient.get('/admin/feedback', {
+        params: {
+          page,
+          per_page: perPage,
+        },
+      })
+
+      const parsed = AdminFeedbackListSchema.parse(response.data)
+
+      return {
+        feedbacks: parsed.feedbacks,
+        currentPage: page,
+        totalPages: parsed.total_pages,
+        total: parsed.total,
+      }
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error('Validation error:', e.issues)
+      } else {
+        console.error('Error fetching admin feedbacks:', e)
+      }
+
+      return {
+        feedbacks: [],
+        currentPage: 1,
+        totalPages: 1,
+        total: 0,
+      }
+    }
+  },
+
+  async getAdminFeedbackById(feedbackId: string): Promise<AdminFeedback | null> {
+    try {
+      const response = await httpClient.get(`/admin/feedback/${feedbackId}`)
+      return AdminFeedbackSchema.parse(response.data)
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error('Validation error:', e.issues)
+      } else {
+        console.error('Error fetching admin feedback by id:', e)
+      }
+      return null
+    }
+  },
+
   async getChatParticipants(chatId: string) {
     try {
       const response = await httpClient.get(`/admin/chat/${chatId}/participants`)
       return response.data as {
         id: string
-        buyer: { id: string; username: string } | null
-        seller: { id: string; username: string } | null
-        support_user: { id: string; username: string } | null
+        buyer: { id: string; username: string; avatar_url: string | null; is_active: boolean } | null
+        seller: { id: string; username: string; avatar_url: string | null; is_active: boolean } | null
+        support_user: { id: string; username: string; avatar_url: string | null; is_active: boolean } | null
       }
     } catch (e) {
       console.error('Error fetching chat participants', e)

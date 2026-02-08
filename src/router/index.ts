@@ -26,6 +26,11 @@ import PaymentSuccessView from "@/views/PaymentSuccessView.vue";
 import PaymentFailedView from "@/views/PaymentFailedView.vue";
 import AdminChatView from "@/views/admin/AdminChatView.vue";
 import AdminChatsView from "@/views/admin/AdminChatsView.vue";
+import FeedbackView from "@/views/FeedbackView.vue";
+import AdminFeedbacksView from "@/views/admin/AdminFeedbacksView.vue";
+import AdminFeedbackView from "@/views/admin/AdminFeedbackView.vue";
+import BecomeSellerView from "@/views/BecomeSellerView.vue";
+import AboutView from "@/views/AboutView.vue";
 
 const routes = [
     {
@@ -142,6 +147,18 @@ const routes = [
       meta: { requiredAdmin: true },
     },
     {
+      path: "/admin/feedback",
+      name: "admin feedbacks",
+      component: AdminFeedbacksView,
+      meta: { requiredAdmin: true },
+    },
+    {
+      path: "/admin/feedback/:feedbackId",
+      name: "admin feedback",
+      component: AdminFeedbackView,
+      meta: { requiredAdmin: true },
+    },
+    {
       path: "/admin/categories/edit/:id",
       name: "edit category",
       component: AdminEditCategoryView,
@@ -174,6 +191,22 @@ const routes = [
       path: "/payment/failed",
       name: "failed payment",
       component: PaymentFailedView,
+    },
+    {
+      path: "/feedback",
+      name: "feedback",
+      component: FeedbackView,
+      meta: { requiredAuthorized: true },
+    },
+    {
+      path: "/become-seller",
+      name: "become seller",
+      component: BecomeSellerView,
+    },
+    {
+      path: "/about",
+      name: "about",
+      component: AboutView,
     },
     {
       path: "/:pathMatch(.*)*",

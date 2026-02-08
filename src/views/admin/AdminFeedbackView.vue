@@ -1,0 +1,208 @@
+<script setup lang="ts">
+import { adminService } from '@/api/admin/AdminService'
+import BackButton from '@/components/navigation/BackButton.vue'
+import type { AdminFeedback } from '@/validation/feedback/adminFeedback'
+import {
+  Loader2,
+  MessageCircle,
+  MessageSquareText,
+  Paperclip,
+  UserRound,
+  ExternalLink,
+} from 'lucide-vue-next'
+import { onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
+
+const { t } = useI18n()
+const route = useRoute()
+const router = useRouter()
+const API_HOST = import.meta.env.VITE_API_HOST || ''
+
+const feedback = ref<AdminFeedback | null>(null)
+const isLoading = ref(true)
+const errorMessage = ref('')
+
+function formatDate(dateString: string) {
+  return new Date(dateString).toLocaleString('ru-RU', {
+    year: 'numeric',
+    month: 'long',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function goBack() {
+  router.push('/admin/feedback')
+}
+
+function openProfile(username: string) {
+  router.push(`/user/${username}`)
+}
+
+function openSupportChat(chatId: string | null) {
+  if (!chatId) return
+  router.push({
+    path: '/admin/support/chats',
+    query: { chatId },
+  })
+}
+
+function getImageUrl(imageUrl: string) {
+  return `${API_HOST}${imageUrl}`
+}
+
+function openImage(imageUrl: string) {
+  window.open(getImageUrl(imageUrl), '_blank', 'noopener,noreferrer')
+}
+
+async function loadFeedback() {
+  isLoading.value = true
+  errorMessage.value = ''
+
+  const feedbackId = route.params.feedbackId as string
+  const response = await adminService.getAdminFeedbackById(feedbackId)
+
+  if (!response) {
+    errorMessage.value = t('pages.admin.feedbackPage.notFound')
+    isLoading.value = false
+    return
+  }
+
+  feedback.value = response
+  isLoading.value = false
+}
+
+onMounted(async () => {
+  await loadFeedback()
+})
+</script>
+
+<template>
+  <section class="w-full h-full overflow-y-auto pb-4">
+    <div class="flex items-center gap-2 pt-4 md:pt-6 mb-4">
+      <BackButton />
+      <h1 class="text-xl sm:text-2xl font-bold text-mainText">
+        {{ $t('pages.admin.feedbackPage.detailsTitle') }}
+      </h1>
+    </div>
+
+    <div v-if="isLoading" class="flex items-center justify-center h-32">
+      <Loader2 class="h-6 w-6 animate-spin text-blue-500" />
+      <span class="ml-2 text-gray-400">{{ $t('common.loading') }}</span>
+    </div>
+
+    <div v-else-if="errorMessage" class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-300">
+      <p>{{ errorMessage }}</p>
+    </div>
+
+    <div v-else-if="feedback" class="space-y-4">
+      <article class="bg-dark-600 border border-dark-700 rounded-xl p-4 space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <img
+              v-if="feedback.user.avatar_url"
+              :src="`${API_HOST}${feedback.user.avatar_url}`"
+              :alt="feedback.user.username"
+              class="h-11 w-11 rounded-full object-cover border border-dark-500"
+            />
+            <div
+              v-else
+              class="h-11 w-11 rounded-full bg-dark-500 border border-dark-400 flex items-center justify-center text-sm font-semibold text-mainText uppercase"
+            >
+              {{ feedback.user.username.charAt(0) }}
+            </div>
+
+            <div class="min-w-0">
+              <p class="text-base sm:text-lg text-mainText font-semibold truncate">
+                {{ feedback.user.username }}
+              </p>
+              <p class="text-xs text-gray-500">{{ formatDate(feedback.created_at) }}</p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="inline-flex items-center gap-1.5 rounded-lg border border-dark-500 bg-dark-700 hover:bg-dark-500 px-3 py-1.5 text-xs sm:text-sm text-mainText transition-colors"
+              @click="openProfile(feedback.user.username)"
+            >
+              <UserRound class="h-4 w-4" />
+              {{ $t('pages.admin.feedbackPage.openProfile') }}
+            </button>
+            <button
+              type="button"
+              :disabled="!feedback.support_chat_id"
+              class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs sm:text-sm transition-colors"
+              :class="
+                feedback.support_chat_id
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                  : 'bg-dark-700 text-gray-500 border border-dark-500 cursor-not-allowed'
+              "
+              @click="openSupportChat(feedback.support_chat_id)"
+            >
+              <MessageCircle class="h-4 w-4" />
+              {{
+                feedback.support_chat_id
+                  ? $t('pages.admin.feedbackPage.openSupportChat')
+                  : $t('pages.admin.feedbackPage.supportChatUnavailable')
+              }}
+            </button>
+          </div>
+        </div>
+      </article>
+
+      <article class="bg-dark-600 border border-dark-700 rounded-xl p-4">
+        <h2 class="text-sm sm:text-base font-semibold text-mainText flex items-center gap-2 mb-3">
+          <MessageSquareText class="h-4 w-4 text-blue-400" />
+          {{ $t('pages.admin.feedbackPage.message') }}
+        </h2>
+        <p class="text-sm text-gray-200 whitespace-pre-wrap break-words leading-relaxed">
+          {{ feedback.text }}
+        </p>
+      </article>
+
+      <article class="bg-dark-600 border border-dark-700 rounded-xl p-4">
+        <h2 class="text-sm sm:text-base font-semibold text-mainText flex items-center gap-2 mb-3">
+          <Paperclip class="h-4 w-4 text-blue-400" />
+          {{ $t('pages.admin.feedbackPage.attachments') }}
+        </h2>
+
+        <div v-if="feedback.images.length === 0" class="text-sm text-gray-400">
+          {{ $t('pages.admin.feedbackPage.noAttachments') }}
+        </div>
+
+        <div v-else class="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <button
+            v-for="image in feedback.images"
+            :key="image.id"
+            type="button"
+            class="group relative rounded-lg overflow-hidden border border-dark-500 hover:border-blue-500 transition-colors"
+            @click="openImage(image.image_url)"
+          >
+            <img
+              :src="getImageUrl(image.image_url)"
+              :alt="`feedback-${image.id}`"
+              class="h-32 w-full object-cover"
+            />
+            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/35 transition-colors flex items-center justify-center">
+              <ExternalLink class="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+          </button>
+        </div>
+      </article>
+    </div>
+
+    <div v-else class="bg-dark-600 border border-dark-700 rounded-xl p-4">
+      <p class="text-gray-300 mb-3">{{ $t('pages.admin.feedbackPage.loadError') }}</p>
+      <button
+        type="button"
+        class="rounded-lg border border-dark-500 bg-dark-700 hover:bg-dark-500 px-3 py-1.5 text-sm text-mainText transition-colors"
+        @click="goBack"
+      >
+        {{ $t('common.back') }}
+      </button>
+    </div>
+  </section>
+</template>

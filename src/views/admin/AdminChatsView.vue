@@ -179,7 +179,7 @@ onMounted(async () => {
 
         const chatIdFromQuery = route.query.chatId as string | undefined
         if (chatIdFromQuery) {
-            const exists = chats.value.some(c => c.id === chatIdFromQuery)
+            const exists = await ensureChatLoaded(chatIdFromQuery)
             if (exists) {
                 await loadChatMessages(chatIdFromQuery)
             }
@@ -218,6 +218,35 @@ async function loadChats() {
     hasMoreChats.value = response.currentPage < response.totalPages
 
     isLoadingChats.value = false
+}
+
+async function ensureChatLoaded(chatId: string): Promise<boolean> {
+    if (chats.value.some(chat => chat.id === chatId)) {
+        return true
+    }
+
+    while (hasMoreChats.value) {
+        const response = await adminService.getAdminChats(
+            chatsCurrentPage.value + 1,
+            chatsPerPage.value
+        )
+
+        if (response.chats.length === 0) {
+            hasMoreChats.value = false
+            break
+        }
+
+        chats.value.push(...response.chats)
+        chatsCurrentPage.value = response.currentPage
+        chatsTotalPages.value = response.totalPages
+        hasMoreChats.value = response.currentPage < response.totalPages
+
+        if (chats.value.some(chat => chat.id === chatId)) {
+            return true
+        }
+    }
+
+    return false
 }
 
 // Infinity scroll для чатов

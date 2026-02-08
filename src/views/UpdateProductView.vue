@@ -31,6 +31,15 @@ const productData = ref<ProductEdit | null>(null)
 const isLoadingProduct = ref(true)
 const commissionInterest = ref<number | null>(null)
 
+const PRODUCT_LIMITS = {
+  title: { min: 10, max: 50 },
+  description: { min: 10, max: 256 },
+  productData: { min: 10, max: 128 },
+  price: { min: 10, max: 1000000 },
+  count: { min: 1, max: 5000 },
+  images: { min: 1, max: 8 }
+}
+
 const productId = computed(() => route.params.productId as string)
 
 const store = useUserStore()
@@ -39,7 +48,7 @@ const user = await store.getUser()
 // Максимальное количество новых файлов с учетом существующих
 const computedMaxNewFiles = computed(() => {
   const remainingExisting = existingImages.value.length
-  return Math.max(0, 8 - remainingExisting)
+  return Math.max(0, PRODUCT_LIMITS.images.max - remainingExisting)
 })
 
 const totalImagesAfterUpdate = computed(() => {
@@ -65,11 +74,28 @@ const formatPrice = (value: number) => {
 
 // Валидация формы
 const isFormValid = computed(() => {
-  return title.value.trim() &&
-    description.value.trim() &&
-    price.value &&
-    productDataString.value.trim() &&
-    totalImagesAfterUpdate.value > 0
+  const normalizedTitle = title.value.trim()
+  const normalizedDescription = description.value.trim()
+  const normalizedProductData = productDataString.value.trim()
+  const priceValue = Number(price.value)
+  const countValue = Number(count.value)
+
+  return Boolean(
+    normalizedTitle.length >= PRODUCT_LIMITS.title.min &&
+    normalizedTitle.length <= PRODUCT_LIMITS.title.max &&
+    normalizedDescription.length >= PRODUCT_LIMITS.description.min &&
+    normalizedDescription.length <= PRODUCT_LIMITS.description.max &&
+    normalizedProductData.length >= PRODUCT_LIMITS.productData.min &&
+    normalizedProductData.length <= PRODUCT_LIMITS.productData.max &&
+    Number.isFinite(priceValue) &&
+    priceValue >= PRODUCT_LIMITS.price.min &&
+    priceValue <= PRODUCT_LIMITS.price.max &&
+    Number.isFinite(countValue) &&
+    countValue >= PRODUCT_LIMITS.count.min &&
+    countValue <= PRODUCT_LIMITS.count.max &&
+    totalImagesAfterUpdate.value >= PRODUCT_LIMITS.images.min &&
+    totalImagesAfterUpdate.value <= PRODUCT_LIMITS.images.max
+  )
 })
 
 onMounted(async () => {
@@ -132,18 +158,22 @@ async function updateProduct() {
   }
 
   // Проверка максимального количества изображений
-  if (totalImagesAfterUpdate.value > 8) {
-    errorMessage.value = t('pages.forms.editProduct.maxImagesExceeded', { max: 8 })
+  if (totalImagesAfterUpdate.value > PRODUCT_LIMITS.images.max) {
+    errorMessage.value = t('pages.forms.editProduct.maxImagesExceeded', { max: PRODUCT_LIMITS.images.max })
     return
   }
 
   sended.value = true
   try {
+    const normalizedTitle = title.value.trim()
+    const normalizedDescription = description.value.trim()
+    const normalizedProductData = productDataString.value.trim()
+
     const productDataObj = {
-      title: title.value,
-      description: description.value,
+      title: normalizedTitle,
+      description: normalizedDescription,
       price: Number(price.value),
-      product_data: productDataString.value,
+      product_data: normalizedProductData,
       category_id: productData.value!.category.id,
       count: count.value
     }
@@ -216,7 +246,7 @@ async function updateProduct() {
               </label>
               <div class="flex items-center gap-2">
                 <span class="text-xs text-gray-400">
-                  {{ existingImages.length }}/8
+                  {{ existingImages.length }}/{{ PRODUCT_LIMITS.images.max }}
                 </span>
                 <span v-if="imagesToDelete.length > 0" class="text-xs text-red-400">
                   {{ $t('pages.forms.editProduct.deleting') }}: {{ imagesToDelete.length }}
@@ -276,8 +306,8 @@ async function updateProduct() {
               <AlertCircle class="w-3 h-3 text-yellow-400" />
               <span>
                 {{ $t('pages.forms.editProduct.totalImagesInfo') }}:
-                <span :class="totalImagesAfterUpdate > 8 ? 'text-red-400' : 'text-green-400'">
-                  {{ totalImagesAfterUpdate }}/8
+                <span :class="totalImagesAfterUpdate > PRODUCT_LIMITS.images.max ? 'text-red-400' : 'text-green-400'">
+                  {{ totalImagesAfterUpdate }}/{{ PRODUCT_LIMITS.images.max }}
                 </span>
               </span>
             </div>
@@ -289,11 +319,11 @@ async function updateProduct() {
               {{ $t('pages.forms.createProduct.productName') }}
               <span class="text-xs text-red-400 ml-1">*</span>
             </label>
-            <input id="title" v-model="title" type="text" maxlength="50" minlength="10"
+            <input id="title" v-model="title" type="text" :maxlength="PRODUCT_LIMITS.title.max" :minlength="PRODUCT_LIMITS.title.min"
               :placeholder="$t('pages.forms.createProduct.productNamePlaceholder')"
               class="w-full outline-none rounded-lg bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white placeholder-gray-500 " />
             <p class="text-xs text-gray-400 text-right">
-              {{ title.length }}/50
+              {{ title.length }}/{{ PRODUCT_LIMITS.title.max }}
             </p>
           </div>
 
@@ -303,11 +333,11 @@ async function updateProduct() {
               {{ $t('common.description') }}
               <span class="text-xs text-red-400 ml-1">*</span>
             </label>
-            <textarea id="description" v-model="description" rows="8" maxlength="500" minlength="10"
+            <textarea id="description" v-model="description" rows="8" :maxlength="PRODUCT_LIMITS.description.max" :minlength="PRODUCT_LIMITS.description.min"
               :placeholder="$t('pages.forms.createProduct.descriptionPlaceholder')"
               class="w-full rounded-lg outline-none bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white placeholder-gray-500 resize-none"></textarea>
             <p class="text-xs text-gray-400 text-right">
-              {{ description.length }}/500
+              {{ description.length }}/{{ PRODUCT_LIMITS.description.max }}
             </p>
           </div>
 
@@ -323,11 +353,11 @@ async function updateProduct() {
                 <span>{{ $t('pages.forms.createProduct.productDataHint') }}</span>
               </div>
             </div>
-            <textarea id="productData" v-model="productDataString" rows="6" maxlength="300"
+            <textarea id="productData" v-model="productDataString" rows="6" :maxlength="PRODUCT_LIMITS.productData.max" :minlength="PRODUCT_LIMITS.productData.min"
               :placeholder="$t('pages.forms.createProduct.productDataPlaceholder')"
               class="w-full rounded-lg outline-none bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white placeholder-gray-500 resize-none font-mono"></textarea>
             <p class="text-xs text-gray-400 text-right">
-              {{ productDataString.length }}/300
+              {{ productDataString.length }}/{{ PRODUCT_LIMITS.productData.max }}
             </p>
           </div>
 
@@ -337,7 +367,7 @@ async function updateProduct() {
               {{ $t('pages.forms.createProduct.count') }}
             </label>
             <div class="relative">
-              <input id="count" v-model.number="count" type="number" min="1" max="100000"
+              <input id="count" v-model.number="count" type="number" :min="PRODUCT_LIMITS.count.min" :max="PRODUCT_LIMITS.count.max"
                 class="w-full rounded-lg outline-none bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white" />
               <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
                 {{ $t('common.items') }}
@@ -368,7 +398,7 @@ async function updateProduct() {
                 </div>
               </div>
               <div class="relative">
-                <input id="price" v-model.number="price" type="number" min="1"
+                <input id="price" v-model.number="price" type="number" :min="PRODUCT_LIMITS.price.min" :max="PRODUCT_LIMITS.price.max"
                   :placeholder="$t('pages.forms.createProduct.pricePlaceholder')"
                   class="w-full rounded-lg outline-none bg-dark-600 border border-dark-700 px-4 py-3 text-lg font-semibold text-white" />
                 <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 text-sm font-medium">
@@ -468,7 +498,7 @@ async function updateProduct() {
                   <span class="text-sm text-gray-400">{{ $t('common.images') }}:</span>
                   <div class="flex flex-col items-end">
                     <span class="text-sm font-medium text-white">
-                      {{ totalImagesAfterUpdate }}/8
+                      {{ totalImagesAfterUpdate }}/{{ PRODUCT_LIMITS.images.max }}
                     </span>
                     <span v-if="imagesToDelete.length > 0" class="text-xs text-red-400">
                       -{{ imagesToDelete.length }} {{ $t('pages.forms.editProduct.deleting') }}

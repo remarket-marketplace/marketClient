@@ -77,13 +77,19 @@ function formatPrice(price: number) {
 async function loadProfileData() {
   try {
     const data = await profileService.getUserProfileData(username.value)
+    if (!data) return false
+
     profileData.value = data
     currentProfileData.value = data
-    newDescription.value = data?.description ?? ''
+    newDescription.value = data.description ?? ''
     return true
   } catch (error: any) {
     console.error('Profile load error:', error)
-    router.push(error.response?.status === 404 ? '/404' : '/error')
+
+    if (error?.response?.status === 404) {
+      await router.replace({ name: 'notAccess' })
+    }
+
     return false
   }
 }

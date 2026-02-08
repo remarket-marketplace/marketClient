@@ -1,13 +1,38 @@
+import axios from "axios";
 import { ZodError } from "zod";
 import { httpClient } from "..";
 import { ProductSchema, type Product } from "@/validation/product/product";
 import { ErrorHandler } from "../errorHandler";
 
+export interface ProductsFilterParams {
+  minPrice?: number;
+  maxPrice?: number;
+}
+
+function buildProductsFilterParams(filters?: ProductsFilterParams) {
+  if (!filters) return {};
+
+  const params: Record<string, string | number> = {};
+
+  if (filters.minPrice !== undefined) params.min_price = filters.minPrice;
+  if (filters.maxPrice !== undefined) params.max_price = filters.maxPrice;
+
+  return params;
+}
+
 export const productService = {
-  async getAllProducts(page: number, perPage: number) {
+  async getAllProducts(
+    page: number,
+    perPage: number,
+    filters?: ProductsFilterParams,
+  ) {
     try {
       const response = await httpClient.get("/products/get/all", {
-        params: { page, per_page: perPage },
+        params: {
+          page,
+          per_page: perPage,
+          ...buildProductsFilterParams(filters),
+        },
       });
       return {
         products: response.data.products.map((product: any) => {
@@ -42,6 +67,9 @@ export const productService = {
       };
       return ProductSchema.parse(transformedProduct);
     } catch (e) {
+      if (axios.isAxiosError(e) && e.response?.status === 404) {
+        throw e;
+      }
       if (e instanceof ZodError) console.error(e.issues);
       return null;
     }
@@ -68,6 +96,7 @@ export const productService = {
     categoryId: string,
     page: number,
     perPage: number,
+    filters?: ProductsFilterParams,
   ) {
     try {
       const response = await httpClient.get(
@@ -76,6 +105,7 @@ export const productService = {
           params: {
             page,
             per_page: perPage,
+            ...buildProductsFilterParams(filters),
           },
         },
       );
@@ -272,6 +302,7 @@ export const productService = {
     query: string,
     page: number,
     perPage: number,
+    filters?: ProductsFilterParams,
   ): Promise<{
     products: Product[];
     currentPage: number;
@@ -284,6 +315,7 @@ export const productService = {
           q: query,
           page,
           per_page: perPage,
+          ...buildProductsFilterParams(filters),
         },
       });
 
