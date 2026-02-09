@@ -173,7 +173,7 @@ async function createProduct() {
     </div>
 
     <!-- Desktop layout -->
-    <div class="lg:flex lg:h-full">
+    <div class="lg:flex lg:min-h-[calc(100dvh-3.5rem)]">
       <!-- Left column - Main form -->
       <div class="lg:flex-1 overflow-y-auto no-scrollbar lg:pr-6 lg:pt-6 pb-6">
         <div class="px-4 lg:px-0 space-y-6">
@@ -312,7 +312,7 @@ async function createProduct() {
 
       <!-- Right sidebar - Fixed on desktop, normal flow on mobile -->
       <div
-        class="lg:w-96 lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-full lg:border-l border-dark-700 px-4 lg:px-0 lg:pl-6 lg:pt-6">
+        class="lg:w-96 lg:flex-shrink-0 lg:sticky lg:top-0 lg:min-h-[calc(100dvh-3.5rem)] lg:border-l border-dark-700 px-4 lg:px-0 lg:pl-6 lg:pt-6">
         <div class="pt-6 lg:pt-0">
           <div class="space-y-6 lg:pb-0">
             <!-- Product price -->

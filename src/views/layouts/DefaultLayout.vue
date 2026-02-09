@@ -149,7 +149,7 @@ const navItems = computed(() => {
       class="mx-auto w-full 2xl:w-1/2 no-scrollbar"
       :class="showFooter ? 'min-h-screen' : 'flex flex-1 h-full flex-col'"
     >
-      <header class="flex-none z-30 relative border-b border-dark-700">
+      <header class="flex-none z-30 relative">
         <div class="mx-auto h-14 w-full flex items-center justify-between px-2 lg:px-4">
           <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold"
             @click="router.push('/')">
@@ -188,6 +188,10 @@ const navItems = computed(() => {
             <SelectLanguage />
           </div>
         </div>
+        <div
+          aria-hidden="true"
+          class="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-dark-700/25 via-dark-700/95 to-dark-700/25"
+        />
       </header>
   
       <main :class="showFooter ? '' : 'flex-1 min-h-0 overflow-hidden'">

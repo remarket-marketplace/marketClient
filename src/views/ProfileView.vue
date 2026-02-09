@@ -300,10 +300,10 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
     </div>
 
     <!-- Desktop layout -->
-    <div class="lg:flex lg:h-full">
+    <div class="lg:flex lg:min-h-[calc(100dvh-3.5rem)]">
       <!-- Left column - Profile info -->
       <div
-        class="lg:w-96 lg:flex-shrink-0 lg:sticky lg:h-full lg:border-r border-dark-700 px-4 lg:px-0 lg:pt-6 lg:pr-6">
+        class="lg:w-96 lg:flex-shrink-0 lg:sticky lg:min-h-[calc(100dvh-3.5rem)] lg:border-r border-dark-700 px-4 lg:px-0 lg:pt-6 lg:pr-6">
         <div class="space-y-6">
           <!-- Desktop header -->
           <div class="hidden lg:block">
