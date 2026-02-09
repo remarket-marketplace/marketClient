@@ -13,6 +13,7 @@ import { useUserStore } from '@/stores/user'
 import { useChatStore } from '@/stores/chat'
 import { storeToRefs } from 'pinia'
 import SelectLanguage from '@/components/SelectLanguage.vue'
+import MainPageFooter from '@/components/layout/MainPageFooter.vue'
 import type { FunctionalComponent } from 'vue'
 import type { LucideProps } from 'lucide-vue-next'
 
@@ -85,6 +86,8 @@ const isActiveRouteMobile = (item: NavItem) => {
   return isActiveRoute(item)
 }
 
+const showFooter = computed(() => !route.path.startsWith('/chats'))
+
 onMounted(() => {
   checkDesktop()
   window.addEventListener('resize', checkDesktop)
@@ -138,8 +141,14 @@ const navItems = computed(() => {
 </script>
 
 <template>
-  <div class="h-full-dvh w-screen flex items-center flex-col overflow-hidden bg-background text-mainText">
-    <div class="flex w-full 2xl:w-1/2 flex-col flex-1 h-full no-scrollbar">
+  <div
+    class="w-screen bg-background text-mainText"
+    :class="showFooter ? 'min-h-screen' : 'h-full-dvh overflow-hidden flex flex-col'"
+  >
+    <div
+      class="mx-auto w-full 2xl:w-1/2 no-scrollbar"
+      :class="showFooter ? 'min-h-screen' : 'flex flex-1 h-full flex-col'"
+    >
       <header class="flex-none z-30 relative border-b border-dark-700">
         <div class="mx-auto h-14 w-full flex items-center justify-between px-2 lg:px-4">
           <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold"
@@ -181,8 +190,8 @@ const navItems = computed(() => {
         </div>
       </header>
   
-      <main class="flex-1 overflow-hidden min-h-0">
-        <div class="mx-auto h-full w-full lg:px-4" :class="{ 'pb-16': !isDesktop }">
+      <main :class="showFooter ? '' : 'flex-1 min-h-0 overflow-hidden'">
+        <div class="mx-auto w-full lg:px-4" :class="[{ 'pb-16': !isDesktop }, showFooter ? '' : 'h-full']">
           <slot />
         </div>
       </main>
@@ -219,6 +228,8 @@ const navItems = computed(() => {
         </div>
       </nav>
     </div>
+
+    <MainPageFooter v-if="showFooter" />
   </div>
 </template>
 
