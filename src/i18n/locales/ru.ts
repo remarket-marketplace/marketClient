@@ -232,6 +232,7 @@ const ru = {
     PRODUCT_EDIT_PERMISSION_DENIED: "Нет прав для редактирования этого товара",
     INVALID_PRODUCT_DATA: "Неверные данные товара",
     PRODUCT_ALREADY_SOLD: "Товар уже продан, редактирование невозможно",
+    AT_LEAST_ONE_IMAGE_REQUIRED: "Нужно добавить минимум одно изображение",
 
     unknownError: "Произошла неизвестная ошибка",
     networkError: "Ошибка сети. Проверьте подключение к интернету",
@@ -494,6 +495,8 @@ const ru = {
       reviews: "Отзывы",
       likesCount: "Лайки",
       description: "Описание",
+      raikaVerifiedPrefix: "Товар проверен с помощью ",
+      raikaName: "raika",
       deleteConfirm: {
         title: "Подтверждение удаления товара",
         message:
@@ -854,12 +857,17 @@ const ru = {
         creating: "Создание...",
         errorLoadingCategories: "Ошибка загрузки категорий",
         errorLoadingSubcategories: "Ошибка загрузки подкатегорий",
+        loadingDraft: "Загружаем черновик из Telegram...",
+        draftNotFound: "Черновик не найден или уже истек",
+        errorLoadingDraft: "Ошибка загрузки черновика",
         minLength:
           "Название, описание и данные товара должны содержать минимум 10 символов",
         pricePositive: "Цена должна быть больше 0",
         errorCreatingProduct: "Ошибка создания товара",
         subtitle: "Заполните все детали о вашем товаре",
-        imageHint: "Загрузите до 8 изображений. Первое изображение будет обложкой.",
+        imageHint: "Загрузите до 10 изображений. Первое изображение будет обложкой.",
+        raikaVerifiedPrefix: "Товар проверен с помощью ",
+        raikaName: "raika",
         productNamePlaceholder: "Введите название товара",
         productDataHint: "Эта информация будет видна только после покупки",
         calculations: "Расчеты",

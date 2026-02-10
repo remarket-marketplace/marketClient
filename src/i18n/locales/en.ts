@@ -230,6 +230,7 @@ const en = {
     PRODUCT_EDIT_PERMISSION_DENIED: "No permission to edit this product",
     INVALID_PRODUCT_DATA: "Invalid product data",
     PRODUCT_ALREADY_SOLD: "Product already sold, editing is not possible",
+    AT_LEAST_ONE_IMAGE_REQUIRED: "At least one image is required",
 
     unknownError: "An unknown error occurred",
     networkError: "Network error. Please check your internet connection",
@@ -493,6 +494,8 @@ const en = {
       reviews: "Reviews",
       likesCount: "Likes",
       description: "Description",
+      raikaVerifiedPrefix: "This product was verified using the ",
+      raikaName: "raika",
       deleteConfirm: {
         title: "Confirm Product Deletion",
         message:
@@ -857,12 +860,17 @@ const en = {
         creating: "Creating...",
         errorLoadingCategories: "Error loading categories",
         errorLoadingSubcategories: "Error loading subcategories",
+        loadingDraft: "Loading draft from Telegram...",
+        draftNotFound: "Draft not found or expired",
+        errorLoadingDraft: "Error loading draft",
         minLength:
           "Name, description and product data must contain at least 10 characters",
         pricePositive: "Price must be greater than 0",
         errorCreatingProduct: "Error creating product",
         subtitle: "Fill in all the details about your product",
-        imageHint: "Upload up to 8 images. The first image will be the cover.",
+        imageHint: "Upload up to 10 images. The first image will be the cover.",
+        raikaVerifiedPrefix: "This product was verified using the ",
+        raikaName: "raika",
         productNamePlaceholder: "Enter product name",
         productDataHint: "This information will be visible only after purchase",
         calculations: "Calculations",

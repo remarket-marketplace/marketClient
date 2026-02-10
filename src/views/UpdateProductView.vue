@@ -37,7 +37,7 @@ const PRODUCT_LIMITS = {
   productData: { min: 10, max: 128 },
   price: { min: 10, max: 1000000 },
   count: { min: 1, max: 5000 },
-  images: { min: 1, max: 8 }
+  images: { min: 1, max: 10 }
 }
 
 const productId = computed(() => route.params.productId as string)

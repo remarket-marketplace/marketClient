@@ -15,6 +15,7 @@ import BackButton from '@/components/navigation/BackButton.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
 
 const API_HOST = import.meta.env.VITE_API_HOST
+const RAIKA_BOT_URL = 'https://t.me/Raika_CheckBot'
 const route = useRoute('/product/[productId]')
 const router = useRouter()
 const { locale, t } = useI18n()
@@ -253,6 +254,23 @@ onUnmounted(() => {
             <span class="text-gray-400 font-medium min-w-20">{{ $t('common.category') }}:</span>
             <span class="text-white">{{ product.category?.name ?? $t('common.notSpecified') }}</span>
           </div>
+        </div>
+
+        <div
+          v-if="product.is_raika_verified"
+          class="rounded-lg border border-emerald-700/40 bg-emerald-900/20 p-3 text-xs text-emerald-200"
+        >
+          <p>
+            {{ $t('pages.product.raikaVerifiedPrefix') }}
+            <a
+              :href="RAIKA_BOT_URL"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="underline decoration-emerald-300/60 underline-offset-2 hover:text-emerald-100 transition-colors"
+            >
+              {{ $t('pages.product.raikaName') }}
+            </a>
+          </p>
         </div>
 
         <!-- Seller -->

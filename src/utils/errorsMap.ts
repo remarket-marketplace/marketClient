@@ -45,6 +45,7 @@ export const errorCodeMap: Record<string, string> = {
   PRODUCT_EDIT_PERMISSION_DENIED: 'errors.PRODUCT_EDIT_PERMISSION_DENIED',
   INVALID_PRODUCT_DATA: 'errors.INVALID_PRODUCT_DATA',
   PRODUCT_ALREADY_SOLD: 'errors.PRODUCT_ALREADY_SOLD',
+  AT_LEAST_ONE_IMAGE_REQUIRED: 'errors.AT_LEAST_ONE_IMAGE_REQUIRED',
 }
 
 // errorDetail = { error_code: 'TOKEN_NOT_FOUND', error_message: 'Token not found' }
