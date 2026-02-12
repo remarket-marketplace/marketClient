@@ -33,7 +33,7 @@ const commissionInterest = ref<number | null>(null)
 
 const PRODUCT_LIMITS = {
   title: { min: 10, max: 50 },
-  description: { min: 10, max: 256 },
+  description: { min: 10, max: 1200 },
   productData: { min: 10, max: 128 },
   price: { min: 10, max: 1000000 },
   count: { min: 1, max: 5000 },
