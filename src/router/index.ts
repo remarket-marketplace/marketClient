@@ -218,10 +218,21 @@ const routes = [
   ]
 
 export function createAppRouter(isSSR = false) {
+  let shouldResetNestedScroll = true
+
   const history = isSSR ? createMemoryHistory() : createWebHistory(import.meta.env.BASE_URL)
   const router = createRouter({
     history,
     routes,
+    scrollBehavior(_to, _from, savedPosition) {
+      shouldResetNestedScroll = !savedPosition
+
+      if (savedPosition) {
+        return savedPosition
+      }
+
+      return { left: 0, top: 0 }
+    },
   })
 
   router.beforeEach(async (to, from, next) => {
@@ -247,6 +258,28 @@ export function createAppRouter(isSSR = false) {
 
   next();
   });
+
+  router.afterEach(() => {
+    if (typeof window === 'undefined' || !shouldResetNestedScroll) {
+      return
+    }
+
+    const resetNestedScroll = () => {
+      const scrollableContainers = document.querySelectorAll<HTMLElement>(
+        'main .overflow-scroll, main .overflow-y-auto, main .overflow-y-scroll'
+      )
+
+      scrollableContainers.forEach((el) => {
+        el.scrollTop = 0
+        el.scrollLeft = 0
+      })
+    }
+
+    window.requestAnimationFrame(() => {
+      resetNestedScroll()
+      window.requestAnimationFrame(resetNestedScroll)
+    })
+  })
 
   router.afterEach((to, from) => {
     if (typeof window === 'undefined' || typeof (window as any).ym !== 'function') {
