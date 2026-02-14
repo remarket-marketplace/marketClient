@@ -156,7 +156,12 @@ export const productService = {
       formData.append("title", productData.title);
       formData.append("description", productData.description);
       formData.append("price", productData.price.toString());
-      formData.append("product_data", productData.product_data);
+      if (
+        typeof productData.product_data === "string" &&
+        productData.product_data.trim().length > 0
+      ) {
+        formData.append("product_data", productData.product_data.trim());
+      }
       formData.append("category_id", productData.category_id);
       formData.append("count", productData.count);
       formData.append("auto_delivery", productData.auto_delivery);
