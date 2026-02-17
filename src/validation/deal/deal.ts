@@ -11,7 +11,7 @@ export const DealSchema = z.object({
     seller: UserReadSchema,
     buyer: UserReadSchema,
     product: ProductSchema,
-    chat_room_id: UUIDSchema,
+    chat_room_id: UUIDSchema.nullable().optional(),
     refusal_reason: z.object({
         deal_id: UUIDSchema,
         refusal_reason_title: z.string(),

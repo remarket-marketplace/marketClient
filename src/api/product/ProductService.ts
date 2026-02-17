@@ -160,11 +160,6 @@ export const productService = {
       formData.append("category_id", productData.category_id);
       formData.append("count", productData.count);
       formData.append("auto_delivery", productData.auto_delivery);
-      if (Array.isArray(productData.draft_images)) {
-        productData.draft_images.forEach((imageUrl: string) => {
-          formData.append("draft_images", imageUrl);
-        });
-      }
       uploadedImages.forEach((image) => {
         formData.append("uploaded_images", image);
       });
@@ -308,6 +303,7 @@ export const productService = {
     page: number,
     perPage: number,
     filters?: ProductsFilterParams,
+    categoryId?: string,
   ): Promise<{
     products: Product[];
     currentPage: number;
@@ -320,6 +316,7 @@ export const productService = {
           q: query,
           page,
           per_page: perPage,
+          ...(categoryId ? { category_id: categoryId } : {}),
           ...buildProductsFilterParams(filters),
         },
       });

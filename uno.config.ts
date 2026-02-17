@@ -10,12 +10,16 @@ export default defineConfig({
   ],
   theme: {
     colors: {
-      'dark-900': '#121212',
-      'dark-800': '#1f1f1f',
-      'dark-700': '#2a2a2a',
+      'dark-950': '#050b12',
+      'dark-900': '#07131d',
+      'dark-800': '#0c1d2b',
+      'dark-700': '#12293a',
+      'dark-600': '#18374b',
+      'dark-500': '#245069',
+      'dark-200': '#5f89a2',
       'light-100': '#f5f5f5',
       'light-200': '#e5e5e5',
-      'brand': '#1e40af',
+      'brand': '#2aabee',
     },
   },
   shortcuts: {

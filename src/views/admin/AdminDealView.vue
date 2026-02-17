@@ -15,8 +15,7 @@ import {
   Shield,
   MessageSquare,
   Loader2,
-  ExternalLink, 
-  MessageCircleMore
+  ExternalLink
 } from 'lucide-vue-next'
 import { adminService } from '@/api/admin/AdminService'
 import type { Deal } from '@/validation/deal/deal'
@@ -65,10 +64,6 @@ function formatDate(dateString: string) {
     hour: '2-digit',
     minute: '2-digit'
   })
-}
-
-function goToChat(chatId: string) {
-  router.push({ name: 'adminChatView', params: { chatId } })
 }
 
 // URL изображений
@@ -581,11 +576,6 @@ onMounted(async () => {
                   <span>{{ $t('common.cancelDeal') }}</span>
                 </button>
 
-                <button @click="goToChat(deal.chat_room_id)"
-                  class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-green-800 text-white rounded-lg transition-colors">
-                  <MessageCircleMore class="w-4 h-4" />
-                  <span class="hidden sm:inline">{{ $t('common.toChat') }}</span>
-                </button>
               </div>
             </div>
           </div>

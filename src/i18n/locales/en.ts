@@ -101,7 +101,7 @@ const en = {
     sold: "Sold",
 
     product: "Product",
-    remarket: "Remarket - secure transactions market",
+    remarket: "xmarket - Telegram usernames marketplace",
     support: "Support",
     legal: "Legal",
     forLegalMatters: "For legal matters.",
@@ -109,7 +109,7 @@ const en = {
     aboutUs: "About us",
     privacyPolicy: "Privacy policy",
     termsOfService: "Terms of service",
-    tagline: "A modern platform for secure transactions between users.",
+    tagline: "A marketplace for buying and selling Telegram usernames.",
     features: "Features",
     pricing: "Pricing",
     helpCenter: "Help Center",
@@ -136,7 +136,7 @@ const en = {
       supportText: "Fast help and answers anytime",
 
       sellersTitle: "Verified sellers",
-      sellersText: "Reputation, reviews and moderation",
+      sellersText: "Verified sellers and moderation",
 
       disputesTitle: "Dispute resolution",
       disputesText: "Issues are resolved quickly and fairly",
@@ -308,14 +308,49 @@ const en = {
     },
 
     index: {
-      searchPlaceholder: "Search products...",
+      searchPlaceholder: "Search premium Telegram usernames and X handles...",
       selectCategory: "Select category",
       allSubcategories: "All subcategories",
-      noProducts: "No products for selected category",
+      noProducts: "No lots match the selected filters",
       filtersTitle: "Filters",
       priceFrom: "Price from",
       priceTo: "Price to",
       resetFilters: "Reset",
+      platformTabsTitle: "Category focus",
+      platformTabs: {
+        telegram: "Telegram Usernames",
+        numbers: "+888 Numbers",
+        x: "X Handles",
+      },
+      anonymousNumbers: {
+        eyebrow: "Anonymous Numbers",
+        title: "+888 collection for private ownership",
+        description: "Number assets are TON NFTs with high-margin liquidity. Gold and Silver tiers separate elite inventory from entry-level picks.",
+      },
+      filters: {
+        smartTitle: "Smart filters",
+        lengthTitle: "Length",
+        typeTitle: "Type",
+        priceTitle: "Price",
+        lengthAll: "All",
+        length4: "4 symbols",
+        length5: "5 symbols",
+        length6Plus: "6+ symbols",
+        typeAll: "All types",
+        typeDictionary: "Dictionary Word",
+        typeCrypto: "Crypto / NFT",
+        typePersonal: "Personal / Names",
+        priceAll: "Any price",
+        priceUpTo100: "Up to $100",
+        price100To1000: "$100 - $1000",
+        priceWhale: "Whale Tier ($10k+)",
+      },
+      catalogTitles: {
+        telegram: "Telegram Usernames Catalog",
+        numbers: "Anonymous +888 Numbers Catalog",
+        x: "X Handles Catalog",
+      },
+      filteredCount: "{count} lots",
     },
 
     feedback: {
@@ -394,12 +429,12 @@ const en = {
 
     about: {
       title: "About Us",
-      subtitle: "remarket is a marketplace for secure peer-to-peer deals built on transparent rules, support, and predictable transaction flow.",
+      subtitle: "xmarket is a Telegram usernames marketplace built on transparent rules, support, and predictable transaction flow.",
       missionTitle: "Our Mission",
       missionText1: "We make digital transactions between people clear and safer. In many marketplaces, lack of transparency creates fear on both buying and selling sides. Our goal is to remove that barrier.",
       missionText2: "We build an environment where honest sellers can operate with confidence and buyers can make decisions with lower risk.",
       ideaTitle: "Marketplace Idea",
-      ideaText1: "The core idea of remarket is to combine marketplace convenience with deal-control mechanics: structured listings, in-platform communication, and a clear order lifecycle.",
+      ideaText1: "The core idea of xmarket is to combine marketplace convenience with deal-control mechanics: structured listings, in-platform communication, and a clear order lifecycle.",
       ideaText2: "Every important step is recorded inside the platform so both sides can rely on verifiable facts, not verbal promises.",
       securityTitle: "How We Protect Deals",
       securityText1: "The platform keeps users in a safe flow: in-app chat, consistent statuses, action history, and support in disputed cases.",
@@ -408,7 +443,7 @@ const en = {
       valuesText1: "Transparency: deal terms and expectations should be clear before payment. Speed: users should not lose time in chaotic communication.",
       valuesText2: "Responsibility: we keep improving tools that help both buyers and sellers act fairly and follow marketplace rules.",
       futureTitle: "Where We Are Going",
-      futureText1: "We are building remarket as trust infrastructure by improving moderation quality, communication UX, and seller reliability signals.",
+      futureText1: "We are building xmarket as trust infrastructure by improving moderation quality, communication UX, and seller reliability signals.",
       futureText2: "Our long-term goal is simple: secure transactions should be the standard, not an exception.",
     },
 
@@ -914,12 +949,34 @@ const en = {
   },
 
   hero: {
-    badge: "Secure Digital Asset Trading",
-    mainTitle: "The Marketplace",
-    mainTitleGradient: "Built on Trust",
-    description: "Next-generation trading platform. Buy and sell digital goods with full fund protection and quality guarantee. Verified sellers, fair pricing, honest trading. Your secure place for digital commerce.",
+    badge: "Escrow-Secured Market",
+    mainTitle: "Premium Telegram Usernames",
+    mainTitleGradient: "& X Handles Market",
+    description: "Secure escrow for buying and selling Telegram usernames and X handles.",
     exploreCatalog: "Explore Catalog",
     startSelling: "Start Selling",
+    connectWallet: "Connect Wallet (TON)",
+    tabs: {
+      telegram: "Telegram Usernames",
+      numbers: "+888 Numbers",
+      x: "X Handles",
+    },
+    highlights: {
+      usernames: "Premium usernames",
+      escrow: "Secure Escrow",
+      xHandles: "Premium X handles",
+    },
+    panel: {
+      liveMarket: "Live market",
+      online: "online",
+      escrowTitle: "Escrow 24h",
+      escrowSub: "buyer protection",
+      tonTitle: "Instant TON",
+      tonSub: "fast transfer",
+      auditTitle: "X Audit",
+      auditSub: "shadowban checked",
+      numbersTitle: "Anonymous Numbers",
+    },
   },
 };
 

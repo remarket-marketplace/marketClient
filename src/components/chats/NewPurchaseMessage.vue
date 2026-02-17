@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import { productService } from '@/api/product/ProductService';
-import { reviewService } from '@/api/review/ReviewService';
 import { chatsService } from '@/api/chats/chatsService';
 import { useRouter } from 'vue-router';
 import type { Product } from '@/validation/product/product';
 import type { RefusalReasonsList } from '@/validation/deal/deal';
 import { ref, computed } from 'vue';
-import { Star, X } from 'lucide-vue-next';
+import { X } from 'lucide-vue-next';
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import { RefreshCcw } from 'lucide-vue-next';
-import { useUserStore } from '@/stores/user';
 
 const API_HOST = import.meta.env.VITE_API_HOST;
 
@@ -18,18 +16,12 @@ const isConfirmed = ref(false);
 const isReported = ref(false);
 const isRefunded = ref(false);
 
-const showReviewForm = ref(false);
-const reviewStars = ref(0);
-const reviewText = ref('');
-
 const showRefusalModal = ref(false);
 const refusalReasons = ref<RefusalReasonsList>([]);
 const selectedRefusalId = ref<string | null>(null);
 const customReasonText = ref('');
 const MAX_CUSTOM_REASON_LENGTH = 300;
 const otherReasonId = ref<string | null>(null);
-const userStore = useUserStore();
-const isAdmin = computed(() => userStore.user?.role === 'admin')
 
 const showConfirmModal = ref(false);
 const showRefundModal = ref(false);
@@ -42,8 +34,6 @@ const props = defineProps<{
   dealId: string,
   has_review: boolean | null,
 }>();
-
-const localHasReview = ref(props.has_review ?? false);
 
 // Вычисляемое свойство для проверки, выбрана ли причина "otherReason"
 const isOtherReasonSelected = computed(() => {
@@ -78,7 +68,6 @@ async function doConfirmDeal() {
   confirmLoading.value = false;
   if (response === true) {
     isConfirmed.value = true;
-    localHasReview.value = false;
   }
   showConfirmModal.value = false;
 }
@@ -121,17 +110,6 @@ async function handleReport(dealId: string) {
 
 function handleViewProduct(productId: string) {
   router.push(`/product/${productId}`);
-}
-
-async function handleSendReview(productId: string) {
-  if (isAdmin.value) return;
-  if (reviewStars.value < 1) return;
-  showReviewForm.value = false;
-  const response = await reviewService.createReview(props.dealId!, reviewStars.value, reviewText.value);
-  if (response != null) {
-    localHasReview.value = true;
-    showReviewForm.value = false;
-  }
 }
 </script>
 
@@ -242,32 +220,6 @@ async function handleSendReview(productId: string) {
         </template>
       </div>
 
-      <template v-if="(isConfirmed || dealStatus === 'completed') && !localHasReview && !product.is_owner && !isAdmin">
-        <div class="px-4 pb-4">
-          <button v-if="!showReviewForm" @click="showReviewForm = true"
-            class="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 border border-blue-500 w-full">
-            <Star class="w-4 h-4" /> {{ $t('pages.chats.leaveReview') }}
-          </button>
-        </div>
-      </template>
-
-      <template v-if="showReviewForm">
-        <div class="w-full bg-gray-800/50 border border-gray-700 p-4 rounded-xl mt-3 space-y-4">
-          <div class="flex gap-1 justify-center">
-            <Star v-for="n in 5" :key="n" @click="reviewStars = n" class="cursor-pointer"
-              :class="reviewStars >= n ? 'text-blue-600 w-6 h-6' : 'text-gray-600 w-6 h-6'" />
-          </div>
-
-          <textarea v-model="reviewText" rows="4"
-            class="w-full max-h-28 rounded-lg bg-gray-800 border border-gray-700 p-3 text-sm text-gray-200 outline-none focus:border-blue-500"
-            :placeholder="$t('pages.chats.writeReview')"></textarea>
-
-          <button @click="handleSendReview(product.id)"
-            class="w-full rounded-lg bg-green-600 px-6 py-3 text-sm font-semibold text-white hover:bg-green-700 transition border border-green-500">
-            {{ $t('pages.chats.sendReview') }}
-          </button>
-        </div>
-      </template>
     </div>
   </div>
 

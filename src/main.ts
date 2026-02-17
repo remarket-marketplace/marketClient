@@ -1,7 +1,5 @@
 import './assets/main.css'
 import 'uno.css'
-import './assets/main.css'
-import 'uno.css'
 import { createVueApp } from './app'
 
 const { app, router } = createVueApp(false)

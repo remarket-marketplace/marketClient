@@ -2,7 +2,6 @@
 import { authService } from '@/api/auth/AuthService'
 import { productService } from '@/api/product/ProductService'
 import { profileService } from '@/api/profile/ProfileService'
-import { reviewService } from '@/api/review/ReviewService'
 import Loader from '@/components/Loader.vue'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
@@ -11,11 +10,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import type { Product } from '@/validation/product/product'
 import type { PublicProfileData, UserRead } from '@/validation/user/userRead'
-import type { ReviewSchema } from '@/validation/review/review'
-import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart, Edit, Calendar, Star, Package, ShoppingBag, MessageSquare, Award, TrendingUp } from 'lucide-vue-next'
+import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart, Edit, Calendar, Star, Package, ShoppingBag } from 'lucide-vue-next'
 import QrcodeVue from 'qrcode.vue'
 import type { Deal } from '@/validation/deal/deal'
-import UserRating from '@/components/UserRating.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
 
 const { t } = useI18n()
@@ -42,7 +39,7 @@ const isCopied = ref(false)
 
 const isOwner = computed(() => currentUser.value?.username === username.value)
 const profileUrl = computed(() => `${window.location.origin}/user/${username.value}`)
-const activeTab = ref<'products' | 'reviews' | 'purchases'>('products')
+const activeTab = ref<'products' | 'purchases'>('products')
 
 // Пагинация для товаров
 const products = ref<Product[]>([])
@@ -51,13 +48,6 @@ const totalPagesProducts = ref(1)
 const perPage = ref(20)
 const isLoadingProducts = ref(false)
 const isLoadingMoreProducts = ref(false)
-
-// Пагинация для отзывов
-const reviews = ref<ReviewSchema[]>([])
-const currentPageReviews = ref(1)
-const totalPagesReviews = ref(1)
-const isLoadingReviews = ref(false)
-const isLoadingMoreReviews = ref(false)
 
 // Пагинация для покупок
 const purchases = ref<Deal[]>([])
@@ -124,36 +114,6 @@ async function loadUserProducts(page = 1, append = false) {
   }
 }
 
-async function loadReviews(page = 1, append = false) {
-  if (isLoadingMoreReviews.value) return
-  if (page > totalPagesReviews.value) return
-
-  isLoadingMoreReviews.value = true
-  isLoadingReviews.value = true
-
-  try {
-    const res = await reviewService.getUserReviews(
-      username.value,
-      page,
-      perPage.value
-    )
-
-    if (append) {
-      reviews.value = [...reviews.value, ...res.reviews]
-    } else {
-      reviews.value = res.reviews
-    }
-
-    currentPageReviews.value = page
-    totalPagesReviews.value = res.totalPages
-  } catch (error) {
-    console.error('Failed to load reviews:', error)
-  } finally {
-    isLoadingReviews.value = false
-    isLoadingMoreReviews.value = false
-  }
-}
-
 async function loadPurchases(page = 1, append = false) {
   if (!isOwner.value) return
   if (isLoadingMorePurchases.value) return
@@ -186,11 +146,6 @@ async function loadMoreProducts() {
   await loadUserProducts(currentPageProducts.value + 1, true)
 }
 
-async function loadMoreReviews() {
-  if (currentPageReviews.value >= totalPagesReviews.value) return
-  await loadReviews(currentPageReviews.value + 1, true)
-}
-
 async function loadMorePurchases() {
   if (currentPagePurchases.value >= totalPagesPurchases.value) return
   await loadPurchases(currentPagePurchases.value + 1, true)
@@ -217,9 +172,6 @@ async function updateProfileDescription(newValue: string) {
 function toggleMenu() { showMenu.value = !showMenu.value }
 function goToSettings() { router.push('/settings') }
 function goToWallet() { router.push('/wallet') }
-function goToChat(chatId: string) {
-  router.push({ name: 'chats', query: { chatId } })
-}
 
 function handleClickOutside(event: MouseEvent) {
   if (showMenu.value && menuContainerRef.value && !menuContainerRef.value.contains(event.target as Node)) showMenu.value = false
@@ -261,13 +213,10 @@ async function copyProfileLink() {
   setTimeout(() => isCopied.value = false, 2000)
 }
 
-function switchTab(tab: 'products' | 'reviews' | 'purchases') {
+function switchTab(tab: 'products' | 'purchases') {
   activeTab.value = tab
   if (tab === 'products' && products.value.length === 0) {
     loadUserProducts()
-  }
-  if (tab === 'reviews' && reviews.value.length === 0) {
-    loadReviews()
   }
   if (tab === 'purchases' && purchases.value.length === 0) {
     loadPurchases()
@@ -415,14 +364,10 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
             </div>
 
             <!-- Stats -->
-            <div class="grid grid-cols-3 gap-3">
+            <div class="grid grid-cols-2 gap-3">
               <div class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600 min-h-[76px] space-y-1">
                 <div class="text-lg font-bold text-white">{{ products.length }}</div>
                 <div class="text-xs text-gray-400">{{ t('common.products') }}</div>
-              </div>
-              <div class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600 min-h-[76px] space-y-1">
-                <div class="text-lg font-bold text-white">{{ reviews.length }}</div>
-                <div class="text-xs text-gray-400">{{ t('pages.profile.reviews') }}</div>
               </div>
               <div class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600 min-h-[76px] space-y-1">
                 <div class="text-lg font-bold text-white">{{ currentProfileData.rating }}</div>
@@ -514,20 +459,6 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
               </div>
             </button>
 
-            <button @click="switchTab('reviews')"
-              class="flex-1 min-w-0 px-2 sm:px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
-              :class="activeTab === 'reviews'
-                ? 'bg-blue-600 text-white shadow-lg'
-                : 'text-gray-400 hover:text-white hover:bg-dark-700/50'">
-              <div class="flex items-center justify-center gap-1 sm:gap-2 overflow-hidden">
-                <MessageSquare class="w-4 h-4 flex-shrink-0 hidden xs:block" />
-                <span class="truncate">
-                  <span class="hidden sm:inline">{{ t('pages.profile.reviews') }}</span>
-                  <span class="sm:hidden">{{ t('common.reviewsShort', 'Отзывы') }}</span>
-                </span>
-              </div>
-            </button>
-
             <button v-if="isOwner" @click="switchTab('purchases')"
               class="flex-1 min-w-0 px-2 sm:px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
               :class="activeTab === 'purchases'
@@ -610,48 +541,6 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
               </div>
             </div>
 
-            <!-- Reviews Tab -->
-            <div v-if="activeTab === 'reviews'">
-              <div v-if="isLoadingReviews && !reviews.length" class="w-full flex items-center justify-center py-12">
-                <Loader />
-              </div>
-
-              <div v-else-if="reviews.length === 0" class="text-center py-12">
-                <div
-                  class="w-16 h-16 mx-auto mb-4 rounded-full bg-dark-700/50 border border-dark-600 flex items-center justify-center">
-                  <MessageSquare class="w-8 h-8 text-gray-500" />
-                </div>
-                <h3 class="text-lg font-semibold text-gray-300 mb-2">{{ t('pages.profile.noReviews') }}</h3>
-              </div>
-
-              <div v-else class="space-y-4">
-                <div v-for="review in reviews" :key="review.id"
-                  class="border border-dark-700 rounded-xl bg-dark-600/40 p-4 space-y-3">
-                  <div class="flex items-start justify-between">
-                    <div class="flex items-center gap-3">
-                      <UserRating :rating="review.rating" />
-                      <span class="text-sm text-gray-400">{{ formatFullDate(review.created_at) }}</span>
-                    </div>
-                  </div>
-
-                  <p class="text-sm text-gray-300 leading-relaxed">{{ review.body }}</p>
-                </div>
-
-                <div v-if="currentPageReviews < totalPagesReviews" class="flex justify-center mt-6">
-                  <button @click="loadMoreReviews" :disabled="isLoadingMoreReviews"
-                    class="px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <span v-if="isLoadingMoreReviews" class="flex items-center gap-2">
-                      <Loader />
-                      {{ t('common.loading') }}
-                    </span>
-                    <span v-else>
-                      {{ t('common.loadMore') }}
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
             <!-- Purchases Tab -->
             <div v-if="activeTab === 'purchases'">
               <div v-if="isLoadingPurchases && !purchases.length" class="w-full flex items-center justify-center py-12">
@@ -693,14 +582,6 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                       </div>
                     </div>
 
-                    <button
-                      v-if="deal.chat_room_id"
-                      @click.stop="goToChat(deal.chat_room_id)"
-                      class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-sm"
-                    >
-                      <MessageSquare class="w-4 h-4" />
-                      <span>{{ t('common.toChat') }}</span>
-                    </button>
                   </div>
 
                   <!-- Карточка товара -->

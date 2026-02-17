@@ -1,23 +1,19 @@
 <script setup lang="ts">
 import { categoryService } from '@/api/category/CategoryService'
 import { productService } from '@/api/product/ProductService'
-import { raikaService } from '@/api/raika/RaikaService'
 import CustomSelect from '@/components/CustomSelect.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import FileUploader from '@/components/FileUploader.vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import type { Category } from '@/validation/category/category'
 import { onMounted, ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Percent, Calculator, Info, AlertCircle, X } from 'lucide-vue-next'
+import { Percent, Calculator, Info, AlertCircle } from 'lucide-vue-next'
 import BackButton from '@/components/navigation/BackButton.vue'
 import Checkbox from '@/components/Checkbox.vue'
 
-const API_HOST = import.meta.env.VITE_API_HOST
-const RAIKA_BOT_URL = 'https://t.me/Raika_CheckBot'
 const { t } = useI18n()
-const route = useRoute()
 const router = useRouter()
 const categories = ref<Category[]>([])
 const subcategories = ref<Category[]>([])
@@ -33,9 +29,6 @@ const sended = ref(false)
 const errorMessage = ref('')
 const commissionInterest = ref<number | null>(null)
 const autoDelivery = ref<boolean>(true)
-const isLoadingDraft = ref(false)
-const isRaikaDraftApplied = ref(false)
-const draftImages = ref<string[]>([])
 
 const PRODUCT_LIMITS = {
   title: { min: 10, max: 50 },
@@ -49,10 +42,8 @@ const PRODUCT_LIMITS = {
 const store = useUserStore()
 const user = await store.getUser()
 
-const totalImagesCount = computed(() => draftImages.value.length + images.value.length)
-const maxUploadedImages = computed(() => {
-  return Math.max(0, PRODUCT_LIMITS.images.max - draftImages.value.length)
-})
+const totalImagesCount = computed(() => images.value.length)
+const maxUploadedImages = computed(() => PRODUCT_LIMITS.images.max)
 
 // Calculate seller's final amount
 const sellerAmount = computed(() => {
@@ -97,20 +88,6 @@ const isFormValid = computed(() => {
   )
 })
 
-const draftId = computed(() => {
-  const draftIdParam = route.query.draft_id
-  if (typeof draftIdParam === 'string') {
-    return draftIdParam.trim()
-  }
-  if (Array.isArray(draftIdParam)) {
-    const firstDraftId = draftIdParam.find(
-      (value): value is string => typeof value === 'string'
-    )
-    return firstDraftId?.trim() ?? ''
-  }
-  return ''
-})
-
 onMounted(async () => {
   try {
     await store.fetchUser()
@@ -121,27 +98,6 @@ onMounted(async () => {
   } catch (err) {
     console.error('Error loading data for product creation:', err)
     errorMessage.value = t('common.error')
-  }
-
-  if (!draftId.value) {
-    return
-  }
-
-  try {
-    isLoadingDraft.value = true
-    const draft = await raikaService.getDraft(draftId.value)
-    if (draft) {
-      description.value = draft.description
-      draftImages.value = draft.images.slice(0, PRODUCT_LIMITS.images.max)
-      isRaikaDraftApplied.value = true
-    } else {
-      errorMessage.value = t('pages.forms.createProduct.draftNotFound')
-    }
-  } catch (err) {
-    console.error('Error loading raika draft:', err)
-    errorMessage.value = t('pages.forms.createProduct.errorLoadingDraft')
-  } finally {
-    isLoadingDraft.value = false
   }
 })
 
@@ -159,10 +115,6 @@ watch(selectedCategoryId, async (newCategory) => {
     errorMessage.value = t('pages.forms.createProduct.errorLoadingSubcategories')
   }
 })
-
-function removeDraftImage(index: number) {
-  draftImages.value.splice(index, 1)
-}
 
 async function createProduct() {
   errorMessage.value = ''
@@ -186,7 +138,6 @@ async function createProduct() {
       category_id: selectedSubcategoryId.value,
       count: count.value,
       auto_delivery: autoDelivery.value,
-      draft_images: draftImages.value
     }
 
     const result = await productService.createProduct(productDataObj, images.value)
@@ -240,50 +191,6 @@ async function createProduct() {
             <p class="mt-2 text-sm text-gray-400">
               {{ $t('pages.forms.createProduct.subtitle') }}
             </p>
-          </div>
-
-          <!-- Draft images -->
-          <div v-if="isLoadingDraft" class="rounded-lg border border-dark-700 bg-dark-600/30 p-3">
-            <p class="text-sm text-gray-400">
-              {{ $t('pages.forms.createProduct.loadingDraft') }}
-            </p>
-          </div>
-
-          <div v-if="draftImages.length > 0" class="space-y-3">
-            <div class="flex items-center justify-between">
-              <label class="text-sm font-medium text-gray-300">
-                {{ $t('pages.forms.editProduct.currentImages') }}
-                <span class="text-xs text-red-400 ml-1">*</span>
-              </label>
-              <span class="text-xs text-gray-400">
-                {{ totalImagesCount }}/{{ PRODUCT_LIMITS.images.max }}
-              </span>
-            </div>
-
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              <div
-                v-for="(image, index) in draftImages"
-                :key="`${image}-${index}`"
-                class="group relative aspect-square rounded-lg overflow-hidden border border-dark-700 bg-dark-600 transition-all duration-200 hover:border-red-500"
-              >
-                <img
-                  :src="`${API_HOST}${image}`"
-                  :alt="'Draft image'"
-                  class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-
-                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200 flex items-center justify-center">
-                  <button
-                    type="button"
-                    @click="removeDraftImage(index)"
-                    class="opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-all duration-200"
-                    :title="$t('common.delete')"
-                  >
-                    <X class="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
           </div>
 
           <!-- Images -->
@@ -486,23 +393,6 @@ async function createProduct() {
                   {{ $t('pages.forms.createProduct.commissionNote', { percent: commissionInterest }) }}
                 </p>
               </div>
-            </div>
-
-            <div
-              v-if="isRaikaDraftApplied"
-              class="rounded-lg border border-emerald-700/40 bg-emerald-900/20 p-3 text-xs text-emerald-200"
-            >
-              <p>
-                {{ $t('pages.forms.createProduct.raikaVerifiedPrefix') }}
-                <a
-                  :href="RAIKA_BOT_URL"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="underline decoration-emerald-300/60 underline-offset-2 hover:text-emerald-100 transition-colors"
-                >
-                  {{ $t('pages.forms.createProduct.raikaName') }}
-                </a>
-              </p>
             </div>
 
             <!-- Create button -->

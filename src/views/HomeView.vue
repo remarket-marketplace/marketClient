@@ -8,418 +8,472 @@ import HeroSection from '@/components/HeroSection.vue'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
-import type { ProductsFilterParams } from '@/api/product/ProductService'
-import type { Category } from '@/validation/category/category'
 import type { Product } from '@/validation/product/product'
-import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { demoProductsByPlatform, type DemoProductCard, type ListingType, type PlatformKey } from '@/data/demoProducts'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Folder } from 'lucide-vue-next'
+
+type LengthFilter = 'all' | '4' | '5' | '6+'
+type PriceFilter = 'all' | 'up_to_100' | '100_1000' | 'whale'
+type ProductPlatformKey = PlatformKey | 'numbers'
 
 const { t } = useI18n()
 const router = useRouter()
-const API_HOST = import.meta.env.VITE_API_HOST
 const userStore = useUserStore()
 const { user } = storeToRefs(userStore)
 
-const mainCategories = ref<Category[]>([])
-const subCategories = ref<Category[]>([])
-const selectedMainCategoryId = ref('')
-const selectedSubCategoryId = ref('')
+const platformTabs: Array<{ key: PlatformKey, labelKey: string }> = [
+  { key: 'telegram', labelKey: 'pages.index.platformTabs.telegram' },
+  { key: 'x', labelKey: 'pages.index.platformTabs.x' },
+]
+
+const lengthFilterOptions: Array<{ key: LengthFilter, labelKey: string }> = [
+  { key: 'all', labelKey: 'pages.index.filters.lengthAll' },
+  { key: '4', labelKey: 'pages.index.filters.length4' },
+  { key: '5', labelKey: 'pages.index.filters.length5' },
+  { key: '6+', labelKey: 'pages.index.filters.length6Plus' },
+]
+
+const typeFilterOptions: Array<{ key: 'all' | ListingType, labelKey: string }> = [
+  { key: 'all', labelKey: 'pages.index.filters.typeAll' },
+  { key: 'dictionary', labelKey: 'pages.index.filters.typeDictionary' },
+  { key: 'crypto', labelKey: 'pages.index.filters.typeCrypto' },
+  { key: 'personal', labelKey: 'pages.index.filters.typePersonal' },
+]
+
+const priceFilterOptions: Array<{ key: PriceFilter, labelKey: string }> = [
+  { key: 'all', labelKey: 'pages.index.filters.priceAll' },
+  { key: 'up_to_100', labelKey: 'pages.index.filters.priceUpTo100' },
+  { key: '100_1000', labelKey: 'pages.index.filters.price100To1000' },
+  { key: 'whale', labelKey: 'pages.index.filters.priceWhale' },
+]
+
+const selectedPlatform = ref<PlatformKey>('telegram')
+const platformCategoryIds = ref<Record<PlatformKey, string | null>>({
+  telegram: null,
+  x: null,
+})
+const selectedLengthFilter = ref<LengthFilter>('all')
+const selectedListingType = ref<'all' | ListingType>('all')
+const selectedPriceFilter = ref<PriceFilter>('all')
+
 const products = ref<Product[]>([])
-const totalPages = ref(1)
 const currentPage = ref(1)
-const perPage = ref(30)
-const categoryPage = ref(1)
-const categoryTotalPages = ref(1)
-const subCategoryPage = ref(1)
-const subCategoryTotalPages = ref(1)
-const categoriesPerPage = ref(30)
+const totalPages = ref(1)
+const perPage = ref(24)
+
 const searchQuery = ref('')
-const isServerPagination = ref(true)
-const isCategoryPagination = ref(false)
+const isProductsLoading = ref(true)
 const isLoadingMore = ref(false)
-const isProductsLoading = ref(false)
-const isCategoriesLoading = ref(true)
-const isSubCategoriesLoading = ref(false)
-const isLoadingMoreCategories = ref(false)
-const isLoadingMoreSubCategories = ref(false)
-const isSearchPagination = ref(false)
-const minPriceFilter = ref('')
-const maxPriceFilter = ref('')
 
-const loadMoreTrigger = ref<HTMLElement | null>(null)
-let observer: IntersectionObserver | null = null
+const cryptoKeywords = ['crypto', 'nft', 'ton', 'defi', 'chain', 'dao', 'token']
+const personalKeywords = ['name', 'личн', 'персонал', 'имя', 'first name', 'surname', 'brand me']
+const dictionaryKeywords = ['dictionary', 'word', 'словар']
 
-function goToProduct(id: string) {
-  router.push({ path: `/product/${id}` })
-}
+const hasMoreProducts = computed(() => currentPage.value < totalPages.value)
+const catalogTitle = computed(() => {
+  if (selectedPlatform.value === 'x') return t('pages.index.catalogTitles.x')
+  return t('pages.index.catalogTitles.telegram')
+})
+const normalizedSearchQuery = computed(() => searchQuery.value.trim().toLowerCase())
+const demoProducts = computed(() => {
+  const source = demoProductsByPlatform[selectedPlatform.value]
+  const query = normalizedSearchQuery.value
+
+  if (!query) return source
+
+  return source.filter((item) => {
+    return (
+      item.title.toLowerCase().includes(query)
+      || item.description.toLowerCase().includes(query)
+    )
+  })
+})
+const displayedProducts = computed<Array<Product | DemoProductCard>>(() => {
+  return [...demoProducts.value, ...products.value]
+})
+const filteredDisplayedProducts = computed<Array<Product | DemoProductCard>>(() => {
+  return displayedProducts.value.filter((item) => {
+    const platform = getProductPlatform(item)
+    if (platform && platform !== selectedPlatform.value) return false
+    if (!matchesLengthFilter(item)) return false
+    if (!matchesTypeFilter(item)) return false
+    if (!matchesPriceFilter(item)) return false
+    return true
+  })
+})
+const activeFiltersCount = computed(() => {
+  let count = 0
+  if (selectedLengthFilter.value !== 'all') count += 1
+  if (selectedListingType.value !== 'all') count += 1
+  if (selectedPriceFilter.value !== 'all') count += 1
+  return count
+})
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
-let filterTimeout: ReturnType<typeof setTimeout> | null = null
+
+function isDemoProduct(item: Product | DemoProductCard): item is DemoProductCard {
+  return (item as DemoProductCard).is_demo === true
+}
+
+function onProductCardClick(item: Product | DemoProductCard) {
+  if (isDemoProduct(item)) {
+    router.push({ name: 'nickname page', params: { nicknameId: item.id } })
+    return
+  }
+  router.push({ path: `/product/${item.id}` })
+}
+
+function detectPlatformByCategoryName(name: string): ProductPlatformKey | null {
+  const normalizedName = name.toLowerCase().trim()
+
+  if (
+    normalizedName.includes('+888')
+    || normalizedName.includes('888')
+    || normalizedName.includes('anonymous')
+    || normalizedName.includes('аноним')
+    || normalizedName.includes('номер')
+    || normalizedName.includes('number')
+    || normalizedName.includes('phone')
+  ) {
+    return 'numbers'
+  }
+
+  if (
+    normalizedName.includes('telegram')
+    || normalizedName.includes('телеграм')
+    || normalizedName.includes('тг')
+  ) {
+    return 'telegram'
+  }
+
+  if (
+    normalizedName === 'x'
+    || normalizedName.includes('twitter')
+    || normalizedName.includes('твиттер')
+    || normalizedName.includes('икс')
+    || normalizedName.includes(' x ')
+    || normalizedName.startsWith('x ')
+    || normalizedName.endsWith(' x')
+  ) {
+    return 'x'
+  }
+
+  return null
+}
+
+function getProductPlatform(item: Product | DemoProductCard): ProductPlatformKey | null {
+  if (isDemoProduct(item)) return item.platform
+  return detectPlatformByCategoryName(item.category.name)
+}
+
+function normalizeAssetValue(title: string): string {
+  return title
+    .replace(/^@/, '')
+    .replace(/\+/g, '')
+    .replace(/\s+/g, '')
+    .trim()
+    .toLowerCase()
+}
+
+function getAssetLength(item: Product | DemoProductCard): number {
+  return normalizeAssetValue(item.title).length
+}
+
+function detectListingType(item: Product | DemoProductCard): ListingType {
+  if (isDemoProduct(item)) return item.listing_type
+
+  const text = `${item.title} ${item.description} ${item.category.name}`.toLowerCase()
+
+  if (cryptoKeywords.some((keyword) => text.includes(keyword))) return 'crypto'
+  if (personalKeywords.some((keyword) => text.includes(keyword))) return 'personal'
+  if (dictionaryKeywords.some((keyword) => text.includes(keyword))) return 'dictionary'
+
+  const normalized = normalizeAssetValue(item.title)
+  if (/^[a-z]+$/.test(normalized)) return 'dictionary'
+  if (/^[a-z]+[._-]?[a-z]+$/.test(normalized)) return 'personal'
+
+  return 'dictionary'
+}
+
+function matchesLengthFilter(item: Product | DemoProductCard): boolean {
+  const lengthFilter = selectedLengthFilter.value
+  if (lengthFilter === 'all') return true
+
+  const length = getAssetLength(item)
+  if (lengthFilter === '4') return length === 4
+  if (lengthFilter === '5') return length === 5
+  return length >= 6
+}
+
+function matchesTypeFilter(item: Product | DemoProductCard): boolean {
+  if (selectedListingType.value === 'all') return true
+
+  return detectListingType(item) === selectedListingType.value
+}
+
+function matchesPriceFilter(item: Product | DemoProductCard): boolean {
+  if (selectedPriceFilter.value === 'all') return true
+
+  if (selectedPriceFilter.value === 'up_to_100') return item.price <= 100
+  if (selectedPriceFilter.value === '100_1000') return item.price > 100 && item.price <= 1000
+  return item.price >= 10000
+}
+
+function getPlatformButtonClass(platform: PlatformKey): string {
+  const isActive = selectedPlatform.value === platform
+
+  if (isActive) return 'bg-button-main text-white'
+  return 'bg-dark-900 text-gray-300 hover:bg-dark-700 hover:text-white'
+}
+
+function resetCatalogFilters() {
+  selectedLengthFilter.value = 'all'
+  selectedListingType.value = 'all'
+  selectedPriceFilter.value = 'all'
+}
+
+async function loadPlatformCategoryIds() {
+  const response = await categoryService.getAllCategories(1, 100)
+
+  for (const category of response.categories) {
+    const detectedPlatform = detectPlatformByCategoryName(category.name)
+
+    if (detectedPlatform !== 'numbers' && detectedPlatform && !platformCategoryIds.value[detectedPlatform]) {
+      platformCategoryIds.value[detectedPlatform] = category.id
+    }
+  }
+}
+
+function getActivePlatformCategoryId(): string | undefined {
+  return platformCategoryIds.value[selectedPlatform.value] ?? undefined
+}
+
+async function fetchProducts(page = 1, append = false) {
+  if (append && isLoadingMore.value) return
+
+  if (append) {
+    isLoadingMore.value = true
+  } else {
+    isProductsLoading.value = true
+  }
+
+  const query = searchQuery.value.trim()
+  const platformCategoryId = getActivePlatformCategoryId()
+
+  let response: {
+    products: Product[]
+    currentPage: number
+    totalPages: number
+    total: number
+  }
+
+  if (query) {
+    response = await productService.searchProducts(
+      query,
+      page,
+      perPage.value,
+      undefined,
+      platformCategoryId,
+    )
+  } else if (platformCategoryId) {
+    response = await productService.getProductsByCategory(
+      platformCategoryId,
+      page,
+      perPage.value,
+    )
+  } else {
+    response = await productService.getAllProducts(page, perPage.value)
+  }
+
+  products.value = append ? [...products.value, ...response.products] : response.products
+  currentPage.value = response.currentPage
+  totalPages.value = response.totalPages
+
+  isLoadingMore.value = false
+  isProductsLoading.value = false
+}
+
+async function onPlatformSwitch(platform: PlatformKey) {
+  if (selectedPlatform.value === platform) return
+  selectedPlatform.value = platform
+  await fetchProducts(1, false)
+}
 
 function debouncedSearch() {
   if (searchTimeout) clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(async () => {
-    if (!searchQuery.value.trim()) {
-      await resetAllFilters()
-      return
-    }
-    isProductsLoading.value = true
-    const res = await productService.searchProducts(
-      searchQuery.value.trim(),
-      1,
-      perPage.value,
-      getProductFiltersParams(),
-    )
-    products.value = res.products
-    currentPage.value = res.currentPage
-    totalPages.value = res.totalPages
-    isSearchPagination.value = true
-    isCategoryPagination.value = false
-    isServerPagination.value = false
-    isProductsLoading.value = false
+  searchTimeout = setTimeout(() => {
+    fetchProducts(1, false)
   }, 300)
-}
-
-async function loadProducts(page = 1, append = false) {
-  if (append && isLoadingMore.value) return
-  isLoadingMore.value = append
-  if (!append) isProductsLoading.value = true
-  const res = await productService.getAllProducts(
-    page,
-    perPage.value,
-    getProductFiltersParams(),
-  )
-  products.value = append ? [...products.value, ...res.products] : res.products
-  currentPage.value = res.currentPage
-  totalPages.value = res.totalPages
-  isServerPagination.value = true
-  isCategoryPagination.value = false
-  isLoadingMore.value = false
-  isProductsLoading.value = false
-}
-
-async function loadCategoryProducts(categoryId: string, page = 1, append = false) {
-  if (append && isLoadingMore.value) return
-  isLoadingMore.value = append
-  if (!append) isProductsLoading.value = true
-  const res = await productService.getProductsByCategory(
-    categoryId,
-    page,
-    perPage.value,
-    getProductFiltersParams(),
-  )
-  products.value = append ? [...products.value, ...res.products] : res.products
-  currentPage.value = res.currentPage
-  totalPages.value = res.totalPages
-  isServerPagination.value = true
-  isCategoryPagination.value = true
-  isLoadingMore.value = false
-  isProductsLoading.value = false
 }
 
 async function loadMoreProducts() {
-  if (currentPage.value >= totalPages.value) return
-  const nextPage = currentPage.value + 1
-  if (isSearchPagination.value) {
-    const res = await productService.searchProducts(
-      searchQuery.value.trim(),
-      nextPage,
-      perPage.value,
-      getProductFiltersParams(),
-    )
-    products.value = [...products.value, ...res.products]
-    currentPage.value = res.currentPage
-    totalPages.value = res.totalPages
-    return
-  }
-  if (isCategoryPagination.value) {
-    const id = selectedSubCategoryId.value || selectedMainCategoryId.value
-    await loadCategoryProducts(id, nextPage, true)
-    return
-  }
-  await loadProducts(nextPage, true)
-}
-
-async function loadMainCategories(page = 1, append = false) {
-  if (!append) isCategoriesLoading.value = true
-  const res = await categoryService.getAllCategories(page, categoriesPerPage.value)
-  mainCategories.value = append ? [...mainCategories.value, ...res.categories] : res.categories.filter((c: { parent_id: any }) => !c.parent_id)
-  categoryPage.value = res.currentPage
-  categoryTotalPages.value = res.totalPages
-  isCategoriesLoading.value = false
-}
-
-async function loadMoreMainCategories() {
-  if (isLoadingMoreCategories.value) return
-  if (categoryPage.value >= categoryTotalPages.value) return
-  isLoadingMoreCategories.value = true
-  await loadMainCategories(categoryPage.value + 1, true)
-  isLoadingMoreCategories.value = false
-}
-
-async function onMainCategoryClick(id: string) {
-  if (selectedMainCategoryId.value === id) {
-    await resetAllFilters()
-    return
-  }
-  selectedMainCategoryId.value = id
-  selectedSubCategoryId.value = ''
-  subCategories.value = []
-  subCategoryPage.value = 1
-  isSubCategoriesLoading.value = true
-  const res = await categoryService.getSubcategories(id, subCategoryPage.value, categoriesPerPage.value)
-  subCategories.value = res.categories
-  subCategoryTotalPages.value = res.totalPages
-  isSubCategoriesLoading.value = false
-  await loadCategoryProducts(id, 1, false)
-}
-
-async function loadMoreSubCategories() {
-  if (isLoadingMoreSubCategories.value) return
-  if (subCategoryPage.value >= subCategoryTotalPages.value) return
-  isLoadingMoreSubCategories.value = true
-  const res = await categoryService.getSubcategories(selectedMainCategoryId.value, subCategoryPage.value + 1, categoriesPerPage.value)
-  subCategories.value = [...subCategories.value, ...res.categories]
-  subCategoryPage.value = res.currentPage
-  isLoadingMoreSubCategories.value = false
-}
-
-async function onSubCategoryClick(id: string) {
-  if (selectedSubCategoryId.value === id) {
-    selectedSubCategoryId.value = ''
-    await loadCategoryProducts(selectedMainCategoryId.value, 1, false)
-    return
-  }
-  selectedSubCategoryId.value = id
-  await loadCategoryProducts(id, 1, false)
-}
-
-async function resetAllFilters() {
-  selectedMainCategoryId.value = ''
-  selectedSubCategoryId.value = ''
-  subCategories.value = []
-  searchQuery.value = ''
-  clearProductFilters()
-  isSearchPagination.value = false
-  isCategoryPagination.value = false
-  await loadProducts(1, false)
-}
-
-function parseFilterNumber(value: string | number | null | undefined): number | undefined {
-  if (value === null || value === undefined) return undefined
-
-  if (typeof value === 'number') {
-    return Number.isNaN(value) ? undefined : value
-  }
-
-  const normalizedValue = value.trim()
-  if (normalizedValue === '') return undefined
-
-  const parsed = Number(normalizedValue)
-  return Number.isNaN(parsed) ? undefined : parsed
-}
-
-function getProductFiltersParams(): ProductsFilterParams {
-  const minPriceRaw = parseFilterNumber(minPriceFilter.value)
-  const maxPriceRaw = parseFilterNumber(maxPriceFilter.value)
-
-  if (minPriceRaw !== undefined && maxPriceRaw !== undefined && minPriceRaw > maxPriceRaw) {
-    return {
-      minPrice: maxPriceRaw,
-      maxPrice: minPriceRaw,
-    }
-  }
-
-  return {
-    minPrice: minPriceRaw,
-    maxPrice: maxPriceRaw,
-  }
-}
-
-function clearProductFilters() {
-  minPriceFilter.value = ''
-  maxPriceFilter.value = ''
-}
-
-async function applyProductFilters() {
-  const query = searchQuery.value.trim()
-  if (query) {
-    isProductsLoading.value = true
-    const res = await productService.searchProducts(
-      query,
-      1,
-      perPage.value,
-      getProductFiltersParams(),
-    )
-    products.value = res.products
-    currentPage.value = res.currentPage
-    totalPages.value = res.totalPages
-    isSearchPagination.value = true
-    isCategoryPagination.value = false
-    isServerPagination.value = false
-    isProductsLoading.value = false
-    return
-  }
-
-  if (selectedSubCategoryId.value || selectedMainCategoryId.value) {
-    const categoryId = selectedSubCategoryId.value || selectedMainCategoryId.value
-    await loadCategoryProducts(categoryId, 1, false)
-    isSearchPagination.value = false
-    return
-  }
-
-  isSearchPagination.value = false
-  await loadProducts(1, false)
-}
-
-function debouncedApplyProductFilters() {
-  if (filterTimeout) clearTimeout(filterTimeout)
-  filterTimeout = setTimeout(() => {
-    applyProductFilters()
-  }, 300)
-}
-
-async function onResetProductFilters() {
-  clearProductFilters()
-  await applyProductFilters()
-}
-
-const categoriesScroll = ref<HTMLDivElement | null>(null)
-const categoriesLoadMoreTrigger = ref<HTMLElement | null>(null)
-let categoriesObserver: IntersectionObserver | null = null
-
-const handleCategoriesWheel = (e: WheelEvent) => {
-  const el = e.currentTarget as HTMLElement
-  if (!el) return
-  const canScrollX = el.scrollWidth > el.clientWidth
-  if (!canScrollX) return
-
-  const isHorizontalIntent = Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey
-  if (!isHorizontalIntent) return
-
-  e.preventDefault()
-  const delta = e.shiftKey && e.deltaX === 0 ? e.deltaY : (e.deltaX || e.deltaY)
-  el.scrollLeft += delta
+  if (!hasMoreProducts.value || isLoadingMore.value) return
+  await fetchProducts(currentPage.value + 1, true)
 }
 
 onMounted(async () => {
-  await loadProducts()
-  await loadMainCategories()
-  observer = new IntersectionObserver((entries) => { if (entries[0]!.isIntersecting) loadMoreProducts() }, { rootMargin: '300px' })
-  if (loadMoreTrigger.value) observer.observe(loadMoreTrigger.value)
-  categoriesObserver = new IntersectionObserver((entries) => { if (entries[0]!.isIntersecting && categoryPage.value < categoryTotalPages.value) loadMoreMainCategories() }, { root: categoriesScroll.value, threshold: 0.1 })
-  if (categoriesLoadMoreTrigger.value) categoriesObserver.observe(categoriesLoadMoreTrigger.value)
+  await loadPlatformCategoryIds()
+  await fetchProducts(1, false)
 })
 
 onBeforeUnmount(() => {
   if (searchTimeout) clearTimeout(searchTimeout)
-  if (filterTimeout) clearTimeout(filterTimeout)
-  observer?.disconnect()
-  categoriesObserver?.disconnect()
 })
 </script>
 
 <template>
-  <HeroSection v-if="!user" />
+  <HeroSection
+    v-if="!user"
+    :selected-platform="selectedPlatform"
+    @platform-change="onPlatformSwitch"
+  />
 
   <div id="catalog-start" class="scroll-mt-24"></div>
 
-  <section class="w-full flex flex-col items-center">
-    <div class="relative z-20 flex flex-col items-center w-full px-2 lg:px-4 py-6 min-h-screen">
-        <SearchField v-model="searchQuery" :placeholder="$t('pages.index.searchPlaceholder')"
-          @search-change="debouncedSearch" class="w-full lg:max-w-2xl" />
+  <section class="w-full pb-16 md:pb-10">
+    <div class="mx-auto flex w-full flex-col gap-6 py-6">
+      <SearchField
+        v-model="searchQuery"
+        :placeholder="$t('pages.index.searchPlaceholder')"
+        @search-change="debouncedSearch"
+        class="w-full"
+      />
 
-        <div class="mt-16 w-full">
-          <Title :text="t('common.categories')" />
+      <div class="rounded-2xl border border-dark-700 bg-dark-800/60 p-2">
+        <div class="mb-2 px-2 pt-1 text-xs font-semibold uppercase tracking-[0.14em] text-gray-400">
+          {{ t('pages.index.platformTabsTitle') }}
+        </div>
+        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <button
+            v-for="tab in platformTabs"
+            :key="tab.key"
+            type="button"
+            class="rounded-xl px-4 py-2.5 text-sm font-semibold transition"
+            :class="getPlatformButtonClass(tab.key)"
+            @click="onPlatformSwitch(tab.key)"
+          >
+            {{ t(tab.labelKey) }}
+          </button>
+        </div>
+      </div>
 
-          <div v-if="isCategoriesLoading" class="flex gap-3 overflow-x-auto">
-            <div v-for="n in 5" :key="n" class="w-20 h-20 bg-dark-600 animate-pulse rounded-lg" />
+      <div class="rounded-2xl border border-dark-700 bg-dark-800/60 p-4">
+        <div class="mb-4 flex items-center justify-between gap-3">
+          <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-400">
+            {{ t('pages.index.filters.smartTitle') }}
+          </p>
+
+          <button
+            v-if="activeFiltersCount > 0"
+            type="button"
+            class="rounded-lg border border-dark-600 bg-dark-900 px-3 py-1.5 text-xs font-semibold text-gray-300 transition hover:border-dark-500 hover:text-white"
+            @click="resetCatalogFilters"
+          >
+            {{ t('pages.index.resetFilters') }}
+          </button>
+        </div>
+
+        <div class="grid gap-4 lg:grid-cols-3">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-400">
+              {{ t('pages.index.filters.lengthTitle') }}
+            </p>
+            <div class="mt-2 flex flex-wrap gap-2">
+              <button
+                v-for="option in lengthFilterOptions"
+                :key="option.key"
+                type="button"
+                class="rounded-lg px-3 py-1.5 text-xs font-semibold transition"
+                :class="selectedLengthFilter === option.key
+                  ? 'bg-sky-600 text-white'
+                  : 'bg-dark-900 text-gray-300 hover:bg-dark-700 hover:text-white'"
+                @click="selectedLengthFilter = option.key"
+              >
+                {{ t(option.labelKey) }}
+              </button>
+            </div>
           </div>
 
-          <div v-else ref="categoriesScroll" 
-               @wheel="handleCategoriesWheel"
-               class="overflow-x-auto overflow-y-hidden  w-full relative cursor-grab active:cursor-grabbing">
-            <div class="flex gap-3 min-w-max py-2">
-              <div v-for="cat in mainCategories" :key="cat.id" @click="onMainCategoryClick(cat.id)"
-                class="flex-shrink-0 cursor-pointer flex flex-col items-center p-2 rounded-lg transition" 
-                :class="selectedMainCategoryId === cat.id ? 'bg-white/20' : 'hover:bg-dark-700/40'">
-                <div class="w-16 h-16 flex items-center justify-center bg-dark-700 rounded-lg overflow-hidden border border-white/5 shadow-inner">
-                  <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="w-full h-full object-cover" />
-                  <Folder v-else class="w-8 h-8 text-gray-400" />
-                </div>
-                <span class="text-sm mt-2 text-center truncate w-16 font-medium">{{ cat.name }}</span>
-              </div>
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-400">
+              {{ t('pages.index.filters.typeTitle') }}
+            </p>
+            <div class="mt-2 flex flex-wrap gap-2">
+              <button
+                v-for="option in typeFilterOptions"
+                :key="option.key"
+                type="button"
+                class="rounded-lg px-3 py-1.5 text-xs font-semibold transition"
+                :class="selectedListingType === option.key
+                  ? 'bg-sky-600 text-white'
+                  : 'bg-dark-900 text-gray-300 hover:bg-dark-700 hover:text-white'"
+                @click="selectedListingType = option.key"
+              >
+                {{ t(option.labelKey) }}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-400">
+              {{ t('pages.index.filters.priceTitle') }}
+            </p>
+            <div class="mt-2 flex flex-wrap gap-2">
+              <button
+                v-for="option in priceFilterOptions"
+                :key="option.key"
+                type="button"
+                class="rounded-lg px-3 py-1.5 text-xs font-semibold transition"
+                :class="selectedPriceFilter === option.key
+                  ? 'bg-sky-600 text-white'
+                  : 'bg-dark-900 text-gray-300 hover:bg-dark-700 hover:text-white'"
+                @click="selectedPriceFilter = option.key"
+              >
+                {{ t(option.labelKey) }}
+              </button>
             </div>
           </div>
         </div>
+      </div>
 
-        <div v-if="subCategories.length" class="mt-4 w-full">
-          <div class="flex gap-2 flex-wrap">
-            <button v-for="sub in subCategories" :key="sub.id" @click="onSubCategoryClick(sub.id)"
-              class="px-5 py-2.5 rounded-full text-sm font-bold border transition-all hover:scale-105 active:scale-95 backdrop-blur-md"
-              :class="selectedSubCategoryId === sub.id ? 'bg-blue-600 text-white border-blue-500' : 'bg-white/5 text-white border-white/10 hover:bg-white/10'">
-              {{ sub.name }}
-            </button>
-          </div>
-        </div>
+      <div class="flex items-center justify-between gap-3">
+        <Title class="w-full" :text="catalogTitle" />
+        <span class="hidden whitespace-nowrap rounded-full border border-dark-600 bg-dark-900 px-3 py-1 text-xs font-semibold text-gray-300 sm:inline-flex">
+          {{ t('pages.index.filteredCount', { count: filteredDisplayedProducts.length }) }}
+        </span>
+      </div>
 
-        <div class="mt-6 w-full rounded-xl border border-dark-700 bg-dark-600/30 p-4 md:p-5">
-          <div class="flex items-center justify-between gap-3">
-            <h3 class="text-sm font-semibold text-white">{{ t('pages.index.filtersTitle') }}</h3>
-            <button
-              type="button"
-              class="text-xs text-gray-300 hover:text-white transition"
-              @click="onResetProductFilters"
-            >
-              {{ t('pages.index.resetFilters') }}
-            </button>
-          </div>
+      <div v-if="isProductsLoading" class="grid w-full grid-cols-2 gap-4 md:grid-cols-4">
+        <div v-for="skeleton in perPage" :key="skeleton" class="h-64 animate-pulse rounded-2xl bg-dark-700" />
+      </div>
 
-          <div class="mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-            <div>
-              <label class="mb-1 block text-xs text-gray-400">{{ t('pages.index.priceFrom') }}</label>
-              <input
-                v-model="minPriceFilter"
-                type="number"
-                min="0"
-                inputmode="decimal"
-                class="w-full rounded-lg bg-dark-600 border border-dark-700 px-3 py-2 text-sm text-white outline-none placeholder-gray-500"
-                :placeholder="t('pages.index.priceFrom')"
-                @input="debouncedApplyProductFilters"
-              />
-            </div>
+      <div
+        v-else-if="filteredDisplayedProducts.length === 0"
+        class="rounded-2xl border border-dark-700 bg-dark-800/60 py-16 text-center text-gray-400"
+      >
+        {{ t('pages.index.noProducts') }}
+      </div>
 
-            <div>
-              <label class="mb-1 block text-xs text-gray-400">{{ t('pages.index.priceTo') }}</label>
-              <input
-                v-model="maxPriceFilter"
-                type="number"
-                min="0"
-                inputmode="decimal"
-                class="w-full rounded-lg bg-dark-600 border border-dark-700 px-3 py-2 text-sm text-white outline-none placeholder-gray-500"
-                :placeholder="t('pages.index.priceTo')"
-                @input="debouncedApplyProductFilters"
-              />
-            </div>
-          </div>
-        </div>
+      <div v-else class="grid w-full grid-cols-2 gap-4 md:grid-cols-4">
+        <MainProductCard
+          v-for="product in filteredDisplayedProducts"
+          :key="product.id"
+          :product="product"
+          @click="onProductCardClick"
+        />
+      </div>
 
-        <Title class="mt-12 w-full" :text="t('common.products')" />
-
-        <div v-if="isProductsLoading" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 w-full">
-          <div v-for="n in perPage" :key="n" class="h-64 bg-dark-600 animate-pulse rounded-2xl" />
-        </div>
-
-        <div v-else-if="products.length === 0" class="text-center text-gray-400 py-20">
-          {{ t('pages.index.noProducts') }}
-        </div>
-
-        <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 w-full">
-          <MainProductCard v-for="product in products" :key="product.id" :product="product" @click="goToProduct" />
-        </div>
+      <div v-if="hasMoreProducts" class="flex justify-center pt-2">
+        <button
+          type="button"
+          :disabled="isLoadingMore"
+          class="rounded-xl bg-button-main px-6 py-3 text-sm font-semibold text-white transition hover:bg-button-main/90 disabled:cursor-not-allowed disabled:opacity-60"
+          @click="loadMoreProducts"
+        >
+          {{ isLoadingMore ? t('common.loading') : t('common.loadMore') }}
+        </button>
+      </div>
     </div>
-
-    <div ref="loadMoreTrigger" class="h-10"></div>
   </section>
 </template>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import {
   Home,
-  MessageCircle,
   PlusCircle,
   User,
   Shield
@@ -10,7 +9,6 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { useChatStore } from '@/stores/chat'
 import { storeToRefs } from 'pinia'
 import SelectLanguage from '@/components/SelectLanguage.vue'
 import MainPageFooter from '@/components/layout/MainPageFooter.vue'
@@ -27,14 +25,12 @@ interface NavItem {
 }
 
 const store = useUserStore()
-const chatStore = useChatStore()
 const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 
 const isDesktop = ref(true)
 const { user } = storeToRefs(store)
-const { unreadTotal } = storeToRefs(chatStore)
 
 function checkDesktop() {
   isDesktop.value = window.innerWidth >= 768
@@ -51,11 +47,6 @@ const isActiveRoute = (item: NavItem) => {
   // For the home page - exact match
   if (item.to === '/') {
     return currentPath === '/'
-  }
-
-  // For chats - starts with /chats
-  if (item.to === '/chats') {
-    return currentPath.startsWith('/chats')
   }
 
   // For creating a product - exact match
@@ -86,7 +77,7 @@ const isActiveRouteMobile = (item: NavItem) => {
   return isActiveRoute(item)
 }
 
-const showFooter = computed(() => !route.path.startsWith('/chats'))
+const showFooter = computed(() => true)
 
 onMounted(() => {
   checkDesktop()
@@ -104,12 +95,6 @@ const navItems = computed(() => {
       title: t('navigation.market.home'),
       icon: Home,
       to: '/'
-    },
-    {
-      id: 'chats',
-      title: t('navigation.market.chats'),
-      icon: MessageCircle,
-      to: user && user.value?.username ? '/chats' : '/signin',
     },
     {
       id: 'sell',
@@ -153,7 +138,7 @@ const navItems = computed(() => {
         <div class="mx-auto h-14 w-full flex items-center justify-between px-2 lg:px-4">
           <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold"
             @click="router.push('/')">
-            remarket
+            <span class="text-button-main">x</span>market
           </div>
 
           <div class="flex gap-6">
@@ -167,19 +152,13 @@ const navItems = computed(() => {
                 <div class="relative">
                   <component :is="item.icon" :class="[
                     item.sell ? 'text-2xl' : 'text-xl',
-                    item.admin ? 'text-purple-400' : '',
+                    item.admin ? 'text-sky-400' : '',
                     isActiveRoute(item) ? 'text-white' : 'text-gray-400',
                     'transition-colors duration-300 group-hover:text-white'
                   ]" :size="item.sell ? 24 : 20" stroke-width="1.5" />
-                  <span
-                    v-if="item.id === 'chats' && unreadTotal > 0"
-                    class="absolute -top-1 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-[10px] text-white font-semibold flex items-center justify-center shadow-lg"
-                  >
-                    {{ unreadTotal > 99 ? '99+' : unreadTotal }}
-                  </span>
                 </div>
                 <span class="ml-1 transition-colors duration-300 group-hover:text-white"
-                  :class="{ 'text-purple-300': item.admin }">
+                  :class="{ 'text-sky-300': item.admin }">
                   {{ item.title }}
                 </span>
               </router-link>
@@ -210,21 +189,15 @@ const navItems = computed(() => {
             <div class="icon-box flex items-center justify-center transition-colors duration-300 group-hover:text-white relative"
               :class="[
                 isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400',
-                item.admin ? 'text-purple-400' : ''
+                item.admin ? 'text-sky-400' : ''
               ]">
               <component :is="item.icon" :size="22" stroke-width="1.5" />
-              <span
-                v-if="item.id === 'chats' && unreadTotal > 0"
-                class="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-[10px] text-white font-semibold flex items-center justify-center shadow-md"
-              >
-                {{ unreadTotal > 99 ? '99+' : unreadTotal }}
-              </span>
             </div>
             <span
               class="menu-label text-center text-xs font-light leading-none mt-1 transition-colors duration-300 group-hover:text-white"
               :class="[
                 isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400',
-                item.admin ? 'text-purple-300' : ''
+                item.admin ? 'text-sky-300' : ''
               ]">
               {{ item.title }}
             </span>
@@ -244,12 +217,12 @@ const navItems = computed(() => {
 }
 
 .mobile-nav-glass {
-    background-color: rgba(23, 23, 23, 0.2);
-    -webkit-backdrop-filter: blur(20px);
-    backdrop-filter: blur(30px);
-    border-top-width: 1px;
-    border-top-color: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
+  background-color: rgba(8, 28, 43, 0.75);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border-top-width: 1px;
+  border-top-color: rgba(92, 164, 206, 0.25);
+  box-shadow: 0 -8px 28px rgba(2, 14, 24, 0.45);
 }
 
 .icon-box {

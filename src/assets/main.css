@@ -1,59 +1,72 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-
-
-
-
 :root {
-  /* фон */
-  --background-color: #121212;
+  --background-color: #07131d;
 
-  /* текст */
-  --main-text: #ffffff;
-  --link-text: #2563eb;
-  --error-text: #ef4444;
-  --secondary-text: #D1D5DB;
-  --secondary-dark-text: #6B7280;
+  --main-text: #eaf6ff;
+  --link-text: #5bc8ff;
+  --error-text: #ff7c7c;
+  --secondary-text: #9ebed3;
+  --secondary-dark-text: #68849a;
 
-  /* кнопки */
-  --color-button-primary: #2563eb;
-  --color-button-hover: #1976d2;
+  --color-button-primary: #2aabee;
+  --color-button-hover: #229ed9;
 
-  /* инпуты */
-  --color-input: #6B7280;
+  --color-input: #4a677a;
 }
 
-
-/* Отключение зума на инпутах на iOS */
-input, textarea, select {
-  font-size: 16px !important; /* Минимальный размер шума для iOS */
-  touch-action: manipulation; /* Отключает двойной тап для зума */
-}
-
-/* Отключение зума на iOS Safari */
-@supports (-webkit-touch-callout: none) {
-  input, textarea, select {
-    font-size: 16px; /* Фиксированный размер для iOS */
-  }
-}
-
-/* Отключение выделения текста при тапе на мобильных */
 * {
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
 }
 
-/* Отключение зума при двойном тапе */
-html {
-  touch-action: pan-y pinch-zoom; /* Разрешаем только вертикальный скролл и пинч-зум */
+html,
+body {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+  font-family: 'Space Grotesk', sans-serif;
 }
 
-/* Для инпутов особые настройки */
+body {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  color: var(--main-text);
+  background-color: var(--background-color);
+  background-image:
+    radial-gradient(circle at 0% 0%, rgba(42, 171, 238, 0.2), transparent 44%),
+    radial-gradient(circle at 100% 0%, rgba(26, 152, 210, 0.16), transparent 36%),
+    linear-gradient(180deg, #081a27 0%, #07131d 52%, #060f18 100%);
+  background-attachment: fixed;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+input,
+textarea,
+select {
+  font-size: 16px !important;
+  touch-action: manipulation;
+}
+
+@supports (-webkit-touch-callout: none) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+html {
+  touch-action: pan-y pinch-zoom;
+}
+
 input[type="text"],
 input[type="number"],
 input[type="email"],
@@ -62,10 +75,9 @@ input[type="tel"],
 input[type="search"],
 input[type="url"],
 textarea {
-  touch-action: pan-y; /* Только вертикальный скролл, без зума */
+  touch-action: pan-y;
 }
 
-/* Отключение увеличения при фокусе на мобильных */
 @media screen and (max-width: 768px) {
   input:focus,
   textarea:focus,
@@ -74,37 +86,6 @@ textarea {
   }
 }
 
-/* .title {
-  font-family: 'Outfit', sans-serif;
-} */
-
-
-
-
-
-/* Hide scrollbar for Chrome, Safari and Opera */
-::-webkit-scrollbar {
-  display: none;
-}
-
-/* Hide scrollbar for IE, Edge and Firefox */
-html, body {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
-
-/* Ensure smooth scrolling */
-html {
-  scroll-behavior: smooth;
-}
-
-/* For WebKit browsers */
 * {
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Optional: сохранить функциональность прокрутки */
-body {
-  overflow: auto;
   -webkit-overflow-scrolling: touch;
 }

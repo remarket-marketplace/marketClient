@@ -12,8 +12,7 @@ import {
   CheckCircle,
   XCircle,
   Folder,
-  Loader2,
-  MessageCircleMore
+  Loader2
 } from 'lucide-vue-next'
 import { adminService } from '@/api/admin/AdminService'
 import type { Deal, DealsList } from '@/validation/deal/deal'
@@ -58,10 +57,6 @@ const { images } = useImages()
 // Навигация
 function goToDeal(id: string) {
   router.push({ path: `/admin/deal/${id}` })
-}
-
-function goToChat(chatId: string) {
-  router.push({ name: 'adminChatView', params: { chatId } })
 }
 
 function goToProfile(username: string) {
@@ -391,13 +386,6 @@ watch([searchQuery, sortBy, statusFilter], () => {
                 <span class="text-xl font-bold text-green-400">{{ formatPrice(deal.price) }}</span>
               </div>
               <div class="flex gap-2">
-                <button @click="goToChat(deal.chat_room_id)"
-                  class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
-                  :title="$t('common.viewDeal')">
-                  <MessageCircleMore class="w-4 h-4" />
-                  <span class="hidden sm:inline">{{ $t('common.toChat') }}</span>
-                </button>
-
                 <button @click="goToDeal(deal.id)"
                   class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
                   :title="$t('common.viewDeal')">

@@ -6,18 +6,18 @@
       <div class="absolute inset-0 bg-grid opacity-20"></div>
       <div class="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent"></div>
 
-      <div class="absolute -left-20 bottom-10 w-[300px] h-[300px] bg-blue-600/10 rounded-full blur-[80px]"></div>
-      <div class="absolute -right-20 top-10 w-[250px] h-[250px] bg-cyan-500/5 rounded-full blur-[60px]"></div>
+      <div class="absolute -left-20 bottom-10 w-[300px] h-[300px] bg-button-main/20 rounded-full blur-[80px]"></div>
+      <div class="absolute -right-20 top-10 w-[250px] h-[250px] bg-sky-400/10 rounded-full blur-[60px]"></div>
     </div>
 
     <div class="relative z-10 max-w-7xl mx-auto">
       <div class="flex flex-col lg:flex-row justify-between items-start gap-10 mb-12">
         <div class="flex-1 max-w-lg">
           <div class="flex items-center gap-3 mb-6">
-            <div class="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center">
-              <span class="text-white font-bold text-xl">RM</span>
+            <div class="h-10 w-10 rounded-lg bg-gradient-to-br from-button-main to-sky-400 flex items-center justify-center">
+              <span class="text-white font-bold text-xl">XM</span>
             </div>
-            <span class="text-2xl font-bold text-white">remarket</span>
+            <span class="text-2xl font-bold text-white">xmarket</span>
           </div>
           <p class="text-gray-400 text-lg leading-relaxed font-light max-w-md">
             {{ $t('common.tagline') }}
@@ -34,17 +34,9 @@
                 </a>
               </li>
               <li>
-                <router-link
-                  :to="{ path: '/chats', query: { support: '1' } }"
-                  class="text-gray-400 hover:text-white transition-colors duration-300 font-light"
-                >
+                <a href="mailto:support@re-market.net" class="text-gray-400 hover:text-white transition-colors duration-300 font-light">
                   {{ $t('footer.support', 'Поддержка') }}
-                </router-link>
-              </li>
-              <li>
-                <router-link to="/about" class="text-gray-400 hover:text-white transition-colors duration-300 font-light">
-                  {{ $t('common.aboutUs', 'О нас') }}
-                </router-link>
+                </a>
               </li>
             </ul>
           </div>
@@ -55,16 +47,6 @@
                 <a href="mailto:support@re-market.net" class="text-gray-400 hover:text-white transition-colors duration-300 font-light">
                   support@re-market.net
                 </a>
-              </li>
-              <li>
-                <router-link to="/feedback" class="text-gray-400 hover:text-white transition-colors duration-300 font-light">
-                  {{ $t('footer.feedback', 'Обратная связь') }}
-                </router-link>
-              </li>
-              <li>
-                <router-link to="/become-seller" class="text-gray-400 hover:text-white transition-colors duration-300 font-light">
-                  {{ $t('footer.becomeSeller', 'Стать продавцом') }}
-                </router-link>
               </li>
             </ul>
           </div>
@@ -95,7 +77,7 @@
 
       <div class="flex flex-col md:flex-row justify-between items-center gap-6">
         <div class="text-gray-500 text-sm font-light">
-          © {{ new Date().getFullYear() }} remarket. {{ $t('common.rightsReserved') }}
+          © {{ new Date().getFullYear() }} xmarket. {{ $t('common.rightsReserved') }}
         </div>
       </div>
     </div>

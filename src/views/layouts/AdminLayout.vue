@@ -5,8 +5,6 @@ import {
   Package,
   ShoppingCart,
   Folder,
-  MessageCircle,
-  MessageSquareText
 } from 'lucide-vue-next'
 
 import { computed, onMounted, ref } from 'vue'
@@ -61,18 +59,6 @@ const navItems = computed(() => [
     to: '/admin/users'
   },
   {
-    id: 'chats',
-    title: t('navigation.admin.chats'),
-    icon: MessageCircle,
-    to: '/admin/support/chats',
-  },
-  {
-    id: 'feedback',
-    title: t('navigation.admin.feedback'),
-    icon: MessageSquareText,
-    to: '/admin/feedback',
-  },
-  {
     id: 'products',
     title: t('navigation.admin.products'),
     icon: Package,
@@ -100,7 +86,7 @@ const navItems = computed(() => [
         <div class="flex items-center gap-4">
           <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold"
             @click="router.push('/admin')">
-            <p>remarket</p>
+            <p><span class="text-button-main">x</span>market</p>
             <p class="text-gray-300 font-light">Admin</p>
           </div>
 

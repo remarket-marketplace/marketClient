@@ -2,7 +2,6 @@ import { ZodError } from "zod";
 import { httpClient } from "..";
 import { UserReadSchema, type UserRead } from "@/validation/user/userRead";
 import { useUserStore } from "@/stores/user";
-import { chatsService } from "@/api/chats/chatsService";
 
 export const authService = {
   async getUser(): Promise<UserRead | null> {
@@ -47,7 +46,6 @@ export const authService = {
   },
 
   async signIn(email: string, password: string, captchaToken: string) {
-    chatsService.disconnect();
     const response = await httpClient.post("/auth/login", {
       email,
       password,
@@ -65,7 +63,6 @@ export const authService = {
     code: string
   ) {
     try {
-      chatsService.disconnect();
       const response = await httpClient.post(
         "/auth/confirm-verification-code",
         {
@@ -109,8 +106,6 @@ export const authService = {
       }
       await useUserStore().clearUser();
       return false;
-    } finally {
-      chatsService.disconnect();
     }
   },
 
