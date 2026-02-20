@@ -531,7 +531,7 @@ input[type="number"] {
 /* Custom scrollbar for transactions */
 .overflow-y-auto {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-color: var(--overlay-white-20) transparent;
 }
 
 .overflow-y-auto::-webkit-scrollbar {
@@ -544,12 +544,12 @@ input[type="number"] {
 }
 
 .overflow-y-auto::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--overlay-white-20);
   border-radius: 3px;
 }
 
 .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: var(--overlay-white-30);
 }
 
 /* Ensure proper scrolling on mobile */

@@ -24,7 +24,7 @@ const { user } = storeToRefs(store)
     <div class="absolute inset-0 w-full h-full z-0 pointer-events-none hero-mask">
         <div class="absolute inset-0 bg-background"></div>
         <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-soft-light"></div>
-        <div class="absolute inset-0 bg-grid-white/[0.03] bg-[size:60px_60px]"></div>
+        <div class="absolute inset-0 hero-grid-pattern"></div>
         
         <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-600/30 rounded-full blur-[120px] animate-blob"></div>
         <div class="absolute top-1/4 right-1/4 w-[400px] h-[400px] bg-cyan-500/20 rounded-full blur-[100px] animate-blob animation-delay-2000"></div>
@@ -55,7 +55,7 @@ const { user } = storeToRefs(store)
       <div class="flex flex-col sm:flex-row gap-5 animate-fade-in-up animation-delay-300 w-full sm:w-auto px-6">
         <button 
           @click="scrollToCatalog"
-          class="group relative px-10 py-4 bg-blue-600 text-white font-bold rounded-xl overflow-hidden transition-all hover:shadow-[0_10px_30px_-5px_rgba(37,99,235,0.3)] hover:scale-[1.02] active:scale-[0.98] duration-300"
+          class="hero-primary-btn group relative px-10 py-4 bg-blue-600 text-white font-bold rounded-xl overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] duration-300"
         >
           <span class="relative flex items-center justify-center text-lg">
             {{ t('hero.exploreCatalog') }}
@@ -121,7 +121,13 @@ const { user } = storeToRefs(store)
   to { opacity: 1; transform: translateY(0); }
 }
 
-.bg-grid-white\/\[0\.03\] {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(255 255 255 / 0.04)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
+.hero-grid-pattern {
+  background-image: linear-gradient(to right, var(--grid-pattern-stroke-strong) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-pattern-stroke-strong) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+.hero-primary-btn:hover {
+  box-shadow: 0 10px 30px -5px var(--shadow-blue-600-30);
 }
 </style>

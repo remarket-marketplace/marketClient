@@ -32,6 +32,7 @@ import AdminFeedbackView from "@/views/admin/AdminFeedbackView.vue";
 import BecomeSellerView from "@/views/BecomeSellerView.vue";
 import AboutView from "@/views/AboutView.vue";
 import PartnerFortniteStatsView from "@/views/partner/PartnerFortniteStatsView.vue";
+import BannedView from "@/views/BannedView.vue";
 
 const YANDEX_METRIKA_COUNTER_ID = 106722008;
 
@@ -100,6 +101,11 @@ const routes = [
       path: "/not-access",
       name: "notAccess",
       component: NotAccess,
+    },
+    {
+      path: "/banned",
+      name: "banned",
+      component: BannedView,
     },
     {
       path: "/admin",

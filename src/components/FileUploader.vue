@@ -258,7 +258,7 @@ function clearAll() {
 /* Кастомный скролл для контейнера с превью */
 .grid {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-color: var(--overlay-white-20) transparent;
 }
 
 .grid::-webkit-scrollbar {
@@ -270,7 +270,7 @@ function clearAll() {
 }
 
 .grid::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--overlay-white-20);
   border-radius: 3px;
 }
 

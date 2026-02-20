@@ -98,7 +98,7 @@ import BackButton from '@/components/navigation/BackButton.vue'
 }
 
 .about-section + .about-section {
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid var(--overlay-white-12);
 }
 
 .about-heading {

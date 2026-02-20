@@ -196,7 +196,7 @@ onUnmounted(() => {
               class="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-55 select-none pointer-events-none"
               loading="lazy" aria-hidden="true" />
             <div
-              class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_45%),linear-gradient(to_bottom,rgba(2,6,23,0.08),rgba(2,6,23,0.5))]"
+              class="absolute inset-0 product-image-overlay"
               aria-hidden="true" />
             <img :src="`${API_HOST}${selectedImage.image_url}`" :alt="product.title"
               class="relative z-10 w-full h-full object-contain p-2 sm:p-3 md:p-4 cursor-zoom-in transition-opacity hover:opacity-90"
@@ -427,7 +427,7 @@ onUnmounted(() => {
 /* Custom scrollbar for image thumbnails */
 .thumbnails-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #4B5563 #1F2937;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
 .thumbnails-scroll::-webkit-scrollbar {
@@ -435,17 +435,22 @@ onUnmounted(() => {
 }
 
 .thumbnails-scroll::-webkit-scrollbar-track {
-  background: #1F2937;
+  background: var(--scrollbar-track);
   border-radius: 3px;
 }
 
 .thumbnails-scroll::-webkit-scrollbar-thumb {
-  background: #4B5563;
+  background: var(--scrollbar-thumb);
   border-radius: 3px;
 }
 
 .thumbnails-scroll::-webkit-scrollbar-thumb:hover {
-  background: #6B7280;
+  background: var(--scrollbar-thumb-hover);
+}
+
+.product-image-overlay {
+  background-image: radial-gradient(circle at top, var(--overlay-white-12), transparent 45%),
+    linear-gradient(to bottom, var(--product-image-overlay-top), var(--product-image-overlay-bottom));
 }
 
 /* Button hover animations */

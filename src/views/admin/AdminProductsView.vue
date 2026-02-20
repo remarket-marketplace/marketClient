@@ -425,12 +425,12 @@ watch(sortedProducts, () => {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #4B5563;
+  background: var(--scrollbar-thumb);
   border-radius: 1px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #6B7280;
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Улучшенная адаптация для очень маленьких экранов */

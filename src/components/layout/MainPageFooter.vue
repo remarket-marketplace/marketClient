@@ -104,6 +104,8 @@
 
 <style scoped>
 .bg-grid {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='60' height='60' fill='none' stroke='rgb(255 255 255 / 0.03)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
+  background-image: linear-gradient(to right, var(--grid-pattern-stroke-soft) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-pattern-stroke-soft) 1px, transparent 1px);
+  background-size: 60px 60px;
 }
 </style>

@@ -230,7 +230,7 @@ function startSelling() {
 }
 
 .seller-section + .seller-section {
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid var(--overlay-white-12);
 }
 
 .seller-heading-row {
@@ -247,8 +247,8 @@ function startSelling() {
   min-width: 2.1rem;
   height: 2.1rem;
   border-radius: 999px;
-  border: 1px solid rgba(96, 165, 250, 0.5);
-  color: #bfdbfe;
+  border: 1px solid var(--step-border);
+  color: var(--step-text);
   font-family: 'Sora', 'Segoe UI', Arial, sans-serif;
   font-size: 0.72rem;
   font-weight: 600;
@@ -274,7 +274,7 @@ function startSelling() {
   font-size: 1rem;
   line-height: 1.68;
   font-weight: 400;
-  color: #e5e7eb;
+  color: var(--body-copy-strong);
 }
 
 .seller-cta-text {

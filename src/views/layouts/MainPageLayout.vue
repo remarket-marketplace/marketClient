@@ -279,12 +279,12 @@ const navItems = computed(() => {
 
 <style scoped>
 .mobile-nav-glass {
-    background-color: rgba(23, 23, 23, 0.2);
+    background-color: var(--glass-bg-dark);
     -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(30px);
     border-top-width: 1px;
-    border-top-color: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
+    border-top-color: var(--overlay-white-15);
+    box-shadow: 0 -8px 32px var(--shadow-black-40);
 }
 
 .icon-box {

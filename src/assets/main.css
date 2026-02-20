@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+@import './theme/colors.css';
 
 
 @tailwind base;
@@ -7,26 +8,6 @@
 
 
 
-
-
-:root {
-  /* фон */
-  --background-color: #121212;
-
-  /* текст */
-  --main-text: #ffffff;
-  --link-text: #2563eb;
-  --error-text: #ef4444;
-  --secondary-text: #D1D5DB;
-  --secondary-dark-text: #6B7280;
-
-  /* кнопки */
-  --color-button-primary: #2563eb;
-  --color-button-hover: #1976d2;
-
-  /* инпуты */
-  --color-input: #6B7280;
-}
 
 
 /* Отключение зума на инпутах на iOS */
@@ -117,9 +98,9 @@ body {
     justify-content: center;
     gap: 0.5rem;
     border-radius: 0.5rem;
-    border: 1px solid #374151;
-    background-color: #1f2937;
-    color: #f3f4f6;
+    border: 1px solid var(--admin-btn-border);
+    background-color: var(--admin-btn-bg);
+    color: var(--admin-btn-text);
     font-size: 0.875rem;
     line-height: 1.25rem;
     font-weight: 600;
@@ -129,9 +110,9 @@ body {
   }
 
   .admin-btn:hover {
-    background-color: #273244;
-    border-color: #4b5563;
-    color: #ffffff;
+    background-color: var(--admin-btn-hover-bg);
+    border-color: var(--admin-btn-hover-border);
+    color: var(--admin-btn-text-strong);
   }
 
   .admin-btn:disabled {
@@ -143,7 +124,7 @@ body {
   .admin-btn-primary {
     background-color: var(--color-button-primary);
     border-color: transparent;
-    color: #ffffff;
+    color: var(--admin-btn-text-strong);
   }
 
   .admin-btn-primary:hover {
@@ -152,57 +133,57 @@ body {
   }
 
   .admin-btn-success {
-    background-color: #16a34a;
+    background-color: var(--admin-btn-success-bg);
     border-color: transparent;
-    color: #ffffff;
+    color: var(--admin-btn-text-strong);
   }
 
   .admin-btn-success:hover {
-    background-color: #15803d;
+    background-color: var(--admin-btn-success-hover-bg);
     border-color: transparent;
   }
 
   .admin-btn-danger {
-    background-color: #dc2626;
+    background-color: var(--admin-btn-danger-bg);
     border-color: transparent;
-    color: #ffffff;
+    color: var(--admin-btn-text-strong);
   }
 
   .admin-btn-danger:hover {
-    background-color: #b91c1c;
+    background-color: var(--admin-btn-danger-hover-bg);
     border-color: transparent;
   }
 
   .admin-btn-accent {
-    background-color: #4f46e5;
+    background-color: var(--admin-btn-accent-bg);
     border-color: transparent;
-    color: #ffffff;
+    color: var(--admin-btn-text-strong);
   }
 
   .admin-btn-accent:hover {
-    background-color: #4338ca;
+    background-color: var(--admin-btn-accent-hover-bg);
     border-color: transparent;
   }
 
   .admin-btn-muted {
-    background-color: #4b5563;
+    background-color: var(--admin-btn-muted-bg);
     border-color: transparent;
-    color: #ffffff;
+    color: var(--admin-btn-text-strong);
   }
 
   .admin-btn-muted:hover {
-    background-color: #374151;
+    background-color: var(--admin-btn-muted-hover-bg);
     border-color: transparent;
   }
 
   .admin-btn-ghost {
     background-color: transparent;
-    color: #9ca3af;
+    color: var(--admin-btn-ghost-text);
   }
 
   .admin-btn-ghost:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-    color: #ffffff;
+    background-color: var(--admin-btn-ghost-hover-bg);
+    color: var(--admin-btn-text-strong);
   }
 
   .admin-btn-icon {
@@ -230,7 +211,7 @@ body {
     border-radius: 0.5rem;
     border: 1px solid transparent;
     background-color: transparent;
-    color: #9ca3af;
+    color: var(--admin-btn-tab-text);
     font-size: 0.8125rem;
     line-height: 1.125rem;
     font-weight: 600;
@@ -239,13 +220,13 @@ body {
   }
 
   .admin-btn-tab:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-    color: #ffffff;
+    background-color: var(--admin-btn-tab-hover-bg);
+    color: var(--admin-btn-text-strong);
   }
 
   .admin-btn-tab-active {
-    background-color: rgba(37, 99, 235, 0.2);
-    border-color: rgba(59, 130, 246, 0.45);
-    color: #ffffff;
+    background-color: var(--admin-btn-tab-active-bg);
+    border-color: var(--admin-btn-tab-active-border);
+    color: var(--admin-btn-text-strong);
   }
 }

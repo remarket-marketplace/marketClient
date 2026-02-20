@@ -34,6 +34,9 @@ const confirmWindowOpen = ref(false)
 const userToBan = ref<string | null>(null)
 const userActionType = ref<'ban' | 'unban'>('ban')
 const isBanning = ref(false)
+const selectedBanReasonCode = ref('fraud')
+const customBanReason = ref('')
+const banReasonError = ref('')
 
 const listRef = ref<HTMLElement | null>(null)
 const sentinelRef = ref<HTMLElement | null>(null)
@@ -119,6 +122,17 @@ const displayTotal = computed(() => {
   return users.value.length
 })
 
+const isBanAction = computed(() => userActionType.value === 'ban')
+
+const banReasonOptions = computed(() => [
+  { value: 'fraud', label: t('common.userBanReasons.fraud') },
+  { value: 'spam', label: t('common.userBanReasons.spam') },
+  { value: 'multipleAccounts', label: t('common.userBanReasons.multipleAccounts') },
+  { value: 'chargebackAbuse', label: t('common.userBanReasons.chargebackAbuse') },
+  { value: 'termsViolation', label: t('common.userBanReasons.termsViolation') },
+  { value: 'otherReason', label: t('common.userBanReasons.otherReason') },
+])
+
 function formatPrice(price: number) {
   return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
@@ -168,22 +182,49 @@ function getRoleBadge(user: UserRead) {
 function showBanConfirm(userId: string) {
     userToBan.value = userId
     userActionType.value = 'ban'
+    selectedBanReasonCode.value = 'fraud'
+    customBanReason.value = ''
+    banReasonError.value = ''
     confirmWindowOpen.value = true
 }
 
 function showUnbanConfirm(userId: string) {
     userToBan.value = userId
     userActionType.value = 'unban'
+    selectedBanReasonCode.value = 'fraud'
+    customBanReason.value = ''
+    banReasonError.value = ''
     confirmWindowOpen.value = true
 }
 
 async function confirmBan() {
     if (!userToBan.value) return
-    
+
+    let reasonCode: string | null = null
+    let reasonText: string | null = null
+    banReasonError.value = ''
+
+    if (isBanAction.value) {
+      reasonCode = selectedBanReasonCode.value
+      if (!reasonCode) {
+        banReasonError.value = t('pages.admin.usersPage.banReasonRequired')
+        return
+      }
+
+      if (reasonCode === 'otherReason') {
+        const customReason = customBanReason.value.trim()
+        if (customReason.length < 5) {
+          banReasonError.value = t('pages.admin.usersPage.customBanReasonRequired')
+          return
+        }
+        reasonText = customReason
+      }
+    }
+
     isBanning.value = true
     try {
         const response = userActionType.value === 'ban'
-          ? await adminService.banUser(userToBan.value)
+          ? await adminService.banUser(userToBan.value, reasonCode || 'fraud', reasonText)
           : await adminService.unbanUser(userToBan.value)
         if (response) {
             await loadUsersList()
@@ -192,12 +233,16 @@ async function confirmBan() {
         isBanning.value = false
         confirmWindowOpen.value = false
         userToBan.value = null
+        customBanReason.value = ''
+        banReasonError.value = ''
     }
 }
 
 function cancelBan() {
     confirmWindowOpen.value = false
     userToBan.value = null
+    customBanReason.value = ''
+    banReasonError.value = ''
 }
 
 function loadMoreUsers() {
@@ -465,7 +510,30 @@ watch(sortedUsers, () => {
       :is-loading="isBanning"
       @confirm="confirmBan"
       @cancel="cancelBan"
-    />
+    >
+      <template #body>
+        <div v-if="isBanAction" class="space-y-3">
+          <label class="block text-sm text-gray-300">
+            {{ $t('pages.admin.usersPage.banReasonLabel') }}
+          </label>
+          <CustomSelect
+            v-model="selectedBanReasonCode"
+            :options="banReasonOptions"
+            :placeholder="$t('pages.admin.usersPage.selectBanReason')"
+          />
+          <div v-if="selectedBanReasonCode === 'otherReason'" class="space-y-2">
+            <textarea
+              v-model="customBanReason"
+              class="w-full rounded-lg bg-dark-900 border border-dark-700 text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[110px]"
+              :placeholder="$t('pages.admin.usersPage.customBanReasonPlaceholder')"
+            />
+          </div>
+          <p v-if="banReasonError" class="text-red-400 text-sm">
+            {{ banReasonError }}
+          </p>
+        </div>
+      </template>
+    </ConfirmWindow>
   </section>
 </template>
 
@@ -480,12 +548,12 @@ watch(sortedUsers, () => {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #4B5563;
+  background: var(--scrollbar-thumb);
   border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #6B7280;
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Медиа-запрос для очень маленьких экранов */

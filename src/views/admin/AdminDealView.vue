@@ -641,7 +641,7 @@ onMounted(async () => {
 @media (min-width: 1024px) {
   .lg\:overflow-y-auto {
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    scrollbar-color: var(--overlay-white-20) transparent;
   }
 
   .lg\:overflow-y-auto::-webkit-scrollbar {
@@ -654,12 +654,12 @@ onMounted(async () => {
   }
 
   .lg\:overflow-y-auto::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: var(--overlay-white-20);
     border-radius: 3px;
   }
 
   .lg\:overflow-y-auto::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: var(--overlay-white-30);
   }
 }
 </style>

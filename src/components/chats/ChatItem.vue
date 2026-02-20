@@ -205,7 +205,7 @@ onMounted(() => {
 
 <style scoped>
 .group:hover .text-gray-500 {
-    color: #d1d5db;
+    color: var(--text-hover-muted);
 }
 
 .min-w-0 {

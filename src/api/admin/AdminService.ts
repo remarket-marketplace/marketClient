@@ -179,10 +179,12 @@ export const adminService = {
     }
   },
 
-  async banUser(userId: string) {
+  async banUser(userId: string, reasonCode: string, reasonText?: string | null) {
     try {
       const response = await httpClient.post("/admin/ban-user", {
         id: userId,
+        reason_code: reasonCode,
+        reason_text: reasonText ?? null,
       });
       return response.status === 200;
     } catch (e) {

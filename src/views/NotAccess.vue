@@ -65,7 +65,7 @@ const goHome = () => {
       <div class="flex flex-col sm:flex-row gap-4 justify-center w-full max-w-sm animate-fade-in-up animation-delay-400">
         <button
           @click="$router.back()"
-          class="group relative px-8 py-3 bg-blue-600 text-white font-semibold rounded-xl overflow-hidden transition-all hover:bg-blue-700 hover:shadow-[0_10px_25px_-5px_rgba(37,99,235,0.4)] hover:scale-[1.02] active:scale-[0.98] duration-300 flex items-center justify-center gap-3"
+          class="not-access-primary-btn group relative px-8 py-3 bg-blue-600 text-white font-semibold rounded-xl overflow-hidden transition-all hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] duration-300 flex items-center justify-center gap-3"
         >
           <ArrowLeft class="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-1" />
           {{ t('pages.notFound.back') }}
@@ -124,5 +124,9 @@ const goHome = () => {
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(25px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+.not-access-primary-btn:hover {
+  box-shadow: 0 10px 25px -5px var(--shadow-blue-600-40);
 }
 </style>

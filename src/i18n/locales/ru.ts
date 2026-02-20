@@ -188,6 +188,14 @@ const ru = {
         unsatisfactoryQuality: "Не устроило качество",
         otherReason: "Другая причина"
     },
+    userBanReasons: {
+      fraud: "Мошенничество или обман",
+      spam: "Спам или оскорбительное поведение",
+      multipleAccounts: "Злоупотребление несколькими аккаунтами",
+      chargebackAbuse: "Злоупотребление чарджбэками",
+      termsViolation: "Нарушение правил платформы",
+      otherReason: "Другая причина",
+    },
   },
 
   errors: {
@@ -307,6 +315,13 @@ const ru = {
       goHome: "На главную",
       errorCode: "Ошибка 404",
       description: "У вас нет прав для просмотра этой страницы или она была перемещена"
+    },
+    bannedPage: {
+      title: "Доступ заблокирован",
+      description: "Ваш аккаунт заблокирован администратором. Вход в систему временно недоступен.",
+      noReason: "Причина не указана",
+      contactHint: "Если вы считаете блокировку ошибочной, обратитесь в поддержку.",
+      goHome: "На главную",
     },
     serverError: {
       title: "Что-то пошло не так, попробуйте позже",
@@ -456,6 +471,9 @@ const ru = {
         forgotPassword: "Забыли пароль?",
         success: "Вход успешно выполнен!",
         completeCaptcha: "Пожалуйста пройдите капчу",
+        welcomeLabel: "Успешный вход",
+        welcomeTitle: "Добро пожаловать, {username}",
+        welcomeHint: "Подготавливаем ваше пространство...",
       },
     },
     passwordRecovery: {
@@ -714,6 +732,11 @@ const ru = {
         notActive: "Неактивен",
         confirmBanMessage: "Вы уверены что хотите забанить пользователя?",
         confirmUnbanMessage: "Вы уверены что хотите разбанить пользователя?",
+        banReasonLabel: "Причина блокировки",
+        selectBanReason: "Выберите причину",
+        customBanReasonPlaceholder: "Опишите причину блокировки",
+        banReasonRequired: "Выберите причину блокировки",
+        customBanReasonRequired: "Введите не менее 5 символов",
       },
       categoriesPage: {
         title: "Управление категориями",

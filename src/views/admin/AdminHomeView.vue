@@ -26,6 +26,12 @@ const isError = ref(false)
 const selectedRange = ref(30)
 const rangeOptions = [7, 30, 90, 180]
 
+const cssVar = (token: string, fallback: string) => {
+  if (typeof window === 'undefined') return fallback
+  const value = window.getComputedStyle(document.documentElement).getPropertyValue(token).trim()
+  return value || fallback
+}
+
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('ru-RU', {
     style: 'currency',
@@ -84,99 +90,110 @@ const revenueSeries = computed(() => {
   ]
 })
 
-const revenueOptions = computed<ApexOptions>(() => ({
-  chart: {
-    type: 'line' as const,
-    toolbar: { show: false },
-    background: 'transparent',
-    foreColor: '#9ca3af',
-  },
-  dataLabels: { enabled: false },
-  stroke: { curve: 'smooth', width: [3, 2.4] },
-  markers: {
-    size: 4,
-    strokeWidth: 0,
-    hover: { size: 7 },
-  },
-  colors: ['#38bdf8', '#a855f7'],
-  fill: {
-    type: 'gradient',
-    gradient: {
-      shadeIntensity: 1,
-      opacityFrom: 0.35,
-      opacityTo: 0.05,
-      stops: [0, 90, 100],
+const revenueOptions = computed<ApexOptions>(() => {
+  const axisText = cssVar('--chart-axis-text', 'var(--chart-axis-text)')
+  const legendText = cssVar('--chart-legend-text', 'var(--chart-legend-text)')
+  const gridBorder = cssVar('--chart-grid-border', 'var(--chart-grid-border)')
+  const revenueColor = cssVar('--chart-series-revenue', 'var(--chart-series-revenue)')
+  const usersColor = cssVar('--chart-series-users', 'var(--chart-series-users)')
+
+  return {
+    chart: {
+      type: 'line' as const,
+      toolbar: { show: false },
+      background: 'transparent',
+      foreColor: axisText,
     },
-  },
-  xaxis: {
-    type: 'datetime',
-    labels: {
-      style: { colors: '#9ca3af' },
-      datetimeUTC: false,
+    dataLabels: { enabled: false },
+    stroke: { curve: 'smooth', width: [3, 2.4] },
+    markers: {
+      size: 4,
+      strokeWidth: 0,
+      hover: { size: 7 },
     },
-    axisBorder: { show: false },
-    axisTicks: { show: false },
-  },
-  yaxis: [
-    {
-      labels: {
-        style: { colors: '#9ca3af' },
-        formatter: (val: number) => formatShortNumber(val),
+    colors: [revenueColor, usersColor],
+    fill: {
+      type: 'gradient',
+      gradient: {
+        shadeIntensity: 1,
+        opacityFrom: 0.35,
+        opacityTo: 0.05,
+        stops: [0, 90, 100],
       },
-      title: { text: t('pages.admin.mainPage.revenue'), style: { color: '#9ca3af' } },
     },
-    {
-      opposite: true,
+    xaxis: {
+      type: 'datetime',
       labels: {
-        style: { colors: '#9ca3af' },
-        formatter: (val: number) => formatNumber(val),
+        style: { colors: axisText },
+        datetimeUTC: false,
       },
-      title: { text: t('pages.admin.mainPage.newUsers'), style: { color: '#9ca3af' } },
+      axisBorder: { show: false },
+      axisTicks: { show: false },
     },
-  ],
-  legend: {
-    show: true,
-    position: 'top',
-    horizontalAlign: 'left',
-    labels: { colors: '#e5e7eb' },
-  },
-  grid: {
-    borderColor: 'rgba(255,255,255,0.08)',
-    strokeDashArray: 4,
-  },
-  tooltip: {
-    shared: true,
-    x: { format: 'dd MMM' },
-    y: {
-      formatter: (val: number, opts: any) =>
-        opts.seriesIndex === 0
-          ? formatCurrency(val)
-          : `${formatNumber(val)} ${t('pages.admin.mainPage.usersShort')}`,
+    yaxis: [
+      {
+        labels: {
+          style: { colors: axisText },
+          formatter: (val: number) => formatShortNumber(val),
+        },
+        title: { text: t('pages.admin.mainPage.revenue'), style: { color: axisText } },
+      },
+      {
+        opposite: true,
+        labels: {
+          style: { colors: axisText },
+          formatter: (val: number) => formatNumber(val),
+        },
+        title: { text: t('pages.admin.mainPage.newUsers'), style: { color: axisText } },
+      },
+    ],
+    legend: {
+      show: true,
+      position: 'top',
+      horizontalAlign: 'left',
+      labels: { colors: legendText },
     },
-    theme: 'dark',
-    style: {
-      fontSize: '12px',
-      fontFamily: 'Outfit, sans-serif',
+    grid: {
+      borderColor: gridBorder,
+      strokeDashArray: 4,
     },
-    marker: { show: false },
-    onDatasetHover: { highlightDataSeries: true },
-  },
-}))
+    tooltip: {
+      shared: true,
+      x: { format: 'dd MMM' },
+      y: {
+        formatter: (val: number, opts: any) =>
+          opts.seriesIndex === 0
+            ? formatCurrency(val)
+            : `${formatNumber(val)} ${t('pages.admin.mainPage.usersShort')}`,
+      },
+      theme: 'dark',
+      style: {
+        fontSize: '12px',
+        fontFamily: 'Outfit, sans-serif',
+      },
+      marker: { show: false },
+      onDatasetHover: { highlightDataSeries: true },
+    },
+  }
+})
 
 const statusOptions = computed<ApexOptions>(() => {
+  const axisText = cssVar('--chart-axis-text', 'var(--chart-axis-text)')
+  const gridBorder = cssVar('--chart-grid-border', 'var(--chart-grid-border)')
   const statuses = dealsStatus.value
   const categories = statuses.map(s => t(`common.dealStatuses.${s.status}`) ?? s.status)
   const colorsMap: Record<string, string> = {
-    pending: '#f59e0b',
-    confirmed: '#22d3ee',
-    completed: '#22c55e',
-    disputed: '#fb7185',
-    cancelled: '#94a3b8',
-    refunded: '#f97316',
+    pending: cssVar('--chart-status-pending', 'var(--chart-status-pending)'),
+    confirmed: cssVar('--chart-status-confirmed', 'var(--chart-status-confirmed)'),
+    completed: cssVar('--chart-status-completed', 'var(--chart-status-completed)'),
+    disputed: cssVar('--chart-status-disputed', 'var(--chart-status-disputed)'),
+    cancelled: cssVar('--chart-status-cancelled', 'var(--chart-status-cancelled)'),
+    refunded: cssVar('--chart-status-refunded', 'var(--chart-status-refunded)'),
   }
-  const colors = statuses.map(s => colorsMap[s.status] || '#60a5fa')
+  const fallbackColor = cssVar('--chart-status-default', 'var(--chart-status-default)')
+  const colors = statuses.map(s => colorsMap[s.status] || fallbackColor)
   return {
-    chart: { type: 'bar' as const, toolbar: { show: false }, foreColor: '#9ca3af' },
+    chart: { type: 'bar' as const, toolbar: { show: false }, foreColor: axisText },
     plotOptions: {
       bar: {
         columnWidth: '50%',
@@ -187,23 +204,23 @@ const statusOptions = computed<ApexOptions>(() => {
     colors,
     xaxis: {
       categories,
-      labels: { style: { colors: '#9ca3af' } },
+      labels: { style: { colors: axisText } },
       axisBorder: { show: false },
       axisTicks: { show: false },
     },
     yaxis: {
       labels: {
-        style: { colors: '#9ca3af' },
+        style: { colors: axisText },
         formatter: (val: number) => formatNumber(val),
       },
     },
-  grid: { borderColor: 'rgba(255,255,255,0.08)', strokeDashArray: 4 },
-  tooltip: {
-    theme: 'dark',
-    style: { fontSize: '12px', fontFamily: 'Outfit, sans-serif' },
-    y: { formatter: (val: number) => formatNumber(val) },
-  },
-}
+    grid: { borderColor: gridBorder, strokeDashArray: 4 },
+    tooltip: {
+      theme: 'dark',
+      style: { fontSize: '12px', fontFamily: 'Outfit, sans-serif' },
+      y: { formatter: (val: number) => formatNumber(val) },
+    },
+  }
 })
 
 const statusSeries = computed(() => [
@@ -213,32 +230,39 @@ const statusSeries = computed(() => [
   },
 ])
 
-const topCategoriesOptions = computed<ApexOptions>(() => ({
-  chart: { type: 'bar' as const, toolbar: { show: false }, foreColor: '#9ca3af' },
-  plotOptions: {
-    bar: {
-      horizontal: true,
-      barHeight: '60%',
-      borderRadius: 8,
+const topCategoriesOptions = computed<ApexOptions>(() => {
+  const axisText = cssVar('--chart-axis-text', 'var(--chart-axis-text)')
+  const legendText = cssVar('--chart-legend-text', 'var(--chart-legend-text)')
+  const gridBorder = cssVar('--chart-grid-border', 'var(--chart-grid-border)')
+  const seriesColor = cssVar('--chart-series-top-categories', 'var(--chart-series-top-categories)')
+
+  return {
+    chart: { type: 'bar' as const, toolbar: { show: false }, foreColor: axisText },
+    plotOptions: {
+      bar: {
+        horizontal: true,
+        barHeight: '60%',
+        borderRadius: 8,
+      },
     },
-  },
-  dataLabels: {
-    enabled: true,
-    formatter: (val: number) => formatShortNumber(val),
-    style: { colors: ['#e5e7eb'] },
-  },
-  xaxis: {
-    categories: topCategories.value.map(c => c.category_name),
-    labels: { style: { colors: '#9ca3af' } },
-  },
-  colors: ['#34d399'],
-  grid: { borderColor: 'rgba(255,255,255,0.08)', strokeDashArray: 4 },
-  tooltip: {
-    theme: 'dark',
-    style: { fontSize: '12px', fontFamily: 'Outfit, sans-serif' },
-    y: { formatter: (val: number) => formatCurrency(val) },
-  },
-}))
+    dataLabels: {
+      enabled: true,
+      formatter: (val: number) => formatShortNumber(val),
+      style: { colors: [legendText] },
+    },
+    xaxis: {
+      categories: topCategories.value.map(c => c.category_name),
+      labels: { style: { colors: axisText } },
+    },
+    colors: [seriesColor],
+    grid: { borderColor: gridBorder, strokeDashArray: 4 },
+    tooltip: {
+      theme: 'dark',
+      style: { fontSize: '12px', fontFamily: 'Outfit, sans-serif' },
+      y: { formatter: (val: number) => formatCurrency(val) },
+    },
+  }
+})
 
 const topCategoriesSeries = computed(() => [
   {

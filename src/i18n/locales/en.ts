@@ -187,6 +187,14 @@ const en = {
       unsatisfactoryQuality: "Unsatisfactory quality",
       otherReason: "Other reason",
     },
+    userBanReasons: {
+      fraud: "Fraud or scam activity",
+      spam: "Spam or abusive behavior",
+      multipleAccounts: "Multiple accounts abuse",
+      chargebackAbuse: "Chargeback abuse",
+      termsViolation: "Violation of platform rules",
+      otherReason: "Other reason",
+    },
   },
 
   errors: {
@@ -305,6 +313,13 @@ const en = {
       goHome: "Go Home",
       errorCode: "404 Error",
       description: "The page you requested does not exist or has been moved. Please check the URL or return to the home page."
+    },
+    bannedPage: {
+      title: "Access is blocked",
+      description: "Your account has been banned by an administrator. You cannot sign in right now.",
+      noReason: "Reason not specified",
+      contactHint: "If you think this is a mistake, contact support.",
+      goHome: "Go home",
     },
     serverError: {
       title: "Something went wrong, try again later",
@@ -454,6 +469,9 @@ const en = {
         forgotPassword: "Forgot password?",
         success: "You have successfully logged!",
         completeCaptcha: "Please complete captcha",
+        welcomeLabel: "Signed in",
+        welcomeTitle: "Welcome, {username}",
+        welcomeHint: "Preparing your workspace...",
       },
     },
 
@@ -715,6 +733,11 @@ const en = {
         notActive: "Not active",
         confirmBanMessage: "Are you sure want to ban user?",
         confirmUnbanMessage: "Are you sure you want to unban user?",
+        banReasonLabel: "Ban reason",
+        selectBanReason: "Select reason",
+        customBanReasonPlaceholder: "Describe the reason for ban",
+        banReasonRequired: "Select a ban reason",
+        customBanReasonRequired: "Please enter at least 5 characters",
       },
       categoriesPage: {
         title: "Category Management",
