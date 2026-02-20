@@ -31,6 +31,20 @@ export type DashboardData = {
   top_categories: DashboardCategory[]
 }
 
+export type FortnitePartnerStats = {
+  category_slug: string
+  category_name: string
+  total_accounts: number
+  active_listings: number
+  sold_accounts: number
+  raika_verified_accounts: number
+  total_deals: number
+  total_revenue: number
+  average_deal_amount: number
+  sold_share_percent: number
+  deals_by_status: DashboardStatusBreakdown[]
+}
+
 export const adminService = {
   async getDashboardData(days = 30): Promise<DashboardData | null> {
     try {
@@ -40,6 +54,16 @@ export const adminService = {
       return response.data as DashboardData;
     } catch (e) {
       console.error("Failed to load dashboard data", e);
+      return null;
+    }
+  },
+
+  async getFortnitePartnerStats(): Promise<FortnitePartnerStats | null> {
+    try {
+      const response = await httpClient.get("/admin/partners/fortnite-stats");
+      return response.data as FortnitePartnerStats;
+    } catch (e) {
+      console.error("Failed to load partner fortnite stats", e);
       return null;
     }
   },
@@ -84,7 +108,7 @@ export const adminService = {
       const response = await httpClient.post("/admin/products/reject", {
         product_id: productId,
       });
-      return response.status === 200 && response.data === true;
+      return response.status === 200;
     } catch (e) {
       if (e instanceof ZodError) {
         console.error(e.issues);
@@ -125,6 +149,36 @@ export const adminService = {
     }
   },
 
+  async uploadUserAvatar(userId: string, file: File) {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await httpClient.patch(`/admin/user/${userId}/avatar`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return UserReadSchema.parse(response.data);
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error(e.issues);
+      }
+      return false;
+    }
+  },
+
+  async deleteUserAvatar(userId: string) {
+    try {
+      const response = await httpClient.delete(`/admin/user/${userId}/avatar`);
+      return UserReadSchema.parse(response.data);
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error(e.issues);
+      }
+      return false;
+    }
+  },
+
   async banUser(userId: string) {
     try {
       const response = await httpClient.post("/admin/ban-user", {
@@ -142,7 +196,7 @@ export const adminService = {
   async unbanUser(userId: string) {
     try {
       const response = await httpClient.post("/admin/unban-user", {
-        user_id: userId,
+        id: userId,
       });
       return response.status === 200;
     } catch (e) {

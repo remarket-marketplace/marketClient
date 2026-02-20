@@ -315,7 +315,7 @@ watch(sortedProducts, () => {
                 <div v-if="product.status === 'moderation'" class="flex gap-2">
                   <button
                     @click="navigateToProduct(product.id)"
-                    class="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-xs"
+                    class="admin-btn admin-btn-primary px-4 py-3 text-xs"
                   >
                     <Search class="w-4 h-4" />
                     <span>{{ $t('common.view') }}</span>
@@ -323,7 +323,7 @@ watch(sortedProducts, () => {
                   <button
                     @click="approveProduct(product.id)"
                     :disabled="processingProductId === product.id"
-                    class="flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white rounded-lg transition-colors text-xs"
+                    class="admin-btn admin-btn-success px-4 py-3 text-xs"
                   >
                     <ThumbsUp class="w-4 h-4" />
                     <span>{{ $t('common.approve') }}</span>
@@ -332,7 +332,7 @@ watch(sortedProducts, () => {
                   <button
                     @click="rejectProduct(product.id)"
                     :disabled="processingProductId === product.id"
-                    class="flex items-center justify-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg transition-colors text-xs"
+                    class="admin-btn admin-btn-danger px-4 py-3 text-xs"
                   >
                     <ThumbsDown class="w-4 h-4" />
                     <span>{{ $t('common.reject') }}</span>
@@ -351,7 +351,7 @@ watch(sortedProducts, () => {
               <!-- Кнопка просмотра -->
               <button
                 @click="navigateToProduct(product.id)"
-                class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-xs justify-center flex-1"
+                class="admin-btn admin-btn-primary admin-btn-xs justify-center flex-1"
               >
                 <Search class="w-3 h-3" />
                 <span>{{ $t('common.view') }}</span>
@@ -362,7 +362,7 @@ watch(sortedProducts, () => {
                 <button
                   @click="approveProduct(product.id)"
                   :disabled="processingProductId === product.id"
-                  class="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white rounded-lg transition-colors text-xs justify-center flex-1"
+                  class="admin-btn admin-btn-success admin-btn-xs justify-center flex-1"
                 >
                   <ThumbsUp class="w-3 h-3" />
                   <span>{{ $t('common.approve') }}</span>
@@ -371,7 +371,7 @@ watch(sortedProducts, () => {
                 <button
                   @click="rejectProduct(product.id)"
                   :disabled="processingProductId === product.id"
-                  class="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg transition-colors text-xs justify-center flex-1"
+                  class="admin-btn admin-btn-danger admin-btn-xs justify-center flex-1"
                 >
                   <ThumbsDown class="w-3 h-3" />
                   <span>{{ $t('common.reject') }}</span>

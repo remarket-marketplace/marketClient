@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { Heart, ExternalLink, User, Star } from 'lucide-vue-next'
+import { Heart, ExternalLink, Star } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import type { Product } from '@/validation/product/product'
 import { useI18n } from 'vue-i18n'
 import { productService } from '@/api/product/ProductService'
+import UserAvatar from '@/components/UserAvatar.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -132,10 +133,10 @@ const formatDate = (dateString: string) => {
           class="flex items-center gap-2 min-w-0 group"
         >
           <div class="relative flex-shrink-0">
-            <img
-              :src="`${API_HOST}${product.seller.avatar_url}`"
-              class="w-6 h-6 rounded-full border border-dark-600"
+            <UserAvatar
+              :avatar-url="product.seller.avatar_url"
               :alt="product.seller.username"
+              class="w-6 h-6 rounded-full border border-dark-600 object-cover"
             />
             <div
               v-if="product.seller.is_active"

@@ -704,7 +704,7 @@ async function createProduct() {
             </div>
 
             <button type="button" :disabled="sended || !isFormValid"
-              class="w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 py-3.5 text-white font-semibold hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-blue-500/20"
+              class="w-full rounded-lg border border-transparent bg-button-main px-4 py-3 text-sm font-semibold text-mainText transition-colors duration-200 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               @click="createProduct">
               <span v-if="sended" class="flex items-center justify-center gap-2">
                 <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"

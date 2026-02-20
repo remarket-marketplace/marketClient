@@ -5,7 +5,7 @@ export function useImages() {
 
   const images = {
     avatars: {
-      default: getImage('profile.png'),
+      default: getImage('avatar-default.svg'),
     },
     chat: {
       send: getImage('send.svg'),

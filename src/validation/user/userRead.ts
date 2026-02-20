@@ -12,7 +12,7 @@ export const UserReadSchema = z.object({
   is_banned: z.boolean(),
   is_active: z.boolean(),
   rating: z.number().int().nonnegative(),
-  role: z.enum(['user', 'admin']),
+  role: z.enum(['user', 'admin', 'partner']),
 })
 
 export type UserRead = z.infer<typeof UserReadSchema>

@@ -5,18 +5,18 @@ import SendMessageBar from '@/components/chats/SendMessageBar.vue'
 import Loader from '@/components/Loader.vue'
 import { useUserStore } from '@/stores/user'
 import type { ChatMessageUnion } from '@/validation/chat/chatMessage'
+import type { MessagesReadPayload } from '@/validation/chat/chatMessage'
 import type { UserRead } from '@/validation/user/userRead'
 import { nextTick, onMounted, onUnmounted, ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from 'lucide-vue-next'
 import { adminService } from '@/api/admin/AdminService'
+import UserAvatar from '@/components/UserAvatar.vue'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
-
-const API_HOST = import.meta.env.VITE_API_HOST
 
 const chatMessages = ref<ChatMessageUnion[]>([])
 const messageContainerRef = ref<HTMLElement | null>(null)
@@ -66,10 +66,6 @@ const senderRoles = computed<Record<string, 'buyer' | 'seller' | 'admin'>>(() =>
     return roles
 })
 
-const chatUserInitial = computed(() =>
-    currentChatData.value?.username.charAt(0).toUpperCase() || ''
-)
-
 function resolveCurrentChatData(participants: ChatParticipantsData) {
     const meId = user.value?.id ?? null
     const buyer = participants.buyer
@@ -105,6 +101,20 @@ function resolveCurrentChatData(participants: ChatParticipantsData) {
 
 
 let unsubscribeNewMessage: (() => void) | null = null
+let unsubscribeMessagesRead: (() => void) | null = null
+
+function applyMessagesReadUpdate(update: MessagesReadPayload) {
+    if (update.chat_id !== currentChatId.value || update.message_ids.length === 0) {
+        return
+    }
+
+    const readIds = new Set(update.message_ids)
+    for (const message of chatMessages.value) {
+        if (message.message_type === 'text_message' && readIds.has(message.id)) {
+            message.is_read = true
+        }
+    }
+}
 
 onMounted(async () => {
     try {
@@ -124,6 +134,7 @@ onMounted(async () => {
                 }
             }
         })
+        unsubscribeMessagesRead = chatsService.onMessagesRead(applyMessagesReadUpdate)
 
         const chatId = route.params.chatId as string
         if (chatId) {
@@ -138,6 +149,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
     unsubscribeNewMessage?.()
+    unsubscribeMessagesRead?.()
 })
 
 function scrollToBottom() {
@@ -253,14 +265,11 @@ async function sendMessage() {
                             </button>
                             <div class="flex items-center gap-3 flex-1">
                                 <div class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
-                                    <img v-if="currentChatData.avatar_url"
-                                        :src="`${API_HOST}${currentChatData.avatar_url}`"
+                                    <UserAvatar
+                                        :avatar-url="currentChatData.avatar_url"
+                                        :alt="currentChatData.username"
                                         class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-dark-600 rounded-full object-cover"
-                                        :alt="currentChatData.username">
-                                    <div v-else
-                                        class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center rounded-full bg-gray-700 text-mainText font-bold uppercase">
-                                        {{ chatUserInitial }}
-                                    </div>
+                                    />
                                 </div>
                                 <div class="flex flex-col truncate flex-1">
                                     <p class="truncate text-mainText font-semibold text-lg">

@@ -31,6 +31,7 @@ import AdminFeedbacksView from "@/views/admin/AdminFeedbacksView.vue";
 import AdminFeedbackView from "@/views/admin/AdminFeedbackView.vue";
 import BecomeSellerView from "@/views/BecomeSellerView.vue";
 import AboutView from "@/views/AboutView.vue";
+import PartnerFortniteStatsView from "@/views/partner/PartnerFortniteStatsView.vue";
 
 const YANDEX_METRIKA_COUNTER_ID = 106722008;
 
@@ -173,6 +174,12 @@ const routes = [
       meta: { requiredAdmin: true },
     },
     {
+      path: "/partner/fortnite-stats",
+      name: "partner fortnite stats",
+      component: PartnerFortniteStatsView,
+      meta: { requiredPartner: true },
+    },
+    {
       path: "/wallet",
       name: "wallet",
       component: WalletView,
@@ -218,27 +225,20 @@ const routes = [
   ]
 
 export function createAppRouter(isSSR = false) {
-  let shouldResetNestedScroll = true
-
   const history = isSSR ? createMemoryHistory() : createWebHistory(import.meta.env.BASE_URL)
   const router = createRouter({
     history,
     routes,
-    scrollBehavior(_to, _from, savedPosition) {
-      shouldResetNestedScroll = !savedPosition
-
-      if (savedPosition) {
-        return savedPosition
-      }
-
-      return { left: 0, top: 0 }
+    scrollBehavior() {
+      // Always open next page from the top.
+      return { left: 0, top: 0, behavior: "auto" }
     },
   })
 
   router.beforeEach(async (to, from, next) => {
-  const { requiredAdmin, requiredAuthorized, requiredGuest } = to.meta;
+  const { requiredAdmin, requiredAuthorized, requiredGuest, requiredPartner } = to.meta;
   
-  if (!requiredAdmin && !requiredAuthorized && !requiredGuest) {
+  if (!requiredAdmin && !requiredAuthorized && !requiredGuest && !requiredPartner) {
     return next();
   }
 
@@ -246,6 +246,12 @@ export function createAppRouter(isSSR = false) {
 
   if (requiredAdmin) {
     return user?.role === 'admin' ? next() : next('/not-access');
+  }
+
+  if (requiredPartner) {
+    return user && (user.role === 'partner' || user.role === 'admin')
+      ? next()
+      : next('/not-access');
   }
 
   if (requiredAuthorized) {
@@ -260,25 +266,34 @@ export function createAppRouter(isSSR = false) {
   });
 
   router.afterEach(() => {
-    if (typeof window === 'undefined' || !shouldResetNestedScroll) {
+    if (typeof window === 'undefined') {
       return
     }
 
     const resetNestedScroll = () => {
+      window.scrollTo({ left: 0, top: 0, behavior: "auto" })
+      document.documentElement.scrollTop = 0
+      document.body.scrollTop = 0
+
       const scrollableContainers = document.querySelectorAll<HTMLElement>(
-        'main .overflow-scroll, main .overflow-y-auto, main .overflow-y-scroll'
+        'main.overflow-scroll, main.overflow-y-auto, main.overflow-y-scroll, main .overflow-scroll, main .overflow-y-auto, main .overflow-y-scroll'
       )
 
       scrollableContainers.forEach((el) => {
+        el.scrollTo({ top: 0, left: 0, behavior: "auto" })
         el.scrollTop = 0
         el.scrollLeft = 0
       })
     }
 
-    window.requestAnimationFrame(() => {
+    const runResetSequence = () => {
       resetNestedScroll()
       window.requestAnimationFrame(resetNestedScroll)
-    })
+    }
+
+    window.requestAnimationFrame(runResetSequence)
+    window.setTimeout(runResetSequence, 80)
+    window.setTimeout(runResetSequence, 180)
   })
 
   router.afterEach((to, from) => {

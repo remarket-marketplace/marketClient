@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { adminService } from '@/api/admin/AdminService';
 import type { UserRead } from '@/validation/user/userRead';
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import ErrorBanner from '@/components/ErrorBanner.vue';
@@ -10,10 +10,14 @@ import { Loader2 } from 'lucide-vue-next';
 import SuccessMessage from '@/components/SuccessMessage.vue'
 import Checkbox from '@/components/Checkbox.vue';
 import RadioButton from '@/components/RadioButton.vue';
+import FileUploader from '@/components/FileUploader.vue';
+import { useImages } from '@/composables/useImages';
 
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
+const API_HOST = import.meta.env.VITE_API_HOST || '';
+const { images } = useImages()
 
 const userId = ref<string>(route.params.id as string);
 const user = ref<UserRead | null>(null);
@@ -26,13 +30,28 @@ const successMessage = ref('');
 const email = ref('');
 const username = ref('');
 const description = ref('');
-const avatarUrl = ref('');
+const currentAvatarUrl = ref('');
+const removeAvatarAfterSave = ref(false);
+const avatarFiles = ref<File[]>([]);
 const balance = ref('');
 const rating = ref('');
 const isBanned = ref(false);
-const isActive = ref(true);
-const role = ref<'user' | 'admin'>('user');
+const role = ref<'user' | 'admin' | 'partner'>('user');
 const hasFrozenBalance = ref(false);
+
+const hasCurrentAvatar = computed(() => Boolean(currentAvatarUrl.value) && !removeAvatarAfterSave.value)
+const avatarPreviewUrl = computed(() => {
+  if (!hasCurrentAvatar.value) {
+    return images.avatars.default
+  }
+  if (
+    currentAvatarUrl.value.startsWith('http://')
+    || currentAvatarUrl.value.startsWith('https://')
+  ) {
+    return currentAvatarUrl.value
+  }
+  return `${API_HOST}${currentAvatarUrl.value}`
+})
 
 // Заглушка для получения пользователя
 async function fetchUser(userId: string): Promise<UserRead | false> {
@@ -51,11 +70,12 @@ async function loadUser() {
       email.value = userData.email;
       username.value = userData.username;
       description.value = userData.description || '';
-      avatarUrl.value = userData.avatar_url || '';
+      currentAvatarUrl.value = userData.avatar_url || '';
+      removeAvatarAfterSave.value = false;
+      avatarFiles.value = [];
       balance.value = userData.balance.toString();
       rating.value = userData.rating.toString();
       isBanned.value = userData.is_banned;
-      isActive.value = userData.is_active;
       role.value = userData.role;
       hasFrozenBalance.value = userData.has_frozen_balance;
     }
@@ -95,26 +115,44 @@ async function saveUser() {
       email: email.value,
       username: username.value,
       description: description.value,
-      avatar_url: avatarUrl.value,
       balance: balanceValue,
       rating: ratingValue,
       is_banned: isBanned.value,
-      is_active: isActive.value,
       role: role.value,
       has_frozen_balance: hasFrozenBalance.value,
     };
 
     const success = await adminService.updateUserData(userId.value, userData);
 
-    if (success !== false) {
-      successMessage.value = t('common.saved');
-
-      setTimeout(() => {
-        router.push('/admin/users');
-      }, 1000);
-    } else {
+    if (success === false) {
       errorMessage.value = t('pages.admin.editUser.errorSaving');
+      return;
     }
+
+    if (avatarFiles.value.length > 0) {
+      const avatarResponse = await adminService.uploadUserAvatar(userId.value, avatarFiles.value[0]!)
+      if (avatarResponse === false) {
+        errorMessage.value = t('pages.admin.editUser.errorSaving');
+        return;
+      }
+      currentAvatarUrl.value = avatarResponse.avatar_url || ''
+      removeAvatarAfterSave.value = false
+      avatarFiles.value = []
+    } else if (removeAvatarAfterSave.value && currentAvatarUrl.value) {
+      const avatarResponse = await adminService.deleteUserAvatar(userId.value)
+      if (avatarResponse === false) {
+        errorMessage.value = t('pages.admin.editUser.errorSaving');
+        return;
+      }
+      currentAvatarUrl.value = avatarResponse.avatar_url || ''
+      removeAvatarAfterSave.value = false
+    }
+
+    successMessage.value = t('common.saved');
+
+    setTimeout(() => {
+      router.push('/admin/users');
+    }, 1000);
   } catch (error) {
     console.error('Error saving user:', error);
     errorMessage.value = t('pages.admin.editUser.errorSaving');
@@ -126,6 +164,16 @@ async function saveUser() {
 
 function cancel() {
   router.push('/admin/users');
+}
+
+function markAvatarForDelete() {
+  if (!currentAvatarUrl.value) return
+  removeAvatarAfterSave.value = true
+  avatarFiles.value = []
+}
+
+function cancelAvatarDelete() {
+  removeAvatarAfterSave.value = false
 }
 
 onMounted(() => {
@@ -184,13 +232,46 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- Avatar URL -->
+        <!-- Avatar -->
         <div>
-          <label for="avatarUrl" class="mb-1 block text-sm text-text-secondary">
-            {{ $t('pages.admin.editUser.avatarUrl') }}
+          <label class="mb-2 block text-sm text-text-secondary">
+            {{ $t('pages.admin.editUser.avatarLabel') }}
           </label>
-          <TheInput id="avatarUrl" v-model="avatarUrl" type="text"
-            :placeholder="$t('pages.admin.editUser.avatarUrlPlaceholder')" />
+          <div class="mb-3 flex items-center gap-3 rounded-xl border border-dark-700 bg-dark-600/40 p-3">
+            <img
+              :src="avatarPreviewUrl"
+              :alt="$t('pages.admin.editUser.avatarLabel')"
+              class="h-14 w-14 rounded-full border border-dark-500 object-cover"
+            />
+            <div class="flex flex-col gap-2">
+              <button
+                type="button"
+                class="admin-btn admin-btn-danger admin-btn-xs"
+                :disabled="!hasCurrentAvatar"
+                @click="markAvatarForDelete"
+              >
+                {{ $t('pages.admin.editUser.removeAvatar') }}
+              </button>
+              <button
+                v-if="removeAvatarAfterSave && currentAvatarUrl"
+                type="button"
+                class="admin-btn admin-btn-ghost admin-btn-xs"
+                @click="cancelAvatarDelete"
+              >
+                {{ $t('common.cancel') }}
+              </button>
+            </div>
+          </div>
+
+          <FileUploader
+            v-model="avatarFiles"
+            :max-files="1"
+            :label="$t('pages.admin.editUser.newAvatarLabel')"
+          />
+
+          <p v-if="removeAvatarAfterSave && avatarFiles.length === 0" class="mt-2 text-xs text-orange-300">
+            {{ $t('pages.admin.editUser.avatarWillBeRemoved') }}
+          </p>
         </div>
 
         <!-- Balance and rating  -->
@@ -221,12 +302,6 @@ onMounted(() => {
               {{ $t('common.status') }}
             </label>
             <div class="space-y-2">
-              <label class="flex items-center">
-                <Checkbox v-model="isActive" />
-                <span class="ml-2 text-sm text-mainText">
-                  {{ $t('common.productStatuses.active') }}
-                </span>
-              </label>
               <label class="flex items-center">
                 <Checkbox v-model="isBanned" />
                 <span class="ml-2 text-sm text-mainText">
@@ -262,6 +337,13 @@ onMounted(() => {
                   </span>
                 </RadioButton>
               </label>
+              <label class="flex items-center">
+                <RadioButton v-model="role" name="role" value="partner">
+                  <span class="text-sm text-mainText">
+                    {{ $t('common.partner') }}
+                  </span>
+                </RadioButton>
+              </label>
             </div>
           </div>
         </div>
@@ -284,12 +366,12 @@ onMounted(() => {
         <!-- Action buttons -->
         <div class="flex gap-3 pt-4">
           <button type="button" @click="cancel"
-            class="flex-1 px-4 py-2 border border-dark-700 rounded-lg text-mainText hover:bg-dark-600 transition-colors"
+            class="admin-btn flex-1"
             :disabled="isSaving">
             {{ $t('common.cancel') }}
           </button>
           <button type="submit" :disabled="isSaving"
-            class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors flex items-center justify-center gap-2">
+            class="admin-btn admin-btn-primary flex-1">
             <Loader2 v-if="isSaving" class="h-4 w-4 animate-spin" />
             {{ isSaving ? $t('common.loading') : $t('common.save') }}
           </button>

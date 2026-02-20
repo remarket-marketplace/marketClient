@@ -2,7 +2,9 @@ import {
   ChatArrayUnionSchema,
   ChatMessageUnionSchema,
   ChatUpdateSchema,
+  MessagesReadSchema,
   type ChatMessageUnion,
+  type MessagesReadPayload,
 } from "@/validation/chat/chatMessage";
 import type { Socket } from "socket.io-client";
 import { io } from "socket.io-client";
@@ -18,12 +20,14 @@ let socket: Socket | null = null;
 type MessageCallback = (message: ChatMessageUnion) => void;
 type ChatUpdatedCallback = (data: ChatUpdateSchema) => void;
 type ChatNotificationCallback = (data: ChatUpdateSchema) => void;
+type MessagesReadCallback = (data: MessagesReadPayload) => void;
 
 const WS_API_HOST = import.meta.env.VITE_WS_API_HOST;
 
 const newMessageCallbacks: MessageCallback[] = [];
 const chatUpdatedCallbacks: ChatUpdatedCallback[] = [];
 const chatNotificationCallbacks: ChatNotificationCallback[] = [];
+const messagesReadCallbacks: MessagesReadCallback[] = [];
 
 let lastSubscribedChatId: string | null = null;
 let heartbeatIntervalHandle: number | null = null;
@@ -153,6 +157,15 @@ export const chatsService = {
           chatNotificationCallbacks.forEach((cb) => cb(validated));
         } catch (e) {
           console.error("Error validating chat notification:", e);
+        }
+      });
+
+      socket.on("messages_read", (data: any) => {
+        try {
+          const validated = MessagesReadSchema.parse(data);
+          messagesReadCallbacks.forEach((cb) => cb(validated));
+        } catch (e) {
+          console.error("Error validating messages_read event:", e);
         }
       });
     });
@@ -318,12 +331,25 @@ export const chatsService = {
     };
   },
 
+  onMessagesRead(cb: MessagesReadCallback | null) {
+    if (cb === null) {
+      messagesReadCallbacks.length = 0;
+      return () => {};
+    }
+    messagesReadCallbacks.push(cb);
+    return () => {
+      const idx = messagesReadCallbacks.indexOf(cb);
+      if (idx !== -1) messagesReadCallbacks.splice(idx, 1);
+    };
+  },
+
   disconnect() {
     socket?.disconnect();
     socket = null;
     newMessageCallbacks.length = 0;
     chatUpdatedCallbacks.length = 0;
     chatNotificationCallbacks.length = 0;
+    messagesReadCallbacks.length = 0;
     if (heartbeatIntervalHandle) {
       clearInterval(heartbeatIntervalHandle);
       heartbeatIntervalHandle = null;

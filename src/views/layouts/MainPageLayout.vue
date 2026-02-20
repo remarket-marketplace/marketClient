@@ -4,7 +4,8 @@ import {
     MessageCircle,
     PlusCircle,
     User,
-    Shield
+    Shield,
+    BarChart3
 } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -24,6 +25,7 @@ interface NavItem {
     to: string;
     sell?: boolean;
     admin?: boolean;
+    partner?: boolean;
 }
 
 const store = useUserStore()
@@ -76,6 +78,10 @@ const isActiveRoute = (item: NavItem) => {
     // For admin - starts with /admin
     if (item.to === '/admin') {
         return currentPath.startsWith('/admin')
+    }
+
+    if (item.to === '/partner/fortnite-stats') {
+        return currentPath.startsWith('/partner/')
     }
 
     return currentPath === item.to
@@ -131,6 +137,16 @@ const navItems = computed(() => {
         })
     }
 
+    if (user.value?.role === 'partner') {
+        items.push({
+            id: 'partner-stats',
+            title: t('common.partner'),
+            icon: BarChart3,
+            to: '/partner/fortnite-stats',
+            partner: true
+        })
+    }
+
     return items
 })
 </script>
@@ -156,6 +172,7 @@ const navItems = computed(() => {
                                 <component :is="item.icon" :class="[
                                     item.sell ? 'text-2xl' : 'text-xl',
                                     item.admin ? 'text-purple-400' : '',
+                                    item.partner ? 'text-cyan-300' : '',
                                     isActiveRoute(item) ? 'text-white' : 'text-gray-400',
                                     'transition-colors duration-300 group-hover:text-white'
                                 ]" :size="item.sell ? 24 : 20" stroke-width="1.5" />
@@ -167,7 +184,7 @@ const navItems = computed(() => {
                                 </span>
                             </div>
                             <span class="ml-1 transition-colors duration-300 group-hover:text-white"
-                                :class="{ 'text-purple-300': item.admin }">
+                                :class="{ 'text-purple-300': item.admin, 'text-cyan-200': item.partner }">
                                 {{ item.title }}
                             </span>
                         </router-link>
@@ -196,7 +213,8 @@ const navItems = computed(() => {
                     <div class="icon-box flex items-center justify-center transition-colors duration-300 group-hover:text-white relative"
                         :class="[
                             isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400',
-                            item.admin ? 'text-purple-400' : ''
+                            item.admin ? 'text-purple-400' : '',
+                            item.partner ? 'text-cyan-300' : ''
                         ]">
                         <component :is="item.icon" :size="22" stroke-width="1.5" />
                         <span
@@ -210,7 +228,8 @@ const navItems = computed(() => {
                         class="menu-label text-center text-xs font-light leading-none mt-1 transition-colors duration-300 group-hover:text-white"
                         :class="[
                             isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400',
-                            item.admin ? 'text-purple-300' : ''
+                            item.admin ? 'text-purple-300' : '',
+                            item.partner ? 'text-cyan-200' : ''
                         ]">
                         {{ item.title }}
                     </span>
@@ -232,7 +251,8 @@ const navItems = computed(() => {
                     <div class="icon-box flex items-center justify-center transition-colors duration-300 group-hover:text-white relative"
                         :class="[
                             isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400',
-                            item.admin ? 'text-purple-400' : ''
+                            item.admin ? 'text-purple-400' : '',
+                            item.partner ? 'text-cyan-300' : ''
                         ]">
                         <component :is="item.icon" :size="22" stroke-width="1.5" />
                         <span
@@ -246,7 +266,8 @@ const navItems = computed(() => {
                         class="menu-label text-center text-xs font-light leading-none mt-1 transition-colors duration-300 group-hover:text-white"
                         :class="[
                             isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400',
-                            item.admin ? 'text-purple-300' : ''
+                            item.admin ? 'text-purple-300' : '',
+                            item.partner ? 'text-cyan-200' : ''
                         ]">
                         {{ item.title }}
                     </span>

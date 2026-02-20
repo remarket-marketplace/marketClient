@@ -13,6 +13,7 @@ import TrustComponent from './TrustComponent.vue'
 import { useUserStore } from '@/stores/user'
 import BackButton from '@/components/navigation/BackButton.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
+import UserAvatar from '@/components/UserAvatar.vue'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const RAIKA_BOT_URL = 'https://t.me/Raika_CheckBot'
@@ -181,23 +182,29 @@ onUnmounted(() => {
 
 <template>
   <section v-if="product"
-    class="h-full w-full flex flex-col items-start gap-2 lg:pt-2 overflow-scroll pb-36 text-mainText lg:px-0 lg:pb-6 px-4">
+    class="h-full w-full mx-auto max-w-[1280px] flex flex-col items-start gap-2 lg:pt-2 overflow-x-hidden pb-36 text-mainText lg:px-0 lg:pb-6 px-4">
     <div class="pt-1">
       <BackButton />
     </div>
 
     <!-- Image gallery -->
-    <div class="w-full flex flex-col lg:flex-row gap-5">
-      <div class="w-full rounded-lg lg:w-3/5 space-y-4">
-        <div v-if="selectedImage" class="flex justify-center bg-blue-500 rounded-lg overflow-hidden">
-          <div class="w-full h-98 lg:h-[550px] relative flex items-center justify-center">
+    <div class="w-full grid grid-cols-1 gap-5 lg:gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
+      <div class="w-full min-w-0 space-y-4">
+        <div v-if="selectedImage" class="flex justify-center rounded-2xl border border-dark-700 bg-dark-700/40 overflow-hidden">
+          <div class="relative w-full aspect-[4/3] sm:aspect-[5/4] lg:aspect-[4/3] max-h-[640px] flex items-center justify-center">
             <img :src="`${API_HOST}${selectedImage.image_url}`" :alt="product.title"
-              class="absolute inset-0 w-full h-full object-cover cursor-zoom-in transition-opacity hover:opacity-90"
+              class="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-55 select-none pointer-events-none"
+              loading="lazy" aria-hidden="true" />
+            <div
+              class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_45%),linear-gradient(to_bottom,rgba(2,6,23,0.08),rgba(2,6,23,0.5))]"
+              aria-hidden="true" />
+            <img :src="`${API_HOST}${selectedImage.image_url}`" :alt="product.title"
+              class="relative z-10 w-full h-full object-contain p-2 sm:p-3 md:p-4 cursor-zoom-in transition-opacity hover:opacity-90"
               loading="lazy" @click="openImageModal = true" />
           </div>
         </div>
 
-        <div v-if="product.images && product.images.length > 1" class="flex gap-3 overflow-x-auto pb-2 no-scroollbar">
+        <div v-if="product.images && product.images.length > 1" class="thumbnails-scroll flex gap-3 overflow-x-auto pb-2">
           <img v-for="image in product.images" :key="image.id" :src="`${API_HOST}${image.image_url}`"
             class="h-20 w-20 flex-shrink-0 cursor-pointer border-2 rounded-lg object-cover transition-all duration-200 hover:opacity-80"
             :alt="`Product image: ${product.title}`" :class="{
@@ -220,11 +227,11 @@ onUnmounted(() => {
       </div>
 
       <!-- Product details -->
-      <div class="w-full lg:flex-1 space-y-6 pt-4 lg:pt-0">
+      <div class="w-full min-w-0 space-y-6 pt-4 lg:pt-0">
         <!-- Title and price -->
         <div class="flex justify-between">
           <div class="space-y-4">
-            <h1 class="text-2xl lg:text-3xl font-bold text-white leading-tight">
+            <h1 class="text-2xl lg:text-3xl font-bold text-white leading-tight break-words">
               {{ product.title }}
             </h1>
             <div class="flex items-center gap-4">
@@ -277,13 +284,11 @@ onUnmounted(() => {
         <div
           class="flex items-center gap-4 p-4 rounded-xl bg-dark-600 cursor-pointer transition-all duration-200 hover:bg-dark-600/80 group"
           @click="router.push(`/user/${product.seller.username}`)">
-          <div class="w-12 h-12 rounded-full overflow-hidden bg-gray-600 flex items-center justify-center">
-            <img v-if="product.seller.avatar_url" :src="`${API_HOST}${product.seller.avatar_url}`"
-              class="w-full h-full object-cover" alt="Seller avatar">
-            <div v-else class="text-white font-bold text-lg">
-              {{ product.seller.username.charAt(0).toUpperCase() }}
-            </div>
-          </div>
+          <UserAvatar
+            :avatar-url="product.seller.avatar_url"
+            :alt="product.seller.username"
+            class="w-12 h-12 rounded-full border border-dark-500 object-cover"
+          />
           <div class="flex-1 flex flex-col gap-1">
             <p class="text-white font-semibold">
               {{ product.seller.username }}

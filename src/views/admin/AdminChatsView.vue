@@ -15,12 +15,11 @@ import { useRoute, useRouter } from 'vue-router'
 import { adminService } from '@/api/admin/AdminService'
 import SearchField from '@/components/SearchField.vue'
 import CustomSelect from '@/components/CustomSelect.vue'
+import UserAvatar from '@/components/UserAvatar.vue'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
-
-const API_HOST = import.meta.env.VITE_API_HOST
 
 // Состояние списка чатов
 const chats = ref<ChatListItem[]>([])
@@ -110,10 +109,6 @@ const sortedChats = computed(() => {
 
 const currentChat = computed(() =>
     chats.value.find(chat => chat.id === selectedChatId.value) || null
-)
-
-const chatUserInitial = computed(() =>
-    currentChat.value?.another_user.username.charAt(0).toUpperCase() || ''
 )
 
 function openChatProfile() {
@@ -468,14 +463,11 @@ async function sendMessage() {
                                 @click="openChatProfile"
                             >
                                 <div class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
-                                    <img v-if="currentChat?.another_user.avatar_url"
-                                        :src="`${API_HOST}${currentChat.another_user.avatar_url}`"
+                                    <UserAvatar
+                                        :avatar-url="currentChat?.another_user.avatar_url"
+                                        :alt="currentChat?.another_user.username || ''"
                                         class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-dark-600 rounded-full object-cover"
-                                        :alt="currentChat.another_user.username">
-                                    <div v-else
-                                        class="h-8 w-8 flex items-center justify-center rounded-full bg-gray-700 text-mainText font-bold uppercase">
-                                        {{ chatUserInitial }}
-                                    </div>
+                                    />
                                 </div>
                                 <div class="flex flex-col truncate">
                                     <p class="truncate text-mainText font-semibold text-lg">

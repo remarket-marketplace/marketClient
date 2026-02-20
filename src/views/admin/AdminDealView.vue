@@ -20,11 +20,11 @@ import {
 } from 'lucide-vue-next'
 import { adminService } from '@/api/admin/AdminService'
 import type { Deal } from '@/validation/deal/deal'
-import { useImages } from '@/composables/useImages'
 import DealStatusTag from '@/components/DealStatusTag.vue'
 import UserRating from '@/components/UserRating.vue'
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
+import UserAvatar from '@/components/UserAvatar.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -45,7 +45,6 @@ const showReasonField = ref(false)
 const disputeReason = ref('')
 const reasonError = ref('')
 
-const { images } = useImages()
 const API_HOST = import.meta.env.VITE_API_HOST || ''
 
 // Форматирование
@@ -75,10 +74,6 @@ function goToChat(chatId: string) {
 function getProductImageUrl() {
   if (!deal.value || deal.value.product.images.length === 0) return '/placeholder-product.jpg'
   return `${API_HOST}${deal.value.product.images[0]!.image_url}`
-}
-
-function getUserAvatarUrl(avatarUrl: string) {
-  return avatarUrl ? `${API_HOST}${avatarUrl}` : images.avatars.default
 }
 
 // Навигация
@@ -254,7 +249,7 @@ onMounted(async () => {
     <!-- Mobile header -->
     <div class="mb-6 lg:hidden px-4 pt-4">
       <div class="flex items-center gap-3 mb-4">
-        <button @click="goBack" class="p-2 rounded-lg bg-dark-700 hover:bg-dark-600 transition-colors">
+        <button @click="goBack" class="admin-btn admin-btn-ghost admin-btn-icon">
           <ArrowLeft class="w-5 h-5 text-white" />
         </button>
         <h1 class="text-2xl font-bold text-white">
@@ -277,7 +272,7 @@ onMounted(async () => {
           <!-- Desktop header -->
           <div class="hidden lg:flex items-center justify-between mb-6">
             <div class="flex items-center gap-4">
-              <button @click="goBack" class="p-2 rounded-lg bg-dark-700 hover:bg-dark-600 transition-colors">
+              <button @click="goBack" class="admin-btn admin-btn-ghost admin-btn-icon">
                 <ArrowLeft class="w-5 h-5 text-white" />
               </button>
               <div>
@@ -318,7 +313,7 @@ onMounted(async () => {
                   {{ $t('pages.admin.dealPage.productInfo') }}
                 </h2>
                 <button @click="goToProduct(deal.product.id)"
-                  class="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                  class="admin-btn admin-btn-primary admin-btn-sm">
                   <ExternalLink class="w-4 h-4" />
                   {{ $t('common.view') }}
                 </button>
@@ -385,9 +380,12 @@ onMounted(async () => {
                 </h3>
 
                 <div class="flex items-center gap-3 mb-4">
-                  <img :src="getUserAvatarUrl(deal.seller.avatar_url)" :alt="deal.seller.username"
+                  <UserAvatar
+                    :avatar-url="deal.seller.avatar_url"
+                    :alt="deal.seller.username"
                     class="w-14 h-14 rounded-full object-cover border-2 border-green-500/30 cursor-pointer"
-                    @click="goToProfile(deal.seller.username)" />
+                    @click="goToProfile(deal.seller.username)"
+                  />
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 mb-1">
                       <span class="text-lg font-semibold text-white truncate cursor-pointer"
@@ -422,9 +420,12 @@ onMounted(async () => {
                 </h3>
 
                 <div class="flex items-center gap-3 mb-4">
-                  <img :src="getUserAvatarUrl(deal.buyer.avatar_url)" :alt="deal.buyer.username"
+                  <UserAvatar
+                    :avatar-url="deal.buyer.avatar_url"
+                    :alt="deal.buyer.username"
                     class="w-14 h-14 rounded-full object-cover border-2 border-blue-500/30 cursor-pointer"
-                    @click="goToProfile(deal.buyer.username)" />
+                    @click="goToProfile(deal.buyer.username)"
+                  />
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 mb-1">
                       <span class="text-lg font-semibold text-white truncate cursor-pointer"
@@ -527,13 +528,13 @@ onMounted(async () => {
                 <!-- Pending deals -->
                 <template v-if="deal.status === 'pending'">
                   <button @click="confirmDealAction" :disabled="isActionLoading"
-                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white rounded-lg transition-colors">
+                    class="admin-btn admin-btn-success w-full py-3">
                     <CheckCircle class="w-5 h-5" />
                     <span>{{ $t('common.confirmDeal') }}</span>
                   </button>
 
                   <button @click="refundDealAction" :disabled="isActionLoading"
-                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white rounded-lg transition-colors">
+                    class="admin-btn admin-btn-accent w-full py-3">
                     <Undo2 class="w-5 h-5" />
                     <span>{{ $t('pages.admin.dealsPage.refund') }}</span>
                   </button>
@@ -542,13 +543,13 @@ onMounted(async () => {
                 <!-- Disputed deals -->
                 <template v-else-if="deal.status === 'disputed'">
                   <button @click="resolveDispute('buyer')" :disabled="isActionLoading"
-                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white rounded-lg transition-colors">
+                    class="admin-btn admin-btn-success w-full py-3">
                     <UserCheck class="w-5 h-5" />
                     <span>{{ $t('common.resolveForBuyer') }}</span>
                   </button>
 
                   <button @click="resolveDispute('seller')" :disabled="isActionLoading"
-                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg transition-colors">
+                    class="admin-btn admin-btn-primary w-full py-3">
                     <UserCheck class="w-5 h-5" />
                     <span>{{ $t('common.resolveForSeller') }}</span>
                   </button>
@@ -576,13 +577,13 @@ onMounted(async () => {
                 <!-- Cancel button (for pending and disputed) -->
                 <button v-if="['pending', 'disputed'].includes(deal.status)" @click="cancelDealAction"
                   :disabled="isActionLoading"
-                  class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg transition-colors">
+                  class="admin-btn admin-btn-danger w-full py-3">
                   <XCircle class="w-5 h-5" />
                   <span>{{ $t('common.cancelDeal') }}</span>
                 </button>
 
                 <button @click="goToChat(deal.chat_room_id)"
-                  class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-green-800 text-white rounded-lg transition-colors">
+                  class="admin-btn admin-btn-primary w-full py-3">
                   <MessageCircleMore class="w-4 h-4" />
                   <span class="hidden sm:inline">{{ $t('common.toChat') }}</span>
                 </button>

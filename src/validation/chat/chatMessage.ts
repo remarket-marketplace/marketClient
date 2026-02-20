@@ -56,10 +56,16 @@ export const ChatUpdateSchema = z.object({
   unread_count: z.number(),
 })
 
+export const MessagesReadSchema = z.object({
+  chat_id: z.string(),
+  message_ids: z.array(z.string()),
+})
+
 // Массив сообщений
 export const ChatArrayUnionSchema = z.array(ChatMessageUnionSchema)
 
 export type ChatMessageUnion = z.infer<typeof ChatMessageUnionSchema>
 export type ChatUpdateSchema = z.infer<typeof ChatUpdateSchema>
+export type MessagesReadPayload = z.infer<typeof MessagesReadSchema>
 
 export type DealStatusMessageSchema = z.infer<typeof DealStatusMessageSchema>

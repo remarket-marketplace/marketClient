@@ -78,9 +78,9 @@ async function changePassword() {
     </div>
 
     <!-- Desktop layout -->
-    <div class="lg:flex lg:h-full">
+    <div class="lg:flex lg:min-h-[calc(100dvh-3.5rem)]">
       <!-- Left column - Navigation -->
-      <div class="lg:w-80 lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-full lg:border-r border-dark-700 px-4 lg:px-0 lg:pt-6 lg:pr-6">
+      <div class="lg:w-80 lg:flex-shrink-0 lg:sticky lg:top-0 lg:min-h-[calc(100dvh-3.5rem)] lg:border-r border-dark-700 px-4 lg:px-0 lg:pt-6 lg:pr-6">
         <div class="pt-6 lg:pt-0">
           <div class="space-y-6">
             <!-- Desktop header -->

@@ -8,17 +8,17 @@ import { useUserStore } from '@/stores/user'
 import { useChatStore } from '@/stores/chat'
 import type { ChatListItem } from '@/validation/chat/ChatList'
 import type { ChatMessageUnion } from '@/validation/chat/chatMessage'
+import type { MessagesReadPayload } from '@/validation/chat/chatMessage'
 import type { UserRead } from '@/validation/user/userRead'
 import { nextTick, onMounted, onUnmounted, ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft, Headphones } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
+import UserAvatar from '@/components/UserAvatar.vue'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
-
-const API_HOST = import.meta.env.VITE_API_HOST
 
 const chatStore = useChatStore()
 const chats = ref<ChatListItem[]>([])
@@ -77,15 +77,6 @@ const chatDisplayAvatarUrl = computed(() => {
   return currentChat.value.another_user.avatar_url
 })
 
-// Вычисляемое свойство для инициалов
-const chatUserInitial = computed(() => {
-  if (!currentChat.value) return ''
-  if (currentChat.value.chat_type === 'support_chat') {
-    return 'S' // или другая буква для поддержки
-  }
-  return currentChat.value.another_user.username.charAt(0).toUpperCase()
-})
-
 // Проверяем, является ли текущий чат чатом поддержки
 const isSupportChat = computed(() => {
   return currentChat.value?.chat_type === 'support_chat'
@@ -123,6 +114,20 @@ function backToChats() {
 
 let unsubscribeNewMessage: (() => void) | null = null
 let unsubscribeChatUpdated: (() => void) | null = null
+let unsubscribeMessagesRead: (() => void) | null = null
+
+function applyMessagesReadUpdate(update: MessagesReadPayload) {
+  if (update.chat_id === selectedChatId.value && update.message_ids.length > 0) {
+    const readIds = new Set(update.message_ids)
+    for (const message of chatMessages.value) {
+      if (message.message_type === 'text_message' && readIds.has(message.id)) {
+        message.is_read = true
+      }
+    }
+  }
+
+  chatStore.markMessagesRead(update.chat_id, update.message_ids)
+}
 
 onMounted(async () => {
   try {
@@ -173,6 +178,7 @@ onMounted(async () => {
         }
       }
     })
+    unsubscribeMessagesRead = chatsService.onMessagesRead(applyMessagesReadUpdate)
 
     await loadChats()
 
@@ -208,6 +214,7 @@ onMounted(async () => {
 onUnmounted(() => {
   unsubscribeNewMessage?.()
   unsubscribeChatUpdated?.()
+  unsubscribeMessagesRead?.()
 })
 
 async function loadChats() {
@@ -365,15 +372,12 @@ async function sendMessage() {
                     <Headphones class="w-4 h-4 lg:w-5 lg:h-5 text-blue-400" />
                   </div>
                   <!-- Для обычного чата - фото или инициалы -->
-                  <template v-else>
-                    <img v-if="chatDisplayAvatarUrl" :src="`${API_HOST}${chatDisplayAvatarUrl}`"
-                      class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-dark-600 rounded-full object-cover"
-                      :alt="chatDisplayName">
-                    <div v-else
-                      class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center rounded-full bg-gray-700 text-mainText font-bold uppercase">
-                      {{ chatUserInitial }}
-                    </div>
-                  </template>
+                  <UserAvatar
+                    v-else
+                    :avatar-url="chatDisplayAvatarUrl"
+                    :alt="chatDisplayName"
+                    class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-dark-600 rounded-full object-cover"
+                  />
                 </div>
 
                 <!-- Информация о чате -->

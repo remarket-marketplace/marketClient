@@ -15,6 +15,10 @@ export const useChatStore = defineStore('chat', {
     setChats(list: ChatListItem[]) {
       this.chats = list
     },
+    clear() {
+      this.chats = []
+      this.activeChatId = null
+    },
     setActive(chatId: string | null) {
       this.activeChatId = chatId
     },
@@ -27,6 +31,13 @@ export const useChatStore = defineStore('chat', {
     resetUnread(chatId: string) {
       const chat = this.chats.find((c) => c.id === chatId)
       if (chat) chat.unread_count = 0
+    },
+    markMessagesRead(chatId: string, messageIds: string[]) {
+      const chat = this.chats.find((c) => c.id === chatId)
+      if (!chat?.last_message || chat.last_message.message_type !== 'text_message') return
+      if (messageIds.includes(chat.last_message.id)) {
+        chat.last_message.is_read = true
+      }
     },
   },
 })

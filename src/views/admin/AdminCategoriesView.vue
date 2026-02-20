@@ -292,7 +292,7 @@ watch(selectedCategory, () => {
         </div>
         <p class="text-text-secondary mt-1">{{ t('pages.admin.categoriesPage.subtitle') }}</p>
       </div>
-      <button class="flex items-center justify-center sm:justify-start gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+      <button class="admin-btn admin-btn-primary w-full sm:w-auto"
         @click="showAddCategoryModal = true">
         <Plus class="w-5 h-5" />
         <span>{{ t('pages.admin.categoriesPage.addCategory') }}</span>
@@ -362,7 +362,7 @@ watch(selectedCategory, () => {
             <p class="text-text-secondary text-sm">{{ selectedCategory ? selectedCategory.description : t('pages.admin.categoriesPage.selectCategoryHint') }}</p>
           </div>
           <button v-if="selectedCategory"
-            class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg transition-colors text-sm flex-shrink-0"
+            class="admin-btn admin-btn-success admin-btn-sm flex-shrink-0"
             @click="showAddSubcategoryModal = true">
             <Plus class="w-4 h-4" />
             <span>{{ t('pages.admin.categoriesPage.addSubcategory') }}</span>
@@ -450,10 +450,10 @@ watch(selectedCategory, () => {
           </div>
         </div>
         <div class="flex flex-col sm:flex-row gap-3 mt-6">
-          <button class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg transition-colors order-2 sm:order-1" @click="showAddCategoryModal = false">
+          <button class="admin-btn admin-btn-muted flex-1 order-2 sm:order-1" @click="showAddCategoryModal = false">
             {{ t('common.cancel') }}
           </button>
-          <button class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors order-1 sm:order-2" @click="createCategory" :disabled="!newCategory.name.trim() || !newCategory.image.length">
+          <button class="admin-btn admin-btn-primary flex-1 order-1 sm:order-2" @click="createCategory" :disabled="!newCategory.name.trim() || !newCategory.image.length">
             {{ t('common.create') }}
           </button>
         </div>
@@ -483,10 +483,10 @@ watch(selectedCategory, () => {
           </div>
         </div>
         <div class="flex flex-col sm:flex-row gap-3 mt-6">
-          <button class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg transition-colors order-2 sm:order-1" @click="showAddSubcategoryModal = false">
+          <button class="admin-btn admin-btn-muted flex-1 order-2 sm:order-1" @click="showAddSubcategoryModal = false">
             {{ t('common.cancel') }}
           </button>
-          <button class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition-colors order-1 sm:order-2" @click="createSubcategory" :disabled="!newSubcategory.name.trim() || !newSubcategory.image.length">
+          <button class="admin-btn admin-btn-success flex-1 order-1 sm:order-2" @click="createSubcategory" :disabled="!newSubcategory.name.trim() || !newSubcategory.image.length">
             {{ t('common.create') }}
           </button>
         </div>

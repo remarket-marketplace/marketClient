@@ -330,12 +330,12 @@ watch(selectedRange, loadDashboard)
         </h1>
       </div>
 
-      <div class="flex items-center gap-2 bg-dark-700/70 border border-dark-500/60 rounded-xl p-1">
+      <div class="flex items-center gap-2 bg-dark-600 border border-dark-700 rounded-xl p-1">
         <button
           v-for="range in rangeOptions"
           :key="range"
-          class="px-3 py-1.5 text-sm rounded-lg transition-all duration-200"
-          :class="selectedRange === range ? 'bg-white/10 text-white shadow-lg shadow-blue-900/20' : 'text-gray-400 hover:text-white hover:bg-white/5'"
+          class="admin-btn-tab"
+          :class="selectedRange === range ? 'admin-btn-tab-active' : ''"
           @click="selectedRange = range"
         >
           {{ range }} {{ t('pages.admin.mainPage.days') }}
@@ -359,7 +359,7 @@ watch(selectedRange, loadDashboard)
         <div
           v-for="card in summaryCards"
           :key="card.id"
-          class="relative overflow-hidden rounded-2xl border border-dark-500/50 bg-dark-700/70 p-4 shadow-lg shadow-black/20"
+          class="relative overflow-hidden rounded-2xl border border-dark-700 bg-dark-600 p-4 transition-colors hover:border-dark-500"
         >
           <div class="flex items-center justify-between gap-3">
             <div class="space-y-1">
@@ -392,7 +392,7 @@ watch(selectedRange, loadDashboard)
       </div>
 
       <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <div class="xl:col-span-2 rounded-2xl border border-dark-500/50 bg-dark-700/70 p-4">
+        <div class="xl:col-span-2 rounded-2xl border border-dark-700 bg-dark-600 p-4">
           <div class="flex items-center justify-between mb-3">
             <div>
               <p class="text-sm text-gray-300 font-semibold">
@@ -414,7 +414,7 @@ watch(selectedRange, loadDashboard)
           </div>
         </div>
 
-        <div class="rounded-2xl border border-dark-500/50 bg-dark-700/70 p-4">
+        <div class="rounded-2xl border border-dark-700 bg-dark-600 p-4">
           <div class="flex items-center justify-between mb-3">
             <p class="text-sm text-gray-300 font-semibold">
               {{ t('pages.admin.mainPage.dealsByStatus') }}
@@ -435,7 +435,7 @@ watch(selectedRange, loadDashboard)
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div class="rounded-2xl border border-dark-500/50 bg-dark-700/70 p-4">
+        <div class="rounded-2xl border border-dark-700 bg-dark-600 p-4">
           <div class="flex items-center justify-between mb-3">
             <p class="text-sm text-gray-300 font-semibold">
               {{ t('pages.admin.mainPage.topCategories') }}
@@ -459,34 +459,34 @@ watch(selectedRange, loadDashboard)
           </div>
         </div>
 
-        <div class="rounded-2xl border border-dark-500/50 bg-dark-700/70 p-4">
+        <div class="rounded-2xl border border-dark-700 bg-dark-600 p-4">
           <p class="text-sm text-gray-300 font-semibold mb-3">
             {{ t('pages.admin.mainPage.quickStats') }}
           </p>
           <div class="grid grid-cols-2 gap-3">
-            <div class="rounded-xl border border-dark-500/60 bg-dark-800/60 p-3">
+            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
               <p class="text-xs text-gray-400 mb-1">{{ t('common.dealStatuses.pending') }}</p>
               <p class="text-xl font-semibold text-white">{{ formatNumber(getStatusCount('pending')) }}</p>
             </div>
-            <div class="rounded-xl border border-dark-500/60 bg-dark-800/60 p-3">
+            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
               <p class="text-xs text-gray-400 mb-1">{{ t('common.dealStatuses.completed') }}</p>
               <p class="text-xl font-semibold text-white">{{ formatNumber(getStatusCount('completed')) }}</p>
             </div>
-            <div class="rounded-xl border border-dark-500/60 bg-dark-800/60 p-3">
+            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
               <p class="text-xs text-gray-400 mb-1">{{ t('common.dealStatuses.refunded') }}</p>
               <p class="text-xl font-semibold text-white">{{ formatNumber(getStatusCount('refunded')) }}</p>
             </div>
-            <div class="rounded-xl border border-dark-500/60 bg-dark-800/60 p-3">
+            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
               <p class="text-xs text-gray-400 mb-1">{{ t('common.dealStatuses.disputed') }}</p>
               <p class="text-xl font-semibold text-white">{{ formatNumber(getStatusCount('disputed')) }}</p>
             </div>
           </div>
           <div class="mt-4 grid grid-cols-2 gap-3">
-            <div class="rounded-xl border border-dark-500/60 bg-dark-800/60 p-3">
+            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
               <p class="text-xs text-gray-400 mb-1">{{ t('pages.admin.mainPage.activeDisputes') }}</p>
               <p class="text-xl font-semibold text-white">{{ formatNumber(dashboardData?.active_disputes ?? 0) }}</p>
             </div>
-            <div class="rounded-xl border border-dark-500/60 bg-dark-800/60 p-3">
+            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
               <p class="text-xs text-gray-400 mb-1">{{ t('pages.admin.mainPage.onModeration', { count: '' }) }}</p>
               <p class="text-xl font-semibold text-white">{{ formatNumber(dashboardData?.moderation_products ?? 0) }}</p>
             </div>

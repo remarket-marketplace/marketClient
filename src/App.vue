@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from './stores/user'
 import { useChatStore } from './stores/chat'
@@ -15,28 +15,71 @@ const store = useUserStore()
 const chatStore = useChatStore()
 const route = useRoute()
 const isUserLoaded = ref(false)
+let unsubscribeChatUpdated: (() => void) | null = null
+let onlinePingIntervalHandle: number | null = null
+let chatSyncVersion = 0
 
 const { user } = storeToRefs(store)
 
-onMounted(async () => {
-  try {
-    await store.fetchUser()
-    // init chats if user is logged in
-    if (store.user) {
-      await chatsService.connectChatsWebsocket()
-      const chats = await chatsService.getChats()
-      chatStore.setChats(chats)
-      chatsService.onChatUpdated((update) => chatStore.updateChatFromSocket(update))
-    }
-  } finally {
-    isUserLoaded.value = true
-  }
+async function initChats(userId: string, syncVersion: number) {
+  if (!store.user) return
 
-  // пингуем для сохранения статуса онлайн
-  setInterval(() => {
-    if (user.value)
-      authService.pingOnlineStatus()
-  }, 30000)
+  await chatsService.connectChatsWebsocket()
+  if (syncVersion !== chatSyncVersion || store.user?.id !== userId) return
+
+  const chats = await chatsService.getChats()
+  if (syncVersion !== chatSyncVersion || store.user?.id !== userId) return
+
+  chatStore.setChats(chats)
+
+  unsubscribeChatUpdated?.()
+  unsubscribeChatUpdated = chatsService.onChatUpdated((update) => {
+    chatStore.updateChatFromSocket(update)
+  })
+}
+
+function clearChats() {
+  unsubscribeChatUpdated?.()
+  unsubscribeChatUpdated = null
+  chatStore.clear()
+}
+
+watch(
+  () => store.user?.id ?? null,
+  async (userId) => {
+    chatSyncVersion += 1
+    const syncVersion = chatSyncVersion
+
+    if (!userId) {
+      chatsService.disconnect()
+      clearChats()
+      return
+    }
+
+    await initChats(userId, syncVersion)
+  },
+  { immediate: true }
+)
+
+onMounted(async () => {
+  await store.fetchUser()
+  isUserLoaded.value = true
+
+  if (!onlinePingIntervalHandle) {
+    // пингуем для сохранения статуса онлайн
+    onlinePingIntervalHandle = window.setInterval(() => {
+      if (user.value)
+        authService.pingOnlineStatus()
+    }, 30000)
+  }
+})
+
+onUnmounted(() => {
+  unsubscribeChatUpdated?.()
+  if (onlinePingIntervalHandle) {
+    clearInterval(onlinePingIntervalHandle)
+    onlinePingIntervalHandle = null
+  }
 })
 // Определяем какой layout использовать
 const layout = computed(() => {

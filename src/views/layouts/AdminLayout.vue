@@ -9,7 +9,7 @@ import {
   MessageSquareText
 } from 'lucide-vue-next'
 
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
@@ -45,6 +45,10 @@ const isActiveRouteMobile = (item: any) => {
 onMounted(async () => {
   checkDesktop()
   window.addEventListener('resize', checkDesktop)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkDesktop)
 })
 
 const navItems = computed(() => [
@@ -107,12 +111,12 @@ const navItems = computed(() => [
           <div class="flex items-center">
             <div class="h-4 w-px bg-gray-700"></div>
             <router-link to="/"
-              class="flex items-center gap-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800/50 px-3 py-1.5 rounded-lg transition-all duration-300 group">
+              class="flex items-center gap-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800/50 px-2 md:px-3 py-1.5 rounded-lg transition-all duration-300 group">
               <svg class="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-0.5" fill="none"
                 stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              {{ t('navigation.admin.backToSite') }}
+              <span class="hidden md:inline">{{ t('navigation.admin.backToSite') }}</span>
             </router-link>
           </div>
         </div>
@@ -145,22 +149,24 @@ const navItems = computed(() => [
     </main>
 
     <nav class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-30 h-14 border-t border-gray-700 md:hidden">
-      <div class="mx-auto h-full w-full flex items-center justify-around">
+      <div class="mobile-nav-scroll mx-auto h-full w-full overflow-x-auto overflow-y-hidden no-scrollbar touch-pan-x">
+        <div class="h-full min-w-full w-max flex items-center justify-start gap-1 px-2">
         <router-link v-for="item in navItems" :key="item.id" :to="item.to"
-          class="flex flex-col items-center justify-center px-1 transition-all duration-300 relative group" :class="{
-            'opacity-100': isActiveRouteMobile(item),
-            'opacity-70': !isActiveRouteMobile(item)
-          }">
+          class="flex h-11 min-w-[74px] max-w-[92px] snap-start flex-col items-center justify-center rounded-lg px-2 transition-all duration-300 relative group flex-shrink-0"
+          :class="isActiveRouteMobile(item)
+            ? 'bg-white/10 text-white'
+            : 'text-gray-400 hover:text-white hover:bg-white/5'">
           <div class="icon-box flex items-center justify-center transition-colors duration-300 group-hover:text-white"
             :class="isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400'">
             <component :is="item.icon" :size="22" stroke-width="1.5" />
           </div>
           <span
-            class="menu-label text-center text-xs font-light leading-none mt-1 transition-colors duration-300 group-hover:text-white"
+            class="menu-label max-w-full truncate text-center text-[10px] font-light leading-none mt-1 transition-colors duration-300 group-hover:text-white"
             :class="isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400'">
             {{ item.title }}
           </span>
         </router-link>
+        </div>
       </div>
     </nav>
   </div>
@@ -179,6 +185,11 @@ const navItems = computed(() => [
   border-top-width: 1px;
   border-top-color: rgba(255, 255, 255, 0.15);
   box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.mobile-nav-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
 
 .icon-box {

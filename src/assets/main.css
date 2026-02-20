@@ -93,9 +93,9 @@ html, body {
   scrollbar-width: none;  /* Firefox */
 }
 
-/* Ensure smooth scrolling */
+/* Keep routing scroll reset deterministic on mobile */
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
 }
 
 /* For WebKit browsers */
@@ -107,4 +107,145 @@ html {
 body {
   overflow: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+/* Unified admin buttons (clean, no shadows) */
+@layer components {
+  .admin-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid #374151;
+    background-color: #1f2937;
+    color: #f3f4f6;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    padding: 0.625rem 1rem;
+    text-align: center;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+  }
+
+  .admin-btn:hover {
+    background-color: #273244;
+    border-color: #4b5563;
+    color: #ffffff;
+  }
+
+  .admin-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .admin-btn-primary {
+    background-color: var(--color-button-primary);
+    border-color: transparent;
+    color: #ffffff;
+  }
+
+  .admin-btn-primary:hover {
+    background-color: var(--color-button-hover);
+    border-color: transparent;
+  }
+
+  .admin-btn-success {
+    background-color: #16a34a;
+    border-color: transparent;
+    color: #ffffff;
+  }
+
+  .admin-btn-success:hover {
+    background-color: #15803d;
+    border-color: transparent;
+  }
+
+  .admin-btn-danger {
+    background-color: #dc2626;
+    border-color: transparent;
+    color: #ffffff;
+  }
+
+  .admin-btn-danger:hover {
+    background-color: #b91c1c;
+    border-color: transparent;
+  }
+
+  .admin-btn-accent {
+    background-color: #4f46e5;
+    border-color: transparent;
+    color: #ffffff;
+  }
+
+  .admin-btn-accent:hover {
+    background-color: #4338ca;
+    border-color: transparent;
+  }
+
+  .admin-btn-muted {
+    background-color: #4b5563;
+    border-color: transparent;
+    color: #ffffff;
+  }
+
+  .admin-btn-muted:hover {
+    background-color: #374151;
+    border-color: transparent;
+  }
+
+  .admin-btn-ghost {
+    background-color: transparent;
+    color: #9ca3af;
+  }
+
+  .admin-btn-ghost:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+  }
+
+  .admin-btn-icon {
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0.5rem;
+  }
+
+  .admin-btn-xs {
+    padding: 0.45rem 0.7rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
+  .admin-btn-sm {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+  }
+
+  .admin-btn-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    border: 1px solid transparent;
+    background-color: transparent;
+    color: #9ca3af;
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+    font-weight: 600;
+    padding: 0.45rem 0.75rem;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  }
+
+  .admin-btn-tab:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+  }
+
+  .admin-btn-tab-active {
+    background-color: rgba(37, 99, 235, 0.2);
+    border-color: rgba(59, 130, 246, 0.45);
+    color: #ffffff;
+  }
 }

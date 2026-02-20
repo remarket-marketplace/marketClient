@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { adminService } from '@/api/admin/AdminService'
 import BackButton from '@/components/navigation/BackButton.vue'
+import UserAvatar from '@/components/UserAvatar.vue'
 import type { AdminFeedback } from '@/validation/feedback/adminFeedback'
 import {
   Loader2,
@@ -100,19 +101,12 @@ onMounted(async () => {
     <div v-else-if="feedback" class="space-y-4">
       <article class="bg-dark-600 border border-dark-700 rounded-xl p-4 space-y-3">
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div class="flex items-center gap-3 min-w-0">
-            <img
-              v-if="feedback.user.avatar_url"
-              :src="`${API_HOST}${feedback.user.avatar_url}`"
+            <div class="flex items-center gap-3 min-w-0">
+            <UserAvatar
+              :avatar-url="feedback.user.avatar_url"
               :alt="feedback.user.username"
               class="h-11 w-11 rounded-full object-cover border border-dark-500"
             />
-            <div
-              v-else
-              class="h-11 w-11 rounded-full bg-dark-500 border border-dark-400 flex items-center justify-center text-sm font-semibold text-mainText uppercase"
-            >
-              {{ feedback.user.username.charAt(0) }}
-            </div>
 
             <div class="min-w-0">
               <p class="text-base sm:text-lg text-mainText font-semibold truncate">
@@ -125,7 +119,7 @@ onMounted(async () => {
           <div class="flex flex-wrap gap-2">
             <button
               type="button"
-              class="inline-flex items-center gap-1.5 rounded-lg border border-dark-500 bg-dark-700 hover:bg-dark-500 px-3 py-1.5 text-xs sm:text-sm text-mainText transition-colors"
+              class="admin-btn admin-btn-sm text-xs sm:text-sm"
               @click="openProfile(feedback.user.username)"
             >
               <UserRound class="h-4 w-4" />
@@ -134,12 +128,8 @@ onMounted(async () => {
             <button
               type="button"
               :disabled="!feedback.support_chat_id"
-              class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs sm:text-sm transition-colors"
-              :class="
-                feedback.support_chat_id
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                  : 'bg-dark-700 text-gray-500 border border-dark-500 cursor-not-allowed'
-              "
+              class="admin-btn admin-btn-sm text-xs sm:text-sm"
+              :class="feedback.support_chat_id ? 'admin-btn-primary' : 'admin-btn-muted'"
               @click="openSupportChat(feedback.support_chat_id)"
             >
               <MessageCircle class="h-4 w-4" />
@@ -198,7 +188,7 @@ onMounted(async () => {
       <p class="text-gray-300 mb-3">{{ $t('pages.admin.feedbackPage.loadError') }}</p>
       <button
         type="button"
-        class="rounded-lg border border-dark-500 bg-dark-700 hover:bg-dark-500 px-3 py-1.5 text-sm text-mainText transition-colors"
+        class="admin-btn admin-btn-sm"
         @click="goBack"
       >
         {{ $t('common.back') }}

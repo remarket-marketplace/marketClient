@@ -3,8 +3,8 @@ import type { ChatListItem } from '@/validation/chat/ChatList';
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n';
 import { ShoppingBag, Headphones } from 'lucide-vue-next';
+import UserAvatar from '@/components/UserAvatar.vue';
 
-const API_HOST = import.meta.env.VITE_API_HOST
 const { t } = useI18n()
 
 const props = defineProps<{
@@ -45,9 +45,6 @@ const formattedLastMessage = computed((): string | null => {
 })
 
 const isSelected = computed(() => props.chat.id === props.selectedChatId)
-const userInitial = computed(() => {
-    return props.chat.another_user.username.charAt(0).toUpperCase()
-})
 
 const isUserOnline = computed(() => {
     if (isSupportChat) {
@@ -79,19 +76,12 @@ onMounted(() => {
         <div class="flex-shrink-0 relative">
             <div class="h-12 w-12 flex items-center justify-center">
                 <!-- Regular chat avatar -->
-                <img
-                    v-if="!isSupportChat && chat.another_user.avatar_url"
-                    :src="`${API_HOST}${chat.another_user.avatar_url}`"
-                    class="h-12 w-12 border-2 border-dark-600 rounded-full object-cover"
+                <UserAvatar
+                    v-if="!isSupportChat"
+                    :avatar-url="chat.another_user.avatar_url"
                     :alt="chat.another_user.username"
-                >
-                <!-- Initials for regular chat -->
-                <div
-                    v-else-if="!isSupportChat"
-                    class="h-12 w-12 flex items-center justify-center rounded-full bg-gray-700 text-lg text-mainText font-bold uppercase"
-                >
-                    {{ userInitial }}
-                </div>
+                    class="h-12 w-12 border-2 border-dark-600 rounded-full object-cover"
+                />
                 <!-- Support icon -->
                 <div
                     v-else

@@ -17,6 +17,7 @@ import QrcodeVue from 'qrcode.vue'
 import type { Deal } from '@/validation/deal/deal'
 import UserRating from '@/components/UserRating.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
+import UserAvatar from '@/components/UserAvatar.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -384,17 +385,14 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
             <div class="relative group">
               <div class="relative mx-auto w-32 h-32">
                 <div
-                  class="relative w-full h-full border-2 border-dark-700 rounded-full overflow-hidden bg-gradient-to-br from-dark-700 to-dark-800"
+                  class="relative w-full h-full border-2 border-dark-700 rounded-full overflow-hidden bg-dark-700"
                   @mouseenter="showAvatarEdit" @mouseleave="hideAvatarEdit">
-                  <img v-if="currentProfileData.avatar_url" :src="`${API_HOST}${currentProfileData.avatar_url}`"
+                  <UserAvatar
+                    :avatar-url="currentProfileData.avatar_url"
+                    :alt="currentProfileData.username"
                     class="w-full h-full object-cover transition-all duration-300"
                     :class="{ 'brightness-75': showAvatarOverlay && isOwner, 'animate-pulse': isUploading }"
-                    alt="Avatar" />
-                  <div v-else class="w-full h-full flex items-center justify-center">
-                    <div class="text-4xl font-bold text-gray-400">
-                      {{ currentProfileData.username.charAt(0).toUpperCase() }}
-                    </div>
-                  </div>
+                  />
 
                   <div v-if="showAvatarOverlay && isOwner && !isUploading"
                     class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full cursor-pointer transition-all duration-300"
@@ -742,7 +740,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
       <div v-if="showShareModal"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
         <div ref="shareModalRef"
-          class="relative w-full max-w-md border border-dark-600 rounded-2xl bg-dark-800/95 backdrop-blur-sm p-6 space-y-6"
+          class="relative w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto border border-dark-600 rounded-2xl bg-dark-800/95 backdrop-blur-sm p-4 sm:p-6 space-y-6"
           @click.stop>
           <div class="flex items-center justify-between">
             <h3 class="text-xl font-bold text-white">{{ t('pages.profile.shareProfile') }}</h3>
@@ -764,12 +762,14 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
             <div class="space-y-2">
               <label class="block text-sm font-medium text-gray-300">{{ t('pages.profile.profileLink') }}</label>
-              <div class="flex gap-2">
-                <input type="text" :value="profileUrl" readonly
-                  class="flex-1 px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-sm text-white outline-none" />
+              <div class="flex flex-col sm:flex-row gap-2">
+                <div class="w-full min-w-0 flex-1">
+                  <input type="text" :value="profileUrl" readonly
+                    class="w-full min-w-0 px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-sm text-white outline-none" />
+                </div>
                 <button @click="copyProfileLink"
-                  class="px-4 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center gap-2"
-                  :class="{ 'from-green-600 to-green-700 hover:from-green-700 hover:to-green-800': isCopied }">
+                  class="w-full sm:w-auto sm:flex-shrink-0 rounded-lg border border-transparent px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 flex items-center justify-center gap-2 whitespace-nowrap"
+                  :class="isCopied ? 'bg-green-600 hover:bg-green-700' : 'bg-button-main hover:bg-blue-700'">
                   <Check v-if="isCopied" class="w-4 h-4" />
                   <Copy v-else class="w-4 h-4" />
                   {{ isCopied ? t('common.copied') : t('common.copy') }}

@@ -6,26 +6,24 @@ import { useRouter } from 'vue-router';
 import { 
   Eye, 
   Mail, 
-  DollarSign, 
   Star,
   MoreVertical,
   Edit,
   Ban,
+  UserCheck,
   Loader2,
-  RussianRuble
 } from 'lucide-vue-next';
-import { useImages } from '@/composables/useImages';
 import SearchField from '@/components/SearchField.vue';
 import CustomSelect from '@/components/CustomSelect.vue';
 import ConfirmWindow from '@/components/ConfirmWindow.vue';
 import { useI18n } from 'vue-i18n';
 import BackButton from '@/components/navigation/BackButton.vue';
+import UserAvatar from '@/components/UserAvatar.vue';
 
 const { t } = useI18n();
 const router = useRouter();
 const users = ref<UserRead[]>([]);
 const isLoading = ref(true);
-const API_HOST = import.meta.env.VITE_API_HOST
 
 const searchQuery = ref('')
 const sortBy = ref('created_desc')
@@ -34,9 +32,8 @@ const roleFilter = ref('all')
 const dropdownOpenId = ref<string | null>(null); // Для отслеживания открытого dropdown
 const confirmWindowOpen = ref(false)
 const userToBan = ref<string | null>(null)
+const userActionType = ref<'ban' | 'unban'>('ban')
 const isBanning = ref(false)
-
-const { images } = useImages()
 
 const listRef = ref<HTMLElement | null>(null)
 const sentinelRef = ref<HTMLElement | null>(null)
@@ -159,13 +156,24 @@ function getStatusBadge(user: UserRead) {
 }
 
 function getRoleBadge(user: UserRead) {
-  return user.role === 'admin' 
-    ? { text: 'common.admin', class: 'bg-purple-500/20 text-purple-400 border-purple-500/30' }
-    : { text: 'common.user', class: 'bg-blue-500/20 text-blue-400 border-blue-500/30' };
+  if (user.role === 'admin') {
+    return { text: 'common.admin', class: 'bg-purple-500/20 text-purple-400 border-purple-500/30' };
+  }
+  if (user.role === 'partner') {
+    return { text: 'common.partner', class: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' };
+  }
+  return { text: 'common.user', class: 'bg-blue-500/20 text-blue-400 border-blue-500/30' };
 }
 
 function showBanConfirm(userId: string) {
     userToBan.value = userId
+    userActionType.value = 'ban'
+    confirmWindowOpen.value = true
+}
+
+function showUnbanConfirm(userId: string) {
+    userToBan.value = userId
+    userActionType.value = 'unban'
     confirmWindowOpen.value = true
 }
 
@@ -174,7 +182,9 @@ async function confirmBan() {
     
     isBanning.value = true
     try {
-        const response = await adminService.banUser(userToBan.value)
+        const response = userActionType.value === 'ban'
+          ? await adminService.banUser(userToBan.value)
+          : await adminService.unbanUser(userToBan.value)
         if (response) {
             await loadUsersList()
         }
@@ -299,6 +309,7 @@ watch(sortedUsers, () => {
         :options="[
           { value: 'all', label: t('common.all') },
           { value: 'admin', label: t('common.admin') },
+          { value: 'partner', label: t('common.partner') },
           { value: 'user', label: t('common.user') },
         ]"
         :placeholder="$t('common.filters.role')"
@@ -324,11 +335,10 @@ watch(sortedUsers, () => {
             <div class="flex items-center gap-3 sm:gap-4">
               <div class="flex-shrink-0">
                 <div class="relative">
-                  <img
-                    :src="user.avatar_url ? `${API_HOST}${user.avatar_url}` : images.avatars.default"
+                  <UserAvatar
+                    :avatar-url="user.avatar_url"
                     :alt="user.username"
                     class="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-dark-400"
-                    @error="(e: any) => e.target.src = images.avatars.default"
                   />
                   <div
                     class="absolute -bottom-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 rounded-full border-2 border-dark-600"
@@ -378,7 +388,7 @@ watch(sortedUsers, () => {
             <div class="flex-shrink-0 flex gap-2 justify-end sm:justify-start items-center">
               <button
                 @click="navigateToProfile(user.username)"
-                class="flex items-center gap-1 sm:gap-2 px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-xs sm:text-sm flex-1 sm:flex-none justify-center"
+                class="admin-btn admin-btn-primary admin-btn-xs sm:px-3 sm:py-2 sm:text-sm flex-1 sm:flex-none justify-center"
               >
                 <Eye class="w-3 h-3 sm:w-4 sm:h-4" />
                 <span class="">{{ $t("pages.admin.usersPage.profile") }}</span>
@@ -387,17 +397,26 @@ watch(sortedUsers, () => {
               <button
                 v-if="!user.is_banned && user.role != 'admin'"
                 @click="showBanConfirm(user.id)"
-                class="flex items-center gap-1 sm:gap-2 px-2 py-1.5 sm:px-3 sm:py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-xs sm:text-sm flex-1 sm:flex-none justify-center"
+                class="admin-btn admin-btn-danger admin-btn-xs sm:px-3 sm:py-2 sm:text-sm flex-1 sm:flex-none justify-center"
               >
                 <Ban class="w-3 h-3 sm:w-4 sm:h-4" />
                 <span class="">{{ $t("pages.admin.usersPage.ban") }}</span>
+              </button>
+
+              <button
+                v-if="user.is_banned && user.role != 'admin'"
+                @click="showUnbanConfirm(user.id)"
+                class="admin-btn admin-btn-success admin-btn-xs sm:px-3 sm:py-2 sm:text-sm flex-1 sm:flex-none justify-center"
+              >
+                <UserCheck class="w-3 h-3 sm:w-4 sm:h-4" />
+                <span class="">{{ $t("pages.admin.usersPage.unban") }}</span>
               </button>
 
               <!-- Dropdown меню -->
               <div class="relative dropdown-container">
                 <button
                   @click.stop="toggleDropdown(user.id)"
-                  class="flex items-center justify-center w-8 h-8 rounded-lg bg-dark-500 hover:bg-dark-400 transition-colors"
+                  class="admin-btn admin-btn-ghost w-8 h-8 p-0"
                 >
                   <MoreVertical class="w-4 h-4 text-text-secondary" />
                 </button>
@@ -439,9 +458,9 @@ watch(sortedUsers, () => {
 
     <ConfirmWindow
       :is-open="confirmWindowOpen"
-      :title="$t('pages.admin.usersPage.ban')"
-      :message="$t('pages.admin.usersPage.confirmBanMessage')"
-      :confirm-text="$t('pages.admin.usersPage.ban')"
+      :title="userActionType === 'ban' ? $t('pages.admin.usersPage.ban') : $t('pages.admin.usersPage.unban')"
+      :message="userActionType === 'ban' ? $t('pages.admin.usersPage.confirmBanMessage') : $t('pages.admin.usersPage.confirmUnbanMessage')"
+      :confirm-text="userActionType === 'ban' ? $t('pages.admin.usersPage.ban') : $t('pages.admin.usersPage.unban')"
       :cancel-text="$t('common.cancel')"
       :is-loading="isBanning"
       @confirm="confirmBan"

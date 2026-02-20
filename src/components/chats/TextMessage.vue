@@ -52,6 +52,15 @@ const hasReason = computed(() => {
   return Boolean(props.textMessage?.data?.reason)
 })
 
+const isOwnMessage = computed(() => {
+  return props.textMessage?.sender_id === props.user?.id
+})
+
+const readStatusTitle = computed(() => {
+  if (!props.textMessage || !isOwnMessage.value) return ''
+  return props.textMessage.is_read ? t('common.messageRead') : t('common.messageUnread')
+})
+
 const bubbleRoleClass = computed(() => {
   if (props.textMessage?.sender_id === props.user?.id) {
     return 'bg-blue-600 text-mainText rounded-br-none self-end'
@@ -83,9 +92,18 @@ const pillClasses = computed(() => 'text-gray-200 bg-dark-700/80 border border-d
               <p class="whitespace-pre-line">{{ reasonText }}</p>
             </div>
           </div>
-					<p class="mt-2 text-right text-xs text-gray-400">
-						{{ formatDate(textMessage.created_at) }}
-					</p>
+          <div class="mt-2 flex items-center justify-end gap-2 text-xs text-gray-400">
+            <span
+              v-if="isOwnMessage"
+              class="inline-flex items-center leading-none font-semibold select-none tracking-[-0.12em] text-white"
+              :title="readStatusTitle"
+              :aria-label="readStatusTitle"
+            >
+              <span>✓</span>
+              <span v-if="textMessage.is_read">✓</span>
+            </span>
+            <span>{{ formatDate(textMessage.created_at) }}</span>
+          </div>
 				</div>
 			</div>
 		</div>
@@ -108,8 +126,17 @@ const pillClasses = computed(() => 'text-gray-200 bg-dark-700/80 border border-d
         <p class="whitespace-pre-line">{{ reasonText }}</p>
       </div>
     </div>
-		<p class="mt-1 text-right text-xs text-gray-300">
-			{{ formatDate(textMessage.created_at) }}
-		</p>
+    <div class="mt-1 flex items-center justify-end gap-2 text-xs text-gray-300">
+      <span
+        v-if="isOwnMessage"
+        class="inline-flex items-center leading-none font-semibold select-none tracking-[-0.12em] text-white"
+        :title="readStatusTitle"
+        :aria-label="readStatusTitle"
+      >
+        <span>✓</span>
+        <span v-if="textMessage.is_read">✓</span>
+      </span>
+      <span>{{ formatDate(textMessage.created_at) }}</span>
+    </div>
 	</div>
 </template>

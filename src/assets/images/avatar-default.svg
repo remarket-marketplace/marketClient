@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">Default user avatar</title>
+  <desc id="desc">Minimal neutral placeholder avatar</desc>
+  <circle cx="128" cy="128" r="126" fill="#151515" />
+  <circle cx="128" cy="95" r="22" fill="#969696" />
+  <path d="M86 198c0-23.2 18.8-42 42-42s42 18.8 42 42v5H86z" fill="#747474" />
+</svg>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { adminService } from '@/api/admin/AdminService'
 import BackButton from '@/components/navigation/BackButton.vue'
+import UserAvatar from '@/components/UserAvatar.vue'
 import type { AdminFeedbackListItem } from '@/validation/feedback/adminFeedback'
 import { Loader2, MessageSquareText, Images, UserRound, MessageCircle } from 'lucide-vue-next'
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -9,7 +10,6 @@ import { useRouter } from 'vue-router'
 
 const { t } = useI18n()
 const router = useRouter()
-const API_HOST = import.meta.env.VITE_API_HOST || ''
 
 const feedbacks = ref<AdminFeedbackListItem[]>([])
 const isLoading = ref(true)
@@ -178,18 +178,11 @@ watch(
         >
           <div class="flex items-start justify-between gap-3">
             <div class="flex items-center gap-3 min-w-0">
-              <img
-                v-if="feedback.user.avatar_url"
-                :src="`${API_HOST}${feedback.user.avatar_url}`"
+              <UserAvatar
+                :avatar-url="feedback.user.avatar_url"
                 :alt="feedback.user.username"
                 class="h-10 w-10 rounded-full object-cover border border-dark-500"
               />
-              <div
-                v-else
-                class="h-10 w-10 rounded-full bg-dark-500 border border-dark-400 flex items-center justify-center text-sm font-semibold text-mainText uppercase"
-              >
-                {{ feedback.user.username.charAt(0) }}
-              </div>
 
               <div class="min-w-0">
                 <button
@@ -218,7 +211,7 @@ watch(
           <div class="mt-4 flex flex-wrap gap-2">
             <button
               type="button"
-              class="inline-flex items-center gap-1.5 rounded-lg border border-dark-500 bg-dark-700 hover:bg-dark-500 px-3 py-1.5 text-xs sm:text-sm text-mainText transition-colors"
+              class="admin-btn admin-btn-sm text-xs sm:text-sm"
               @click="openFeedback(feedback.id)"
             >
               <UserRound class="h-4 w-4" />
@@ -228,12 +221,8 @@ watch(
             <button
               type="button"
               :disabled="!feedback.support_chat_id"
-              class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs sm:text-sm transition-colors"
-              :class="
-                feedback.support_chat_id
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                  : 'bg-dark-700 text-gray-500 border border-dark-500 cursor-not-allowed'
-              "
+              class="admin-btn admin-btn-sm text-xs sm:text-sm"
+              :class="feedback.support_chat_id ? 'admin-btn-primary' : 'admin-btn-muted'"
               @click="openSupportChat(feedback.support_chat_id)"
             >
               <MessageCircle class="h-4 w-4" />

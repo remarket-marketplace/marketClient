@@ -3,8 +3,8 @@ import type { ChatListItem } from '@/validation/chat/ChatList';
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n';
 import { ShoppingBag, Headphones } from 'lucide-vue-next';
+import UserAvatar from '@/components/UserAvatar.vue';
 
-const API_HOST = import.meta.env.VITE_API_HOST
 const { t } = useI18n()
 
 const props = defineProps<{
@@ -55,9 +55,6 @@ const formattedLastMessage = computed((): string | null => {
 })
 
 const isSelected = computed(() => props.chat.id === props.selectedChatId)
-const userInitial = computed(() => {
-    return props.chat.another_user.username.charAt(0).toUpperCase()
-})
 
 const isUserOnline = computed(() => {
     if (isSupportChat && !props.showSupportAsUser) {
@@ -102,14 +99,6 @@ const displayAvatarUrl = computed(() => {
     return props.chat.another_user.avatar_url
 })
 
-// Вычисляемое свойство для инициалов
-const displayInitial = computed(() => {
-    if (isSupportChat.value && !props.showSupportAsUser) {
-        return 'S'
-    }
-    return props.chat.another_user.username.charAt(0).toUpperCase()
-})
-
 const checkMobile = () => {
     isMobile.value = window.innerWidth < 768
 }
@@ -137,18 +126,11 @@ onMounted(() => {
                 </div>
                 <!-- Regular chat avatar (or support chat in admin mode) -->
                 <template v-else>
-                    <img
-                        v-if="displayAvatarUrl"
-                        :src="`${API_HOST}${displayAvatarUrl}`"
-                        class="h-12 w-12 border-2 border-dark-600 rounded-full object-cover"
+                    <UserAvatar
+                        :avatar-url="displayAvatarUrl"
                         :alt="displayName"
-                    >
-                    <div
-                        v-else
-                        class="h-12 w-12 flex items-center justify-center rounded-full bg-gray-700 text-lg text-mainText font-bold uppercase"
-                    >
-                        {{ displayInitial }}
-                    </div>
+                        class="h-12 w-12 border-2 border-dark-600 rounded-full object-cover"
+                    />
                 </template>
             </div>
             

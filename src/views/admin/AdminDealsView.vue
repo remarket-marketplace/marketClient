@@ -17,13 +17,13 @@ import {
 } from 'lucide-vue-next'
 import { adminService } from '@/api/admin/AdminService'
 import type { Deal, DealsList } from '@/validation/deal/deal'
-import { useImages } from '@/composables/useImages'
 import DealStatusTag from '@/components/DealStatusTag.vue'
 import UserRating from '@/components/UserRating.vue'
 import SearchField from '@/components/SearchField.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import CustomSelect from '@/components/CustomSelect.vue'
+import UserAvatar from '@/components/UserAvatar.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -52,8 +52,6 @@ const isActionLoading = ref(false)
 const showReasonField = ref(false)
 const disputeReason = ref('')
 const reasonError = ref('')
-
-const { images } = useImages()
 
 // Навигация
 function goToDeal(id: string) {
@@ -192,11 +190,6 @@ function getProductImageUrl(deal: Deal) {
     return `${API_HOST}${deal.product.images[0]!.image_url}`
   }
   return '/placeholder-product.jpg'
-}
-
-function getUserAvatarUrl(avatarUrl: string) {
-  const API_HOST = import.meta.env.VITE_API_HOST || ''
-  return avatarUrl ? `${API_HOST}${avatarUrl}` : images.avatars.default
 }
 
 // ===== Управление сделками =====
@@ -392,14 +385,14 @@ watch([searchQuery, sortBy, statusFilter], () => {
               </div>
               <div class="flex gap-2">
                 <button @click="goToChat(deal.chat_room_id)"
-                  class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
+                  class="admin-btn admin-btn-primary admin-btn-sm"
                   :title="$t('common.viewDeal')">
                   <MessageCircleMore class="w-4 h-4" />
                   <span class="hidden sm:inline">{{ $t('common.toChat') }}</span>
                 </button>
 
                 <button @click="goToDeal(deal.id)"
-                  class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
+                  class="admin-btn admin-btn-primary admin-btn-sm"
                   :title="$t('common.viewDeal')">
                   <Eye class="w-4 h-4" />
                   <span class="hidden sm:inline">{{ $t('common.view') }}</span>
@@ -432,7 +425,11 @@ watch([searchQuery, sortBy, statusFilter], () => {
               <div @click="goToProfile(deal.seller.username)"
                 class="bg-dark-700 hover:bg-dark-700/80 transition rounded-lg p-3 cursor-pointer">
                 <div class="flex items-center gap-3">
-                  <img :src="getUserAvatarUrl(deal.seller.avatar_url)" :alt="deal.seller.username" class="w-10 h-10 rounded-full object-cover" />
+                  <UserAvatar
+                    :avatar-url="deal.seller.avatar_url"
+                    :alt="deal.seller.username"
+                    class="w-10 h-10 rounded-full object-cover"
+                  />
                   <div class="flex-1 min-w-0">
                     <div class="text-text-secondary text-xs mb-1">{{ $t('common.seller') }}</div>
                     <div class="flex items-center gap-2">
@@ -446,7 +443,11 @@ watch([searchQuery, sortBy, statusFilter], () => {
               <div @click="goToProfile(deal.buyer.username)"
                 class="bg-dark-700 hover:bg-dark-700/80 transition rounded-lg p-3 cursor-pointer">
                 <div class="flex items-center gap-3">
-                  <img :src="getUserAvatarUrl(deal.buyer.avatar_url)" :alt="deal.buyer.username" class="w-10 h-10 rounded-full object-cover" />
+                  <UserAvatar
+                    :avatar-url="deal.buyer.avatar_url"
+                    :alt="deal.buyer.username"
+                    class="w-10 h-10 rounded-full object-cover"
+                  />
                   <div class="flex-1 min-w-0">
                     <div class="text-text-secondary text-xs mb-1">{{ $t('common.buyer') }}</div>
                     <div class="flex items-center gap-2">
@@ -479,12 +480,12 @@ watch([searchQuery, sortBy, statusFilter], () => {
             <div class="flex flex-col sm:flex-row sm:flex-wrap gap-2 pt-2 border-t border-dark-700">
               <template v-if="deal.status === 'pending'">
                 <button @click="confirmDeal(deal.id)" :disabled="processingDealId === deal.id"
-                  class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white rounded-lg transition-colors text-sm min-w-[140px]">
+                  class="admin-btn admin-btn-success flex-1 sm:flex-none min-w-[140px]">
                   <Check class="w-4 h-4" />
                   <span>{{ $t('common.confirmDeal') }}</span>
                 </button>
                 <button @click="refundDeal(deal.id)" :disabled="processingDealId === deal.id"
-                  class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white rounded-lg transition-colors text-sm min-w-[140px]">
+                  class="admin-btn admin-btn-accent flex-1 sm:flex-none min-w-[140px]">
                   <Undo2 class="w-4 h-4" />
                   <span>{{ $t('pages.admin.dealsPage.refund') }}</span>
                 </button>
@@ -492,12 +493,12 @@ watch([searchQuery, sortBy, statusFilter], () => {
 
               <template v-else-if="deal.status === 'disputed'">
                 <button @click="resolveDispute(deal.id, 'buyer')" :disabled="processingDealId === deal.id"
-                  class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white rounded-lg transition-colors text-sm min-w-[160px]">
+                  class="admin-btn admin-btn-success flex-1 sm:flex-none min-w-[160px]">
                   <UserCheck class="w-4 h-4" />
                   <span>{{ $t('common.resolveForBuyer') }}</span>
                 </button>
                 <button @click="resolveDispute(deal.id, 'seller')" :disabled="processingDealId === deal.id"
-                  class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg transition-colors text-sm min-w-[160px]">
+                  class="admin-btn admin-btn-primary flex-1 sm:flex-none min-w-[160px]">
                   <UserCheck class="w-4 h-4" />
                   <span>{{ $t('common.resolveForSeller') }}</span>
                 </button>
@@ -525,7 +526,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
               </template>
 
               <button v-if="['pending', 'disputed'].includes(deal.status)" @click="cancelDeal(deal.id)" :disabled="processingDealId === deal.id"
-                class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg transition-colors text-sm min-w-[140px] sm:ml-auto">
+                class="admin-btn admin-btn-danger flex-1 sm:flex-none min-w-[140px] sm:ml-auto">
                 <XCircle class="w-4 h-4" />
                 <span>{{ $t('common.cancelDeal') }}</span>
               </button>
