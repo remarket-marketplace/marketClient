@@ -12,7 +12,7 @@ const goHome = () => {
 </script>
 
 <template>
-  <div class="h-screen w-screen flex flex-col items-center justify-center relative overflow-hidden">
+  <div class="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] flex w-screen min-h-[calc(100vh-56px)] flex-col items-center justify-center overflow-hidden">
     
     <!-- Фон с анимированными шарами -->
     <div class="absolute inset-0 w-full h-full z-0 pointer-events-none">

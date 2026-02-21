@@ -65,7 +65,7 @@ onMounted(loadStats)
 <template>
   <section class="w-full min-h-[calc(100vh-120px)] pb-10 pt-6">
     <div class="max-w-6xl mx-auto px-2 lg:px-0 flex flex-col gap-4">
-      <div class="rounded-2xl border border-dark-500/50 bg-dark-700/70 p-5">
+      <div class="rounded-2xl border border-dark-700 bg-dark-600 p-5">
         <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Partner Dashboard</p>
         <h1 class="text-2xl font-semibold text-white mt-1">Raika checker x Market</h1>
         <p class="text-sm text-gray-400 mt-2">
@@ -73,7 +73,7 @@ onMounted(loadStats)
         </p>
       </div>
 
-      <div v-if="isLoading" class="rounded-2xl border border-dark-500/50 bg-dark-700/70 p-10 flex justify-center">
+      <div v-if="isLoading" class="rounded-2xl border border-dark-700 bg-dark-600 p-10 flex justify-center">
         <Loader />
       </div>
 
@@ -89,19 +89,19 @@ onMounted(loadStats)
           <div
             v-for="card in metricCards"
             :key="card.key"
-            class="rounded-xl border border-dark-500/60 bg-dark-700/70 p-4"
+            class="rounded-2xl border border-dark-700 bg-dark-600 p-4 transition-colors hover:border-dark-500"
           >
             <p class="text-xs text-gray-400">{{ card.label }}</p>
             <p class="text-xl font-semibold text-white mt-2">{{ card.value }}</p>
           </div>
         </div>
 
-        <div class="rounded-2xl border border-dark-500/50 bg-dark-700/70 p-4">
+        <div class="rounded-2xl border border-dark-700 bg-dark-600 p-4">
           <h2 class="text-lg font-semibold text-white mb-3">Сделки по статусам</h2>
           <div v-if="statusRows.length" class="overflow-x-auto">
             <table class="w-full text-sm">
               <thead>
-                <tr class="text-left text-gray-400 border-b border-dark-500/60">
+                <tr class="text-left text-gray-400 border-b border-dark-600">
                   <th class="py-2 pr-3 font-medium">Статус</th>
                   <th class="py-2 font-medium">Количество</th>
                 </tr>
@@ -110,7 +110,7 @@ onMounted(loadStats)
                 <tr
                   v-for="item in statusRows"
                   :key="item.status"
-                  class="border-b border-dark-500/30 last:border-b-0"
+                  class="border-b border-dark-700 last:border-b-0"
                 >
                   <td class="py-2 pr-3 text-gray-200">{{ item.label }}</td>
                   <td class="py-2 text-white font-medium">{{ formatNumber(item.count) }}</td>
