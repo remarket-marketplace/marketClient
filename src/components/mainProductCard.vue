@@ -45,7 +45,7 @@ const formattedPrice = computed(() => `${priceFormatter.format(props.product.pri
 
     <div class="px-3 pb-3 flex flex-1 flex-col">
       <!-- Title -->
-      <h3 class="text-sm sm:text-base font-semibold text-mainText leading-tight line-clamp-2 mb-2 min-h-[2.5rem] sm:min-h-[3rem] flex-shrink-0">
+      <h3 class="product-title text-sm md:text-base font-semibold text-mainText leading-[1.125rem] md:leading-5 mb-2 h-[2.25rem] md:h-[2.5rem] flex-shrink-0">
         {{ product.title }}
       </h3>
 
@@ -84,3 +84,15 @@ const formattedPrice = computed(() => `${priceFormatter.format(props.product.pri
     </div>
   </div>
 </template>
+
+<style scoped>
+.product-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+  text-overflow: ellipsis;
+}
+</style>

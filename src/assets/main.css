@@ -32,6 +32,8 @@ input, textarea, select {
 /* Отключение зума при двойном тапе */
 html {
   touch-action: pan-y pinch-zoom; /* Разрешаем только вертикальный скролл и пинч-зум */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 /* Для инпутов особые настройки */

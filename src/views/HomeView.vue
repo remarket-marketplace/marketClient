@@ -46,6 +46,7 @@ const isLoadingMoreSubCategories = ref(false)
 const isSearchPagination = ref(false)
 const minPriceFilter = ref('')
 const maxPriceFilter = ref('')
+const isFiltersOpen = ref(false)
 
 interface PricePreset {
   id: string
@@ -66,18 +67,6 @@ const pricePresets = computed<PricePreset[]>(() => [
   { id: '10000-plus', label: `≥ ${formatPrice(10000)} ₽`, min: 10000 },
 ])
 
-const hasActivePriceFilters = computed(() => (
-  parseFilterNumber(minPriceFilter.value) !== undefined
-  || parseFilterNumber(maxPriceFilter.value) !== undefined
-))
-
-const selectedPriceRangeLabel = computed(() => {
-  const { minPrice, maxPrice } = getProductFiltersParams()
-  const minLabel = minPrice === undefined ? '0 ₽' : `${formatPrice(minPrice)} ₽`
-  const maxLabel = maxPrice === undefined ? '∞' : `${formatPrice(maxPrice)} ₽`
-  return `${minLabel} - ${maxLabel}`
-})
-
 function isPricePresetActive(preset: PricePreset): boolean {
   const min = parseFilterNumber(minPriceFilter.value)
   const max = parseFilterNumber(maxPriceFilter.value)
@@ -85,6 +74,12 @@ function isPricePresetActive(preset: PricePreset): boolean {
 }
 
 async function onPricePresetClick(preset: PricePreset) {
+  if (isPricePresetActive(preset)) {
+    clearProductFilters()
+    await applyProductFilters()
+    return
+  }
+
   minPriceFilter.value = preset.min === undefined ? '' : String(preset.min)
   maxPriceFilter.value = preset.max === undefined ? '' : String(preset.max)
   await applyProductFilters()
@@ -323,9 +318,8 @@ function debouncedApplyProductFilters() {
   }, 300)
 }
 
-async function onResetProductFilters() {
-  clearProductFilters()
-  await applyProductFilters()
+function toggleFiltersVisibility() {
+  isFiltersOpen.value = !isFiltersOpen.value
 }
 
 const categoriesScroll = ref<HTMLDivElement | null>(null)
@@ -407,85 +401,86 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <div class="mt-6 w-full rounded-2xl border border-dark-700 bg-dark-600/25 p-4 md:p-5">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div class="flex items-start gap-3">
-              <div class="flex h-9 w-9 items-center justify-center rounded-lg border border-dark-600 bg-dark-700/40">
-                <SlidersHorizontal class="h-4 w-4 text-gray-300" />
+        <div class="mt-6 w-full">
+          <button
+            type="button"
+            class="inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-semibold transition"
+            :class="isFiltersOpen
+              ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
+              : 'border-dark-600 bg-dark-700/40 text-gray-300 hover:border-dark-500 hover:bg-dark-700/55'"
+            :aria-expanded="isFiltersOpen"
+            :aria-label="t('pages.index.filtersTitle')"
+            :title="t('pages.index.filtersTitle')"
+            @click="toggleFiltersVisibility"
+          >
+            <SlidersHorizontal class="h-4 w-4" />
+            <span>{{ t('pages.index.filtersTitle') }}</span>
+          </button>
+
+          <transition
+            enter-active-class="transition-all duration-200 ease-out"
+            enter-from-class="opacity-0 -translate-y-1"
+            enter-to-class="opacity-100 translate-y-0"
+            leave-active-class="transition-all duration-150 ease-in"
+            leave-from-class="opacity-100 translate-y-0"
+            leave-to-class="opacity-0 -translate-y-1"
+          >
+            <div v-if="isFiltersOpen" class="mt-3 w-full rounded-2xl border border-dark-700 bg-dark-600/25 p-4 md:p-5">
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="preset in pricePresets"
+                  :key="preset.id"
+                  type="button"
+                  class="rounded-full border px-3 py-1.5 text-xs font-semibold transition"
+                  :class="isPricePresetActive(preset)
+                    ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
+                    : 'border-dark-600 bg-dark-700/30 text-gray-300 hover:bg-dark-700/50 hover:text-white'"
+                  @click="onPricePresetClick(preset)"
+                >
+                  {{ preset.label }}
+                </button>
               </div>
 
-              <div>
-                <h3 class="text-sm font-semibold text-white">{{ t('pages.index.filtersTitle') }}</h3>
-                <p class="mt-0.5 text-xs text-gray-400">{{ selectedPriceRangeLabel }}</p>
+              <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                <label class="rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2.5 transition focus-within:border-blue-400/40 focus-within:bg-dark-700/55">
+                  <span class="block text-xs text-gray-400">{{ t('pages.index.priceFrom') }}</span>
+                  <div class="mt-1.5 flex items-center gap-2">
+                    <input
+                      v-model="minPriceFilter"
+                      type="number"
+                      min="0"
+                      inputmode="decimal"
+                      class="w-full bg-transparent text-sm text-white outline-none placeholder-gray-500"
+                      :placeholder="t('pages.index.priceFrom')"
+                      @input="debouncedApplyProductFilters"
+                    />
+                    <span class="text-xs font-semibold text-gray-400">₽</span>
+                  </div>
+                </label>
+
+                <label class="rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2.5 transition focus-within:border-blue-400/40 focus-within:bg-dark-700/55">
+                  <span class="block text-xs text-gray-400">{{ t('pages.index.priceTo') }}</span>
+                  <div class="mt-1.5 flex items-center gap-2">
+                    <input
+                      v-model="maxPriceFilter"
+                      type="number"
+                      min="0"
+                      inputmode="decimal"
+                      class="w-full bg-transparent text-sm text-white outline-none placeholder-gray-500"
+                      :placeholder="t('pages.index.priceTo')"
+                      @input="debouncedApplyProductFilters"
+                    />
+                    <span class="text-xs font-semibold text-gray-400">₽</span>
+                  </div>
+                </label>
               </div>
             </div>
-
-            <button
-              type="button"
-              class="rounded-md border px-3 py-1.5 text-xs font-medium transition"
-              :class="hasActivePriceFilters
-                ? 'border-dark-600 bg-dark-700/40 text-gray-300 hover:bg-dark-700/60 hover:text-white'
-                : 'cursor-not-allowed border-dark-700 bg-dark-700/30 text-gray-500'"
-              :disabled="!hasActivePriceFilters"
-              @click="onResetProductFilters"
-            >
-              {{ t('pages.index.resetFilters') }}
-            </button>
-          </div>
-
-          <div class="mt-4 flex flex-wrap gap-2">
-            <button
-              v-for="preset in pricePresets"
-              :key="preset.id"
-              type="button"
-              class="rounded-full border px-3 py-1.5 text-xs font-semibold transition"
-              :class="isPricePresetActive(preset)
-                ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
-                : 'border-dark-600 bg-dark-700/30 text-gray-300 hover:bg-dark-700/50 hover:text-white'"
-              @click="onPricePresetClick(preset)"
-            >
-              {{ preset.label }}
-            </button>
-          </div>
-
-          <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-            <label class="rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2.5 transition focus-within:border-blue-400/40 focus-within:bg-dark-700/55">
-              <span class="block text-xs text-gray-400">{{ t('pages.index.priceFrom') }}</span>
-              <div class="mt-1.5 flex items-center gap-2">
-                <input
-                  v-model="minPriceFilter"
-                  type="number"
-                  min="0"
-                  inputmode="decimal"
-                  class="w-full bg-transparent text-sm text-white outline-none placeholder-gray-500"
-                  :placeholder="t('pages.index.priceFrom')"
-                  @input="debouncedApplyProductFilters"
-                />
-                <span class="text-xs font-semibold text-gray-400">₽</span>
-              </div>
-            </label>
-
-            <label class="rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2.5 transition focus-within:border-blue-400/40 focus-within:bg-dark-700/55">
-              <span class="block text-xs text-gray-400">{{ t('pages.index.priceTo') }}</span>
-              <div class="mt-1.5 flex items-center gap-2">
-                <input
-                  v-model="maxPriceFilter"
-                  type="number"
-                  min="0"
-                  inputmode="decimal"
-                  class="w-full bg-transparent text-sm text-white outline-none placeholder-gray-500"
-                  :placeholder="t('pages.index.priceTo')"
-                  @input="debouncedApplyProductFilters"
-                />
-                <span class="text-xs font-semibold text-gray-400">₽</span>
-              </div>
-            </label>
-          </div>
+          </transition>
         </div>
 
         <Title class="mt-12 w-full" :text="t('common.products')" />
 
-        <div v-if="isProductsLoading" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 w-full">
+        <div v-if="isProductsLoading" class="products-grid grid gap-4 mt-6 w-full">
           <div v-for="n in perPage" :key="n" class="h-64 bg-dark-600 animate-pulse rounded-2xl" />
         </div>
 
@@ -493,7 +488,7 @@ onBeforeUnmount(() => {
           {{ t('pages.index.noProducts') }}
         </div>
 
-        <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 w-full">
+        <div v-else class="products-grid grid gap-4 mt-6 w-full">
           <MainProductCard v-for="product in products" :key="product.id" :product="product" @click="goToProduct" />
         </div>
     </div>
@@ -501,3 +496,21 @@ onBeforeUnmount(() => {
     <div ref="loadMoreTrigger" class="h-10"></div>
   </section>
 </template>
+
+<style scoped>
+.products-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 380px) {
+  .products-grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  .products-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+</style>

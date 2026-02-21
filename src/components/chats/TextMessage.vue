@@ -110,7 +110,7 @@ const pillClasses = computed(() => 'text-gray-200 bg-dark-700/80 border border-d
 	</div>
 
 	<!-- Regular messages -->
-	<div v-else-if="textMessage != null" class="max-w-[70%] min-w-4 rounded-xl px-4 py-2 text-sm break-words" :class="[
+	<div v-else-if="textMessage != null" class="max-w-[70%] md:max-w-[40%] min-w-4 rounded-xl px-4 py-2 text-sm break-words" :class="[
     bubbleRoleClass,
     textMessage.sender_id === user?.id ? 'self-end' : 'self-start'
 	]">
