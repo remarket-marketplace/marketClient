@@ -401,7 +401,9 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <div class="mt-6 w-full">
+        <Title class="mt-12 w-full" :text="t('common.products')" />
+
+        <div class="mt-4 w-full">
           <button
             type="button"
             class="inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-semibold transition"
@@ -477,8 +479,6 @@ onBeforeUnmount(() => {
             </div>
           </transition>
         </div>
-
-        <Title class="mt-12 w-full" :text="t('common.products')" />
 
         <div v-if="isProductsLoading" class="products-grid grid gap-4 mt-6 w-full">
           <div v-for="n in perPage" :key="n" class="h-64 bg-dark-600 animate-pulse rounded-2xl" />
