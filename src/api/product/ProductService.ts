@@ -204,10 +204,11 @@ export const productService = {
         formData.append("description", productData.description);
       if (productData.price)
         formData.append("price", productData.price.toString());
-      if (productData.product_data)
+      if (productData.auto_delivery && productData.product_data)
         formData.append("product_data", productData.product_data);
       if (productData.category_id)
         formData.append("category_id", productData.category_id);
+      formData.append("auto_delivery", String(Boolean(productData.auto_delivery)));
       uploadedImages.forEach((image) => {
         formData.append("uploaded_images", image);
       });

@@ -3,6 +3,7 @@ import { productService } from '@/api/product/ProductService'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import FileUploader from '@/components/FileUploader.vue'
 import Loader from '@/components/Loader.vue'
+import Checkbox from '@/components/Checkbox.vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import type { ProductEdit } from '@/validation/product/product'
@@ -21,6 +22,7 @@ const title = ref('')
 const description = ref('')
 const price = ref('')
 const productDataString = ref('')
+const autoDelivery = ref<boolean>(true)
 const newImages = ref<File[]>([])
 const existingImages = ref<{ id: string; image_url: string }[]>([])
 const count = ref<number>()
@@ -56,6 +58,42 @@ const totalImagesAfterUpdate = computed(() => {
   return remainingExisting + newImages.value.length
 })
 
+const normalizedTitle = computed(() => title.value.trim())
+const normalizedDescription = computed(() => description.value.trim())
+const normalizedProductData = computed(() => productDataString.value.trim())
+const priceValue = computed(() => Number(price.value))
+const countValue = computed(() => Number(count.value))
+
+const titleLengthValid = computed(() => (
+  normalizedTitle.value.length >= PRODUCT_LIMITS.title.min
+  && normalizedTitle.value.length <= PRODUCT_LIMITS.title.max
+))
+const descriptionLengthValid = computed(() => (
+  normalizedDescription.value.length >= PRODUCT_LIMITS.description.min
+  && normalizedDescription.value.length <= PRODUCT_LIMITS.description.max
+))
+const productDataLengthValid = computed(() => (
+  normalizedProductData.value.length >= PRODUCT_LIMITS.productData.min
+  && normalizedProductData.value.length <= PRODUCT_LIMITS.productData.max
+))
+const productDataValidForForm = computed(() => (
+  !autoDelivery.value || productDataLengthValid.value
+))
+const priceValid = computed(() => (
+  Number.isFinite(priceValue.value)
+  && priceValue.value >= PRODUCT_LIMITS.price.min
+  && priceValue.value <= PRODUCT_LIMITS.price.max
+))
+const countValid = computed(() => (
+  Number.isFinite(countValue.value)
+  && countValue.value >= PRODUCT_LIMITS.count.min
+  && countValue.value <= PRODUCT_LIMITS.count.max
+))
+const imagesCountValid = computed(() => (
+  totalImagesAfterUpdate.value >= PRODUCT_LIMITS.images.min
+  && totalImagesAfterUpdate.value <= PRODUCT_LIMITS.images.max
+))
+
 // Calculate seller's final amount
 const sellerAmount = computed(() => {
   if (!price.value || !commissionInterest.value) return 0
@@ -74,28 +112,69 @@ const formatPrice = (value: number) => {
 
 // Валидация формы
 const isFormValid = computed(() => {
-  const normalizedTitle = title.value.trim()
-  const normalizedDescription = description.value.trim()
-  const normalizedProductData = productDataString.value.trim()
-  const priceValue = Number(price.value)
-  const countValue = Number(count.value)
-
   return Boolean(
-    normalizedTitle.length >= PRODUCT_LIMITS.title.min &&
-    normalizedTitle.length <= PRODUCT_LIMITS.title.max &&
-    normalizedDescription.length >= PRODUCT_LIMITS.description.min &&
-    normalizedDescription.length <= PRODUCT_LIMITS.description.max &&
-    normalizedProductData.length >= PRODUCT_LIMITS.productData.min &&
-    normalizedProductData.length <= PRODUCT_LIMITS.productData.max &&
-    Number.isFinite(priceValue) &&
-    priceValue >= PRODUCT_LIMITS.price.min &&
-    priceValue <= PRODUCT_LIMITS.price.max &&
-    Number.isFinite(countValue) &&
-    countValue >= PRODUCT_LIMITS.count.min &&
-    countValue <= PRODUCT_LIMITS.count.max &&
-    totalImagesAfterUpdate.value >= PRODUCT_LIMITS.images.min &&
-    totalImagesAfterUpdate.value <= PRODUCT_LIMITS.images.max
+    titleLengthValid.value &&
+    descriptionLengthValid.value &&
+    productDataValidForForm.value &&
+    priceValid.value &&
+    countValid.value &&
+    imagesCountValid.value
   )
+})
+
+const validationIssues = computed(() => {
+  const issues: string[] = []
+
+  if (!titleLengthValid.value) {
+    issues.push(
+      t('pages.forms.editProduct.validationTitleLength', {
+        min: PRODUCT_LIMITS.title.min,
+        max: PRODUCT_LIMITS.title.max,
+      }),
+    )
+  }
+  if (!descriptionLengthValid.value) {
+    issues.push(
+      t('pages.forms.editProduct.validationDescriptionLength', {
+        min: PRODUCT_LIMITS.description.min,
+        max: PRODUCT_LIMITS.description.max,
+      }),
+    )
+  }
+  if (autoDelivery.value && !productDataLengthValid.value) {
+    issues.push(
+      t('pages.forms.editProduct.validationProductDataLength', {
+        min: PRODUCT_LIMITS.productData.min,
+        max: PRODUCT_LIMITS.productData.max,
+      }),
+    )
+  }
+  if (!priceValid.value) {
+    issues.push(
+      t('pages.forms.editProduct.validationPriceRange', {
+        min: PRODUCT_LIMITS.price.min,
+        max: PRODUCT_LIMITS.price.max,
+      }),
+    )
+  }
+  if (!countValid.value) {
+    issues.push(
+      t('pages.forms.editProduct.validationCountRange', {
+        min: PRODUCT_LIMITS.count.min,
+        max: PRODUCT_LIMITS.count.max,
+      }),
+    )
+  }
+  if (!imagesCountValid.value) {
+    issues.push(
+      t('pages.forms.editProduct.validationImagesRange', {
+        min: PRODUCT_LIMITS.images.min,
+        max: PRODUCT_LIMITS.images.max,
+      }),
+    )
+  }
+
+  return issues
 })
 
 onMounted(async () => {
@@ -119,6 +198,7 @@ onMounted(async () => {
     description.value = productData.value.description
     price.value = productData.value.price.toString()
     productDataString.value = productData.value.product_data_string ?? ''
+    autoDelivery.value = productData.value.auto_delivery
     existingImages.value = [...productData.value.images]
     count.value = productData.value.count
 
@@ -147,7 +227,7 @@ async function updateProduct() {
   errorMessage.value = ''
 
   if (!isFormValid.value) {
-    errorMessage.value = t('common.fillAllFields')
+    errorMessage.value = t('pages.forms.editProduct.fixFormToSave')
     return
   }
 
@@ -165,17 +245,14 @@ async function updateProduct() {
 
   sended.value = true
   try {
-    const normalizedTitle = title.value.trim()
-    const normalizedDescription = description.value.trim()
-    const normalizedProductData = productDataString.value.trim()
-
     const productDataObj = {
-      title: normalizedTitle,
-      description: normalizedDescription,
-      price: Number(price.value),
-      product_data: normalizedProductData,
+      title: normalizedTitle.value,
+      description: normalizedDescription.value,
+      price: priceValue.value,
+      product_data: autoDelivery.value ? normalizedProductData.value : undefined,
       category_id: productData.value!.category.id,
-      count: count.value
+      count: count.value,
+      auto_delivery: autoDelivery.value,
     }
 
     const result = await productService.updateProduct(
@@ -302,29 +379,70 @@ async function updateProduct() {
             <FileUploader v-model="newImages" :max-files="computedMaxNewFiles"
               :hint="$t('pages.forms.createProduct.imageHint')" />
 
-            <div class="text-xs text-gray-400 flex items-center gap-1">
+            <div class="text-xs flex items-center gap-1" :class="imagesCountValid ? 'text-gray-400' : 'text-red-400'">
               <AlertCircle class="w-3 h-3 text-yellow-400" />
               <span>
-                {{ $t('pages.forms.editProduct.totalImagesInfo') }}:
-                <span :class="totalImagesAfterUpdate > PRODUCT_LIMITS.images.max ? 'text-red-400' : 'text-green-400'">
-                  {{ totalImagesAfterUpdate }}/{{ PRODUCT_LIMITS.images.max }}
-                </span>
+                {{
+                  $t('pages.forms.editProduct.validationImagesRange', {
+                    min: PRODUCT_LIMITS.images.min,
+                    max: PRODUCT_LIMITS.images.max,
+                  })
+                }}
               </span>
             </div>
+            <p class="text-xs text-right text-gray-400">
+              {{ $t('pages.forms.editProduct.totalImagesInfo') }}:
+              <span :class="imagesCountValid ? 'text-green-400' : 'text-red-400'">
+                {{ totalImagesAfterUpdate }}/{{ PRODUCT_LIMITS.images.max }}
+              </span>
+            </p>
           </div>
 
-          <!-- Title -->
-          <div class="space-y-2">
-            <label for="title" class="text-sm font-medium text-gray-300">
-              {{ $t('pages.forms.createProduct.productName') }}
-              <span class="text-xs text-red-400 ml-1">*</span>
-            </label>
-            <input id="title" v-model="title" type="text" :maxlength="PRODUCT_LIMITS.title.max" :minlength="PRODUCT_LIMITS.title.min"
-              :placeholder="$t('pages.forms.createProduct.productNamePlaceholder')"
-              class="w-full outline-none rounded-lg bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white placeholder-gray-500 " />
-            <p class="text-xs text-gray-400 text-right">
-              {{ title.length }}/{{ PRODUCT_LIMITS.title.max }}
-            </p>
+          <!-- Title and quantity -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label for="title" class="text-sm font-medium text-gray-300">
+                {{ $t('pages.forms.createProduct.productName') }}
+                <span class="text-xs text-red-400 ml-1">*</span>
+              </label>
+              <input id="title" v-model="title" type="text" :maxlength="PRODUCT_LIMITS.title.max" :minlength="PRODUCT_LIMITS.title.min"
+                :placeholder="$t('pages.forms.createProduct.productNamePlaceholder')"
+                class="w-full outline-none rounded-lg bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white placeholder-gray-500 " />
+              <div class="flex items-center justify-between gap-3">
+                <p class="text-xs" :class="titleLengthValid ? 'text-gray-400' : 'text-red-400'">
+                  {{
+                    $t('pages.forms.editProduct.validationTitleLength', {
+                      min: PRODUCT_LIMITS.title.min,
+                      max: PRODUCT_LIMITS.title.max,
+                    })
+                  }}
+                </p>
+                <p class="text-xs text-gray-400 text-right">
+                  {{ title.length }}/{{ PRODUCT_LIMITS.title.max }}
+                </p>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label for="count" class="text-sm font-medium text-gray-300">
+                {{ $t('pages.forms.createProduct.count') }}
+              </label>
+              <div class="relative">
+                <input id="count" v-model.number="count" type="number" :min="PRODUCT_LIMITS.count.min" :max="PRODUCT_LIMITS.count.max"
+                  class="w-full rounded-lg outline-none bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white" />
+                <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                  {{ $t('common.items') }}
+                </div>
+              </div>
+              <p class="text-xs" :class="countValid ? 'text-gray-400' : 'text-red-400'">
+                {{
+                  $t('pages.forms.editProduct.validationCountRange', {
+                    min: PRODUCT_LIMITS.count.min,
+                    max: PRODUCT_LIMITS.count.max,
+                  })
+                }}
+              </p>
+            </div>
           </div>
 
           <!-- Description -->
@@ -336,13 +454,46 @@ async function updateProduct() {
             <textarea id="description" v-model="description" rows="8" :maxlength="PRODUCT_LIMITS.description.max" :minlength="PRODUCT_LIMITS.description.min"
               :placeholder="$t('pages.forms.createProduct.descriptionPlaceholder')"
               class="w-full rounded-lg outline-none bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white placeholder-gray-500 resize-none"></textarea>
-            <p class="text-xs text-gray-400 text-right">
-              {{ description.length }}/{{ PRODUCT_LIMITS.description.max }}
-            </p>
+            <div class="flex items-center justify-between gap-3">
+              <p class="text-xs" :class="descriptionLengthValid ? 'text-gray-400' : 'text-red-400'">
+                {{
+                  $t('pages.forms.editProduct.validationDescriptionLength', {
+                    min: PRODUCT_LIMITS.description.min,
+                    max: PRODUCT_LIMITS.description.max,
+                  })
+                }}
+              </p>
+              <p class="text-xs text-gray-400 text-right">
+                {{ description.length }}/{{ PRODUCT_LIMITS.description.max }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Auto delivery -->
+          <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-5 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="space-y-1">
+                <h4 class="text-sm font-semibold text-white">
+                  {{ $t('pages.forms.createProduct.autoDelivery') }}
+                </h4>
+                <p class="text-xs text-gray-400 leading-relaxed">
+                  {{ $t('pages.forms.createProduct.autoDeliveryHint') }}
+                </p>
+              </div>
+              <Checkbox v-model="autoDelivery" size="lg" />
+            </div>
+            <div v-if="autoDelivery" class="mt-3">
+              <div class="p-3 rounded-lg bg-blue-900/20 border border-blue-800/30">
+                <p class="text-xs text-blue-300 leading-relaxed flex items-start gap-2">
+                  <Info class="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  {{ $t('pages.forms.createProduct.autoDeliveryEnabledHint') }}
+                </p>
+              </div>
+            </div>
           </div>
 
           <!-- Product data -->
-          <div class="space-y-2">
+          <div v-if="autoDelivery" class="space-y-2">
             <div class="flex items-center gap-2">
               <label for="productData" class="text-sm font-medium text-gray-300">
                 {{ $t('pages.forms.createProduct.productData') }}
@@ -356,22 +507,18 @@ async function updateProduct() {
             <textarea id="productData" v-model="productDataString" rows="6" :maxlength="PRODUCT_LIMITS.productData.max" :minlength="PRODUCT_LIMITS.productData.min"
               :placeholder="$t('pages.forms.createProduct.productDataPlaceholder')"
               class="w-full rounded-lg outline-none bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white placeholder-gray-500 resize-none font-mono"></textarea>
-            <p class="text-xs text-gray-400 text-right">
-              {{ productDataString.length }}/{{ PRODUCT_LIMITS.productData.max }}
-            </p>
-          </div>
-
-          <!-- Quantity -->
-          <div class="space-y-2">
-            <label for="count" class="text-sm font-medium text-gray-300">
-              {{ $t('pages.forms.createProduct.count') }}
-            </label>
-            <div class="relative">
-              <input id="count" v-model.number="count" type="number" :min="PRODUCT_LIMITS.count.min" :max="PRODUCT_LIMITS.count.max"
-                class="w-full rounded-lg outline-none bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white" />
-              <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
-                {{ $t('common.items') }}
-              </div>
+            <div class="flex items-center justify-between gap-3">
+              <p class="text-xs" :class="productDataLengthValid ? 'text-gray-400' : 'text-red-400'">
+                {{
+                  $t('pages.forms.editProduct.validationProductDataLength', {
+                    min: PRODUCT_LIMITS.productData.min,
+                    max: PRODUCT_LIMITS.productData.max,
+                  })
+                }}
+              </p>
+              <p class="text-xs text-gray-400 text-right">
+                {{ productDataString.length }}/{{ PRODUCT_LIMITS.productData.max }}
+              </p>
             </div>
           </div>
 
@@ -405,6 +552,14 @@ async function updateProduct() {
                   ₽
                 </div>
               </div>
+              <p class="text-xs" :class="priceValid ? 'text-gray-400' : 'text-red-400'">
+                {{
+                  $t('pages.forms.editProduct.validationPriceRange', {
+                    min: PRODUCT_LIMITS.price.min,
+                    max: PRODUCT_LIMITS.price.max,
+                  })
+                }}
+              </p>
             </div>
 
             <!-- Calculations -->
@@ -519,6 +674,24 @@ async function updateProduct() {
                   {{ $t('pages.forms.editProduct.categoryCannotBeChanged') }}
                 </p>
               </div>
+            </div>
+
+            <div
+              v-if="!isFormValid"
+              class="rounded-lg border border-amber-700/40 bg-amber-900/15 p-3"
+            >
+              <p class="text-xs text-amber-200 font-medium mb-2">
+                {{ t('pages.forms.editProduct.fixFormToSave') }}
+              </p>
+              <ul class="space-y-1">
+                <li
+                  v-for="issue in validationIssues"
+                  :key="issue"
+                  class="text-xs text-amber-300"
+                >
+                  • {{ issue }}
+                </li>
+              </ul>
             </div>
 
             <!-- Save button -->

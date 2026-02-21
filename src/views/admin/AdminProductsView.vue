@@ -18,6 +18,7 @@ import ProductStatusTag from '@/components/ProductStatusTag.vue';
 import BackButton from '@/components/navigation/BackButton.vue';
 import SearchField from '@/components/SearchField.vue';
 import CustomSelect from '@/components/CustomSelect.vue';
+import ConfirmWindow from '@/components/ConfirmWindow.vue';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -32,6 +33,12 @@ const pageSize = 20;
 const visibleCount = ref(pageSize);
 const listRef = ref<HTMLElement | null>(null);
 const sentinelRef = ref<HTMLElement | null>(null);
+const confirmRejectWindowOpen = ref(false);
+const productToReject = ref<string | null>(null);
+const selectedRejectReasonCode = ref('invalidDescription');
+const customRejectReason = ref('');
+const rejectReasonError = ref('');
+const isRejecting = ref(false);
 let observer: IntersectionObserver | null = null;
 
 async function loadProducts() {
@@ -77,10 +84,43 @@ async function approveProduct(productId: string) {
   }
 }
 
-async function rejectProduct(productId: string) {
-  processingProductId.value = productId;
+function openRejectConfirm(productId: string) {
+  productToReject.value = productId;
+  selectedRejectReasonCode.value = 'invalidDescription';
+  customRejectReason.value = '';
+  rejectReasonError.value = '';
+  confirmRejectWindowOpen.value = true;
+}
+
+async function confirmRejectProduct() {
+  if (!productToReject.value) return;
+
+  const reasonCode = selectedRejectReasonCode.value;
+  if (!reasonCode) {
+    rejectReasonError.value = t('pages.admin.productsPage.rejectReasonRequired');
+    return;
+  }
+
+  let reasonText: string | null = null;
+  if (reasonCode === 'otherReason') {
+    const customReason = customRejectReason.value.trim();
+    if (customReason.length < 5) {
+      rejectReasonError.value = t('pages.admin.productsPage.customRejectReasonRequired');
+      return;
+    }
+    reasonText = customReason;
+  }
+
+  rejectReasonError.value = '';
+  processingProductId.value = productToReject.value;
+  isRejecting.value = true;
+
   try {
-    const response = await adminService.rejectProduct(productId);
+    const response = await adminService.rejectProduct(
+      productToReject.value,
+      reasonCode,
+      reasonText,
+    );
     if (response) {
       await loadProducts();
     }
@@ -88,7 +128,19 @@ async function rejectProduct(productId: string) {
     console.error('Error rejecting product:', error);
   } finally {
     processingProductId.value = null;
+    isRejecting.value = false;
+    confirmRejectWindowOpen.value = false;
+    productToReject.value = null;
+    customRejectReason.value = '';
+    rejectReasonError.value = '';
   }
+}
+
+function cancelRejectProduct() {
+  confirmRejectWindowOpen.value = false;
+  productToReject.value = null;
+  customRejectReason.value = '';
+  rejectReasonError.value = '';
 }
 
 function formatPrice(price: number) {
@@ -164,6 +216,14 @@ const statusOptions = computed(() => {
     })),
   ];
 });
+
+const rejectReasonOptions = computed(() => [
+  { value: 'invalidDescription', label: t('common.productRejectReasons.invalidDescription') },
+  { value: 'prohibitedContent', label: t('common.productRejectReasons.prohibitedContent') },
+  { value: 'misleadingInfo', label: t('common.productRejectReasons.misleadingInfo') },
+  { value: 'termsViolation', label: t('common.productRejectReasons.termsViolation') },
+  { value: 'otherReason', label: t('common.productRejectReasons.otherReason') },
+]);
 
 function loadMoreProducts() {
   if (visibleCount.value >= sortedProducts.value.length) return;
@@ -330,7 +390,7 @@ watch(sortedProducts, () => {
                   </button>
                   
                   <button
-                    @click="rejectProduct(product.id)"
+                    @click="openRejectConfirm(product.id)"
                     :disabled="processingProductId === product.id"
                     class="admin-btn admin-btn-danger px-4 py-3 text-xs"
                   >
@@ -369,7 +429,7 @@ watch(sortedProducts, () => {
                 </button>
                 
                 <button
-                  @click="rejectProduct(product.id)"
+                  @click="openRejectConfirm(product.id)"
                   :disabled="processingProductId === product.id"
                   class="admin-btn admin-btn-danger admin-btn-xs justify-center flex-1"
                 >
@@ -404,6 +464,40 @@ watch(sortedProducts, () => {
         <div ref="sentinelRef" class="h-4 w-full"></div>
       </div>
     </div>
+
+    <ConfirmWindow
+      :is-open="confirmRejectWindowOpen"
+      :title="$t('common.reject')"
+      :message="$t('pages.admin.productsPage.confirmRejectMessage')"
+      :confirm-text="$t('common.reject')"
+      :cancel-text="$t('common.cancel')"
+      :is-loading="isRejecting"
+      @confirm="confirmRejectProduct"
+      @cancel="cancelRejectProduct"
+    >
+      <template #body>
+        <div class="space-y-3">
+          <label class="block text-sm text-gray-300">
+            {{ $t('pages.admin.productsPage.rejectReasonLabel') }}
+          </label>
+          <CustomSelect
+            v-model="selectedRejectReasonCode"
+            :options="rejectReasonOptions"
+            :placeholder="$t('pages.admin.productsPage.selectRejectReason')"
+          />
+          <div v-if="selectedRejectReasonCode === 'otherReason'" class="space-y-2">
+            <textarea
+              v-model="customRejectReason"
+              class="w-full rounded-lg bg-dark-900 border border-dark-700 text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[110px]"
+              :placeholder="$t('pages.admin.productsPage.customRejectReasonPlaceholder')"
+            />
+          </div>
+          <p v-if="rejectReasonError" class="text-red-400 text-sm">
+            {{ rejectReasonError }}
+          </p>
+        </div>
+      </template>
+    </ConfirmWindow>
   </section>
 </template>
 

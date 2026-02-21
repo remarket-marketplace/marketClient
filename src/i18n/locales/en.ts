@@ -1,6 +1,8 @@
 const en = {
   common: {
     loading: "Loading...",
+    captchaLoading: "Loading captcha...",
+    captchaLoadFailed: "Failed to load captcha. Please refresh the page.",
     sending: "Sending...",
     back: "Back",
     home: "Home",
@@ -192,6 +194,13 @@ const en = {
       spam: "Spam or abusive behavior",
       multipleAccounts: "Multiple accounts abuse",
       chargebackAbuse: "Chargeback abuse",
+      termsViolation: "Violation of platform rules",
+      otherReason: "Other reason",
+    },
+    productRejectReasons: {
+      invalidDescription: "Invalid or incomplete product description",
+      prohibitedContent: "Prohibited content",
+      misleadingInfo: "Misleading information",
       termsViolation: "Violation of platform rules",
       otherReason: "Other reason",
     },
@@ -517,6 +526,8 @@ const en = {
       description: "Description",
       raikaVerifiedPrefix: "This product was verified using the ",
       raikaName: "raika",
+      moderationRejectedTitle: "Product did not pass moderation",
+      moderationRejectReasonLabel: "Rejection reason",
       deleteConfirm: {
         title: "Confirm Product Deletion",
         message:
@@ -621,6 +632,7 @@ const en = {
       noReviews: "No reviews",
       noAds: "No ads",
       noProducts: "No products",
+      rejectedByModeration: "Product did not pass moderation",
       purchased: "Purchased",
       moderation: "Moderation",
       rejected: "Rejected",
@@ -754,6 +766,12 @@ const en = {
       },
       productsPage: {
         title: "Products",
+        confirmRejectMessage: "Select the reason for rejecting this product",
+        rejectReasonLabel: "Rejection reason",
+        selectRejectReason: "Select reason",
+        customRejectReasonPlaceholder: "Describe rejection reason",
+        rejectReasonRequired: "Select a rejection reason",
+        customRejectReasonRequired: "Please enter at least 5 characters",
       },
 
       dealsPage: {
@@ -953,6 +971,13 @@ const en = {
         errorUpdatingProduct: "Error updating product",
         deleting: "Deleting",
         totalImagesInfo: "Total images",
+        fixFormToSave: "Fix the checks below to activate the “Save” button.",
+        validationTitleLength: "Product name: from {min} to {max} characters.",
+        validationDescriptionLength: "Description: from {min} to {max} characters.",
+        validationProductDataLength: "Product data: from {min} to {max} characters.",
+        validationPriceRange: "Price: from {min} to {max}.",
+        validationCountRange: "Quantity: from {min} to {max}.",
+        validationImagesRange: "Images: from {min} to {max}.",
       },
     },
   },

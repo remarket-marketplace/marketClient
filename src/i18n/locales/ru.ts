@@ -3,6 +3,8 @@ import { de } from "zod/locales";
 const ru = {
   common: {
     loading: "Загрузка...",
+    captchaLoading: "Загружаем капчу...",
+    captchaLoadFailed: "Не удалось загрузить капчу. Обновите страницу.",
     sending: "Отправка...",
     back: "Назад",
     home: "Главная",
@@ -194,6 +196,13 @@ const ru = {
       multipleAccounts: "Злоупотребление несколькими аккаунтами",
       chargebackAbuse: "Злоупотребление чарджбэками",
       termsViolation: "Нарушение правил платформы",
+      otherReason: "Другая причина",
+    },
+    productRejectReasons: {
+      invalidDescription: "Некорректное или неполное описание товара",
+      prohibitedContent: "Запрещенный контент",
+      misleadingInfo: "Вводящая в заблуждение информация",
+      termsViolation: "Нарушение правил площадки",
       otherReason: "Другая причина",
     },
   },
@@ -518,6 +527,8 @@ const ru = {
       description: "Описание",
       raikaVerifiedPrefix: "Товар проверен с помощью ",
       raikaName: "raika",
+      moderationRejectedTitle: "Товар не прошел модерацию",
+      moderationRejectReasonLabel: "Причина отклонения",
       deleteConfirm: {
         title: "Подтверждение удаления товара",
         message:
@@ -620,6 +631,7 @@ const ru = {
       noReviews: "Нет отзывов",
       noAds: "Нет объявлений",
       noProducts: "Нет товаров",
+      rejectedByModeration: "Товар не прошел модерацию",
       purchased: "Куплено",
       moderation: "Модерация",
       rejected: "Отклонено",
@@ -753,6 +765,12 @@ const ru = {
       },
       productsPage: {
         title: "Товары",
+        confirmRejectMessage: "Выберите причину отклонения товара",
+        rejectReasonLabel: "Причина отклонения",
+        selectRejectReason: "Выберите причину",
+        customRejectReasonPlaceholder: "Опишите причину отклонения",
+        rejectReasonRequired: "Выберите причину отклонения",
+        customRejectReasonRequired: "Введите не менее 5 символов",
       },
 
       dealsPage: {
@@ -947,7 +965,14 @@ const ru = {
         errorLoadingData: "Ошибка загрузки данных",
         errorUpdatingProduct: "Ошибка обновления товара",
         deleting: "Удаляется",
-        totalImagesInfo: "Всего изображений"
+        totalImagesInfo: "Всего изображений",
+        fixFormToSave: "Исправьте пункты ниже, чтобы активировать кнопку «Сохранить».",
+        validationTitleLength: "Название товара: от {min} до {max} символов.",
+        validationDescriptionLength: "Описание: от {min} до {max} символов.",
+        validationProductDataLength: "Данные товара: от {min} до {max} символов.",
+        validationPriceRange: "Цена: от {min} до {max}.",
+        validationCountRange: "Количество: от {min} до {max}.",
+        validationImagesRange: "Изображения: от {min} до {max}.",
       },
     },
   },

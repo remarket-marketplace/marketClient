@@ -1,16 +1,39 @@
 <template>
-  <div ref="container" />
+  <div class="relative w-full min-h-[72px]">
+    <div ref="container" class="w-full min-h-[72px]" />
+
+    <div
+      v-if="isLoading"
+      class="absolute inset-0 flex items-center justify-center gap-2 rounded-xl border border-dark-700 bg-dark-600/70 text-sm text-gray-300 backdrop-blur-sm"
+      role="status"
+      aria-live="polite"
+    >
+      <span class="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
+      <span>{{ t('common.captchaLoading') }}</span>
+    </div>
+
+    <div
+      v-else-if="hasError"
+      class="absolute inset-0 flex items-center justify-center rounded-xl border border-red-500/30 bg-red-500/10 px-3 text-center text-xs text-red-200"
+      role="alert"
+    >
+      {{ t('common.captchaLoadFailed') }}
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const emit = defineEmits<{
   verified: [token: string]
 }>()
+const { t } = useI18n()
 
 type TurnstileRenderOptions = {
   sitekey: string
+  size?: 'normal' | 'compact' | 'flexible'
   callback: (token: string) => void
   'expired-callback': () => void
   'error-callback': (errorCode?: string) => void
@@ -29,6 +52,8 @@ declare global {
 }
 
 const container = ref<HTMLElement | null>(null)
+const isLoading = ref(true)
+const hasError = ref(false)
 let widgetId: string | null = null
 
 const SITE_KEY =
@@ -84,25 +109,35 @@ const loadTurnstileScript = async (): Promise<void> => {
 
 const renderTurnstile = async () => {
   if (!container.value) return
+  isLoading.value = true
+  hasError.value = false
 
   try {
     await loadTurnstileScript()
 
     if (!window.turnstile) {
+      hasError.value = true
+      isLoading.value = false
       emit('verified', '')
       return
     }
 
     widgetId = window.turnstile.render(container.value, {
       sitekey: SITE_KEY,
+      size: 'flexible',
       callback: (token: string) => emit('verified', token),
       'expired-callback': () => emit('verified', ''),
       'error-callback': (errorCode?: string) => {
         console.error('[Turnstile] client-side error:', errorCode ?? '<no-code>')
+        hasError.value = true
+        isLoading.value = false
         emit('verified', '')
       },
     })
+    isLoading.value = false
   } catch {
+    hasError.value = true
+    isLoading.value = false
     emit('verified', '')
   }
 }

@@ -103,10 +103,16 @@ export const adminService = {
     }
   },
 
-  async rejectProduct(productId: string) {
+  async rejectProduct(
+    productId: string,
+    reasonCode: string,
+    reasonText?: string | null,
+  ) {
     try {
       const response = await httpClient.post("/admin/products/reject", {
         product_id: productId,
+        reason_code: reasonCode,
+        reason_text: reasonText ?? null,
       });
       return response.status === 200;
     } catch (e) {

@@ -41,6 +41,8 @@ export const ProductSchema = z.object({
   count: z.number(),
   auto_delivery: z.boolean(),
   is_raika_verified: z.boolean().optional(),
+  moderation_reject_reason_code: z.string().nullable().optional(),
+  moderation_reject_reason_text: z.string().nullable().optional(),
   reviews: ReviewsListSchema.nullable().optional(),
   is_owner: z.boolean().optional(),
   product_data_string: z.string().nullable().optional(),

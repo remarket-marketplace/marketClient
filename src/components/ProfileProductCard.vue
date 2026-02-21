@@ -63,6 +63,10 @@ function goToSeller() {
         {{ product.description }}
       </p>
 
+      <p v-if="isOwner && product.status === 'rejected'" class="text-xs text-red-400 mb-2">
+        {{ $t('pages.profile.rejectedByModeration') }}
+      </p>
+
       <div class="flex items-end justify-between mt-auto">
         <div v-if="!isOwner" class="text-sm">
           <p

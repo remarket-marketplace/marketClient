@@ -33,6 +33,24 @@ const showDeleteConfirm = ref(false)
 const showBuyConfirm = ref(false)
 const buyError = ref<string | null>(null)
 
+const canSeeModerationRejectReason = computed(() => {
+  if (!product.value || product.value.status !== 'rejected') {
+    return false
+  }
+
+  return Boolean(product.value.is_owner || user?.role === 'admin')
+})
+
+const moderationRejectReasonLabel = computed(() => {
+  const reasonCode = product.value?.moderation_reject_reason_code
+  if (!reasonCode) return null
+
+  const translationKey = `common.productRejectReasons.${reasonCode}`
+  const translatedValue = t(translationKey)
+
+  return translatedValue === translationKey ? reasonCode : translatedValue
+})
+
 onMounted(async () => {
   try {
     product.value = await productService.getProductById(productId) ?? null
@@ -277,6 +295,25 @@ onUnmounted(() => {
             >
               {{ $t('pages.product.raikaName') }}
             </a>
+          </p>
+        </div>
+
+        <div
+          v-if="canSeeModerationRejectReason"
+          class="rounded-lg border border-red-800/40 bg-red-950/20 p-3 text-sm text-red-100"
+        >
+          <p class="text-red-300 font-semibold">
+            {{ $t('pages.product.moderationRejectedTitle') }}
+          </p>
+          <p class="mt-2 text-red-100/90">
+            <span class="text-red-200">{{ $t('pages.product.moderationRejectReasonLabel') }}:</span>
+            {{ moderationRejectReasonLabel ?? $t('common.notSpecified') }}
+          </p>
+          <p
+            v-if="product.moderation_reject_reason_text"
+            class="mt-2 whitespace-pre-line text-red-100/80"
+          >
+            {{ product.moderation_reject_reason_text }}
           </p>
         </div>
 

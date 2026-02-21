@@ -18,6 +18,7 @@ import type { Deal } from '@/validation/deal/deal'
 import UserRating from '@/components/UserRating.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
+import ProductStatusTag from '@/components/ProductStatusTag.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -570,7 +571,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                     </div>
 
                     <div class="absolute top-3 right-3">
-                      <ProductStatusTag v-if="product.is_owner" :product-status="product.status" />
+                      <ProductStatusTag v-if="isOwner" :product-status="product.status" />
                     </div>
 
                     <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
