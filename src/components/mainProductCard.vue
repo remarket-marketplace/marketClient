@@ -52,7 +52,7 @@ const formattedPrice = computed(() => `${priceFormatter.format(props.product.pri
       <hr class="border-dark-700 opacity-80 mb-2 flex-shrink-0" />
 
       <!-- Bottom section with seller and button -->
-      <div class="mt-auto flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-2">
+      <div class="product-footer mt-auto flex flex-col gap-2">
         <!-- Seller info-->
         <div class="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
           <p class="min-w-0 shrink text-xs sm:text-sm text-blue-400 transition hover:text-blue-300 underline decoration-transparent hover:decoration-blue-300 truncate"
@@ -70,7 +70,7 @@ const formattedPrice = computed(() => `${priceFormatter.format(props.product.pri
 
         <!-- Buy button -->
         <button
-          class="group w-full md:w-auto md:min-w-[108px] relative overflow-hidden rounded-lg bg-blue-600 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-white transition cursor-pointer flex-shrink-0 whitespace-nowrap hover:bg-blue-700"
+          class="product-buy-btn group w-full relative overflow-hidden rounded-lg bg-blue-600 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-white transition cursor-pointer flex-shrink-0 whitespace-nowrap hover:bg-blue-700"
           @click="onClick">
           <span class="block text-center tabular-nums transition-all duration-200 group-hover:-translate-y-full group-hover:opacity-0">
             {{ formattedPrice }}
@@ -94,5 +94,19 @@ const formattedPrice = computed(() => `${priceFormatter.format(props.product.pri
   overflow: hidden;
   word-break: break-word;
   text-overflow: ellipsis;
+}
+
+@media (min-width: 2140px) {
+  .product-footer {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .product-buy-btn {
+    width: auto;
+    min-width: 108px;
+  }
 }
 </style>
