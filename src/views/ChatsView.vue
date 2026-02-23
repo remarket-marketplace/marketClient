@@ -25,7 +25,8 @@ const chats = ref<ChatListItem[]>([])
 const chatMessages = ref<ChatMessageUnion[]>([])
 const selectedChatId = ref<string | null>(null)
 const messageContainerRef = ref<HTMLElement | null>(null)
-const isLoading = ref(false)
+const isPageLoading = ref(false)
+const isChatLoading = ref(false)
 const isLoadingMoreMessages = ref(false)
 const errorMessage = ref<string | null>(null)
 const isMobile = ref(false)
@@ -131,7 +132,7 @@ function applyMessagesReadUpdate(update: MessagesReadPayload) {
 
 onMounted(async () => {
   try {
-    isLoading.value = true
+    isPageLoading.value = true
     await store.fetchUser()
     user.value = await store.getUser()
 
@@ -201,7 +202,7 @@ onMounted(async () => {
   } catch {
     errorMessage.value = t('pages.chats.errorLoadingChats')
   } finally {
-    isLoading.value = false
+    isPageLoading.value = false
   }
 
   const checkMobile = () => {
@@ -261,30 +262,31 @@ async function loadMoreMessages() {
 }
 
 async function loadChatMessages(chatId: string) {
-  isLoading.value = true
+  isChatLoading.value = true
+  try {
+    chatMessages.value = []
+    currentPage.value = 1
+    hasMoreMessages.value = true
 
-  chatMessages.value = []
-  currentPage.value = 1
-  hasMoreMessages.value = true
+    await chatsService.joinChat(chatId)
+    selectedChatId.value = chatId
+    chatStore.setActive(chatId)
+    updateUrlChatId(chatId)
 
-  await chatsService.joinChat(chatId)
-  selectedChatId.value = chatId
-  chatStore.setActive(chatId)
-  updateUrlChatId(chatId)
+    const response = await chatsService.getChatMessages(chatId, 1, perPage.value)
+    chatMessages.value = response.messages
+    totalPages.value = response.totalPages
+    hasMoreMessages.value = 1 < totalPages.value
+    chatStore.resetUnread(chatId)
+    await chatsService.markChatRead(chatId)
 
-  const response = await chatsService.getChatMessages(chatId, 1, perPage.value)
-  chatMessages.value = response.messages
-  totalPages.value = response.totalPages
-  hasMoreMessages.value = 1 < totalPages.value
-  chatStore.resetUnread(chatId)
-  await chatsService.markChatRead(chatId)
+    await nextTick()
+    scrollToBottom()
 
-  await nextTick()
-  scrollToBottom()
-
-  if (isMobile.value) mobileMode.value = 'chat'
-
-  isLoading.value = false
+    if (isMobile.value) mobileMode.value = 'chat'
+  } finally {
+    isChatLoading.value = false
+  }
 }
 
 async function sendMessage() {
@@ -303,7 +305,7 @@ async function sendMessage() {
 
 <template>
   <div class="h-full w-full flex flex-col md:pt-6">
-    <div v-if="isLoading" class="flex flex-1 items-center justify-center text-gray-300">
+    <div v-if="isPageLoading" class="flex flex-1 items-center justify-center text-gray-300">
       <Loader />
     </div>
 
@@ -399,6 +401,11 @@ async function sendMessage() {
 
             <div ref="messageContainerRef" class="no-scrollbar flex flex-1 flex-col overflow-y-auto pb-16"
               @scroll="handleScroll">
+              <div v-if="isChatLoading" class="flex h-full w-full items-center justify-center">
+                <Loader />
+              </div>
+
+              <template v-else>
               <div v-if="isLoadingMoreMessages" class="flex justify-center py-2">
                 <Loader size="sm" />
               </div>
@@ -422,6 +429,7 @@ async function sendMessage() {
               <div v-else-if="selectedChatId === null" class="h-full w-full flex items-center justify-center">
                 <p class="text-gray-400 font-light">{{ $t('pages.chats.selectChat') }}</p>
               </div>
+              </template>
             </div>
 
             <SendMessageBar v-if="selectedChatId" v-model:newMessage="newMessage" @sendMessage="sendMessage" />
