@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { Check, CheckCheck } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 interface TextMessageProps {
   id: string;
@@ -61,6 +62,11 @@ const readStatusTitle = computed(() => {
   return props.textMessage.is_read ? t('common.messageRead') : t('common.messageUnread')
 })
 
+const readStatusClass = computed(() => {
+  if (!props.textMessage || !isOwnMessage.value) return ''
+  return props.textMessage.is_read ? 'text-sky-300' : 'text-gray-300/85'
+})
+
 const bubbleRoleClass = computed(() => {
   if (props.textMessage?.sender_id === props.user?.id) {
     return 'bg-blue-600 text-mainText rounded-br-none self-end'
@@ -95,12 +101,23 @@ const pillClasses = computed(() => 'text-gray-200 bg-dark-700/80 border border-d
           <div class="mt-2 flex items-center justify-end gap-2 text-xs text-gray-400">
             <span
               v-if="isOwnMessage"
-              class="inline-flex items-center leading-none font-semibold select-none tracking-[-0.12em] text-white"
+              class="inline-flex items-center leading-none select-none transition-colors duration-200"
+              :class="readStatusClass"
               :title="readStatusTitle"
               :aria-label="readStatusTitle"
             >
-              <span>✓</span>
-              <span v-if="textMessage.is_read">✓</span>
+              <Check
+                v-if="!textMessage.is_read"
+                class="h-3.5 w-3.5 translate-y-[0.25px]"
+                :stroke-width="2.35"
+                aria-hidden="true"
+              />
+              <CheckCheck
+                v-else
+                class="h-3.5 w-3.5 -translate-x-[0.5px] translate-y-[0.25px]"
+                :stroke-width="2.35"
+                aria-hidden="true"
+              />
             </span>
             <span>{{ formatDate(textMessage.created_at) }}</span>
           </div>
@@ -129,12 +146,23 @@ const pillClasses = computed(() => 'text-gray-200 bg-dark-700/80 border border-d
     <div class="mt-1 flex items-center justify-end gap-2 text-xs text-gray-300">
       <span
         v-if="isOwnMessage"
-        class="inline-flex items-center leading-none font-semibold select-none tracking-[-0.12em] text-white"
+        class="inline-flex items-center leading-none select-none transition-colors duration-200"
+        :class="readStatusClass"
         :title="readStatusTitle"
         :aria-label="readStatusTitle"
       >
-        <span>✓</span>
-        <span v-if="textMessage.is_read">✓</span>
+        <Check
+          v-if="!textMessage.is_read"
+          class="h-3.5 w-3.5 translate-y-[0.25px]"
+          :stroke-width="2.35"
+          aria-hidden="true"
+        />
+        <CheckCheck
+          v-else
+          class="h-3.5 w-3.5 -translate-x-[0.5px] translate-y-[0.25px]"
+          :stroke-width="2.35"
+          aria-hidden="true"
+        />
       </span>
       <span>{{ formatDate(textMessage.created_at) }}</span>
     </div>
