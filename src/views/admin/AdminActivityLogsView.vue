@@ -20,6 +20,7 @@ const totalPages = ref(1)
 const total = ref(0)
 const perPage = 30
 
+const userIdQuery = ref('')
 const usernameQuery = ref('')
 const actionType = ref('all')
 const ipAddress = ref('')
@@ -48,6 +49,14 @@ function toIsoDate(value: string): string | undefined {
   return parsed.toISOString()
 }
 
+function toUserIdFilter(value: string): string | undefined {
+  const normalized = value.trim()
+  if (!normalized) return undefined
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  return uuidRegex.test(normalized) ? normalized : undefined
+}
+
 function getActionLabel(action: string): string {
   const key = `pages.admin.activityLogs.actions.${action}`
   const translated = t(key)
@@ -67,6 +76,7 @@ function formatDate(value: string): string {
 
 function buildFilters() {
   return {
+    user_id: toUserIdFilter(userIdQuery.value),
     username: usernameQuery.value.trim() || undefined,
     action_type: actionType.value === 'all' ? undefined : actionType.value,
     ip_address: ipAddress.value.trim() || undefined,
@@ -114,6 +124,59 @@ function openLink(url: string | null | undefined) {
   window.open(url, '_blank', 'noopener,noreferrer')
 }
 
+function getDisplayUsername(log: AuditLog): string {
+  return log.current_username || log.username || '-'
+}
+
+function getUserProfileLink(log: AuditLog): string | null {
+  return log.links.user_profile || log.links.admin_user || null
+}
+
+type ContextLink = {
+  key: string
+  url: string
+  label: string
+}
+
+function getContextLinks(log: AuditLog): ContextLink[] {
+  const links: ContextLink[] = []
+
+  if (log.links.admin_chat) {
+    links.push({
+      key: 'chat',
+      url: log.links.admin_chat,
+      label: t('pages.admin.activityLogs.openChat'),
+    })
+  }
+
+  if (log.links.admin_deal) {
+    links.push({
+      key: 'deal',
+      url: log.links.admin_deal,
+      label: t('pages.admin.activityLogs.openDeal'),
+    })
+  }
+
+  if (log.links.product) {
+    links.push({
+      key: 'product',
+      url: log.links.product,
+      label: t('pages.admin.activityLogs.openProduct'),
+    })
+  }
+
+  return links
+}
+
+function getPrimaryContextLink(log: AuditLog): ContextLink | null {
+  const links = getContextLinks(log)
+  return links.length > 0 ? links[0]! : null
+}
+
+function getSecondaryContextLinks(log: AuditLog): ContextLink[] {
+  return getContextLinks(log).slice(1)
+}
+
 function detailsPreview(details: Record<string, any> | null | undefined): string {
   if (!details) return ''
   try {
@@ -123,7 +186,7 @@ function detailsPreview(details: Record<string, any> | null | undefined): string
   }
 }
 
-watch([usernameQuery, actionType, ipAddress, countryCode, dateFrom, dateTo], () => {
+watch([userIdQuery, usernameQuery, actionType, ipAddress, countryCode, dateFrom, dateTo], () => {
   if (filterDebounce) clearTimeout(filterDebounce)
   filterDebounce = setTimeout(() => {
     loadLogs(true)
@@ -162,6 +225,12 @@ onMounted(async () => {
     />
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+      <input
+        v-model="userIdQuery"
+        class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText focus:border-blue-500 focus:outline-none"
+        :placeholder="$t('pages.admin.activityLogs.searchByUserId')"
+      />
+
       <CustomSelect
         v-model="actionType"
         :options="actionOptions"
@@ -227,7 +296,18 @@ onMounted(async () => {
           <div class="mt-3 grid grid-cols-1 gap-2 text-sm text-gray-200 sm:grid-cols-2 lg:grid-cols-3">
             <div>
               <span class="text-gray-400">{{ $t('common.username') }}:</span>
-              <span class="ml-1 font-medium">{{ log.username || '-' }}</span>
+              <button
+                v-if="getUserProfileLink(log)"
+                type="button"
+                class="ml-1 font-medium text-blue-300 hover:text-blue-200 underline-offset-2 hover:underline"
+                @click="openLink(getUserProfileLink(log))"
+              >
+                {{ getDisplayUsername(log) }}
+              </button>
+              <span v-else class="ml-1 font-medium">{{ getDisplayUsername(log) }}</span>
+              <div class="mt-1 text-[11px] text-gray-500">
+                {{ $t('common.userId') }}: {{ log.user_id || '-' }}
+              </div>
             </div>
             <div>
               <span class="text-gray-400">{{ $t('pages.admin.activityLogs.ipAddress') }}:</span>
@@ -241,33 +321,34 @@ onMounted(async () => {
 
           <div class="mt-3 flex flex-wrap gap-2">
             <button
-              v-if="log.links.product"
+              v-if="getUserProfileLink(log)"
               type="button"
               class="admin-btn admin-btn-sm text-xs"
-              @click="openLink(log.links.product)"
+              @click="openLink(getUserProfileLink(log))"
             >
               <Link2 class="h-3.5 w-3.5" />
-              {{ $t('pages.admin.activityLogs.openProduct') }}
+              {{ $t('pages.admin.activityLogs.openProfile') }}
             </button>
 
             <button
-              v-if="log.links.admin_deal"
+              v-if="getPrimaryContextLink(log)"
               type="button"
               class="admin-btn admin-btn-sm text-xs"
-              @click="openLink(log.links.admin_deal)"
+              @click="openLink(getPrimaryContextLink(log)?.url)"
             >
               <Link2 class="h-3.5 w-3.5" />
-              {{ $t('pages.admin.activityLogs.openDeal') }}
+              {{ getPrimaryContextLink(log)?.label }}
             </button>
 
             <button
-              v-if="log.links.admin_chat"
+              v-for="contextLink in getSecondaryContextLinks(log)"
+              :key="`${log.id}-${contextLink.key}`"
               type="button"
               class="admin-btn admin-btn-sm text-xs"
-              @click="openLink(log.links.admin_chat)"
+              @click="openLink(contextLink.url)"
             >
               <Link2 class="h-3.5 w-3.5" />
-              {{ $t('pages.admin.activityLogs.openChat') }}
+              {{ contextLink.label }}
             </button>
           </div>
 

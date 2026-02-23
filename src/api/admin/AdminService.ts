@@ -51,6 +51,7 @@ export type FortnitePartnerStats = {
 }
 
 export type ActivityLogFilters = {
+  user_id?: string
   username?: string
   action_type?: string
   ip_address?: string

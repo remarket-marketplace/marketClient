@@ -6,6 +6,8 @@ export const AuditLogLinksSchema = z.object({
   chat: z.string().nullable().optional(),
   admin_deal: z.string().nullable().optional(),
   admin_chat: z.string().nullable().optional(),
+  user_profile: z.string().nullable().optional(),
+  admin_user: z.string().nullable().optional(),
 });
 
 export const AuditLogSchema = z.object({
@@ -14,6 +16,7 @@ export const AuditLogSchema = z.object({
   action_type: z.string(),
   user_id: z.string().uuid().nullable().optional(),
   username: z.string().nullable().optional(),
+  current_username: z.string().nullable().optional(),
   user_role: z.string().nullable().optional(),
   ip_address: z.string().nullable().optional(),
   country_code: z.string().nullable().optional(),
