@@ -207,9 +207,9 @@ const typeLabel = (type: string) => {
     </div>
 
     <!-- Desktop layout -->
-    <div class="lg:flex lg:h-full">
+    <div class="lg:flex lg:min-h-[calc(100dvh-3.5rem)]">
       <!-- Left column - Wallet info -->
-      <div class="lg:w-96 lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-full lg:border-r border-dark-700 px-4 lg:px-0 lg:pt-6 lg:pr-6">
+      <div class="lg:w-96 lg:flex-shrink-0 lg:sticky lg:top-0 lg:min-h-[calc(100dvh-3.5rem)] lg:border-r border-dark-700 px-4 lg:px-0 lg:pt-6 lg:pr-6">
         <div class="pt-6 lg:pt-0">
           <div class="space-y-6">
             <!-- Desktop header -->
@@ -227,10 +227,10 @@ const typeLabel = (type: string) => {
               <div class="flex items-center justify-between">
                 <div class="space-y-1">
                   <div class="text-sm text-gray-300 font-medium">{{ $t('pages.wallet.currentBalance') }}</div>
-                  <div class="text-3xl font-bold text-green-400">{{ formatCurrency(balance) }}</div>
+                  <div class="text-3xl font-bold text-blue-100">{{ formatCurrency(balance) }}</div>
                 </div>
-                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-                  <WalletIcon class="w-6 h-6 text-white" />
+                <div class="w-12 h-12 rounded-full border border-dark-500 bg-dark-700/70 flex items-center justify-center">
+                  <WalletIcon class="w-6 h-6 text-gray-200" />
                 </div>
               </div>
 
@@ -240,8 +240,8 @@ const typeLabel = (type: string) => {
                   @click="showDepositModal = true"
                   class="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-dark-600 bg-dark-700/50 hover:bg-dark-700 transition-all duration-200"
                 >
-                  <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                    <ArrowDownToLine class="w-5 h-5 text-white" />
+                  <div class="w-10 h-10 rounded-full border border-dark-500 bg-dark-700/70 flex items-center justify-center">
+                    <ArrowDownToLine class="w-5 h-5 text-gray-200" />
                   </div>
                   <span class="text-sm font-medium text-white">{{ $t('pages.wallet.deposit') }}</span>
                 </button>
@@ -250,8 +250,8 @@ const typeLabel = (type: string) => {
                   @click="showWithdrawModal = true"
                   class="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-dark-600 bg-dark-700/50 hover:bg-dark-700 transition-all duration-200"
                 >
-                  <div class="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center">
-                    <ArrowUpFromLine class="w-5 h-5 text-white" />
+                  <div class="w-10 h-10 rounded-full border border-dark-500 bg-dark-700/70 flex items-center justify-center">
+                    <ArrowUpFromLine class="w-5 h-5 text-gray-200" />
                   </div>
                   <span class="text-sm font-medium text-white">{{ $t('pages.wallet.withdraw') }}</span>
                 </button>
@@ -261,8 +261,8 @@ const typeLabel = (type: string) => {
             <!-- Info cards -->
             <div class="space-y-3">
               <div class="flex items-center gap-3 p-4 rounded-lg border border-dark-600 bg-dark-700/30">
-                <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
-                  <CreditCard class="w-4 h-4 text-blue-400" />
+                <div class="w-8 h-8 rounded-full border border-dark-600 bg-dark-700/70 flex items-center justify-center">
+                  <CreditCard class="w-4 h-4 text-gray-300" />
                 </div>
                 <div class="space-y-1">
                   <div class="text-sm font-medium text-gray-300">{{ $t('pages.wallet.instantDeposit') }}</div>
@@ -271,8 +271,8 @@ const typeLabel = (type: string) => {
               </div>
 
               <div class="flex items-center gap-3 p-4 rounded-lg border border-dark-600 bg-dark-700/30">
-                <div class="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
-                  <Banknote class="w-4 h-4 text-green-400" />
+                <div class="w-8 h-8 rounded-full border border-dark-600 bg-dark-700/70 flex items-center justify-center">
+                  <Banknote class="w-4 h-4 text-gray-300" />
                 </div>
                 <div class="space-y-1">
                   <div class="text-sm font-medium text-gray-300">{{ $t('pages.wallet.fastWithdrawal') }}</div>
@@ -389,8 +389,8 @@ const typeLabel = (type: string) => {
         <div class="relative w-full max-w-md border border-dark-600 rounded-2xl bg-dark-800/95 backdrop-blur-sm p-6 space-y-6">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                <ArrowDownToLine class="w-5 h-5 text-white" />
+              <div class="w-10 h-10 rounded-full border border-dark-500 bg-dark-700/70 flex items-center justify-center">
+                <ArrowDownToLine class="w-5 h-5 text-gray-200" />
               </div>
               <h3 class="text-xl font-bold text-white">{{ $t('pages.wallet.deposit') }}</h3>
             </div>
@@ -452,8 +452,8 @@ const typeLabel = (type: string) => {
         <div class="relative w-full max-w-md border border-dark-600 rounded-2xl bg-dark-800/95 backdrop-blur-sm p-6 space-y-6">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center">
-                <ArrowUpFromLine class="w-5 h-5 text-white" />
+              <div class="w-10 h-10 rounded-full border border-dark-500 bg-dark-700/70 flex items-center justify-center">
+                <ArrowUpFromLine class="w-5 h-5 text-gray-200" />
               </div>
               <h3 class="text-xl font-bold text-white">{{ $t('pages.wallet.withdraw') }}</h3>
             </div>

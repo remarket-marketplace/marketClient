@@ -49,6 +49,10 @@ const confirmAction = ref<() => Promise<void>>(() => Promise.resolve())
 const confirmTitle = ref('')
 const confirmMessage = ref('')
 const isActionLoading = ref(false)
+const showStatusModal = ref(false)
+const dealToUpdateStatus = ref<Deal | null>(null)
+const selectedDealStatus = ref<string>('pending')
+const isStatusUpdating = ref(false)
 const showReasonField = ref(false)
 const disputeReason = ref('')
 const reasonError = ref('')
@@ -123,6 +127,15 @@ const displayTotal = computed(() => {
   }
   return totalCount.value || deals.value.length
 })
+
+const dealStatusOptions = computed(() => ([
+  { value: 'pending', label: t('common.dealStatuses.pending') },
+  { value: 'confirmed', label: t('common.dealStatuses.confirmed') },
+  { value: 'disputed', label: t('common.dealStatuses.disputed') },
+  { value: 'completed', label: t('common.dealStatuses.completed') },
+  { value: 'cancelled', label: t('common.dealStatuses.cancelled') },
+  { value: 'refunded', label: t('common.dealStatuses.refunded') },
+]))
 
 // ===== Пагинация =====
 async function loadDeals(reset = false) {
@@ -225,6 +238,40 @@ async function cancelDeal(dealId: string) {
   } catch (error) {
     console.error(error)
   } finally {
+    processingDealId.value = null
+  }
+}
+
+function openDealStatusModal(deal: Deal) {
+  dealToUpdateStatus.value = deal
+  selectedDealStatus.value = deal.status
+  showStatusModal.value = true
+}
+
+function closeDealStatusModal() {
+  showStatusModal.value = false
+  dealToUpdateStatus.value = null
+}
+
+async function confirmDealStatusUpdate() {
+  if (!dealToUpdateStatus.value) return
+
+  processingDealId.value = dealToUpdateStatus.value.id
+  isStatusUpdating.value = true
+
+  try {
+    const res = await adminService.updateDealStatus(
+      dealToUpdateStatus.value.id,
+      selectedDealStatus.value
+    )
+    if (res) {
+      await loadDeals(true)
+      closeDealStatusModal()
+    }
+  } catch (error) {
+    console.error('Ошибка при обновлении статуса сделки:', error)
+  } finally {
+    isStatusUpdating.value = false
     processingDealId.value = null
   }
 }
@@ -478,6 +525,14 @@ watch([searchQuery, sortBy, statusFilter], () => {
 
             <!-- Кнопки управления -->
             <div class="flex flex-col sm:flex-row sm:flex-wrap gap-2 pt-2 border-t border-dark-700">
+              <button
+                @click="openDealStatusModal(deal)"
+                :disabled="processingDealId === deal.id"
+                class="admin-btn admin-btn-ghost flex-1 sm:flex-none min-w-[140px]"
+              >
+                <span>{{ $t('common.status') }}</span>
+              </button>
+
               <template v-if="deal.status === 'pending'">
                 <button @click="confirmDeal(deal.id)" :disabled="processingDealId === deal.id"
                   class="admin-btn admin-btn-success flex-1 sm:flex-none min-w-[140px]">
@@ -568,6 +623,25 @@ watch([searchQuery, sortBy, statusFilter], () => {
           {{ reasonError }}
         </p>
       </div>
+    </template>
+  </ConfirmWindow>
+
+  <ConfirmWindow
+    :is-open="showStatusModal"
+    :title="$t('common.status')"
+    :message="$t('common.edit')"
+    :confirm-text="$t('common.save')"
+    :cancel-text="$t('common.cancel')"
+    :is-loading="isStatusUpdating"
+    @confirm="confirmDealStatusUpdate"
+    @cancel="closeDealStatusModal"
+  >
+    <template #body>
+      <CustomSelect
+        v-model="selectedDealStatus"
+        :options="dealStatusOptions"
+        :placeholder="$t('common.filters.status')"
+      />
     </template>
   </ConfirmWindow>
 </template>

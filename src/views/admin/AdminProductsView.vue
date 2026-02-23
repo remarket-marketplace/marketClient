@@ -11,7 +11,8 @@ import {
   Package,
   Search,
   ThumbsUp,
-  ThumbsDown
+  ThumbsDown,
+  Edit
 } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 import ProductStatusTag from '@/components/ProductStatusTag.vue';
@@ -39,6 +40,13 @@ const selectedRejectReasonCode = ref('invalidDescription');
 const customRejectReason = ref('');
 const rejectReasonError = ref('');
 const isRejecting = ref(false);
+const confirmStatusWindowOpen = ref(false);
+const productToUpdateStatus = ref<Product | null>(null);
+const selectedProductStatus = ref<string>('active');
+const selectedStatusReasonCode = ref('invalidDescription');
+const customStatusReason = ref('');
+const statusUpdateError = ref('');
+const isUpdatingStatus = ref(false);
 let observer: IntersectionObserver | null = null;
 
 async function loadProducts() {
@@ -225,6 +233,82 @@ const rejectReasonOptions = computed(() => [
   { value: 'otherReason', label: t('common.productRejectReasons.otherReason') },
 ]);
 
+const productStatusOptions = computed(() => ([
+  { value: 'active', label: t('common.productStatuses.active') },
+  { value: 'moderation', label: t('common.productStatuses.moderation') },
+  { value: 'rejected', label: t('common.productStatuses.rejected') },
+  { value: 'purchased', label: t('common.productStatuses.purchased') },
+  { value: 'completed', label: t('common.productStatuses.completed') },
+  { value: 'cancelled', label: t('common.productStatuses.cancelled') },
+  { value: 'disputed', label: t('common.productStatuses.disputed') },
+  { value: 'deleted', label: t('common.productStatuses.deleted') },
+]));
+
+function openStatusConfirm(product: Product) {
+  productToUpdateStatus.value = product;
+  selectedProductStatus.value = product.status;
+  selectedStatusReasonCode.value = 'invalidDescription';
+  customStatusReason.value = '';
+  statusUpdateError.value = '';
+  confirmStatusWindowOpen.value = true;
+}
+
+function cancelStatusUpdate() {
+  confirmStatusWindowOpen.value = false;
+  productToUpdateStatus.value = null;
+  customStatusReason.value = '';
+  statusUpdateError.value = '';
+}
+
+async function confirmStatusUpdate() {
+  if (!productToUpdateStatus.value) return;
+
+  statusUpdateError.value = '';
+  let reasonCode: string | null = null;
+  let reasonText: string | null = null;
+
+  if (selectedProductStatus.value === 'rejected') {
+    reasonCode = selectedStatusReasonCode.value;
+    if (!reasonCode) {
+      statusUpdateError.value = t('pages.admin.productsPage.rejectReasonRequired');
+      return;
+    }
+
+    if (reasonCode === 'otherReason') {
+      const customReason = customStatusReason.value.trim();
+      if (customReason.length < 5) {
+        statusUpdateError.value = t('pages.admin.productsPage.customRejectReasonRequired');
+        return;
+      }
+      reasonText = customReason;
+    }
+  }
+
+  processingProductId.value = productToUpdateStatus.value.id;
+  isUpdatingStatus.value = true;
+
+  try {
+    const ok = await adminService.updateProductStatus(
+      productToUpdateStatus.value.id,
+      selectedProductStatus.value,
+      reasonCode,
+      reasonText,
+    );
+    if (ok) {
+      await loadProducts();
+      confirmStatusWindowOpen.value = false;
+      productToUpdateStatus.value = null;
+      customStatusReason.value = '';
+      statusUpdateError.value = '';
+    }
+  } catch (error) {
+    console.error('Error updating product status:', error);
+  } finally {
+    processingProductId.value = null;
+    isUpdatingStatus.value = false;
+  }
+}
+
 function loadMoreProducts() {
   if (visibleCount.value >= sortedProducts.value.length) return;
   visibleCount.value = Math.min(visibleCount.value + pageSize, sortedProducts.value.length);
@@ -371,8 +455,7 @@ watch(sortedProducts, () => {
               </div>
 
               <div class="hidden lg:flex h-[max-content]">
-                <!-- Кнопки модерации (только для товаров на модерации) -->
-                <div v-if="product.status === 'moderation'" class="flex gap-2">
+                <div class="flex gap-2">
                   <button
                     @click="navigateToProduct(product.id)"
                     class="admin-btn admin-btn-primary px-4 py-3 text-xs"
@@ -380,6 +463,16 @@ watch(sortedProducts, () => {
                     <Search class="w-4 h-4" />
                     <span>{{ $t('common.view') }}</span>
                   </button>
+                  <button
+                    @click="openStatusConfirm(product)"
+                    :disabled="processingProductId === product.id"
+                    class="admin-btn admin-btn-ghost px-4 py-3 text-xs"
+                  >
+                    <Edit class="w-4 h-4" />
+                    <span>{{ $t('common.status') }}</span>
+                  </button>
+
+                  <template v-if="product.status === 'moderation'">
                   <button
                     @click="approveProduct(product.id)"
                     :disabled="processingProductId === product.id"
@@ -397,6 +490,7 @@ watch(sortedProducts, () => {
                     <ThumbsDown class="w-4 h-4" />
                     <span>{{ $t('common.reject') }}</span>
                   </button>
+                  </template>
                 </div>
               </div>
             </div>
@@ -415,6 +509,15 @@ watch(sortedProducts, () => {
               >
                 <Search class="w-3 h-3" />
                 <span>{{ $t('common.view') }}</span>
+              </button>
+
+              <button
+                @click="openStatusConfirm(product)"
+                :disabled="processingProductId === product.id"
+                class="admin-btn admin-btn-ghost admin-btn-xs justify-center flex-1"
+              >
+                <Edit class="w-3 h-3" />
+                <span>{{ $t('common.status') }}</span>
               </button>
 
               <!-- Кнопки модерации (только для товаров на модерации) -->
@@ -494,6 +597,44 @@ watch(sortedProducts, () => {
           </div>
           <p v-if="rejectReasonError" class="text-red-400 text-sm">
             {{ rejectReasonError }}
+          </p>
+        </div>
+      </template>
+    </ConfirmWindow>
+
+    <ConfirmWindow
+      :is-open="confirmStatusWindowOpen"
+      :title="$t('common.status')"
+      :message="$t('common.edit')"
+      :confirm-text="$t('common.save')"
+      :cancel-text="$t('common.cancel')"
+      :is-loading="isUpdatingStatus"
+      @confirm="confirmStatusUpdate"
+      @cancel="cancelStatusUpdate"
+    >
+      <template #body>
+        <div class="space-y-3">
+          <CustomSelect
+            v-model="selectedProductStatus"
+            :options="productStatusOptions"
+            :placeholder="$t('common.filters.status')"
+          />
+          <template v-if="selectedProductStatus === 'rejected'">
+            <CustomSelect
+              v-model="selectedStatusReasonCode"
+              :options="rejectReasonOptions"
+              :placeholder="$t('pages.admin.productsPage.selectRejectReason')"
+            />
+            <div v-if="selectedStatusReasonCode === 'otherReason'" class="space-y-2">
+              <textarea
+                v-model="customStatusReason"
+                class="w-full rounded-lg bg-dark-900 border border-dark-700 text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[110px]"
+                :placeholder="$t('pages.admin.productsPage.customRejectReasonPlaceholder')"
+              />
+            </div>
+          </template>
+          <p v-if="statusUpdateError" class="text-red-400 text-sm">
+            {{ statusUpdateError }}
           </p>
         </div>
       </template>

@@ -123,6 +123,28 @@ export const adminService = {
     }
   },
 
+  async updateProductStatus(
+    productId: string,
+    status: string,
+    reasonCode?: string | null,
+    reasonText?: string | null,
+  ) {
+    try {
+      const response = await httpClient.patch("/admin/products/status", {
+        product_id: productId,
+        status,
+        reason_code: reasonCode ?? null,
+        reason_text: reasonText ?? null,
+      });
+      return response.status === 200;
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error(e.issues);
+      }
+      return false;
+    }
+  },
+
   async getAllUsers() {
     try {
       const response = await httpClient.get("/admin/users");
@@ -291,6 +313,18 @@ export const adminService = {
         deal_id: dealId,
         resolve_favor: inFavorOf,
         reason,
+      });
+      return DealSchema.parse(response.data);
+    } catch (e) {
+      return false;
+    }
+  },
+
+  async updateDealStatus(dealId: string, status: string): Promise<Deal | false> {
+    try {
+      const response = await httpClient.patch("/admin/deals/status", {
+        deal_id: dealId,
+        status,
       });
       return DealSchema.parse(response.data);
     } catch (e) {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { adminService } from '@/api/admin/AdminService';
 import type { UserRead } from '@/validation/user/userRead';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import ErrorBanner from '@/components/ErrorBanner.vue';
@@ -36,6 +36,7 @@ const avatarFiles = ref<File[]>([]);
 const balance = ref('');
 const rating = ref('');
 const isBanned = ref(false);
+const isActive = ref(true);
 const role = ref<'user' | 'admin' | 'partner'>('user');
 const hasFrozenBalance = ref(false);
 
@@ -76,6 +77,7 @@ async function loadUser() {
       balance.value = userData.balance.toString();
       rating.value = userData.rating.toString();
       isBanned.value = userData.is_banned;
+      isActive.value = userData.is_active;
       role.value = userData.role;
       hasFrozenBalance.value = userData.has_frozen_balance;
     }
@@ -118,6 +120,7 @@ async function saveUser() {
       balance: balanceValue,
       rating: ratingValue,
       is_banned: isBanned.value,
+      is_active: isActive.value,
       role: role.value,
       has_frozen_balance: hasFrozenBalance.value,
     };
@@ -178,6 +181,18 @@ function cancelAvatarDelete() {
 
 onMounted(() => {
   loadUser();
+});
+
+watch(isBanned, (value) => {
+  if (value) {
+    isActive.value = false;
+  }
+});
+
+watch(isActive, (value) => {
+  if (value && isBanned.value) {
+    isBanned.value = false;
+  }
 });
 </script>
 
@@ -306,6 +321,12 @@ onMounted(() => {
                 <Checkbox v-model="isBanned" />
                 <span class="ml-2 text-sm text-mainText">
                   {{ $t('common.banned') }}
+                </span>
+              </label>
+              <label class="flex items-center">
+                <Checkbox v-model="isActive" />
+                <span class="ml-2 text-sm text-mainText">
+                  {{ $t('common.isActive') }}
                 </span>
               </label>
               <label class="flex items-center">

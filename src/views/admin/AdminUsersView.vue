@@ -440,7 +440,7 @@ watch(sortedUsers, () => {
               </button>
               
               <button
-                v-if="!user.is_banned && user.role != 'admin'"
+                v-if="!user.is_banned"
                 @click="showBanConfirm(user.id)"
                 class="admin-btn admin-btn-danger admin-btn-xs sm:px-3 sm:py-2 sm:text-sm flex-1 sm:flex-none justify-center"
               >
@@ -449,7 +449,7 @@ watch(sortedUsers, () => {
               </button>
 
               <button
-                v-if="user.is_banned && user.role != 'admin'"
+                v-if="user.is_banned"
                 @click="showUnbanConfirm(user.id)"
                 class="admin-btn admin-btn-success admin-btn-xs sm:px-3 sm:py-2 sm:text-sm flex-1 sm:flex-none justify-center"
               >

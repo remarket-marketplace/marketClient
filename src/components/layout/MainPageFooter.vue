@@ -14,9 +14,6 @@
       <div class="flex flex-col lg:flex-row justify-between items-start gap-10 mb-12">
         <div class="flex-1 max-w-lg">
           <div class="flex items-center gap-3 mb-6">
-            <div class="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center">
-              <span class="text-white font-bold text-xl">RM</span>
-            </div>
             <span class="text-2xl font-bold text-white">remarket</span>
           </div>
           <p class="text-gray-400 text-lg leading-relaxed font-light max-w-md">

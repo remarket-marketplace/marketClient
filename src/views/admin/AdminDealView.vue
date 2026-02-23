@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
@@ -25,6 +25,7 @@ import UserRating from '@/components/UserRating.vue'
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
+import CustomSelect from '@/components/CustomSelect.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -44,8 +45,19 @@ const confirmMessage = ref('')
 const showReasonField = ref(false)
 const disputeReason = ref('')
 const reasonError = ref('')
+const selectedForcedStatus = ref<string>('pending')
+const isForcedStatusUpdating = ref(false)
 
 const API_HOST = import.meta.env.VITE_API_HOST || ''
+
+const dealStatusOptions = computed(() => ([
+  { value: 'pending', label: t('common.dealStatuses.pending') },
+  { value: 'confirmed', label: t('common.dealStatuses.confirmed') },
+  { value: 'disputed', label: t('common.dealStatuses.disputed') },
+  { value: 'completed', label: t('common.dealStatuses.completed') },
+  { value: 'cancelled', label: t('common.dealStatuses.cancelled') },
+  { value: 'refunded', label: t('common.dealStatuses.refunded') },
+]))
 
 // Форматирование
 function formatPrice(price: number) {
@@ -100,6 +112,7 @@ async function loadDeal() {
 
     if (response) {
       deal.value = response
+      selectedForcedStatus.value = response.status
     } else {
       errorMessage.value = t('common.notFound')
     }
@@ -230,6 +243,42 @@ async function resolveDispute(inFavorOf: 'buyer' | 'seller') {
       isActionLoading.value = false
     }
   }, { showReason: true })
+}
+
+function forceUpdateDealStatus() {
+  if (!deal.value) return
+
+  const statusLabel = t(`common.dealStatuses.${selectedForcedStatus.value}`)
+
+  showConfirmDialog(
+    t('common.status'),
+    `${t('common.status')}: ${statusLabel}`,
+    async () => {
+      isActionLoading.value = true
+      isForcedStatusUpdating.value = true
+      actionError.value = ''
+      actionSuccess.value = ''
+      try {
+        const res = await adminService.updateDealStatus(
+          deal.value!.id,
+          selectedForcedStatus.value
+        )
+        if (!res) {
+          actionError.value = t('errors.SERVER_ERROR')
+          return
+        }
+        actionSuccess.value = t('common.saved')
+        await loadDeal()
+        showConfirmModal.value = false
+      } catch (error) {
+        console.error(error)
+        actionError.value = t('errors.SERVER_ERROR')
+      } finally {
+        isActionLoading.value = false
+        isForcedStatusUpdating.value = false
+      }
+    }
+  )
 }
 
 // Инициализация
@@ -525,6 +574,21 @@ onMounted(async () => {
 
               <!-- Actions based on deal status -->
               <div class="space-y-3">
+                <div class="space-y-2 pb-2 border-b border-dark-700">
+                  <CustomSelect
+                    v-model="selectedForcedStatus"
+                    :options="dealStatusOptions"
+                    :placeholder="$t('common.filters.status')"
+                  />
+                  <button
+                    @click="forceUpdateDealStatus"
+                    :disabled="isActionLoading || isForcedStatusUpdating"
+                    class="admin-btn admin-btn-ghost w-full py-3"
+                  >
+                    <span>{{ $t('common.save') }}</span>
+                  </button>
+                </div>
+
                 <!-- Pending deals -->
                 <template v-if="deal.status === 'pending'">
                   <button @click="confirmDealAction" :disabled="isActionLoading"

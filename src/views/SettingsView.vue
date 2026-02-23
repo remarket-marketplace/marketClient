@@ -99,8 +99,8 @@ async function changePassword() {
             <!-- Settings menu -->
             <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-4 space-y-4">
               <div class="flex items-center gap-3 p-3 rounded-lg bg-blue-600/20 border border-blue-500/30">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                  <Shield class="w-5 h-5 text-white" />
+                <div class="w-8 h-8 rounded-full bg-dark-700 flex items-center justify-center">
+                  <Shield class="w-4 h-4 text-gray-400" />
                 </div>
                 <div>
                   <h3 class="font-semibold text-white">{{ $t('pages.settingsPage.security') }}</h3>
@@ -158,14 +158,9 @@ async function changePassword() {
         <div class="px-4 lg:px-0 lg:pb-6 space-y-6">
           <!-- Security section -->
           <div class="space-y-6">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                <Key class="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h2 class="text-xl font-bold text-white">{{ $t('pages.settingsPage.changePassword') }}</h2>
-                <p class="text-sm text-gray-400">{{ $t('pages.settingsPage.changePasswordHint') }}</p>
-              </div>
+            <div>
+              <h2 class="text-xl font-bold text-white">{{ $t('pages.settingsPage.changePassword') }}</h2>
+              <p class="text-sm text-gray-400">{{ $t('pages.settingsPage.changePasswordHint') }}</p>
             </div>
 
             <!-- Password change form -->
