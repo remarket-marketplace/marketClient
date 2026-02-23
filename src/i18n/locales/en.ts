@@ -305,6 +305,7 @@ const en = {
       categories: "Categories",
       chats: "Chats",
       feedback: "Feedback",
+      activityLogs: "Logs",
       backToSite: "Back to site",
     },
     button: {
@@ -829,6 +830,38 @@ const en = {
 
       supportChats: {
         supportChats: "Support Chats",
+      },
+
+      activityLogs: {
+        title: "Activity logs",
+        subtitle: "User audit trail: what happened, when it happened, and in which context.",
+        searchByUsername: "Search by username...",
+        actionType: "Action type",
+        ipAddress: "IP address",
+        countryCode: "Country code",
+        country: "Country",
+        openProduct: "Open product",
+        openDeal: "Open deal",
+        openChat: "Open chat",
+        empty: "No logs found yet",
+        loadError: "Failed to load activity logs",
+        actions: {
+          product_created: "Product created",
+          product_viewed: "Product viewed",
+          product_updated: "Product edited",
+          product_deleted: "Product deleted",
+          product_purchased: "Product purchased",
+          chat_message_sent: "Chat message sent",
+          deal_receipt_confirmed: "Receipt confirmed",
+          deal_report_submitted: "Dispute report submitted",
+          wallet_top_up_requested: "Top-up requested",
+          wallet_top_up_confirmed: "Top-up confirmed",
+          wallet_top_up_canceled: "Top-up canceled",
+          feedback_submitted: "Feedback submitted",
+          profile_description_updated: "Profile description updated",
+          password_changed: "Password changed",
+          username_changed: "Username changed",
+        },
       },
 
       feedbackPage: {

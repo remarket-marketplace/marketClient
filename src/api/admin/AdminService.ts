@@ -8,6 +8,11 @@ import {
   AdminFeedbackSchema,
   type AdminFeedback,
 } from "@/validation/feedback/adminFeedback";
+import {
+  AuditActionTypesSchema,
+  AuditLogsListSchema,
+  type AuditLog,
+} from "@/validation/audit/activityLog";
 
 export type DashboardStatusBreakdown = { status: string; count: number }
 export type DashboardSeriesPoint = { date: string; value: number }
@@ -43,6 +48,15 @@ export type FortnitePartnerStats = {
   average_deal_amount: number
   sold_share_percent: number
   deals_by_status: DashboardStatusBreakdown[]
+}
+
+export type ActivityLogFilters = {
+  username?: string
+  action_type?: string
+  ip_address?: string
+  country_code?: string
+  date_from?: string
+  date_to?: string
 }
 
 export const adminService = {
@@ -467,6 +481,66 @@ export const adminService = {
     } catch (e) {
       console.error('Error fetching chat participants', e)
       return null
+    }
+  },
+
+  async getActivityLogs(
+    page = 1,
+    perPage = 30,
+    filters: ActivityLogFilters = {},
+  ): Promise<{
+    logs: AuditLog[]
+    currentPage: number
+    totalPages: number
+    total: number
+  }> {
+    try {
+      const params: Record<string, string | number> = {
+        page,
+        per_page: perPage,
+      }
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && String(value).trim() !== "") {
+          params[key] = String(value).trim()
+        }
+      })
+
+      const response = await httpClient.get("/admin/activity-logs", { params })
+      const parsed = AuditLogsListSchema.parse(response.data)
+      return {
+        logs: parsed.logs,
+        currentPage: page,
+        totalPages: parsed.total_pages,
+        total: parsed.total,
+      }
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error("Activity logs validation error:", e.issues)
+      } else {
+        console.error("Error fetching activity logs:", e)
+      }
+      return {
+        logs: [],
+        currentPage: 1,
+        totalPages: 1,
+        total: 0,
+      }
+    }
+  },
+
+  async getActivityLogActionTypes(): Promise<string[]> {
+    try {
+      const response = await httpClient.get("/admin/activity-logs/action-types")
+      const parsed = AuditActionTypesSchema.parse(response.data)
+      return parsed.action_types
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error("Activity action types validation error:", e.issues)
+      } else {
+        console.error("Error fetching activity action types:", e)
+      }
+      return []
     }
   },
 

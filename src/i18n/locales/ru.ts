@@ -307,6 +307,7 @@ const ru = {
       categories: "Категории",
       chats: "Чаты",
       feedback: "Обращения",
+      activityLogs: "Логи",
       backToSite: "Вернуться на сайт",
     },
     button: {
@@ -828,6 +829,38 @@ const ru = {
 
       supportChats: {
         supportChats: "Чаты поддержки",
+      },
+
+      activityLogs: {
+        title: "Логи активности",
+        subtitle: "Аудит действий пользователей: что, когда и в каком контексте происходило.",
+        searchByUsername: "Поиск по нику пользователя...",
+        actionType: "Тип действия",
+        ipAddress: "IP адрес",
+        countryCode: "Код страны",
+        country: "Страна",
+        openProduct: "Открыть товар",
+        openDeal: "Открыть сделку",
+        openChat: "Открыть чат",
+        empty: "Логи пока не найдены",
+        loadError: "Не удалось загрузить логи",
+        actions: {
+          product_created: "Создание товара",
+          product_viewed: "Просмотр товара",
+          product_updated: "Редактирование товара",
+          product_deleted: "Удаление товара",
+          product_purchased: "Покупка товара",
+          chat_message_sent: "Сообщение в чате",
+          deal_receipt_confirmed: "Подтверждение получения",
+          deal_report_submitted: "Отправка жалобы",
+          wallet_top_up_requested: "Запрос на пополнение",
+          wallet_top_up_confirmed: "Пополнение подтверждено",
+          wallet_top_up_canceled: "Пополнение отменено",
+          feedback_submitted: "Отправка обращения",
+          profile_description_updated: "Изменение описания профиля",
+          password_changed: "Смена пароля",
+          username_changed: "Смена ника",
+        },
       },
 
       feedbackPage: {

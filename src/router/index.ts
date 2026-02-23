@@ -29,6 +29,7 @@ import AdminChatsView from "@/views/admin/AdminChatsView.vue";
 import FeedbackView from "@/views/FeedbackView.vue";
 import AdminFeedbacksView from "@/views/admin/AdminFeedbacksView.vue";
 import AdminFeedbackView from "@/views/admin/AdminFeedbackView.vue";
+import AdminActivityLogsView from "@/views/admin/AdminActivityLogsView.vue";
 import BecomeSellerView from "@/views/BecomeSellerView.vue";
 import AboutView from "@/views/AboutView.vue";
 import PartnerFortniteStatsView from "@/views/partner/PartnerFortniteStatsView.vue";
@@ -165,6 +166,12 @@ const routes = [
       path: "/admin/feedback/:feedbackId",
       name: "admin feedback",
       component: AdminFeedbackView,
+      meta: { requiredAdmin: true },
+    },
+    {
+      path: "/admin/activity-logs",
+      name: "admin activity logs",
+      component: AdminActivityLogsView,
       meta: { requiredAdmin: true },
     },
     {

@@ -6,7 +6,8 @@ import {
   ShoppingCart,
   Folder,
   MessageCircle,
-  MessageSquareText
+  MessageSquareText,
+  History
 } from 'lucide-vue-next'
 
 import { computed, onMounted, onUnmounted, ref } from 'vue'
@@ -77,6 +78,12 @@ const navItems = computed(() => [
     to: '/admin/feedback',
   },
   {
+    id: 'activity-logs',
+    title: t('navigation.admin.activityLogs'),
+    icon: History,
+    to: '/admin/activity-logs',
+  },
+  {
     id: 'products',
     title: t('navigation.admin.products'),
     icon: Package,
@@ -121,23 +128,29 @@ const navItems = computed(() => [
           </div>
         </div>
 
-        <div class="flex gap-6">
-          <nav class="hidden items-center gap-6 md:flex">
-            <router-link v-for="item in navItems" :key="item.id" :to="item.to"
-              class="flex items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"
-              :class="{
-                'text-white': isActiveRoute(item),
-                'text-gray-400': !isActiveRoute(item)
-              }">
-              <component :is="item.icon" class="text-xl transition-colors duration-300 group-hover:text-white"
-                :class="isActiveRoute(item) ? 'text-white' : 'text-gray-400'" :size="20" stroke-width="1.5" />
-              <span class="ml-1 transition-colors duration-300 group-hover:text-white">
-                {{ item.title }}
-              </span>
-            </router-link>
-          </nav>
+        <div class="flex min-w-0 flex-1 items-center justify-end gap-3 sm:gap-4">
+          <div class="hidden min-w-0 flex-1 md:block">
+            <div class="w-full overflow-x-auto no-scrollbar">
+              <nav class="ml-auto flex min-w-full w-max items-center justify-end gap-6 pr-1">
+                <router-link v-for="item in navItems" :key="item.id" :to="item.to"
+                  class="flex shrink-0 items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"
+                  :class="{
+                    'text-white': isActiveRoute(item),
+                    'text-gray-400': !isActiveRoute(item)
+                  }">
+                  <component :is="item.icon" class="text-xl transition-colors duration-300 group-hover:text-white"
+                    :class="isActiveRoute(item) ? 'text-white' : 'text-gray-400'" :size="20" stroke-width="1.5" />
+                  <span class="ml-1 transition-colors duration-300 group-hover:text-white whitespace-nowrap">
+                    {{ item.title }}
+                  </span>
+                </router-link>
+              </nav>
+            </div>
+          </div>
 
-          <SelectLanguage />
+          <div class="shrink-0">
+            <SelectLanguage />
+          </div>
         </div>
       </div>
     </header>
