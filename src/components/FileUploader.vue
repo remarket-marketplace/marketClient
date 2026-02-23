@@ -138,7 +138,7 @@ function clearAll() {
       :class="[
         isSingleFileMode 
           ? 'grid-cols-1 max-w-xs mx-auto' 
-          : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
+          : 'file-uploader-grid'
       ]"
       @dragover="isSingleFileMode ? handleDragOver : null"
       @dragleave="isSingleFileMode ? handleDragLeave : null"
@@ -198,7 +198,7 @@ function clearAll() {
         <button
           type="button"
           @click="fileInput?.click()"
-          class="w-full h-full flex flex-col items-center justify-center rounded-lg border-2 border-dashed transition-all duration-200 p-6"
+          class="w-full h-full flex flex-col items-center justify-center rounded-lg border-2 border-dashed transition-all duration-200 p-3 sm:p-4"
           :class="[
             isDragging 
               ? 'border-blue-500 bg-blue-500/10' 
@@ -208,18 +208,18 @@ function clearAll() {
           :title="$t('components.fileUploader.upload')"
         >
           <!-- Иконка -->
-          <div class="mb-3">
-            <div class="w-12 h-12 rounded-full bg-dark-700 flex items-center justify-center">
+          <div class="mb-2 sm:mb-3">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-dark-700 flex items-center justify-center">
               <Upload 
-                class="w-6 h-6" 
+                class="w-5 h-5 sm:w-6 sm:h-6" 
                 :class="isDragging ? 'text-blue-400' : 'text-gray-400'" 
               />
             </div>
           </div>
           
           <!-- Текст -->
-          <div class="text-center">
-            <span class="text-sm font-medium block" :class="isDragging ? 'text-blue-400' : 'text-gray-400'">
+          <div class="text-center leading-tight">
+            <span class="text-xs sm:text-sm font-medium block break-words" :class="isDragging ? 'text-blue-400' : 'text-gray-400'">
               {{ $t('components.fileUploader.addPhoto') }}
             </span>
             <span v-if="isSingleFileMode" class="text-xs text-gray-500 mt-1 block">
@@ -282,5 +282,10 @@ img {
 /* Специальные стили для режима одного файла */
 .single-file-mode .grid {
   max-width: 100%;
+}
+
+/* Adaptive grid for multi-image mode: keeps cards readable in narrow columns. */
+.file-uploader-grid {
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
 }
 </style>

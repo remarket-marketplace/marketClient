@@ -455,7 +455,7 @@ onUnmounted(() => {
       :cancel-text="$t('pages.product.buyConfirm.cancel')" @confirm="handleBuyConfirm" @cancel="closeBuyConfirm" />
   </section>
 
-  <div v-else class="w-full h-full flex items-center justify-center">
+  <div v-else class="w-full min-h-[calc(100dvh-3.5rem)] flex items-center justify-center">
     <Loader />
   </div>
 </template>

@@ -463,17 +463,22 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
             </div>
 
             <!-- Balance (for owner) -->
-            <div v-if="isOwner && 'balance' in currentProfileData"
-              class="rounded-lg bg-gradient-to-r from-blue-900/30 to-cyan-900/20 border border-blue-800/30 p-4">
-              <div class="flex items-center justify-between">
-                <div class="space-y-1">
-                  <div class="text-sm text-blue-300 font-medium">{{ t('common.balance') }}</div>
-                  <div class="text-2xl font-bold text-green-400">{{ (currentProfileData as UserRead).balance.toFixed(2)
-                    }}₽</div>
+            <div
+              v-if="isOwner && 'balance' in currentProfileData"
+              class="relative overflow-hidden rounded-xl border border-blue-800/35 bg-[linear-gradient(120deg,rgba(30,58,138,0.28)_0%,rgba(15,23,42,0.72)_55%,rgba(8,145,178,0.22)_100%)] p-4"
+            >
+              <div class="flex items-center justify-between gap-3">
+                <div class="space-y-1.5">
+                  <div class="text-xs font-medium uppercase tracking-[0.08em] text-blue-200/80">{{ t('common.balance') }}</div>
+                  <div class="text-2xl font-semibold leading-none tracking-tight tabular-nums text-gray-100">
+                    {{ (currentProfileData as UserRead).balance.toFixed(2) }}₽
+                  </div>
                 </div>
-                <button @click="goToWallet"
-                  class="w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 transition-colors">
-                  <Wallet class="w-5 h-5 text-white" />
+                <button
+                  @click="goToWallet"
+                  class="h-10 w-10 flex items-center justify-center rounded-lg border border-blue-400/30 bg-blue-500/20 hover:bg-blue-500/30 transition-colors"
+                >
+                  <Wallet class="w-5 h-5 text-blue-100" />
                 </button>
               </div>
             </div>

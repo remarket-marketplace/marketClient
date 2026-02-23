@@ -154,7 +154,7 @@ const navItems = computed(() => {
 <template>
     <div class="min-h-screen w-screen flex flex-col bg-background text-mainText">
         <header
-            class="fixed top-0 left-0 right-0 z-50 border-b border-dark-700 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            class="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div class="mx-auto h-14 w-full flex items-center justify-between px-2 lg:px-4 2xl:w-1/2">
                 <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold title"
                     @click="router.push('/')">
@@ -192,6 +192,10 @@ const navItems = computed(() => {
                     <SelectLanguage />
                 </div>
             </div>
+            <div
+                aria-hidden="true"
+                class="pointer-events-none absolute bottom-0 left-1/2 h-px w-full -translate-x-1/2 bg-gradient-to-r from-dark-700/25 via-dark-700/95 to-dark-700/25 2xl:w-1/2"
+            />
         </header>
 
         <main class="flex-1 pt-14 overflow-y-auto">
