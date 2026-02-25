@@ -1,21 +1,30 @@
 <script setup lang="ts">
-import { adminService, type FortnitePartnerStats } from '@/api/admin/AdminService'
+import { adminService, type PartnerGame, type PartnerStats } from '@/api/admin/AdminService'
 import Loader from '@/components/Loader.vue'
 import { computed, onMounted, ref } from 'vue'
+import { formatCurrencyAmount } from '@/utils/currency'
 
+const gameOptions: Array<{ value: PartnerGame; label: string }> = [
+  { value: 'fortnite', label: 'Fortnite' },
+  { value: 'roblox', label: 'Roblox' },
+  { value: 'valorant', label: 'Valorant' },
+]
+
+const selectedGame = ref<PartnerGame>('fortnite')
 const isLoading = ref(true)
 const isError = ref(false)
-const stats = ref<FortnitePartnerStats | null>(null)
+const stats = ref<PartnerStats | null>(null)
+const requestCounter = ref(0)
+
+const currentGameLabel = computed(
+  () => gameOptions.find((game) => game.value === selectedGame.value)?.label ?? 'Fortnite'
+)
 
 const formatNumber = (value: number) =>
   new Intl.NumberFormat('ru-RU').format(Math.round(value || 0))
 
 const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
-    maximumFractionDigits: 0,
-  }).format(value || 0)
+  formatCurrencyAmount(value || 0)
 
 const statusLabels: Record<string, string> = {
   pending: 'В ожидании',
@@ -47,19 +56,31 @@ const metricCards = computed(() => {
   ]
 })
 
-const loadStats = async () => {
+const loadStats = async (game: PartnerGame) => {
+  const requestId = ++requestCounter.value
   isLoading.value = true
   isError.value = false
-  const data = await adminService.getFortnitePartnerStats()
+  stats.value = null
+  const data = await adminService.getPartnerStats(game)
+  if (requestId !== requestCounter.value) return
   if (!data) {
     isError.value = true
+    stats.value = null
   } else {
     stats.value = data
   }
   isLoading.value = false
 }
 
-onMounted(loadStats)
+const selectGame = (game: PartnerGame) => {
+  if (selectedGame.value === game && !isError.value) return
+  selectedGame.value = game
+  void loadStats(game)
+}
+
+onMounted(() => {
+  void loadStats(selectedGame.value)
+})
 </script>
 
 <template>
@@ -69,8 +90,24 @@ onMounted(loadStats)
         <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Partner Dashboard</p>
         <h1 class="text-2xl font-semibold text-white mt-1">Raika checker x Market</h1>
         <p class="text-sm text-gray-400 mt-2">
-          Прозрачная статистика продаж по категории <span class="text-white font-medium">fortnite</span>.
+          Прозрачная статистика продаж по категории
+          <span class="text-white font-medium">{{ stats?.category_name ?? currentGameLabel }}</span>.
         </p>
+
+        <div class="mt-4 flex flex-wrap gap-2">
+          <button
+            v-for="game in gameOptions"
+            :key="game.value"
+            type="button"
+            class="rounded-xl border px-4 py-2 text-sm font-medium transition-colors"
+            :class="selectedGame === game.value
+              ? 'border-cyan-400/70 bg-cyan-500/20 text-cyan-100'
+              : 'border-dark-600 bg-dark-700 text-gray-300 hover:border-dark-500'"
+            @click="selectGame(game.value)"
+          >
+            {{ game.label }}
+          </button>
+        </div>
       </div>
 
       <div v-if="isLoading" class="rounded-2xl border border-dark-700 bg-dark-600 p-10 flex justify-center">

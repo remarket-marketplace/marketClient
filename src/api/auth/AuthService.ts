@@ -64,26 +64,19 @@ export const authService = {
     username: string,
     code: string
   ) {
-    try {
-      chatsService.disconnect();
-      const response = await httpClient.post(
-        "/auth/confirm-verification-code",
-        {
-          email,
-          username,
-          password,
-          email_code: code,
-        }
-      );
-      const userData = UserReadSchema.parse(response.data);
-      await useUserStore().setUser(userData);
-      return true;
-    } catch (e) {
-      if (e instanceof ZodError) {
-        console.error("Ошибка валидации пользователя:", e.issues);
+    chatsService.disconnect();
+    const response = await httpClient.post(
+      "/auth/confirm-verification-code",
+      {
+        email,
+        username,
+        password,
+        email_code: code,
       }
-      return false;
-    }
+    );
+    const userData = UserReadSchema.parse(response.data);
+    await useUserStore().setUser(userData);
+    return userData;
   },
 
   async refreshTokens() {

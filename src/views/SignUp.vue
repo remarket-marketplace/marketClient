@@ -42,13 +42,15 @@ const passwordError = ref('')
 
 function validateUsername() {
   usernameError.value = ''
+  const normalizedUsername = username.value.trim()
+  username.value = normalizedUsername
 
-  if (username.value.length < 3 || username.value.length > 16) {
+  if (normalizedUsername.length < 3 || normalizedUsername.length > 16) {
     usernameError.value = t('pages.auth.signUp.usernameLengthError')
     return false
   }
 
-  if (!/^[A-Za-z0-9_]+$/.test(username.value)) {
+  if (!/^[A-Za-z0-9_]+$/.test(normalizedUsername)) {
     usernameError.value = t('pages.auth.signUp.usernameCharsError')
     return false
   }
@@ -58,9 +60,23 @@ function validateUsername() {
 
 function validateEmail() {
   emailError.value = ''
+  const normalizedEmail = email.value.trim()
+  email.value = normalizedEmail
+
+  if (normalizedEmail.length > 254) {
+    emailError.value = t('pages.auth.signUp.emailLengthError')
+    return false
+  }
+
+  const atIndex = normalizedEmail.indexOf('@')
+  const localPart = atIndex >= 0 ? normalizedEmail.slice(0, atIndex) : ''
+  if (localPart.length > 64) {
+    emailError.value = t('pages.auth.signUp.emailLengthError')
+    return false
+  }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(email.value)) {
+  if (!emailRegex.test(normalizedEmail)) {
     emailError.value = t('pages.auth.signUp.invalidEmail')
     return false
   }
@@ -107,32 +123,53 @@ function validateForm() {
   return isUsernameValid && isEmailValid && isPasswordValid
 }
 
+function normalizeCredentials() {
+  username.value = username.value.trim()
+  email.value = email.value.trim()
+}
+
+function resolveRequestError(error: any): string {
+  const detail = error?.response?.data?.detail
+  if (detail) {
+    return getErrorMessage(detail, t)
+  }
+
+  if (error?.code === 'ECONNABORTED' || error?.code === 'ERR_NETWORK') {
+    return t('errors.NETWORK_ERROR')
+  }
+
+  return t('errors.SERVER_ERROR')
+}
+
 async function sendCode() {
+  if (sended.value) {
+    return
+  }
+
+  if (!captchaToken.value) {
+    errorMessage.value = t('pages.auth.signUp.completeCaptcha')
+    return
+  }
+
+  normalizeCredentials()
+
+  if (!validateForm()) {
+    return
+  }
+
+  if (!(await passwordsEquals())) {
+    return
+  }
+
+  errorMessage.value = ''
+  sended.value = true
+
   try {
-    if (!captchaToken.value) {
-      errorMessage.value = t('pages.auth.signUp.completeCaptcha')
-      return
-    }
-
-    if (!validateForm()) return
-
-    if (await passwordsEquals()) {
-      errorMessage.value = ''
-      sended.value = true
-      try {
-        await authService.sendVerificationCode(email.value, username.value, captchaToken.value)
-        showCodeInput.value = true
-      } catch (error: any) {
-        const detail = error?.response?.data?.detail
-        errorMessage.value = getErrorMessage(detail, t)
-      } finally {
-        sended.value = false
-      }
-    } else {
-      errorMessage.value = t('pages.auth.signUp.passwordsMustEqual')
-    }
-  } catch (e) {
-    errorMessage.value = t('errors.SERVER_ERROR')
+    await authService.sendVerificationCode(email.value, username.value, captchaToken.value)
+    showCodeInput.value = true
+    codeDigits.value = ['', '', '', '', '', '']
+  } catch (error) {
+    errorMessage.value = resolveRequestError(error)
   } finally {
     sended.value = false
   }
@@ -171,23 +208,33 @@ async function passwordsEquals(): Promise<boolean> {
 }
 
 async function completeSignUp() {
-  if (await passwordsEquals()) {
-    const code = codeDigits.value.join('')
-    if (!code || code.length !== 6) {
-      errorMessage.value = t('pages.auth.signUp.invalidCode')
-      return
-    }
-    errorMessage.value = ''
-    sended.value = true
-    const result = await authService.signUp(email.value, password.value, username.value, code)
-    if (result) {
-      showCodeInput.value = false
-      successShown.value = true
-      isWelcomeRedirecting.value = false
-    } else {
-      errorMessage.value = t('pages.auth.signUp.invalidCode')
-    }
+  if (sended.value) {
+    return
+  }
 
+  normalizeCredentials()
+
+  if (!(await passwordsEquals())) {
+    return
+  }
+
+  const code = codeDigits.value.join('')
+  if (!code || code.length !== 6) {
+    errorMessage.value = t('pages.auth.signUp.invalidCode')
+    return
+  }
+
+  errorMessage.value = ''
+  sended.value = true
+
+  try {
+    await authService.signUp(email.value, password.value, username.value, code)
+    showCodeInput.value = false
+    successShown.value = true
+    isWelcomeRedirecting.value = false
+  } catch (error) {
+    errorMessage.value = resolveRequestError(error)
+  } finally {
     sended.value = false
   }
 }
@@ -266,7 +313,7 @@ function handleWelcomeFinished() {
         </h1>
 
         <!-- Форма регистрации -->
-        <form v-if="!showCodeInput" class="space-y-4" @submit.prevent>
+        <form v-if="!showCodeInput" class="space-y-4" novalidate @submit.prevent="sendCode">
           <!-- Username -->
           <div>
             <label for="username" class="mb-1 block text-sm text-text-secondary">{{ $t('common.username') }}</label>
@@ -318,14 +365,14 @@ function handleWelcomeFinished() {
           </div>
           <Captcha @verified="(token: string) => captchaToken = token" />
 
-          <TheButton @click="sendCode" :button-text="sended ? $t('common.sending') : $t('pages.auth.signUp.getCode')"
+          <TheButton :button-text="sended ? $t('common.sending') : $t('pages.auth.signUp.getCode')"
             :sended="sended" class="w-full" />
 
           <ErrorBanner :message="errorMessage" />
         </form>
 
         <!-- Форма ввода кода -->
-        <form v-if="showCodeInput" class="space-y-4">
+        <form v-if="showCodeInput" class="space-y-4" @submit.prevent="completeSignUp">
           <div class="space-y-2">
             <label class="block text-sm text-text-secondary">{{ $t('pages.auth.signUp.enterCode') }}</label>
             <div class="grid grid-cols-6 gap-2">
@@ -340,8 +387,7 @@ function handleWelcomeFinished() {
             <ErrorBanner :message="errorMessage" />
           </div>
 
-          <TheButton @click="completeSignUp" :button-text="$t('pages.auth.signUp.completeRegistration')"
-            :sended="sended" />
+          <TheButton :button-text="$t('pages.auth.signUp.completeRegistration')" :sended="sended" />
         </form>
 
         <p class="text-center text-sm text-text-secondaryDark">

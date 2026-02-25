@@ -36,7 +36,9 @@ export type DashboardData = {
   top_categories: DashboardCategory[]
 }
 
-export type FortnitePartnerStats = {
+export type PartnerGame = "fortnite" | "roblox" | "valorant";
+
+export type PartnerStats = {
   category_slug: string
   category_name: string
   total_accounts: number
@@ -73,10 +75,22 @@ export const adminService = {
     }
   },
 
-  async getFortnitePartnerStats(): Promise<FortnitePartnerStats | null> {
+  async getPartnerStats(game: PartnerGame): Promise<PartnerStats | null> {
+    try {
+      const response = await httpClient.get("/admin/partners/stats", {
+        params: { game },
+      });
+      return response.data as PartnerStats;
+    } catch (e) {
+      console.error("Failed to load partner stats", e);
+      return null;
+    }
+  },
+
+  async getFortnitePartnerStats(): Promise<PartnerStats | null> {
     try {
       const response = await httpClient.get("/admin/partners/fortnite-stats");
-      return response.data as FortnitePartnerStats;
+      return response.data as PartnerStats;
     } catch (e) {
       console.error("Failed to load partner fortnite stats", e);
       return null;

@@ -246,7 +246,10 @@ const ru = {
     EMAIL_VERIFICATION_MAX_COUNT_OF_TRIES_EXCEEDED:
       "Превышено максимальное количество попыток. Макс попыток - {max_tries}",
     INVALID_PASSWORD: "Неверный пароль",
+    VERIFY_CAPTCHA_TOKEN_FAILED: "Не удалось проверить капчу, попробуйте еще раз",
+    NETWORK_ERROR: "Ошибка сети. Проверьте подключение к интернету",
     FILL_ALL_INPUTS: "Заполните все поля",
+    FILL_REQUIRED_FIELDS: "Заполните обязательные поля",
     PASSWORD_SAME_AS_CURRENT: "Нельзя изменить на текущий пароль",
     PRODUCT_UPDATE_ERROR: "Ошибка при обновлении товара",
     PRODUCT_EDIT_PERMISSION_DENIED: "Нет прав для редактирования этого товара",
@@ -461,6 +464,7 @@ const ru = {
         usernameCharsError:
           "Никнейм должен содержать только английские буквы, цифры и символ '_'",
         invalidEmail: "Введите корректный email",
+        emailLengthError: "Email слишком длинный",
         passwordLengthError: "Пароль должен быть не менее 8 символов",
         passwordUppercaseError:
           "Пароль должен содержать хотя бы одну заглавную букву",

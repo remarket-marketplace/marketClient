@@ -38,6 +38,7 @@ export const errorCodeMap: Record<string, string> = {
   EMAIL_ALREADY_EXISTS: 'errors.EMAIL_ALREADY_EXISTS',
   EMAIL_VERIFICATION_MAX_COUNT_OF_TRIES_EXCEEDED: 'errors.EMAIL_VERIFICATION_MAX_COUNT_OF_TRIES_EXCEEDED',
   NETWORK_ERROR: 'errors.NETWORK_ERROR',
+  VERIFY_CAPTCHA_TOKEN_FAILED: 'errors.VERIFY_CAPTCHA_TOKEN_FAILED',
   FILL_REQUIRED_FIELDS: 'errors.FILL_REQUIRED_FIELDS',
   INVALID_PASSWORD: 'errors.INVALID_PASSWORD',
   PASSWORD_SAME_AS_CURRENT: 'errors.PASSWORD_SAME_AS_CURRENT',
@@ -49,11 +50,39 @@ export const errorCodeMap: Record<string, string> = {
 }
 
 // errorDetail = { error_code: 'TOKEN_NOT_FOUND', error_message: 'Token not found' }
-export function getErrorMessage(errorDetail: { error_code: string, error_message?: string }, t: (key: string) => string): string {
-  const i18nKey = errorCodeMap[errorDetail.error_code]
-  if (i18nKey) {
-    return t(i18nKey)
+export function getErrorMessage(errorDetail: unknown, t: (key: string) => string): string {
+  if (!errorDetail) {
+    return t('errors.SERVER_ERROR')
   }
-  // fallback: don't have key - return original error message
-  return errorDetail.error_message || errorDetail.error_code
+
+  if (typeof errorDetail === 'string') {
+    const mappedByCode = errorCodeMap[errorDetail]
+    return mappedByCode ? t(mappedByCode) : errorDetail
+  }
+
+  if (Array.isArray(errorDetail)) {
+    const firstError = errorDetail[0] as { msg?: string } | undefined
+    if (firstError?.msg) {
+      return firstError.msg
+    }
+    return t('errors.SERVER_ERROR')
+  }
+
+  if (typeof errorDetail === 'object') {
+    const detail = errorDetail as { error_code?: string; error_message?: string; message?: string }
+
+    if (detail.error_code) {
+      const i18nKey = errorCodeMap[detail.error_code]
+      if (i18nKey) {
+        return t(i18nKey)
+      }
+      return detail.error_message || detail.error_code
+    }
+
+    if (detail.message) {
+      return detail.message
+    }
+  }
+
+  return t('errors.SERVER_ERROR')
 }

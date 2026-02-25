@@ -244,7 +244,10 @@ const en = {
     EMAIL_VERIFICATION_MAX_COUNT_OF_TRIES_EXCEEDED:
       "Max count of tries exceeded. Max tries - {max_tries}",
     INVALID_PASSWORD: "Invalid password",
+    VERIFY_CAPTCHA_TOKEN_FAILED: "Captcha verification failed, please try again",
+    NETWORK_ERROR: "Network error. Please check your internet connection",
     FILL_ALL_INPUTS: "Fill all inputs",
+    FILL_REQUIRED_FIELDS: "Fill in the required fields",
     PASSWORD_SAME_AS_CURRENT: "Cannot change to current password",
     PRODUCT_UPDATE_ERROR: "Error updating product",
     PRODUCT_EDIT_PERMISSION_DENIED: "No permission to edit this product",
@@ -459,6 +462,7 @@ const en = {
         usernameCharsError:
           "Username can only contain English letters, numbers and the '_' symbol",
         invalidEmail: "Please enter a valid email",
+        emailLengthError: "Email is too long",
         passwordLengthError: "Password must be at least 8 characters long",
         passwordUppercaseError:
           "Password must contain at least one uppercase letter",
