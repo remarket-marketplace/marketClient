@@ -10,6 +10,7 @@ import { Star, X } from 'lucide-vue-next';
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import { RefreshCcw } from 'lucide-vue-next';
 import { useUserStore } from '@/stores/user';
+import { formatCurrencyAmount } from '@/utils/currency';
 
 const API_HOST = import.meta.env.VITE_API_HOST;
 
@@ -152,7 +153,7 @@ async function handleSendReview(productId: string) {
             {{ product.title }}
           </h3>
 
-          <p class="text-xl text-green-400 font-bold">{{ product.price }}₽</p>
+          <p class="text-xl text-green-400 font-bold">{{ formatCurrencyAmount(product.price) }}</p>
 
           <div v-if="product.auto_delivery" class="space-y-2">
             <p class="text-sm font-semibold text-gray-300 uppercase tracking-wide border-b border-gray-700 pb-2">

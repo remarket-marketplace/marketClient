@@ -16,6 +16,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 import SelectLanguage from '@/components/SelectLanguage.vue'
+import SelectCurrency from '@/components/SelectCurrency.vue'
 
 const store = useUserStore()
 const { t } = useI18n()
@@ -148,7 +149,8 @@ const navItems = computed(() => [
             </div>
           </div>
 
-          <div class="shrink-0">
+          <div class="shrink-0 flex items-center gap-3">
+            <SelectCurrency />
             <SelectLanguage />
           </div>
         </div>

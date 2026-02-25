@@ -14,6 +14,7 @@ import { useUserStore } from '@/stores/user'
 import { useChatStore } from '@/stores/chat'
 import { storeToRefs } from 'pinia'
 import SelectLanguage from '@/components/SelectLanguage.vue'
+import SelectCurrency from '@/components/SelectCurrency.vue'
 import MainPageFooter from '@/components/layout/MainPageFooter.vue'
 import type { FunctionalComponent } from 'vue'
 import type { LucideProps } from 'lucide-vue-next'
@@ -160,7 +161,7 @@ const navItems = computed(() => {
                     @click="router.push('/')">
                     remarket
                 </div>
-                <div class="flex gap-6">
+                <div class="flex items-center gap-3">
                     <nav class="hidden items-center gap-6 md:flex">
                         <router-link v-for="item in navItems" :key="item.id" :to="item.to"
                             class="flex items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"
@@ -189,6 +190,7 @@ const navItems = computed(() => {
                             </span>
                         </router-link>
                     </nav>
+                    <SelectCurrency />
                     <SelectLanguage />
                 </div>
             </div>

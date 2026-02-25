@@ -12,6 +12,13 @@ import { useI18n } from 'vue-i18n'
 import { getErrorMessage } from '@/utils/errorsMap'
 import { X, Info, AlertCircle, Tag, Package, Percent, Calculator } from 'lucide-vue-next'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
+import {
+  convertCurrencyAmount,
+  formatCurrencyAmount,
+  getCurrencySymbol,
+  getUsdRubRate,
+  resolvePreferredCurrency,
+} from '@/utils/currency'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const route = useRoute()
@@ -32,6 +39,9 @@ const errorMessage = ref('')
 const productData = ref<ProductEdit | null>(null)
 const isLoadingProduct = ref(true)
 const commissionInterest = ref<number | null>(null)
+const selectedCurrency = resolvePreferredCurrency()
+const currencySymbol = getCurrencySymbol(selectedCurrency)
+const usdRubRate = getUsdRubRate()
 
 const PRODUCT_LIMITS = {
   title: { min: 10, max: 50 },
@@ -61,7 +71,11 @@ const totalImagesAfterUpdate = computed(() => {
 const normalizedTitle = computed(() => title.value.trim())
 const normalizedDescription = computed(() => description.value.trim())
 const normalizedProductData = computed(() => productDataString.value.trim())
-const priceValue = computed(() => Number(price.value))
+const priceValueRub = computed(() => {
+  const input = Number(price.value)
+  if (!Number.isFinite(input)) return 0
+  return convertCurrencyAmount(input, selectedCurrency, 'RUB')
+})
 const countValue = computed(() => Number(count.value))
 
 const titleLengthValid = computed(() => (
@@ -80,9 +94,9 @@ const productDataValidForForm = computed(() => (
   !autoDelivery.value || productDataLengthValid.value
 ))
 const priceValid = computed(() => (
-  Number.isFinite(priceValue.value)
-  && priceValue.value >= PRODUCT_LIMITS.price.min
-  && priceValue.value <= PRODUCT_LIMITS.price.max
+  Number.isFinite(priceValueRub.value)
+  && priceValueRub.value >= PRODUCT_LIMITS.price.min
+  && priceValueRub.value <= PRODUCT_LIMITS.price.max
 ))
 const countValid = computed(() => (
   Number.isFinite(countValue.value)
@@ -95,20 +109,38 @@ const imagesCountValid = computed(() => (
 ))
 
 // Calculate seller's final amount
+const totalPriceInRub = computed(() => priceValueRub.value * (count.value || 1))
+const commissionAmountInRub = computed(() => {
+  if (!commissionInterest.value) return 0
+  return totalPriceInRub.value * (commissionInterest.value / 100)
+})
+
 const sellerAmount = computed(() => {
   if (!price.value || !commissionInterest.value) return 0
-  const total = Number(price.value) * (count.value || 1)
-  const commission = total * (commissionInterest.value / 100)
-  return Math.max(0, total - commission)
+  return Math.max(0, totalPriceInRub.value - commissionAmountInRub.value)
 })
 
 // Price formatting
 const formatPrice = (value: number) => {
-  return value.toLocaleString('ru-RU', {
+  return formatCurrencyAmount(value, {
+    fromCurrency: 'RUB',
+    currency: selectedCurrency,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
-  }) + '₽'
+  })
 }
+
+const priceInputMin = computed(() => {
+  if (selectedCurrency === 'RUB') return PRODUCT_LIMITS.price.min
+  return Number((PRODUCT_LIMITS.price.min / usdRubRate).toFixed(2))
+})
+
+const priceInputMax = computed(() => {
+  if (selectedCurrency === 'RUB') return PRODUCT_LIMITS.price.max
+  return Number((PRODUCT_LIMITS.price.max / usdRubRate).toFixed(2))
+})
+
+const priceInputStep = selectedCurrency === 'USD' ? 0.01 : 1
 
 // Валидация формы
 const isFormValid = computed(() => {
@@ -196,7 +228,7 @@ onMounted(async () => {
     // Инициализируем поля данными товара
     title.value = productData.value.title
     description.value = productData.value.description
-    price.value = productData.value.price.toString()
+    price.value = convertCurrencyAmount(productData.value.price, 'RUB', selectedCurrency).toString()
     productDataString.value = productData.value.product_data_string ?? ''
     autoDelivery.value = productData.value.auto_delivery
     existingImages.value = [...productData.value.images]
@@ -248,7 +280,7 @@ async function updateProduct() {
     const productDataObj = {
       title: normalizedTitle.value,
       description: normalizedDescription.value,
-      price: priceValue.value,
+      price: Math.round(priceValueRub.value),
       product_data: autoDelivery.value ? normalizedProductData.value : undefined,
       category_id: productData.value!.category.id,
       count: count.value,
@@ -541,15 +573,15 @@ async function updateProduct() {
                 </label>
                 <div class="flex items-center gap-2">
                   <Calculator class="w-4 h-4 text-blue-400" />
-                  <span class="text-xs text-gray-400">₽</span>
+                  <span class="text-xs text-gray-400">{{ currencySymbol }}</span>
                 </div>
               </div>
               <div class="relative">
-                <input id="price" v-model.number="price" type="number" :min="PRODUCT_LIMITS.price.min" :max="PRODUCT_LIMITS.price.max"
+                <input id="price" v-model.number="price" type="number" :min="priceInputMin" :max="priceInputMax" :step="priceInputStep"
                   :placeholder="$t('pages.forms.createProduct.pricePlaceholder')"
                   class="w-full rounded-lg outline-none bg-dark-600 border border-dark-700 px-4 py-3 text-lg font-semibold text-white" />
                 <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 text-sm font-medium">
-                  ₽
+                  {{ currencySymbol }}
                 </div>
               </div>
               <p class="text-xs" :class="priceValid ? 'text-gray-400' : 'text-red-400'">
@@ -574,7 +606,7 @@ async function updateProduct() {
                 <div class="flex items-center justify-between">
                   <span class="text-sm text-gray-400">{{ $t('pages.forms.createProduct.totalPrice') }}:</span>
                   <span class="text-sm font-medium text-white">
-                    {{ formatPrice(Number(price) * (count || 1)) }}
+                    {{ formatPrice(totalPriceInRub) }}
                   </span>
                 </div>
 
@@ -587,7 +619,7 @@ async function updateProduct() {
                     </span>
                   </span>
                   <span class="text-sm font-medium text-red-400">
-                    -{{ formatPrice((Number(price) * (count || 1)) * (commissionInterest! / 100)) }}
+                    -{{ formatPrice(commissionAmountInRub) }}
                   </span>
                 </div>
 

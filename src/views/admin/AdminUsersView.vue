@@ -19,6 +19,7 @@ import ConfirmWindow from '@/components/ConfirmWindow.vue';
 import { useI18n } from 'vue-i18n';
 import BackButton from '@/components/navigation/BackButton.vue';
 import UserAvatar from '@/components/UserAvatar.vue';
+import { formatCurrencyAmount } from '@/utils/currency';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -134,11 +135,7 @@ const banReasonOptions = computed(() => [
 ])
 
 function formatPrice(price: number) {
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
-    minimumFractionDigits: 0
-  }).format(price)
+  return formatCurrencyAmount(price)
 }
 
 onMounted(async () => {

@@ -14,12 +14,20 @@ import type { Product } from '@/validation/product/product'
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Folder, SlidersHorizontal } from 'lucide-vue-next'
+import {
+  convertCurrencyAmount,
+  formatCurrencyAmount,
+  getCurrencySymbol,
+  resolvePreferredCurrency,
+} from '@/utils/currency'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const router = useRouter()
 const API_HOST = import.meta.env.VITE_API_HOST
 const userStore = useUserStore()
 const { user } = storeToRefs(userStore)
+const selectedCurrency = resolvePreferredCurrency()
+const currencySymbol = getCurrencySymbol(selectedCurrency)
 
 const mainCategories = ref<Category[]>([])
 const subCategories = ref<Category[]>([])
@@ -56,20 +64,30 @@ interface PricePreset {
 }
 
 function formatPrice(value: number): string {
-  const localeCode = locale.value === 'ru' ? 'ru-RU' : 'en-US'
-  return new Intl.NumberFormat(localeCode).format(value)
+  return formatCurrencyAmount(value, { fromCurrency: 'RUB' })
+}
+
+function formatFilterValueFromRub(value: number): string {
+  const converted = convertCurrencyAmount(value, 'RUB', selectedCurrency)
+  return selectedCurrency === 'USD' ? converted.toFixed(2) : Math.round(converted).toString()
+}
+
+function parsePriceFilterInRub(value: string | number | null | undefined): number | undefined {
+  const parsed = parseFilterNumber(value)
+  if (parsed === undefined) return undefined
+  return Math.round(convertCurrencyAmount(parsed, selectedCurrency, 'RUB'))
 }
 
 const pricePresets = computed<PricePreset[]>(() => [
-  { id: 'up-to-1000', label: `≤ ${formatPrice(1000)} ₽`, max: 1000 },
-  { id: '1000-5000', label: `${formatPrice(1000)} - ${formatPrice(5000)} ₽`, min: 1000, max: 5000 },
-  { id: '5000-10000', label: `${formatPrice(5000)} - ${formatPrice(10000)} ₽`, min: 5000, max: 10000 },
-  { id: '10000-plus', label: `≥ ${formatPrice(10000)} ₽`, min: 10000 },
+  { id: 'up-to-1000', label: `≤ ${formatPrice(1000)}`, max: 1000 },
+  { id: '1000-5000', label: `${formatPrice(1000)} - ${formatPrice(5000)}`, min: 1000, max: 5000 },
+  { id: '5000-10000', label: `${formatPrice(5000)} - ${formatPrice(10000)}`, min: 5000, max: 10000 },
+  { id: '10000-plus', label: `≥ ${formatPrice(10000)}`, min: 10000 },
 ])
 
 function isPricePresetActive(preset: PricePreset): boolean {
-  const min = parseFilterNumber(minPriceFilter.value)
-  const max = parseFilterNumber(maxPriceFilter.value)
+  const min = parsePriceFilterInRub(minPriceFilter.value)
+  const max = parsePriceFilterInRub(maxPriceFilter.value)
   return min === preset.min && max === preset.max
 }
 
@@ -80,8 +98,8 @@ async function onPricePresetClick(preset: PricePreset) {
     return
   }
 
-  minPriceFilter.value = preset.min === undefined ? '' : String(preset.min)
-  maxPriceFilter.value = preset.max === undefined ? '' : String(preset.max)
+  minPriceFilter.value = preset.min === undefined ? '' : formatFilterValueFromRub(preset.min)
+  maxPriceFilter.value = preset.max === undefined ? '' : formatFilterValueFromRub(preset.max)
   await applyProductFilters()
 }
 
@@ -259,8 +277,8 @@ function parseFilterNumber(value: string | number | null | undefined): number | 
 }
 
 function getProductFiltersParams(): ProductsFilterParams {
-  const minPriceRaw = parseFilterNumber(minPriceFilter.value)
-  const maxPriceRaw = parseFilterNumber(maxPriceFilter.value)
+  const minPriceRaw = parsePriceFilterInRub(minPriceFilter.value)
+  const maxPriceRaw = parsePriceFilterInRub(maxPriceFilter.value)
 
   if (minPriceRaw !== undefined && maxPriceRaw !== undefined && minPriceRaw > maxPriceRaw) {
     return {
@@ -459,7 +477,7 @@ onBeforeUnmount(() => {
                       :placeholder="t('pages.index.priceFrom')"
                       @input="debouncedApplyProductFilters"
                     />
-                    <span class="text-xs font-semibold text-gray-400">₽</span>
+                    <span class="text-xs font-semibold text-gray-400">{{ currencySymbol }}</span>
                   </div>
                 </label>
 
@@ -475,7 +493,7 @@ onBeforeUnmount(() => {
                       :placeholder="t('pages.index.priceTo')"
                       @input="debouncedApplyProductFilters"
                     />
-                    <span class="text-xs font-semibold text-gray-400">₽</span>
+                    <span class="text-xs font-semibold text-gray-400">{{ currencySymbol }}</span>
                   </div>
                 </label>
               </div>

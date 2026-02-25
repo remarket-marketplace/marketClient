@@ -4,6 +4,7 @@ import type { Product } from '@/validation/product/product';
 import { useI18n } from 'vue-i18n';
 import DealStatusTag from '../DealStatusTag.vue';
 import { useRouter } from 'vue-router';
+import { formatCurrencyAmount } from '@/utils/currency';
 
 defineProps<{
     product: Product | null,
@@ -34,7 +35,7 @@ function handleViewProduct(productId: string) {
 
             <div class="flex flex-col">
                 <p class="font-medium text-sm text-white truncate">{{ product?.title }}</p>
-                <p class="text-xs text-gray-300">{{ product?.price }} ₽</p>
+                <p class="text-xs text-gray-300">{{ product ? formatCurrencyAmount(product.price) : '-' }}</p>
             </div>
         </div>
 

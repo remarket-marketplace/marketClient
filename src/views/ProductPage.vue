@@ -14,6 +14,7 @@ import { useUserStore } from '@/stores/user'
 import BackButton from '@/components/navigation/BackButton.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
 import UserAvatar from '@/components/UserAvatar.vue'
+import { formatCurrencyAmount } from '@/utils/currency'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const RAIKA_BOT_URL = 'https://t.me/Raika_CheckBot'
@@ -254,7 +255,7 @@ onUnmounted(() => {
             </h1>
             <div class="flex items-center gap-4">
               <span class="text-2xl lg:text-3xl font-bold text-green-400">
-                {{ product.price }}₽
+                {{ formatCurrencyAmount(product.price) }}
               </span>
               <ProductStatusTag v-if="product.is_owner || user?.role === 'admin'" :product-status="product.status" />
             </div>

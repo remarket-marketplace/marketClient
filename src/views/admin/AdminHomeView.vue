@@ -13,6 +13,7 @@ import {
 import type { ApexOptions } from 'apexcharts'
 import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { formatCurrencyAmount } from '@/utils/currency'
 
 type Trend = { diff: number; percent: number; isUp: boolean; isFlat: boolean }
 
@@ -33,11 +34,7 @@ const cssVar = (token: string, fallback: string) => {
 }
 
 const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
-    maximumFractionDigits: 0,
-  }).format(value || 0)
+  formatCurrencyAmount(value || 0)
 
 const formatNumber = (value: number) =>
   new Intl.NumberFormat('ru-RU').format(Math.round(value || 0))

@@ -67,11 +67,11 @@ function selectLanguage(value: 'en' | 'ru') {
 </script>
 
 <template>
-  <div ref="wrapperRef" class="relative w-full">
+  <div ref="wrapperRef" class="relative shrink-0 flex items-center">
     <!-- Button -->
     <button
       type="button"
-      class="w-full flex items-center justify-between gap-3 rounded-lg border border-dark-700 bg-dark-600 px-3 lg:px-4 py-2 text-mainText transition hover:border-dark-500 focus:outline-none"
+      class="min-w-[86px] flex items-center justify-between gap-2 rounded-lg border border-dark-700 bg-dark-600 px-3 lg:px-4 py-2 text-mainText transition hover:border-dark-500 focus:outline-none"
       :aria-expanded="isOpen"
       @click="toggle"
     >
@@ -90,7 +90,7 @@ function selectLanguage(value: 'en' | 'ru') {
     <transition name="fade">
       <ul
         v-show="isOpen"
-        class="absolute right-2 z-50 mt-2 min-w-16 rounded-lg border border-dark-700 bg-dark-800 shadow-xl overflow-hidden"
+        class="absolute top-full right-0 z-50 mt-1.5 min-w-16 rounded-lg border border-dark-700 bg-dark-800 overflow-hidden"
         role="listbox"
       >
         <li

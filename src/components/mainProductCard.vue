@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import type { Product } from '@/validation/product/product'
 import { useI18n } from 'vue-i18n'
 import UserRating from './UserRating.vue'
+import { formatCurrencyAmount } from '@/utils/currency'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -17,7 +18,6 @@ const emit = defineEmits<{
 }>()
 
 const API_HOST = import.meta.env.VITE_API_HOST
-const priceFormatter = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 })
 
 function onClick() {
   emit('click', props.product.id)
@@ -27,7 +27,7 @@ function goToSeller() {
   router.push(`/user/${props.product.seller.username}`)
 }
 
-const formattedPrice = computed(() => `${priceFormatter.format(props.product.price)}₽`)
+const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
 </script>
 
 <template>

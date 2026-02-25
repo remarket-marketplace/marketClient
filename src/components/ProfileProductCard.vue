@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router';
 import type { Product } from '@/validation/product/product';
 import { useI18n } from 'vue-i18n';
 import ProductStatusTag from './ProductStatusTag.vue';
+import { formatCurrencyAmount } from '@/utils/currency';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -78,7 +79,7 @@ function goToSeller() {
         </div>
         
         <span class="text-xl text-mainText font-semibold">
-          {{ product.price }}₽
+          {{ formatCurrencyAmount(product.price) }}
         </span>
       </div>
     </div>

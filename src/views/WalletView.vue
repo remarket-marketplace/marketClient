@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   ArrowDownToLine,
@@ -18,6 +18,12 @@ import {
 import { walletService } from '@/api/wallet/walletService'
 import type { Balance, WalletHistoryItem } from '@/validation/wallet/wallet'
 import BackButton from '@/components/navigation/BackButton.vue'
+import {
+  convertCurrencyAmount,
+  formatCurrencyAmount,
+  getCurrencySymbol,
+  resolvePreferredCurrency,
+} from '@/utils/currency'
 
 const { t } = useI18n()
 
@@ -29,9 +35,66 @@ const page = ref(1)
 const perPage = 10
 const totalPages = ref(1)
 const isFetchingTransactions = ref(false)
+const MIN_DEPOSIT_RUB = 10
+const MAX_DEPOSIT_RUB = 100000
 
 const depositAmount = ref('')
 const withdrawAmount = ref('')
+const selectedCurrency = resolvePreferredCurrency()
+const currencySymbol = getCurrencySymbol(selectedCurrency)
+const currencyFractionDigits = selectedCurrency === 'USD' ? 2 : 0
+const currencyInputStep = selectedCurrency === 'USD' ? 0.01 : 1
+
+const parsedDepositAmount = computed(() => Number.parseFloat(depositAmount.value))
+const parsedWithdrawAmount = computed(() => Number.parseFloat(withdrawAmount.value))
+
+const depositAmountInRub = computed(() => {
+  return convertCurrencyAmount(parsedDepositAmount.value, selectedCurrency, 'RUB')
+})
+
+const withdrawAmountInRub = computed(() => {
+  return convertCurrencyAmount(parsedWithdrawAmount.value, selectedCurrency, 'RUB')
+})
+
+const depositInputMin = computed(() => {
+  const converted = convertCurrencyAmount(MIN_DEPOSIT_RUB, 'RUB', selectedCurrency)
+  return selectedCurrency === 'USD' ? Number(converted.toFixed(2)) : Math.ceil(converted)
+})
+
+const depositInputMax = computed(() => {
+  const converted = convertCurrencyAmount(MAX_DEPOSIT_RUB, 'RUB', selectedCurrency)
+  return selectedCurrency === 'USD' ? Number(converted.toFixed(2)) : Math.floor(converted)
+})
+
+const isDepositAmountValid = computed(() => {
+  return (
+    Number.isFinite(parsedDepositAmount.value)
+    && parsedDepositAmount.value > 0
+    && Number.isFinite(depositAmountInRub.value)
+    && depositAmountInRub.value >= MIN_DEPOSIT_RUB
+    && depositAmountInRub.value <= MAX_DEPOSIT_RUB
+  )
+})
+
+const availableBalanceInSelectedCurrency = computed(() =>
+  convertCurrencyAmount(balance.value, 'RUB', selectedCurrency)
+)
+
+const withdrawInputMin = computed(() => (selectedCurrency === 'USD' ? 0.01 : 1))
+const withdrawInputMax = computed(() => {
+  return selectedCurrency === 'USD'
+    ? Number(availableBalanceInSelectedCurrency.value.toFixed(2))
+    : Math.max(0, Math.floor(availableBalanceInSelectedCurrency.value))
+})
+
+const isWithdrawAmountValid = computed(() => {
+  return (
+    Number.isFinite(parsedWithdrawAmount.value)
+    && parsedWithdrawAmount.value > 0
+    && Number.isFinite(withdrawAmountInRub.value)
+    && withdrawAmountInRub.value <= balance.value
+  )
+})
 
 // New states for modals
 const showDepositModal = ref(false)
@@ -74,11 +137,14 @@ const handleScroll = async (event: Event) => {
 }
 
 const handleDeposit = async () => {
-  if (!depositAmount.value || parseFloat(depositAmount.value) <= 0) return
+  if (!isDepositAmountValid.value) return
+
+  const baseAmount = Math.round(depositAmountInRub.value)
+  if (!Number.isFinite(baseAmount) || baseAmount < MIN_DEPOSIT_RUB) return
 
   isLoading.value = true
   const paymentUrl = await walletService.TopUpUserBalance(
-    parseInt(depositAmount.value)
+    baseAmount
   )
 
   if (paymentUrl) {
@@ -90,10 +156,9 @@ const handleDeposit = async () => {
 }
 
 const handleWithdraw = () => {
-  if (!withdrawAmount.value) return
+  if (!isWithdrawAmountValid.value) return
 
-  const amount = parseFloat(withdrawAmount.value)
-  if (amount <= 0 || amount > balance.value) return
+  const amount = withdrawAmountInRub.value
 
   isLoading.value = true
 
@@ -106,11 +171,12 @@ const handleWithdraw = () => {
 }
 
 const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
-    minimumFractionDigits: 0
-  }).format(amount)
+  return formatCurrencyAmount(amount, {
+    fromCurrency: 'RUB',
+    currency: selectedCurrency,
+    minimumFractionDigits: currencyFractionDigits,
+    maximumFractionDigits: currencyFractionDigits,
+  })
 }
 
 const formatDate = (dateString: string) => {
@@ -179,6 +245,20 @@ const getTypeColor = (item: WalletHistoryItem) => {
 const formatSigned = (amount: number) => {
   const sign = amount >= 0 ? '+' : ''
   return `${sign}${formatCurrency(amount)}`
+}
+
+const minimumDepositText = formatCurrencyAmount(MIN_DEPOSIT_RUB, {
+  fromCurrency: 'RUB',
+  currency: selectedCurrency,
+  minimumFractionDigits: currencyFractionDigits,
+  maximumFractionDigits: currencyFractionDigits,
+})
+
+const availableBalanceForInput = () => {
+  const converted = availableBalanceInSelectedCurrency.value
+  return selectedCurrency === 'USD'
+    ? converted.toFixed(2)
+    : Math.round(converted).toString()
 }
 
 const typeLabel = (type: string) => {
@@ -411,23 +491,24 @@ const typeLabel = (type: string) => {
                 <input
                   v-model="depositAmount"
                   type="number"
-                  min="10"
-                  max="100000"
+                  :min="depositInputMin"
+                  :max="depositInputMax"
+                  :step="currencyInputStep"
                   placeholder="0"
                   class="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-white text-lg font-semibold outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
                 />
                 <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 text-sm font-medium">
-                  ₽
+                  {{ currencySymbol }}
                 </div>
               </div>
               <p class="text-xs text-gray-400 mt-2">
-                {{ $t('pages.wallet.depositMin', { amount: '10₽' }) }}
+                {{ $t('pages.wallet.depositMin', { amount: minimumDepositText }) }}
               </p>
             </div>
 
             <button
               @click="handleDeposit"
-              :disabled="!depositAmount || parseFloat(depositAmount) < 1 || isLoading"
+              :disabled="!isDepositAmountValid || isLoading"
               class="w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 py-3.5 text-white font-semibold hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-blue-500/20"
             >
               <span v-if="isLoading" class="flex items-center justify-center gap-2">
@@ -452,8 +533,8 @@ const typeLabel = (type: string) => {
         <div class="relative w-full max-w-md border border-dark-600 rounded-2xl bg-dark-800/95 backdrop-blur-sm p-6 space-y-6">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full border border-dark-500 bg-dark-700/70 flex items-center justify-center">
-                <ArrowUpFromLine class="w-5 h-5 text-gray-200" />
+              <div class="w-10 h-10 rounded-full border border-emerald-500/35 bg-emerald-500/10 flex items-center justify-center">
+                <ArrowUpFromLine class="w-5 h-5 text-emerald-300" />
               </div>
               <h3 class="text-xl font-bold text-white">{{ $t('pages.wallet.withdraw') }}</h3>
             </div>
@@ -474,13 +555,14 @@ const typeLabel = (type: string) => {
                 <input
                   v-model="withdrawAmount"
                   type="number"
-                  :max="balance"
-                  min="10"
+                  :max="withdrawInputMax"
+                  :min="withdrawInputMin"
+                  :step="currencyInputStep"
                   placeholder="0"
                   class="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-white text-lg font-semibold outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
                 />
                 <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 text-sm font-medium">
-                  ₽
+                  {{ currencySymbol }}
                 </div>
               </div>
               <div class="flex items-center justify-between text-xs mt-2">
@@ -488,7 +570,7 @@ const typeLabel = (type: string) => {
                   {{ $t('pages.wallet.available') }}: <span class="text-green-400">{{ formatCurrency(balance) }}</span>
                 </span>
                 <button 
-                  @click="withdrawAmount = balance.toString()"
+                  @click="withdrawAmount = availableBalanceForInput()"
                   class="text-blue-400 hover:text-blue-300 transition-colors"
                 >
                   {{ $t('pages.wallet.useAll') }}
@@ -498,8 +580,8 @@ const typeLabel = (type: string) => {
 
             <button
               @click="handleWithdraw"
-              :disabled="!withdrawAmount || parseFloat(withdrawAmount) < 1 || parseFloat(withdrawAmount) > balance || isLoading"
-              class="w-full rounded-xl bg-gradient-to-r from-red-600 to-red-700 py-3.5 text-white font-semibold hover:from-red-700 hover:to-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-red-500/20"
+              :disabled="!isWithdrawAmountValid || isLoading"
+              class="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 py-3.5 text-white font-semibold hover:from-emerald-700 hover:to-teal-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-emerald-500/20"
             >
               <span v-if="isLoading" class="flex items-center justify-center gap-2">
                 <Loader2 class="w-4 h-4 animate-spin text-white" />

@@ -19,6 +19,7 @@ import UserRating from '@/components/UserRating.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
+import { formatCurrencyAmount } from '@/utils/currency'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -73,7 +74,7 @@ function formatFullDate(dateStr: string): string {
 }
 
 function formatPrice(price: number) {
-  return price.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '₽'
+  return formatCurrencyAmount(price, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 async function loadProfileData() {
@@ -471,7 +472,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 <div class="space-y-1.5">
                   <div class="text-xs font-medium uppercase tracking-[0.08em] text-blue-200/80">{{ t('common.balance') }}</div>
                   <div class="text-2xl font-semibold leading-none tracking-tight tabular-nums text-gray-100">
-                    {{ (currentProfileData as UserRead).balance.toFixed(2) }}₽
+                    {{ formatPrice((currentProfileData as UserRead).balance) }}
                   </div>
                 </div>
                 <button
@@ -580,7 +581,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                     </div>
 
                     <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                      <span class="text-lg font-bold text-white">{{ product.price }}₽</span>
+                      <span class="text-lg font-bold text-white">{{ formatCurrencyAmount(product.price) }}</span>
                     </div>
                   </div>
 

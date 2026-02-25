@@ -24,6 +24,7 @@ import BackButton from '@/components/navigation/BackButton.vue'
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import CustomSelect from '@/components/CustomSelect.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
+import { formatCurrencyAmount } from '@/utils/currency'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -186,11 +187,7 @@ function checkMobile() {
 }
 
 function formatPrice(price: number) {
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
-    minimumFractionDigits: 0
-  }).format(price)
+  return formatCurrencyAmount(price)
 }
 
 function formatDate(dateString: string) {

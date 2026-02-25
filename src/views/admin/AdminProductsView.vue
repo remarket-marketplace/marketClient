@@ -20,6 +20,7 @@ import BackButton from '@/components/navigation/BackButton.vue';
 import SearchField from '@/components/SearchField.vue';
 import CustomSelect from '@/components/CustomSelect.vue';
 import ConfirmWindow from '@/components/ConfirmWindow.vue';
+import { formatCurrencyAmount } from '@/utils/currency';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -152,11 +153,7 @@ function cancelRejectProduct() {
 }
 
 function formatPrice(price: number) {
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
-    minimumFractionDigits: 0
-  }).format(price);
+  return formatCurrencyAmount(price);
 }
 
 const normalizedQuery = computed(() => searchQuery.value.trim().toLowerCase());

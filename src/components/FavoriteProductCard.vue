@@ -5,6 +5,7 @@ import type { Product } from '@/validation/product/product'
 import { useI18n } from 'vue-i18n'
 import { productService } from '@/api/product/ProductService'
 import UserAvatar from '@/components/UserAvatar.vue'
+import { formatCurrencyAmount } from '@/utils/currency'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -157,7 +158,7 @@ const formatDate = (dateString: string) => {
         <!-- Price -->
         <div class="text-right flex-shrink-0">
           <div class="text-base font-bold text-white">
-            {{ product.price }}₽
+            {{ formatCurrencyAmount(product.price) }}
           </div>
           <div class="text-xs text-gray-500">
             {{ formatDate(product.created_at) }}

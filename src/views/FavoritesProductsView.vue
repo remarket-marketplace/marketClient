@@ -43,10 +43,6 @@ function onProductRemoved(productId: string) {
   )
 }
 
-// Форматирование цены
-const formatPrice = (price: number) => {
-  return new Intl.NumberFormat('ru-RU').format(price) + '₽'
-}
 </script>
 
 <template>
