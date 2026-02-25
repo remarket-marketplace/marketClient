@@ -458,11 +458,11 @@ const en = {
         passwordsMismatch: "Passwords do not match",
         invalidCode: "Invalid code or registration error",
         usernameLengthError:
-          "Username must be between 3 and 16 characters long",
+          "Username must be between 4 and 32 characters long",
         usernameCharsError:
           "Username can only contain English letters, numbers and the '_' symbol",
         invalidEmail: "Please enter a valid email",
-        emailLengthError: "Email is too long",
+        emailLengthError: "Email must be at most 64 characters",
         passwordLengthError: "Password must be at least 8 characters long",
         passwordUppercaseError:
           "Password must contain at least one uppercase letter",

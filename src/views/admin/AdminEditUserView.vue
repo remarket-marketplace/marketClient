@@ -95,6 +95,32 @@ async function saveUser() {
     errorMessage.value = '';
     successMessage.value = '';
 
+    const normalizedEmail = email.value.trim();
+    const normalizedUsername = username.value.trim();
+    email.value = normalizedEmail;
+    username.value = normalizedUsername;
+
+    if (normalizedUsername.length < 4 || normalizedUsername.length > 32) {
+      errorMessage.value = t('pages.auth.signUp.usernameLengthError');
+      return;
+    }
+
+    if (!/^[A-Za-z0-9_]+$/.test(normalizedUsername)) {
+      errorMessage.value = t('pages.auth.signUp.usernameCharsError');
+      return;
+    }
+
+    if (normalizedEmail.length > 64) {
+      errorMessage.value = t('pages.auth.signUp.emailLengthError');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(normalizedEmail)) {
+      errorMessage.value = t('pages.auth.signUp.invalidEmail');
+      return;
+    }
+
     const balanceValue = parseFloat(balance.value);
     const ratingValue = parseInt(rating.value);
 
@@ -222,7 +248,7 @@ watch(isActive, (value) => {
           <label for="email" class="mb-1 block text-sm text-text-secondary">
             {{ $t('common.email') }}
           </label>
-          <TheInput id="email" v-model="email" type="email" :placeholder="$t('common.email')" required />
+          <TheInput id="email" v-model="email" type="email" :placeholder="$t('common.email')" required :maxlength="64" />
         </div>
 
         <!-- Username -->
@@ -231,7 +257,7 @@ watch(isActive, (value) => {
             {{ $t('common.username') }}
           </label>
           <TheInput id="username" v-model="username" type="text" :placeholder="$t('common.username')" required
-            :minlength="5" :maxlength="15" />
+            :minlength="4" :maxlength="32" />
         </div>
 
         <!-- Description -->

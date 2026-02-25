@@ -45,7 +45,7 @@ function validateUsername() {
   const normalizedUsername = username.value.trim()
   username.value = normalizedUsername
 
-  if (normalizedUsername.length < 3 || normalizedUsername.length > 16) {
+  if (normalizedUsername.length < 4 || normalizedUsername.length > 32) {
     usernameError.value = t('pages.auth.signUp.usernameLengthError')
     return false
   }
@@ -63,7 +63,7 @@ function validateEmail() {
   const normalizedEmail = email.value.trim()
   email.value = normalizedEmail
 
-  if (normalizedEmail.length > 254) {
+  if (normalizedEmail.length > 64) {
     emailError.value = t('pages.auth.signUp.emailLengthError')
     return false
   }
@@ -319,7 +319,7 @@ function handleWelcomeFinished() {
             <label for="username" class="mb-1 block text-sm text-text-secondary">{{ $t('common.username') }}</label>
             <TheInput id="username" v-model="username" type="text"
               :placeholder="$t('pages.auth.signUp.usernamePlaceholder')" required @blur="validateUsername"
-              @input="clearUsernameError" />
+              @input="clearUsernameError" :minlength="4" :maxlength="32" />
             <p v-if="usernameError" class="text-gray-300 text-sm mt-1">{{ usernameError }}</p>
           </div>
 
@@ -327,7 +327,7 @@ function handleWelcomeFinished() {
           <div>
             <label for="email" class="mb-1 block text-sm text-text-secondary">{{ $t('common.email') }}</label>
             <TheInput id="email" v-model="email" type="email" :placeholder="$t('common.email')" required
-              @blur="validateEmail" @input="clearEmailError" />
+              @blur="validateEmail" @input="clearEmailError" :maxlength="64" />
             <p v-if="emailError" class="text-gray-300 text-sm mt-1">{{ emailError }}</p>
           </div>
 
