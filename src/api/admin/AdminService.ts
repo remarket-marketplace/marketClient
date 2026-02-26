@@ -1,6 +1,7 @@
 import { ZodError } from "zod";
 import { httpClient } from "..";
-import { CategorySchema, ProductSchema } from "@/validation/product/product";
+import { ProductSchema } from "@/validation/product/product";
+import { CategorySchema } from "@/validation/category/category";
 import { UserReadSchema } from "@/validation/user/userRead";
 import { DealSchema, DealsListSchema, type Deal } from "@/validation/deal/deal";
 import {
@@ -378,10 +379,12 @@ export const adminService = {
     // update category data
     //
     try {
+      const normalizedName = name.trim()
+      const normalizedDescription = description.trim()
       const formData = new FormData()
 
-      formData.append('name', name)
-      formData.append('description', description)
+      formData.append('name', normalizedName)
+      formData.append('description', normalizedDescription)
       formData.append('is_active', isActive ? '1' : '0')
       if (newImage) {
         formData.append('uploaded_image', newImage)

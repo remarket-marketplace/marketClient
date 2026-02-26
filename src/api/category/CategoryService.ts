@@ -1,6 +1,6 @@
 import { ZodError } from "zod";
 import { httpClient } from "..";
-import { CategorySchema } from "@/validation/product/product";
+import { CategorySchema } from "@/validation/category/category";
 
 export const categoryService = {
   async getCategory(game_id: string) {
@@ -87,9 +87,14 @@ export const categoryService = {
     parentId?: string
   ) {
     try {
+      const normalizedName = name.trim();
+      const normalizedDescription = description.trim();
+
       const formData = new FormData();
-      formData.append("name", name);
-      formData.append("description", description);
+      formData.append("name", normalizedName);
+      if (normalizedDescription) {
+        formData.append("description", normalizedDescription);
+      }
       formData.append("uploaded_image", file);
       if (parentId) {
         formData.append("parent_category_id", parentId);

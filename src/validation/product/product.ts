@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { ReviewsListSchema } from '../review/review'
+import { CategorySchema } from '../category/category'
 
 export const UUIDSchema = z.string()
 
@@ -15,16 +16,6 @@ export const SellerSchema = z.object({
   is_banned: z.boolean(),
   rating: z.number(),
   created_at: z.string(),
-}).strip()
-
-export const CategorySchema = z.object({
-  id: UUIDSchema,
-  name: z.string(),
-  slug: z.string(),
-  description: z.string(),
-  is_active: z.boolean(),
-  image_url: z.string().nullable(),
-  parent_id: z.string().nullable(),
 }).strip()
 
 export const ProductSchema = z.object({
@@ -53,3 +44,4 @@ export const ProductSchema = z.object({
 export type Product = z.infer<typeof ProductSchema>
 export type ProductImage = z.infer<typeof ProductImageSchema>
 export type ProductEdit = z.infer<typeof ProductSchema>
+export { CategorySchema }

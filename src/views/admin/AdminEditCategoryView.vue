@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { adminService } from '@/api/admin/AdminService'
 import type { z } from 'zod'
-import { CategorySchema } from '@/validation/category/category'
+import {
+  CategorySchema,
+  CATEGORY_NAME_MAX_LENGTH,
+  CATEGORY_DESCRIPTION_MAX_LENGTH,
+} from '@/validation/category/category'
 import { onMounted, ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -55,7 +59,7 @@ async function loadCategory() {
 
     category.value = data
     name.value = data.name
-    description.value = data.description
+    description.value = data.description ?? ''
     existingImage.value = data.image_url
     isActive.value = data.is_active
   } catch (e) {
@@ -78,8 +82,10 @@ async function saveCategory() {
   try {
     isSaving.value = true
     errorMessage.value = ''
+    const normalizedName = name.value.trim()
+    const normalizedDescription = description.value.trim()
 
-    if (!name.value.trim()) {
+    if (!normalizedName) {
       errorMessage.value = t('pages.admin.editCategory.nameRequired')
       return
     }
@@ -91,8 +97,8 @@ async function saveCategory() {
 
     const success = await adminService.updateCategoryData(
       categoryId,
-      name.value,
-      description.value,
+      normalizedName,
+      normalizedDescription,
       isActive.value,
       newImage.value[0] ?? null
     )
@@ -143,14 +149,14 @@ onMounted(loadCategory)
           <label class="mb-1 block text-sm text-text-secondary">
             {{ $t('common.name') }}
           </label>
-          <TheInput v-model="name" type="text" required />
+          <TheInput v-model="name" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" required />
         </div>
 
         <div>
           <label class="mb-1 block text-sm text-text-secondary">
             {{ $t('common.description') }}
           </label>
-          <textarea v-model="description" rows="3"
+          <textarea v-model="description" rows="3" :maxlength="CATEGORY_DESCRIPTION_MAX_LENGTH"
             class="w-full max-h-28 px-3 py-2 border border-dark-700 rounded-lg bg-dark-600 text-mainText resize-none" />
         </div>
 

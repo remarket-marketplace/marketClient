@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { categoryService } from '@/api/category/CategoryService'
-import type { Category } from '@/validation/category/category'
+import {
+  CATEGORY_NAME_MAX_LENGTH,
+  CATEGORY_DESCRIPTION_MAX_LENGTH,
+  type Category,
+} from '@/validation/category/category'
 import {
   Plus,
   Folder,
@@ -110,11 +114,13 @@ function selectCategory(category: Category) {
 }
 
 async function createCategory() {
-  if (!newCategory.value.name.trim() || !newCategory.value.image.length) return
+  const normalizedName = newCategory.value.name.trim()
+  const normalizedDescription = newCategory.value.description.trim()
+  if (!normalizedName || !newCategory.value.image.length) return
   try {
     const success = await categoryService.AddCategory(
-      newCategory.value.name,
-      newCategory.value.description,
+      normalizedName,
+      normalizedDescription,
       newCategory.value.image[0] as File
     )
     if (success) {
@@ -128,11 +134,13 @@ async function createCategory() {
 }
 
 async function createSubcategory() {
-  if (!newSubcategory.value.name.trim() || !selectedCategory.value || !newSubcategory.value.image.length) return
+  const normalizedName = newSubcategory.value.name.trim()
+  const normalizedDescription = newSubcategory.value.description.trim()
+  if (!normalizedName || !selectedCategory.value || !newSubcategory.value.image.length) return
   try {
     const success = await categoryService.AddCategory(
-      newSubcategory.value.name,
-      newSubcategory.value.description,
+      normalizedName,
+      normalizedDescription,
       newSubcategory.value.image[0] as File,
       selectedCategory.value.id
     )
@@ -171,7 +179,7 @@ const normalizedSubcategoryQuery = computed(() => subcategorySearch.value.trim()
 const filteredCategories = computed(() => {
   return categories.value.filter(category => {
     return normalizedCategoryQuery.value
-      ? [category.name, category.description, category.slug]
+      ? [category.name, category.description ?? '', category.slug]
           .join(' ')
           .toLowerCase()
           .includes(normalizedCategoryQuery.value)
@@ -182,7 +190,7 @@ const filteredCategories = computed(() => {
 const filteredSubcategories = computed(() => {
   return subcategories.value.filter(category => {
     return normalizedSubcategoryQuery.value
-      ? [category.name, category.description, category.slug]
+      ? [category.name, category.description ?? '', category.slug]
           .join(' ')
           .toLowerCase()
           .includes(normalizedSubcategoryQuery.value)
@@ -359,7 +367,7 @@ watch(selectedCategory, () => {
         <div class="flex items-center justify-between mb-4 flex-shrink-0">
           <div>
             <h2 class="text-lg font-semibold text-mainText">{{ selectedCategory ? selectedCategory.name : t('pages.admin.categoriesPage.selectCategory') }}</h2>
-            <p class="text-text-secondary text-sm">{{ selectedCategory ? selectedCategory.description : t('pages.admin.categoriesPage.selectCategoryHint') }}</p>
+            <p class="text-text-secondary text-sm">{{ selectedCategory ? (selectedCategory.description || t('pages.admin.categoriesPage.noDescription')) : t('pages.admin.categoriesPage.selectCategoryHint') }}</p>
           </div>
           <button v-if="selectedCategory"
             class="admin-btn admin-btn-success admin-btn-sm flex-shrink-0"
@@ -438,11 +446,11 @@ watch(selectedCategory, () => {
         <div class="space-y-4">
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.name') }} *</label>
-            <input v-model="newCategory.name" type="text" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите название" />
+            <input v-model="newCategory.name" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите название" />
           </div>
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.description') }}</label>
-            <textarea v-model="newCategory.description" rows="3" class="w-full max-h-28 bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите описание" />
+            <textarea v-model="newCategory.description" rows="3" :maxlength="CATEGORY_DESCRIPTION_MAX_LENGTH" class="w-full max-h-28 bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите описание" />
           </div>
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.image') }} *</label>
@@ -471,11 +479,11 @@ watch(selectedCategory, () => {
         <div class="space-y-4">
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.name') }} *</label>
-            <input v-model="newSubcategory.name" type="text" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите название" />
+            <input v-model="newSubcategory.name" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите название" />
           </div>
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.description') }}</label>
-            <textarea v-model="newSubcategory.description" rows="3" class="w-full max-h-28 bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите описание" />
+            <textarea v-model="newSubcategory.description" rows="3" :maxlength="CATEGORY_DESCRIPTION_MAX_LENGTH" class="w-full max-h-28 bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите описание" />
           </div>
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.image') }} *</label>
