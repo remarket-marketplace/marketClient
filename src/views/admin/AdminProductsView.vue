@@ -200,6 +200,8 @@ const filteredProducts = computed(() => {
 const sortedProducts = computed(() => {
   const data = [...filteredProducts.value];
   switch (sortBy.value) {
+    case 'created_desc':
+      return data;
     case 'created_asc':
       return data.sort(
         (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
@@ -213,9 +215,7 @@ const sortedProducts = computed(() => {
     case 'name_asc':
       return data.sort((a, b) => a.title.localeCompare(b.title));
     default:
-      return data.sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
+      return data;
   }
 });
 
