@@ -17,7 +17,7 @@ import {
   formatCurrencyAmount,
   getCurrencySymbol,
   getUsdRubRate,
-  resolvePreferredCurrency,
+  preferredCurrency,
 } from '@/utils/currency'
 
 const API_HOST = import.meta.env.VITE_API_HOST
@@ -39,8 +39,8 @@ const errorMessage = ref('')
 const productData = ref<ProductEdit | null>(null)
 const isLoadingProduct = ref(true)
 const commissionInterest = ref<number | null>(null)
-const selectedCurrency = resolvePreferredCurrency()
-const currencySymbol = getCurrencySymbol(selectedCurrency)
+const selectedCurrency = computed(() => preferredCurrency.value)
+const currencySymbol = computed(() => getCurrencySymbol(selectedCurrency.value))
 const usdRubRate = getUsdRubRate()
 
 const PRODUCT_LIMITS = {
@@ -74,7 +74,7 @@ const normalizedProductData = computed(() => productDataString.value.trim())
 const priceValueRub = computed(() => {
   const input = Number(price.value)
   if (!Number.isFinite(input)) return 0
-  return convertCurrencyAmount(input, selectedCurrency, 'RUB')
+  return convertCurrencyAmount(input, selectedCurrency.value, 'RUB')
 })
 const countValue = computed(() => Number(count.value))
 
@@ -124,23 +124,23 @@ const sellerAmount = computed(() => {
 const formatPrice = (value: number) => {
   return formatCurrencyAmount(value, {
     fromCurrency: 'RUB',
-    currency: selectedCurrency,
+    currency: selectedCurrency.value,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   })
 }
 
 const priceInputMin = computed(() => {
-  if (selectedCurrency === 'RUB') return PRODUCT_LIMITS.price.min
+  if (selectedCurrency.value === 'RUB') return PRODUCT_LIMITS.price.min
   return Number((PRODUCT_LIMITS.price.min / usdRubRate).toFixed(2))
 })
 
 const priceInputMax = computed(() => {
-  if (selectedCurrency === 'RUB') return PRODUCT_LIMITS.price.max
+  if (selectedCurrency.value === 'RUB') return PRODUCT_LIMITS.price.max
   return Number((PRODUCT_LIMITS.price.max / usdRubRate).toFixed(2))
 })
 
-const priceInputStep = selectedCurrency === 'USD' ? 0.01 : 1
+const priceInputStep = computed(() => (selectedCurrency.value === 'USD' ? 0.01 : 1))
 
 // Валидация формы
 const isFormValid = computed(() => {
@@ -228,7 +228,7 @@ onMounted(async () => {
     // Инициализируем поля данными товара
     title.value = productData.value.title
     description.value = productData.value.description
-    price.value = convertCurrencyAmount(productData.value.price, 'RUB', selectedCurrency).toString()
+    price.value = convertCurrencyAmount(productData.value.price, 'RUB', selectedCurrency.value).toString()
     productDataString.value = productData.value.product_data_string ?? ''
     autoDelivery.value = productData.value.auto_delivery
     existingImages.value = [...productData.value.images]

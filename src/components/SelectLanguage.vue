@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { ChevronDown, ChevronUp, Languages } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 
 interface LanguageOption {
   label: string
@@ -14,6 +15,7 @@ const languageOptions: LanguageOption[] = [
 
 const isOpen = ref(false)
 const wrapperRef = ref<HTMLElement | null>(null)
+const { locale } = useI18n()
 
 const isClient = typeof window !== 'undefined'
 
@@ -43,6 +45,7 @@ function handleClickOutside(e: MouseEvent) {
 }
 
 onMounted(() => {
+  locale.value = selectedLanguage.value
   document.addEventListener('click', handleClickOutside)
 })
 
@@ -58,9 +61,9 @@ function selectLanguage(value: 'en' | 'ru') {
   if (selectedLanguage.value === value) return
 
   selectedLanguage.value = value
+  locale.value = value
   if (isClient) {
     localStorage.setItem('user-language', value)
-    setTimeout(() => location.reload(), 100)
   }
   isOpen.value = false
 }

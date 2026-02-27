@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { ChevronDown, ChevronUp, Coins } from 'lucide-vue-next'
 import {
   type CurrencyCode,
-  resolvePreferredCurrency,
+  preferredCurrency,
   setPreferredCurrency,
 } from '@/utils/currency'
 
@@ -19,7 +19,7 @@ const currencyOptions: CurrencyOption[] = [
 
 const isOpen = ref(false)
 const wrapperRef = ref<HTMLElement | null>(null)
-const selectedCurrency = ref<CurrencyCode>(resolvePreferredCurrency())
+const selectedCurrency = preferredCurrency
 
 const currentOption = computed(() => {
   return (
@@ -41,10 +41,8 @@ function toggle() {
 
 function selectCurrency(value: CurrencyCode) {
   if (selectedCurrency.value === value) return
-  selectedCurrency.value = value
   setPreferredCurrency(value)
   isOpen.value = false
-  setTimeout(() => location.reload(), 100)
 }
 
 onMounted(() => {

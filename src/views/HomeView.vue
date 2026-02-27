@@ -18,7 +18,7 @@ import {
   convertCurrencyAmount,
   formatCurrencyAmount,
   getCurrencySymbol,
-  resolvePreferredCurrency,
+  preferredCurrency,
 } from '@/utils/currency'
 
 const { t } = useI18n()
@@ -26,8 +26,8 @@ const router = useRouter()
 const API_HOST = import.meta.env.VITE_API_HOST
 const userStore = useUserStore()
 const { user } = storeToRefs(userStore)
-const selectedCurrency = resolvePreferredCurrency()
-const currencySymbol = getCurrencySymbol(selectedCurrency)
+const selectedCurrency = computed(() => preferredCurrency.value)
+const currencySymbol = computed(() => getCurrencySymbol(selectedCurrency.value))
 
 const mainCategories = ref<Category[]>([])
 const subCategories = ref<Category[]>([])
@@ -68,14 +68,14 @@ function formatPrice(value: number): string {
 }
 
 function formatFilterValueFromRub(value: number): string {
-  const converted = convertCurrencyAmount(value, 'RUB', selectedCurrency)
-  return selectedCurrency === 'USD' ? converted.toFixed(2) : Math.round(converted).toString()
+  const converted = convertCurrencyAmount(value, 'RUB', selectedCurrency.value)
+  return selectedCurrency.value === 'USD' ? converted.toFixed(2) : Math.round(converted).toString()
 }
 
 function parsePriceFilterInRub(value: string | number | null | undefined): number | undefined {
   const parsed = parseFilterNumber(value)
   if (parsed === undefined) return undefined
-  return Math.round(convertCurrencyAmount(parsed, selectedCurrency, 'RUB'))
+  return Math.round(convertCurrencyAmount(parsed, selectedCurrency.value, 'RUB'))
 }
 
 const pricePresets = computed<PricePreset[]>(() => [

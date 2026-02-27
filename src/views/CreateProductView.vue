@@ -18,7 +18,7 @@ import {
   formatCurrencyAmount,
   getCurrencySymbol,
   getUsdRubRate,
-  resolvePreferredCurrency,
+  preferredCurrency,
 } from '@/utils/currency'
 
 const API_HOST = import.meta.env.VITE_API_HOST
@@ -43,8 +43,8 @@ const autoDelivery = ref<boolean>(true)
 const isLoadingDraft = ref(false)
 const isRaikaDraftApplied = ref(false)
 const draftImages = ref<string[]>([])
-const selectedCurrency = resolvePreferredCurrency()
-const currencySymbol = getCurrencySymbol(selectedCurrency)
+const selectedCurrency = computed(() => preferredCurrency.value)
+const currencySymbol = computed(() => getCurrencySymbol(selectedCurrency.value))
 const usdRubRate = getUsdRubRate()
 
 const PRODUCT_LIMITS = {
@@ -69,7 +69,7 @@ const normalizedProductData = computed(() => productData.value.trim())
 const priceValueRub = computed(() => {
   const input = Number(price.value)
   if (!Number.isFinite(input)) return 0
-  return convertCurrencyAmount(input, selectedCurrency, 'RUB')
+  return convertCurrencyAmount(input, selectedCurrency.value, 'RUB')
 })
 const countValue = computed(() => Number(count.value))
 
@@ -119,23 +119,23 @@ const sellerAmount = computed(() => {
 const formatPrice = (value: number) => {
   return formatCurrencyAmount(value, {
     fromCurrency: 'RUB',
-    currency: selectedCurrency,
+    currency: selectedCurrency.value,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   })
 }
 
 const priceInputMin = computed(() => {
-  if (selectedCurrency === 'RUB') return PRODUCT_LIMITS.price.min
+  if (selectedCurrency.value === 'RUB') return PRODUCT_LIMITS.price.min
   return Number((PRODUCT_LIMITS.price.min / usdRubRate).toFixed(2))
 })
 
 const priceInputMax = computed(() => {
-  if (selectedCurrency === 'RUB') return PRODUCT_LIMITS.price.max
+  if (selectedCurrency.value === 'RUB') return PRODUCT_LIMITS.price.max
   return Number((PRODUCT_LIMITS.price.max / usdRubRate).toFixed(2))
 })
 
-const priceInputStep = selectedCurrency === 'USD' ? 0.01 : 1
+const priceInputStep = computed(() => (selectedCurrency.value === 'USD' ? 0.01 : 1))
 
 // Form validation
 const isFormValid = computed(() => {

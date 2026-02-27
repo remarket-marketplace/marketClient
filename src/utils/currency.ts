@@ -1,3 +1,5 @@
+import { ref } from 'vue'
+
 export type CurrencyCode = 'RUB' | 'USD'
 
 export const CURRENCY_STORAGE_KEY = 'user-currency'
@@ -19,6 +21,10 @@ export function getSavedCurrency(): CurrencyCode | null {
 }
 
 export function resolvePreferredCurrency(): CurrencyCode {
+  return preferredCurrency.value
+}
+
+function resolvePreferredCurrencyFromStorage(): CurrencyCode {
   const saved = getSavedCurrency()
   if (saved) return saved
 
@@ -29,7 +35,10 @@ export function resolvePreferredCurrency(): CurrencyCode {
   return getDefaultCurrencyByLanguage(savedLanguage || browserLanguage)
 }
 
+export const preferredCurrency = ref<CurrencyCode>(resolvePreferredCurrencyFromStorage())
+
 export function setPreferredCurrency(currency: CurrencyCode): void {
+  preferredCurrency.value = currency
   if (typeof window === 'undefined') return
   localStorage.setItem(CURRENCY_STORAGE_KEY, currency)
 }

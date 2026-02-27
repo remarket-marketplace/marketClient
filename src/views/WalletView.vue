@@ -22,7 +22,7 @@ import {
   convertCurrencyAmount,
   formatCurrencyAmount,
   getCurrencySymbol,
-  resolvePreferredCurrency,
+  preferredCurrency,
 } from '@/utils/currency'
 
 const { t } = useI18n()
@@ -40,30 +40,30 @@ const MAX_DEPOSIT_RUB = 100000
 
 const depositAmount = ref('')
 const withdrawAmount = ref('')
-const selectedCurrency = resolvePreferredCurrency()
-const currencySymbol = getCurrencySymbol(selectedCurrency)
-const currencyFractionDigits = selectedCurrency === 'USD' ? 2 : 0
-const currencyInputStep = selectedCurrency === 'USD' ? 0.01 : 1
+const selectedCurrency = computed(() => preferredCurrency.value)
+const currencySymbol = computed(() => getCurrencySymbol(selectedCurrency.value))
+const currencyFractionDigits = computed(() => (selectedCurrency.value === 'USD' ? 2 : 0))
+const currencyInputStep = computed(() => (selectedCurrency.value === 'USD' ? 0.01 : 1))
 
 const parsedDepositAmount = computed(() => Number.parseFloat(depositAmount.value))
 const parsedWithdrawAmount = computed(() => Number.parseFloat(withdrawAmount.value))
 
 const depositAmountInRub = computed(() => {
-  return convertCurrencyAmount(parsedDepositAmount.value, selectedCurrency, 'RUB')
+  return convertCurrencyAmount(parsedDepositAmount.value, selectedCurrency.value, 'RUB')
 })
 
 const withdrawAmountInRub = computed(() => {
-  return convertCurrencyAmount(parsedWithdrawAmount.value, selectedCurrency, 'RUB')
+  return convertCurrencyAmount(parsedWithdrawAmount.value, selectedCurrency.value, 'RUB')
 })
 
 const depositInputMin = computed(() => {
-  const converted = convertCurrencyAmount(MIN_DEPOSIT_RUB, 'RUB', selectedCurrency)
-  return selectedCurrency === 'USD' ? Number(converted.toFixed(2)) : Math.ceil(converted)
+  const converted = convertCurrencyAmount(MIN_DEPOSIT_RUB, 'RUB', selectedCurrency.value)
+  return selectedCurrency.value === 'USD' ? Number(converted.toFixed(2)) : Math.ceil(converted)
 })
 
 const depositInputMax = computed(() => {
-  const converted = convertCurrencyAmount(MAX_DEPOSIT_RUB, 'RUB', selectedCurrency)
-  return selectedCurrency === 'USD' ? Number(converted.toFixed(2)) : Math.floor(converted)
+  const converted = convertCurrencyAmount(MAX_DEPOSIT_RUB, 'RUB', selectedCurrency.value)
+  return selectedCurrency.value === 'USD' ? Number(converted.toFixed(2)) : Math.floor(converted)
 })
 
 const isDepositAmountValid = computed(() => {
@@ -77,12 +77,12 @@ const isDepositAmountValid = computed(() => {
 })
 
 const availableBalanceInSelectedCurrency = computed(() =>
-  convertCurrencyAmount(balance.value, 'RUB', selectedCurrency)
+  convertCurrencyAmount(balance.value, 'RUB', selectedCurrency.value)
 )
 
-const withdrawInputMin = computed(() => (selectedCurrency === 'USD' ? 0.01 : 1))
+const withdrawInputMin = computed(() => (selectedCurrency.value === 'USD' ? 0.01 : 1))
 const withdrawInputMax = computed(() => {
-  return selectedCurrency === 'USD'
+  return selectedCurrency.value === 'USD'
     ? Number(availableBalanceInSelectedCurrency.value.toFixed(2))
     : Math.max(0, Math.floor(availableBalanceInSelectedCurrency.value))
 })
@@ -173,9 +173,9 @@ const handleWithdraw = () => {
 const formatCurrency = (amount: number) => {
   return formatCurrencyAmount(amount, {
     fromCurrency: 'RUB',
-    currency: selectedCurrency,
-    minimumFractionDigits: currencyFractionDigits,
-    maximumFractionDigits: currencyFractionDigits,
+    currency: selectedCurrency.value,
+    minimumFractionDigits: currencyFractionDigits.value,
+    maximumFractionDigits: currencyFractionDigits.value,
   })
 }
 
@@ -247,16 +247,16 @@ const formatSigned = (amount: number) => {
   return `${sign}${formatCurrency(amount)}`
 }
 
-const minimumDepositText = formatCurrencyAmount(MIN_DEPOSIT_RUB, {
+const minimumDepositText = computed(() => formatCurrencyAmount(MIN_DEPOSIT_RUB, {
   fromCurrency: 'RUB',
-  currency: selectedCurrency,
-  minimumFractionDigits: currencyFractionDigits,
-  maximumFractionDigits: currencyFractionDigits,
-})
+  currency: selectedCurrency.value,
+  minimumFractionDigits: currencyFractionDigits.value,
+  maximumFractionDigits: currencyFractionDigits.value,
+}))
 
 const availableBalanceForInput = () => {
   const converted = availableBalanceInSelectedCurrency.value
-  return selectedCurrency === 'USD'
+  return selectedCurrency.value === 'USD'
     ? converted.toFixed(2)
     : Math.round(converted).toString()
 }
