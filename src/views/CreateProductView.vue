@@ -56,6 +56,11 @@ const PRODUCT_LIMITS = {
   images: { min: 1, max: 10 }
 }
 
+function getMultipartTransportLength(value: string): number {
+  // Multipart form payload normalizes LF to CRLF, so backend sees this length.
+  return value.replace(/\r?\n/g, '\r\n').length
+}
+
 const store = useUserStore()
 const user = await store.getUser()
 
@@ -66,6 +71,8 @@ const maxUploadedImages = computed(() => {
 const normalizedTitle = computed(() => title.value.trim())
 const normalizedDescription = computed(() => description.value.trim())
 const normalizedProductData = computed(() => productData.value.trim())
+const normalizedDescriptionLength = computed(() => getMultipartTransportLength(normalizedDescription.value))
+const normalizedProductDataLength = computed(() => getMultipartTransportLength(normalizedProductData.value))
 const priceValueRub = computed(() => {
   const input = Number(price.value)
   if (!Number.isFinite(input)) return 0
@@ -78,12 +85,12 @@ const titleLengthValid = computed(() => (
   && normalizedTitle.value.length <= PRODUCT_LIMITS.title.max
 ))
 const descriptionLengthValid = computed(() => (
-  normalizedDescription.value.length >= PRODUCT_LIMITS.description.min
-  && normalizedDescription.value.length <= PRODUCT_LIMITS.description.max
+  normalizedDescriptionLength.value >= PRODUCT_LIMITS.description.min
+  && normalizedDescriptionLength.value <= PRODUCT_LIMITS.description.max
 ))
 const productDataLengthValid = computed(() => (
-  normalizedProductData.value.length >= PRODUCT_LIMITS.productData.min
-  && normalizedProductData.value.length <= PRODUCT_LIMITS.productData.max
+  normalizedProductDataLength.value >= PRODUCT_LIMITS.productData.min
+  && normalizedProductDataLength.value <= PRODUCT_LIMITS.productData.max
 ))
 const productDataValidForForm = computed(() => (
   !autoDelivery.value || productDataLengthValid.value
@@ -544,7 +551,7 @@ async function createProduct() {
                   }}
                 </p>
                 <p class="text-xs text-gray-400 text-right">
-                  {{ description.length }}/{{ PRODUCT_LIMITS.description.max }}
+                  {{ normalizedDescriptionLength }}/{{ PRODUCT_LIMITS.description.max }}
                 </p>
               </div>
             </div>
@@ -600,7 +607,7 @@ async function createProduct() {
                   }}
                 </p>
                 <p class="text-xs text-gray-400 text-right">
-                  {{ productData.length }}/{{ PRODUCT_LIMITS.productData.max }}
+                  {{ normalizedProductDataLength }}/{{ PRODUCT_LIMITS.productData.max }}
                 </p>
               </div>
             </div>

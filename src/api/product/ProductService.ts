@@ -419,8 +419,9 @@ export const productService = {
   async deleteProduct(productId: string) {
     try {
       const response = await httpClient.delete(`/products/${productId}`);
-      return response.status === 200;
-    } catch {
+      return response.status === 200 || response.status === 204;
+    } catch (e) {
+      console.error("Failed to delete product:", e);
       return false;
     }
   },

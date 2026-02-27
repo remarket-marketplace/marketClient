@@ -32,7 +32,10 @@ const searchQuery = ref('');
 const sortBy = ref('created_desc');
 const statusFilter = ref('all');
 const pageSize = 20;
-const visibleCount = ref(pageSize);
+const currentPage = ref(1);
+const totalPages = ref(1);
+const totalProducts = ref(0);
+const isLoadingMore = ref(false);
 const listRef = ref<HTMLElement | null>(null);
 const sentinelRef = ref<HTMLElement | null>(null);
 const confirmRejectWindowOpen = ref(false);
@@ -50,20 +53,34 @@ const statusUpdateError = ref('');
 const isUpdatingStatus = ref(false);
 let observer: IntersectionObserver | null = null;
 
-async function loadProducts() {
+async function loadProducts(page = 1, append = false) {
   try {
-    const data = await adminService.getAdminProductList();
-    products.value = Array.isArray(data) ? data : [];
+    if (!append) {
+      isLoading.value = true;
+    } else {
+      isLoadingMore.value = true;
+    }
+
+    const data = await adminService.getAdminProductList(page, pageSize);
+    if (append) {
+      products.value = [...products.value, ...data.products];
+    } else {
+      products.value = data.products;
+    }
+    currentPage.value = data.currentPage;
+    totalPages.value = data.totalPages;
+    totalProducts.value = data.total;
   } catch (error) {
     console.error('Error loading products:', error);
   } finally {
     isLoading.value = false;
+    isLoadingMore.value = false;
+    nextTick(setupObserver);
   }
 }
 
 onMounted(async () => {
   await loadProducts();
-  resetPagination();
   nextTick(setupObserver);
 });
 
@@ -202,13 +219,11 @@ const sortedProducts = computed(() => {
   }
 });
 
-const visibleProducts = computed(() => sortedProducts.value.slice(0, visibleCount.value));
-
 const displayTotal = computed(() => {
   if (normalizedQuery.value || statusFilter.value !== 'all') {
     return filteredProducts.value.length;
   }
-  return products.value.length;
+  return totalProducts.value;
 });
 
 const statusOptions = computed(() => {
@@ -306,14 +321,10 @@ async function confirmStatusUpdate() {
   }
 }
 
-function loadMoreProducts() {
-  if (visibleCount.value >= sortedProducts.value.length) return;
-  visibleCount.value = Math.min(visibleCount.value + pageSize, sortedProducts.value.length);
-}
-
-function resetPagination() {
-  visibleCount.value = pageSize;
-  if (listRef.value) listRef.value.scrollTop = 0;
+async function loadMoreProducts() {
+  if (isLoading.value || isLoadingMore.value) return;
+  if (currentPage.value >= totalPages.value) return;
+  await loadProducts(currentPage.value + 1, true);
 }
 
 function setupObserver() {
@@ -321,7 +332,9 @@ function setupObserver() {
   observer?.disconnect();
   observer = new IntersectionObserver(
     (entries) => {
-      if (entries[0]?.isIntersecting) loadMoreProducts();
+      if (entries[0]?.isIntersecting) {
+        void loadMoreProducts();
+      }
     },
     { root: listRef.value, threshold: 0.1 }
   );
@@ -329,14 +342,8 @@ function setupObserver() {
 }
 
 watch([searchQuery, sortBy, statusFilter], () => {
-  resetPagination();
+  if (listRef.value) listRef.value.scrollTop = 0;
   nextTick(setupObserver);
-});
-
-watch(sortedProducts, () => {
-  if (visibleCount.value > sortedProducts.value.length) {
-    visibleCount.value = sortedProducts.value.length;
-  }
 });
 </script>
 
@@ -386,7 +393,7 @@ watch(sortedProducts, () => {
         <span class="ml-2 text-sm sm:text-lg text-gray-400">{{ $t('common.loading') }}</span>
       </div>
 
-      <div v-else-if="visibleProducts.length === 0" class="flex items-center justify-center h-32">
+      <div v-else-if="sortedProducts.length === 0" class="flex items-center justify-center h-32">
         <div class="text-center">
           <Package class="h-6 w-6 sm:h-12 sm:w-12 text-gray-500 mx-auto mb-1" />
           <p class="text-text-secondary text-xs sm:text-base">{{ $t('common.noData') }}</p>
@@ -396,7 +403,7 @@ watch(sortedProducts, () => {
       <div ref="listRef" v-else class="h-full overflow-y-auto space-y-2">
         <!-- Карточка товара -->
         <div
-          v-for="product in visibleProducts"
+          v-for="product in sortedProducts"
           :key="product.id"
           class="bg-dark-600 border border-dark-700 rounded-lg p-2 sm:p-4 hover:border-dark-500 transition-all duration-200"
         >
@@ -561,6 +568,9 @@ watch(sortedProducts, () => {
           </div>
         </div>
 
+        <div v-if="isLoadingMore" class="flex items-center justify-center py-4">
+          <Loader2 class="h-5 w-5 animate-spin text-blue-500" />
+        </div>
         <div ref="sentinelRef" class="h-4 w-full"></div>
       </div>
     </div>

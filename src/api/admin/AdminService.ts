@@ -98,10 +98,15 @@ export const adminService = {
     }
   },
 
-  async getAdminProductList() {
+  async getAdminProductList(page = 1, perPage = 20) {
     try {
-      const response = await httpClient.get("/admin/products");
-      return response.data.map((product: any) => {
+      const response = await httpClient.get("/admin/products", {
+        params: {
+          page,
+          per_page: perPage,
+        },
+      });
+      const products = response.data.products.map((product: any) => {
         const transformedProduct = {
           ...product,
           images: product.images.map((img: any) => ({
@@ -111,11 +116,22 @@ export const adminService = {
         };
         return ProductSchema.parse(transformedProduct);
       });
+      return {
+        products,
+        currentPage: page,
+        totalPages: response.data.total_pages,
+        total: response.data.total,
+      };
     } catch (e) {
       if (e instanceof ZodError) {
         console.error(e.issues);
       }
-      return [];
+      return {
+        products: [],
+        currentPage: 1,
+        totalPages: 1,
+        total: 0,
+      };
     }
   },
 
