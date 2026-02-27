@@ -15,6 +15,7 @@ import BackButton from '@/components/navigation/BackButton.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
+import { storeToRefs } from 'pinia'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const RAIKA_BOT_URL = 'https://t.me/Raika_CheckBot'
@@ -25,7 +26,7 @@ const productId = route.params.productId as string
 
 
 const store = useUserStore()
-const user = await store.getUser()
+const { user } = storeToRefs(store)
 
 const product = ref<Product | null>(null)
 const selectedImage = ref<ProductImage | null>(null)
@@ -33,13 +34,19 @@ const openImageModal = ref(false)
 const showDeleteConfirm = ref(false)
 const showBuyConfirm = ref(false)
 const buyError = ref<string | null>(null)
+const showInsufficientBalanceModal = ref(false)
+const insufficientBalanceDetails = ref<{
+  balance: number
+  price: number
+  shortage: number
+} | null>(null)
 
 const canSeeModerationRejectReason = computed(() => {
   if (!product.value || product.value.status !== 'rejected') {
     return false
   }
 
-  return Boolean(product.value.is_owner || user?.role === 'admin')
+  return Boolean(product.value.is_owner || user.value?.role === 'admin')
 })
 
 const moderationRejectReasonLabel = computed(() => {
@@ -111,19 +118,52 @@ async function handleBuyConfirm() {
   buyError.value = null
 
   const result = await productService.buyProduct(product.value.id)
+  showBuyConfirm.value = false
 
   if (result.success) {
     router.push('/chats')
-  } else if (result.error) {
-    buyError.value = getErrorMessage(result.error, t)
+    return
   }
 
-  showBuyConfirm.value = false
+  if (result.error?.error_code === 'NOT_ENOUGH_BALANCE') {
+    await store.fetchUser()
+    const balance = Number(user.value?.balance ?? 0)
+    const price = Number(product.value.price ?? 0)
+    const shortage = Math.max(0, price - balance)
+
+    insufficientBalanceDetails.value = {
+      balance,
+      price,
+      shortage,
+    }
+    showInsufficientBalanceModal.value = true
+    return
+  }
+
+  if (result.error) {
+    buyError.value = getErrorMessage(result.error, t)
+  }
 }
 
 
 function closeBuyConfirm() {
   showBuyConfirm.value = false
+}
+
+function closeInsufficientBalanceModal() {
+  showInsufficientBalanceModal.value = false
+}
+
+function goToWalletTopUp() {
+  showInsufficientBalanceModal.value = false
+  const shortageRub = Math.max(0, insufficientBalanceDetails.value?.shortage ?? 0)
+  router.push({
+    name: 'wallet',
+    query: {
+      open_deposit: '1',
+      amount_rub: shortageRub.toFixed(2),
+    },
+  })
 }
 
 function nextImage() {
@@ -454,6 +494,50 @@ onUnmounted(() => {
     <ConfirmWindow :is-open="showBuyConfirm" :title="$t('pages.product.buyConfirm.title')"
       :message="$t('pages.product.buyConfirm.message')" :confirm-text="$t('pages.product.buyConfirm.confirm')"
       :cancel-text="$t('pages.product.buyConfirm.cancel')" @confirm="handleBuyConfirm" @cancel="closeBuyConfirm" />
+
+    <ConfirmWindow
+      :is-open="showInsufficientBalanceModal"
+      :title="$t('pages.product.insufficientBalance.title')"
+      :message="$t('pages.product.insufficientBalance.message')"
+      :confirm-text="$t('pages.product.insufficientBalance.topUp')"
+      :cancel-text="$t('common.cancel')"
+      @confirm="goToWalletTopUp"
+      @cancel="closeInsufficientBalanceModal"
+    >
+      <template #body>
+        <div
+          class="rounded-xl border border-amber-700/40 bg-amber-900/15 p-4"
+        >
+          <div class="space-y-2 text-sm">
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-gray-300">
+                {{ $t('pages.product.insufficientBalance.balance') }}
+              </span>
+              <span class="font-semibold text-white">
+                {{ formatCurrencyAmount(insufficientBalanceDetails?.balance ?? 0, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+              </span>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-gray-300">
+                {{ $t('pages.product.insufficientBalance.price') }}
+              </span>
+              <span class="font-semibold text-white">
+                {{ formatCurrencyAmount(insufficientBalanceDetails?.price ?? 0, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+              </span>
+            </div>
+            <div class="h-px bg-dark-700"></div>
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-amber-200 font-medium">
+                {{ $t('pages.product.insufficientBalance.shortage') }}
+              </span>
+              <span class="font-bold text-amber-300">
+                {{ formatCurrencyAmount(insufficientBalanceDetails?.shortage ?? 0, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </template>
+    </ConfirmWindow>
   </section>
 
   <div v-else class="w-full min-h-[calc(100dvh-3.5rem)] flex items-center justify-center">

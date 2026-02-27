@@ -7,7 +7,7 @@ import Checkbox from '@/components/Checkbox.vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import type { ProductEdit } from '@/validation/product/product'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getErrorMessage } from '@/utils/errorsMap'
 import { X, Info, AlertCircle, Tag, Package, Percent, Calculator } from 'lucide-vue-next'
@@ -18,6 +18,7 @@ import {
   getCurrencySymbol,
   getUsdRubRate,
   preferredCurrency,
+  setUsdRubRate,
 } from '@/utils/currency'
 
 const API_HOST = import.meta.env.VITE_API_HOST
@@ -41,16 +42,18 @@ const isLoadingProduct = ref(true)
 const commissionInterest = ref<number | null>(null)
 const selectedCurrency = computed(() => preferredCurrency.value)
 const currencySymbol = computed(() => getCurrencySymbol(selectedCurrency.value))
-const usdRubRate = getUsdRubRate()
+const usdRubRate = computed(() => getUsdRubRate())
 
 const PRODUCT_LIMITS = {
   title: { min: 10, max: 50 },
   description: { min: 10, max: 1200 },
   productData: { min: 10, max: 128 },
-  price: { min: 10, max: 1000000 },
   count: { min: 1, max: 5000 },
   images: { min: 1, max: 10 }
 }
+const DEFAULT_PRICE_RANGE_RUB = { min: 10, max: 1000000 }
+const minPriceRub = ref(DEFAULT_PRICE_RANGE_RUB.min)
+const maxPriceRub = ref(DEFAULT_PRICE_RANGE_RUB.max)
 
 function getMultipartTransportLength(value: string): number {
   // Multipart form payload normalizes LF to CRLF, so backend sees this length.
@@ -78,10 +81,10 @@ const normalizedDescription = computed(() => description.value.trim())
 const normalizedProductData = computed(() => productDataString.value.trim())
 const normalizedDescriptionLength = computed(() => getMultipartTransportLength(normalizedDescription.value))
 const normalizedProductDataLength = computed(() => getMultipartTransportLength(normalizedProductData.value))
+const priceValueInput = computed(() => Number(price.value))
 const priceValueRub = computed(() => {
-  const input = Number(price.value)
-  if (!Number.isFinite(input)) return 0
-  return convertCurrencyAmount(input, selectedCurrency.value, 'RUB')
+  if (!Number.isFinite(priceValueInput.value)) return NaN
+  return convertCurrencyAmount(priceValueInput.value, selectedCurrency.value, 'RUB')
 })
 const countValue = computed(() => Number(count.value))
 
@@ -100,10 +103,25 @@ const productDataLengthValid = computed(() => (
 const productDataValidForForm = computed(() => (
   !autoDelivery.value || productDataLengthValid.value
 ))
+const priceInputMin = computed(() => {
+  if (selectedCurrency.value === 'RUB') return minPriceRub.value
+  return Number((minPriceRub.value / usdRubRate.value).toFixed(2))
+})
+
+const priceInputMax = computed(() => {
+  if (selectedCurrency.value === 'RUB') return maxPriceRub.value
+  return Number((maxPriceRub.value / usdRubRate.value).toFixed(2))
+})
+
+const priceInputStep = computed(() => (selectedCurrency.value === 'USD' ? 0.01 : 1))
+
 const priceValid = computed(() => (
-  Number.isFinite(priceValueRub.value)
-  && priceValueRub.value >= PRODUCT_LIMITS.price.min
-  && priceValueRub.value <= PRODUCT_LIMITS.price.max
+  Number.isFinite(priceValueInput.value)
+  && priceValueInput.value >= priceInputMin.value
+  && priceValueInput.value <= priceInputMax.value
+  && Number.isFinite(priceValueRub.value)
+  && priceValueRub.value >= minPriceRub.value
+  && priceValueRub.value <= maxPriceRub.value
 ))
 const countValid = computed(() => (
   Number.isFinite(countValue.value)
@@ -137,17 +155,15 @@ const formatPrice = (value: number) => {
   })
 }
 
-const priceInputMin = computed(() => {
-  if (selectedCurrency.value === 'RUB') return PRODUCT_LIMITS.price.min
-  return Number((PRODUCT_LIMITS.price.min / usdRubRate).toFixed(2))
-})
+function formatPriceRangeBound(value: number): string {
+  if (selectedCurrency.value === 'USD') {
+    return `${value.toFixed(2)} ${currencySymbol.value}`
+  }
+  return `${Math.round(value)} ${currencySymbol.value}`
+}
 
-const priceInputMax = computed(() => {
-  if (selectedCurrency.value === 'RUB') return PRODUCT_LIMITS.price.max
-  return Number((PRODUCT_LIMITS.price.max / usdRubRate).toFixed(2))
-})
-
-const priceInputStep = computed(() => (selectedCurrency.value === 'USD' ? 0.01 : 1))
+const priceRangeMinLabel = computed(() => formatPriceRangeBound(priceInputMin.value))
+const priceRangeMaxLabel = computed(() => formatPriceRangeBound(priceInputMax.value))
 
 // Валидация формы
 const isFormValid = computed(() => {
@@ -191,8 +207,8 @@ const validationIssues = computed(() => {
   if (!priceValid.value) {
     issues.push(
       t('pages.forms.editProduct.validationPriceRange', {
-        min: PRODUCT_LIMITS.price.min,
-        max: PRODUCT_LIMITS.price.max,
+        min: priceRangeMinLabel.value,
+        max: priceRangeMaxLabel.value,
       }),
     )
   }
@@ -218,6 +234,21 @@ const validationIssues = computed(() => {
 
 onMounted(async () => {
   try {
+    const currencyConfig = await productService.getCurrencyConfig()
+    if (currencyConfig?.usd_rub_rate) {
+      setUsdRubRate(currencyConfig.usd_rub_rate)
+    }
+    if (
+      currencyConfig
+      && Number.isFinite(currencyConfig.min_price_rub)
+      && Number.isFinite(currencyConfig.max_price_rub)
+      && currencyConfig.min_price_rub > 0
+      && currencyConfig.max_price_rub >= currencyConfig.min_price_rub
+    ) {
+      minPriceRub.value = currencyConfig.min_price_rub
+      maxPriceRub.value = currencyConfig.max_price_rub
+    }
+
     await store.fetchUser()
 
     // Загружаем данные товара для редактирования
@@ -251,6 +282,17 @@ onMounted(async () => {
   } finally {
     isLoadingProduct.value = false
   }
+})
+
+watch(selectedCurrency, (nextCurrency, prevCurrency) => {
+  if (!prevCurrency || nextCurrency === prevCurrency) return
+  const currentInput = Number(price.value)
+  if (!Number.isFinite(currentInput)) return
+
+  const converted = convertCurrencyAmount(currentInput, prevCurrency, nextCurrency)
+  price.value = nextCurrency === 'USD'
+    ? converted.toFixed(2)
+    : Math.round(converted).toString()
 })
 
 // Удаление существующего изображения
@@ -287,7 +329,8 @@ async function updateProduct() {
     const productDataObj = {
       title: normalizedTitle.value,
       description: normalizedDescription.value,
-      price: Math.round(priceValueRub.value),
+      price: Number(price.value),
+      price_currency: selectedCurrency.value,
       product_data: autoDelivery.value ? normalizedProductData.value : undefined,
       category_id: productData.value!.category.id,
       count: count.value,
@@ -308,10 +351,11 @@ async function updateProduct() {
     }
   } catch (err: any) {
     console.error('Ошибка при обновлении товара:', err)
-    if (err?.response?.data?.detail?.error_code) {
-      errorMessage.value = getErrorMessage(err.response.data.detail, t)
-    } else if (err.response?.data?.detail && Array.isArray(err.response.data.detail)) {
-      const errors = err.response.data.detail.map((e: any) => e.msg).join(', ')
+    const detail = err?.response?.data?.detail
+    if (detail?.error_code) {
+      errorMessage.value = getErrorMessage(detail, t)
+    } else if (Array.isArray(detail)) {
+      const errors = detail.map((e: any) => e.msg).join(', ')
       errorMessage.value = `${t('common.validationErrors')} ${errors}`
     } else {
       errorMessage.value = t('pages.forms.editProduct.errorUpdatingProduct')
@@ -594,8 +638,8 @@ async function updateProduct() {
               <p class="text-xs" :class="priceValid ? 'text-gray-400' : 'text-red-400'">
                 {{
                   $t('pages.forms.editProduct.validationPriceRange', {
-                    min: PRODUCT_LIMITS.price.min,
-                    max: PRODUCT_LIMITS.price.max,
+                    min: priceRangeMinLabel,
+                    max: priceRangeMaxLabel,
                   })
                 }}
               </p>

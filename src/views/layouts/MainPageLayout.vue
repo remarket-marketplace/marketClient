@@ -194,10 +194,6 @@ const navItems = computed(() => {
                     <SelectLanguage />
                 </div>
             </div>
-            <div
-                aria-hidden="true"
-                class="pointer-events-none absolute bottom-0 left-1/2 h-px w-full -translate-x-1/2 bg-gradient-to-r from-dark-700/25 via-dark-700/95 to-dark-700/25 2xl:w-1/2"
-            />
         </header>
 
         <main class="flex-1 overflow-y-auto">

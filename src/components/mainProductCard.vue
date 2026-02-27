@@ -4,14 +4,18 @@ import { useRouter } from 'vue-router'
 import type { Product } from '@/validation/product/product'
 import { useI18n } from 'vue-i18n'
 import UserRating from './UserRating.vue'
+import ProductStatusTag from './ProductStatusTag.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
 
 const { t } = useI18n()
 const router = useRouter()
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   product: Product
-}>()
+  showStatusTag?: boolean
+}>(), {
+  showStatusTag: false,
+})
 
 const emit = defineEmits<{
   click: [id: string]
@@ -35,11 +39,14 @@ const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
     class="flex flex-col cursor-pointer border border-dark-700 rounded-2xl hover:shadow-xl hover:border-dark-500 transition duration-200 bg-dark-900 h-full"
     @click="onClick">
     <!-- Image -->
-    <div class="m-1 mb-2 aspect-square w-auto overflow-hidden rounded-xl bg-gray-700 flex-shrink-0 border-[0.5px] border-dark-600/70">
+    <div class="relative m-1 mb-2 aspect-square w-auto overflow-hidden rounded-xl bg-gray-700 flex-shrink-0 border-[0.5px] border-dark-600/70">
       <img v-if="product.images.length" :src="`${API_HOST}${product.images[0]?.image_url}`"
         class="w-full h-full object-cover" alt="product image" />
       <div v-else class="w-full h-full flex items-center justify-center text-sm text-gray-300">
         {{ t('common.noImage') }}
+      </div>
+      <div v-if="showStatusTag" class="pointer-events-none absolute right-2 top-2 z-10">
+        <ProductStatusTag :product-status="product.status" />
       </div>
     </div>
 
@@ -52,9 +59,9 @@ const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
       <hr class="border-dark-700 opacity-80 mb-2 flex-shrink-0" />
 
       <!-- Bottom section with seller and button -->
-      <div class="product-footer mt-auto flex flex-col gap-2">
+      <div class="mt-auto flex w-full flex-col gap-2">
         <!-- Seller info-->
-        <div class="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
+        <div class="flex w-full min-w-0 items-center gap-1 sm:gap-2">
           <p class="min-w-0 shrink text-xs sm:text-sm text-blue-400 transition hover:text-blue-300 underline decoration-transparent hover:decoration-blue-300 truncate"
             @click.stop="goToSeller">
             {{ product.seller.username }}
@@ -70,7 +77,7 @@ const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
 
         <!-- Buy button -->
         <button
-          class="product-buy-btn group w-full relative overflow-hidden rounded-lg bg-blue-600 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-white transition cursor-pointer flex-shrink-0 whitespace-nowrap hover:bg-blue-700"
+          class="group relative w-full flex-shrink-0 cursor-pointer overflow-hidden whitespace-nowrap rounded-lg bg-blue-600 px-2 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700 sm:px-3 sm:py-2 sm:text-sm"
           @click="onClick">
           <span class="block text-center tabular-nums transition-all duration-200 group-hover:-translate-y-full group-hover:opacity-0">
             {{ formattedPrice }}
@@ -94,19 +101,5 @@ const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
   overflow: hidden;
   word-break: break-word;
   text-overflow: ellipsis;
-}
-
-@media (min-width: 2140px) {
-  .product-footer {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-  }
-
-  .product-buy-btn {
-    width: auto;
-    min-width: 108px;
-  }
 }
 </style>

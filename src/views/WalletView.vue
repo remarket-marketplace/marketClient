@@ -18,6 +18,8 @@ import {
 import { walletService } from '@/api/wallet/walletService'
 import type { Balance, WalletHistoryItem } from '@/validation/wallet/wallet'
 import BackButton from '@/components/navigation/BackButton.vue'
+import { useRoute, useRouter } from 'vue-router'
+import type { LocationQueryValue } from 'vue-router'
 import {
   convertCurrencyAmount,
   formatCurrencyAmount,
@@ -26,6 +28,8 @@ import {
 } from '@/utils/currency'
 
 const { t } = useI18n()
+const route = useRoute()
+const router = useRouter()
 
 const balance = ref(0)
 const isLoading = ref(false)
@@ -100,6 +104,45 @@ const isWithdrawAmountValid = computed(() => {
 const showDepositModal = ref(false)
 const showWithdrawModal = ref(false)
 
+function getSingleQueryValue(
+  value: LocationQueryValue | LocationQueryValue[] | undefined,
+): string | null {
+  if (Array.isArray(value)) return typeof value[0] === 'string' ? value[0] : null
+  if (typeof value === 'string') return value
+  return null
+}
+
+function resolveDepositAmountFromRub(amountRub: number): string {
+  const converted = convertCurrencyAmount(amountRub, 'RUB', selectedCurrency.value)
+  if (selectedCurrency.value === 'USD') {
+    return converted.toFixed(2)
+  }
+  return Math.ceil(converted).toString()
+}
+
+function clearAutoDepositQuery() {
+  const nextQuery = { ...route.query }
+  delete nextQuery.open_deposit
+  delete nextQuery.amount_rub
+  router.replace({ query: nextQuery })
+}
+
+function applyAutoDepositFromQuery() {
+  const shouldOpen = getSingleQueryValue(route.query.open_deposit) === '1'
+  if (!shouldOpen) return
+
+  const amountRubRaw = getSingleQueryValue(route.query.amount_rub)
+  const amountRub = Number.parseFloat(amountRubRaw ?? '')
+
+  showDepositModal.value = true
+
+  if (Number.isFinite(amountRub) && amountRub > 0) {
+    depositAmount.value = resolveDepositAmountFromRub(amountRub)
+  }
+
+  clearAutoDepositQuery()
+}
+
 onMounted(async () => {
   isLoading.value = true
 
@@ -109,6 +152,7 @@ onMounted(async () => {
   }
 
   await loadHistory()
+  applyAutoDepositFromQuery()
   isLoading.value = false
 })
 

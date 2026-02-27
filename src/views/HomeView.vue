@@ -382,7 +382,7 @@ onBeforeUnmount(() => {
 
   <section class="w-full flex flex-col items-center">
     <div
-      class="relative z-20 flex min-h-screen w-full flex-col items-center px-2 pb-6 lg:px-4"
+      class="relative z-20 flex min-h-screen w-full flex-col items-center px-1 pb-6 sm:px-2 lg:px-2"
       :class="user ? 'pt-20' : 'pt-6'"
     >
         <SearchField v-model="searchQuery" :placeholder="$t('pages.index.searchPlaceholder')"
@@ -397,11 +397,11 @@ onBeforeUnmount(() => {
 
           <div v-else ref="categoriesScroll" 
                @wheel="handleCategoriesWheel"
-               class="overflow-x-auto overflow-y-hidden  w-full relative cursor-grab active:cursor-grabbing">
+               class="overflow-x-auto overflow-y-hidden w-full relative">
             <div class="flex gap-3 min-w-max py-2">
               <div v-for="cat in mainCategories" :key="cat.id" @click="onMainCategoryClick(cat.id)"
                 class="flex-shrink-0 cursor-pointer flex flex-col items-center p-2 rounded-lg transition" 
-                :class="selectedMainCategoryId === cat.id ? 'bg-white/20' : 'hover:bg-dark-700/40'">
+                :class="selectedMainCategoryId === cat.id ? 'bg-white/20' : ''">
                 <div class="w-16 h-16 flex items-center justify-center bg-dark-700 rounded-lg overflow-hidden border border-white/5 shadow-inner">
                   <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="w-full h-full object-cover" />
                   <Folder v-else class="w-8 h-8 text-gray-400" />
@@ -415,7 +415,7 @@ onBeforeUnmount(() => {
         <div v-if="subCategories.length" class="mt-4 w-full">
           <div class="flex gap-2 flex-wrap">
             <button v-for="sub in subCategories" :key="sub.id" @click="onSubCategoryClick(sub.id)"
-              class="px-5 py-2.5 rounded-full text-sm font-bold border transition-all hover:scale-105 active:scale-95 backdrop-blur-md"
+              class="px-5 py-2.5 rounded-full text-sm font-bold border transition-colors backdrop-blur-md"
               :class="selectedSubCategoryId === sub.id ? 'bg-blue-600 text-white border-blue-500' : 'bg-white/5 text-white border-white/10 hover:bg-white/10'">
               {{ sub.name }}
             </button>
@@ -501,7 +501,7 @@ onBeforeUnmount(() => {
           </transition>
         </div>
 
-        <div v-if="isProductsLoading" class="products-grid grid gap-4 mt-6 w-full">
+        <div v-if="isProductsLoading" class="products-grid grid gap-1 md:gap-2 mt-6 w-full">
           <div v-for="n in perPage" :key="n" class="h-64 bg-dark-600 animate-pulse rounded-2xl" />
         </div>
 
@@ -509,7 +509,7 @@ onBeforeUnmount(() => {
           {{ t('pages.index.noProducts') }}
         </div>
 
-        <div v-else class="products-grid grid gap-4 mt-6 w-full">
+        <div v-else class="products-grid grid gap-1 md:gap-2 mt-6 w-full">
           <MainProductCard v-for="product in products" :key="product.id" :product="product" @click="goToProduct" />
         </div>
     </div>
@@ -523,15 +523,21 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 680px) {
   .products-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-@media (min-width: 2140px) {
+@media (min-width: 980px) {
   .products-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1360px) {
+  .products-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 </style>

@@ -152,12 +152,20 @@ onMounted(async () => {
             if (chatIndex === -1) return
 
             const chat = chats.value[chatIndex]
+            const isActiveChat = selectedChatId.value === update.chat_id
 
             if (update.last_message && chat) {
                 chat.last_message = update.last_message
                 // Перемещаем чат наверх списка при новом сообщении
                 chats.value.splice(chatIndex, 1)
                 chats.value.unshift(chat)
+            }
+
+            if (chat && typeof update.unread_count === 'number') {
+                chat.unread_count = isActiveChat ? 0 : update.unread_count
+                if (isActiveChat && update.unread_count > 0) {
+                    void chatsService.markChatRead(update.chat_id)
+                }
             }
         })
 
@@ -166,6 +174,10 @@ onMounted(async () => {
                 if (!chatMessages.value.some(m => m.id === message.id)) {
                     chatMessages.value.push(message)
                     nextTick(scrollToBottom)
+
+                    const activeChat = chats.value.find(c => c.id === message.chat_room_id)
+                    if (activeChat) activeChat.unread_count = 0
+                    void chatsService.markChatRead(message.chat_room_id)
                 }
             }
         })
@@ -331,6 +343,10 @@ async function loadChatMessages(chatId: string) {
     chatMessages.value = response.messages
     messagesTotalPages.value = response.totalPages
     hasMoreMessages.value = 1 < messagesTotalPages.value
+
+    const chat = chats.value.find(c => c.id === chatId)
+    if (chat) chat.unread_count = 0
+    await chatsService.markChatRead(chatId)
 
     await nextTick()
     scrollToBottom()

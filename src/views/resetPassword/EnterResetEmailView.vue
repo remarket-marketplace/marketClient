@@ -40,8 +40,8 @@ async function sendLetter() {
 </script>
 
 <template>
-    <div class="h-full w-full flex items-center justify-center bg-background px-4">
-        <div class="max-w-sm w-full border border-dark-700 rounded-2xl bg-background p-8 backdrop-blur-md space-y-6">
+    <div class="h-full w-full flex flex-col items-center overflow-scroll pb-36 pt-10">
+        <div class="max-w-sm w-full border border-dark-700 rounded-2xl bg-background p-8 backdrop-blur-md space-y-6 my-auto">
             <h1 class="text-center text-3xl text-mainText font-bold">
                 {{ $t('pages.resetPassword.title') }}
             </h1>

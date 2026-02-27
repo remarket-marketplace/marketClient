@@ -6,6 +6,11 @@ export const CURRENCY_STORAGE_KEY = 'user-currency'
 const LANGUAGE_STORAGE_KEY = 'user-language'
 const DEFAULT_USD_RUB_RATE = 90
 
+function resolveUsdRubRateFromEnv(): number {
+  const raw = Number.parseFloat(import.meta.env.VITE_USD_RUB_RATE ?? '')
+  return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_USD_RUB_RATE
+}
+
 function isCurrencyCode(value: string | null): value is CurrencyCode {
   return value === 'RUB' || value === 'USD'
 }
@@ -36,6 +41,7 @@ function resolvePreferredCurrencyFromStorage(): CurrencyCode {
 }
 
 export const preferredCurrency = ref<CurrencyCode>(resolvePreferredCurrencyFromStorage())
+const usdRubRate = ref<number>(resolveUsdRubRateFromEnv())
 
 export function setPreferredCurrency(currency: CurrencyCode): void {
   preferredCurrency.value = currency
@@ -44,8 +50,12 @@ export function setPreferredCurrency(currency: CurrencyCode): void {
 }
 
 export function getUsdRubRate(): number {
-  const raw = Number.parseFloat(import.meta.env.VITE_USD_RUB_RATE ?? '')
-  return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_USD_RUB_RATE
+  return usdRubRate.value
+}
+
+export function setUsdRubRate(rate: number): void {
+  if (!Number.isFinite(rate) || rate <= 0) return
+  usdRubRate.value = rate
 }
 
 export function getCurrencyLocale(currency: CurrencyCode): string {

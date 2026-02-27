@@ -16,15 +16,16 @@ const currencyOptions: CurrencyOption[] = [
   { label: 'USD', value: 'USD' },
   { label: 'RUB', value: 'RUB' },
 ]
+const fallbackCurrencyOption: CurrencyOption = { label: 'USD', value: 'USD' }
 
 const isOpen = ref(false)
 const wrapperRef = ref<HTMLElement | null>(null)
 const selectedCurrency = preferredCurrency
 
-const currentOption = computed(() => {
+const currentOption = computed<CurrencyOption>(() => {
   return (
     currencyOptions.find((opt) => opt.value === selectedCurrency.value) ??
-    currencyOptions[0]
+    fallbackCurrencyOption
   )
 })
 

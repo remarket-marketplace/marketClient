@@ -9,6 +9,17 @@ export interface ProductsFilterParams {
   maxPrice?: number;
 }
 
+export interface ProductCurrencyConfig {
+  base_currency: "RUB";
+  supported_currencies: string[];
+  usd_rub_rate: number;
+  rate_source?: string;
+  rate_updated_at?: string | null;
+  is_fallback_rate?: boolean;
+  min_price_rub: number;
+  max_price_rub: number;
+}
+
 function buildProductsFilterParams(filters?: ProductsFilterParams) {
   if (!filters) return {};
 
@@ -21,6 +32,16 @@ function buildProductsFilterParams(filters?: ProductsFilterParams) {
 }
 
 export const productService = {
+  async getCurrencyConfig(): Promise<ProductCurrencyConfig | null> {
+    try {
+      const response = await httpClient.get("/products/currency-config");
+      return response.data as ProductCurrencyConfig;
+    } catch (e) {
+      console.error("Failed to load currency config:", e);
+      return null;
+    }
+  },
+
   async getAllProducts(
     page: number,
     perPage: number,
@@ -156,6 +177,7 @@ export const productService = {
       formData.append("title", productData.title);
       formData.append("description", productData.description);
       formData.append("price", productData.price.toString());
+      formData.append("price_currency", productData.price_currency || "RUB");
       if (
         typeof productData.product_data === "string" &&
         productData.product_data.trim().length > 0
@@ -181,7 +203,7 @@ export const productService = {
       return response.status === 200;
     } catch (error) {
       console.error("Ошибка создания товара:", error);
-      return null;
+      throw error;
     }
   },
 
@@ -202,8 +224,9 @@ export const productService = {
       if (productData.title) formData.append("title", productData.title);
       if (productData.description)
         formData.append("description", productData.description);
-      if (productData.price)
+      if (productData.price !== undefined && productData.price !== null)
         formData.append("price", productData.price.toString());
+      formData.append("price_currency", productData.price_currency || "RUB");
       if (productData.auto_delivery && productData.product_data)
         formData.append("product_data", productData.product_data);
       if (productData.category_id)
@@ -221,7 +244,7 @@ export const productService = {
       return response.data;
     } catch (error) {
       console.error("Ошибка обновления товара:", error);
-      return null;
+      throw error;
     }
   },
 

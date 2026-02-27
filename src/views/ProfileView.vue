@@ -4,6 +4,7 @@ import { productService } from '@/api/product/ProductService'
 import { profileService } from '@/api/profile/ProfileService'
 import { reviewService } from '@/api/review/ReviewService'
 import Loader from '@/components/Loader.vue'
+import ProfileProductCard from '@/components/ProfileProductCard.vue'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 import { ref, onMounted, onUnmounted, computed } from 'vue'
@@ -18,7 +19,6 @@ import type { Deal } from '@/validation/deal/deal'
 import UserRating from '@/components/UserRating.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
-import ProductStatusTag from '@/components/ProductStatusTag.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
 
 const { t } = useI18n()
@@ -564,41 +564,14 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 <h3 class="text-lg font-semibold text-gray-300 mb-2">{{ t('pages.profile.noProducts') }}</h3>
               </div>
 
-              <div v-else class="grid grid-cols-1 md:grid-cols-2 3xl:grid-cols-3 gap-4">
-                <div v-for="product in products" :key="product.id"
-                  class="group relative border border-dark-700 rounded-xl bg-dark-600/40 hover:bg-dark-600/60 transition-all duration-200 hover:border-blue-500/30 overflow-hidden"
-                  @click="router.push(`/product/${product.id}`)">
-                  <div class="aspect-square relative overflow-hidden">
-                    <img v-if="product.images?.[0]" :src="`${API_HOST}${product.images[0].image_url}`"
-                      class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      :alt="product.title" />
-                    <div v-else class="w-full h-full flex items-center justify-center bg-dark-700">
-                      <Package class="w-12 h-12 text-gray-500" />
-                    </div>
-
-                    <div class="absolute top-3 right-3">
-                      <ProductStatusTag v-if="isOwner" :product-status="product.status" />
-                    </div>
-
-                    <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                      <span class="text-lg font-bold text-white">{{ formatCurrencyAmount(product.price) }}</span>
-                    </div>
-                  </div>
-
-                  <div class="p-4 space-y-2">
-                    <h3 class="text-sm font-semibold text-white truncate">{{ product.title }}</h3>
-                    <p class="text-xs text-gray-400 line-clamp-2">{{ product.description }}</p>
-
-                    <div class="flex items-center justify-between pt-2">
-                      <div class="text-xs text-gray-400">
-                        {{ formatFullDate(product.created_at) }}
-                      </div>
-                      <div v-if="product.is_sold" class="text-xs px-2 py-1 rounded-full bg-red-500/20 text-red-300">
-                        {{ t('common.sold') }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div v-else class="profile-products-grid grid gap-4 mt-6 w-full">
+                <ProfileProductCard
+                  v-for="product in products"
+                  :key="product.id"
+                  :product="product"
+                  :is-owner="isOwner"
+                  @click="goToProduct"
+                />
               </div>
 
               <div v-if="currentPageProducts < totalPagesProducts" class="flex justify-center mt-6">
@@ -800,6 +773,22 @@ input[type="number"]::-webkit-outer-spin-button {
 
 input[type="number"] {
   -moz-appearance: textfield;
+}
+
+.profile-products-grid {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+@media (min-width: 640px) {
+  .profile-products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1700px) {
+  .profile-products-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 /* Custom scrollbar for left column on desktop */
