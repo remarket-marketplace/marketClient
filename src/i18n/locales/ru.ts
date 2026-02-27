@@ -279,6 +279,7 @@ const ru = {
       addPhoto: "Добавить фото",
       clearAll: "Очистить все",
       singleFileHint: "Загрузите одно изображение",
+      pasteHint: "Можно вставить из буфера: Cmd/Ctrl + V",
       errorOnlyImages: "Пожалуйста, загружайте только изображения",
       errorMaxFiles: "Максимум {maxFiles} изображений",
     },

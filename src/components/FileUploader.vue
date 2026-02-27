@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { Upload, Trash2, Image, X } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
   modelValue: File[]
@@ -13,6 +14,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:modelValue', value: File[]): void
 }>()
+const { t } = useI18n()
 
 type PreviewItem = {
   id: string
@@ -50,14 +52,14 @@ function addFiles(files: File[]) {
   const validFiles = files.filter((f) => f.type.startsWith('image/'))
 
   if (!validFiles.length) {
-    errorMessage.value = 'Пожалуйста, загружайте только изображения'
+    errorMessage.value = t('components.fileUploader.errorOnlyImages')
     return
   }
 
   if (maxFiles) {
     const remaining = maxFiles - props.modelValue.length
     if (remaining <= 0) {
-      errorMessage.value = `Максимум ${maxFiles} изображений`
+      errorMessage.value = t('components.fileUploader.errorMaxFiles', { maxFiles })
       return
     }
     validFiles.splice(remaining)
@@ -96,6 +98,27 @@ function handleChange(event: Event) {
   target.value = ''
 }
 
+// Clipboard paste
+function getClipboardFiles(data: DataTransfer | null): File[] {
+  if (!data) return []
+
+  const fromFiles = Array.from(data.files || [])
+  if (fromFiles.length) return fromFiles
+
+  return Array.from(data.items || [])
+    .filter((item) => item.kind === 'file')
+    .map((item) => item.getAsFile())
+    .filter((file): file is File => file !== null)
+}
+
+function handlePaste(event: ClipboardEvent) {
+  const files = getClipboardFiles(event.clipboardData)
+  if (!files.length) return
+
+  event.preventDefault()
+  addFiles(files)
+}
+
 // Удаление файла
 function removeImage(index: number) {
   const updated = [...props.modelValue]
@@ -110,7 +133,12 @@ function clearAll() {
 </script>
 
 <template>
-  <div class="w-full space-y-3" :class="{ 'single-file-mode': isSingleFileMode }">
+  <div
+    class="w-full space-y-3"
+    :class="{ 'single-file-mode': isSingleFileMode }"
+    tabindex="0"
+    @paste="handlePaste"
+  >
     <!-- Заголовок и счетчик -->
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
@@ -128,7 +156,7 @@ function clearAll() {
         class="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors"
       >
         <X class="w-3 h-3" />
-        Очистить все
+        {{ $t('components.fileUploader.clearAll') }}
       </button>
     </div>
 
@@ -245,6 +273,9 @@ function clearAll() {
     <div class="text-xs text-gray-400 flex items-center gap-1">
       <Image class="w-3 h-3" />
       {{ $t('components.fileUploader.supportOnlyImages') }}
+    </div>
+    <div class="text-xs text-gray-400">
+      {{ $t('components.fileUploader.pasteHint') }}
     </div>
   </div>
 </template>

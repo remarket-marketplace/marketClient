@@ -277,6 +277,7 @@ const en = {
       addPhoto: "Add photo",
       clearAll: "Clear all",
       singleFileHint: "Upload a single image",
+      pasteHint: "You can paste from clipboard: Cmd/Ctrl + V",
       errorOnlyImages: "Please upload only images",
       errorMaxFiles: "Maximum {maxFiles} images",
     },
