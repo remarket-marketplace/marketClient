@@ -59,8 +59,8 @@ const isFiltersOpen = ref(false)
 interface PricePreset {
   id: string
   label: string
-  min?: number
-  max?: number
+  minRub?: number
+  maxRub?: number
 }
 
 function formatPrice(value: number): string {
@@ -78,17 +78,50 @@ function parsePriceFilterInRub(value: string | number | null | undefined): numbe
   return Math.round(convertCurrencyAmount(parsed, selectedCurrency.value, 'RUB'))
 }
 
-const pricePresets = computed<PricePreset[]>(() => [
-  { id: 'up-to-1000', label: `≤ ${formatPrice(1000)}`, max: 1000 },
-  { id: '1000-5000', label: `${formatPrice(1000)} - ${formatPrice(5000)}`, min: 1000, max: 5000 },
-  { id: '5000-10000', label: `${formatPrice(5000)} - ${formatPrice(10000)}`, min: 5000, max: 10000 },
-  { id: '10000-plus', label: `≥ ${formatPrice(10000)}`, min: 10000 },
-])
+function toRubFromUsd(value: number): number {
+  return Math.round(convertCurrencyAmount(value, 'USD', 'RUB'))
+}
+
+const pricePresets = computed<PricePreset[]>(() => {
+  if (selectedCurrency.value === 'USD') {
+    return [
+      {
+        id: 'up-to-10-usd',
+        label: `≤ ${formatCurrencyAmount(10, { fromCurrency: 'USD', currency: 'USD' })}`,
+        maxRub: toRubFromUsd(10),
+      },
+      {
+        id: '10-50-usd',
+        label: `${formatCurrencyAmount(10, { fromCurrency: 'USD', currency: 'USD' })} - ${formatCurrencyAmount(50, { fromCurrency: 'USD', currency: 'USD' })}`,
+        minRub: toRubFromUsd(10),
+        maxRub: toRubFromUsd(50),
+      },
+      {
+        id: '50-100-usd',
+        label: `${formatCurrencyAmount(50, { fromCurrency: 'USD', currency: 'USD' })} - ${formatCurrencyAmount(100, { fromCurrency: 'USD', currency: 'USD' })}`,
+        minRub: toRubFromUsd(50),
+        maxRub: toRubFromUsd(100),
+      },
+      {
+        id: '100-plus-usd',
+        label: `≥ ${formatCurrencyAmount(100, { fromCurrency: 'USD', currency: 'USD' })}`,
+        minRub: toRubFromUsd(100),
+      },
+    ]
+  }
+
+  return [
+    { id: 'up-to-1000-rub', label: `≤ ${formatPrice(1000)}`, maxRub: 1000 },
+    { id: '1000-5000-rub', label: `${formatPrice(1000)} - ${formatPrice(5000)}`, minRub: 1000, maxRub: 5000 },
+    { id: '5000-10000-rub', label: `${formatPrice(5000)} - ${formatPrice(10000)}`, minRub: 5000, maxRub: 10000 },
+    { id: '10000-plus-rub', label: `≥ ${formatPrice(10000)}`, minRub: 10000 },
+  ]
+})
 
 function isPricePresetActive(preset: PricePreset): boolean {
   const min = parsePriceFilterInRub(minPriceFilter.value)
   const max = parsePriceFilterInRub(maxPriceFilter.value)
-  return min === preset.min && max === preset.max
+  return min === preset.minRub && max === preset.maxRub
 }
 
 async function onPricePresetClick(preset: PricePreset) {
@@ -98,8 +131,8 @@ async function onPricePresetClick(preset: PricePreset) {
     return
   }
 
-  minPriceFilter.value = preset.min === undefined ? '' : formatFilterValueFromRub(preset.min)
-  maxPriceFilter.value = preset.max === undefined ? '' : formatFilterValueFromRub(preset.max)
+  minPriceFilter.value = preset.minRub === undefined ? '' : formatFilterValueFromRub(preset.minRub)
+  maxPriceFilter.value = preset.maxRub === undefined ? '' : formatFilterValueFromRub(preset.maxRub)
   await applyProductFilters()
 }
 

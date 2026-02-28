@@ -78,13 +78,22 @@ function goToSeller() {
         </div>
 
         <button
-          class="group relative w-full flex-shrink-0 cursor-pointer overflow-hidden whitespace-nowrap rounded-lg bg-blue-600 px-2 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700 sm:px-3 sm:py-2 sm:text-sm"
+          class="w-full flex-shrink-0 cursor-pointer overflow-hidden whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-semibold transition sm:px-3 sm:py-2 sm:text-sm"
+          :class="isOwner
+            ? 'border border-dark-600 bg-dark-700/70 text-gray-100 hover:bg-dark-700'
+            : 'group bg-blue-600 text-white hover:bg-blue-700'"
           @click.stop="onClick"
         >
-          <span class="block text-center tabular-nums transition-all duration-200 group-hover:-translate-y-full group-hover:opacity-0">
+          <span
+            class="block text-center tabular-nums"
+            :class="!isOwner ? 'transition-all duration-200 group-hover:-translate-y-full group-hover:opacity-0' : ''"
+          >
             {{ formattedPrice }}
           </span>
-          <span class="absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+          <span
+            v-if="!isOwner"
+            class="absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100"
+          >
             {{ t('common.buy') }}
           </span>
         </button>
