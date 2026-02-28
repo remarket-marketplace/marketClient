@@ -98,7 +98,12 @@ async function handleDeleteConfirm() {
   if (product.value) {
     const success = await productService.deleteProduct(product.value.id)
     if (success) {
-      router.push('/')
+      if (window.history.length > 1) {
+        router.back()
+      } else {
+        const username = user.value?.username
+        router.push(username ? `/user/${username}` : '/')
+      }
     }
   }
   showDeleteConfirm.value = false

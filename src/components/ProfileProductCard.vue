@@ -47,9 +47,6 @@ function goToSeller() {
       <div v-else class="flex h-full w-full items-center justify-center text-sm text-gray-300">
         {{ t('common.noImage') }}
       </div>
-      <div v-if="isOwner" class="pointer-events-none absolute right-2 top-2 z-10">
-        <ProductStatusTag :product-status="product.status" />
-      </div>
     </div>
 
     <div class="flex flex-1 flex-col px-3 pb-3">
@@ -75,6 +72,10 @@ function goToSeller() {
           <div class="flex-shrink-0">
             <UserRating :rating="product.seller.rating" />
           </div>
+        </div>
+
+        <div v-if="isOwner" class="flex w-full justify-end">
+          <ProductStatusTag :product-status="product.status" size="compact" />
         </div>
 
         <button

@@ -3,6 +3,7 @@ import { computed } from 'vue';
 
 const props = defineProps<{
     productStatus: string
+    size?: 'default' | 'compact'
 }>()
 
 const statusClass = computed(() => {
@@ -25,10 +26,17 @@ const statusClass = computed(() => {
             return 'text-gray-400 bg-gray-400/10 border-gray-400/20';
     }
 })
+
+const sizeClass = computed(() => {
+    if (props.size === 'compact') {
+        return 'text-[10px] px-1.5 py-0.5'
+    }
+    return 'text-xs px-2.5 py-1'
+})
 </script>
 
 <template>
-    <span :class='["text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap border transition-all duration-200", statusClass]'>
+    <span :class='["font-medium rounded-full whitespace-nowrap border transition-all duration-200", statusClass, sizeClass]'>
         {{ $t(`common.productStatuses.${productStatus}`) }}
     </span>
 </template>
