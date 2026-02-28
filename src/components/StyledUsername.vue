@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { resolveNicknameStyleId } from '@/utils/nicknameStyles'
+import { computed, type CSSProperties } from 'vue'
+import { parseCustomNicknameStyleId, resolveNicknameStyleId } from '@/utils/nicknameStyles'
 
 const props = withDefaults(
   defineProps<{
@@ -13,11 +13,38 @@ const props = withDefaults(
 )
 
 const normalizedStyleId = computed(() => resolveNicknameStyleId(props.styleId))
-const styleClass = computed(() => `nick-style-${normalizedStyleId.value}`)
+const customStyleConfig = computed(() => parseCustomNicknameStyleId(normalizedStyleId.value))
+const styleClass = computed(() => (customStyleConfig.value ? '' : `nick-style-${normalizedStyleId.value}`))
+
+function rgbToRgba(rgb: { r: number; g: number; b: number }, alpha: number): string {
+  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`
+}
+
+const customInlineStyle = computed<CSSProperties | undefined>(() => {
+  const config = customStyleConfig.value
+  if (!config) return undefined
+
+  const primaryHex = `#${config.primaryColor.r.toString(16).padStart(2, '0')}${config.primaryColor.g.toString(16).padStart(2, '0')}${config.primaryColor.b.toString(16).padStart(2, '0')}`
+  const secondaryHex = `#${config.secondaryColor.r.toString(16).padStart(2, '0')}${config.secondaryColor.g.toString(16).padStart(2, '0')}${config.secondaryColor.b.toString(16).padStart(2, '0')}`
+  const isGradient = primaryHex !== secondaryHex
+
+  return {
+    color: isGradient ? 'transparent' : primaryHex,
+    backgroundImage: isGradient ? `linear-gradient(110deg, ${primaryHex} 0%, ${secondaryHex} 100%)` : undefined,
+    backgroundClip: isGradient ? 'text' : undefined,
+    WebkitBackgroundClip: isGradient ? 'text' : undefined,
+    textShadow: config.glowEnabled
+      ? `0 0 6px ${rgbToRgba(config.glowColor, 0.42)}, 0 0 14px ${rgbToRgba(config.glowColor, 0.28)}`
+      : undefined,
+    fontWeight: String(config.fontWeight),
+    fontStyle: config.italic ? 'italic' : 'normal',
+    textDecorationLine: config.underline ? 'underline' : 'none',
+  }
+})
 </script>
 
 <template>
-  <span class="styled-username" :class="styleClass">{{ username }}</span>
+  <span class="styled-username" :class="styleClass" :style="customInlineStyle">{{ username }}</span>
 </template>
 
 <style scoped>

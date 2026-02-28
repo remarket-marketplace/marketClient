@@ -1,4 +1,6 @@
 export const DEFAULT_NICKNAME_STYLE_ID = 'default'
+export const CUSTOM_NICKNAME_STYLE_PRICE_RUB = 149
+export const CUSTOM_NICKNAME_STYLE_PREFIX = 'custom_'
 
 export const NICKNAME_STYLE_IDS = [
   DEFAULT_NICKNAME_STYLE_ID,
@@ -16,14 +18,97 @@ export const NICKNAME_STYLE_IDS = [
   'matrix_code',
 ] as const
 
-export type NicknameStyleId = (typeof NICKNAME_STYLE_IDS)[number]
+export type KnownNicknameStyleId = (typeof NICKNAME_STYLE_IDS)[number]
+export type NicknameStyleId = string
 
-export function isNicknameStyleId(styleId: string | null | undefined): styleId is NicknameStyleId {
+export const CUSTOM_NICKNAME_STYLE_FONT_WEIGHTS = [500, 600, 700, 800, 900] as const
+export type CustomNicknameStyleFontWeight = (typeof CUSTOM_NICKNAME_STYLE_FONT_WEIGHTS)[number]
+
+const CUSTOM_NICKNAME_STYLE_ID_REGEX =
+  /^custom_([0-9a-f]{6})_([0-9a-f]{6})_([0-9a-f]{6})_(500|600|700|800|900)_([01])_([01])_([01])$/
+
+export type CustomNicknameStyleConfig = {
+  primaryColor: { r: number; g: number; b: number }
+  secondaryColor: { r: number; g: number; b: number }
+  glowColor: { r: number; g: number; b: number }
+  fontWeight: CustomNicknameStyleFontWeight
+  italic: boolean
+  underline: boolean
+  glowEnabled: boolean
+}
+
+function clampRgbChannel(value: number): number {
+  if (!Number.isFinite(value)) return 0
+  return Math.min(255, Math.max(0, Math.round(value)))
+}
+
+function toHex(value: number): string {
+  return clampRgbChannel(value).toString(16).padStart(2, '0')
+}
+
+function normalizeFontWeight(value: number): CustomNicknameStyleFontWeight {
+  if ((CUSTOM_NICKNAME_STYLE_FONT_WEIGHTS as readonly number[]).includes(value)) {
+    return value as CustomNicknameStyleFontWeight
+  }
+  return 700
+}
+
+function normalizeStyleId(styleId: string | null | undefined): string {
+  return styleId?.trim().toLowerCase() || DEFAULT_NICKNAME_STYLE_ID
+}
+
+export function buildCustomNicknameStyleId(config: CustomNicknameStyleConfig): string {
+  const primaryHex = `${toHex(config.primaryColor.r)}${toHex(config.primaryColor.g)}${toHex(config.primaryColor.b)}`
+  const secondaryHex = `${toHex(config.secondaryColor.r)}${toHex(config.secondaryColor.g)}${toHex(config.secondaryColor.b)}`
+  const glowHex = `${toHex(config.glowColor.r)}${toHex(config.glowColor.g)}${toHex(config.glowColor.b)}`
+  const fontWeight = normalizeFontWeight(config.fontWeight)
+
+  return `${CUSTOM_NICKNAME_STYLE_PREFIX}${primaryHex}_${secondaryHex}_${glowHex}_${fontWeight}_${config.italic ? 1 : 0}_${config.underline ? 1 : 0}_${config.glowEnabled ? 1 : 0}`
+}
+
+function parseHexColor(hexColor: string): { r: number; g: number; b: number } {
+  return {
+    r: Number.parseInt(hexColor.slice(0, 2), 16),
+    g: Number.parseInt(hexColor.slice(2, 4), 16),
+    b: Number.parseInt(hexColor.slice(4, 6), 16),
+  }
+}
+
+export function parseCustomNicknameStyleId(
+  styleId: string | null | undefined,
+): CustomNicknameStyleConfig | null {
+  const normalized = normalizeStyleId(styleId)
+  const match = normalized.match(CUSTOM_NICKNAME_STYLE_ID_REGEX)
+  if (!match) return null
+
+  const [, primaryHex, secondaryHex, glowHex, fontWeightRaw, italicRaw, underlineRaw, glowEnabledRaw] = match
+
+  return {
+    primaryColor: parseHexColor(primaryHex),
+    secondaryColor: parseHexColor(secondaryHex),
+    glowColor: parseHexColor(glowHex),
+    fontWeight: normalizeFontWeight(Number.parseInt(fontWeightRaw, 10)),
+    italic: italicRaw === '1',
+    underline: underlineRaw === '1',
+    glowEnabled: glowEnabledRaw === '1',
+  }
+}
+
+export function isKnownNicknameStyleId(
+  styleId: string | null | undefined,
+): styleId is KnownNicknameStyleId {
   return !!styleId && (NICKNAME_STYLE_IDS as readonly string[]).includes(styleId)
 }
 
+export function isCustomNicknameStyleId(styleId: string | null | undefined): boolean {
+  return !!parseCustomNicknameStyleId(styleId)
+}
+
 export function resolveNicknameStyleId(styleId: string | null | undefined): NicknameStyleId {
-  if (isNicknameStyleId(styleId)) return styleId
+  const normalized = normalizeStyleId(styleId)
+  if (isKnownNicknameStyleId(normalized) || isCustomNicknameStyleId(normalized)) {
+    return normalized
+  }
   return DEFAULT_NICKNAME_STYLE_ID
 }
 
@@ -32,7 +117,7 @@ type NicknameStyleTheme = {
   glowClass: string
 }
 
-export const nicknameStyleThemes: Record<NicknameStyleId, NicknameStyleTheme> = {
+export const nicknameStyleThemes: Record<KnownNicknameStyleId, NicknameStyleTheme> = {
   default: {
     cardClass: 'border-dark-600 bg-dark-700/60',
     glowClass: 'shadow-none',

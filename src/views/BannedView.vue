@@ -61,7 +61,7 @@ function goHome() {
 </script>
 
 <template>
-  <section class="banned-shell relative w-full overflow-hidden px-4 py-6 sm:py-8">
+  <section class="banned-shell banned-shell-fullbleed relative w-full overflow-hidden px-4 py-6 sm:py-8">
     <div class="pointer-events-none absolute inset-0 z-0">
       <div class="absolute inset-0 bg-background"></div>
       <div class="absolute inset-0 bg-[radial-gradient(65%_45%_at_50%_0%,rgba(59,130,246,0.08),transparent_75%)]"></div>
@@ -111,5 +111,15 @@ function goHome() {
 .banned-shell {
   min-height: calc(100vh - 56px);
   min-height: calc(100dvh - 56px);
+}
+
+.banned-shell-fullbleed {
+  position: relative;
+  left: 50%;
+  right: 50%;
+  width: 100vw;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  max-width: 100vw;
 }
 </style>

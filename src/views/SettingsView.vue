@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { settingsService } from '@/api/settings/settingsService'
+import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import TheInput from '@/components/TheInput.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
+import Checkbox from '@/components/Checkbox.vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import SuccessMessage from '@/components/SuccessMessage.vue'
@@ -11,11 +13,15 @@ import { AtSign, Key, Loader2, Lock, Palette, Shield } from 'lucide-vue-next'
 import BackButton from '@/components/navigation/BackButton.vue'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
-import { formatCurrencyAmount } from '@/utils/currency'
+import { formatCurrencyAmount, resolvePreferredCurrency } from '@/utils/currency'
 import { useRoute, useRouter } from 'vue-router'
 import {
+  buildCustomNicknameStyleId,
+  CUSTOM_NICKNAME_STYLE_FONT_WEIGHTS,
+  CUSTOM_NICKNAME_STYLE_PRICE_RUB,
+  isCustomNicknameStyleId,
   resolveNicknameStyleId,
-  type NicknameStyleId,
+  type CustomNicknameStyleFontWeight,
 } from '@/utils/nicknameStyles'
 import type {
   NicknameStyleCatalogItem,
@@ -28,6 +34,8 @@ const NICKNAME_MIN_LENGTH = 4
 const NICKNAME_MAX_LENGTH = 32
 const NICKNAME_CHANGE_PRICE_RUB = 100
 const NICKNAME_REGEX = /^[A-Za-z0-9_]+$/
+const RGB_MIN = 0
+const RGB_MAX = 255
 
 const { t } = useI18n()
 const route = useRoute()
@@ -52,22 +60,51 @@ const isStylesLoading = ref(false)
 const stylesErrorMessage = ref<string | null>(null)
 const stylesSuccessMessage = ref<string | null>(null)
 const stylesCatalog = ref<NicknameStyleCatalogResponse | null>(null)
-const previewStyleId = ref<NicknameStyleId>('default')
+const previewStyleId = ref('default')
 const styleActionType = ref<'buy' | 'apply' | null>(null)
 const styleActionLoadingId = ref<string | null>(null)
+const showUsernameConfirmModal = ref(false)
+const pendingUsernameForChange = ref('')
+const showStylePurchaseConfirmModal = ref(false)
+const pendingStylePurchaseId = ref<string | null>(null)
+const customPrimaryR = ref(94)
+const customPrimaryG = ref(234)
+const customPrimaryB = ref(212)
+const customSecondaryR = ref(129)
+const customSecondaryG = ref(140)
+const customSecondaryB = ref(248)
+const customGlowR = ref(244)
+const customGlowG = ref(114)
+const customGlowB = ref(182)
+const customFontWeight = ref<CustomNicknameStyleFontWeight>(700)
+const customItalic = ref(false)
+const customUnderline = ref(false)
+const customGlowEnabled = ref(true)
 
 const currentUsername = computed(() => user.value?.username ?? 'username')
 const currentStyleId = computed(
   () => stylesCatalog.value?.active_style_id ?? user.value?.nickname_style_id ?? 'default',
 )
-const resolvedPreviewStyleId = computed<NicknameStyleId>(() =>
+const resolvedPreviewStyleId = computed(() =>
   resolveNicknameStyleId(previewStyleId.value || currentStyleId.value),
 )
+const customStyleId = computed(() =>
+  buildCustomNicknameStyleId({
+    primaryColor: { r: customPrimaryR.value, g: customPrimaryG.value, b: customPrimaryB.value },
+    secondaryColor: { r: customSecondaryR.value, g: customSecondaryG.value, b: customSecondaryB.value },
+    glowColor: { r: customGlowR.value, g: customGlowG.value, b: customGlowB.value },
+    fontWeight: customFontWeight.value,
+    italic: customItalic.value,
+    underline: customUnderline.value,
+    glowEnabled: customGlowEnabled.value,
+  }),
+)
+const priceFractionDigits = computed(() => (resolvePreferredCurrency() === 'USD' ? 2 : 0))
 const nicknameChangePriceLabel = computed(() =>
   formatCurrencyAmount(NICKNAME_CHANGE_PRICE_RUB, {
     fromCurrency: 'RUB',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: priceFractionDigits.value,
+    maximumFractionDigits: priceFractionDigits.value,
   }),
 )
 const activeSection = computed<SettingsSection>(() => normalizeSettingsSection(route.query.section))
@@ -80,6 +117,47 @@ const canChangeUsername = computed(() => {
     NICKNAME_REGEX.test(normalized) &&
     normalized !== currentUsername.value
   )
+})
+const pendingStylePurchase = computed(
+  () =>
+    stylesCatalog.value?.styles.find((style) => style.style_id === pendingStylePurchaseId.value) ??
+    (pendingStylePurchaseId.value && isCustomNicknameStyleId(pendingStylePurchaseId.value)
+      ? {
+          style_id: pendingStylePurchaseId.value,
+          price_rub: CUSTOM_NICKNAME_STYLE_PRICE_RUB,
+          is_owned: false,
+          is_active: false,
+        }
+      : null),
+)
+const pendingStylePurchasePriceLabel = computed(() => {
+  if (!pendingStylePurchase.value) return ''
+  return getStylePriceLabel(pendingStylePurchase.value)
+})
+const customStyleCatalogItem = computed(
+  () => stylesCatalog.value?.styles.find((style) => style.style_id === customStyleId.value) ?? null,
+)
+const customStylePriceLabel = computed(() =>
+  formatCurrencyAmount(CUSTOM_NICKNAME_STYLE_PRICE_RUB, {
+    fromCurrency: 'RUB',
+    minimumFractionDigits: priceFractionDigits.value,
+    maximumFractionDigits: priceFractionDigits.value,
+  }),
+)
+const customStyleActionLabel = computed(() => {
+  const existingCustomStyle = customStyleCatalogItem.value
+  const isLoadingCustomAction = styleActionLoadingId.value === customStyleId.value
+
+  if (existingCustomStyle?.is_active) return t('pages.settingsPage.active')
+  if (existingCustomStyle?.is_owned) {
+    return isLoadingCustomAction && styleActionType.value === 'apply'
+      ? t('pages.settingsPage.applying')
+      : t('pages.settingsPage.select')
+  }
+
+  return isLoadingCustomAction && styleActionType.value === 'buy'
+    ? t('pages.settingsPage.buying')
+    : t('pages.settingsPage.buyFor', { price: customStylePriceLabel.value })
 })
 
 function normalizeSettingsSection(value: unknown): SettingsSection {
@@ -134,7 +212,49 @@ function applyStylesCatalog(data: NicknameStyleCatalogResponse) {
   })
 }
 
+function clampRgb(value: number): number {
+  if (!Number.isFinite(value)) return RGB_MIN
+  return Math.min(RGB_MAX, Math.max(RGB_MIN, Math.round(value)))
+}
+
+function normalizeCustomRgbChannel(field: 'r' | 'g' | 'b', group: 'primary' | 'secondary' | 'glow') {
+  const normalized = (() => {
+    if (group === 'primary') {
+      if (field === 'r') return clampRgb(customPrimaryR.value)
+      if (field === 'g') return clampRgb(customPrimaryG.value)
+      return clampRgb(customPrimaryB.value)
+    }
+    if (group === 'secondary') {
+      if (field === 'r') return clampRgb(customSecondaryR.value)
+      if (field === 'g') return clampRgb(customSecondaryG.value)
+      return clampRgb(customSecondaryB.value)
+    }
+    if (field === 'r') return clampRgb(customGlowR.value)
+    if (field === 'g') return clampRgb(customGlowG.value)
+    return clampRgb(customGlowB.value)
+  })()
+
+  if (group === 'primary') {
+    if (field === 'r') customPrimaryR.value = normalized
+    if (field === 'g') customPrimaryG.value = normalized
+    if (field === 'b') customPrimaryB.value = normalized
+    return
+  }
+  if (group === 'secondary') {
+    if (field === 'r') customSecondaryR.value = normalized
+    if (field === 'g') customSecondaryG.value = normalized
+    if (field === 'b') customSecondaryB.value = normalized
+    return
+  }
+  if (field === 'r') customGlowR.value = normalized
+  if (field === 'g') customGlowG.value = normalized
+  if (field === 'b') customGlowB.value = normalized
+}
+
 function getStyleDescription(styleId: string) {
+  if (isCustomNicknameStyleId(styleId)) {
+    return t('pages.settingsPage.customStyleDescription')
+  }
   const key = `pages.settingsPage.nicknameStyleCatalog.${styleId}.description`
   const value = t(key)
   return value === key ? '' : value
@@ -144,8 +264,8 @@ function getStylePriceLabel(style: NicknameStyleCatalogItem) {
   if (style.price_rub <= 0) return t('pages.settingsPage.free')
   return formatCurrencyAmount(style.price_rub, {
     fromCurrency: 'RUB',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: priceFractionDigits.value,
+    maximumFractionDigits: priceFractionDigits.value,
   })
 }
 
@@ -203,7 +323,7 @@ async function loadNicknameStyles() {
   isStylesLoading.value = false
 }
 
-async function handleStyleAction(style: NicknameStyleCatalogItem) {
+async function executeStyleAction(style: NicknameStyleCatalogItem) {
   if (style.is_active || styleActionLoadingId.value) return
 
   stylesErrorMessage.value = null
@@ -234,7 +354,50 @@ async function handleStyleAction(style: NicknameStyleCatalogItem) {
   styleActionType.value = null
 }
 
-async function changeUsername() {
+function requestStyleAction(style: NicknameStyleCatalogItem) {
+  if (style.is_active || styleActionLoadingId.value) return
+
+  if (style.is_owned) {
+    void executeStyleAction(style)
+    return
+  }
+
+  pendingStylePurchaseId.value = style.style_id
+  showStylePurchaseConfirmModal.value = true
+}
+
+function requestCustomStyleAction() {
+  if (!stylesCatalog.value || styleActionLoadingId.value) return
+
+  selectPreviewStyle(customStyleId.value)
+
+  if (customStyleCatalogItem.value?.is_owned) {
+    void executeStyleAction(customStyleCatalogItem.value)
+    return
+  }
+
+  pendingStylePurchaseId.value = customStyleId.value
+  showStylePurchaseConfirmModal.value = true
+}
+
+function closeStylePurchaseConfirmModal() {
+  if (styleActionType.value === 'buy' && styleActionLoadingId.value === pendingStylePurchaseId.value) return
+  showStylePurchaseConfirmModal.value = false
+  pendingStylePurchaseId.value = null
+}
+
+async function confirmStylePurchase() {
+  const style = pendingStylePurchase.value
+  if (!style) {
+    closeStylePurchaseConfirmModal()
+    return
+  }
+
+  await executeStyleAction(style)
+  closeStylePurchaseConfirmModal()
+}
+
+function requestUsernameChangeConfirmation() {
   usernameErrorMessage.value = null
   usernameSuccessMessage.value = null
 
@@ -242,6 +405,23 @@ async function changeUsername() {
   const validationError = validateUsernameForChange(normalizedUsername)
   if (validationError) {
     usernameErrorMessage.value = validationError
+    return
+  }
+
+  pendingUsernameForChange.value = normalizedUsername
+  showUsernameConfirmModal.value = true
+}
+
+function closeUsernameConfirmModal() {
+  if (isChangingUsername.value) return
+  showUsernameConfirmModal.value = false
+  pendingUsernameForChange.value = ''
+}
+
+async function changeUsername() {
+  const normalizedUsername = pendingUsernameForChange.value.trim()
+  if (!normalizedUsername) {
+    closeUsernameConfirmModal()
     return
   }
 
@@ -261,8 +441,9 @@ async function changeUsername() {
     balance: result.data.balance,
   })
   changingUsername.value = ''
-  setUsernameSuccessMessage(t('pages.settingsPage.nicknameChanged'))
   isChangingUsername.value = false
+  closeUsernameConfirmModal()
+  setUsernameSuccessMessage(t('pages.settingsPage.nicknameChanged'))
 }
 
 async function changePassword() {
@@ -406,7 +587,10 @@ watch(
               </div>
             </div>
 
-            <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-4 space-y-3">
+            <div
+              v-if="activeSection === 'security'"
+              class="rounded-xl border border-dark-700 bg-dark-600/40 p-4 space-y-3"
+            >
               <h4 class="text-sm font-semibold text-gray-300">{{ $t('pages.settingsPage.securityTips') }}</h4>
               <ul class="space-y-2 text-xs text-gray-400">
                 <li class="flex items-start gap-2">
@@ -574,7 +758,7 @@ watch(
                 type="button"
                 class="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 py-3.5 text-white font-semibold hover:from-emerald-700 hover:to-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
                 :disabled="!canChangeUsername"
-                @click="changeUsername"
+                @click="requestUsernameChangeConfirmation"
               >
                 <Loader2 v-if="isChangingUsername" class="w-4 h-4 animate-spin" />
                 <span>{{ isChangingUsername ? t('pages.settingsPage.savingNickname') : t('pages.settingsPage.saveNickname') }}</span>
@@ -662,6 +846,220 @@ watch(
                   </div>
                 </div>
 
+                <div class="rounded-xl border border-dark-600 bg-dark-700/50 p-4 space-y-4">
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 class="text-sm font-semibold text-white">
+                        {{ $t('pages.settingsPage.customStyleBuilderTitle') }}
+                      </h3>
+                      <p class="mt-1 text-xs text-gray-300">
+                        {{ $t('pages.settingsPage.customStyleBuilderHint') }}
+                      </p>
+                    </div>
+                    <div class="rounded-md border border-amber-500/35 bg-amber-600/15 px-2.5 py-1 text-xs font-semibold text-amber-100">
+                      {{ customStylePriceLabel }}
+                    </div>
+                  </div>
+
+                  <div class="rounded-xl border border-dark-600 bg-dark-800/70 p-3">
+                    <div class="text-xs uppercase tracking-wide text-gray-400">
+                      {{ $t('pages.settingsPage.customStylePreview') }}
+                    </div>
+                    <div class="mt-2">
+                      <StyledUsername
+                        :username="currentUsername"
+                        :style-id="customStyleId"
+                        class="text-lg font-semibold"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+                    <div class="rounded-lg border border-dark-600 bg-dark-800/60 p-3">
+                      <div class="text-xs font-medium text-gray-300">
+                        {{ $t('pages.settingsPage.customPrimaryColor') }}
+                      </div>
+                      <div class="mt-2 flex items-center gap-3">
+                        <div
+                          class="h-8 w-8 rounded-md border border-dark-500"
+                          :style="{ backgroundColor: `rgb(${customPrimaryR}, ${customPrimaryG}, ${customPrimaryB})` }"
+                        />
+                        <div class="grid w-full grid-cols-3 gap-2">
+                          <input
+                            v-model.number="customPrimaryR"
+                            type="number"
+                            :min="RGB_MIN"
+                            :max="RGB_MAX"
+                            class="w-full rounded-lg border border-dark-500 bg-dark-700 px-2 py-1.5 text-xs text-gray-100 outline-none focus:border-blue-500/60"
+                            @blur="normalizeCustomRgbChannel('r', 'primary')"
+                          >
+                          <input
+                            v-model.number="customPrimaryG"
+                            type="number"
+                            :min="RGB_MIN"
+                            :max="RGB_MAX"
+                            class="w-full rounded-lg border border-dark-500 bg-dark-700 px-2 py-1.5 text-xs text-gray-100 outline-none focus:border-blue-500/60"
+                            @blur="normalizeCustomRgbChannel('g', 'primary')"
+                          >
+                          <input
+                            v-model.number="customPrimaryB"
+                            type="number"
+                            :min="RGB_MIN"
+                            :max="RGB_MAX"
+                            class="w-full rounded-lg border border-dark-500 bg-dark-700 px-2 py-1.5 text-xs text-gray-100 outline-none focus:border-blue-500/60"
+                            @blur="normalizeCustomRgbChannel('b', 'primary')"
+                          >
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="rounded-lg border border-dark-600 bg-dark-800/60 p-3">
+                      <div class="text-xs font-medium text-gray-300">
+                        {{ $t('pages.settingsPage.customSecondaryColor') }}
+                      </div>
+                      <div class="mt-2 flex items-center gap-3">
+                        <div
+                          class="h-8 w-8 rounded-md border border-dark-500"
+                          :style="{ backgroundColor: `rgb(${customSecondaryR}, ${customSecondaryG}, ${customSecondaryB})` }"
+                        />
+                        <div class="grid w-full grid-cols-3 gap-2">
+                          <input
+                            v-model.number="customSecondaryR"
+                            type="number"
+                            :min="RGB_MIN"
+                            :max="RGB_MAX"
+                            class="w-full rounded-lg border border-dark-500 bg-dark-700 px-2 py-1.5 text-xs text-gray-100 outline-none focus:border-blue-500/60"
+                            @blur="normalizeCustomRgbChannel('r', 'secondary')"
+                          >
+                          <input
+                            v-model.number="customSecondaryG"
+                            type="number"
+                            :min="RGB_MIN"
+                            :max="RGB_MAX"
+                            class="w-full rounded-lg border border-dark-500 bg-dark-700 px-2 py-1.5 text-xs text-gray-100 outline-none focus:border-blue-500/60"
+                            @blur="normalizeCustomRgbChannel('g', 'secondary')"
+                          >
+                          <input
+                            v-model.number="customSecondaryB"
+                            type="number"
+                            :min="RGB_MIN"
+                            :max="RGB_MAX"
+                            class="w-full rounded-lg border border-dark-500 bg-dark-700 px-2 py-1.5 text-xs text-gray-100 outline-none focus:border-blue-500/60"
+                            @blur="normalizeCustomRgbChannel('b', 'secondary')"
+                          >
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="rounded-lg border border-dark-600 bg-dark-800/60 p-3">
+                      <div class="text-xs font-medium text-gray-300">
+                        {{ $t('pages.settingsPage.customGlowColor') }}
+                      </div>
+                      <div class="mt-2 flex items-center gap-3">
+                        <div
+                          class="h-8 w-8 rounded-md border border-dark-500"
+                          :style="{ backgroundColor: `rgb(${customGlowR}, ${customGlowG}, ${customGlowB})` }"
+                        />
+                        <div class="grid w-full grid-cols-3 gap-2">
+                          <input
+                            v-model.number="customGlowR"
+                            type="number"
+                            :min="RGB_MIN"
+                            :max="RGB_MAX"
+                            class="w-full rounded-lg border border-dark-500 bg-dark-700 px-2 py-1.5 text-xs text-gray-100 outline-none focus:border-blue-500/60"
+                            @blur="normalizeCustomRgbChannel('r', 'glow')"
+                          >
+                          <input
+                            v-model.number="customGlowG"
+                            type="number"
+                            :min="RGB_MIN"
+                            :max="RGB_MAX"
+                            class="w-full rounded-lg border border-dark-500 bg-dark-700 px-2 py-1.5 text-xs text-gray-100 outline-none focus:border-blue-500/60"
+                            @blur="normalizeCustomRgbChannel('g', 'glow')"
+                          >
+                          <input
+                            v-model.number="customGlowB"
+                            type="number"
+                            :min="RGB_MIN"
+                            :max="RGB_MAX"
+                            class="w-full rounded-lg border border-dark-500 bg-dark-700 px-2 py-1.5 text-xs text-gray-100 outline-none focus:border-blue-500/60"
+                            @blur="normalizeCustomRgbChannel('b', 'glow')"
+                          >
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    <label class="rounded-lg border border-dark-600 bg-dark-800/60 px-3 py-2">
+                      <div class="text-[11px] uppercase tracking-wide text-gray-400">
+                        {{ $t('pages.settingsPage.customFontWeight') }}
+                      </div>
+                      <select
+                        v-model.number="customFontWeight"
+                        class="mt-2 w-full rounded-md border border-dark-500 bg-dark-700 px-2 py-1.5 text-xs text-gray-100 outline-none focus:border-blue-500/60"
+                      >
+                        <option
+                          v-for="weight in CUSTOM_NICKNAME_STYLE_FONT_WEIGHTS"
+                          :key="weight"
+                          :value="weight"
+                        >
+                          {{ weight }}
+                        </option>
+                      </select>
+                    </label>
+
+                    <label class="rounded-lg border border-dark-600 bg-dark-800/60 px-3 py-2 text-xs text-gray-200">
+                      <div class="text-[11px] uppercase tracking-wide text-gray-400">
+                        {{ $t('pages.settingsPage.customItalic') }}
+                      </div>
+                      <Checkbox
+                        v-model="customItalic"
+                        class="mt-3"
+                        size="md"
+                      />
+                    </label>
+
+                    <label class="rounded-lg border border-dark-600 bg-dark-800/60 px-3 py-2 text-xs text-gray-200">
+                      <div class="text-[11px] uppercase tracking-wide text-gray-400">
+                        {{ $t('pages.settingsPage.customUnderline') }}
+                      </div>
+                      <Checkbox
+                        v-model="customUnderline"
+                        class="mt-3"
+                        size="md"
+                      />
+                    </label>
+
+                    <label class="rounded-lg border border-dark-600 bg-dark-800/60 px-3 py-2 text-xs text-gray-200">
+                      <div class="text-[11px] uppercase tracking-wide text-gray-400">
+                        {{ $t('pages.settingsPage.customGlowEnabled') }}
+                      </div>
+                      <Checkbox
+                        v-model="customGlowEnabled"
+                        class="mt-3"
+                        size="md"
+                      />
+                    </label>
+                  </div>
+
+                  <div class="flex justify-end">
+                    <button
+                      type="button"
+                      class="rounded-lg px-3 py-1.5 text-xs font-semibold transition border"
+                      :class="customStyleCatalogItem?.is_active
+                        ? 'cursor-default border-blue-500/35 bg-blue-600/20 text-blue-200'
+                        : customStyleCatalogItem?.is_owned
+                          ? 'border-emerald-500/35 bg-emerald-600/15 text-emerald-200 hover:bg-emerald-600/25'
+                          : 'border-amber-500/35 bg-amber-600/15 text-amber-100 hover:bg-amber-600/25'"
+                      :disabled="!stylesCatalog || !!styleActionLoadingId || customStyleCatalogItem?.is_active"
+                      @click="requestCustomStyleAction"
+                    >
+                      {{ customStyleActionLabel }}
+                    </button>
+                  </div>
+                </div>
+
                 <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
                   <div
                     v-for="style in stylesCatalog.styles"
@@ -716,7 +1114,7 @@ watch(
                             ? 'border border-emerald-500/35 bg-emerald-600/15 text-emerald-200 hover:bg-emerald-600/25'
                             : 'border border-amber-500/35 bg-amber-600/15 text-amber-100 hover:bg-amber-600/25'"
                         :disabled="style.is_active || styleActionLoadingId === style.style_id"
-                        @click.stop="handleStyleAction(style)"
+                        @click.stop="requestStyleAction(style)"
                       >
                         {{ getStyleActionLabel(style) }}
                       </button>
@@ -737,6 +1135,28 @@ watch(
       </div>
     </div>
   </div>
+
+  <ConfirmWindow
+    :is-open="showUsernameConfirmModal"
+    :title="$t('pages.settingsPage.confirmNicknameChangeTitle')"
+    :message="$t('pages.settingsPage.confirmNicknameChangeMessage', { nickname: pendingUsernameForChange, price: nicknameChangePriceLabel })"
+    :confirm-text="$t('pages.settingsPage.confirmNicknameChangeConfirm')"
+    :cancel-text="$t('common.cancel')"
+    :is-loading="isChangingUsername"
+    @confirm="changeUsername"
+    @cancel="closeUsernameConfirmModal"
+  />
+
+  <ConfirmWindow
+    :is-open="showStylePurchaseConfirmModal"
+    :title="$t('pages.settingsPage.confirmStylePurchaseTitle')"
+    :message="$t('pages.settingsPage.confirmStylePurchaseMessage', { price: pendingStylePurchasePriceLabel })"
+    :confirm-text="$t('pages.settingsPage.confirmStylePurchaseConfirm')"
+    :cancel-text="$t('common.cancel')"
+    :is-loading="styleActionType === 'buy' && styleActionLoadingId === pendingStylePurchaseId"
+    @confirm="confirmStylePurchase"
+    @cancel="closeStylePurchaseConfirmModal"
+  />
 </template>
 
 <style>
