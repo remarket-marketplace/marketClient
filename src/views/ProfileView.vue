@@ -564,7 +564,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 <h3 class="text-lg font-semibold text-gray-300 mb-2">{{ t('pages.profile.noProducts') }}</h3>
               </div>
 
-              <div v-else class="profile-products-grid grid gap-4 mt-6 w-full">
+              <div v-else class="profile-products-grid grid gap-1 md:gap-2 mt-6 w-full">
                 <ProfileProductCard
                   v-for="product in products"
                   :key="product.id"
