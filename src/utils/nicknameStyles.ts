@@ -1,5 +1,5 @@
 export const DEFAULT_NICKNAME_STYLE_ID = 'default'
-export const CUSTOM_NICKNAME_STYLE_PRICE_RUB = 149
+export const CUSTOM_NICKNAME_STYLE_PRICE_RUB = 299
 export const CUSTOM_NICKNAME_STYLE_PREFIX = 'custom_'
 
 export const NICKNAME_STYLE_IDS = [

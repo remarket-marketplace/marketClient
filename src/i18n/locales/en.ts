@@ -751,55 +751,42 @@ const en = {
       nicknameStyleCatalog: {
         default: {
           name: "Classic",
-          description: "Default clean nickname style",
         },
         neon_pulse: {
           name: "Neon Pulse",
-          description: "Bright cyan glow with soft pulse effect",
         },
         gold_royal: {
           name: "Gold Royal",
-          description: "Premium golden gradient with polished shine",
         },
         cyber_glitch: {
           name: "Cyber Glitch",
-          description: "Cyberpunk split-color text with glitch vibe",
         },
         sunset_wave: {
           name: "Sunset Wave",
-          description: "Warm orange-pink gradient inspired by sunset",
         },
         ice_frost: {
           name: "Ice Frost",
-          description: "Cool crystal-blue color with frosty highlight",
         },
         emerald_glow: {
           name: "Emerald Glow",
-          description: "Green neon style with rich glow",
         },
         lava_burst: {
           name: "Lava Burst",
-          description: "Hot red-orange gradient with fiery accent",
         },
         aurora_spectrum: {
           name: "Aurora Spectrum",
-          description: "Multi-color aurora gradient for standout look",
         },
         candy_pop: {
           name: "Candy Pop",
-          description: "Sweet pink-purple palette with playful tone",
         },
         shadow_void: {
           name: "Shadow Void",
-          description: "Dark mystical violet style with deep glow",
         },
         sky_bolt: {
           name: "Sky Bolt",
-          description: "Electric blue gradient with dynamic feel",
         },
         matrix_code: {
           name: "Matrix Code",
-          description: "Digital green style inspired by terminal code",
         },
       },
     },
