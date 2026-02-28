@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import NewPurchaseMessage from './NewPurchaseMessage.vue'
+import PriceOfferMessage from './PriceOfferMessage.vue'
 import type { Product } from '@/validation/product/product'
 import type { ChatMessageUnion } from '@/validation/chat/chatMessage'
 import { useI18n } from 'vue-i18n'
@@ -20,6 +21,9 @@ function isDealStatusMessage(msg: ChatMessageUnion): msg is Extract<ChatMessageU
 }
 function isReviewMessage(msg: ChatMessageUnion): msg is Extract<ChatMessageUnion, { message_type: 'review_message' }> {
   return msg.message_type === 'review_message'
+}
+function isPriceOfferMessage(msg: ChatMessageUnion): msg is Extract<ChatMessageUnion, { message_type: 'price_offer_message' }> {
+  return msg.message_type === 'price_offer_message'
 }
 
 const props = defineProps<{
@@ -57,10 +61,12 @@ const hasReview = computed<boolean | null>(() => {
 const isDealStatus = computed(() => isDealStatusMessage(props.message))
 
 const isDealReviewMessage = computed(() => isReviewMessage(props.message))
+const isPriceOffer = computed(() => isPriceOfferMessage(props.message))
 
 const messageAlignment = computed(() => {
   if (isDealStatus.value) return 'w-full self-center'
   if (product.value && !isDealStatus.value) return 'w-full self-center'
+  if (isPriceOffer.value) return 'w-full self-center'
   if (textMessage.value && textMessage.value.sender_id === props.user?.id) return 'flex justify-end'
   return 'flex justify-start'
 })
@@ -102,5 +108,12 @@ function formatDate(dateInput: string | Date): string {
     <DealStatusMessage v-else-if="isDealStatus" :message="(props.message as Extract<ChatMessageUnion, { message_type: 'update_deal_status_message' }>)" :product="product" :formatDate="formatDate" />
 
     <ReviewMessage v-else-if="isDealReviewMessage" :review="(props.message as Extract<ChatMessageUnion, { message_type: 'review_message' }>).review" :formatDate="formatDate"/>
+
+    <PriceOfferMessage
+      v-else-if="isPriceOffer"
+      :message="(props.message as Extract<ChatMessageUnion, { message_type: 'price_offer_message' }>)"
+      :user="user"
+      :format-date="formatDate"
+    />
   </div>
 </template>

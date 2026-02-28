@@ -51,8 +51,6 @@ const customInlineStyle = computed<CSSProperties | undefined>(() => {
 .styled-username {
   display: inline-block;
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
   line-height: 1.2;
 }

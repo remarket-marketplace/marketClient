@@ -271,22 +271,70 @@ export const chatsService = {
     }
   },
 
-  async sendMessage(message: string, chatId: string): Promise<boolean> {
+  async sendMessage(
+    message: string,
+    chatId: string,
+  ): Promise<{ success: boolean; errorCode?: string }> {
     if (!this.isConnected()) {
       await new Promise((r) => setTimeout(r, 500));
 
       if (!this.isConnected()) {
         console.error("Socket not connected even after retry");
-        return false;
+        return { success: false, errorCode: "NETWORK_ERROR" };
       }
     }
 
     try {
-      socket!.emit("send_message", { chat_id: chatId, message });
-      return true;
+      const ack = await new Promise<{ success?: boolean; error_code?: string }>(
+        (resolve) => {
+          socket!.emit("send_message", { chat_id: chatId, message }, (response: any) => {
+            resolve(response ?? { success: true });
+          });
+        }
+      );
+      return {
+        success: ack.success === true,
+        errorCode: ack.error_code,
+      };
     } catch (e) {
       console.error("Error sending message:", e);
-      return false;
+      return { success: false, errorCode: "SERVER_ERROR" };
+    }
+  },
+
+  async sendDirectMessage(
+    username: string,
+    text: string,
+  ): Promise<{ chatId: string | null; errorCode?: string }> {
+    try {
+      const response = await httpClient.post("/chats/direct-message", {
+        username,
+        text,
+      });
+      return { chatId: response.data.chat_id ?? null };
+    } catch (e) {
+      console.error("sendDirectMessage error", e);
+      const errorCode =
+        (e as any)?.response?.data?.detail?.error_code
+        || (e as any)?.response?.data?.error_code;
+      return { chatId: null, errorCode };
+    }
+  },
+
+  async getOrCreateDirectChat(
+    username: string,
+  ): Promise<{ chatId: string | null; errorCode?: string }> {
+    try {
+      const response = await httpClient.post("/chats/direct-chat", {
+        username,
+      });
+      return { chatId: response.data.chat_id ?? null };
+    } catch (e) {
+      console.error("getOrCreateDirectChat error", e);
+      const errorCode =
+        (e as any)?.response?.data?.detail?.error_code
+        || (e as any)?.response?.data?.error_code;
+      return { chatId: null, errorCode };
     }
   },
 

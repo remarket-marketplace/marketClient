@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { authService } from '@/api/auth/AuthService'
+import { chatsService } from '@/api/chats/chatsService'
 import { productService } from '@/api/product/ProductService'
 import { profileService } from '@/api/profile/ProfileService'
 import { reviewService } from '@/api/review/ReviewService'
@@ -13,7 +14,7 @@ import { useI18n } from 'vue-i18n'
 import type { Product } from '@/validation/product/product'
 import type { PublicProfileData, UserRead } from '@/validation/user/userRead'
 import type { ReviewSchema } from '@/validation/review/review'
-import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart, Edit, Calendar, Star, Package, ShoppingBag, MessageSquare, Award, TrendingUp } from 'lucide-vue-next'
+import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart, Edit, Calendar, Star, Package, ShoppingBag, MessageSquare, Award, TrendingUp, Loader2 } from 'lucide-vue-next'
 import QrcodeVue from 'qrcode.vue'
 import type { Deal } from '@/validation/deal/deal'
 import UserRating from '@/components/UserRating.vue'
@@ -43,6 +44,8 @@ const isUploading = ref(false)
 const showAvatarOverlay = ref(false)
 const showShareModal = ref(false)
 const isCopied = ref(false)
+const isOpeningDirectChat = ref(false)
+const directChatError = ref<string | null>(null)
 
 const isOwner = computed(() => currentUser.value?.username === username.value)
 const profileUrl = computed(() => `${window.location.origin}/user/${username.value}`)
@@ -259,6 +262,28 @@ function openShareModal() {
 
 function closeShareModal() { showShareModal.value = false; document.removeEventListener('click', handleClickOutside) }
 
+async function openDirectChat(event?: MouseEvent) {
+  event?.preventDefault()
+  event?.stopPropagation()
+
+  if (!username.value || isOpeningDirectChat.value) return
+  isOpeningDirectChat.value = true
+  directChatError.value = null
+
+  const result = await chatsService.getOrCreateDirectChat(username.value)
+
+  isOpeningDirectChat.value = false
+
+  if (!result.chatId) {
+    directChatError.value = result.errorCode
+      ? t(`errors.${result.errorCode}`)
+      : t('errors.SERVER_ERROR')
+    return
+  }
+
+  await router.push({ path: '/chats', query: { chatId: result.chatId } })
+}
+
 async function copyProfileLink() {
   try { await navigator.clipboard.writeText(profileUrl.value); isCopied.value = true }
   catch { const ta = document.createElement('textarea'); ta.value = profileUrl.value; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); isCopied.value = true }
@@ -307,7 +332,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
     <div class="lg:flex lg:min-h-[calc(100dvh-3.5rem)]">
       <!-- Left column - Profile info -->
       <div
-        class="lg:w-96 lg:flex-shrink-0 lg:sticky lg:min-h-[calc(100dvh-3.5rem)] lg:border-r border-dark-700 px-4 lg:px-0 lg:pt-6 lg:pr-6">
+        class="relative z-10 lg:w-96 lg:flex-shrink-0 lg:sticky lg:min-h-[calc(100dvh-3.5rem)] lg:border-r border-dark-700 px-4 lg:px-0 lg:pt-6 lg:pr-6">
         <div class="space-y-6">
           <!-- Desktop header -->
           <div class="hidden lg:block">
@@ -501,12 +526,26 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
               <Heart class="w-4 h-4 text-red-400" />
               <span>{{ $t('pages.profile.favorites') }}</span>
             </button>
+
+            <button
+              v-else-if="currentUser"
+              type="button"
+              :disabled="isOpeningDirectChat"
+              @pointerdown.stop.prevent="openDirectChat"
+              @click.stop.prevent="openDirectChat"
+              class="relative z-20 w-full flex items-center justify-center gap-2 rounded-lg border border-emerald-700/50 bg-emerald-700/20 px-4 py-3 text-sm text-emerald-100 hover:bg-emerald-700/35 transition-all duration-200 touch-manipulation disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              <Loader2 v-if="isOpeningDirectChat" class="w-4 h-4 animate-spin" />
+              <MessageSquare v-else class="w-4 h-4" />
+              <span>{{ isOpeningDirectChat ? $t('common.loading') : $t('pages.profile.writeMessage') }}</span>
+            </button>
+            <p v-if="directChatError" class="text-xs text-red-400 text-center">{{ directChatError }}</p>
           </div>
         </div>
       </div>
 
       <!-- Right column - Content -->
-      <div class="lg:flex-1 overflow-y-auto  mt-6 lg:mt-0 lg:pt-6 lg:pl-6">
+      <div class="relative z-0 lg:flex-1 overflow-y-auto  mt-6 lg:mt-0 lg:pt-6 lg:pl-6">
         <div class="px-4 lg:px-0 lg:pb-6 space-y-6">
           <!-- Tabs -->
           <div class="flex items-center gap-1 sm:gap-2 rounded-xl bg-dark-700/30 p-1 border border-dark-600">
@@ -765,6 +804,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
         </div>
       </div>
     </Teleport>
+
   </div>
 </template>
 

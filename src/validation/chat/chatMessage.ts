@@ -41,12 +41,25 @@ export const ReviewMessageSchema = BaseMessageSchema.extend({
   review: ReviewSchema,
 })
 
+export const PriceOfferMessageSchema = BaseMessageSchema.extend({
+  message_type: z.literal('price_offer_message'),
+  product: ProductSchema,
+  offer_id: z.uuid(),
+  offered_price: z.number(),
+  offer_status: z.string(),
+  offer_message: z.string().nullable().optional(),
+  buyer_id: z.uuid(),
+  seller_id: z.uuid(),
+  accepted_deal_id: z.uuid().nullable().optional(),
+})
+
 // discriminated union по полю message_type
 export const ChatMessageUnionSchema = z.discriminatedUnion('message_type', [
   TextMessageSchema,
   ProductMessageSchema,
   DealStatusMessageSchema,
   ReviewMessageSchema,
+  PriceOfferMessageSchema,
 ])
 
 // Схема обновления чата

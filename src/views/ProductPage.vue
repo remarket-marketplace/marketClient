@@ -34,7 +34,12 @@ const selectedImage = ref<ProductImage | null>(null)
 const openImageModal = ref(false)
 const showDeleteConfirm = ref(false)
 const showBuyConfirm = ref(false)
+const showOfferConfirm = ref(false)
 const buyError = ref<string | null>(null)
+const offerError = ref<string | null>(null)
+const isOfferSubmitting = ref(false)
+const offeredPrice = ref<number | null>(null)
+const offerMessage = ref('')
 const showInsufficientBalanceModal = ref(false)
 const insufficientBalanceDetails = ref<{
   balance: number
@@ -116,6 +121,52 @@ function closeDeleteConfirm() {
 
 function openBuyConfirm() {
   showBuyConfirm.value = true
+}
+
+function openOfferConfirm() {
+  if (!product.value) return
+  offeredPrice.value = Math.max(1, Math.floor(Number(product.value.price) - 1))
+  offerMessage.value = ''
+  offerError.value = null
+  showOfferConfirm.value = true
+}
+
+function closeOfferConfirm() {
+  showOfferConfirm.value = false
+  offerError.value = null
+}
+
+async function handleOfferConfirm() {
+  if (!product.value || user.value === null) return
+
+  const priceNumber = Number(offeredPrice.value)
+  if (!Number.isFinite(priceNumber) || priceNumber <= 0 || priceNumber >= Number(product.value.price)) {
+    offerError.value = t('errors.INVALID_PRICE_OFFER')
+    return
+  }
+
+  isOfferSubmitting.value = true
+  offerError.value = null
+  const result = await productService.createPriceOffer(
+    product.value.id,
+    priceNumber,
+    offerMessage.value,
+  )
+  isOfferSubmitting.value = false
+
+  if (result.success) {
+    showOfferConfirm.value = false
+    if (result.chatId) {
+      router.push({ name: 'chats', query: { chatId: result.chatId } })
+    } else {
+      router.push('/chats')
+    }
+    return
+  }
+
+  if (result.error) {
+    offerError.value = getErrorMessage(result.error, t)
+  }
 }
 
 async function handleBuyConfirm() {
@@ -404,8 +455,16 @@ onUnmounted(() => {
               <span v-if="user === null" class="text-sm text-gray-400">
                 {{ $t('pages.product.authRequired') }}
               </span>
-              <div v-if="product.status === 'active'" class="flex flex-col items-end gap-1">
-                <button :disabled="user === null" @click="user !== null && openBuyConfirm()" class="w-full rounded-lg px-10 py-4 text-base font-semibold transition sm:w-auto
+              <div v-if="product.status === 'active'" class="flex flex-wrap items-center justify-end gap-2">
+                <button :disabled="user === null" @click="user !== null && openOfferConfirm()" class="rounded-lg px-10 py-3 text-sm font-semibold transition
+        bg-emerald-600 text-white hover:bg-emerald-700
+        disabled:bg-emerald-600/40
+        disabled:text-white/60
+        disabled:cursor-not-allowed
+        disabled:hover:bg-emerald-600/40">
+                  {{ $t('pages.product.offerPrice') }}
+                </button>
+                <button :disabled="user === null" @click="user !== null && openBuyConfirm()" class="rounded-lg px-10 py-3 text-sm font-semibold transition
         bg-blue-600 text-white hover:bg-blue-700
         disabled:bg-blue-600/40
         disabled:text-white/60
@@ -502,6 +561,43 @@ onUnmounted(() => {
     <ConfirmWindow :is-open="showBuyConfirm" :title="$t('pages.product.buyConfirm.title')"
       :message="$t('pages.product.buyConfirm.message')" :confirm-text="$t('pages.product.buyConfirm.confirm')"
       :cancel-text="$t('pages.product.buyConfirm.cancel')" @confirm="handleBuyConfirm" @cancel="closeBuyConfirm" />
+
+    <ConfirmWindow
+      :is-open="showOfferConfirm"
+      :title="$t('pages.product.offerPriceConfirm.title')"
+      :message="$t('pages.product.offerPriceConfirm.message')"
+      :confirm-text="$t('pages.product.offerPriceConfirm.confirm')"
+      :cancel-text="$t('pages.product.offerPriceConfirm.cancel')"
+      :is-loading="isOfferSubmitting"
+      @confirm="handleOfferConfirm"
+      @cancel="closeOfferConfirm"
+    >
+      <template #body>
+        <div class="space-y-3">
+          <div>
+            <label class="text-xs text-gray-300">{{ $t('pages.product.offerPriceConfirm.offeredPriceLabel') }}</label>
+            <input
+              v-model.number="offeredPrice"
+              type="number"
+              min="0.01"
+              step="0.01"
+              class="mt-1 w-full rounded-lg border border-dark-700 bg-dark-700/60 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500"
+            />
+          </div>
+          <div>
+            <label class="text-xs text-gray-300">{{ $t('pages.product.offerPriceConfirm.messageLabel') }}</label>
+            <textarea
+              v-model="offerMessage"
+              rows="3"
+              maxlength="500"
+              class="mt-1 w-full resize-none rounded-lg border border-dark-700 bg-dark-700/60 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500"
+              :placeholder="$t('pages.product.offerPriceConfirm.messagePlaceholder')"
+            />
+          </div>
+          <p v-if="offerError" class="text-xs text-red-400">{{ offerError }}</p>
+        </div>
+      </template>
+    </ConfirmWindow>
 
     <ConfirmWindow
       :is-open="showInsufficientBalanceModal"

@@ -26,11 +26,21 @@ const formattedLastMessage = computed((): string | null => {
 
     let text = null;
     switch (props.chat.last_message.message_type) {
+        case "price_offer_message":
+            text = t('pages.chats.newPriceOffer')
+            break
         case "purchase_message":
             text = t('pages.chats.newPurchase')
             break
         case "text_message":
-            text = props.chat.last_message.text
+            const last = props.chat.last_message as any
+            if (last.data?.i18n_key) {
+                const prefix = t(String(last.data.i18n_key))
+                const reason = last.data?.reason || ''
+                text = `${prefix} ${reason}`.trim()
+            } else {
+                text = props.chat.last_message.text
+            }
             if (text.length > 60) {
                 text = text.substring(0, 57) + '...'
             }
@@ -48,7 +58,7 @@ const formattedLastMessage = computed((): string | null => {
 const isSelected = computed(() => props.chat.id === props.selectedChatId)
 
 const isUserOnline = computed(() => {
-    if (isSupportChat) {
+    if (isSupportChat.value) {
         return true
     }
     return props.chat.another_user.is_active
@@ -139,12 +149,18 @@ onMounted(() => {
                     class="truncate text-sm flex-1 min-w-0"
                     :class="{
                         'text-blue-500 font-light': chat.last_message?.message_type === 'purchase_message'
+                        || chat.last_message?.message_type === 'price_offer_message'
                         || chat.last_message?.message_type === 'update_deal_status_message'
                         || chat.last_message?.message_type === 'review_message',
                         'text-gray-500': chat.last_message?.message_type === 'text_message'
                     }"
                 >
                     <!-- Message type icon -->
+                    <component
+                        v-if="chat.last_message?.message_type === 'price_offer_message'"
+                        :is="ShoppingBag"
+                        class="inline-block w-3 h-3 mr-1.5 -mt-0.5"
+                    />
                     <component
                         v-if="chat.last_message?.message_type === 'purchase_message'"
                         :is="ShoppingBag"

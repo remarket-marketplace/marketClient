@@ -2,7 +2,7 @@ import axios from "axios";
 import { ZodError } from "zod";
 import { httpClient } from "..";
 import { ProductSchema, type Product } from "@/validation/product/product";
-import { ErrorHandler } from "../errorHandler";
+import { ErrorHandler, type ApiError } from "../errorHandler";
 
 export interface ProductsFilterParams {
   minPrice?: number;
@@ -278,6 +278,62 @@ export const productService = {
       await httpClient.post(`/products/buy`, {
         product_id: productId,
       });
+      return { success: true };
+    } catch (error) {
+      const apiError = ErrorHandler.handleApiError(error);
+      return {
+        success: false,
+        error: apiError,
+      };
+    }
+  },
+
+  async createPriceOffer(
+    productId: string,
+    offeredPrice: number,
+    message?: string,
+  ): Promise<{ success: boolean; chatId?: string; error?: ApiError }> {
+    try {
+      const response = await httpClient.post(`/offers/products/${productId}`, {
+        offered_price: offeredPrice,
+        message: message?.trim() ? message.trim() : null,
+      });
+      return {
+        success: true,
+        chatId: response.data?.chat_room_id,
+      };
+    } catch (error) {
+      const apiError = ErrorHandler.handleApiError(error);
+      return {
+        success: false,
+        error: apiError,
+      };
+    }
+  },
+
+  async acceptPriceOffer(
+    offerId: string,
+  ): Promise<{ success: boolean; dealId?: string; error?: ApiError }> {
+    try {
+      const response = await httpClient.patch(`/offers/${offerId}/accept`);
+      return {
+        success: true,
+        dealId: response.data?.deal_id ?? undefined,
+      };
+    } catch (error) {
+      const apiError = ErrorHandler.handleApiError(error);
+      return {
+        success: false,
+        error: apiError,
+      };
+    }
+  },
+
+  async rejectPriceOffer(
+    offerId: string,
+  ): Promise<{ success: boolean; error?: ApiError }> {
+    try {
+      await httpClient.patch(`/offers/${offerId}/reject`);
       return { success: true };
     } catch (error) {
       const apiError = ErrorHandler.handleApiError(error);

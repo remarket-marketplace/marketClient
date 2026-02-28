@@ -4,7 +4,8 @@ import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import TheInput from '@/components/TheInput.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
 import Checkbox from '@/components/Checkbox.vue'
-import { computed, ref, watch } from 'vue'
+import DarkColorPicker from '@/components/settings/DarkColorPicker.vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import SuccessMessage from '@/components/SuccessMessage.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
@@ -29,13 +30,12 @@ import type {
 } from '@/validation/user/nicknameStyle'
 
 type SettingsSection = 'security' | 'nickname' | 'nickname-styles'
+type ColorPickerGroup = 'primary' | 'secondary' | 'glow'
 
 const NICKNAME_MIN_LENGTH = 4
 const NICKNAME_MAX_LENGTH = 32
 const NICKNAME_CHANGE_PRICE_RUB = 100
 const NICKNAME_REGEX = /^[A-Za-z0-9_]+$/
-const RGB_MIN = 0
-const RGB_MAX = 255
 
 const { t } = useI18n()
 const route = useRoute()
@@ -213,47 +213,98 @@ function applyStylesCatalog(data: NicknameStyleCatalogResponse) {
 }
 
 function clampRgb(value: number): number {
-  if (!Number.isFinite(value)) return RGB_MIN
-  return Math.min(RGB_MAX, Math.max(RGB_MIN, Math.round(value)))
+  if (!Number.isFinite(value)) return 0
+  return Math.min(255, Math.max(0, Math.round(value)))
 }
 
-function normalizeCustomRgbChannel(field: 'r' | 'g' | 'b', group: 'primary' | 'secondary' | 'glow') {
-  const normalized = (() => {
-    if (group === 'primary') {
-      if (field === 'r') return clampRgb(customPrimaryR.value)
-      if (field === 'g') return clampRgb(customPrimaryG.value)
-      return clampRgb(customPrimaryB.value)
-    }
-    if (group === 'secondary') {
-      if (field === 'r') return clampRgb(customSecondaryR.value)
-      if (field === 'g') return clampRgb(customSecondaryG.value)
-      return clampRgb(customSecondaryB.value)
-    }
-    if (field === 'r') return clampRgb(customGlowR.value)
-    if (field === 'g') return clampRgb(customGlowG.value)
-    return clampRgb(customGlowB.value)
-  })()
+function channelToHex(value: number): string {
+  return clampRgb(value).toString(16).padStart(2, '0')
+}
 
-  if (group === 'primary') {
-    if (field === 'r') customPrimaryR.value = normalized
-    if (field === 'g') customPrimaryG.value = normalized
-    if (field === 'b') customPrimaryB.value = normalized
-    return
+function rgbToHexColor(r: number, g: number, b: number): string {
+  return `#${channelToHex(r)}${channelToHex(g)}${channelToHex(b)}`
+}
+
+function parseHexColor(color: string): { r: number; g: number; b: number } | null {
+  const normalized = color.trim().toLowerCase()
+  const match = normalized.match(/^#([0-9a-f]{6})$/)
+  if (!match || !match[1]) return null
+  const raw = match[1]
+  return {
+    r: Number.parseInt(raw.slice(0, 2), 16),
+    g: Number.parseInt(raw.slice(2, 4), 16),
+    b: Number.parseInt(raw.slice(4, 6), 16),
   }
-  if (group === 'secondary') {
-    if (field === 'r') customSecondaryR.value = normalized
-    if (field === 'g') customSecondaryG.value = normalized
-    if (field === 'b') customSecondaryB.value = normalized
-    return
+}
+
+const customPrimaryHex = computed({
+  get: () => rgbToHexColor(customPrimaryR.value, customPrimaryG.value, customPrimaryB.value),
+  set: (value: string) => {
+    const parsed = parseHexColor(value)
+    if (!parsed) return
+    customPrimaryR.value = parsed.r
+    customPrimaryG.value = parsed.g
+    customPrimaryB.value = parsed.b
+  },
+})
+
+const customSecondaryHex = computed({
+  get: () => rgbToHexColor(customSecondaryR.value, customSecondaryG.value, customSecondaryB.value),
+  set: (value: string) => {
+    const parsed = parseHexColor(value)
+    if (!parsed) return
+    customSecondaryR.value = parsed.r
+    customSecondaryG.value = parsed.g
+    customSecondaryB.value = parsed.b
+  },
+})
+
+const customGlowHex = computed({
+  get: () => rgbToHexColor(customGlowR.value, customGlowG.value, customGlowB.value),
+  set: (value: string) => {
+    const parsed = parseHexColor(value)
+    if (!parsed) return
+    customGlowR.value = parsed.r
+    customGlowG.value = parsed.g
+    customGlowB.value = parsed.b
+  },
+})
+
+const customPrimaryPaletteRef = ref<HTMLElement | null>(null)
+const customSecondaryPaletteRef = ref<HTMLElement | null>(null)
+const customGlowPaletteRef = ref<HTMLElement | null>(null)
+const activeColorPalette = ref<ColorPickerGroup | null>(null)
+
+const darkMarketPalette = [
+  '#0B1220', '#111827', '#1F2937', '#273244', '#334155', '#475569',
+  '#0F172A', '#172554', '#1E3A8A', '#1E40AF', '#0C4A6E', '#155E75',
+  '#052E2B', '#064E3B', '#14532D', '#365314', '#4C1D95', '#581C87',
+  '#3B1B3D', '#4C1D32', '#7C2D12', '#7F1D1D', '#B45309', '#BE123C',
+] as const
+
+function getPaletteContainerRef(group: ColorPickerGroup): HTMLElement | null {
+  if (group === 'primary') return customPrimaryPaletteRef.value
+  if (group === 'secondary') return customSecondaryPaletteRef.value
+  return customGlowPaletteRef.value
+}
+
+function toggleColorPalette(group: ColorPickerGroup) {
+  activeColorPalette.value = activeColorPalette.value === group ? null : group
+}
+
+function handleOutsidePaletteClick(event: MouseEvent) {
+  if (!activeColorPalette.value) return
+  const paletteContainer = getPaletteContainerRef(activeColorPalette.value)
+  if (!paletteContainer) return
+  const target = event.target as Node | null
+  if (target && !paletteContainer.contains(target)) {
+    activeColorPalette.value = null
   }
-  if (field === 'r') customGlowR.value = normalized
-  if (field === 'g') customGlowG.value = normalized
-  if (field === 'b') customGlowB.value = normalized
 }
 
 function getStyleDescription(styleId: string) {
   if (isCustomNicknameStyleId(styleId)) {
-    return t('pages.settingsPage.customStyleDescription')
+    return ''
   }
   const key = `pages.settingsPage.nicknameStyleCatalog.${styleId}.description`
   const value = t(key)
@@ -491,6 +542,14 @@ watch(
   },
   { immediate: true },
 )
+
+onMounted(() => {
+  window.addEventListener('click', handleOutsidePaletteClick)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('click', handleOutsidePaletteClick)
+})
 </script>
 
 <template>
@@ -879,37 +938,21 @@ watch(
                       <div class="text-xs font-medium text-gray-300">
                         {{ $t('pages.settingsPage.customPrimaryColor') }}
                       </div>
-                      <div class="mt-2 flex items-center gap-3">
-                        <div
-                          class="h-8 w-8 rounded-md border border-dark-500"
+                      <div ref="customPrimaryPaletteRef" class="relative mt-2 inline-block">
+                        <button
+                          type="button"
+                          class="h-10 w-10 min-w-10 aspect-square rounded-md border border-dark-500 transition hover:border-blue-400/70 focus:outline-none focus:ring-2 focus:ring-blue-500/45"
                           :style="{ backgroundColor: `rgb(${customPrimaryR}, ${customPrimaryG}, ${customPrimaryB})` }"
+                          :aria-label="$t('pages.settingsPage.customPrimaryColor')"
+                          @click.stop="toggleColorPalette('primary')"
+                        >
+                        </button>
+                        <DarkColorPicker
+                          v-if="activeColorPalette === 'primary'"
+                          v-model="customPrimaryHex"
+                          :swatches="darkMarketPalette"
+                          class="absolute left-0 top-12 z-20"
                         />
-                        <div class="grid w-full grid-cols-3 gap-2">
-                          <input
-                            v-model.number="customPrimaryR"
-                            type="number"
-                            :min="RGB_MIN"
-                            :max="RGB_MAX"
-                            class="w-full rounded-lg border border-dark-500 bg-dark-700 px-2 py-1.5 text-xs text-gray-100 outline-none focus:border-blue-500/60"
-                            @blur="normalizeCustomRgbChannel('r', 'primary')"
-                          >
-                          <input
-                            v-model.number="customPrimaryG"
-                            type="number"
-                            :min="RGB_MIN"
-                            :max="RGB_MAX"
-                            class="w-full rounded-lg border border-dark-500 bg-dark-700 px-2 py-1.5 text-xs text-gray-100 outline-none focus:border-blue-500/60"
-                            @blur="normalizeCustomRgbChannel('g', 'primary')"
-                          >
-                          <input
-                            v-model.number="customPrimaryB"
-                            type="number"
-                            :min="RGB_MIN"
-                            :max="RGB_MAX"
-                            class="w-full rounded-lg border border-dark-500 bg-dark-700 px-2 py-1.5 text-xs text-gray-100 outline-none focus:border-blue-500/60"
-                            @blur="normalizeCustomRgbChannel('b', 'primary')"
-                          >
-                        </div>
                       </div>
                     </div>
 
@@ -917,37 +960,21 @@ watch(
                       <div class="text-xs font-medium text-gray-300">
                         {{ $t('pages.settingsPage.customSecondaryColor') }}
                       </div>
-                      <div class="mt-2 flex items-center gap-3">
-                        <div
-                          class="h-8 w-8 rounded-md border border-dark-500"
+                      <div ref="customSecondaryPaletteRef" class="relative mt-2 inline-block">
+                        <button
+                          type="button"
+                          class="h-10 w-10 min-w-10 aspect-square rounded-md border border-dark-500 transition hover:border-blue-400/70 focus:outline-none focus:ring-2 focus:ring-blue-500/45"
                           :style="{ backgroundColor: `rgb(${customSecondaryR}, ${customSecondaryG}, ${customSecondaryB})` }"
+                          :aria-label="$t('pages.settingsPage.customSecondaryColor')"
+                          @click.stop="toggleColorPalette('secondary')"
+                        >
+                        </button>
+                        <DarkColorPicker
+                          v-if="activeColorPalette === 'secondary'"
+                          v-model="customSecondaryHex"
+                          :swatches="darkMarketPalette"
+                          class="absolute left-0 top-12 z-20"
                         />
-                        <div class="grid w-full grid-cols-3 gap-2">
-                          <input
-                            v-model.number="customSecondaryR"
-                            type="number"
-                            :min="RGB_MIN"
-                            :max="RGB_MAX"
-                            class="w-full rounded-lg border border-dark-500 bg-dark-700 px-2 py-1.5 text-xs text-gray-100 outline-none focus:border-blue-500/60"
-                            @blur="normalizeCustomRgbChannel('r', 'secondary')"
-                          >
-                          <input
-                            v-model.number="customSecondaryG"
-                            type="number"
-                            :min="RGB_MIN"
-                            :max="RGB_MAX"
-                            class="w-full rounded-lg border border-dark-500 bg-dark-700 px-2 py-1.5 text-xs text-gray-100 outline-none focus:border-blue-500/60"
-                            @blur="normalizeCustomRgbChannel('g', 'secondary')"
-                          >
-                          <input
-                            v-model.number="customSecondaryB"
-                            type="number"
-                            :min="RGB_MIN"
-                            :max="RGB_MAX"
-                            class="w-full rounded-lg border border-dark-500 bg-dark-700 px-2 py-1.5 text-xs text-gray-100 outline-none focus:border-blue-500/60"
-                            @blur="normalizeCustomRgbChannel('b', 'secondary')"
-                          >
-                        </div>
                       </div>
                     </div>
 
@@ -955,37 +982,21 @@ watch(
                       <div class="text-xs font-medium text-gray-300">
                         {{ $t('pages.settingsPage.customGlowColor') }}
                       </div>
-                      <div class="mt-2 flex items-center gap-3">
-                        <div
-                          class="h-8 w-8 rounded-md border border-dark-500"
+                      <div ref="customGlowPaletteRef" class="relative mt-2 inline-block">
+                        <button
+                          type="button"
+                          class="h-10 w-10 min-w-10 aspect-square rounded-md border border-dark-500 transition hover:border-blue-400/70 focus:outline-none focus:ring-2 focus:ring-blue-500/45"
                           :style="{ backgroundColor: `rgb(${customGlowR}, ${customGlowG}, ${customGlowB})` }"
+                          :aria-label="$t('pages.settingsPage.customGlowColor')"
+                          @click.stop="toggleColorPalette('glow')"
+                        >
+                        </button>
+                        <DarkColorPicker
+                          v-if="activeColorPalette === 'glow'"
+                          v-model="customGlowHex"
+                          :swatches="darkMarketPalette"
+                          class="absolute left-0 top-12 z-20"
                         />
-                        <div class="grid w-full grid-cols-3 gap-2">
-                          <input
-                            v-model.number="customGlowR"
-                            type="number"
-                            :min="RGB_MIN"
-                            :max="RGB_MAX"
-                            class="w-full rounded-lg border border-dark-500 bg-dark-700 px-2 py-1.5 text-xs text-gray-100 outline-none focus:border-blue-500/60"
-                            @blur="normalizeCustomRgbChannel('r', 'glow')"
-                          >
-                          <input
-                            v-model.number="customGlowG"
-                            type="number"
-                            :min="RGB_MIN"
-                            :max="RGB_MAX"
-                            class="w-full rounded-lg border border-dark-500 bg-dark-700 px-2 py-1.5 text-xs text-gray-100 outline-none focus:border-blue-500/60"
-                            @blur="normalizeCustomRgbChannel('g', 'glow')"
-                          >
-                          <input
-                            v-model.number="customGlowB"
-                            type="number"
-                            :min="RGB_MIN"
-                            :max="RGB_MAX"
-                            class="w-full rounded-lg border border-dark-500 bg-dark-700 px-2 py-1.5 text-xs text-gray-100 outline-none focus:border-blue-500/60"
-                            @blur="normalizeCustomRgbChannel('b', 'glow')"
-                          >
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -1080,7 +1091,7 @@ watch(
                           :style-id="style.style_id"
                           class="text-base font-semibold"
                         />
-                        <p class="mt-1 text-xs text-gray-200/80">
+                        <p v-if="getStyleDescription(style.style_id)" class="mt-1 text-xs text-gray-200/80">
                           {{ getStyleDescription(style.style_id) }}
                         </p>
                       </div>
@@ -1091,12 +1102,6 @@ watch(
                           class="rounded-md border border-emerald-500/35 bg-emerald-600/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-200"
                         >
                           {{ $t('pages.settingsPage.owned') }}
-                        </span>
-                        <span
-                          v-if="style.is_active"
-                          class="rounded-md border border-blue-500/35 bg-blue-600/15 px-2 py-0.5 text-[11px] font-semibold text-blue-200"
-                        >
-                          {{ $t('pages.settingsPage.active') }}
                         </span>
                       </div>
                     </div>
@@ -1160,16 +1165,6 @@ watch(
 </template>
 
 <style>
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-input[type="number"] {
-  -moz-appearance: textfield;
-}
-
 @media (min-width: 1024px) {
   .lg\:overflow-y-auto {
     scrollbar-width: thin;

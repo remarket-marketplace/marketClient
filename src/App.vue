@@ -18,8 +18,29 @@ const isUserLoaded = ref(false)
 let unsubscribeChatUpdated: (() => void) | null = null
 let onlinePingIntervalHandle: number | null = null
 let chatSyncVersion = 0
+let isResyncingChats = false
+let needResyncChats = false
 
 const { user } = storeToRefs(store)
+
+async function resyncChats(userId: string, syncVersion: number) {
+  if (isResyncingChats) {
+    needResyncChats = true
+    return
+  }
+
+  isResyncingChats = true
+  try {
+    do {
+      needResyncChats = false
+      const chats = await chatsService.getChats()
+      if (syncVersion !== chatSyncVersion || store.user?.id !== userId) return
+      chatStore.setChats(chats)
+    } while (needResyncChats)
+  } finally {
+    isResyncingChats = false
+  }
+}
 
 async function initChats(userId: string, syncVersion: number) {
   if (!store.user) return
@@ -34,6 +55,11 @@ async function initChats(userId: string, syncVersion: number) {
 
   unsubscribeChatUpdated?.()
   unsubscribeChatUpdated = chatsService.onChatUpdated((update) => {
+    const hasChatInStore = chatStore.chats.some((chat) => chat.id === update.chat_id)
+    if (!hasChatInStore) {
+      void resyncChats(userId, syncVersion)
+      return
+    }
     chatStore.updateChatFromSocket(update)
   })
 }

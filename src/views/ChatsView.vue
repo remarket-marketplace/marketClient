@@ -10,7 +10,7 @@ import type { ChatListItem } from '@/validation/chat/ChatList'
 import type { ChatMessageUnion } from '@/validation/chat/chatMessage'
 import type { MessagesReadPayload } from '@/validation/chat/chatMessage'
 import type { UserRead } from '@/validation/user/userRead'
-import { nextTick, onMounted, onUnmounted, ref, computed } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft, Headphones } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
@@ -29,7 +29,8 @@ const messageContainerRef = ref<HTMLElement | null>(null)
 const isPageLoading = ref(false)
 const isChatLoading = ref(false)
 const isLoadingMoreMessages = ref(false)
-const errorMessage = ref<string | null>(null)
+const pageErrorMessage = ref<string | null>(null)
+const sendErrorMessage = ref<string | null>(null)
 const isMobile = ref(false)
 const mobileMode = ref<'chats' | 'chat'>('chats')
 const store = useUserStore()
@@ -40,6 +41,8 @@ const currentPage = ref(1)
 const totalPages = ref(0)
 const perPage = ref(30)
 const hasMoreMessages = ref(true)
+const totalMessagesInChat = ref(0)
+const isMessageLimitLockedByServer = ref(false)
 
 // Разделяем чаты на support и обычные
 const sortedChats = computed(() => {
@@ -89,6 +92,76 @@ const shouldShowAdminBadge = computed(() => {
   return !isSupportChat.value
 })
 
+type TextMessage = Extract<ChatMessageUnion, { message_type: 'text_message' }>
+const textMessagesInChat = computed<TextMessage[]>(() =>
+  chatMessages.value.filter(
+    (message): message is TextMessage => message.message_type === 'text_message'
+  )
+)
+
+const hasDealSignals = computed(() => {
+  const lastMessageType = currentChat.value?.last_message?.message_type
+  if (lastMessageType === 'purchase_message' || lastMessageType === 'update_deal_status_message') {
+    return true
+  }
+  return chatMessages.value.some(message =>
+    message.message_type === 'purchase_message' || message.message_type === 'update_deal_status_message'
+  )
+})
+
+const isChatHistoryFullyLoaded = computed(() => {
+  if (totalMessagesInChat.value <= 0) return false
+  return chatMessages.value.length >= totalMessagesInChat.value
+})
+
+const singleSenderWaitState = computed<'sender' | 'recipient' | null>(() => {
+  if (!selectedChatId.value || !user.value || isSupportChat.value) return null
+  if (hasDealSignals.value) return null
+  if (!isChatHistoryFullyLoaded.value) return null
+
+  const textMessages = textMessagesInChat.value
+  if (textMessages.length === 0) return null
+
+  // Restriction applies only to simple direct chats with text-only history.
+  if (textMessages.length !== chatMessages.value.length) return null
+
+  const uniqueSenders = new Set(textMessages.map(message => message.sender_id))
+  if (uniqueSenders.size !== 1) return null
+
+  const [onlySenderId] = Array.from(uniqueSenders)
+  if (!onlySenderId) return null
+  return onlySenderId === user.value.id ? 'sender' : 'recipient'
+})
+
+const hasReplyFromAnotherUser = computed(() => {
+  if (!user.value) return false
+  return textMessagesInChat.value.some(message => message.sender_id !== user.value?.id)
+})
+
+const isSendLocked = computed(() => {
+  if (!selectedChatId.value || isSupportChat.value) return false
+  if (hasDealSignals.value) return false
+  if (singleSenderWaitState.value === 'sender') return true
+  return isMessageLimitLockedByServer.value
+})
+
+const lockReminderType = computed<'sender' | 'recipient' | null>(() => {
+  if (!selectedChatId.value || isSupportChat.value) return null
+  if (isSendLocked.value) return 'sender'
+  if (singleSenderWaitState.value === 'recipient') return 'recipient'
+  return null
+})
+
+const lockReminderText = computed(() => {
+  if (lockReminderType.value === 'sender') {
+    return t('pages.chats.waitReplyReminderSender')
+  }
+  if (lockReminderType.value === 'recipient') {
+    return t('pages.chats.waitReplyReminderRecipient')
+  }
+  return null
+})
+
 function openChatProfile() {
   if (!currentChat.value || isSupportChat.value) return
   const username = currentChat.value.another_user?.username
@@ -130,6 +203,36 @@ function applyMessagesReadUpdate(update: MessagesReadPayload) {
 
   chatStore.markMessagesRead(update.chat_id, update.message_ids)
 }
+
+watch(selectedChatId, () => {
+  isMessageLimitLockedByServer.value = false
+  sendErrorMessage.value = null
+})
+
+watch([hasReplyFromAnotherUser, hasDealSignals], ([hasReply, hasDeal]) => {
+  if (hasReply || hasDeal) {
+    isMessageLimitLockedByServer.value = false
+  }
+})
+
+watch(
+  () => route.query.chatId,
+  async (chatIdQuery) => {
+    const chatId = typeof chatIdQuery === 'string' ? chatIdQuery : null
+    if (!chatId) return
+    if (selectedChatId.value === chatId) return
+    if (isPageLoading.value) return
+
+    const exists = chats.value.some(chat => chat.id === chatId)
+    if (!exists) {
+      await loadChats()
+    }
+
+    if (chats.value.some(chat => chat.id === chatId)) {
+      await loadChatMessages(chatId)
+    }
+  }
+)
 
 onMounted(async () => {
   try {
@@ -174,6 +277,10 @@ onMounted(async () => {
       if (selectedChatId.value === message.chat_room_id) {
         if (!chatMessages.value.some(m => m.id === message.id)) {
           chatMessages.value.push(message)
+          totalMessagesInChat.value = Math.max(
+            totalMessagesInChat.value + 1,
+            chatMessages.value.length
+          )
           nextTick(scrollToBottom)
           chatStore.resetUnread(message.chat_room_id)
           chatsService.markChatRead(message.chat_room_id)
@@ -201,7 +308,7 @@ onMounted(async () => {
       }
     }
   } catch {
-    errorMessage.value = t('pages.chats.errorLoadingChats')
+    pageErrorMessage.value = t('pages.chats.errorLoadingChats')
   } finally {
     isPageLoading.value = false
   }
@@ -247,6 +354,7 @@ async function loadMoreMessages() {
     currentPage.value + 1,
     perPage.value
   )
+  totalMessagesInChat.value = response.total
 
   if (response.messages.length) {
     chatMessages.value.unshift(...response.messages)
@@ -268,6 +376,9 @@ async function loadChatMessages(chatId: string) {
     chatMessages.value = []
     currentPage.value = 1
     hasMoreMessages.value = true
+    totalMessagesInChat.value = 0
+    sendErrorMessage.value = null
+    isMessageLimitLockedByServer.value = false
 
     await chatsService.joinChat(chatId)
     selectedChatId.value = chatId
@@ -276,6 +387,7 @@ async function loadChatMessages(chatId: string) {
 
     const response = await chatsService.getChatMessages(chatId, 1, perPage.value)
     chatMessages.value = response.messages
+    totalMessagesInChat.value = response.total
     totalPages.value = response.totalPages
     hasMoreMessages.value = 1 < totalPages.value
     chatStore.resetUnread(chatId)
@@ -291,14 +403,26 @@ async function loadChatMessages(chatId: string) {
 }
 
 async function sendMessage() {
-  if (!newMessage.value.trim() || !selectedChatId.value) return
-  const success = await chatsService.sendMessage(
+  if (!newMessage.value.trim() || !selectedChatId.value || isSendLocked.value) return
+  const result = await chatsService.sendMessage(
     newMessage.value.trim(),
     selectedChatId.value
   )
-  if (success) {
+  if (result.success) {
     newMessage.value = ''
+    sendErrorMessage.value = null
     nextTick(scrollToBottom)
+    return
+  }
+
+  if (result.errorCode === 'MESSAGE_LIMIT_WAIT_FOR_SELLER_REPLY') {
+    isMessageLimitLockedByServer.value = true
+    sendErrorMessage.value = null
+    return
+  } else {
+    sendErrorMessage.value = result.errorCode
+      ? t(`errors.${result.errorCode}`)
+      : t('errors.SERVER_ERROR')
   }
 }
 </script>
@@ -310,8 +434,8 @@ async function sendMessage() {
       <Loader />
     </div>
 
-    <div v-else-if="errorMessage" class="flex flex-1 items-center justify-center text-red-500">
-      {{ errorMessage }}
+    <div v-else-if="pageErrorMessage" class="flex flex-1 items-center justify-center text-red-500">
+      {{ pageErrorMessage }}
     </div>
 
     <div v-else class="w-full flex flex-1 overflow-hidden">
@@ -439,7 +563,27 @@ async function sendMessage() {
               </template>
             </div>
 
-            <SendMessageBar v-if="selectedChatId" v-model:newMessage="newMessage" @sendMessage="sendMessage" />
+            <div
+              v-if="selectedChatId && lockReminderText"
+              class="mx-1 mb-2 rounded-xl border px-3 py-2 text-sm"
+              :class="lockReminderType === 'sender'
+                ? 'border-amber-400/40 bg-amber-500/10 text-amber-200'
+                : 'border-blue-400/40 bg-blue-500/10 text-blue-200'"
+            >
+              {{ lockReminderText }}
+            </div>
+            <div
+              v-if="selectedChatId && sendErrorMessage"
+              class="mx-1 mb-2 rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300"
+            >
+              {{ sendErrorMessage }}
+            </div>
+            <SendMessageBar
+              v-if="selectedChatId"
+              v-model:newMessage="newMessage"
+              :disabled="isSendLocked"
+              @sendMessage="sendMessage"
+            />
           </div>
         </div>
       </div>
