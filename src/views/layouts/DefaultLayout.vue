@@ -162,11 +162,10 @@ const navItems = computed(() => {
     class="w-screen bg-background text-mainText"
     :class="showFooter ? 'min-h-screen' : 'h-full-dvh overflow-hidden flex flex-col'"
   >
-    <div
-      class="mx-auto w-full 2xl:w-1/2 no-scrollbar"
-      :class="showFooter ? 'min-h-screen' : 'flex flex-1 h-full flex-col'"
+    <header
+      class="fixed inset-x-0 top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
     >
-      <header class="flex-none z-30 relative">
+      <div class="mx-auto w-full 2xl:w-1/2">
         <div class="mx-auto h-14 w-full flex items-center justify-between px-2 lg:px-4">
           <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold"
             @click="router.push('/')">
@@ -202,17 +201,22 @@ const navItems = computed(() => {
                 </span>
               </router-link>
             </nav>
-  
+
             <SelectCurrency />
             <SelectLanguage />
           </div>
         </div>
-        <div
-          aria-hidden="true"
-          class="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-dark-700/25 via-dark-700/95 to-dark-700/25"
-        />
-      </header>
-  
+      </div>
+      <div
+        aria-hidden="true"
+        class="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-dark-700/25 via-dark-700/95 to-dark-700/25"
+      />
+    </header>
+
+    <div
+      class="mx-auto w-full 2xl:w-1/2 no-scrollbar pt-14"
+      :class="showFooter ? 'min-h-screen' : 'flex flex-1 min-h-0 flex-col'"
+    >
       <main :class="showFooter ? '' : 'flex-1 min-h-0 overflow-hidden'">
         <div class="mx-auto w-full lg:px-4" :class="[{ 'pb-16': !isDesktop }, showFooter ? '' : 'h-full']">
           <slot />

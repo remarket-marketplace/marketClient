@@ -107,57 +107,65 @@ const navItems = computed(() => [
 
 <template>
   <div class="h-full-dvh w-screen flex flex-col bg-background text-mainText overflow-hidden">
-    <header class="flex-none z-30 relative">
-      <div class="mx-auto h-14 w-full flex items-center justify-between px-2 lg:px-4">
-        <div class="flex items-center gap-4">
-          <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold"
-            @click="router.push('/admin')">
-            <p>remarket</p>
-            <p class="text-gray-300 font-light">Admin</p>
-          </div>
+    <header
+      class="fixed inset-x-0 top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+    >
+      <div class="mx-auto w-full 2xl:w-1/2">
+        <div class="mx-auto h-14 w-full flex items-center justify-between px-2 lg:px-4">
+          <div class="flex items-center gap-4">
+            <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold"
+              @click="router.push('/admin')">
+              <p>remarket</p>
+              <p class="text-gray-300 font-light">Admin</p>
+            </div>
 
-          <div class="flex items-center">
-            <div class="h-4 w-px bg-gray-700"></div>
-            <router-link to="/"
-              class="flex items-center gap-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800/50 px-2 md:px-3 py-1.5 rounded-lg transition-all duration-300 group">
-              <svg class="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-0.5" fill="none"
-                stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              <span class="hidden md:inline">{{ t('navigation.admin.backToSite') }}</span>
-            </router-link>
-          </div>
-        </div>
-
-        <div class="flex min-w-0 flex-1 items-center justify-end gap-3 sm:gap-4">
-          <div class="hidden min-w-0 flex-1 md:block">
-            <div class="w-full overflow-x-auto no-scrollbar">
-              <nav class="ml-auto flex min-w-full w-max items-center justify-end gap-6 pr-1">
-                <router-link v-for="item in navItems" :key="item.id" :to="item.to"
-                  class="flex shrink-0 items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"
-                  :class="{
-                    'text-white': isActiveRoute(item),
-                    'text-gray-400': !isActiveRoute(item)
-                  }">
-                  <component :is="item.icon" class="text-xl transition-colors duration-300 group-hover:text-white"
-                    :class="isActiveRoute(item) ? 'text-white' : 'text-gray-400'" :size="20" stroke-width="1.5" />
-                  <span class="ml-1 transition-colors duration-300 group-hover:text-white whitespace-nowrap">
-                    {{ item.title }}
-                  </span>
-                </router-link>
-              </nav>
+            <div class="flex items-center">
+              <div class="h-4 w-px bg-gray-700"></div>
+              <router-link to="/"
+                class="flex items-center gap-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800/50 px-2 md:px-3 py-1.5 rounded-lg transition-all duration-300 group">
+                <svg class="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-0.5" fill="none"
+                  stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                <span class="hidden md:inline">{{ t('navigation.admin.backToSite') }}</span>
+              </router-link>
             </div>
           </div>
 
-          <div class="shrink-0 flex items-center gap-3">
-            <SelectCurrency />
-            <SelectLanguage />
+          <div class="flex min-w-0 flex-1 items-center justify-end gap-3 sm:gap-4">
+            <div class="hidden min-w-0 flex-1 md:block">
+              <div class="w-full overflow-x-auto no-scrollbar">
+                <nav class="ml-auto flex min-w-full w-max items-center justify-end gap-6 pr-1">
+                  <router-link v-for="item in navItems" :key="item.id" :to="item.to"
+                    class="flex shrink-0 items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"
+                    :class="{
+                      'text-white': isActiveRoute(item),
+                      'text-gray-400': !isActiveRoute(item)
+                    }">
+                    <component :is="item.icon" class="text-xl transition-colors duration-300 group-hover:text-white"
+                      :class="isActiveRoute(item) ? 'text-white' : 'text-gray-400'" :size="20" stroke-width="1.5" />
+                    <span class="ml-1 transition-colors duration-300 group-hover:text-white whitespace-nowrap">
+                      {{ item.title }}
+                    </span>
+                  </router-link>
+                </nav>
+              </div>
+            </div>
+
+            <div class="shrink-0 flex items-center gap-3">
+              <SelectCurrency />
+              <SelectLanguage />
+            </div>
           </div>
         </div>
       </div>
+      <div
+        aria-hidden="true"
+        class="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-dark-700/25 via-dark-700/95 to-dark-700/25"
+      />
     </header>
 
-    <main class="flex-1 min-h-0 overflow-hidden">
+    <main class="flex-1 min-h-0 overflow-hidden pt-14">
       <div class="flex w-full 2xl:w-1/2 mx-auto h-full px-2" :class="{ 'pb-16': !isDesktop }">
         <slot />
       </div>

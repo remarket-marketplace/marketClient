@@ -304,7 +304,7 @@ async function sendMessage() {
 
 
 <template>
-  <div class="h-full w-full flex flex-col md:pt-6">
+  <div class="h-full w-full flex flex-col overscroll-none md:pt-6">
     <div v-if="isPageLoading" class="flex flex-1 items-center justify-center text-gray-300">
       <Loader />
     </div>
@@ -328,7 +328,7 @@ async function sendMessage() {
             {{ $t('pages.chats.title') }}
           </p>
 
-          <div class="scrollbar-hidden min-h-0 flex-1 overflow-y-auto">
+          <div class="scrollbar-hidden min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
             <div v-if="sortedChats.length > 0" class="flex flex-col">
               <ChatItem v-for="chat in sortedChats" :key="chat.id" :chat="chat" :selected-chat-id="selectedChatId"
                 :show-support-as-user="false" @load-chat-messages="(n: string) => loadChatMessages(n)" />
@@ -399,7 +399,7 @@ async function sendMessage() {
               </button>
             </div>
 
-            <div ref="messageContainerRef" class="no-scrollbar flex flex-1 flex-col overflow-y-auto pb-16"
+            <div ref="messageContainerRef" class="no-scrollbar flex flex-1 flex-col overflow-y-auto overscroll-y-contain pb-16"
               @scroll="handleScroll">
               <div v-if="isChatLoading" class="flex h-full w-full items-center justify-center">
                 <Loader />

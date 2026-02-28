@@ -371,7 +371,7 @@ async function sendMessage() {
 
 <template>
     <!-- Добавляем md:pt-6 обратно -->
-    <div class="h-full w-full flex flex-col md:pt-6">
+    <div class="h-full w-full flex flex-col overscroll-none md:pt-6">
         <div v-if="isLoading && chats.length === 0" class="flex flex-1 items-center justify-center text-gray-300">
             <Loader />
         </div>
@@ -434,7 +434,7 @@ async function sendMessage() {
                         </div>
                     </div>
 
-                    <div ref="chatsContainerRef" class="scrollbar-hidden flex-1 min-h-0 overflow-y-auto"
+                    <div ref="chatsContainerRef" class="scrollbar-hidden flex-1 min-h-0 overflow-y-auto overscroll-y-contain"
                         @scroll="handleChatsScroll">
                         <div v-if="sortedChats.length > 0" class="flex flex-col">
                             <ChatItem v-for="chat in sortedChats" :key="chat.id" :chat="chat"
@@ -500,7 +500,7 @@ async function sendMessage() {
                         </div>
 
                         <!-- message -->
-                        <div ref="messageContainerRef" class="flex-1 min-h-0 overflow-y-auto pb-2"
+                        <div ref="messageContainerRef" class="flex-1 min-h-0 overflow-y-auto overscroll-y-contain pb-2"
                             @scroll="handleMessagesScroll">
                             <div v-if="isLoadingMoreMessages" class="flex justify-center py-2">
                                 <Loader size="sm" />
