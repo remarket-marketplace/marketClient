@@ -5,6 +5,7 @@ import type { Product } from '@/validation/product/product'
 import { useI18n } from 'vue-i18n'
 import ProductStatusTag from './ProductStatusTag.vue'
 import UserRating from './UserRating.vue'
+import StyledUsername from './StyledUsername.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
 
 const { t } = useI18n()
@@ -62,12 +63,17 @@ function goToSeller() {
 
       <div class="mt-auto flex w-full flex-col gap-2">
         <div v-if="!isOwner" class="flex w-full min-w-0 items-center gap-1.5 sm:gap-2">
-          <p
-            class="min-w-0 shrink truncate text-xs text-blue-400 underline decoration-transparent transition hover:text-blue-300 hover:decoration-blue-300 sm:text-sm"
+          <button
+            type="button"
+            class="min-w-0 shrink truncate text-left text-xs underline decoration-transparent transition hover:decoration-blue-300 sm:text-sm"
             @click.stop="goToSeller"
           >
-            {{ product.seller.username }}
-          </p>
+            <StyledUsername
+              :username="product.seller.username"
+              :style-id="product.seller.nickname_style_id"
+              class="block truncate"
+            />
+          </button>
           <span v-if="product.seller.is_active" class="h-2 w-2 flex-shrink-0 rounded-full bg-green-500" />
           <div class="flex-shrink-0">
             <UserRating :rating="product.seller.rating" />

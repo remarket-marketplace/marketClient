@@ -5,6 +5,7 @@ import type { Product } from '@/validation/product/product'
 import { useI18n } from 'vue-i18n'
 import { productService } from '@/api/product/ProductService'
 import UserAvatar from '@/components/UserAvatar.vue'
+import StyledUsername from '@/components/StyledUsername.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
 
 const { t } = useI18n()
@@ -145,9 +146,11 @@ const formatDate = (dateString: string) => {
             />
           </div>
           <div class="min-w-0">
-            <p class="text-xs text-blue-400 truncate group-hover:text-blue-300 transition-colors">
-              {{ product.seller.username }}
-            </p>
+            <StyledUsername
+              :username="product.seller.username"
+              :style-id="product.seller.nickname_style_id"
+              class="text-xs truncate transition-colors"
+            />
             <div class="flex items-center gap-1 text-xs text-gray-500">
               <Star class="w-3 h-3 text-yellow-500 fill-current" />
               <span>{{ product.seller.rating.toFixed(1) }}</span>

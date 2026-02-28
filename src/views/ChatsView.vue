@@ -15,6 +15,7 @@ import { useI18n } from 'vue-i18n'
 import { ArrowLeft, Headphones } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import UserAvatar from '@/components/UserAvatar.vue'
+import StyledUsername from '@/components/StyledUsername.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -385,9 +386,15 @@ async function sendMessage() {
                 <!-- Информация о чате -->
                 <div class="flex flex-col truncate">
                   <!-- Имя чата -->
-                  <p class="truncate font-semibold text-lg" :class="isSupportChat ? 'text-blue-500' : 'text-mainText'">
+                  <p v-if="isSupportChat" class="truncate font-semibold text-lg text-blue-500">
                     {{ chatDisplayName }}
                   </p>
+                  <StyledUsername
+                    v-else
+                    :username="chatDisplayName"
+                    :style-id="currentChat?.another_user.nickname_style_id"
+                    class="truncate text-lg font-semibold"
+                  />
                   <!-- Статус онлайн -->
                   <p v-if="chatDisplayStatus" class="text-xs text-green-500">
                     {{ $t('common.online') }}

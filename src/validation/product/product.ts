@@ -11,6 +11,7 @@ export const ProductImageSchema = z.object({
 
 export const SellerSchema = z.object({
   username: z.string(),
+  nickname_style_id: z.string().max(64).nullish().transform((value) => value ?? 'default'),
   avatar_url: z.string(),
   is_active: z.boolean(),
   is_banned: z.boolean(),

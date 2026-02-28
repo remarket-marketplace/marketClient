@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n';
 import { ShoppingBag, Headphones } from 'lucide-vue-next';
 import UserAvatar from '@/components/UserAvatar.vue';
+import StyledUsername from '@/components/StyledUsername.vue';
 
 const { t } = useI18n()
 
@@ -154,11 +155,18 @@ onMounted(() => {
             <div class="flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2 truncate">
                     <!-- Name based on context -->
-                    <p 
+                    <p
+                        v-if="isSupportChat && !showSupportAsUser"
                         :class="['truncate font-semibold text-base', displayNameColor]"
                     >
                         {{ displayName }}
                     </p>
+                    <StyledUsername
+                        v-else
+                        :username="displayName"
+                        :style-id="chat.another_user.nickname_style_id"
+                        class="truncate text-base font-semibold"
+                    />
                     <span
                         v-if="unreadCount > 0"
                         class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-red-500 text-white text-[11px] font-semibold"

@@ -14,6 +14,7 @@ import { useUserStore } from '@/stores/user'
 import BackButton from '@/components/navigation/BackButton.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
 import UserAvatar from '@/components/UserAvatar.vue'
+import StyledUsername from '@/components/StyledUsername.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
 import { storeToRefs } from 'pinia'
 
@@ -373,9 +374,11 @@ onUnmounted(() => {
             class="w-12 h-12 rounded-full border border-dark-500 object-cover"
           />
           <div class="flex-1 flex flex-col gap-1">
-            <p class="text-white font-semibold">
-              {{ product.seller.username }}
-            </p>
+            <StyledUsername
+              :username="product.seller.username"
+              :style-id="product.seller.nickname_style_id"
+              class="text-base font-semibold"
+            />
             <div class="flex">
               <UserRating :rating="product.seller.rating" />
             </div>

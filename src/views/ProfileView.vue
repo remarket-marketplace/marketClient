@@ -19,6 +19,7 @@ import type { Deal } from '@/validation/deal/deal'
 import UserRating from '@/components/UserRating.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
+import StyledUsername from '@/components/StyledUsername.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
 
 const { t } = useI18n()
@@ -327,7 +328,11 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
             <!-- Profile header -->
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
-                <h2 class="text-xl font-bold text-white truncate">{{ currentProfileData.username }}</h2>
+                <StyledUsername
+                  :username="currentProfileData.username"
+                  :style-id="currentProfileData.nickname_style_id"
+                  class="max-w-[220px] text-xl font-bold"
+                />
                 <div v-if="currentProfileData.rating > 0" class="flex items-center gap-2">
                   <div class="flex items-center gap-1 px-2 py-1 rounded-lg bg-yellow-500/10 border border-yellow-400/30">
                     <Star class="w-4 h-4 text-yellow-300 fill-yellow-300" />

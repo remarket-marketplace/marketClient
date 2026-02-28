@@ -16,6 +16,7 @@ import { adminService } from '@/api/admin/AdminService'
 import SearchField from '@/components/SearchField.vue'
 import CustomSelect from '@/components/CustomSelect.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
+import StyledUsername from '@/components/StyledUsername.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -486,9 +487,11 @@ async function sendMessage() {
                                     />
                                 </div>
                                 <div class="flex flex-col truncate">
-                                    <p class="truncate text-mainText font-semibold text-lg">
-                                        {{ currentChat?.another_user.username }}
-                                    </p>
+                                    <StyledUsername
+                                        :username="currentChat?.another_user.username || ''"
+                                        :style-id="currentChat?.another_user.nickname_style_id"
+                                        class="truncate text-lg font-semibold"
+                                    />
                                     <p v-if="currentChat?.another_user.is_active" class="text-xs text-green-500">
                                         {{ $t('common.online') }}
                                     </p>

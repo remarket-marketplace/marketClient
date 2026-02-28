@@ -32,6 +32,8 @@ import AdminFeedbackView from "@/views/admin/AdminFeedbackView.vue";
 import AdminActivityLogsView from "@/views/admin/AdminActivityLogsView.vue";
 import BecomeSellerView from "@/views/BecomeSellerView.vue";
 import AboutView from "@/views/AboutView.vue";
+import TermsOfServiceView from "@/views/TermsOfServiceView.vue";
+import PrivacyPolicyView from "@/views/PrivacyPolicyView.vue";
 import PartnerFortniteStatsView from "@/views/partner/PartnerFortniteStatsView.vue";
 import BannedView from "@/views/BannedView.vue";
 
@@ -229,6 +231,17 @@ const routes = [
       path: "/about",
       name: "about",
       component: AboutView,
+    },
+    {
+      path: "/terms",
+      name: "terms",
+      component: TermsOfServiceView,
+    },
+    {
+      path: "/privacy-policy",
+      alias: "/privacy",
+      name: "privacy policy",
+      component: PrivacyPolicyView,
     },
     {
       path: "/:pathMatch(.*)*",

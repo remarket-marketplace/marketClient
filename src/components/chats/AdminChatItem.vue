@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n';
 import { ShoppingBag, Headphones } from 'lucide-vue-next';
 import UserAvatar from '@/components/UserAvatar.vue';
+import StyledUsername from '@/components/StyledUsername.vue';
 
 const { t } = useI18n()
 
@@ -118,12 +119,12 @@ onMounted(() => {
                         {{ t('pages.chats.support') }}
                     </p>
                     <!-- Show username for regular chats -->
-                    <p 
+                    <StyledUsername
                         v-else
-                        class="truncate text-mainText font-semibold text-base"
-                    >
-                        {{ chat.another_user.username }}
-                    </p>
+                        :username="chat.another_user.username"
+                        :style-id="chat.another_user.nickname_style_id"
+                        class="truncate text-base font-semibold"
+                    />
                 </div>
                 <span 
                     v-if="chat.last_message?.created_at" 

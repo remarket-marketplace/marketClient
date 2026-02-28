@@ -365,6 +365,17 @@ function handleWelcomeFinished() {
           </div>
           <Captcha @verified="(token: string) => captchaToken = token" />
 
+          <p class="text-xs text-gray-400 leading-relaxed">
+            {{ $t('pages.auth.signUp.legalPrefix') }}
+            <router-link to="/terms" class="text-blue-400 hover:text-blue-300 hover:underline transition-colors">
+              {{ $t('pages.auth.signUp.legalTerms') }}
+            </router-link>
+            {{ ' ' + $t('pages.auth.signUp.legalAnd') + ' ' }}
+            <router-link to="/privacy-policy" class="text-blue-400 hover:text-blue-300 hover:underline transition-colors">
+              {{ $t('pages.auth.signUp.legalPrivacy') }}
+            </router-link>.
+          </p>
+
           <TheButton :button-text="sended ? $t('common.sending') : $t('pages.auth.signUp.getCode')"
             :sended="sended" class="w-full" />
 

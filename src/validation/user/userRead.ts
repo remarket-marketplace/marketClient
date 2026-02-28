@@ -1,9 +1,16 @@
 import { z } from 'zod'
 
+const nicknameStyleIdSchema = z
+  .string()
+  .max(64)
+  .nullish()
+  .transform((value) => value ?? 'default')
+
 export const UserReadSchema = z.object({
   id: z.string(),
   email: z.string().email(),
   username: z.string().min(4).max(32),
+  nickname_style_id: nicknameStyleIdSchema,
   balance: z.number().nonnegative(),
   avatar_url: z.string().or(z.literal('')),
   description: z.string().max(500).nullable(),
@@ -22,6 +29,7 @@ export type ProfileData = UserRead
 
 export const PublicProfileDataSchema = z.object({
   username: z.string().min(4).max(32),
+  nickname_style_id: nicknameStyleIdSchema,
   avatar_url: z.string().or(z.literal('')),
   description: z.string().max(500).nullable(),
   is_active: z.boolean(),

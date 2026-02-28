@@ -69,14 +69,14 @@
             <h4 class="font-semibold text-white text-lg mb-4">{{ $t('common.legal') }}</h4>
             <ul class="space-y-3">
               <li>
-                <a href="#" class="text-gray-400 hover:text-white transition-colors duration-300 font-light">
+                <router-link to="/privacy-policy" class="text-gray-400 hover:text-white transition-colors duration-300 font-light">
                   {{ $t('footer.privacyPolicy', 'Политика конфиденциальности') }}
-                </a>
+                </router-link>
               </li>
               <li>
-                <a href="#" class="text-gray-400 hover:text-white transition-colors duration-300 font-light">
+                <router-link to="/terms" class="text-gray-400 hover:text-white transition-colors duration-300 font-light">
                   {{ $t('footer.termsOfService', 'Условия использования') }}
-                </a>
+                </router-link>
               </li>
               <li>
                 <a href="mailto:legal@re-market.net" class="text-gray-400 hover:text-white transition-colors duration-300 font-light">

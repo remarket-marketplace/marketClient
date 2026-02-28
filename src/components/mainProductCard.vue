@@ -5,6 +5,7 @@ import type { Product } from '@/validation/product/product'
 import { useI18n } from 'vue-i18n'
 import UserRating from './UserRating.vue'
 import ProductStatusTag from './ProductStatusTag.vue'
+import StyledUsername from './StyledUsername.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
 
 const { t } = useI18n()
@@ -62,10 +63,17 @@ const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
       <div class="mt-auto flex w-full flex-col gap-2">
         <!-- Seller info-->
         <div class="flex w-full min-w-0 items-center gap-1 sm:gap-2">
-          <p class="min-w-0 shrink text-xs sm:text-sm text-blue-400 transition hover:text-blue-300 underline decoration-transparent hover:decoration-blue-300 truncate"
-            @click.stop="goToSeller">
-            {{ product.seller.username }}
-          </p>
+          <button
+            type="button"
+            class="min-w-0 shrink text-left text-xs sm:text-sm underline decoration-transparent hover:decoration-blue-300"
+            @click.stop="goToSeller"
+          >
+            <StyledUsername
+              :username="product.seller.username"
+              :style-id="product.seller.nickname_style_id"
+              class="block truncate transition"
+            />
+          </button>
 
           <span v-if="product.seller.is_active" class="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" title="Online" />
 
