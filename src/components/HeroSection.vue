@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
+import HeroBackground from '@/components/HeroBackground.vue'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -20,15 +21,8 @@ const { user } = storeToRefs(store)
 
 <template>
   <div class="relative left-1/2 right-1/2 ml-[-50vw] mr-[-50vw] w-screen min-h-[70vh] flex flex-col items-center justify-center overflow-hidden">
-    
-    <div class="absolute inset-0 w-full h-full z-0 pointer-events-none hero-mask">
-        <div class="absolute inset-0 bg-background"></div>
-        <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-soft-light"></div>
-        <div class="absolute inset-0 hero-grid-pattern"></div>
-        
-        <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-600/30 rounded-full blur-[120px] animate-blob"></div>
-        <div class="absolute top-1/4 right-1/4 w-[400px] h-[400px] bg-cyan-500/20 rounded-full blur-[100px] animate-blob animation-delay-2000"></div>
-        <div class="absolute -bottom-20 left-1/2 w-[600px] h-[600px] bg-blue-700/20 rounded-full blur-[130px] animate-blob animation-delay-4000"></div>
+    <div class="absolute inset-0 h-full w-full z-0">
+      <HeroBackground />
     </div>
 
     <div class="relative z-20 px-4 max-w-5xl mx-auto text-center flex flex-col items-center py-20">
@@ -76,11 +70,6 @@ const { user } = storeToRefs(store)
 </template>
 
 <style scoped>
-.hero-mask {
-  mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
-}
-
 .animate-gradient-x {
   background-size: 200% 200%;
   animation: gradient-x 5s ease infinite;
@@ -90,20 +79,6 @@ const { user } = storeToRefs(store)
   0% { background-position: 0% 50% }
   50% { background-position: 100% 50% }
   100% { background-position: 0% 50% }
-}
-
-.animate-blob {
-  animation: blob 12s infinite cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.animation-delay-2000 { animation-delay: 2s; }
-.animation-delay-4000 { animation-delay: 4s; }
-
-@keyframes blob {
-  0% { transform: translate(0px, 0px) scale(1); }
-  33% { transform: translate(40px, -60px) scale(1.1); }
-  66% { transform: translate(-30px, 30px) scale(0.9); }
-  100% { transform: translate(0px, 0px) scale(1); }
 }
 
 .animate-fade-in-up {
@@ -120,11 +95,4 @@ const { user } = storeToRefs(store)
   from { opacity: 0; transform: translateY(30px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
-.hero-grid-pattern {
-  background-image: linear-gradient(to right, var(--grid-pattern-stroke-strong) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--grid-pattern-stroke-strong) 1px, transparent 1px);
-  background-size: 60px 60px;
-}
-
 </style>

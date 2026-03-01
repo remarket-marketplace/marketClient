@@ -162,6 +162,10 @@ const lockReminderText = computed(() => {
   return null
 })
 
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 768
+}
+
 function openChatProfile() {
   if (!currentChat.value || isSupportChat.value) return
   const username = currentChat.value.another_user?.username
@@ -235,6 +239,9 @@ watch(
 )
 
 onMounted(async () => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+
   try {
     isPageLoading.value = true
     await store.fetchUser()
@@ -312,18 +319,13 @@ onMounted(async () => {
   } finally {
     isPageLoading.value = false
   }
-
-  const checkMobile = () => {
-    isMobile.value = window.innerWidth < 768
-  }
-  checkMobile()
-  window.addEventListener('resize', checkMobile)
 })
 
 onUnmounted(() => {
   unsubscribeNewMessage?.()
   unsubscribeChatUpdated?.()
   unsubscribeMessagesRead?.()
+  window.removeEventListener('resize', checkMobile)
 })
 
 async function loadChats() {

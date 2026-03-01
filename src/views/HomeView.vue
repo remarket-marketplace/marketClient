@@ -5,6 +5,7 @@ import MainProductCard from '@/components/mainProductCard.vue'
 import SearchField from '@/components/SearchField.vue'
 import Title from '@/components/Title.vue'
 import HeroSection from '@/components/HeroSection.vue'
+import HeroBackground from '@/components/HeroBackground.vue'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
@@ -413,7 +414,14 @@ onBeforeUnmount(() => {
 
   <div id="catalog-start" class="scroll-mt-24"></div>
 
-  <section class="w-full flex flex-col items-center">
+  <section class="relative w-full flex flex-col items-center">
+    <div
+      v-if="user"
+      class="pointer-events-none absolute top-0 left-1/2 right-1/2 ml-[-50vw] mr-[-50vw] h-[70vh] w-screen z-0"
+    >
+      <HeroBackground />
+    </div>
+
     <div
       class="relative z-20 flex min-h-screen w-full flex-col items-center px-1 pb-6 sm:px-2 lg:px-2"
       :class="user ? 'pt-20' : 'pt-6'"

@@ -15,7 +15,7 @@ import BackButton from '@/components/navigation/BackButton.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
 import UserAvatar from '@/components/UserAvatar.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
-import { formatCurrencyAmount } from '@/utils/currency'
+import { formatCurrencyAmount, getCurrencySymbol, resolvePreferredCurrency } from '@/utils/currency'
 import { storeToRefs } from 'pinia'
 
 const API_HOST = import.meta.env.VITE_API_HOST
@@ -64,6 +64,9 @@ const moderationRejectReasonLabel = computed(() => {
 
   return translatedValue === translationKey ? reasonCode : translatedValue
 })
+
+const offerCurrencyCode = computed(() => resolvePreferredCurrency())
+const offerCurrencySymbol = computed(() => getCurrencySymbol(offerCurrencyCode.value))
 
 onMounted(async () => {
   try {
@@ -451,33 +454,36 @@ onUnmounted(() => {
               <Trash2 @click="openDeleteConfirm" class="cursor-pointer w-6 h-6" />
             </div>
 
-            <div v-else class="flex gap-6 pr-4 items-center">
-              <span v-if="user === null" class="text-sm text-gray-400">
+            <div v-else class="w-full sm:pr-4">
+              <span v-if="user === null" class="mb-2 block text-sm text-gray-400 sm:text-right">
                 {{ $t('pages.product.authRequired') }}
               </span>
-              <div v-if="product.status === 'active'" class="flex flex-wrap items-center justify-end gap-2">
-                <button :disabled="user === null" @click="user !== null && openOfferConfirm()" class="rounded-lg px-10 py-3 text-sm font-semibold transition
-        bg-emerald-600 text-white hover:bg-emerald-700
-        disabled:bg-emerald-600/40
-        disabled:text-white/60
-        disabled:cursor-not-allowed
-        disabled:hover:bg-emerald-600/40">
-                  {{ $t('pages.product.offerPrice') }}
-                </button>
-                <button :disabled="user === null" @click="user !== null && openBuyConfirm()" class="rounded-lg px-10 py-3 text-sm font-semibold transition
-        bg-blue-600 text-white hover:bg-blue-700
-        disabled:bg-blue-600/40
-        disabled:text-white/60
-        disabled:cursor-not-allowed
-        disabled:hover:bg-blue-600/40">
-                  {{ $t('pages.product.buy') }}
-                </button>
-              </div>
 
-              <div v-if="product.status == 'active'">
-                <Heart v-if="product.is_liked" @click="removeProductLike" class="w-8 h-8 text-red-500 cursor-pointer"
-                  :style="{ fill: 'currentColor' }" />
-                <Heart v-else @click="likeProduct" class="cursor-pointer w-8 h-8" />
+              <div v-if="product.status === 'active'" class="flex w-full items-center justify-end gap-3">
+                <div class="flex min-w-0 flex-1 flex-nowrap items-stretch gap-2">
+                  <button :disabled="user === null" @click="user !== null && openOfferConfirm()" class="h-12 flex-1 whitespace-nowrap rounded-lg px-4 text-sm font-semibold transition
+          bg-emerald-600 text-white hover:bg-emerald-700
+          disabled:bg-emerald-600/40
+          disabled:text-white/60
+          disabled:cursor-not-allowed
+          disabled:hover:bg-emerald-600/40">
+                    {{ $t('pages.product.offerPrice') }}
+                  </button>
+                  <button :disabled="user === null" @click="user !== null && openBuyConfirm()" class="h-12 flex-1 whitespace-nowrap rounded-lg px-4 text-sm font-semibold transition
+          bg-blue-600 text-white hover:bg-blue-700
+          disabled:bg-blue-600/40
+          disabled:text-white/60
+          disabled:cursor-not-allowed
+          disabled:hover:bg-blue-600/40">
+                    {{ $t('pages.product.buy') }}
+                  </button>
+                </div>
+
+                <div class="shrink-0">
+                  <Heart v-if="product.is_liked" @click="removeProductLike" class="w-8 h-8 text-red-500 cursor-pointer"
+                    :style="{ fill: 'currentColor' }" />
+                  <Heart v-else @click="likeProduct" class="cursor-pointer w-8 h-8" />
+                </div>
               </div>
             </div>
 
@@ -576,13 +582,18 @@ onUnmounted(() => {
         <div class="space-y-3">
           <div>
             <label class="text-xs text-gray-300">{{ $t('pages.product.offerPriceConfirm.offeredPriceLabel') }}</label>
-            <input
-              v-model.number="offeredPrice"
-              type="number"
-              min="0.01"
-              step="0.01"
-              class="mt-1 w-full rounded-lg border border-dark-700 bg-dark-700/60 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500"
-            />
+            <div class="relative mt-1">
+              <input
+                v-model.number="offeredPrice"
+                type="number"
+                min="0.01"
+                step="0.01"
+                class="w-full rounded-lg border border-dark-700 bg-dark-700/60 px-3 py-2 pr-20 text-sm text-white outline-none focus:border-emerald-500"
+              />
+              <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 whitespace-nowrap text-xs text-gray-300">
+                {{ offerCurrencySymbol }} {{ offerCurrencyCode }}
+              </span>
+            </div>
           </div>
           <div>
             <label class="text-xs text-gray-300">{{ $t('pages.product.offerPriceConfirm.messageLabel') }}</label>
