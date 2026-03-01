@@ -4,6 +4,37 @@ import { httpClient } from "..";
 import { ProductSchema, type Product } from "@/validation/product/product";
 import { ErrorHandler, type ApiError } from "../errorHandler";
 
+const UPLOAD_REQUEST_TIMEOUT_MS = 120000;
+const DIRECT_UPLOAD_SUPPORTED_CONTENT_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/svg+xml",
+  "image/svg",
+]);
+
+interface ProductDirectUploadRequestFile {
+  filename: string;
+  content_type: string;
+  size: number;
+}
+
+interface ProductDirectUploadRequestPayload {
+  files: ProductDirectUploadRequestFile[];
+}
+
+interface ProductDirectUploadItem {
+  upload_url: string;
+  image_url: string;
+  content_type: string;
+  filename: string;
+}
+
+interface ProductDirectUploadResponsePayload {
+  uploads: ProductDirectUploadItem[];
+  expires_in_seconds: number;
+}
+
 export interface ProductsFilterParams {
   minPrice?: number;
   maxPrice?: number;
@@ -173,6 +204,66 @@ export const productService = {
 
   async createProduct(productData: any, uploadedImages: File[] = []) {
     try {
+      const draftImagesFromPayload: string[] = Array.isArray(productData.draft_images)
+        ? productData.draft_images
+        : [];
+
+      let draftImagesFromDirectUpload: string[] = [];
+      let imagesForServerUpload: File[] = uploadedImages;
+
+      if (uploadedImages.length > 0) {
+        const directUploadEligibleFiles = uploadedImages.filter((file) =>
+          DIRECT_UPLOAD_SUPPORTED_CONTENT_TYPES.has(file.type),
+        );
+        const directUploadIneligibleFiles = uploadedImages.filter(
+          (file) => !DIRECT_UPLOAD_SUPPORTED_CONTENT_TYPES.has(file.type),
+        );
+
+        if (directUploadEligibleFiles.length > 0) {
+          try {
+            const presignPayload: ProductDirectUploadRequestPayload = {
+              files: directUploadEligibleFiles.map((file) => ({
+                filename: file.name,
+                content_type: file.type,
+                size: file.size,
+              })),
+            };
+
+            const presignResponse = await httpClient.post<ProductDirectUploadResponsePayload>(
+              "/products/uploads/presign",
+              presignPayload,
+              { timeout: UPLOAD_REQUEST_TIMEOUT_MS },
+            );
+
+            const uploads = presignResponse.data.uploads;
+            if (uploads.length !== directUploadEligibleFiles.length) {
+              throw new Error("Presigned uploads count mismatch");
+            }
+
+            await Promise.all(
+              uploads.map((upload, index) =>
+                axios.put(upload.upload_url, directUploadEligibleFiles[index], {
+                  headers: {
+                    "Content-Type": upload.content_type,
+                  },
+                  timeout: UPLOAD_REQUEST_TIMEOUT_MS,
+                }),
+              ),
+            );
+
+            draftImagesFromDirectUpload = uploads.map((upload) => upload.image_url);
+            imagesForServerUpload = directUploadIneligibleFiles;
+          } catch (directUploadError) {
+            console.warn(
+              "Direct S3 image upload failed, fallback to API multipart upload",
+              directUploadError,
+            );
+            draftImagesFromDirectUpload = [];
+            imagesForServerUpload = uploadedImages;
+          }
+        }
+      }
+
       const formData = new FormData();
       formData.append("title", productData.title);
       formData.append("description", productData.description);
@@ -187,20 +278,23 @@ export const productService = {
       formData.append("category_id", productData.category_id);
       formData.append("count", productData.count);
       formData.append("auto_delivery", productData.auto_delivery);
-      if (Array.isArray(productData.draft_images)) {
-        productData.draft_images.forEach((imageUrl: string) => {
+
+      [...draftImagesFromPayload, ...draftImagesFromDirectUpload].forEach(
+        (imageUrl: string) => {
           formData.append("draft_images", imageUrl);
-        });
-      }
-      uploadedImages.forEach((image) => {
+        },
+      );
+
+      imagesForServerUpload.forEach((image) => {
         formData.append("uploaded_images", image);
       });
       const response = await httpClient.post("/products/", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
+        timeout: UPLOAD_REQUEST_TIMEOUT_MS,
       });
-      return response.status === 200;
+      return response.status >= 200 && response.status < 300;
     } catch (error) {
       console.error("Ошибка создания товара:", error);
       throw error;
@@ -240,6 +334,7 @@ export const productService = {
         headers: {
           "Content-Type": "multipart/form-data",
         },
+        timeout: UPLOAD_REQUEST_TIMEOUT_MS,
       });
       return response.data;
     } catch (error) {
@@ -254,8 +349,9 @@ export const productService = {
         headers: {
           "Content-Type": "multipart/form-data",
         },
+        timeout: UPLOAD_REQUEST_TIMEOUT_MS,
       });
-      return response.status === 200;
+      return response.status >= 200 && response.status < 300;
     } catch (error) {
       console.error("Ошибка добавления изображений:", error);
       return false;
