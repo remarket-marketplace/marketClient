@@ -317,6 +317,10 @@ onMounted(async () => {
               <span class="text-gray-400">{{ $t('pages.admin.activityLogs.country') }}:</span>
               <span class="ml-1 font-medium">{{ log.country_name || log.country_code || '-' }}</span>
             </div>
+            <div>
+              <span class="text-gray-400">{{ $t('pages.admin.activityLogs.device') }}:</span>
+              <span class="ml-1 font-medium">{{ log.device || '-' }}</span>
+            </div>
           </div>
 
           <div class="mt-3 flex flex-wrap gap-2">

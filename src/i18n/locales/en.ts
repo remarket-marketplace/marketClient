@@ -1038,6 +1038,7 @@ const en = {
         ipAddress: "IP address",
         countryCode: "Country code",
         country: "Country",
+        device: "Device",
         openProfile: "Open profile",
         openProduct: "Open product",
         openDeal: "Open deal",

@@ -1037,6 +1037,7 @@ const ru = {
         ipAddress: "IP адрес",
         countryCode: "Код страны",
         country: "Страна",
+        device: "Устройство",
         openProfile: "Открыть профиль",
         openProduct: "Открыть товар",
         openDeal: "Открыть сделку",

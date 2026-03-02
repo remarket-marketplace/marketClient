@@ -7,7 +7,7 @@ import type { Product, ProductImage } from '@/validation/product/product'
 import { onMounted, ref, onUnmounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { ChevronLeft, ChevronRight, X, Heart, Trash, Trash2 } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, X, Heart, Trash, Trash2, Percent, ShoppingBag } from 'lucide-vue-next'
 import UserRating from '@/components/UserRating.vue'
 import TrustComponent from './TrustComponent.vue'
 import { useUserStore } from '@/stores/user'
@@ -467,7 +467,10 @@ onUnmounted(() => {
           disabled:text-white/60
           disabled:cursor-not-allowed
           disabled:hover:bg-emerald-600/40">
-                    {{ $t('pages.product.offerPrice') }}
+                    <span class="inline-flex items-center justify-center gap-2">
+                      <Percent class="h-4 w-4" />
+                      {{ $t('pages.product.offerPrice') }}
+                    </span>
                   </button>
                   <button :disabled="user === null" @click="user !== null && openBuyConfirm()" class="h-12 flex-1 whitespace-nowrap rounded-lg px-4 text-sm font-semibold transition
           bg-blue-600 text-white hover:bg-blue-700
@@ -475,7 +478,10 @@ onUnmounted(() => {
           disabled:text-white/60
           disabled:cursor-not-allowed
           disabled:hover:bg-blue-600/40">
-                    {{ $t('pages.product.buy') }}
+                    <span class="inline-flex items-center justify-center gap-2">
+                      <ShoppingBag class="h-4 w-4" />
+                      {{ $t('pages.product.buy') }}
+                    </span>
                   </button>
                 </div>
 

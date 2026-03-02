@@ -22,6 +22,7 @@ export const AuditLogSchema = z.object({
   country_code: z.string().nullable().optional(),
   country_name: z.string().nullable().optional(),
   user_agent: z.string().nullable().optional(),
+  device: z.string().nullable().optional(),
   http_method: z.string().nullable().optional(),
   endpoint: z.string().nullable().optional(),
   product_id: z.string().uuid().nullable().optional(),
