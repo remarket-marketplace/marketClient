@@ -643,7 +643,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                   :key="product.id"
                   :product="product"
                   :is-owner="isOwner"
-                  @click="goToProduct"
+                  @click="goToProduct(product.id)"
                 />
               </div>
 
