@@ -74,10 +74,10 @@ function handleViewProduct(productId: string) {
 </script>
 
 <template>
-  <div class="my-2 w-full">
-    <div class="overflow-hidden rounded-xl border border-dark-700 bg-dark-800/40 p-4">
+  <div class="my-2 w-full min-w-0">
+    <div class="w-full min-w-0 overflow-hidden rounded-xl border border-dark-700 bg-dark-800/40 p-4">
       <div
-        class="mb-3 flex cursor-pointer gap-3 rounded-lg border border-dark-700 bg-dark-700/45 p-3 transition hover:bg-dark-700/70"
+        class="mb-3 flex w-full min-w-0 cursor-pointer gap-3 rounded-lg border border-dark-700 bg-dark-700/45 p-3 transition hover:bg-dark-700/70"
         @click="handleViewProduct(message.product.id)"
       >
         <div class="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-dark-600 bg-dark-800">
@@ -114,7 +114,7 @@ function handleViewProduct(productId: string) {
         </div>
       </div>
 
-      <p v-if="message.offer_message" class="mt-3 whitespace-pre-line text-sm text-gray-200">
+      <p v-if="message.offer_message" class="mt-3 whitespace-pre-line text-sm text-gray-200 break-words [overflow-wrap:anywhere]">
         {{ message.offer_message }}
       </p>
 

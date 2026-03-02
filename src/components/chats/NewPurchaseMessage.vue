@@ -137,8 +137,8 @@ async function handleSendReview(productId: string) {
 </script>
 
 <template>
-  <div class="my-2">
-    <div class="overflow-hidden bg-gray-800/20 rounded-xl shadow-lg">
+  <div class="my-2 w-full min-w-0">
+    <div class="w-full min-w-0 overflow-hidden rounded-xl bg-gray-800/20 shadow-lg">
       <div class="flex flex-col gap-4 p-4 sm:flex-row sm:items-start">
         <div class="flex-shrink-0 sm:w-1/3 min-w-0 cursor-pointer" @click="handleViewProduct(product.id)">
           <div class="relative aspect-square rounded-lg overflow-hidden bg-gray-700 border border-gray-600">
@@ -159,7 +159,7 @@ async function handleSendReview(productId: string) {
             <p class="text-sm font-semibold text-gray-300 uppercase tracking-wide border-b border-gray-700 pb-2">
               {{ $t('pages.chats.productData') }}
             </p>
-            <p class="text-gray-400 text-sm leading-relaxed line-clamp-3">
+            <p class="text-gray-400 text-sm leading-relaxed line-clamp-3 break-words [overflow-wrap:anywhere]">
               {{ product.product_data_string }}
             </p>
           </div>

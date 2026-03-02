@@ -8,12 +8,12 @@ defineProps<{
 </script>
 
 <template>
-  <div class="w-full p-4 rounded-xl flex flex-col gap-3 bg-gray-800/20">
+  <div class="w-full min-w-0 rounded-xl bg-gray-800/20 p-4">
 
-    <p class="text-2xl">{{ $t('pages.chats.buyerLeftReview') }}</p>
+    <p class="text-2xl break-words [overflow-wrap:anywhere]">{{ $t('pages.chats.buyerLeftReview') }}</p>
 
     <!-- Rating -->
-    <div class="flex items-center gap-1">
+    <div class="mt-3 flex items-center gap-1">
       <template v-for="n in 5" :key="n">
         <span
           class="text-blue-600 text-lg"
@@ -25,17 +25,17 @@ defineProps<{
     </div>
 
     <!-- Review content -->
-    <div class="p-3 rounded-md bg-gray-800/50 border border-gray-700/60">
-      <p v-if="review.body" class="text-sm leading-relaxed text-gray-200 whitespace-pre-line">
+    <div class="mt-3 rounded-md border border-gray-700/60 bg-gray-800/50 p-3">
+      <p v-if="review.body" class="text-sm leading-relaxed text-gray-200 whitespace-pre-line break-words [overflow-wrap:anywhere]">
         {{ review.body }}
       </p>
-      <p v-else class="text-sm leading-relaxed text-gray-400 whitespace-pre-line">
+      <p v-else class="text-sm leading-relaxed text-gray-400 whitespace-pre-line break-words [overflow-wrap:anywhere]">
         {{ $t('pages.chats.withoutReviewText') }}
       </p>
     </div>
 
     <!-- date -->
-    <p class="text-xs text-gray-400 text-right">
+    <p class="mt-3 text-right text-xs text-gray-400">
       {{ formatDate(review.created_at) }}
     </p>
   </div>

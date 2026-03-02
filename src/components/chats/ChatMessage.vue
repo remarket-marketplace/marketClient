@@ -86,7 +86,7 @@ function formatDate(dateInput: string | Date): string {
 </script>
 
 <template>
-  <div :class="messageAlignment">
+  <div class="max-w-full min-w-0" :class="messageAlignment">
     <!-- PRODUCT MESSAGE -->
     <div v-if="product && !isDealStatus && dealId">
       <NewPurchaseMessage :product="product" :deal-id="dealId" :deal-status="dealStatus" :has_review="hasReview" />

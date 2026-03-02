@@ -22,31 +22,34 @@ function handleViewProduct(productId: string) {
 </script>
 
 <template>
-    <div class="w-full p-4 rounded-xl flex flex-col gap-3 bg-gray-800/20">
+    <div class="w-full min-w-0 overflow-hidden rounded-xl bg-gray-800/20 p-4">
         <!-- Deal status -->
-        <div>
+        <div class="min-w-0">
             <DealStatusTag :deal-status="message.new_status" />
         </div>
 
         <!-- Product -->
-        <div @click="handleViewProduct(product!.id)" class="flex items-center gap-3 p-2 cursor-pointer bg-gray-800/50 rounded-md">
+        <div
+          @click="handleViewProduct(product!.id)"
+          class="mt-3 flex w-full min-w-0 cursor-pointer items-center gap-3 overflow-hidden rounded-md bg-gray-800/50 p-2"
+        >
             <img v-if="product?.images[0]?.image_url" :src="`${API_HOST}${product.images[0].image_url}`" alt="product"
-                class="w-12 h-12 object-cover rounded" />
+                class="h-12 w-12 flex-shrink-0 rounded object-cover" />
 
-            <div class="flex flex-col">
+            <div class="flex min-w-0 flex-1 flex-col">
                 <p class="font-medium text-sm text-white truncate">{{ product?.title }}</p>
                 <p class="text-xs text-gray-300">{{ product ? formatCurrencyAmount(product.price) : '-' }}</p>
             </div>
         </div>
 
         <!-- deal status desciption -->
-        <div class="pl-3 border-l border-gray-700/60">
-            <p class="text-sm leading-relaxed text-gray-300">
+        <div class="mt-3 border-l border-gray-700/60 pl-3">
+            <p class="text-sm leading-relaxed text-gray-300 break-words [overflow-wrap:anywhere]">
                 {{ t(`pages.chats.${message.new_status}`) }}
             </p>
         </div>
 
-        <p class="text-xs text-gray-400 text-right mt-1">
+        <p class="mt-3 text-right text-xs text-gray-400">
             {{ formatDate(message.created_at) }}
         </p>
     </div>

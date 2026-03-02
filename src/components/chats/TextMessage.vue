@@ -80,22 +80,22 @@ const pillClasses = computed(() => 'text-gray-200 bg-dark-700/80 border border-d
 
 <template>
 	<!-- Admin message - centered, full width -->
-	<div v-if="textMessage != null && showAdminBadge && textMessage.is_admin_message" class="w-full flex justify-center">
-		<div class="w-full max-w-2xl px-4 py-3 rounded-xl bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 text-mainText text-sm break-words">
+	<div v-if="textMessage != null && showAdminBadge && textMessage.is_admin_message" class="w-full min-w-0 flex justify-center">
+		<div class="w-full min-w-0 max-w-2xl overflow-hidden rounded-xl border border-blue-500/30 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 px-4 py-3 text-sm text-mainText break-words [overflow-wrap:anywhere]">
 			<div class="flex items-start gap-2">
 				<div class="flex-shrink-0 mt-0.5 p-1.5 rounded-full bg-blue-500/20">
 					<svg class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
 						<path d="M18 9.5a1.5 1.5 0 11-3 0v-6a1.5 1.5 0 011.5-1.5h3V2a.5.5 0 00-.5-.5h-3A4.5 4.5 0 0010 5.5v6a4.5 4.5 0 004.5 4.5h3a.5.5 0 00.5-.5V15h-3a1.5 1.5 0 01-1.5-1.5z"></path>
 					</svg>
 				</div>
-				<div class="flex-1">
+				<div class="min-w-0 flex-1">
 					<p class="text-blue-200 font-medium text-xs mb-1">{{ $t('common.admin') }}</p>
           <p v-if="senderLabel || forceShowSender" class="text-xs text-gray-400 mb-1">{{ senderLabel || $t('common.admin') }}</p>
-					<p class="text-gray-100">{{ adminContent }}</p>
+					<p class="text-gray-100 break-words [overflow-wrap:anywhere]">{{ adminContent }}</p>
           <div v-if="hasReason" class="mt-2 space-y-2">
             <p class="font-semibold text-gray-50">{{ $t('common.reason') }}</p>
             <div class="rounded-lg border border-dark-600 bg-dark-900/70 px-3 py-2 text-gray-100">
-              <p class="whitespace-pre-line">{{ reasonText }}</p>
+              <p class="whitespace-pre-line break-words [overflow-wrap:anywhere]">{{ reasonText }}</p>
             </div>
           </div>
           <div class="mt-2 flex items-center justify-end gap-2 text-xs text-gray-400">
@@ -127,7 +127,7 @@ const pillClasses = computed(() => 'text-gray-200 bg-dark-700/80 border border-d
 	</div>
 
 	<!-- Regular messages -->
-	<div v-else-if="textMessage != null" class="max-w-[70%] md:max-w-[40%] min-w-4 rounded-xl px-4 py-2 text-sm break-words" :class="[
+	<div v-else-if="textMessage != null" class="min-w-0 max-w-[70%] rounded-xl px-4 py-2 text-sm break-words [overflow-wrap:anywhere] md:max-w-[40%]" :class="[
     bubbleRoleClass,
     textMessage.sender_id === user?.id ? 'self-end' : 'self-start'
 	]">
@@ -136,11 +136,11 @@ const pillClasses = computed(() => 'text-gray-200 bg-dark-700/80 border border-d
         {{ senderLabel || $t('common.user') }}
       </span>
     </div>
-		<p>{{ regularContent }}</p>
+		<p class="break-words [overflow-wrap:anywhere]">{{ regularContent }}</p>
     <div v-if="hasReason" class="mt-2 space-y-2">
       <p class="font-semibold text-gray-50">{{ $t('common.reason') }}</p>
       <div class="rounded-lg border border-dark-700 bg-dark-900/60 px-3 py-2 text-gray-100">
-        <p class="whitespace-pre-line">{{ reasonText }}</p>
+        <p class="whitespace-pre-line break-words [overflow-wrap:anywhere]">{{ reasonText }}</p>
       </div>
     </div>
     <div class="mt-1 flex items-center justify-end gap-2 text-xs text-gray-300">

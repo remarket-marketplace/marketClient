@@ -431,7 +431,7 @@ async function sendMessage() {
 
 
 <template>
-  <div class="h-full w-full flex flex-col overscroll-none md:pt-6">
+  <div class="h-full w-full flex flex-col overflow-x-hidden overscroll-none md:pt-6">
     <div v-if="isPageLoading" class="flex flex-1 items-center justify-center text-gray-300">
       <Loader />
     </div>
@@ -475,11 +475,11 @@ async function sendMessage() {
             ? 'fixed inset-0 z-10 w-full bg-background'
             : 'flex-1 w-9/12 border-1 border-dark-400 rounded-3xl',
         ]">
-        <div class="flex flex-1 flex-col px-2 md:rounded-xl w-full min-h-0" :class="{
+        <div class="flex w-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-2 md:rounded-xl" :class="{
           'pb-16': isMobile && mobileMode === 'chat',
           'pt-16': isMobile && mobileMode === 'chat',
         }">
-          <div class="flex flex-grow flex-col overflow-y-auto lg:pb-2 w-full">
+          <div class="flex w-full min-w-0 flex-grow flex-col overflow-hidden overflow-y-auto lg:pb-2">
             <div v-if="currentChat"
               class="flex items-center gap-2 sticky top-0 bg-background px-2 py-2 lg:py-3 lg:px-3 z-10 lg:border-b border-dark-700">
               <button v-if="isMobile" class="text-xl font-bold flex-shrink-0" @click="backToChats">
@@ -510,7 +510,7 @@ async function sendMessage() {
                 </div>
 
                 <!-- Информация о чате -->
-                <div class="flex flex-col truncate">
+                <div class="flex min-w-0 flex-col truncate">
                   <!-- Имя чата -->
                   <p v-if="isSupportChat" class="truncate font-semibold text-lg text-blue-500">
                     {{ chatDisplayName }}
@@ -532,7 +532,7 @@ async function sendMessage() {
               </button>
             </div>
 
-            <div ref="messageContainerRef" class="no-scrollbar flex flex-1 flex-col overflow-y-auto overscroll-y-contain pb-16"
+            <div ref="messageContainerRef" class="no-scrollbar flex flex-1 min-w-0 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain pb-16"
               @scroll="handleScroll">
               <div v-if="isChatLoading" class="flex h-full w-full items-center justify-center">
                 <Loader />
@@ -543,8 +543,8 @@ async function sendMessage() {
                 <Loader size="sm" />
               </div>
 
-              <div v-if="chatMessages.length > 0" class="flex flex-1 flex-col justify-start">
-                <div class="flex flex-col gap-3 py-2">
+              <div v-if="chatMessages.length > 0" class="flex min-w-0 flex-1 flex-col justify-start">
+                <div class="flex min-w-0 flex-col gap-3 py-2">
                   <ChatMessage v-for="message in chatMessages" :key="message.id" :message="message" :user="user" :showAdminBadge="shouldShowAdminBadge" />
                 </div>
               </div>
