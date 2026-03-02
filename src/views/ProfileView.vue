@@ -309,7 +309,7 @@ function goToProfile(username: string) { router.push(`/user/${username}`) }
 onMounted(async () => {
   const profileLoaded = await loadProfileData()
   if (profileLoaded) {
-    await loadUserProducts()
+    await Promise.all([loadUserProducts(), loadReviews()])
   }
 })
 
