@@ -254,6 +254,18 @@ export const productService = {
             draftImagesFromDirectUpload = uploads.map((upload) => upload.image_url);
             imagesForServerUpload = directUploadIneligibleFiles;
           } catch (directUploadError) {
+            if (axios.isAxiosError(directUploadError)) {
+              const errorCode =
+                (directUploadError.response?.data as any)?.detail?.error_code
+                || (directUploadError.response?.data as any)?.error_code;
+
+              // For business validation errors fallback only adds latency.
+              // Keep fallback only for local backend mode where presign is unavailable.
+              if (errorCode && errorCode !== "WRONG_FILE_TYPE") {
+                throw directUploadError;
+              }
+            }
+
             console.warn(
               "Direct S3 image upload failed, fallback to API multipart upload",
               directUploadError,

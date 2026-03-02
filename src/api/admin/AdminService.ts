@@ -63,6 +63,11 @@ export type ActivityLogFilters = {
   date_to?: string
 }
 
+export type PlatformSettings = {
+  registration_enabled: boolean
+  product_creation_enabled: boolean
+}
+
 export const adminService = {
   async getDashboardData(days = 30): Promise<DashboardData | null> {
     try {
@@ -72,6 +77,31 @@ export const adminService = {
       return response.data as DashboardData;
     } catch (e) {
       console.error("Failed to load dashboard data", e);
+      return null;
+    }
+  },
+
+  async getPlatformSettings(): Promise<PlatformSettings | null> {
+    try {
+      const response = await httpClient.get("/admin/platform-settings");
+      return response.data as PlatformSettings;
+    } catch (e) {
+      console.error("Failed to load platform settings", e);
+      return null;
+    }
+  },
+
+  async updatePlatformSettings(
+    settingsPayload: PlatformSettings,
+  ): Promise<PlatformSettings | null> {
+    try {
+      const response = await httpClient.patch(
+        "/admin/platform-settings",
+        settingsPayload,
+      );
+      return response.data as PlatformSettings;
+    } catch (e) {
+      console.error("Failed to update platform settings", e);
       return null;
     }
   },

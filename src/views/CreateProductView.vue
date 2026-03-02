@@ -21,6 +21,7 @@ import {
   preferredCurrency,
   setUsdRubRate,
 } from '@/utils/currency'
+import { getErrorMessage } from '@/utils/errorsMap'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const RAIKA_BOT_URL = 'https://t.me/Raika_CheckBot'
@@ -386,11 +387,15 @@ async function createProduct() {
   } catch (err: any) {
     console.error('Error creating product:', err)
     const detail = err.response?.data?.detail
-    if (Array.isArray(detail)) {
-      const errors = detail.map((e: any) => e.msg).join(', ')
-      errorMessage.value = `${t('pages.forms.createProduct.validationErrors')}${errors}`
-    } else if (detail?.error_message) {
-      errorMessage.value = detail.error_message
+    if (detail) {
+      if (Array.isArray(detail)) {
+        const errors = detail.map((e: any) => e.msg).join(', ')
+        errorMessage.value = `${t('pages.forms.createProduct.validationErrors')}${errors}`
+      } else {
+        errorMessage.value = getErrorMessage(detail, t)
+      }
+    } else if (err?.code === 'ECONNABORTED' || err?.code === 'ERR_NETWORK') {
+      errorMessage.value = t('errors.NETWORK_ERROR')
     } else {
       errorMessage.value = t('pages.forms.createProduct.errorCreatingProduct')
     }

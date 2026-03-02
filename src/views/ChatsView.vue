@@ -162,6 +162,17 @@ const lockReminderText = computed(() => {
   return null
 })
 
+const chatParticipantIds = computed<string[]>(() => {
+  const participants = new Set<string>()
+  if (user.value?.id) {
+    participants.add(user.value.id)
+  }
+  if (currentChat.value?.another_user?.id) {
+    participants.add(currentChat.value.another_user.id)
+  }
+  return Array.from(participants)
+})
+
 const checkMobile = () => {
   isMobile.value = window.innerWidth < 768
 }
@@ -545,7 +556,14 @@ async function sendMessage() {
 
               <div v-if="chatMessages.length > 0" class="flex min-w-0 flex-1 flex-col justify-start">
                 <div class="flex min-w-0 flex-col gap-3 py-2">
-                  <ChatMessage v-for="message in chatMessages" :key="message.id" :message="message" :user="user" :showAdminBadge="shouldShowAdminBadge" />
+                  <ChatMessage
+                    v-for="message in chatMessages"
+                    :key="message.id"
+                    :message="message"
+                    :user="user"
+                    :showAdminBadge="shouldShowAdminBadge"
+                    :chat-participant-ids="chatParticipantIds"
+                  />
                 </div>
               </div>
 

@@ -30,6 +30,7 @@ const props = defineProps<{
   message: ChatMessageUnion
   user: any
   showAdminBadge?: boolean
+  chatParticipantIds?: string[]
   senderLabels?: Record<string, string>
   senderRoles?: Record<string, 'buyer' | 'seller' | 'admin'>
   forceShowSender?: boolean
@@ -99,6 +100,7 @@ function formatDate(dateInput: string | Date): string {
       :user="user"
       :formatDate="formatDate"
       :showAdminBadge="showAdminBadge"
+      :chat-participant-ids="props.chatParticipantIds"
       :sender-label="props.senderLabels?.[textMessage.sender_id]"
       :sender-role="props.senderRoles?.[textMessage.sender_id]"
       :force-show-sender="props.forceShowSender"

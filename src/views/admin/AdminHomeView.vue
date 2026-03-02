@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { adminService, type DashboardData } from '@/api/admin/AdminService'
+import {
+  adminService,
+  type DashboardData,
+  type PlatformSettings,
+} from '@/api/admin/AdminService'
+import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import Loader from '@/components/Loader.vue'
 import {
   Activity,
@@ -26,6 +31,15 @@ const isLoading = ref(true)
 const isError = ref(false)
 const selectedRange = ref(30)
 const rangeOptions = [7, 30, 90, 180]
+const platformSettings = ref<PlatformSettings | null>(null)
+const isPlatformSettingsLoading = ref(true)
+const isPlatformSettingsSaving = ref(false)
+const platformSettingsError = ref('')
+const platformSettingsSuccess = ref('')
+const pendingPlatformToggle = ref<{
+  key: 'registration_enabled' | 'product_creation_enabled'
+  nextValue: boolean
+} | null>(null)
 
 const cssVar = (token: string, fallback: string) => {
   if (typeof window === 'undefined') return fallback
@@ -329,12 +343,91 @@ const loadDashboard = async () => {
   isLoading.value = false
 }
 
+const loadPlatformSettings = async () => {
+  isPlatformSettingsLoading.value = true
+  platformSettingsError.value = ''
+  const data = await adminService.getPlatformSettings()
+  if (!data) {
+    platformSettingsError.value = t('pages.admin.mainPage.platformSettingsLoadError')
+  } else {
+    platformSettings.value = data
+  }
+  isPlatformSettingsLoading.value = false
+}
+
+const updatePlatformSettings = async (payload: PlatformSettings) => {
+  if (isPlatformSettingsSaving.value) return
+
+  isPlatformSettingsSaving.value = true
+  platformSettingsError.value = ''
+  platformSettingsSuccess.value = ''
+
+  const updated = await adminService.updatePlatformSettings(payload)
+  if (!updated) {
+    platformSettingsError.value = t('pages.admin.mainPage.platformSettingsSaveError')
+  } else {
+    platformSettings.value = updated
+    platformSettingsSuccess.value = t('pages.admin.mainPage.platformSettingsSaved')
+  }
+
+  isPlatformSettingsSaving.value = false
+}
+
+const openRegistrationToggleConfirm = async () => {
+  if (!platformSettings.value) return
+  pendingPlatformToggle.value = {
+    key: 'registration_enabled',
+    nextValue: !platformSettings.value.registration_enabled,
+  }
+}
+
+const openProductCreationToggleConfirm = async () => {
+  if (!platformSettings.value) return
+  pendingPlatformToggle.value = {
+    key: 'product_creation_enabled',
+    nextValue: !platformSettings.value.product_creation_enabled,
+  }
+}
+
+const closePlatformToggleConfirm = () => {
+  if (isPlatformSettingsSaving.value) return
+  pendingPlatformToggle.value = null
+}
+
+const platformToggleConfirmTitle = computed(() =>
+  t('pages.admin.mainPage.confirmToggleTitle'),
+)
+
+const platformToggleConfirmMessage = computed(() => {
+  if (!pendingPlatformToggle.value) return ''
+  const { key, nextValue } = pendingPlatformToggle.value
+  if (key === 'registration_enabled') {
+    return nextValue
+      ? t('pages.admin.mainPage.confirmRegistrationEnableMessage')
+      : t('pages.admin.mainPage.confirmRegistrationDisableMessage')
+  }
+  return nextValue
+    ? t('pages.admin.mainPage.confirmProductCreationEnableMessage')
+    : t('pages.admin.mainPage.confirmProductCreationDisableMessage')
+})
+
+const confirmPlatformToggle = async () => {
+  if (!platformSettings.value || !pendingPlatformToggle.value) return
+
+  const { key, nextValue } = pendingPlatformToggle.value
+  await updatePlatformSettings({
+    ...platformSettings.value,
+    [key]: nextValue,
+  })
+  pendingPlatformToggle.value = null
+}
+
 onMounted(async () => {
   if (!ApexChart.value) {
     const mod = await import('vue3-apexcharts')
     ApexChart.value = mod.default
   }
-  await loadDashboard()
+  await Promise.all([loadDashboard(), loadPlatformSettings()])
 })
 watch(selectedRange, loadDashboard)
 </script>
@@ -376,6 +469,85 @@ watch(selectedRange, loadDashboard)
     </div>
 
     <div v-else class="flex flex-col gap-5 overflow-y-auto pb-8">
+      <div class="rounded-2xl border border-dark-700 bg-dark-600 p-4">
+        <div class="mb-3">
+          <p class="text-sm font-semibold text-gray-200">
+            {{ t('pages.admin.mainPage.platformSettingsTitle') }}
+          </p>
+          <p class="mt-1 text-xs text-gray-400">
+            {{ t('pages.admin.mainPage.platformSettingsHint') }}
+          </p>
+        </div>
+
+        <div v-if="isPlatformSettingsLoading" class="py-6 flex items-center justify-center">
+          <Loader />
+        </div>
+
+        <template v-else>
+          <div
+            v-if="platformSettingsError"
+            class="mb-3 rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200"
+          >
+            {{ platformSettingsError }}
+          </div>
+
+          <div
+            v-if="platformSettingsSuccess"
+            class="mb-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200"
+          >
+            {{ platformSettingsSuccess }}
+          </div>
+
+          <div v-if="platformSettings" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
+              <p class="text-sm text-gray-200 font-medium">
+                {{ t('pages.admin.mainPage.registrationToggleLabel') }}
+              </p>
+              <p class="mt-1 text-xs text-gray-400">
+                {{ t('pages.admin.mainPage.registrationToggleHint') }}
+              </p>
+              <button
+                class="mt-3 rounded-lg border px-3 py-2 text-xs font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
+                :class="platformSettings.registration_enabled
+                  ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25'
+                  : 'border-red-500/40 bg-red-500/15 text-red-200 hover:bg-red-500/25'"
+                :disabled="isPlatformSettingsSaving"
+                @click="openRegistrationToggleConfirm"
+              >
+                {{
+                  platformSettings.registration_enabled
+                    ? t('pages.admin.mainPage.enabled')
+                    : t('pages.admin.mainPage.disabled')
+                }}
+              </button>
+            </div>
+
+            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
+              <p class="text-sm text-gray-200 font-medium">
+                {{ t('pages.admin.mainPage.productCreationToggleLabel') }}
+              </p>
+              <p class="mt-1 text-xs text-gray-400">
+                {{ t('pages.admin.mainPage.productCreationToggleHint') }}
+              </p>
+              <button
+                class="mt-3 rounded-lg border px-3 py-2 text-xs font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
+                :class="platformSettings.product_creation_enabled
+                  ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25'
+                  : 'border-red-500/40 bg-red-500/15 text-red-200 hover:bg-red-500/25'"
+                :disabled="isPlatformSettingsSaving"
+                @click="openProductCreationToggleConfirm"
+              >
+                {{
+                  platformSettings.product_creation_enabled
+                    ? t('pages.admin.mainPage.enabled')
+                    : t('pages.admin.mainPage.disabled')
+                }}
+              </button>
+            </div>
+          </div>
+        </template>
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         <div
           v-for="card in summaryCards"
@@ -515,5 +687,15 @@ watch(selectedRange, loadDashboard)
         </div>
       </div>
     </div>
+
+    <ConfirmWindow
+      :is-open="pendingPlatformToggle !== null"
+      :title="platformToggleConfirmTitle"
+      :message="platformToggleConfirmMessage"
+      :confirm-text="t('pages.admin.mainPage.confirmToggleConfirm')"
+      :is-loading="isPlatformSettingsSaving"
+      @cancel="closePlatformToggleConfirm"
+      @confirm="confirmPlatformToggle"
+    />
   </section>
 </template>

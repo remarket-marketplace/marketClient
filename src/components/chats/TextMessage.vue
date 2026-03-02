@@ -19,6 +19,7 @@ const props = defineProps<{
   user: any;
   formatDate: (dateStr: string) => string;
   showAdminBadge?: boolean;
+  chatParticipantIds?: string[];
   senderLabel?: string;
   senderRole?: 'buyer' | 'seller' | 'admin';
   forceShowSender?: boolean;
@@ -76,11 +77,27 @@ const bubbleRoleClass = computed(() => {
 })
 
 const pillClasses = computed(() => 'text-gray-200 bg-dark-700/80 border border-dark-600')
+
+const isAdminSenderParticipantInCurrentChat = computed(() => {
+  if (!props.textMessage?.is_admin_message) return false
+  const participants = props.chatParticipantIds ?? []
+  if (participants.length === 0) return false
+  return participants.includes(props.textMessage.sender_id)
+})
+
+const shouldRenderAdminMessage = computed(() => {
+  return Boolean(
+    props.textMessage
+    && props.showAdminBadge
+    && props.textMessage.is_admin_message
+    && !isAdminSenderParticipantInCurrentChat.value
+  )
+})
 </script>
 
 <template>
 	<!-- Admin message - centered, full width -->
-	<div v-if="textMessage != null && showAdminBadge && textMessage.is_admin_message" class="w-full min-w-0 flex justify-center">
+	<div v-if="shouldRenderAdminMessage" class="w-full min-w-0 flex justify-center">
 		<div class="w-full min-w-0 max-w-2xl overflow-hidden rounded-xl border border-blue-500/30 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 px-4 py-3 text-sm text-mainText break-words [overflow-wrap:anywhere]">
 			<div class="flex items-start gap-2">
 				<div class="flex-shrink-0 mt-0.5 p-1.5 rounded-full bg-blue-500/20">
