@@ -10,7 +10,7 @@ import { useI18n } from 'vue-i18n'
 import SuccessMessage from '@/components/SuccessMessage.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
-import { AtSign, Key, Loader2, Lock, Palette, Shield } from 'lucide-vue-next'
+import { AtSign, Key, Loader2, Lock, Palette, Shield, ImagePlus } from 'lucide-vue-next'
 import BackButton from '@/components/navigation/BackButton.vue'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
@@ -35,6 +35,7 @@ type ColorPickerGroup = 'primary' | 'secondary' | 'glow'
 const NICKNAME_MIN_LENGTH = 4
 const NICKNAME_MAX_LENGTH = 32
 const NICKNAME_CHANGE_PRICE_RUB = 100
+const PROFILE_BACKGROUND_UNLOCK_PRICE_RUB = 199
 const NICKNAME_REGEX = /^[A-Za-z0-9_]+$/
 
 const { t } = useI18n()
@@ -42,6 +43,7 @@ const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const { user } = storeToRefs(userStore)
+const API_HOST = import.meta.env.VITE_API_HOST
 
 const isLoading = ref(false)
 const isSendedChangePassword = ref(false)
@@ -67,6 +69,13 @@ const showUsernameConfirmModal = ref(false)
 const pendingUsernameForChange = ref('')
 const showStylePurchaseConfirmModal = ref(false)
 const pendingStylePurchaseId = ref<string | null>(null)
+const profileBackgroundFileInputRef = ref<HTMLInputElement | null>(null)
+const isProfileBackgroundPurchasing = ref(false)
+const isProfileBackgroundUploading = ref(false)
+const isProfileBackgroundRemoving = ref(false)
+const profileBackgroundErrorMessage = ref<string | null>(null)
+const profileBackgroundSuccessMessage = ref<string | null>(null)
+const showProfileBackgroundPurchaseConfirmModal = ref(false)
 const customPrimaryR = ref(94)
 const customPrimaryG = ref(234)
 const customPrimaryB = ref(212)
@@ -106,6 +115,17 @@ const nicknameChangePriceLabel = computed(() =>
     minimumFractionDigits: priceFractionDigits.value,
     maximumFractionDigits: priceFractionDigits.value,
   }),
+)
+const profileBackgroundUnlockPriceLabel = computed(() =>
+  formatCurrencyAmount(PROFILE_BACKGROUND_UNLOCK_PRICE_RUB, {
+    fromCurrency: 'RUB',
+    minimumFractionDigits: priceFractionDigits.value,
+    maximumFractionDigits: priceFractionDigits.value,
+  }),
+)
+const profileBackgroundUnlocked = computed(() => user.value?.profile_background_unlocked === true)
+const profileBackgroundPreviewUrl = computed(() =>
+  resolveProfileMediaUrl(user.value?.profile_background_url),
 )
 const activeSection = computed<SettingsSection>(() => normalizeSettingsSection(route.query.section))
 const canChangeUsername = computed(() => {
@@ -201,6 +221,24 @@ function setUsernameSuccessMessage(value: string) {
       usernameSuccessMessage.value = null
     }
   }, 2600)
+}
+
+function setProfileBackgroundSuccessMessage(value: string) {
+  profileBackgroundSuccessMessage.value = value
+  window.setTimeout(() => {
+    if (profileBackgroundSuccessMessage.value === value) {
+      profileBackgroundSuccessMessage.value = null
+    }
+  }, 2600)
+}
+
+function resolveProfileMediaUrl(rawUrl?: string | null): string {
+  const normalizedUrl = rawUrl?.trim() ?? ''
+  if (!normalizedUrl) return ''
+  if (normalizedUrl.startsWith('http://') || normalizedUrl.startsWith('https://')) {
+    return normalizedUrl
+  }
+  return `${API_HOST}${normalizedUrl}`
 }
 
 function applyStylesCatalog(data: NicknameStyleCatalogResponse) {
@@ -446,6 +484,115 @@ async function confirmStylePurchase() {
 
   await executeStyleAction(style)
   closeStylePurchaseConfirmModal()
+}
+
+function triggerProfileBackgroundFileInput() {
+  if (!profileBackgroundUnlocked.value || !profileBackgroundFileInputRef.value) return
+  profileBackgroundFileInputRef.value.click()
+}
+
+function requestProfileBackgroundPurchase() {
+  if (profileBackgroundUnlocked.value || isProfileBackgroundPurchasing.value) return
+  profileBackgroundErrorMessage.value = null
+  profileBackgroundSuccessMessage.value = null
+  showProfileBackgroundPurchaseConfirmModal.value = true
+}
+
+function closeProfileBackgroundPurchaseConfirmModal() {
+  if (isProfileBackgroundPurchasing.value) return
+  showProfileBackgroundPurchaseConfirmModal.value = false
+}
+
+async function purchaseProfileBackgroundAccess() {
+  if (profileBackgroundUnlocked.value || isProfileBackgroundPurchasing.value) return
+
+  profileBackgroundErrorMessage.value = null
+  isProfileBackgroundPurchasing.value = true
+
+  const result = await settingsService.purchaseProfileBackgroundAccess()
+  if (!result.success || !result.data) {
+    profileBackgroundErrorMessage.value = getErrorMessage(
+      result.error,
+      t as unknown as (key: string) => string,
+    )
+    isProfileBackgroundPurchasing.value = false
+    return
+  }
+
+  userStore.updateUserProfile({
+    balance: result.data.balance,
+    profile_background_unlocked: result.data.profile_background_unlocked,
+    profile_background_url: result.data.profile_background_url,
+  })
+  setProfileBackgroundSuccessMessage(t('pages.settingsPage.profileBackgroundPurchased'))
+  isProfileBackgroundPurchasing.value = false
+}
+
+async function confirmProfileBackgroundPurchase() {
+  await purchaseProfileBackgroundAccess()
+  closeProfileBackgroundPurchaseConfirmModal()
+}
+
+async function handleProfileBackgroundUpload(event: Event) {
+  const file = (event.target as HTMLInputElement)?.files?.[0]
+  if (
+    !file
+    || !profileBackgroundUnlocked.value
+    || !file.type.startsWith('image/')
+    || file.size > 10 * 1024 * 1024
+  ) {
+    return
+  }
+
+  profileBackgroundErrorMessage.value = null
+  isProfileBackgroundUploading.value = true
+
+  const result = await settingsService.uploadProfileBackground(file)
+  if (!result.success || !result.data) {
+    profileBackgroundErrorMessage.value = getErrorMessage(
+      result.error,
+      t as unknown as (key: string) => string,
+    )
+    isProfileBackgroundUploading.value = false
+    ;(event.target as HTMLInputElement).value = ''
+    return
+  }
+
+  userStore.updateUserProfile({
+    balance: result.data.balance,
+    profile_background_unlocked: result.data.profile_background_unlocked,
+    profile_background_url: result.data.profile_background_url,
+  })
+  setProfileBackgroundSuccessMessage(t('pages.settingsPage.profileBackgroundUpdated'))
+  isProfileBackgroundUploading.value = false
+  ;(event.target as HTMLInputElement).value = ''
+}
+
+async function removeProfileBackground() {
+  if (!profileBackgroundUnlocked.value || !profileBackgroundPreviewUrl.value || isProfileBackgroundRemoving.value) {
+    return
+  }
+
+  profileBackgroundErrorMessage.value = null
+  isProfileBackgroundRemoving.value = true
+
+  const result = await settingsService.removeProfileBackground()
+  if (!result.success || !result.data) {
+    profileBackgroundErrorMessage.value = getErrorMessage(
+      result.error,
+      t as unknown as (key: string) => string,
+    )
+    isProfileBackgroundRemoving.value = false
+    return
+  }
+
+  userStore.updateUserProfile({
+    balance: result.data.balance,
+    profile_background_unlocked: result.data.profile_background_unlocked,
+    profile_background_url: result.data.profile_background_url,
+  })
+  setProfileBackgroundSuccessMessage(t('pages.settingsPage.profileBackgroundRemoved'))
+  isProfileBackgroundRemoving.value = false
 }
 
 function requestUsernameChangeConfirmation() {
@@ -843,6 +990,112 @@ onUnmounted(() => {
             </div>
 
             <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-6 space-y-4">
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 class="text-base font-semibold text-white">
+                    {{ $t('pages.settingsPage.profileBackgroundSectionTitle') }}
+                  </h3>
+                  <p v-if="!profileBackgroundUnlocked" class="mt-1 text-xs text-gray-300">
+                    {{ $t('pages.settingsPage.profileBackgroundSectionHint') }}
+                  </p>
+                </div>
+                <span
+                  v-if="!profileBackgroundUnlocked"
+                  class="rounded-md border border-amber-500/35 bg-amber-600/15 px-2.5 py-1 text-xs font-semibold text-amber-100"
+                >
+                  {{ profileBackgroundUnlockPriceLabel }}
+                </span>
+              </div>
+
+              <div class="rounded-xl border border-dark-600 bg-dark-800/60 p-3 space-y-3">
+                <div class="text-xs uppercase tracking-wide text-gray-400">
+                  {{ $t('pages.settingsPage.profileBackgroundPreview') }}
+                </div>
+                <div class="relative h-24 overflow-hidden rounded-lg border border-dark-600 bg-dark-700/60">
+                  <div
+                    v-if="profileBackgroundPreviewUrl"
+                    class="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                    :style="{
+                      backgroundImage: `linear-gradient(180deg, rgba(8, 12, 19, 0.45) 0%, rgba(8, 12, 19, 0.75) 100%), url(${profileBackgroundPreviewUrl})`,
+                    }"
+                  />
+                  <div class="relative z-10 flex h-full w-full items-center justify-center text-xs text-gray-200">
+                    {{ $t('pages.settingsPage.profileBackgroundPreviewHint') }}
+                  </div>
+                </div>
+                <div v-if="!profileBackgroundUnlocked" class="text-xs text-gray-300">
+                  {{ $t('pages.settingsPage.profileBackgroundUnlockFee', { price: profileBackgroundUnlockPriceLabel }) }}
+                </div>
+              </div>
+
+              <ErrorMessage
+                v-if="profileBackgroundErrorMessage"
+                :error-message="profileBackgroundErrorMessage"
+              />
+              <SuccessMessage
+                v-if="profileBackgroundSuccessMessage"
+                :success-message="profileBackgroundSuccessMessage"
+              />
+
+              <div class="flex flex-wrap items-center gap-2">
+                <button
+                  v-if="!profileBackgroundUnlocked"
+                  type="button"
+                  class="rounded-lg border border-amber-500/35 bg-amber-600/15 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:bg-amber-600/25 disabled:cursor-not-allowed disabled:opacity-60"
+                  :disabled="isProfileBackgroundPurchasing"
+                  @click="requestProfileBackgroundPurchase"
+                >
+                  <span>
+                    {{ isProfileBackgroundPurchasing
+                      ? $t('pages.settingsPage.profileBackgroundPurchasing')
+                      : $t('pages.settingsPage.profileBackgroundPurchase')
+                    }}
+                  </span>
+                </button>
+
+                <button
+                  v-else
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-lg border border-dark-600 bg-dark-700/70 px-3 py-2 text-xs font-semibold text-gray-100 transition hover:bg-dark-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  :disabled="isProfileBackgroundUploading || isProfileBackgroundRemoving"
+                  @click="triggerProfileBackgroundFileInput"
+                >
+                  <Loader2 v-if="isProfileBackgroundUploading" class="h-3.5 w-3.5 animate-spin" />
+                  <ImagePlus v-else class="h-3.5 w-3.5" />
+                  <span>
+                    {{ isProfileBackgroundUploading
+                      ? $t('pages.settingsPage.profileBackgroundUploading')
+                      : $t('pages.settingsPage.profileBackgroundChange')
+                    }}
+                  </span>
+                </button>
+
+                <button
+                  v-if="profileBackgroundUnlocked && profileBackgroundPreviewUrl"
+                  type="button"
+                  class="rounded-lg border border-dark-500 bg-dark-700/70 px-3 py-2 text-xs font-semibold text-gray-200 transition hover:bg-dark-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  :disabled="isProfileBackgroundRemoving || isProfileBackgroundUploading"
+                  @click="removeProfileBackground"
+                >
+                  <span>
+                    {{ isProfileBackgroundRemoving
+                      ? $t('pages.settingsPage.profileBackgroundRemoving')
+                      : $t('pages.settingsPage.profileBackgroundRemove')
+                    }}
+                  </span>
+                </button>
+
+                <input
+                  ref="profileBackgroundFileInputRef"
+                  type="file"
+                  accept="image/*"
+                  class="hidden"
+                  @change="handleProfileBackgroundUpload"
+                />
+              </div>
+            </div>
+
+            <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-6 space-y-4">
               <div v-if="isStylesLoading" class="flex items-center justify-center py-8 text-sm text-gray-400">
                 <Loader2 class="mr-2 h-4 w-4 animate-spin" />
                 {{ $t('common.loading') }}
@@ -1161,6 +1414,17 @@ onUnmounted(() => {
     :is-loading="styleActionType === 'buy' && styleActionLoadingId === pendingStylePurchaseId"
     @confirm="confirmStylePurchase"
     @cancel="closeStylePurchaseConfirmModal"
+  />
+
+  <ConfirmWindow
+    :is-open="showProfileBackgroundPurchaseConfirmModal"
+    :title="$t('pages.settingsPage.confirmProfileBackgroundPurchaseTitle')"
+    :message="$t('pages.settingsPage.confirmProfileBackgroundPurchaseMessage', { price: profileBackgroundUnlockPriceLabel })"
+    :confirm-text="$t('pages.settingsPage.confirmProfileBackgroundPurchaseConfirm')"
+    :cancel-text="$t('common.cancel')"
+    :is-loading="isProfileBackgroundPurchasing"
+    @confirm="confirmProfileBackgroundPurchase"
+    @cancel="closeProfileBackgroundPurchaseConfirmModal"
   />
 </template>
 

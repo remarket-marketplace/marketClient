@@ -13,6 +13,12 @@ export const UserReadSchema = z.object({
   nickname_style_id: nicknameStyleIdSchema,
   balance: z.number().nonnegative(),
   avatar_url: z.string().or(z.literal('')),
+  profile_background_url: z
+    .string()
+    .or(z.literal(''))
+    .optional()
+    .transform((value) => value ?? ''),
+  profile_background_unlocked: z.boolean().optional().transform((value) => value ?? false),
   description: z.string().max(500).nullable(),
   created_at: z.string().pipe(z.coerce.date()),
   has_frozen_balance: z.boolean(),
@@ -31,6 +37,11 @@ export const PublicProfileDataSchema = z.object({
   username: z.string().min(4).max(32),
   nickname_style_id: nicknameStyleIdSchema,
   avatar_url: z.string().or(z.literal('')),
+  profile_background_url: z
+    .string()
+    .or(z.literal(''))
+    .optional()
+    .transform((value) => value ?? ''),
   description: z.string().max(500).nullable(),
   is_active: z.boolean(),
   is_banned: z.boolean(),

@@ -109,4 +109,67 @@ export const settingsService = {
             }
         }
     },
+
+    async purchaseProfileBackgroundAccess(): Promise<{ success: boolean; data?: UserRead; error?: ApiError }> {
+        try {
+            const response = await httpClient.post('/users/profile-background/purchase')
+            return {
+                success: true,
+                data: UserReadSchema.parse(response.data),
+            }
+        }
+        catch (error) {
+            if (error instanceof ZodError) {
+                console.error(error.issues)
+            }
+            return {
+                success: false,
+                error: ErrorHandler.handleApiError(error),
+            }
+        }
+    },
+
+    async uploadProfileBackground(file: File): Promise<{ success: boolean; data?: UserRead; error?: ApiError }> {
+        try {
+            const formData = new FormData()
+            formData.append('file', file)
+            const response = await httpClient.patch('/users/profile-background', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            })
+            return {
+                success: true,
+                data: UserReadSchema.parse(response.data),
+            }
+        }
+        catch (error) {
+            if (error instanceof ZodError) {
+                console.error(error.issues)
+            }
+            return {
+                success: false,
+                error: ErrorHandler.handleApiError(error),
+            }
+        }
+    },
+
+    async removeProfileBackground(): Promise<{ success: boolean; data?: UserRead; error?: ApiError }> {
+        try {
+            const response = await httpClient.delete('/users/profile-background')
+            return {
+                success: true,
+                data: UserReadSchema.parse(response.data),
+            }
+        }
+        catch (error) {
+            if (error instanceof ZodError) {
+                console.error(error.issues)
+            }
+            return {
+                success: false,
+                error: ErrorHandler.handleApiError(error),
+            }
+        }
+    },
 }

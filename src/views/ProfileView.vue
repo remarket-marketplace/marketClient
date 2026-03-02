@@ -49,6 +49,19 @@ const directChatError = ref<string | null>(null)
 
 const isOwner = computed(() => currentUser.value?.username === username.value)
 const profileUrl = computed(() => `${window.location.origin}/user/${username.value}`)
+const profileBackgroundImageUrl = computed(() => resolveProfileMediaUrl(currentProfileData.value?.profile_background_url))
+const profileBackgroundLayerStyle = computed(() => {
+  if (!profileBackgroundImageUrl.value) {
+    return {}
+  }
+
+  return {
+    backgroundImage: `linear-gradient(180deg, rgba(8, 12, 19, 0.82) 0%, rgba(8, 12, 19, 0.94) 100%), url(${profileBackgroundImageUrl.value})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+  }
+})
 const activeTab = ref<'products' | 'reviews' | 'purchases'>('products')
 
 // Пагинация для товаров
@@ -79,6 +92,15 @@ function formatFullDate(dateStr: string): string {
 
 function formatPrice(price: number) {
   return formatCurrencyAmount(price, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+function resolveProfileMediaUrl(rawUrl?: string | null): string {
+  const normalizedUrl = rawUrl?.trim() ?? ''
+  if (!normalizedUrl) return ''
+  if (normalizedUrl.startsWith('http://') || normalizedUrl.startsWith('https://')) {
+    return normalizedUrl
+  }
+  return `${API_HOST}${normalizedUrl}`
 }
 
 async function loadProfileData() {
@@ -317,19 +339,26 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 </script>
 
 <template>
-  <div class="w-full h-full overflow-scroll lg:overflow-hidden pb-16 md:pb-0">
-    <!-- Mobile header -->
-    <div class="mb-6 lg:hidden px-4 pt-4">
-      <div class="flex gap-2">
-        <BackButton />
-        <h1 class="text-2xl font-bold text-white">
-          {{ $t('pages.profile.title') }}
-        </h1>
-      </div>
-    </div>
+  <div class="relative w-full h-full overflow-scroll lg:overflow-hidden pb-16 md:pb-0">
+    <div
+      v-if="profileBackgroundImageUrl"
+      class="pointer-events-none fixed inset-0 z-0 bg-cover bg-center bg-no-repeat"
+      :style="profileBackgroundLayerStyle"
+    />
 
-    <!-- Desktop layout -->
-    <div class="lg:flex lg:min-h-[calc(100dvh-3.5rem)]">
+    <div class="relative z-10">
+      <!-- Mobile header -->
+      <div class="mb-6 lg:hidden px-4 pt-4">
+        <div class="flex gap-2">
+          <BackButton />
+          <h1 class="text-2xl font-bold text-white">
+            {{ $t('pages.profile.title') }}
+          </h1>
+        </div>
+      </div>
+
+      <!-- Desktop layout -->
+      <div class="lg:flex lg:min-h-[calc(100dvh-3.5rem)]">
       <!-- Left column - Profile info -->
       <div
         class="relative z-10 lg:w-96 lg:flex-shrink-0 lg:sticky lg:min-h-[calc(100dvh-3.5rem)] lg:border-r border-dark-700 px-4 lg:px-0 lg:pt-6 lg:pr-6">
@@ -805,6 +834,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
       </div>
     </Teleport>
 
+    </div>
   </div>
 </template>
 
