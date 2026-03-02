@@ -629,6 +629,7 @@ const en = {
       waitReplyReminderRecipient: "This user will be able to send more messages only after your reply.",
       newPurchase: "New purchase",
       newPriceOffer: "New price offer",
+      imageMessage: "Photo",
       newAdminMessage: "New message from support",
       viewProduct: "View Product",
       productData: "Product data",

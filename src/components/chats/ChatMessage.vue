@@ -4,14 +4,17 @@ import NewPurchaseMessage from './NewPurchaseMessage.vue'
 import PriceOfferMessage from './PriceOfferMessage.vue'
 import type { Product } from '@/validation/product/product'
 import type { ChatMessageUnion } from '@/validation/chat/chatMessage'
-import { useI18n } from 'vue-i18n'
 import TextMessage from './TextMessage.vue'
 import DealStatusMessage from './DealStatusMessage.vue'
 import ReviewMessage from './ReviewMessage.vue'
+import ImageMessage from './ImageMessage.vue'
 
 // ===== TYPE GUARDS =====
 function isTextMessage(msg: ChatMessageUnion): msg is Extract<ChatMessageUnion, { message_type: 'text_message' }> {
   return msg.message_type === 'text_message'
+}
+function isImageMessage(msg: ChatMessageUnion): msg is Extract<ChatMessageUnion, { message_type: 'image_message' }> {
+  return msg.message_type === 'image_message'
 }
 function isProductMessage(msg: ChatMessageUnion): msg is Extract<ChatMessageUnion, { message_type: 'purchase_message' }> {
   return msg.message_type === 'purchase_message'
@@ -36,9 +39,8 @@ const props = defineProps<{
   forceShowSender?: boolean
 }>()
 
-const { t } = useI18n()
-
 const textMessage = computed(() => isTextMessage(props.message) ? props.message : null)
+const imageMessage = computed(() => isImageMessage(props.message) ? props.message : null)
 const product = computed<Product | null>(() => {
   if (isProductMessage(props.message)) return props.message.product
   if (isDealStatusMessage(props.message)) return props.message.product
@@ -68,6 +70,8 @@ const messageAlignment = computed(() => {
   if (isDealStatus.value) return 'w-full self-center'
   if (product.value && !isDealStatus.value) return 'w-full self-center'
   if (isPriceOffer.value) return 'w-full self-center'
+  if (imageMessage.value && imageMessage.value.sender_id === props.user?.id) return 'flex justify-end'
+  if (imageMessage.value) return 'flex justify-start'
   if (textMessage.value && textMessage.value.sender_id === props.user?.id) return 'flex justify-end'
   return 'flex justify-start'
 })
@@ -103,6 +107,15 @@ function formatDate(dateInput: string | Date): string {
       :chat-participant-ids="props.chatParticipantIds"
       :sender-label="props.senderLabels?.[textMessage.sender_id]"
       :sender-role="props.senderRoles?.[textMessage.sender_id]"
+      :force-show-sender="props.forceShowSender"
+    />
+
+    <ImageMessage
+      v-else-if="imageMessage"
+      :image-message="imageMessage"
+      :user="user"
+      :format-date="formatDate"
+      :sender-label="props.senderLabels?.[imageMessage.sender_id]"
       :force-show-sender="props.forceShowSender"
     />
 

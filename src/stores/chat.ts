@@ -34,7 +34,11 @@ export const useChatStore = defineStore('chat', {
     },
     markMessagesRead(chatId: string, messageIds: string[]) {
       const chat = this.chats.find((c) => c.id === chatId)
-      if (!chat?.last_message || chat.last_message.message_type !== 'text_message') return
+      if (!chat?.last_message) return
+      if (
+        chat.last_message.message_type !== 'text_message'
+        && chat.last_message.message_type !== 'image_message'
+      ) return
       if (messageIds.includes(chat.last_message.id)) {
         chat.last_message.is_read = true
       }

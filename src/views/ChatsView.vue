@@ -44,11 +44,17 @@ const hasMoreMessages = ref(true)
 const totalMessagesInChat = ref(0)
 const isMessageLimitLockedByServer = ref(false)
 
-// Разделяем чаты на support и обычные
+function getLastMessageTimestamp(chat: ChatListItem): number {
+  const createdAt = chat.last_message?.created_at
+  if (!createdAt) return 0
+  const timestamp = new Date(createdAt).getTime()
+  return Number.isFinite(timestamp) ? timestamp : 0
+}
+
 const sortedChats = computed(() => {
-  const supportChats = chats.value.filter(chat => chat.chat_type === 'support_chat')
-  const regularChats = chats.value.filter(chat => chat.chat_type === 'chat')
-  return [...supportChats, ...regularChats]
+  return [...chats.value].sort((a, b) => (
+    getLastMessageTimestamp(b) - getLastMessageTimestamp(a)
+  ))
 })
 
 const currentChat = computed(() =>
@@ -210,7 +216,10 @@ function applyMessagesReadUpdate(update: MessagesReadPayload) {
   if (update.chat_id === selectedChatId.value && update.message_ids.length > 0) {
     const readIds = new Set(update.message_ids)
     for (const message of chatMessages.value) {
-      if (message.message_type === 'text_message' && readIds.has(message.id)) {
+      if (
+        (message.message_type === 'text_message' || message.message_type === 'image_message')
+        && readIds.has(message.id)
+      ) {
         message.is_read = true
       }
     }
@@ -270,18 +279,6 @@ onMounted(async () => {
 
       if (update.last_message && chat) {
         chat.last_message = update.last_message
-
-        // Для обычных чатов перемещаем наверх, support_chat остаются на месте
-        if (chat.chat_type === 'chat') {
-          chats.value.splice(chatIndex, 1)
-          // Находим позицию после всех support_chat
-          const firstRegularChatIndex = chats.value.findIndex(c => c.chat_type === 'chat')
-          if (firstRegularChatIndex === -1) {
-            chats.value.push(chat)
-          } else {
-            chats.value.splice(firstRegularChatIndex, 0, chat)
-          }
-        }
       }
       if (chat) {
         if (typeof update.unread_count === 'number') {
@@ -345,8 +342,22 @@ async function loadChats() {
 }
 
 function scrollToBottom() {
-  const el = messageContainerRef.value
-  if (el) el.scrollTop = el.scrollHeight
+  let attempts = 0
+  const maxAttempts = 18
+
+  const applyBottomScroll = () => {
+    const el = messageContainerRef.value
+    if (!el) return
+
+    el.scrollTop = el.scrollHeight
+    attempts += 1
+
+    if (attempts < maxAttempts) {
+      requestAnimationFrame(applyBottomScroll)
+    }
+  }
+
+  applyBottomScroll()
 }
 
 async function handleScroll() {
@@ -385,6 +396,7 @@ async function loadMoreMessages() {
 
 async function loadChatMessages(chatId: string) {
   isChatLoading.value = true
+  let shouldScrollToBottom = false
   try {
     chatMessages.value = []
     currentPage.value = 1
@@ -404,38 +416,71 @@ async function loadChatMessages(chatId: string) {
     totalPages.value = response.totalPages
     hasMoreMessages.value = 1 < totalPages.value
     chatStore.resetUnread(chatId)
-    await chatsService.markChatRead(chatId)
-
-    await nextTick()
-    scrollToBottom()
+    void chatsService.markChatRead(chatId)
 
     if (isMobile.value) mobileMode.value = 'chat'
+    shouldScrollToBottom = true
   } finally {
     isChatLoading.value = false
+    if (shouldScrollToBottom) {
+      await nextTick()
+      scrollToBottom()
+    }
   }
 }
 
-async function sendMessage() {
-  if (!newMessage.value.trim() || !selectedChatId.value || isSendLocked.value) return
-  const result = await chatsService.sendMessage(
-    newMessage.value.trim(),
-    selectedChatId.value
-  )
-  if (result.success) {
+async function sendMessage(payload: { files: File[] }) {
+  if (!selectedChatId.value || isSendLocked.value) return
+
+  const text = newMessage.value.trim()
+  const files = payload.files ?? []
+  if (!text && files.length === 0) return
+
+  let hasSentAnyMessage = false
+
+  if (text) {
+    const result = await chatsService.sendMessage(
+      text,
+      selectedChatId.value
+    )
+    if (!result.success) {
+      if (result.errorCode === 'MESSAGE_LIMIT_WAIT_FOR_SELLER_REPLY') {
+        isMessageLimitLockedByServer.value = true
+        sendErrorMessage.value = null
+        return
+      }
+
+      sendErrorMessage.value = result.errorCode
+        ? t(`errors.${result.errorCode}`)
+        : t('errors.SERVER_ERROR')
+      return
+    }
+
+    hasSentAnyMessage = true
     newMessage.value = ''
-    sendErrorMessage.value = null
-    nextTick(scrollToBottom)
-    return
   }
 
-  if (result.errorCode === 'MESSAGE_LIMIT_WAIT_FOR_SELLER_REPLY') {
-    isMessageLimitLockedByServer.value = true
+  if (files.length > 0) {
+    const imagesResult = await chatsService.sendImages(selectedChatId.value, files)
+    if (!imagesResult.success) {
+      if (imagesResult.errorCode === 'MESSAGE_LIMIT_WAIT_FOR_SELLER_REPLY') {
+        isMessageLimitLockedByServer.value = true
+        sendErrorMessage.value = null
+        return
+      }
+
+      sendErrorMessage.value = imagesResult.errorCode
+        ? t(`errors.${imagesResult.errorCode}`)
+        : t('errors.SERVER_ERROR')
+      return
+    }
+
+    hasSentAnyMessage = true
+  }
+
+  if (hasSentAnyMessage) {
     sendErrorMessage.value = null
-    return
-  } else {
-    sendErrorMessage.value = result.errorCode
-      ? t(`errors.${result.errorCode}`)
-      : t('errors.SERVER_ERROR')
+    nextTick(scrollToBottom)
   }
 }
 </script>

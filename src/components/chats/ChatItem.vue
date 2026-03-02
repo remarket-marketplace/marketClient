@@ -2,7 +2,7 @@
 import type { ChatListItem } from '@/validation/chat/ChatList';
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n';
-import { ShoppingBag, Headphones } from 'lucide-vue-next';
+import { ShoppingBag, Headphones, Image as ImageIcon } from 'lucide-vue-next';
 import UserAvatar from '@/components/UserAvatar.vue';
 import StyledUsername from '@/components/StyledUsername.vue';
 
@@ -47,6 +47,9 @@ const formattedLastMessage = computed((): string | null => {
             if (text.length > 60) {
                 text = text.substring(0, 57) + '...'
             }
+            break
+        case "image_message":
+            text = t('pages.chats.imageMessage')
             break
         case "update_deal_status_message":
             text = t('pages.chats.updateDealStatus')
@@ -191,6 +194,7 @@ onMounted(() => {
                     :class="{
                         'text-blue-500 font-light': chat.last_message?.message_type === 'purchase_message'
                         || chat.last_message?.message_type === 'price_offer_message'
+                        || chat.last_message?.message_type === 'image_message'
                         || chat.last_message?.message_type === 'update_deal_status_message'
                         || chat.last_message?.message_type === 'review_message'
                         || isAdminMessage,
@@ -206,6 +210,11 @@ onMounted(() => {
                     <component
                         v-if="chat.last_message?.message_type === 'purchase_message'"
                         :is="ShoppingBag"
+                        class="inline-block w-3 h-3 mr-1.5 -mt-0.5"
+                    />
+                    <component
+                        v-else-if="chat.last_message?.message_type === 'image_message'"
+                        :is="ImageIcon"
                         class="inline-block w-3 h-3 mr-1.5 -mt-0.5"
                     />
                     <component

@@ -154,12 +154,19 @@ onMounted(async () => {
 
             const chat = chats.value[chatIndex]
             const isActiveChat = selectedChatId.value === update.chat_id
+            const previousLastMessageId = chat.last_message?.id ?? null
+            const incomingLastMessageId = update.last_message?.id ?? null
+            const hasNewLastMessage = Boolean(
+                incomingLastMessageId && incomingLastMessageId !== previousLastMessageId
+            )
 
             if (update.last_message && chat) {
                 chat.last_message = update.last_message
-                // Перемещаем чат наверх списка при новом сообщении
-                chats.value.splice(chatIndex, 1)
-                chats.value.unshift(chat)
+                // Перемещаем чат наверх только когда пришло именно новое сообщение.
+                if (hasNewLastMessage) {
+                    chats.value.splice(chatIndex, 1)
+                    chats.value.unshift(chat)
+                }
             }
 
             if (chat && typeof update.unread_count === 'number') {
@@ -292,8 +299,22 @@ async function loadMoreChats() {
 }
 
 function scrollToBottom() {
-    const el = messageContainerRef.value
-    if (el) el.scrollTop = el.scrollHeight
+    let attempts = 0
+    const maxAttempts = 18
+
+    const applyBottomScroll = () => {
+        const el = messageContainerRef.value
+        if (!el) return
+
+        el.scrollTop = el.scrollHeight
+        attempts += 1
+
+        if (attempts < maxAttempts) {
+            requestAnimationFrame(applyBottomScroll)
+        }
+    }
+
+    applyBottomScroll()
 }
 
 async function handleMessagesScroll() {
@@ -331,6 +352,7 @@ async function loadMoreMessages() {
 
 async function loadChatMessages(chatId: string) {
     isLoading.value = true
+    let shouldScrollToBottom = false
 
     chatMessages.value = []
     messagesCurrentPage.value = 1
@@ -347,24 +369,46 @@ async function loadChatMessages(chatId: string) {
 
     const chat = chats.value.find(c => c.id === chatId)
     if (chat) chat.unread_count = 0
-    await chatsService.markChatRead(chatId)
-
-    await nextTick()
-    scrollToBottom()
+    void chatsService.markChatRead(chatId)
 
     if (isMobile.value) mobileMode.value = 'chat'
+    shouldScrollToBottom = true
 
     isLoading.value = false
+    if (shouldScrollToBottom) {
+        await nextTick()
+        scrollToBottom()
+    }
 }
 
-async function sendMessage() {
-    if (!newMessage.value.trim() || !selectedChatId.value) return
-    const success = await chatsService.sendMessage(
-        newMessage.value.trim(),
-        selectedChatId.value
-    )
-    if (success) {
+async function sendMessage(payload: { files: File[] }) {
+    if (!selectedChatId.value) return
+
+    const text = newMessage.value.trim()
+    const files = payload.files ?? []
+    if (!text && files.length === 0) return
+
+    let hasSentAnyMessage = false
+
+    if (text) {
+        const textResult = await chatsService.sendMessage(
+            text,
+            selectedChatId.value
+        )
+        if (!textResult.success) return
+
         newMessage.value = ''
+        hasSentAnyMessage = true
+    }
+
+    if (files.length > 0) {
+        const imagesResult = await chatsService.sendImages(selectedChatId.value, files)
+        if (!imagesResult.success) return
+
+        hasSentAnyMessage = true
+    }
+
+    if (hasSentAnyMessage) {
         nextTick(scrollToBottom)
     }
 }

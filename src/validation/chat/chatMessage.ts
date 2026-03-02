@@ -20,6 +20,14 @@ export const TextMessageSchema = BaseMessageSchema.extend({
   data: z.record(z.string(), z.any()).nullable().optional(),
 })
 
+export const ImageMessageSchema = BaseMessageSchema.extend({
+  message_type: z.literal('image_message'),
+  sender_id: z.string(),
+  text: z.string(),
+  is_read: z.boolean(),
+  data: z.record(z.string(), z.any()).nullable().optional(),
+})
+
 // Сообщение о покупке
 export const ProductMessageSchema = BaseMessageSchema.extend({
   message_type: z.literal('purchase_message'),
@@ -56,6 +64,7 @@ export const PriceOfferMessageSchema = BaseMessageSchema.extend({
 // discriminated union по полю message_type
 export const ChatMessageUnionSchema = z.discriminatedUnion('message_type', [
   TextMessageSchema,
+  ImageMessageSchema,
   ProductMessageSchema,
   DealStatusMessageSchema,
   ReviewMessageSchema,

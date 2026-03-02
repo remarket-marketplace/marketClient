@@ -110,7 +110,10 @@ function applyMessagesReadUpdate(update: MessagesReadPayload) {
 
     const readIds = new Set(update.message_ids)
     for (const message of chatMessages.value) {
-        if (message.message_type === 'text_message' && readIds.has(message.id)) {
+        if (
+            (message.message_type === 'text_message' || message.message_type === 'image_message')
+            && readIds.has(message.id)
+        ) {
             message.is_read = true
         }
     }
@@ -153,8 +156,22 @@ onUnmounted(() => {
 })
 
 function scrollToBottom() {
-    const el = messageContainerRef.value
-    if (el) el.scrollTop = el.scrollHeight
+    let attempts = 0
+    const maxAttempts = 18
+
+    const applyBottomScroll = () => {
+        const el = messageContainerRef.value
+        if (!el) return
+
+        el.scrollTop = el.scrollHeight
+        attempts += 1
+
+        if (attempts < maxAttempts) {
+            requestAnimationFrame(applyBottomScroll)
+        }
+    }
+
+    applyBottomScroll()
 }
 
 async function handleScroll() {
@@ -192,6 +209,7 @@ async function loadMoreMessages() {
 
 async function loadChatMessages(chatId: string) {
     isLoading.value = true
+    let shouldScrollToBottom = false
 
     chatMessages.value = []
     currentPage.value = 1
@@ -225,20 +243,43 @@ async function loadChatMessages(chatId: string) {
     totalPages.value = response.totalPages
     hasMoreMessages.value = 1 < totalPages.value
 
-    await nextTick()
-    scrollToBottom()
+    shouldScrollToBottom = true
 
     isLoading.value = false
+    if (shouldScrollToBottom) {
+        await nextTick()
+        scrollToBottom()
+    }
 }
 
-async function sendMessage() {
-    if (!newMessage.value.trim() || !currentChatId.value) return
-    const success = await chatsService.sendMessage(
-        newMessage.value.trim(),
-        currentChatId.value
-    )
-    if (success) {
+async function sendMessage(payload: { files: File[] }) {
+    if (!currentChatId.value) return
+
+    const text = newMessage.value.trim()
+    const files = payload.files ?? []
+    if (!text && files.length === 0) return
+
+    let hasSentAnyMessage = false
+
+    if (text) {
+        const textResult = await chatsService.sendMessage(
+            text,
+            currentChatId.value
+        )
+        if (!textResult.success) return
+
         newMessage.value = ''
+        hasSentAnyMessage = true
+    }
+
+    if (files.length > 0) {
+        const imagesResult = await chatsService.sendImages(currentChatId.value, files)
+        if (!imagesResult.success) return
+
+        hasSentAnyMessage = true
+    }
+
+    if (hasSentAnyMessage) {
         nextTick(scrollToBottom)
     }
 }

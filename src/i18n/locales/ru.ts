@@ -630,6 +630,7 @@ const ru = {
       waitReplyReminderRecipient: "Пользователь сможет отправлять вам сообщения только после вашего ответа.",
       newPurchase: "Новая покупка",
       newPriceOffer: "Новое предложение цены",
+      imageMessage: "Фото",
       newAdminMessage: "Новое сообщение от поддержки",
       viewProduct: "Посмотреть товар",
       productData: "Данные товара",

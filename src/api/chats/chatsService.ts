@@ -302,6 +302,39 @@ export const chatsService = {
     }
   },
 
+  async sendImages(
+    chatId: string,
+    files: File[],
+  ): Promise<{ success: boolean; errorCode?: string }> {
+    if (files.length === 0) {
+      return { success: true };
+    }
+
+    const MAX_IMAGES_PER_MESSAGE = 5;
+    if (files.length > MAX_IMAGES_PER_MESSAGE) {
+      return { success: false, errorCode: "MAXIMUM_NUMBER_PHOTOS_EXCEEDED" };
+    }
+
+    try {
+      const formData = new FormData();
+      files.forEach((file) => {
+        formData.append("uploaded_images", file);
+      });
+
+      await httpClient.post(`/chats/${chatId}/images`, formData);
+      return { success: true };
+    } catch (e) {
+      console.error("Error sending images:", e);
+      const errorCode =
+        (e as any)?.response?.data?.detail?.error_code
+        || (e as any)?.response?.data?.error_code;
+      return {
+        success: false,
+        errorCode: errorCode || "SERVER_ERROR",
+      };
+    }
+  },
+
   async sendDirectMessage(
     username: string,
     text: string,
