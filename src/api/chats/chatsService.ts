@@ -274,6 +274,7 @@ export const chatsService = {
   async sendMessage(
     message: string,
     chatId: string,
+    options?: { isAdminPanelMessage?: boolean },
   ): Promise<{ success: boolean; errorCode?: string }> {
     if (!this.isConnected()) {
       await new Promise((r) => setTimeout(r, 500));
@@ -287,9 +288,17 @@ export const chatsService = {
     try {
       const ack = await new Promise<{ success?: boolean; error_code?: string }>(
         (resolve) => {
-          socket!.emit("send_message", { chat_id: chatId, message }, (response: any) => {
-            resolve(response ?? { success: true });
-          });
+          socket!.emit(
+            "send_message",
+            {
+              chat_id: chatId,
+              message,
+              is_admin_panel_message: options?.isAdminPanelMessage === true,
+            },
+            (response: any) => {
+              resolve(response ?? { success: true });
+            }
+          );
         }
       );
       return {

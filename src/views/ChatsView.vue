@@ -16,6 +16,7 @@ import { ArrowLeft, Headphones } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import UserAvatar from '@/components/UserAvatar.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
+import { createBottomPinController } from '@/utils/chatScroll'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -26,8 +27,10 @@ const chats = ref<ChatListItem[]>([])
 const chatMessages = ref<ChatMessageUnion[]>([])
 const selectedChatId = ref<string | null>(null)
 const messageContainerRef = ref<HTMLElement | null>(null)
+const bottomPin = createBottomPinController(() => messageContainerRef.value)
 const isPageLoading = ref(false)
 const isChatLoading = ref(false)
+const isChatPinning = ref(false)
 const isLoadingMoreMessages = ref(false)
 const pageErrorMessage = ref<string | null>(null)
 const sendErrorMessage = ref<string | null>(null)
@@ -39,13 +42,39 @@ const newMessage = ref('')
 
 const currentPage = ref(1)
 const totalPages = ref(0)
-const perPage = ref(30)
+const perPage = ref(15)
 const hasMoreMessages = ref(true)
 const totalMessagesInChat = ref(0)
 const isMessageLimitLockedByServer = ref(false)
+const topLoadThresholdPx = 8
+const previousMessageScrollTop = ref(0)
+const hasUserScrolledAwayFromTop = ref(false)
+const bottomAutoScrollThresholdPx = 120
 
 function getLastMessageTimestamp(chat: ChatListItem): number {
   const createdAt = chat.last_message?.created_at
+  if (!createdAt) return 0
+  const timestamp = new Date(createdAt).getTime()
+  return Number.isFinite(timestamp) ? timestamp : 0
+}
+
+function shouldApplyLastMessage(
+  currentMessage?: ChatMessageUnion | null,
+  incomingMessage?: ChatMessageUnion | null,
+): boolean {
+  if (!incomingMessage) return false
+  if (!currentMessage) return true
+
+  const currentTs = getMessageTimestamp(currentMessage)
+  const incomingTs = getMessageTimestamp(incomingMessage)
+
+  if (incomingTs > currentTs) return true
+  if (incomingTs < currentTs) return false
+  return incomingMessage.id === currentMessage.id
+}
+
+function getMessageTimestamp(message: ChatMessageUnion): number {
+  const createdAt = message.created_at
   if (!createdAt) return 0
   const timestamp = new Date(createdAt).getTime()
   return Number.isFinite(timestamp) ? timestamp : 0
@@ -278,7 +307,9 @@ onMounted(async () => {
       const chat = chats.value[chatIndex]
 
       if (update.last_message && chat) {
-        chat.last_message = update.last_message
+        if (shouldApplyLastMessage(chat.last_message ?? null, update.last_message)) {
+          chat.last_message = update.last_message
+        }
       }
       if (chat) {
         if (typeof update.unread_count === 'number') {
@@ -291,12 +322,17 @@ onMounted(async () => {
     unsubscribeNewMessage = chatsService.onNewMessage(message => {
       if (selectedChatId.value === message.chat_room_id) {
         if (!chatMessages.value.some(m => m.id === message.id)) {
+          const shouldStickToBottom = isNearBottom()
           chatMessages.value.push(message)
           totalMessagesInChat.value = Math.max(
             totalMessagesInChat.value + 1,
             chatMessages.value.length
           )
-          nextTick(scrollToBottom)
+          nextTick(() => {
+            if (shouldStickToBottom) {
+              void bottomPin.pinFor(320)
+            }
+          })
           chatStore.resetUnread(message.chat_room_id)
           chatsService.markChatRead(message.chat_room_id)
         }
@@ -333,6 +369,7 @@ onUnmounted(() => {
   unsubscribeNewMessage?.()
   unsubscribeChatUpdated?.()
   unsubscribeMessagesRead?.()
+  bottomPin.stop()
   window.removeEventListener('resize', checkMobile)
 })
 
@@ -342,28 +379,42 @@ async function loadChats() {
 }
 
 function scrollToBottom() {
-  let attempts = 0
-  const maxAttempts = 18
+  bottomPin.scrollNow()
+}
 
-  const applyBottomScroll = () => {
-    const el = messageContainerRef.value
-    if (!el) return
+function pinChatToBottom() {
+  return bottomPin.pinFor(1200)
+}
 
-    el.scrollTop = el.scrollHeight
-    attempts += 1
+function isNearBottom() {
+  const el = messageContainerRef.value
+  if (!el) return true
+  const distanceToBottom = el.scrollHeight - el.clientHeight - el.scrollTop
+  return distanceToBottom <= bottomAutoScrollThresholdPx
+}
 
-    if (attempts < maxAttempts) {
-      requestAnimationFrame(applyBottomScroll)
-    }
-  }
-
-  applyBottomScroll()
+function cancelChatPinning() {
+  if (!isChatPinning.value) return
+  bottomPin.stop()
+  isChatPinning.value = false
 }
 
 async function handleScroll() {
   const el = messageContainerRef.value
-  if (!el || isLoadingMoreMessages.value || !hasMoreMessages.value) return
-  if (el.scrollTop === 0) await loadMoreMessages()
+  if (!el || isChatLoading.value || isChatPinning.value || isLoadingMoreMessages.value || !hasMoreMessages.value) return
+
+  const currentScrollTop = el.scrollTop
+  if (currentScrollTop > topLoadThresholdPx) {
+    hasUserScrolledAwayFromTop.value = true
+  }
+
+  const isUserScrollingUp = currentScrollTop < (previousMessageScrollTop.value - 1)
+  previousMessageScrollTop.value = currentScrollTop
+
+  if (!hasUserScrolledAwayFromTop.value) return
+  if (isUserScrollingUp && currentScrollTop <= topLoadThresholdPx) {
+    await loadMoreMessages()
+  }
 }
 
 async function loadMoreMessages() {
@@ -386,7 +437,10 @@ async function loadMoreMessages() {
     totalPages.value = response.totalPages
     hasMoreMessages.value = currentPage.value < totalPages.value
     await nextTick()
-    if (el) el.scrollTop = el.scrollHeight - oldHeight
+    if (el) {
+      el.scrollTop = el.scrollHeight - oldHeight
+      previousMessageScrollTop.value = el.scrollTop
+    }
   } else {
     hasMoreMessages.value = false
   }
@@ -396,8 +450,11 @@ async function loadMoreMessages() {
 
 async function loadChatMessages(chatId: string) {
   isChatLoading.value = true
+  isChatPinning.value = false
   let shouldScrollToBottom = false
   try {
+    hasUserScrolledAwayFromTop.value = false
+    previousMessageScrollTop.value = 0
     chatMessages.value = []
     currentPage.value = 1
     hasMoreMessages.value = true
@@ -421,10 +478,24 @@ async function loadChatMessages(chatId: string) {
     if (isMobile.value) mobileMode.value = 'chat'
     shouldScrollToBottom = true
   } finally {
+    if (shouldScrollToBottom) {
+      isChatPinning.value = true
+    }
     isChatLoading.value = false
     if (shouldScrollToBottom) {
-      await nextTick()
-      scrollToBottom()
+      try {
+        await nextTick()
+        await nextTick()
+        await pinChatToBottom()
+        await nextTick()
+        const container = messageContainerRef.value
+        if (container) {
+          previousMessageScrollTop.value = container.scrollTop
+          hasUserScrolledAwayFromTop.value = container.scrollTop > topLoadThresholdPx
+        }
+      } finally {
+        isChatPinning.value = false
+      }
     }
   }
 }
@@ -480,7 +551,9 @@ async function sendMessage(payload: { files: File[] }) {
 
   if (hasSentAnyMessage) {
     sendErrorMessage.value = null
-    nextTick(scrollToBottom)
+    nextTick(() => {
+      void bottomPin.pinFor(320)
+    })
   }
 }
 </script>
@@ -535,7 +608,7 @@ async function sendMessage(payload: { files: File[] }) {
           'pb-16': isMobile && mobileMode === 'chat',
           'pt-16': isMobile && mobileMode === 'chat',
         }">
-          <div class="flex w-full min-w-0 flex-grow flex-col overflow-hidden overflow-y-auto lg:pb-2">
+          <div class="flex w-full min-w-0 flex-grow flex-col overflow-hidden lg:pb-2">
             <div v-if="currentChat"
               class="flex items-center gap-2 sticky top-0 bg-background px-2 py-2 lg:py-3 lg:px-3 z-10 lg:border-b border-dark-700">
               <button v-if="isMobile" class="text-xl font-bold flex-shrink-0" @click="backToChats">
@@ -566,17 +639,18 @@ async function sendMessage(payload: { files: File[] }) {
                 </div>
 
                 <!-- Информация о чате -->
-                <div class="flex min-w-0 flex-col truncate">
+                <div class="flex min-w-0 flex-col">
                   <!-- Имя чата -->
                   <p v-if="isSupportChat" class="truncate font-semibold text-lg text-blue-500">
                     {{ chatDisplayName }}
                   </p>
-                  <StyledUsername
-                    v-else
-                    :username="chatDisplayName"
-                    :style-id="currentChat?.another_user.nickname_style_id"
-                    class="truncate text-lg font-semibold"
-                  />
+                  <div v-else class="w-full min-w-0 truncate">
+                    <StyledUsername
+                      :username="chatDisplayName"
+                      :style-id="currentChat?.another_user.nickname_style_id"
+                      class="text-lg font-semibold"
+                    />
+                  </div>
                   <!-- Статус онлайн -->
                   <p v-if="chatDisplayStatus" class="text-xs text-green-500">
                     {{ $t('common.online') }}
@@ -588,44 +662,58 @@ async function sendMessage(payload: { files: File[] }) {
               </button>
             </div>
 
-            <div ref="messageContainerRef" class="no-scrollbar flex flex-1 min-w-0 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain pb-16"
-              @scroll="handleScroll">
-              <div v-if="isChatLoading" class="flex h-full w-full items-center justify-center">
+            <div class="relative flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden">
+              <div ref="messageContainerRef" class="no-scrollbar flex h-full min-w-0 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain pb-24"
+                @scroll="handleScroll"
+                @wheel.passive="cancelChatPinning"
+                @touchstart.passive="cancelChatPinning"
+                @mousedown="cancelChatPinning">
+                <div v-if="isChatLoading" class="flex h-full w-full items-center justify-center">
+                  <Loader />
+                </div>
+
+                <template v-else>
+                  <div :class="isChatPinning ? 'opacity-0 pointer-events-none' : 'opacity-100'">
+                    <div v-if="isLoadingMoreMessages" class="flex justify-center py-2">
+                      <Loader size="sm" />
+                    </div>
+
+                    <div v-if="chatMessages.length > 0" class="flex min-w-0 flex-1 flex-col justify-start">
+                      <div class="flex min-w-0 flex-col gap-3 py-2">
+                        <ChatMessage
+                          v-for="message in chatMessages"
+                          :key="message.id"
+                          :message="message"
+                          :user="user"
+                          :showAdminBadge="shouldShowAdminBadge"
+                          :chat-participant-ids="chatParticipantIds"
+                        />
+                      </div>
+                    </div>
+
+                    <div v-else-if="selectedChatId != null && chatMessages.length === 0"
+                      class="h-full w-full flex items-center justify-center">
+                      <div v-if="isSupportChat" class="flex flex-col items-center justify-center gap-4 text-center px-4">
+                        <div class="text-4xl">💬</div>
+                        <p class="text-lg text-mainText font-semibold">{{ $t("pages.chats.emptySupport") }}</p>
+                        <p class="text-gray-400 text-sm">{{ $t("pages.chats.emptySupportDesc") }}</p>
+                      </div>
+                      <p v-else class="text-gray-400 font-light">{{ $t("pages.chats.emptyMessages") }}</p>
+                    </div>
+
+                    <div v-else-if="selectedChatId === null" class="h-full w-full flex items-center justify-center">
+                      <p class="text-gray-400 font-light">{{ $t('pages.chats.selectChat') }}</p>
+                    </div>
+                  </div>
+                </template>
+              </div>
+
+              <div
+                v-if="isChatPinning"
+                class="absolute inset-0 z-10 flex items-center justify-center bg-background"
+              >
                 <Loader />
               </div>
-
-              <template v-else>
-              <div v-if="isLoadingMoreMessages" class="flex justify-center py-2">
-                <Loader size="sm" />
-              </div>
-
-              <div v-if="chatMessages.length > 0" class="flex min-w-0 flex-1 flex-col justify-start">
-                <div class="flex min-w-0 flex-col gap-3 py-2">
-                  <ChatMessage
-                    v-for="message in chatMessages"
-                    :key="message.id"
-                    :message="message"
-                    :user="user"
-                    :showAdminBadge="shouldShowAdminBadge"
-                    :chat-participant-ids="chatParticipantIds"
-                  />
-                </div>
-              </div>
-
-              <div v-else-if="selectedChatId != null && chatMessages.length === 0"
-                class="h-full w-full flex items-center justify-center">
-                <div v-if="isSupportChat" class="flex flex-col items-center justify-center gap-4 text-center px-4">
-                  <div class="text-4xl">💬</div>
-                  <p class="text-lg text-mainText font-semibold">{{ $t("pages.chats.emptySupport") }}</p>
-                  <p class="text-gray-400 text-sm">{{ $t("pages.chats.emptySupportDesc") }}</p>
-                </div>
-                <p v-else class="text-gray-400 font-light">{{ $t("pages.chats.emptyMessages") }}</p>
-              </div>
-
-              <div v-else-if="selectedChatId === null" class="h-full w-full flex items-center justify-center">
-                <p class="text-gray-400 font-light">{{ $t('pages.chats.selectChat') }}</p>
-              </div>
-              </template>
             </div>
 
             <div

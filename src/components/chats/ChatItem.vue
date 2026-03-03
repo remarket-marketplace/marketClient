@@ -159,7 +159,7 @@ onMounted(() => {
 
         <div class="flex flex-col flex-1 min-w-0">
             <div class="flex items-center justify-between gap-2">
-                <div class="flex items-center gap-2 truncate">
+                <div class="flex min-w-0 flex-1 items-center gap-2">
                     <!-- Name based on context -->
                     <p
                         v-if="isSupportChat && !showSupportAsUser"
@@ -167,12 +167,13 @@ onMounted(() => {
                     >
                         {{ displayName }}
                     </p>
-                    <StyledUsername
-                        v-else
-                        :username="displayName"
-                        :style-id="chat.another_user.nickname_style_id"
-                        class="truncate text-base font-semibold"
-                    />
+                    <div v-else class="min-w-0 flex-1 truncate">
+                        <StyledUsername
+                            :username="displayName"
+                            :style-id="chat.another_user.nickname_style_id"
+                            class="text-base font-semibold"
+                        />
+                    </div>
                     <span
                         v-if="unreadCount > 0"
                         class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-red-500 text-white text-[11px] font-semibold"

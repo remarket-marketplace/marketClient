@@ -123,7 +123,7 @@ onMounted(() => {
 
         <div class="flex flex-col flex-1 min-w-0">
             <div class="flex items-center justify-between gap-2">
-                <div class="flex items-center gap-2 truncate">
+                <div class="flex min-w-0 flex-1 items-center gap-2">
                     <!-- Show "Support" for support chats -->
                     <p 
                         v-if="isSupportChat"
@@ -132,12 +132,13 @@ onMounted(() => {
                         {{ t('pages.chats.support') }}
                     </p>
                     <!-- Show username for regular chats -->
-                    <StyledUsername
-                        v-else
-                        :username="chat.another_user.username"
-                        :style-id="chat.another_user.nickname_style_id"
-                        class="truncate text-base font-semibold"
-                    />
+                    <div v-else class="min-w-0 flex-1 truncate">
+                        <StyledUsername
+                            :username="chat.another_user.username"
+                            :style-id="chat.another_user.nickname_style_id"
+                            class="text-base font-semibold"
+                        />
+                    </div>
                 </div>
                 <span 
                     v-if="chat.last_message?.created_at" 

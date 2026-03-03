@@ -17,6 +17,7 @@ import SearchField from '@/components/SearchField.vue'
 import CustomSelect from '@/components/CustomSelect.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
+import { createBottomPinController } from '@/utils/chatScroll'
 
 const route = useRoute()
 const router = useRouter()
@@ -35,8 +36,11 @@ const hasMoreChats = ref(true)
 const chatMessages = ref<ChatMessageUnion[]>([])
 const selectedChatId = ref<string | null>(null)
 const messageContainerRef = ref<HTMLElement | null>(null)
+const bottomPin = createBottomPinController(() => messageContainerRef.value)
 const chatsContainerRef = ref<HTMLElement | null>(null)
 const isLoading = ref(false)
+const isChatLoading = ref(false)
+const isChatPinning = ref(false)
 const isLoadingMoreMessages = ref(false)
 const errorMessage = ref<string | null>(null)
 const isMobile = ref(false)
@@ -47,8 +51,12 @@ const newMessage = ref('')
 
 const messagesCurrentPage = ref(1)
 const messagesTotalPages = ref(0)
-const messagesPerPage = ref(30)
+const messagesPerPage = ref(15)
 const hasMoreMessages = ref(true)
+const topLoadThresholdPx = 8
+const bottomAutoScrollThresholdPx = 120
+const previousMessageScrollTop = ref(0)
+const hasUserScrolledAwayFromTop = ref(false)
 
 // Все чаты для админа - только support_chat типы
 const searchQuery = ref('')
@@ -112,6 +120,28 @@ const currentChat = computed(() =>
     chats.value.find(chat => chat.id === selectedChatId.value) || null
 )
 
+function getMessageTimestamp(message: ChatMessageUnion): number {
+    const createdAt = message.created_at
+    if (!createdAt) return 0
+    const timestamp = new Date(createdAt).getTime()
+    return Number.isFinite(timestamp) ? timestamp : 0
+}
+
+function shouldApplyLastMessage(
+    currentMessage?: ChatMessageUnion | null,
+    incomingMessage?: ChatMessageUnion | null,
+): boolean {
+    if (!incomingMessage) return false
+    if (!currentMessage) return true
+
+    const currentTs = getMessageTimestamp(currentMessage)
+    const incomingTs = getMessageTimestamp(incomingMessage)
+
+    if (incomingTs > currentTs) return true
+    if (incomingTs < currentTs) return false
+    return incomingMessage.id === currentMessage.id
+}
+
 function openChatProfile() {
     const username = currentChat.value?.another_user?.username
     if (!username) return
@@ -161,11 +191,13 @@ onMounted(async () => {
             )
 
             if (update.last_message && chat) {
-                chat.last_message = update.last_message
-                // Перемещаем чат наверх только когда пришло именно новое сообщение.
-                if (hasNewLastMessage) {
-                    chats.value.splice(chatIndex, 1)
-                    chats.value.unshift(chat)
+                if (shouldApplyLastMessage(chat.last_message ?? null, update.last_message)) {
+                    chat.last_message = update.last_message
+                    // Перемещаем чат наверх только когда пришло именно новое сообщение.
+                    if (hasNewLastMessage) {
+                        chats.value.splice(chatIndex, 1)
+                        chats.value.unshift(chat)
+                    }
                 }
             }
 
@@ -180,8 +212,13 @@ onMounted(async () => {
         unsubscribeNewMessage = chatsService.onNewMessage(message => {
             if (selectedChatId.value === message.chat_room_id) {
                 if (!chatMessages.value.some(m => m.id === message.id)) {
+                    const shouldStickToBottom = isNearBottom()
                     chatMessages.value.push(message)
-                    nextTick(scrollToBottom)
+                    nextTick(() => {
+                        if (shouldStickToBottom) {
+                            void bottomPin.pinFor(320)
+                        }
+                    })
 
                     const activeChat = chats.value.find(c => c.id === message.chat_room_id)
                     if (activeChat) activeChat.unread_count = 0
@@ -215,6 +252,7 @@ onMounted(async () => {
 onUnmounted(() => {
     unsubscribeNewMessage?.()
     unsubscribeChatUpdated?.()
+    bottomPin.stop()
     window.removeEventListener('resize', () => { })
 })
 
@@ -299,28 +337,42 @@ async function loadMoreChats() {
 }
 
 function scrollToBottom() {
-    let attempts = 0
-    const maxAttempts = 18
+    bottomPin.scrollNow()
+}
 
-    const applyBottomScroll = () => {
-        const el = messageContainerRef.value
-        if (!el) return
+function pinChatToBottom() {
+    return bottomPin.pinFor(1200)
+}
 
-        el.scrollTop = el.scrollHeight
-        attempts += 1
+function isNearBottom() {
+    const el = messageContainerRef.value
+    if (!el) return true
+    const distanceToBottom = el.scrollHeight - el.clientHeight - el.scrollTop
+    return distanceToBottom <= bottomAutoScrollThresholdPx
+}
 
-        if (attempts < maxAttempts) {
-            requestAnimationFrame(applyBottomScroll)
-        }
-    }
-
-    applyBottomScroll()
+function cancelChatPinning() {
+    if (!isChatPinning.value) return
+    bottomPin.stop()
+    isChatPinning.value = false
 }
 
 async function handleMessagesScroll() {
     const el = messageContainerRef.value
-    if (!el || isLoadingMoreMessages.value || !hasMoreMessages.value) return
-    if (el.scrollTop === 0) await loadMoreMessages()
+    if (!el || isChatLoading.value || isChatPinning.value || isLoadingMoreMessages.value || !hasMoreMessages.value) return
+
+    const currentScrollTop = el.scrollTop
+    if (currentScrollTop > topLoadThresholdPx) {
+        hasUserScrolledAwayFromTop.value = true
+    }
+
+    const isUserScrollingUp = currentScrollTop < (previousMessageScrollTop.value - 1)
+    previousMessageScrollTop.value = currentScrollTop
+
+    if (!hasUserScrolledAwayFromTop.value) return
+    if (isUserScrollingUp && currentScrollTop <= topLoadThresholdPx) {
+        await loadMoreMessages()
+    }
 }
 
 async function loadMoreMessages() {
@@ -342,7 +394,10 @@ async function loadMoreMessages() {
         messagesTotalPages.value = response.totalPages
         hasMoreMessages.value = messagesCurrentPage.value < messagesTotalPages.value
         await nextTick()
-        if (el) el.scrollTop = el.scrollHeight - oldHeight
+        if (el) {
+            el.scrollTop = el.scrollHeight - oldHeight
+            previousMessageScrollTop.value = el.scrollTop
+        }
     } else {
         hasMoreMessages.value = false
     }
@@ -352,32 +407,53 @@ async function loadMoreMessages() {
 
 async function loadChatMessages(chatId: string) {
     isLoading.value = true
+    isChatLoading.value = true
+    isChatPinning.value = false
     let shouldScrollToBottom = false
 
-    chatMessages.value = []
-    messagesCurrentPage.value = 1
-    hasMoreMessages.value = true
+    try {
+        hasUserScrolledAwayFromTop.value = false
+        previousMessageScrollTop.value = 0
+        chatMessages.value = []
+        messagesCurrentPage.value = 1
+        hasMoreMessages.value = true
 
-    await chatsService.joinChat(chatId)
-    selectedChatId.value = chatId
-    updateUrlChatId(chatId)
+        await chatsService.joinChat(chatId)
+        selectedChatId.value = chatId
+        updateUrlChatId(chatId)
 
-    const response = await chatsService.getChatMessages(chatId, 1, messagesPerPage.value)
-    chatMessages.value = response.messages
-    messagesTotalPages.value = response.totalPages
-    hasMoreMessages.value = 1 < messagesTotalPages.value
+        const response = await chatsService.getChatMessages(chatId, 1, messagesPerPage.value)
+        chatMessages.value = response.messages
+        messagesTotalPages.value = response.totalPages
+        hasMoreMessages.value = 1 < messagesTotalPages.value
 
-    const chat = chats.value.find(c => c.id === chatId)
-    if (chat) chat.unread_count = 0
-    void chatsService.markChatRead(chatId)
+        const chat = chats.value.find(c => c.id === chatId)
+        if (chat) chat.unread_count = 0
+        void chatsService.markChatRead(chatId)
 
-    if (isMobile.value) mobileMode.value = 'chat'
-    shouldScrollToBottom = true
-
-    isLoading.value = false
-    if (shouldScrollToBottom) {
-        await nextTick()
-        scrollToBottom()
+        if (isMobile.value) mobileMode.value = 'chat'
+        shouldScrollToBottom = true
+    } finally {
+        isLoading.value = false
+        if (shouldScrollToBottom) {
+            isChatPinning.value = true
+        }
+        isChatLoading.value = false
+        if (shouldScrollToBottom) {
+            try {
+                await nextTick()
+                await nextTick()
+                await pinChatToBottom()
+                await nextTick()
+                const container = messageContainerRef.value
+                if (container) {
+                    previousMessageScrollTop.value = container.scrollTop
+                    hasUserScrolledAwayFromTop.value = container.scrollTop > topLoadThresholdPx
+                }
+            } finally {
+                isChatPinning.value = false
+            }
+        }
     }
 }
 
@@ -393,7 +469,8 @@ async function sendMessage(payload: { files: File[] }) {
     if (text) {
         const textResult = await chatsService.sendMessage(
             text,
-            selectedChatId.value
+            selectedChatId.value,
+            { isAdminPanelMessage: true },
         )
         if (!textResult.success) return
 
@@ -409,7 +486,9 @@ async function sendMessage(payload: { files: File[] }) {
     }
 
     if (hasSentAnyMessage) {
-        nextTick(scrollToBottom)
+        nextTick(() => {
+            void bottomPin.pinFor(320)
+        })
     }
 }
 </script>
@@ -530,12 +609,14 @@ async function sendMessage(payload: { files: File[] }) {
                                         class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-dark-600 rounded-full object-cover"
                                     />
                                 </div>
-                                <div class="flex flex-col truncate">
-                                    <StyledUsername
-                                        :username="currentChat?.another_user.username || ''"
-                                        :style-id="currentChat?.another_user.nickname_style_id"
-                                        class="truncate text-lg font-semibold"
-                                    />
+                                <div class="flex min-w-0 flex-col">
+                                    <div class="w-full min-w-0 truncate">
+                                        <StyledUsername
+                                            :username="currentChat?.another_user.username || ''"
+                                            :style-id="currentChat?.another_user.nickname_style_id"
+                                            class="text-lg font-semibold"
+                                        />
+                                    </div>
                                     <p v-if="currentChat?.another_user.is_active" class="text-xs text-green-500">
                                         {{ $t('common.online') }}
                                     </p>
@@ -547,27 +628,47 @@ async function sendMessage(payload: { files: File[] }) {
                         </div>
 
                         <!-- message -->
-                        <div ref="messageContainerRef" class="flex-1 min-h-0 overflow-y-auto overscroll-y-contain pb-2"
-                            @scroll="handleMessagesScroll">
-                            <div v-if="isLoadingMoreMessages" class="flex justify-center py-2">
-                                <Loader size="sm" />
-                            </div>
-
-                            <div v-if="chatMessages.length > 0" class="flex flex-1 flex-col justify-start min-h-0">
-                                <div class="flex flex-col gap-3 py-2">
-                                    <ChatMessage v-for="message in chatMessages" :key="message.id" :message="message"
-                                        :user="user" :showAdminBadge="false" />
+                        <div class="relative flex-1 min-h-0 overflow-hidden">
+                            <div ref="messageContainerRef" class="h-full overflow-y-auto overscroll-y-contain pb-20"
+                                @scroll="handleMessagesScroll"
+                                @wheel.passive="cancelChatPinning"
+                                @touchstart.passive="cancelChatPinning"
+                                @mousedown="cancelChatPinning">
+                                <div v-if="isChatLoading" class="flex h-full w-full items-center justify-center">
+                                    <Loader />
                                 </div>
+
+                                <template v-else>
+                                    <div :class="isChatPinning ? 'opacity-0 pointer-events-none' : 'opacity-100'">
+                                        <div v-if="isLoadingMoreMessages" class="flex justify-center py-2">
+                                            <Loader size="sm" />
+                                        </div>
+
+                                        <div v-if="chatMessages.length > 0" class="flex flex-1 flex-col justify-start min-h-0">
+                                            <div class="flex flex-col gap-3 py-2">
+                                                <ChatMessage v-for="message in chatMessages" :key="message.id" :message="message"
+                                                    :user="user" :showAdminBadge="false" />
+                                            </div>
+                                        </div>
+
+                                        <div v-else-if="selectedChatId != null && chatMessages.length === 0"
+                                            class="h-full w-full flex items-center justify-center">
+                                            <p class="text-gray-400 font-light">{{ $t("pages.chats.emptyMessages") }}</p>
+                                        </div>
+
+                                        <div v-else-if="selectedChatId === null"
+                                            class="h-full w-full flex items-center justify-center">
+                                            <p class="text-gray-400 font-light">{{ $t('pages.admin.selectSupportChat') }}</p>
+                                        </div>
+                                    </div>
+                                </template>
                             </div>
 
-                            <div v-else-if="selectedChatId != null && chatMessages.length === 0"
-                                class="h-full w-full flex items-center justify-center">
-                                <p class="text-gray-400 font-light">{{ $t("pages.chats.emptyMessages") }}</p>
-                            </div>
-
-                            <div v-else-if="selectedChatId === null"
-                                class="h-full w-full flex items-center justify-center">
-                                <p class="text-gray-400 font-light">{{ $t('pages.admin.selectSupportChat') }}</p>
+                            <div
+                                v-if="isChatPinning"
+                                class="absolute inset-0 z-10 flex items-center justify-center bg-background"
+                            >
+                                <Loader />
                             </div>
                         </div>
 

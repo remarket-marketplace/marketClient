@@ -12,6 +12,27 @@ export const useChatStore = defineStore('chat', {
     unreadTotal: (state) => state.chats.reduce((sum, chat) => sum + (chat.unread_count ?? 0), 0),
   },
   actions: {
+    getMessageTimestamp(message?: ChatMessageUnion | null): number {
+      if (!message?.created_at) return 0
+      const timestamp = new Date(message.created_at).getTime()
+      return Number.isFinite(timestamp) ? timestamp : 0
+    },
+    shouldApplyLastMessage(
+      currentMessage?: ChatMessageUnion | null,
+      incomingMessage?: ChatMessageUnion | null,
+    ): boolean {
+      if (!incomingMessage) return false
+      if (!currentMessage) return true
+
+      const currentTs = this.getMessageTimestamp(currentMessage)
+      const incomingTs = this.getMessageTimestamp(incomingMessage)
+
+      if (incomingTs > currentTs) return true
+      if (incomingTs < currentTs) return false
+
+      // Equal timestamp: allow same message updates (read-state changes).
+      return incomingMessage.id === currentMessage.id
+    },
     setChats(list: ChatListItem[]) {
       this.chats = list
     },
@@ -25,7 +46,12 @@ export const useChatStore = defineStore('chat', {
     updateChatFromSocket(update: ChatUpdateSchema) {
       const chat = this.chats.find((c) => c.id === update.chat_id)
       if (!chat) return
-      if (update.last_message) chat.last_message = update.last_message as ChatMessageUnion
+      if (update.last_message) {
+        const incoming = update.last_message as ChatMessageUnion
+        if (this.shouldApplyLastMessage(chat.last_message as ChatMessageUnion | null, incoming)) {
+          chat.last_message = incoming
+        }
+      }
       if (typeof update.unread_count === 'number') chat.unread_count = update.unread_count
     },
     resetUnread(chatId: string) {

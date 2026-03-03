@@ -55,15 +55,56 @@ const container = ref<HTMLElement | null>(null)
 const isLoading = ref(true)
 const hasError = ref(false)
 let widgetId: string | null = null
+const MIN_LOADING_INDICATOR_MS = 500
 
 const SITE_KEY =
   import.meta.env.VITE_TURNSTILE_SITE_KEY ??
   '0x4AAAAAACcme7gpeL7XYdtm'
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const ensureMinLoadingIndicator = async (startedAt: number) => {
+  const elapsed = Date.now() - startedAt
+  const remaining = MIN_LOADING_INDICATOR_MS - elapsed
+  if (remaining > 0) {
+    await sleep(remaining)
+  }
+}
+
+const hasRenderedMarkup = (element: HTMLElement): boolean => {
+  return (
+    element.childElementCount > 0
+    || !!element.querySelector('iframe')
+    || !!element.querySelector('input[name="cf-turnstile-response"]')
+  )
+}
+
+const waitForRenderedWidget = async () => {
+  if (!container.value) return
+
+  const target = container.value
+  if (hasRenderedMarkup(target)) return
+
+  await new Promise<void>((resolve) => {
+    const observer = new MutationObserver(() => {
+      if (hasRenderedMarkup(target)) {
+        observer.disconnect()
+        resolve()
+      }
+    })
+    observer.observe(target, { childList: true, subtree: true })
+
+    window.setTimeout(() => {
+      observer.disconnect()
+      resolve()
+    }, 5000)
+  })
+}
+
 const waitForTurnstile = async () => {
   for (let attempt = 0; attempt < 50; attempt += 1) {
     if (window.turnstile) return
-    await new Promise((resolve) => setTimeout(resolve, 100))
+    await sleep(100)
   }
   throw new Error('Turnstile API unavailable')
 }
@@ -109,6 +150,7 @@ const loadTurnstileScript = async (): Promise<void> => {
 
 const renderTurnstile = async () => {
   if (!container.value) return
+  const loadingStartedAt = Date.now()
   isLoading.value = true
   hasError.value = false
 
@@ -117,6 +159,7 @@ const renderTurnstile = async () => {
 
     if (!window.turnstile) {
       hasError.value = true
+      await ensureMinLoadingIndicator(loadingStartedAt)
       isLoading.value = false
       emit('verified', '')
       return
@@ -134,9 +177,13 @@ const renderTurnstile = async () => {
         emit('verified', '')
       },
     })
+
+    await waitForRenderedWidget()
+    await ensureMinLoadingIndicator(loadingStartedAt)
     isLoading.value = false
   } catch {
     hasError.value = true
+    await ensureMinLoadingIndicator(loadingStartedAt)
     isLoading.value = false
     emit('verified', '')
   }

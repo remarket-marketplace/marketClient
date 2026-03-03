@@ -123,7 +123,7 @@ function closeImageModal() {
     </div>
     <p v-else>{{ imageMessage.text }}</p>
 
-    <div class="mt-1 flex items-center justify-end gap-2 text-xs text-gray-300">
+    <div class="mt-1 flex w-full items-center justify-end gap-2 text-xs text-gray-300">
       <span
         v-if="isOwnMessage"
         class="inline-flex items-center leading-none select-none transition-colors duration-200"

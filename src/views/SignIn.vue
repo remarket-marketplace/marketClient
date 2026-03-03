@@ -17,6 +17,7 @@ const sended = ref(false)
 const email = ref('')
 const password = ref('')
 const captchaToken = ref('')
+const captchaRenderKey = ref(0)
 const passwordHidden = ref(true)
 const showWelcomeScreen = ref(false)
 const welcomeUsername = ref('')
@@ -55,6 +56,11 @@ function handleWelcomeFinished() {
   router.push('/')
 }
 
+function refreshCaptcha() {
+  captchaToken.value = ''
+  captchaRenderKey.value += 1
+}
+
 async function signIn() {
   if (sended.value) return
 
@@ -76,6 +82,7 @@ async function signIn() {
 
     if (!success) {
       errorMessage.value = t('errors.INCORRECT_EMAIL_OR_PASSWORD')
+      refreshCaptcha()
       return
     }
 
@@ -104,6 +111,7 @@ async function signIn() {
     } else {
       errorMessage.value = t('errors.SERVER_ERROR')
     }
+    refreshCaptcha()
   } finally {
     sended.value = false
   }
@@ -173,7 +181,7 @@ function switchPasswordVisibility() {
           </div>
 
           <div>
-            <Captcha @verified="(token: string) => captchaToken = token" />
+            <Captcha :key="captchaRenderKey" @verified="(token: string) => captchaToken = token" />
           </div>
 
           <TheButton

@@ -20,8 +20,45 @@ let onlinePingIntervalHandle: number | null = null
 let chatSyncVersion = 0
 let isResyncingChats = false
 let needResyncChats = false
+const onlinePingIntervalMs = Number(import.meta.env.VITE_ONLINE_PING_INTERVAL_MS ?? 4000)
+const resolvedOnlinePingIntervalMs = Number.isFinite(onlinePingIntervalMs)
+  ? Math.max(1000, Math.floor(onlinePingIntervalMs))
+  : 4000
 
 const { user } = storeToRefs(store)
+
+function pingOnlineSafely() {
+  if (!user.value) return
+  void authService.pingOnlineStatus().catch(() => null)
+}
+
+function startOnlinePing() {
+  if (onlinePingIntervalHandle) return
+  pingOnlineSafely()
+  onlinePingIntervalHandle = window.setInterval(() => {
+    pingOnlineSafely()
+  }, resolvedOnlinePingIntervalMs)
+}
+
+function stopOnlinePing() {
+  if (!onlinePingIntervalHandle) return
+  clearInterval(onlinePingIntervalHandle)
+  onlinePingIntervalHandle = null
+}
+
+function handleVisibilityChange() {
+  if (document.visibilityState === 'visible') {
+    pingOnlineSafely()
+  }
+}
+
+function handleWindowFocus() {
+  pingOnlineSafely()
+}
+
+function handleWindowOnline() {
+  pingOnlineSafely()
+}
 
 async function resyncChats(userId: string, syncVersion: number) {
   if (isResyncingChats) {
@@ -87,25 +124,33 @@ watch(
   { immediate: true }
 )
 
+watch(
+  () => user.value?.id ?? null,
+  (userId) => {
+    if (userId) {
+      startOnlinePing()
+      return
+    }
+    stopOnlinePing()
+  },
+  { immediate: true }
+)
+
 onMounted(async () => {
   await store.fetchUser()
+  window.addEventListener('focus', handleWindowFocus)
+  window.addEventListener('online', handleWindowOnline)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  pingOnlineSafely()
   isUserLoaded.value = true
-
-  if (!onlinePingIntervalHandle) {
-    // пингуем для сохранения статуса онлайн
-    onlinePingIntervalHandle = window.setInterval(() => {
-      if (user.value)
-        authService.pingOnlineStatus()
-    }, 30000)
-  }
 })
 
 onUnmounted(() => {
   unsubscribeChatUpdated?.()
-  if (onlinePingIntervalHandle) {
-    clearInterval(onlinePingIntervalHandle)
-    onlinePingIntervalHandle = null
-  }
+  stopOnlinePing()
+  window.removeEventListener('focus', handleWindowFocus)
+  window.removeEventListener('online', handleWindowOnline)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 // Определяем какой layout использовать
 const layout = computed(() => {

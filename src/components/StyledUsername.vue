@@ -34,7 +34,7 @@ const customInlineStyle = computed<CSSProperties | undefined>(() => {
     backgroundClip: isGradient ? 'text' : undefined,
     WebkitBackgroundClip: isGradient ? 'text' : undefined,
     textShadow: config.glowEnabled
-      ? `0 0 6px ${rgbToRgba(config.glowColor, 0.42)}, 0 0 14px ${rgbToRgba(config.glowColor, 0.28)}`
+      ? `-2px 0 6px ${rgbToRgba(config.glowColor, 0.34)}, 2px 0 6px ${rgbToRgba(config.glowColor, 0.34)}, 0 0 14px ${rgbToRgba(config.glowColor, 0.28)}`
       : undefined,
     fontWeight: String(config.fontWeight),
     fontStyle: config.italic ? 'italic' : 'normal',
@@ -44,7 +44,9 @@ const customInlineStyle = computed<CSSProperties | undefined>(() => {
 </script>
 
 <template>
-  <span class="styled-username" :class="styleClass" :style="customInlineStyle">{{ username }}</span>
+  <span class="styled-username" :class="styleClass" :style="customInlineStyle">
+    {{ username }}
+  </span>
 </template>
 
 <style scoped>
@@ -61,7 +63,10 @@ const customInlineStyle = computed<CSSProperties | undefined>(() => {
 
 .nick-style-neon_pulse {
   color: #67e8f9;
-  text-shadow: 0 0 6px rgba(103, 232, 249, 0.45), 0 0 14px rgba(34, 211, 238, 0.28);
+  text-shadow:
+    -2px 0 6px rgba(103, 232, 249, 0.36),
+    2px 0 6px rgba(103, 232, 249, 0.36),
+    0 0 14px rgba(34, 211, 238, 0.28);
   animation: nick-neon-pulse 2.2s ease-in-out infinite;
 }
 
@@ -93,12 +98,18 @@ const customInlineStyle = computed<CSSProperties | undefined>(() => {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  text-shadow: 0 0 7px rgba(125, 211, 252, 0.35);
+  text-shadow:
+    -2px 0 6px rgba(125, 211, 252, 0.3),
+    2px 0 6px rgba(125, 211, 252, 0.3),
+    0 0 10px rgba(125, 211, 252, 0.26);
 }
 
 .nick-style-emerald_glow {
   color: #6ee7b7;
-  text-shadow: 0 0 7px rgba(52, 211, 153, 0.5), 0 0 14px rgba(5, 150, 105, 0.28);
+  text-shadow:
+    -2px 0 6px rgba(52, 211, 153, 0.38),
+    2px 0 6px rgba(52, 211, 153, 0.38),
+    0 0 14px rgba(5, 150, 105, 0.28);
 }
 
 .nick-style-lava_burst {
@@ -106,7 +117,10 @@ const customInlineStyle = computed<CSSProperties | undefined>(() => {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  text-shadow: 0 0 10px rgba(239, 68, 68, 0.25);
+  text-shadow:
+    -2px 0 7px rgba(239, 68, 68, 0.24),
+    2px 0 7px rgba(239, 68, 68, 0.24),
+    0 0 12px rgba(239, 68, 68, 0.25);
 }
 
 .nick-style-aurora_spectrum {
@@ -128,7 +142,10 @@ const customInlineStyle = computed<CSSProperties | undefined>(() => {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  text-shadow: 0 0 10px rgba(139, 92, 246, 0.4);
+  text-shadow:
+    -2px 0 8px rgba(139, 92, 246, 0.32),
+    2px 0 8px rgba(139, 92, 246, 0.32),
+    0 0 12px rgba(139, 92, 246, 0.4);
 }
 
 .nick-style-sky_bolt {
@@ -140,17 +157,26 @@ const customInlineStyle = computed<CSSProperties | undefined>(() => {
 
 .nick-style-matrix_code {
   color: #86efac;
-  text-shadow: 0 0 8px rgba(34, 197, 94, 0.45);
+  text-shadow:
+    -2px 0 6px rgba(34, 197, 94, 0.34),
+    2px 0 6px rgba(34, 197, 94, 0.34),
+    0 0 8px rgba(34, 197, 94, 0.45);
   letter-spacing: 0.02em;
 }
 
 @keyframes nick-neon-pulse {
   0%,
   100% {
-    text-shadow: 0 0 5px rgba(103, 232, 249, 0.3), 0 0 12px rgba(34, 211, 238, 0.18);
+    text-shadow:
+      -2px 0 5px rgba(103, 232, 249, 0.24),
+      2px 0 5px rgba(103, 232, 249, 0.24),
+      0 0 12px rgba(34, 211, 238, 0.18);
   }
   50% {
-    text-shadow: 0 0 9px rgba(103, 232, 249, 0.6), 0 0 16px rgba(34, 211, 238, 0.35);
+    text-shadow:
+      -2px 0 8px rgba(103, 232, 249, 0.5),
+      2px 0 8px rgba(103, 232, 249, 0.5),
+      0 0 16px rgba(34, 211, 238, 0.35);
   }
 }
 </style>
