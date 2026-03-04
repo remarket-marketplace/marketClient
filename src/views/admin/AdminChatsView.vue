@@ -590,7 +590,7 @@ async function sendMessage(payload: { files: File[] }) {
                     'pb-16': isMobile && mobileMode === 'chat',
                     'pt-16': isMobile && mobileMode === 'chat',
                 }">
-                    <div class="flex flex-1 flex-col min-h-0 w-full pb-2">
+                    <div class="flex flex-1 flex-col min-h-0 w-full">
                         <!-- chat title -->
                         <div v-if="currentChat"
                             class="flex items-center gap-2 sticky top-0 bg-background px-2 py-2 lg:py-3 lg:px-3 z-10 lg:border-b border-dark-700">
@@ -629,7 +629,7 @@ async function sendMessage(payload: { files: File[] }) {
 
                         <!-- message -->
                         <div class="relative flex-1 min-h-0 overflow-hidden">
-                            <div ref="messageContainerRef" class="h-full overflow-y-auto overscroll-y-contain pb-20"
+                            <div ref="messageContainerRef" class="h-full overflow-y-auto overscroll-y-contain pb-2"
                                 @scroll="handleMessagesScroll"
                                 @wheel.passive="cancelChatPinning"
                                 @touchstart.passive="cancelChatPinning"
@@ -660,6 +660,14 @@ async function sendMessage(payload: { files: File[] }) {
                                             class="h-full w-full flex items-center justify-center">
                                             <p class="text-gray-400 font-light">{{ $t('pages.admin.selectSupportChat') }}</p>
                                         </div>
+
+                                        <div v-if="selectedChatId" class="sticky bottom-0 z-20 mt-2 bg-transparent pb-1 pt-2">
+                                            <SendMessageBar
+                                                v-model:newMessage="newMessage"
+                                                @sendMessage="sendMessage"
+                                                class="flex-none"
+                                            />
+                                        </div>
                                     </div>
                                 </template>
                             </div>
@@ -671,9 +679,6 @@ async function sendMessage(payload: { files: File[] }) {
                                 <Loader />
                             </div>
                         </div>
-
-                        <SendMessageBar v-if="selectedChatId" v-model:newMessage="newMessage" @sendMessage="sendMessage"
-                            class="flex-none" />
                     </div>
                 </div>
             </div>

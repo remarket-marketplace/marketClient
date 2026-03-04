@@ -239,6 +239,7 @@ const en = {
     USER_WITH_THIS_EMAIL_ALREADY_EXISTS: "Email already taken",
     USER_WITH_THIS_USERNAME_ALREADY_EXISTS: "Username already taken",
     EMAIL_ALREADY_EXISTS: "Email already exists",
+    RECIPIENT_IS_BANNED: "Cannot send message: user is banned",
     NOT_ENOUGH_BALANCE: "Not enough balance",
     NICKNAME_STYLE_NOT_FOUND: "Nickname style not found",
     NICKNAME_STYLE_ALREADY_OWNED: "Style has already been purchased",
@@ -353,7 +354,7 @@ const en = {
     },
     bannedPage: {
       title: "Access is blocked",
-      description: "Your account has been banned by an administrator. You cannot sign in right now.",
+      description: "Your account has been banned by an administrator. You cannot sign in.",
       noReason: "Reason not specified",
       contactHint: "If you think this is a mistake, contact support.",
       goHome: "Go home",
@@ -719,6 +720,10 @@ const en = {
       share: "Share",
       scanQR: "Scan QR",
       favorites: "Favorites",
+      bannedStatus: "User is banned",
+      banReasonTitle: "Ban reason",
+      banReasonMissing: "Reason not specified",
+      writeBlockedBanned: "You cannot message this user because the account is banned.",
     },
 
     settingsPage: {

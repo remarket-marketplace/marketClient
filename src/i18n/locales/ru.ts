@@ -241,6 +241,7 @@ const ru = {
     USER_WITH_THIS_EMAIL_ALREADY_EXISTS: "Почта уже занята",
     USER_WITH_THIS_USERNAME_ALREADY_EXISTS: "Имя пользователя уже занято",
     EMAIL_ALREADY_EXISTS: "Email уже существует",
+    RECIPIENT_IS_BANNED: "Нельзя отправить сообщение: пользователь заблокирован",
     NOT_ENOUGH_BALANCE: "Недостаточно средств",
     NICKNAME_STYLE_NOT_FOUND: "Стиль ника не найден",
     NICKNAME_STYLE_ALREADY_OWNED: "Этот стиль уже куплен",
@@ -355,7 +356,7 @@ const ru = {
     },
     bannedPage: {
       title: "Доступ заблокирован",
-      description: "Ваш аккаунт заблокирован администратором. Вход в систему временно недоступен.",
+      description: "Ваш аккаунт заблокирован администратором. Вход в систему недоступен.",
       noReason: "Причина не указана",
       contactHint: "Если вы считаете блокировку ошибочной, обратитесь в поддержку.",
       goHome: "На главную",
@@ -718,6 +719,10 @@ const ru = {
       share: "Поделиться",
       scanQR: "Сканировать QR код",
       favorites: "Избранное",
+      bannedStatus: "Пользователь заблокирован",
+      banReasonTitle: "Причина блокировки",
+      banReasonMissing: "Причина не указана",
+      writeBlockedBanned: "Нельзя написать пользователю: аккаунт заблокирован.",
     },
 
     settingsPage: {

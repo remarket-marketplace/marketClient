@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useImages } from '@/composables/useImages';
-import { computed, onBeforeUnmount, ref } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { ImagePlus, X } from 'lucide-vue-next';
 
 const { images } = useImages()
@@ -17,8 +17,10 @@ const emit = defineEmits<{
 }>()
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
+const messageInputRef = ref<HTMLTextAreaElement | null>(null)
 const selectedFiles = ref<File[]>([])
 const previewUrls = ref<string[]>([])
+const TEXTAREA_MAX_HEIGHT_PX = 140
 
 const isDisabled = computed(() => props.disabled === true)
 const hasDraftToSend = computed(() => (
@@ -46,7 +48,17 @@ const handleSendMessage = () => {
 
 const updateMessage = (event: Event) => {
   if (isDisabled.value) return
-  emit('update:newMessage', (event.target as HTMLInputElement).value)
+  const target = event.target as HTMLTextAreaElement
+  emit('update:newMessage', target.value)
+  resizeMessageInput()
+}
+
+const resizeMessageInput = () => {
+  const textarea = messageInputRef.value
+  if (!textarea) return
+  textarea.style.height = 'auto'
+  const nextHeight = Math.min(textarea.scrollHeight, TEXTAREA_MAX_HEIGHT_PX)
+  textarea.style.height = `${nextHeight}px`
 }
 
 const openImagesPicker = () => {
@@ -81,10 +93,15 @@ const removeSelectedImage = (index: number) => {
 onBeforeUnmount(() => {
   previewUrls.value.forEach((url) => URL.revokeObjectURL(url))
 })
+
+watch(
+  () => props.newMessage,
+  () => resizeMessageInput(),
+)
 </script>
 
 <template>
-  <div class="sticky bottom-0 z-10 mt-2 flex flex-none flex-col gap-2">
+  <div class="z-10 flex flex-none flex-col gap-2">
     <div v-if="previewUrls.length > 0" class="px-1">
       <div class="mb-1 flex items-center justify-between">
         <p class="text-xs text-gray-400">{{ previewUrls.length }}/{{ MAX_IMAGES_PER_MESSAGE }}</p>
@@ -116,14 +133,14 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <div class="flex flex-none">
+    <div class="flex flex-none items-end gap-2">
       <button
         type="button"
-        class="rounded-l-2xl border border-r-0 border-white/10 bg-white/5 px-3 text-gray-300 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+        class="h-12 w-12 flex-none rounded-2xl border border-dark-600 bg-dark-700/95 text-gray-300 transition hover:bg-dark-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
         :disabled="isDisabled || selectedFiles.length >= MAX_IMAGES_PER_MESSAGE"
         @click="openImagesPicker"
       >
-        <ImagePlus class="h-5 w-5" />
+        <ImagePlus class="mx-auto h-5 w-5" />
       </button>
 
       <input
@@ -135,23 +152,30 @@ onBeforeUnmount(() => {
         @change="handleImagesSelected"
       >
 
-      <input
-        :value="props.newMessage"
-        @input="updateMessage"
-        type="text"
-        class="flex-1 rounded-none border border-white/10 bg-white/5 p-3 text-white outline-none transition placeholder:text-gray-400 focus:border-blue-400/60 disabled:cursor-not-allowed disabled:border-amber-400/40 disabled:bg-amber-500/10 disabled:opacity-60 disabled:placeholder:text-amber-200/70"
-        :placeholder="$t('pages.chats.messagePlaceholder')"
-        :disabled="isDisabled"
-        maxlength="500"
-        @keyup.enter="handleSendMessage"
+      <div
+        class="flex flex-1 items-end rounded-2xl border px-3 py-2 transition"
+        :class="isDisabled
+          ? 'border-amber-400/40 bg-amber-500/10 opacity-60'
+          : 'border-dark-600 bg-dark-700/95 focus-within:border-blue-400/60'"
       >
-      <button
-        class="rounded-r-2xl border border-l-0 border-blue-400/40 bg-blue-600/90 px-4 text-sm font-bold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:border-amber-400/40 disabled:bg-dark-500 disabled:opacity-60 disabled:hover:bg-dark-500"
-        :disabled="isDisabled || !hasDraftToSend"
-        @click="handleSendMessage"
-      >
-        <img :src="images.chat.send" alt="">
-      </button>
+        <textarea
+          ref="messageInputRef"
+          :value="props.newMessage"
+          @input="updateMessage"
+          rows="1"
+          class="max-h-[140px] min-h-8 flex-1 resize-none border-0 bg-transparent py-1 text-white outline-none placeholder:text-gray-400 disabled:cursor-not-allowed disabled:placeholder:text-amber-200/70"
+          :placeholder="$t('pages.chats.messagePlaceholder')"
+          :disabled="isDisabled"
+          maxlength="500"
+        />
+        <button
+          class="ml-2 flex h-8 w-8 flex-none items-center justify-center self-end rounded-full border border-blue-400/40 bg-blue-600/90 text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:border-amber-400/40 disabled:bg-dark-500 disabled:opacity-60 disabled:hover:bg-dark-500"
+          :disabled="isDisabled || !hasDraftToSend"
+          @click="handleSendMessage"
+        >
+          <img :src="images.chat.send" alt="" class="h-4 w-4 object-contain">
+        </button>
+      </div>
     </div>
   </div>
 </template>

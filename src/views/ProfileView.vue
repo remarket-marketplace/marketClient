@@ -48,6 +48,28 @@ const isOpeningDirectChat = ref(false)
 const directChatError = ref<string | null>(null)
 
 const isOwner = computed(() => currentUser.value?.username === username.value)
+const isProfileBanned = computed(() => !isOwner.value && Boolean(currentProfileData.value?.is_banned))
+const profileBanReason = computed(() => {
+  const profile = currentProfileData.value
+  if (!profile?.is_banned) {
+    return null
+  }
+
+  const customReason = typeof profile.ban_reason_text === 'string' ? profile.ban_reason_text.trim() : ''
+  if (customReason) {
+    return customReason
+  }
+
+  const reasonCode = typeof profile.ban_reason_code === 'string' ? profile.ban_reason_code : ''
+  if (reasonCode) {
+    const translated = t(`common.userBanReasons.${reasonCode}`)
+    if (translated !== `common.userBanReasons.${reasonCode}`) {
+      return translated
+    }
+  }
+
+  return t('pages.profile.banReasonMissing')
+})
 const profileUrl = computed(() => `${window.location.origin}/user/${username.value}`)
 const profileBackgroundImageUrl = computed(() => resolveProfileMediaUrl(currentProfileData.value?.profile_background_url))
 const profileBackgroundLayerStyle = computed(() => {
@@ -289,6 +311,10 @@ async function openDirectChat(event?: MouseEvent) {
   event?.stopPropagation()
 
   if (!username.value || isOpeningDirectChat.value) return
+  if (isProfileBanned.value) {
+    directChatError.value = t('errors.RECIPIENT_IS_BANNED')
+    return
+  }
   isOpeningDirectChat.value = true
   directChatError.value = null
 
@@ -473,6 +499,18 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
               <input ref="fileInputRef" type="file" accept="image/*" class="hidden" @change="handleAvatarUpload" />
             </div>
 
+            <div
+              v-if="currentProfileData.is_banned"
+              class="rounded-xl border border-red-500/35 bg-red-500/10 p-3 text-sm text-red-100"
+            >
+              <div class="font-semibold">
+                {{ t('pages.profile.bannedStatus') }}
+              </div>
+              <div class="mt-1 text-red-200/90">
+                {{ t('pages.profile.banReasonTitle') }}: {{ profileBanReason }}
+              </div>
+            </div>
+
             <!-- Stats -->
             <div class="grid grid-cols-3 gap-3">
               <div class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600 min-h-[76px] space-y-1">
@@ -557,7 +595,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
             </button>
 
             <button
-              v-else-if="currentUser"
+              v-else-if="currentUser && !isProfileBanned"
               type="button"
               :disabled="isOpeningDirectChat"
               @pointerdown.stop.prevent="openDirectChat"
@@ -568,6 +606,12 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
               <MessageSquare v-else class="w-4 h-4" />
               <span>{{ isOpeningDirectChat ? $t('common.loading') : $t('pages.profile.writeMessage') }}</span>
             </button>
+            <p
+              v-else-if="currentUser && isProfileBanned"
+              class="text-xs text-red-400 text-center"
+            >
+              {{ t('pages.profile.writeBlockedBanned') }}
+            </p>
             <p v-if="directChatError" class="text-xs text-red-400 text-center">{{ directChatError }}</p>
           </div>
         </div>

@@ -23,6 +23,8 @@ export const UserReadSchema = z.object({
   created_at: z.string().pipe(z.coerce.date()),
   has_frozen_balance: z.boolean(),
   is_banned: z.boolean(),
+  ban_reason_code: z.string().nullable().optional(),
+  ban_reason_text: z.string().nullable().optional(),
   is_active: z.boolean(),
   rating: z.number().int().nonnegative(),
   role: z.enum(['user', 'admin', 'partner']),
@@ -45,6 +47,8 @@ export const PublicProfileDataSchema = z.object({
   description: z.string().max(500).nullable(),
   is_active: z.boolean(),
   is_banned: z.boolean(),
+  ban_reason_code: z.string().nullable().optional(),
+  ban_reason_text: z.string().nullable().optional(),
   rating: z.number().int().nonnegative(),
   created_at: z.string().pipe(z.coerce.date()),
 })
