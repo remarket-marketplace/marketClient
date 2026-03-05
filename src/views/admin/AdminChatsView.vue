@@ -628,8 +628,8 @@ async function sendMessage(payload: { files: File[] }) {
                         </div>
 
                         <!-- message -->
-                        <div class="relative flex-1 min-h-0 overflow-hidden">
-                            <div ref="messageContainerRef" class="h-full overflow-y-auto overscroll-y-contain pb-2"
+                        <div class="relative flex flex-1 min-h-0 flex-col overflow-hidden">
+                            <div ref="messageContainerRef" class="flex-1 min-h-0 overflow-y-auto overscroll-y-contain pb-2"
                                 @scroll="handleMessagesScroll"
                                 @wheel.passive="cancelChatPinning"
                                 @touchstart.passive="cancelChatPinning"
@@ -660,16 +660,16 @@ async function sendMessage(payload: { files: File[] }) {
                                             class="h-full w-full flex items-center justify-center">
                                             <p class="text-gray-400 font-light">{{ $t('pages.admin.selectSupportChat') }}</p>
                                         </div>
-
-                                        <div v-if="selectedChatId" class="sticky bottom-0 z-20 mt-2 bg-transparent pb-1 pt-2">
-                                            <SendMessageBar
-                                                v-model:newMessage="newMessage"
-                                                @sendMessage="sendMessage"
-                                                class="flex-none"
-                                            />
-                                        </div>
                                     </div>
                                 </template>
+                            </div>
+
+                            <div v-if="selectedChatId" class="z-20 mt-2 bg-transparent pb-1 pt-2">
+                                <SendMessageBar
+                                    v-model:newMessage="newMessage"
+                                    @sendMessage="sendMessage"
+                                    class="flex-none"
+                                />
                             </div>
 
                             <div

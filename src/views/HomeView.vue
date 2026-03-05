@@ -456,7 +456,7 @@ onBeforeUnmount(() => {
         <div v-if="subCategories.length" class="mt-4 w-full">
           <div class="flex gap-2 flex-wrap">
             <button v-for="sub in subCategories" :key="sub.id" @click="onSubCategoryClick(sub.id)"
-              class="px-5 py-2.5 rounded-full text-sm font-bold border transition-colors backdrop-blur-md"
+              class="px-5 py-2.5 rounded-xl text-sm font-bold border transition-colors backdrop-blur-md"
               :class="selectedSubCategoryId === sub.id ? 'bg-blue-600 text-white border-blue-500' : 'bg-white/5 text-white border-white/10 hover:bg-white/10'">
               {{ sub.name }}
             </button>

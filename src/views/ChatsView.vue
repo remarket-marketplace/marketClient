@@ -663,7 +663,7 @@ async function sendMessage(payload: { files: File[] }) {
             </div>
 
             <div class="relative flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden">
-              <div ref="messageContainerRef" class="no-scrollbar flex h-full min-w-0 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain pb-2"
+              <div ref="messageContainerRef" class="no-scrollbar flex flex-1 min-h-0 min-w-0 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain pb-2"
                 @scroll="handleScroll"
                 @wheel.passive="cancelChatPinning"
                 @touchstart.passive="cancelChatPinning"
@@ -704,31 +704,31 @@ async function sendMessage(payload: { files: File[] }) {
                     <div v-else-if="selectedChatId === null" class="h-full w-full flex items-center justify-center">
                       <p class="text-gray-400 font-light">{{ $t('pages.chats.selectChat') }}</p>
                     </div>
-
-                    <div v-if="selectedChatId" class="sticky bottom-0 z-20 mt-2 bg-transparent pb-1 pt-2">
-                      <div
-                        v-if="lockReminderText"
-                        class="mx-1 mb-2 rounded-xl border px-3 py-2 text-sm"
-                        :class="lockReminderType === 'sender'
-                          ? 'border-amber-400/40 bg-amber-500/10 text-amber-200'
-                          : 'border-blue-400/40 bg-blue-500/10 text-blue-200'"
-                      >
-                        {{ lockReminderText }}
-                      </div>
-                      <div
-                        v-if="sendErrorMessage"
-                        class="mx-1 mb-2 rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300"
-                      >
-                        {{ sendErrorMessage }}
-                      </div>
-                      <SendMessageBar
-                        v-model:newMessage="newMessage"
-                        :disabled="isSendLocked"
-                        @sendMessage="sendMessage"
-                      />
-                    </div>
                   </div>
                 </template>
+              </div>
+
+              <div v-if="selectedChatId" class="z-20 mt-2 bg-transparent pb-1 pt-2">
+                <div
+                  v-if="lockReminderText"
+                  class="mx-1 mb-2 rounded-xl border px-3 py-2 text-sm"
+                  :class="lockReminderType === 'sender'
+                    ? 'border-amber-400/40 bg-amber-500/10 text-amber-200'
+                    : 'border-blue-400/40 bg-blue-500/10 text-blue-200'"
+                >
+                  {{ lockReminderText }}
+                </div>
+                <div
+                  v-if="sendErrorMessage"
+                  class="mx-1 mb-2 rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300"
+                >
+                  {{ sendErrorMessage }}
+                </div>
+                <SendMessageBar
+                  v-model:newMessage="newMessage"
+                  :disabled="isSendLocked"
+                  @sendMessage="sendMessage"
+                />
               </div>
 
               <div
