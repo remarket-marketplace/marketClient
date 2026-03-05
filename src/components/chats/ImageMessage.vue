@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Check, CheckCheck, X } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
+import Loader from '@/components/Loader.vue'
 const API_HOST = (import.meta.env.VITE_API_HOST || '').replace(/\/$/, '')
 
 interface ImageMessageProps {
@@ -80,13 +81,68 @@ const readStatusClass = computed(() => {
 })
 
 const selectedModalImageUrl = ref<string | null>(null)
+const modalImageLoading = ref(false)
+const modalImageError = ref(false)
+const imageLoadState = ref<Record<string, 'loading' | 'loaded' | 'error'>>({})
+
+function getImageStateKey(imageUrl: string, index: number): string {
+  return `${index}::${imageUrl}`
+}
+
+watch(
+  resolvedImageUrls,
+  (urls) => {
+    const nextState: Record<string, 'loading' | 'loaded' | 'error'> = {}
+    urls.forEach((imageUrl, index) => {
+      const key = getImageStateKey(imageUrl, index)
+      const previousState = imageLoadState.value[key]
+      nextState[key] = previousState === 'loaded' ? 'loaded' : 'loading'
+    })
+    imageLoadState.value = nextState
+  },
+  { immediate: true },
+)
+
+function isImageLoading(imageUrl: string, index: number): boolean {
+  const key = getImageStateKey(imageUrl, index)
+  return imageLoadState.value[key] === 'loading'
+}
+
+function isImageError(imageUrl: string, index: number): boolean {
+  const key = getImageStateKey(imageUrl, index)
+  return imageLoadState.value[key] === 'error'
+}
+
+function markImageLoaded(imageUrl: string, index: number) {
+  const key = getImageStateKey(imageUrl, index)
+  imageLoadState.value[key] = 'loaded'
+}
+
+function markImageError(imageUrl: string, index: number) {
+  const key = getImageStateKey(imageUrl, index)
+  imageLoadState.value[key] = 'error'
+}
 
 function openImageModal(imageUrl: string) {
   selectedModalImageUrl.value = imageUrl
+  modalImageLoading.value = true
+  modalImageError.value = false
 }
 
 function closeImageModal() {
   selectedModalImageUrl.value = null
+  modalImageLoading.value = false
+  modalImageError.value = false
+}
+
+function handleModalImageLoaded() {
+  modalImageLoading.value = false
+  modalImageError.value = false
+}
+
+function handleModalImageError() {
+  modalImageLoading.value = false
+  modalImageError.value = true
 }
 </script>
 
@@ -108,15 +164,29 @@ function closeImageModal() {
           v-for="(imageUrl, index) in resolvedImageUrls"
           :key="`${imageUrl}_${index}`"
           type="button"
-          class="block w-full overflow-hidden rounded-lg border border-white/15"
-          :class="hasSingleImage ? '' : 'aspect-square'"
+          class="relative block w-full overflow-hidden rounded-lg border border-white/15 bg-dark-700/70"
+          :class="hasSingleImage ? 'min-h-[120px]' : 'aspect-square'"
           @click="openImageModal(imageUrl)"
         >
+          <div
+            v-if="isImageLoading(imageUrl, index)"
+            class="absolute inset-0 z-10 flex items-center justify-center bg-dark-700/75"
+          >
+            <Loader size="sm" />
+          </div>
+          <div
+            v-else-if="isImageError(imageUrl, index)"
+            class="absolute inset-0 z-10 flex items-center justify-center bg-dark-700/80 px-2 text-center text-xs text-gray-300"
+          >
+            {{ t('common.noImage') }}
+          </div>
           <img
             :src="imageUrl"
             alt="chat image"
-            class="w-full object-cover"
-            :class="hasSingleImage ? 'h-auto max-h-[340px]' : 'h-full'"
+            class="w-full object-cover transition-opacity duration-200"
+            :class="[hasSingleImage ? 'h-auto max-h-[340px]' : 'h-full', isImageLoading(imageUrl, index) ? 'opacity-0' : 'opacity-100']"
+            @load="markImageLoaded(imageUrl, index)"
+            @error="markImageError(imageUrl, index)"
           >
         </button>
       </div>
@@ -155,11 +225,26 @@ function closeImageModal() {
       @click="closeImageModal"
     >
       <div class="relative mx-auto flex h-full w-full max-w-7xl items-center justify-center" @click.stop>
+        <div
+          v-if="modalImageLoading"
+          class="absolute inset-0 z-10 flex items-center justify-center"
+        >
+          <Loader />
+        </div>
+        <div
+          v-if="modalImageError"
+          class="absolute inset-0 z-10 flex items-center justify-center px-4 text-center text-sm text-gray-300"
+        >
+          {{ t('common.noImage') }}
+        </div>
         <img
           :src="selectedModalImageUrl"
           alt="Modal chat image"
-          class="max-h-full max-w-full rounded-lg object-contain"
+          class="max-h-full max-w-full rounded-lg object-contain transition-opacity duration-200"
+          :class="modalImageLoading ? 'opacity-0' : 'opacity-100'"
           loading="lazy"
+          @load="handleModalImageLoaded"
+          @error="handleModalImageError"
         >
 
         <button
