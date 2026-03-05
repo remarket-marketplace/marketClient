@@ -898,7 +898,19 @@ input[type="number"] {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-@media (min-width: 1700px) {
+@media (max-width: 359px) {
+  .profile-products-grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1536px) and (max-width: 1799px) {
+  .profile-products-grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 2100px) {
   .profile-products-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }

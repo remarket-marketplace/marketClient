@@ -218,7 +218,7 @@ const navItems = computed(() => {
       :class="showFooter ? 'min-h-screen' : 'flex flex-1 min-h-0 flex-col'"
     >
       <main :class="showFooter ? '' : 'flex-1 min-h-0 overflow-hidden'">
-        <div class="mx-auto w-full lg:px-4" :class="[{ 'pb-16': !isDesktop }, showFooter ? '' : 'h-full']">
+        <div class="mx-auto w-full lg:px-3" :class="[{ 'pb-16': !isDesktop }, showFooter ? '' : 'h-full']">
           <slot />
         </div>
       </main>

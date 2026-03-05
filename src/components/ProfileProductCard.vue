@@ -38,7 +38,7 @@ function goToSeller() {
     class="profile-product-card flex h-full cursor-pointer flex-col rounded-2xl border border-dark-700 bg-dark-900 transition duration-200 hover:border-dark-500 hover:shadow-xl"
     @click="onClick"
   >
-    <div class="relative m-1 mb-2 aspect-square w-auto overflow-hidden rounded-xl border-[0.5px] border-dark-600/70 bg-gray-700">
+    <div class="profile-product-media relative m-1 mb-2 aspect-square w-auto overflow-hidden rounded-xl border-[0.5px] border-dark-600/70 bg-gray-700">
       <img
         v-if="product.images.length"
         :src="`${API_HOST}${product.images[0]?.image_url}`"
@@ -50,12 +50,12 @@ function goToSeller() {
       </div>
     </div>
 
-    <div class="flex flex-1 flex-col px-3 pb-3">
-      <h3 class="profile-product-title mb-2 h-[2.25rem] text-sm font-semibold leading-[1.125rem] text-mainText md:h-[2.5rem] md:text-base md:leading-5">
+    <div class="profile-product-content flex min-w-0 flex-1 flex-col px-3 pb-3">
+      <h3 class="profile-product-title mb-2 h-[2.25rem] min-w-0 w-full text-sm font-semibold leading-[1.125rem] text-mainText md:h-[2.5rem] md:text-base md:leading-5">
         {{ product.title }}
       </h3>
 
-      <p class="mb-2 line-clamp-2 min-h-[2rem] text-xs text-gray-400">
+      <p class="profile-product-description mb-2 min-w-0 w-full line-clamp-2 min-h-[2rem] text-xs text-gray-400">
         {{ product.description || t('common.noDescription') }}
       </p>
 
@@ -116,7 +116,100 @@ function goToSeller() {
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  overflow-wrap: anywhere;
   word-break: break-word;
+  min-width: 0;
+}
+
+.profile-product-description {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
+  overflow: hidden;
   text-overflow: ellipsis;
+}
+
+@media (max-width: 359px), (min-width: 1536px) and (max-width: 1799px) {
+  .profile-product-card {
+    flex-direction: row;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  .profile-product-media {
+    flex: 0 0 auto;
+    max-width: calc(50% - 8px);
+    height: calc(100% - 16px);
+    aspect-ratio: auto;
+    margin: 8px 0 8px 8px;
+  }
+
+  .profile-product-content {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .profile-product-title {
+    display: block !important;
+    height: auto !important;
+    min-height: 0;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-line-clamp: 1 !important;
+    line-clamp: 1 !important;
+  }
+
+  .profile-product-description {
+    display: block;
+    min-height: 0 !important;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-line-clamp: 1 !important;
+    line-clamp: 1 !important;
+  }
+
+  .profile-product-content hr {
+    margin-bottom: 6px;
+  }
+
+  .profile-product-content .mt-auto {
+    gap: 6px;
+  }
+}
+
+@media (max-width: 359px) {
+  .profile-product-card {
+    height: 118px;
+    min-height: 118px;
+    max-height: 118px;
+  }
+
+  .profile-product-media {
+    width: 44%;
+  }
+
+  .profile-product-content {
+    padding: 8px 10px;
+  }
+}
+
+@media (min-width: 1536px) and (max-width: 1799px) {
+  .profile-product-card {
+    height: 142px;
+    min-height: 142px;
+    max-height: 142px;
+  }
+
+  .profile-product-media {
+    width: clamp(160px, 36%, 200px);
+  }
+
+  .profile-product-content {
+    padding: 10px 14px 10px 12px;
+  }
 }
 </style>
