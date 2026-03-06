@@ -436,9 +436,13 @@ async function connectTelegram() {
   notificationsErrorMessage.value = null
   notificationsSuccessMessage.value = null
   isTelegramConnectLoading.value = true
+  const pendingWindow = window.open('', '_blank', 'noopener,noreferrer')
 
   const result = await settingsService.createTelegramConnectLink()
   if (!result.success || !result.data) {
+    if (pendingWindow && !pendingWindow.closed) {
+      pendingWindow.close()
+    }
     notificationsErrorMessage.value = getErrorMessage(
       result.error,
       t as unknown as (key: string) => string,
@@ -447,7 +451,11 @@ async function connectTelegram() {
     return
   }
 
-  window.open(result.data.connect_url, '_blank', 'noopener,noreferrer')
+  if (pendingWindow && !pendingWindow.closed) {
+    pendingWindow.location.href = result.data.connect_url
+  } else {
+    window.location.assign(result.data.connect_url)
+  }
   setNotificationsSuccessMessage(t('pages.settingsPage.notificationsConnectLinkOpened'))
   isTelegramConnectLoading.value = false
 }
