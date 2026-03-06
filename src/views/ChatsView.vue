@@ -673,7 +673,7 @@ async function sendMessage(payload: { files: File[] }) {
                 </div>
 
                 <template v-else>
-                  <div :class="isChatPinning ? 'opacity-0 pointer-events-none' : 'opacity-100'">
+                  <div :class="isChatPinning ? 'h-full opacity-0 pointer-events-none' : 'h-full opacity-100'">
                     <div v-if="isLoadingMoreMessages" class="flex justify-center py-2">
                       <Loader size="sm" />
                     </div>
