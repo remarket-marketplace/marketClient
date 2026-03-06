@@ -10,7 +10,7 @@ import { useI18n } from 'vue-i18n'
 import SuccessMessage from '@/components/SuccessMessage.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
-import { AtSign, Key, Loader2, Lock, Palette, Shield, ImagePlus } from 'lucide-vue-next'
+import { AtSign, Bell, Key, Loader2, Lock, Mail, Palette, Send, Shield, ImagePlus, Link2Off } from 'lucide-vue-next'
 import BackButton from '@/components/navigation/BackButton.vue'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
@@ -28,8 +28,9 @@ import type {
   NicknameStyleCatalogItem,
   NicknameStyleCatalogResponse,
 } from '@/validation/user/nicknameStyle'
+import type { NotificationSettings } from '@/validation/user/notificationSettings'
 
-type SettingsSection = 'security' | 'nickname' | 'nickname-styles'
+type SettingsSection = 'security' | 'notifications' | 'nickname' | 'nickname-styles'
 type ColorPickerGroup = 'primary' | 'secondary' | 'glow'
 
 const NICKNAME_MIN_LENGTH = 4
@@ -57,6 +58,13 @@ const changingUsername = ref('')
 const isChangingUsername = ref(false)
 const usernameErrorMessage = ref<string | null>(null)
 const usernameSuccessMessage = ref<string | null>(null)
+const notificationsData = ref<NotificationSettings | null>(null)
+const notificationsErrorMessage = ref<string | null>(null)
+const notificationsSuccessMessage = ref<string | null>(null)
+const isNotificationsLoading = ref(false)
+const isNotificationsSaving = ref(false)
+const isTelegramConnectLoading = ref(false)
+const isTelegramDisconnectLoading = ref(false)
 
 const isStylesLoading = ref(false)
 const stylesErrorMessage = ref<string | null>(null)
@@ -127,6 +135,15 @@ const profileBackgroundUnlocked = computed(() => user.value?.profile_background_
 const profileBackgroundPreviewUrl = computed(() =>
   resolveProfileMediaUrl(user.value?.profile_background_url),
 )
+const emailNotificationsEnabled = computed(
+  () => notificationsData.value?.email_notifications_enabled ?? true,
+)
+const telegramNotificationsEnabled = computed(
+  () => notificationsData.value?.telegram_notifications_enabled ?? false,
+)
+const telegramConnected = computed(() => notificationsData.value?.telegram_connected === true)
+const telegramUsername = computed(() => notificationsData.value?.telegram_username ?? null)
+const telegramBotUsername = computed(() => notificationsData.value?.telegram_bot_username ?? null)
 const activeSection = computed<SettingsSection>(() => normalizeSettingsSection(route.query.section))
 const canChangeUsername = computed(() => {
   const normalized = changingUsername.value.trim()
@@ -182,7 +199,12 @@ const customStyleActionLabel = computed(() => {
 
 function normalizeSettingsSection(value: unknown): SettingsSection {
   const raw = Array.isArray(value) ? value[0] : value
-  if (raw === 'security' || raw === 'nickname' || raw === 'nickname-styles') {
+  if (
+    raw === 'security'
+    || raw === 'notifications'
+    || raw === 'nickname'
+    || raw === 'nickname-styles'
+  ) {
     return raw
   }
   return 'security'
@@ -219,6 +241,15 @@ function setUsernameSuccessMessage(value: string) {
   window.setTimeout(() => {
     if (usernameSuccessMessage.value === value) {
       usernameSuccessMessage.value = null
+    }
+  }, 2600)
+}
+
+function setNotificationsSuccessMessage(value: string) {
+  notificationsSuccessMessage.value = value
+  window.setTimeout(() => {
+    if (notificationsSuccessMessage.value === value) {
+      notificationsSuccessMessage.value = null
     }
   }, 2600)
 }
@@ -338,6 +369,108 @@ function handleOutsidePaletteClick(event: MouseEvent) {
   if (target && !paletteContainer.contains(target)) {
     activeColorPalette.value = null
   }
+}
+
+function applyNotificationSettings(data: NotificationSettings) {
+  notificationsData.value = data
+}
+
+async function loadNotificationSettings() {
+  isNotificationsLoading.value = true
+  notificationsErrorMessage.value = null
+
+  const result = await settingsService.getNotificationSettings()
+  if (!result.success || !result.data) {
+    notificationsErrorMessage.value = getErrorMessage(
+      result.error,
+      t as unknown as (key: string) => string,
+    )
+    isNotificationsLoading.value = false
+    return
+  }
+
+  applyNotificationSettings(result.data)
+  isNotificationsLoading.value = false
+}
+
+async function updateNotificationSettings(payload: {
+  email_notifications_enabled?: boolean
+  telegram_notifications_enabled?: boolean
+}) {
+  if (isNotificationsSaving.value) return
+  notificationsErrorMessage.value = null
+  notificationsSuccessMessage.value = null
+  isNotificationsSaving.value = true
+
+  const result = await settingsService.updateNotificationSettings(payload)
+  if (!result.success || !result.data) {
+    notificationsErrorMessage.value = getErrorMessage(
+      result.error,
+      t as unknown as (key: string) => string,
+    )
+    isNotificationsSaving.value = false
+    return
+  }
+
+  applyNotificationSettings(result.data)
+  setNotificationsSuccessMessage(t('pages.settingsPage.notificationsSaved'))
+  isNotificationsSaving.value = false
+}
+
+async function toggleEmailNotifications() {
+  if (!notificationsData.value) return
+  await updateNotificationSettings({
+    email_notifications_enabled: !notificationsData.value.email_notifications_enabled,
+  })
+}
+
+async function toggleTelegramNotifications() {
+  if (!notificationsData.value || !telegramConnected.value) return
+  await updateNotificationSettings({
+    telegram_notifications_enabled: !notificationsData.value.telegram_notifications_enabled,
+  })
+}
+
+async function connectTelegram() {
+  if (isTelegramConnectLoading.value) return
+  notificationsErrorMessage.value = null
+  notificationsSuccessMessage.value = null
+  isTelegramConnectLoading.value = true
+
+  const result = await settingsService.createTelegramConnectLink()
+  if (!result.success || !result.data) {
+    notificationsErrorMessage.value = getErrorMessage(
+      result.error,
+      t as unknown as (key: string) => string,
+    )
+    isTelegramConnectLoading.value = false
+    return
+  }
+
+  window.open(result.data.connect_url, '_blank', 'noopener,noreferrer')
+  setNotificationsSuccessMessage(t('pages.settingsPage.notificationsConnectLinkOpened'))
+  isTelegramConnectLoading.value = false
+}
+
+async function disconnectTelegram() {
+  if (isTelegramDisconnectLoading.value || !telegramConnected.value) return
+  notificationsErrorMessage.value = null
+  notificationsSuccessMessage.value = null
+  isTelegramDisconnectLoading.value = true
+
+  const result = await settingsService.disconnectTelegram()
+  if (!result.success || !result.data) {
+    notificationsErrorMessage.value = getErrorMessage(
+      result.error,
+      t as unknown as (key: string) => string,
+    )
+    isTelegramDisconnectLoading.value = false
+    return
+  }
+
+  applyNotificationSettings(result.data)
+  setNotificationsSuccessMessage(t('pages.settingsPage.notificationsSaved'))
+  isTelegramDisconnectLoading.value = false
 }
 
 function getStyleDescription(styleId: string) {
@@ -686,6 +819,9 @@ watch(
     if (section === 'nickname-styles' && !stylesCatalog.value && !isStylesLoading.value) {
       void loadNicknameStyles()
     }
+    if (section === 'notifications' && !notificationsData.value && !isNotificationsLoading.value) {
+      void loadNotificationSettings()
+    }
   },
   { immediate: true },
 )
@@ -783,14 +919,22 @@ onUnmounted(() => {
                 </div>
               </button>
 
-              <div class="flex items-center gap-3 p-3 rounded-lg hover:bg-dark-700/50 transition-colors cursor-not-allowed opacity-50">
+              <button
+                type="button"
+                class="w-full flex items-center gap-3 p-3 rounded-lg text-left transition"
+                :class="isSectionActive('notifications')
+                  ? 'bg-amber-600/20 border border-amber-500/30'
+                  : 'border border-transparent hover:bg-dark-700/60'"
+                @click="switchSection('notifications')"
+              >
                 <div class="w-8 h-8 rounded-full bg-dark-700 flex items-center justify-center">
-                  <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
+                  <Bell class="w-4 h-4" :class="isSectionActive('notifications') ? 'text-amber-300' : 'text-gray-400'" />
                 </div>
-                <span class="text-sm text-gray-400">{{ $t('pages.settingsPage.notifications') }}</span>
-              </div>
+                <div>
+                  <h3 class="font-semibold text-white">{{ $t('pages.settingsPage.notificationsMenu') }}</h3>
+                  <p class="text-xs text-gray-300">{{ $t('pages.settingsPage.notificationsHint') }}</p>
+                </div>
+              </button>
             </div>
 
             <div
@@ -969,6 +1113,102 @@ onUnmounted(() => {
                 <Loader2 v-if="isChangingUsername" class="w-4 h-4 animate-spin" />
                 <span>{{ isChangingUsername ? t('pages.settingsPage.savingNickname') : t('pages.settingsPage.saveNickname') }}</span>
               </button>
+            </div>
+          </div>
+
+          <div v-else-if="activeSection === 'notifications'" class="space-y-6">
+            <div>
+              <h2 class="text-xl font-bold text-white">{{ $t('pages.settingsPage.notificationsSectionTitle') }}</h2>
+              <p class="text-sm text-gray-400">{{ $t('pages.settingsPage.notificationsSectionHint') }}</p>
+            </div>
+
+            <div v-if="isNotificationsLoading" class="rounded-xl border border-dark-700 bg-dark-600/40 p-6">
+              <div class="flex items-center gap-2 text-sm text-gray-300">
+                <Loader2 class="w-4 h-4 animate-spin" />
+                <span>{{ t('common.loading') }}</span>
+              </div>
+            </div>
+
+            <div v-else class="rounded-xl border border-dark-700 bg-dark-600/40 p-6 space-y-5">
+              <div class="rounded-xl border border-dark-700 bg-dark-700/30 p-4 flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 text-white font-semibold">
+                    <Mail class="w-4 h-4 text-blue-300" />
+                    <span>{{ $t('pages.settingsPage.notificationsEmailTitle') }}</span>
+                  </div>
+                  <p class="mt-1 text-xs text-gray-300">{{ $t('pages.settingsPage.notificationsEmailHint') }}</p>
+                </div>
+                <Checkbox
+                  size="md"
+                  :model-value="emailNotificationsEnabled"
+                  :disabled="isNotificationsSaving"
+                  @update:model-value="toggleEmailNotifications"
+                />
+              </div>
+
+              <div class="rounded-xl border border-dark-700 bg-dark-700/30 p-4 space-y-3">
+                <div class="flex items-center justify-between gap-3">
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-2 text-white font-semibold">
+                      <Send class="w-4 h-4 text-emerald-300" />
+                      <span>{{ $t('pages.settingsPage.notificationsTelegramTitle') }}</span>
+                    </div>
+                    <p class="mt-1 text-xs text-gray-300">{{ $t('pages.settingsPage.notificationsTelegramHint') }}</p>
+                  </div>
+                  <Checkbox
+                    size="md"
+                    :model-value="telegramNotificationsEnabled"
+                    :disabled="isNotificationsSaving || !telegramConnected"
+                    @update:model-value="toggleTelegramNotifications"
+                  />
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 text-xs">
+                  <span
+                    class="inline-flex items-center rounded-full px-2.5 py-1 font-semibold"
+                    :class="telegramConnected ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/15 text-amber-200 border border-amber-500/30'"
+                  >
+                    {{ telegramConnected ? $t('pages.settingsPage.notificationsTelegramConnected') : $t('pages.settingsPage.notificationsTelegramNotConnected') }}
+                  </span>
+                  <span v-if="telegramUsername" class="text-gray-300">@{{ telegramUsername }}</span>
+                  <span v-if="telegramBotUsername" class="text-gray-400">bot: @{{ telegramBotUsername }}</span>
+                </div>
+
+                <p class="text-xs text-gray-400">{{ $t('pages.settingsPage.notificationsTelegramStartHint') }}</p>
+
+                <div class="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    :disabled="isTelegramConnectLoading"
+                    @click="connectTelegram"
+                  >
+                    <Loader2 v-if="isTelegramConnectLoading" class="w-4 h-4 animate-spin" />
+                    <span>{{ isTelegramConnectLoading ? $t('pages.settingsPage.notificationsTelegramConnecting') : $t('pages.settingsPage.notificationsTelegramConnect') }}</span>
+                  </button>
+
+                  <button
+                    v-if="telegramConnected"
+                    type="button"
+                    class="inline-flex items-center gap-2 rounded-lg border border-dark-600 px-3 py-2 text-sm font-semibold text-gray-200 hover:bg-dark-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    :disabled="isTelegramDisconnectLoading"
+                    @click="disconnectTelegram"
+                  >
+                    <Loader2 v-if="isTelegramDisconnectLoading" class="w-4 h-4 animate-spin" />
+                    <Link2Off v-else class="w-4 h-4" />
+                    <span>{{ $t('pages.settingsPage.notificationsTelegramDisconnect') }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <ErrorMessage
+                v-if="notificationsErrorMessage"
+                :error-message="notificationsErrorMessage"
+              />
+              <SuccessMessage
+                v-if="notificationsSuccessMessage"
+                :success-message="notificationsSuccessMessage"
+              />
             </div>
           </div>
 
