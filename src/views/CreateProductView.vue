@@ -311,9 +311,10 @@ onMounted(async () => {
 })
 
 watch(selectedCategoryId, async (newCategory) => {
+  selectedSubcategoryId.value = ''
+
   if (!newCategory) {
     subcategories.value = []
-    selectedSubcategoryId.value = ''
     return
   }
   try {
@@ -511,7 +512,9 @@ async function createProduct() {
               </label>
               <CustomSelect v-model="selectedCategoryId"
                 :options="categories.map(c => ({ label: c.name, value: c.id }))"
-                :placeholder="t('pages.forms.createProduct.selectCategory')" class="w-full" />
+                :placeholder="t('pages.forms.createProduct.selectCategory')"
+                searchable
+                class="w-full" />
             </div>
 
             <div v-if="subcategories.length" class="space-y-2">
@@ -521,7 +524,9 @@ async function createProduct() {
               </label>
               <CustomSelect v-model="selectedSubcategoryId"
                 :options="subcategories.map(s => ({ label: s.name, value: s.id }))"
-                :placeholder="t('pages.forms.createProduct.selectSubcategory')" class="w-full" />
+                :placeholder="t('pages.forms.createProduct.selectSubcategory')"
+                searchable
+                class="w-full" />
             </div>
           </div>
 

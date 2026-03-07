@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { Icon } from '@iconify/vue'
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ChevronDown, ChevronUp } from 'lucide-vue-next'
 
@@ -16,6 +15,8 @@ const props = defineProps<{
   label?: string
   disabled?: boolean
   required?: boolean
+  searchable?: boolean
+  searchPlaceholder?: string
 }>()
 
 const emit = defineEmits<{
@@ -27,12 +28,28 @@ const { t } = useI18n()
 // Состояния
 const isOpen = ref(false)
 const wrapperRef = ref<HTMLElement | null>(null)
+const searchInputRef = ref<HTMLInputElement | null>(null)
+const searchQuery = ref('')
+
+const filteredOptions = computed(() => {
+  if (!props.searchable) return props.options
+
+  const normalizedQuery = searchQuery.value.trim().toLowerCase()
+  if (!normalizedQuery) return props.options
+
+  return props.options.filter(option => option.label.toLowerCase().includes(normalizedQuery))
+})
+
+function closeDropdown() {
+  isOpen.value = false
+  searchQuery.value = ''
+}
 
 // Закрытие при клике вне
 function handleClickOutside(e: MouseEvent) {
   const target = e.target as Node
   if (wrapperRef.value && !wrapperRef.value.contains(target)) {
-    isOpen.value = false
+    closeDropdown()
   }
 }
 
@@ -40,14 +57,27 @@ onMounted(() => document.addEventListener('click', handleClickOutside))
 onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
 
 function toggle() {
-  if (!props.disabled)
-    isOpen.value = !isOpen.value
+  if (props.disabled) return
+
+  if (isOpen.value) {
+    closeDropdown()
+    return
+  }
+
+  isOpen.value = true
 }
 
 function selectOption(value: string | number) {
   emit('update:modelValue', value)
-  isOpen.value = false
+  closeDropdown()
 }
+
+watch(isOpen, async (opened) => {
+  if (!opened || !props.searchable) return
+
+  await nextTick()
+  searchInputRef.value?.focus()
+})
 </script>
 
 <template>
@@ -61,7 +91,7 @@ function selectOption(value: string | number) {
       @click="toggle"
     >
       <span class="truncate text-left">
-        <template v-if="modelValue">
+        <template v-if="modelValue !== null && modelValue !== ''">
           {{ options.find(opt => opt.value === modelValue)?.label }}
         </template>
         <template v-else>
@@ -80,15 +110,26 @@ function selectOption(value: string | number) {
         role="listbox"
         tabindex="-1"
       >
+        <li v-if="searchable" class="px-2 pb-1">
+          <input
+            ref="searchInputRef"
+            v-model="searchQuery"
+            type="text"
+            class="w-full rounded-md border border-dark-700 bg-dark-700 px-3 py-2 text-sm text-mainText outline-none placeholder-gray-400"
+            :placeholder="searchPlaceholder ?? t('common.search')"
+            @click.stop
+          />
+        </li>
+
         <li
-          v-if="!options.length"
+          v-if="!filteredOptions.length"
           class="select-none px-4 py-2 text-sm text-gray-400"
         >
           {{ $t('common.noOptions') }}
         </li>
 
         <li
-          v-for="opt in options"
+          v-for="opt in filteredOptions"
           :key="opt.value"
           class="flex cursor-pointer items-center justify-between px-4 py-2 text-sm text-mainText hover:bg-dark-700"
           :class="{ 'bg-dark-700': modelValue === opt.value }"

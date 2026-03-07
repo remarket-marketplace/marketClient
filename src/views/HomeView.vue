@@ -429,34 +429,34 @@ onBeforeUnmount(() => {
         <SearchField v-model="searchQuery" :placeholder="$t('pages.index.searchPlaceholder')"
           @search-change="debouncedSearch" class="w-full lg:max-w-2xl" />
 
-        <div class="mt-16 w-full">
+        <div class="mt-10 w-full sm:mt-16">
           <Title :text="t('common.categories')" />
 
-          <div v-if="isCategoriesLoading" class="flex gap-3 overflow-x-auto">
-            <div v-for="n in 5" :key="n" class="w-20 h-20 bg-dark-600 animate-pulse rounded-lg" />
+          <div v-if="isCategoriesLoading" class="flex gap-2 overflow-x-auto sm:gap-3">
+            <div v-for="n in 5" :key="n" class="h-16 w-16 bg-dark-600 animate-pulse rounded-lg sm:h-20 sm:w-20" />
           </div>
 
           <div v-else ref="categoriesScroll" 
                @wheel="handleCategoriesWheel"
                class="overflow-x-auto overflow-y-hidden w-full relative">
-            <div class="flex gap-3 min-w-max py-2">
+            <div class="flex min-w-max gap-2 py-1.5 sm:gap-3 sm:py-2">
               <div v-for="cat in mainCategories" :key="cat.id" @click="onMainCategoryClick(cat.id)"
-                class="flex-shrink-0 cursor-pointer flex flex-col items-center p-2 rounded-lg transition" 
+                class="flex-shrink-0 cursor-pointer flex flex-col items-center p-1.5 rounded-lg transition sm:p-2"
                 :class="selectedMainCategoryId === cat.id ? 'bg-white/20' : ''">
-                <div class="w-16 h-16 flex items-center justify-center bg-dark-700 rounded-lg overflow-hidden border border-white/5 shadow-inner">
+                <div class="h-12 w-12 flex items-center justify-center bg-dark-700 rounded-lg overflow-hidden border border-white/5 shadow-inner sm:h-16 sm:w-16">
                   <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="w-full h-full object-cover" />
-                  <Folder v-else class="w-8 h-8 text-gray-400" />
+                  <Folder v-else class="h-6 w-6 text-gray-400 sm:h-8 sm:w-8" />
                 </div>
-                <span class="text-sm mt-2 text-center truncate w-16 font-medium">{{ cat.name }}</span>
+                <span class="mt-1.5 w-12 truncate text-center text-xs font-medium leading-tight sm:mt-2 sm:w-16 sm:text-sm">{{ cat.name }}</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div v-if="subCategories.length" class="mt-4 w-full">
-          <div class="flex gap-2 flex-wrap">
+        <div v-if="subCategories.length" class="mt-3 w-full sm:mt-4">
+          <div class="flex flex-wrap gap-1.5 sm:gap-2">
             <button v-for="sub in subCategories" :key="sub.id" @click="onSubCategoryClick(sub.id)"
-              class="px-5 py-2.5 rounded-xl text-sm font-bold border transition-colors backdrop-blur-md"
+              class="rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors backdrop-blur-md sm:rounded-xl sm:px-5 sm:py-2.5 sm:text-sm sm:font-bold"
               :class="selectedSubCategoryId === sub.id ? 'bg-blue-600 text-white border-blue-500' : 'bg-white/5 text-white border-white/10 hover:bg-white/10'">
               {{ sub.name }}
             </button>
