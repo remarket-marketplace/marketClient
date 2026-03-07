@@ -66,6 +66,7 @@ export type ActivityLogFilters = {
 export type PlatformSettings = {
   registration_enabled: boolean
   product_creation_enabled: boolean
+  telegram_integration_enabled: boolean
 }
 
 export const adminService = {

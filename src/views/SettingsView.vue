@@ -141,6 +141,9 @@ const emailNotificationsEnabled = computed(
 const telegramNotificationsEnabled = computed(
   () => notificationsData.value?.telegram_notifications_enabled ?? false,
 )
+const telegramIntegrationEnabled = computed(
+  () => notificationsData.value?.telegram_integration_enabled !== false,
+)
 const telegramConnected = computed(() => notificationsData.value?.telegram_connected === true)
 const telegramUsername = computed(() => notificationsData.value?.telegram_username ?? null)
 const telegramBotUsername = computed(() => notificationsData.value?.telegram_bot_username ?? null)
@@ -1154,7 +1157,10 @@ onUnmounted(() => {
                 />
               </div>
 
-              <div class="rounded-xl border border-dark-700 bg-dark-700/30 p-4 space-y-3">
+              <div
+                v-if="telegramIntegrationEnabled"
+                class="rounded-xl border border-dark-700 bg-dark-700/30 p-4 space-y-3"
+              >
                 <div class="flex items-center justify-between gap-3">
                   <div class="min-w-0">
                     <div class="flex items-center gap-2 text-white font-semibold">

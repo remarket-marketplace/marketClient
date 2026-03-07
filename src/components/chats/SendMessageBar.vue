@@ -46,6 +46,17 @@ const handleSendMessage = () => {
   clearSelectedImages()
 }
 
+const handleMessageKeydown = (event: KeyboardEvent) => {
+  if (event.key !== 'Enter') return
+  if (event.isComposing) return
+
+  // New line is available with Shift/Ctrl/Cmd + Enter.
+  if (event.shiftKey || event.ctrlKey || event.metaKey) return
+
+  event.preventDefault()
+  handleSendMessage()
+}
+
 const updateMessage = (event: Event) => {
   if (isDisabled.value) return
   const target = event.target as HTMLTextAreaElement
@@ -162,6 +173,7 @@ watch(
           ref="messageInputRef"
           :value="props.newMessage"
           @input="updateMessage"
+          @keydown="handleMessageKeydown"
           rows="1"
           class="max-h-[140px] min-h-8 flex-1 resize-none border-0 bg-transparent py-1 text-white outline-none placeholder:text-gray-400 disabled:cursor-not-allowed disabled:placeholder:text-amber-200/70"
           :placeholder="$t('pages.chats.messagePlaceholder')"

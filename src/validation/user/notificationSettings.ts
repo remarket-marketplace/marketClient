@@ -4,6 +4,7 @@ export const NotificationSettingsSchema = z.object({
   email_notifications_enabled: z.boolean(),
   telegram_notifications_enabled: z.boolean(),
   telegram_connected: z.boolean(),
+  telegram_integration_enabled: z.boolean().optional().transform((value) => value ?? true),
   telegram_username: z.string().nullable().optional().transform((value) => value ?? null),
   telegram_bot_username: z.string().nullable().optional().transform((value) => value ?? null),
 })

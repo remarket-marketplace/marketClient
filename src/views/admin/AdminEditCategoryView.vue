@@ -122,7 +122,7 @@ onMounted(loadCategory)
 </script>
 
 <template>
-  <div class=" h-full w-full flex flex-col items-center overflow-scroll pb-36">
+  <div class=" h-full w-full flex flex-col items-center overflow-scroll pb-36 pt-3 md:pt-4">
     <div class="w-full">
       <BackButton/>
     </div>

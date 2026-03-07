@@ -132,7 +132,7 @@ watch(
 </script>
 
 <template>
-  <section class="h-full w-full flex flex-col gap-3 sm:gap-6 overflow-hidden">
+  <section class="h-full w-full flex flex-col gap-3 sm:gap-6 overflow-hidden pt-3 md:pt-4">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
       <div class="flex items-center gap-2">
         <BackButton />

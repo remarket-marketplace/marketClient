@@ -223,7 +223,7 @@ watch(isActive, (value) => {
 </script>
 
 <template>
-  <div class=" h-full w-full flex flex-col items-center overflow-scroll pb-36">
+  <div class=" h-full w-full flex flex-col items-center overflow-scroll pb-36 pt-3 md:pt-4">
     <div class="max-w-md w-full border border-dark-700 rounded-2xl bg-background p-6 sm:p-8 backdrop-blur-md space-y-6">
       <div class="text-center">
         <h1 class="text-2xl sm:text-3xl text-mainText font-bold">

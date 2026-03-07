@@ -37,7 +37,7 @@ const isPlatformSettingsSaving = ref(false)
 const platformSettingsError = ref('')
 const platformSettingsSuccess = ref('')
 const pendingPlatformToggle = ref<{
-  key: 'registration_enabled' | 'product_creation_enabled'
+  key: 'registration_enabled' | 'product_creation_enabled' | 'telegram_integration_enabled'
   nextValue: boolean
 } | null>(null)
 
@@ -389,6 +389,14 @@ const openProductCreationToggleConfirm = async () => {
   }
 }
 
+const openTelegramIntegrationToggleConfirm = async () => {
+  if (!platformSettings.value) return
+  pendingPlatformToggle.value = {
+    key: 'telegram_integration_enabled',
+    nextValue: !platformSettings.value.telegram_integration_enabled,
+  }
+}
+
 const closePlatformToggleConfirm = () => {
   if (isPlatformSettingsSaving.value) return
   pendingPlatformToggle.value = null
@@ -406,9 +414,14 @@ const platformToggleConfirmMessage = computed(() => {
       ? t('pages.admin.mainPage.confirmRegistrationEnableMessage')
       : t('pages.admin.mainPage.confirmRegistrationDisableMessage')
   }
+  if (key === 'product_creation_enabled') {
+    return nextValue
+      ? t('pages.admin.mainPage.confirmProductCreationEnableMessage')
+      : t('pages.admin.mainPage.confirmProductCreationDisableMessage')
+  }
   return nextValue
-    ? t('pages.admin.mainPage.confirmProductCreationEnableMessage')
-    : t('pages.admin.mainPage.confirmProductCreationDisableMessage')
+    ? t('pages.admin.mainPage.confirmTelegramIntegrationEnableMessage')
+    : t('pages.admin.mainPage.confirmTelegramIntegrationDisableMessage')
 })
 
 const confirmPlatformToggle = async () => {
@@ -433,7 +446,7 @@ watch(selectedRange, loadDashboard)
 </script>
 
 <template>
-  <section class="h-full w-full flex flex-col gap-4 overflow-hidden pb-6">
+  <section class="h-full w-full flex flex-col gap-4 overflow-hidden pb-6 pt-3 md:pt-4">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div class="space-y-1">
         <p class="text-xs uppercase tracking-[0.2em] text-gray-400">
@@ -498,7 +511,7 @@ watch(selectedRange, loadDashboard)
             {{ platformSettingsSuccess }}
           </div>
 
-          <div v-if="platformSettings" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div v-if="platformSettings" class="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
               <p class="text-sm text-gray-200 font-medium">
                 {{ t('pages.admin.mainPage.registrationToggleLabel') }}
@@ -539,6 +552,29 @@ watch(selectedRange, loadDashboard)
               >
                 {{
                   platformSettings.product_creation_enabled
+                    ? t('pages.admin.mainPage.enabled')
+                    : t('pages.admin.mainPage.disabled')
+                }}
+              </button>
+            </div>
+
+            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
+              <p class="text-sm text-gray-200 font-medium">
+                {{ t('pages.admin.mainPage.telegramIntegrationToggleLabel') }}
+              </p>
+              <p class="mt-1 text-xs text-gray-400">
+                {{ t('pages.admin.mainPage.telegramIntegrationToggleHint') }}
+              </p>
+              <button
+                class="mt-3 rounded-lg border px-3 py-2 text-xs font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
+                :class="platformSettings.telegram_integration_enabled
+                  ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25'
+                  : 'border-red-500/40 bg-red-500/15 text-red-200 hover:bg-red-500/25'"
+                :disabled="isPlatformSettingsSaving"
+                @click="openTelegramIntegrationToggleConfirm"
+              >
+                {{
+                  platformSettings.telegram_integration_enabled
                     ? t('pages.admin.mainPage.enabled')
                     : t('pages.admin.mainPage.disabled')
                 }}
