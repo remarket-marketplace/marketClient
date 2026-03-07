@@ -155,6 +155,10 @@ const navItems = computed(() => {
 
   return items
 })
+
+const mobileNavGridStyle = computed(() => ({
+  gridTemplateColumns: `repeat(${Math.max(1, navItems.value.length)}, minmax(0, 1fr))`,
+}))
 </script>
 
 <template>
@@ -224,9 +228,9 @@ const navItems = computed(() => {
       </main>
   
       <nav class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-30 h-14 border-t border-gray-700 md:hidden">
-        <div class="mx-auto h-full w-full flex items-center justify-around">
+        <div class="mx-auto grid h-full w-full items-center" :style="mobileNavGridStyle">
           <router-link v-for="item in navItems" :key="item.id" :to="item.to"
-            class="flex flex-col items-center justify-center px-1 transition-all duration-300 relative group" :class="{
+            class="relative flex min-w-0 flex-col items-center justify-center px-0.5 transition-all duration-300 group" :class="{
               'opacity-100': isActiveRouteMobile(item),
               'opacity-70': !isActiveRouteMobile(item)
             }">
@@ -245,7 +249,7 @@ const navItems = computed(() => {
               </span>
             </div>
             <span
-              class="menu-label text-center text-xs font-light leading-none mt-1 transition-colors duration-300 group-hover:text-white"
+              class="menu-label mt-1 max-w-full truncate px-0.5 text-center text-[10px] font-light leading-none transition-colors duration-300 group-hover:text-white"
               :class="[
                 isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400',
                 item.admin ? 'text-purple-300' : '',
