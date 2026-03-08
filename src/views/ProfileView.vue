@@ -14,7 +14,7 @@ import { useI18n } from 'vue-i18n'
 import type { Product } from '@/validation/product/product'
 import type { PublicProfileData, UserRead } from '@/validation/user/userRead'
 import type { ReviewSchema } from '@/validation/review/review'
-import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart, Edit, Calendar, Star, Package, ShoppingBag, MessageSquare, Award, TrendingUp, Loader2 } from 'lucide-vue-next'
+import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart, Edit, Calendar, Package, ShoppingBag, MessageSquare, Award, TrendingUp, Loader2 } from 'lucide-vue-next'
 import QrcodeVue from 'qrcode.vue'
 import type { Deal } from '@/validation/deal/deal'
 import UserRating from '@/components/UserRating.vue'
@@ -413,15 +413,6 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                   :style-id="currentProfileData.nickname_style_id"
                   class="max-w-[220px] text-xl font-bold"
                 />
-                <div v-if="currentProfileData.rating > 0" class="flex items-center gap-2">
-                  <div class="flex items-center gap-1 px-2 py-1 rounded-lg bg-yellow-500/10 border border-yellow-400/30">
-                    <Star class="w-4 h-4 text-yellow-300 fill-yellow-300" />
-                    <span class="text-sm font-semibold text-yellow-200">{{ currentProfileData.rating }}</span>
-                  </div>
-                  <span class="text-[11px] text-gray-400 whitespace-nowrap">
-                    {{ $t('pages.profile.ratingPeriodShort') }}
-                  </span>
-                </div>
               </div>
 
               <div v-if="isOwner" class="relative" ref="menuContainerRef">
