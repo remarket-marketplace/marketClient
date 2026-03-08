@@ -22,7 +22,8 @@ import { formatCurrencyAmount, getCurrencySymbol, resolvePreferredCurrency } fro
 import { storeToRefs } from 'pinia'
 
 const API_HOST = import.meta.env.VITE_API_HOST
-const RAIKA_BOT_URL = 'https://t.me/Raika_CheckBot'
+const RAIKA_BOT_URL = 'https://raika.gg'
+const RAIKA_LOGO_URL = '/raika-logo.png'
 const route = useRoute('/product/[productId]')
 const router = useRouter()
 const { locale, t } = useI18n()
@@ -540,16 +541,24 @@ onUnmounted(() => {
           v-if="product.is_raika_verified"
           class="rounded-lg border border-emerald-700/40 bg-emerald-900/20 p-3 text-xs text-emerald-200"
         >
-          <p>
-            {{ $t('pages.product.raikaVerifiedPrefix') }}
-            <a
-              :href="RAIKA_BOT_URL"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="underline decoration-emerald-300/60 underline-offset-2 hover:text-emerald-100 transition-colors"
-            >
-              {{ $t('pages.product.raikaName') }}
-            </a>
+          <p class="flex flex-wrap items-center gap-1.5">
+            <img
+              :src="RAIKA_LOGO_URL"
+              alt="Raika logo"
+              class="h-4 w-4 rounded-sm object-contain shrink-0"
+              loading="lazy"
+            />
+            <span>
+              {{ $t('pages.product.raikaVerifiedPrefix') }}
+              <a
+                :href="RAIKA_BOT_URL"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="underline decoration-emerald-300/60 underline-offset-2 hover:text-emerald-100 transition-colors"
+              >
+                {{ $t('pages.product.raikaName') }}
+              </a>
+            </span>
           </p>
         </div>
 
