@@ -21,6 +21,7 @@ import SearchField from '@/components/SearchField.vue';
 import CustomSelect from '@/components/CustomSelect.vue';
 import ConfirmWindow from '@/components/ConfirmWindow.vue';
 import { formatCurrencyAmount } from '@/utils/currency';
+import { buildSlugKey } from '@/utils/urlKeys';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -92,8 +93,10 @@ function navigateToProfile(username: string) {
   router.push(`/user/${username}`);
 }
 
-function navigateToProduct(productId: string) {
-  router.push(`/product/${productId}`);
+function navigateToProduct(productId: string, productSlug?: string | null) {
+  const productKey = buildSlugKey(productSlug, productId, 'product');
+  if (!productKey) return;
+  router.push(`/product/${productKey}`);
 }
 
 async function approveProduct(productId: string) {
@@ -418,7 +421,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
                     :src="`${API_HOST}${product.images[0]?.image_url}`"
                     :alt="product.title"
                     class="w-12 h-12 sm:w-20 sm:h-20 rounded-lg object-cover border border-dark-400 cursor-pointer"
-                    @click="navigateToProduct(product.id)"
+                    @click="navigateToProduct(product.id, product.slug)"
                   />
                 </div>
               </div>
@@ -430,7 +433,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
                   <div class="flex flex-col gap-1">
                     <h3 
                       class="text-sm sm:text-lg font-semibold text-mainText line-clamp-2 cursor-pointer"
-                      @click="navigateToProduct(product.id)"
+                      @click="navigateToProduct(product.id, product.slug)"
                     >
                       {{ product.title }}
                     </h3>
@@ -461,7 +464,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
               <div class="hidden lg:flex h-[max-content]">
                 <div class="flex gap-2">
                   <button
-                    @click="navigateToProduct(product.id)"
+                    @click="navigateToProduct(product.id, product.slug)"
                     class="admin-btn admin-btn-primary px-4 py-3 text-xs"
                   >
                     <Search class="w-4 h-4" />
@@ -508,7 +511,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
             <div class="flex lg:hidden flex-col gap-1 sm:gap-2">
               <!-- Кнопка просмотра -->
               <button
-                @click="navigateToProduct(product.id)"
+                @click="navigateToProduct(product.id, product.slug)"
                 class="admin-btn admin-btn-primary admin-btn-xs justify-center flex-1"
               >
                 <Search class="w-3 h-3" />

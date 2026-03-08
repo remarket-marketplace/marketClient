@@ -11,6 +11,7 @@ import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import { RefreshCcw } from 'lucide-vue-next';
 import { useUserStore } from '@/stores/user';
 import { formatCurrencyAmount } from '@/utils/currency';
+import { buildProductKey } from '@/utils/urlKeys';
 
 const API_HOST = import.meta.env.VITE_API_HOST;
 
@@ -120,8 +121,10 @@ async function handleReport(dealId: string) {
   }
 }
 
-function handleViewProduct(productId: string) {
-  router.push(`/product/${productId}`);
+function handleViewProduct(product: Product) {
+  const productKey = buildProductKey(product);
+  if (!productKey) return;
+  router.push(`/product/${productKey}`);
 }
 
 async function handleSendReview(productId: string) {
@@ -140,7 +143,7 @@ async function handleSendReview(productId: string) {
   <div class="my-2 w-full min-w-0">
     <div class="w-full min-w-0 overflow-hidden rounded-xl bg-gray-800/20 shadow-lg">
       <div class="flex flex-col gap-4 p-4 sm:flex-row sm:items-start">
-        <div class="flex-shrink-0 sm:w-1/3 min-w-0 cursor-pointer" @click="handleViewProduct(product.id)">
+        <div class="flex-shrink-0 sm:w-1/3 min-w-0 cursor-pointer" @click="handleViewProduct(product)">
           <div class="relative aspect-square rounded-lg overflow-hidden bg-gray-700 border border-gray-600">
             <img :src="`${API_HOST}${product.images?.[0]?.image_url}`" :alt="product.title"
               class="h-full w-full object-cover" loading="lazy" />
@@ -149,7 +152,7 @@ async function handleSendReview(productId: string) {
 
         <div class="flex-1 text-mainText space-y-3 min-w-0">
           <h3 class="cursor-pointer text-lg font-bold text-white transition-colors duration-200 line-clamp-2"
-            @click="handleViewProduct(product.id)">
+            @click="handleViewProduct(product)">
             {{ product.title }}
           </h3>
 

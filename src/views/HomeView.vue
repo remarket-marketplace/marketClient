@@ -21,6 +21,7 @@ import {
   getCurrencySymbol,
   preferredCurrency,
 } from '@/utils/currency'
+import { buildCategoryKey } from '@/utils/urlKeys'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -168,13 +169,15 @@ async function onPricePresetClick(preset: PricePreset) {
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 
-function goToProduct(id: string) {
-  router.push({ path: `/product/${id}` })
+function goToProduct(productKey: string) {
+  if (!productKey) return
+  router.push({ path: `/product/${productKey}` })
 }
 
-function goToCategoryPage(id: string) {
-  if (!id) return
-  router.push({ path: `/category/${id}` })
+function goToCategoryPage(category: Category) {
+  const categoryKey = buildCategoryKey(category)
+  if (!categoryKey) return
+  router.push({ path: `/category/${categoryKey}` })
 }
 
 function resolveCategoryImageUrl(imageUrl: string | null): string {
@@ -299,8 +302,8 @@ async function loadMoreMainCategories() {
   isLoadingMoreCategories.value = false
 }
 
-function onMainCategoryClick(id: string) {
-  goToCategoryPage(id)
+function onMainCategoryClick(category: Category) {
+  goToCategoryPage(category)
 }
 
 async function loadMoreSubCategories() {
@@ -482,7 +485,7 @@ onBeforeUnmount(() => {
             :key="`search-category-${category.id}`"
             type="button"
             class="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-white transition hover:bg-dark-600"
-            @click="goToCategoryPage(category.id)"
+            @click="goToCategoryPage(category)"
           >
             <img
               v-if="category.image_url"
@@ -506,7 +509,7 @@ onBeforeUnmount(() => {
                @wheel="handleCategoriesWheel"
                class="overflow-x-auto overflow-y-hidden w-full relative">
             <div class="flex min-w-max gap-2 py-1.5 sm:gap-3 sm:py-2">
-              <div v-for="cat in mainCategories" :key="cat.id" @click="onMainCategoryClick(cat.id)"
+              <div v-for="cat in mainCategories" :key="cat.id" @click="onMainCategoryClick(cat)"
                 class="flex-shrink-0 cursor-pointer flex flex-col items-center p-1.5 rounded-lg transition sm:p-2">
                 <div class="h-12 w-12 flex items-center justify-center bg-dark-700 rounded-lg overflow-hidden border border-white/5 shadow-inner sm:h-16 sm:w-16">
                   <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="w-full h-full object-cover" />

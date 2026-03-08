@@ -21,6 +21,7 @@ export const SellerSchema = z.object({
 
 export const ProductSchema = z.object({
   id: UUIDSchema,
+  slug: z.string(),
   title: z.string(),
   description: z.string(),
   is_sold: z.boolean(),

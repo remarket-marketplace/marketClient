@@ -27,6 +27,7 @@ import ProductStatusTag from '@/components/ProductStatusTag.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import CustomSelect from '@/components/CustomSelect.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
+import { buildSlugKey } from '@/utils/urlKeys'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -94,8 +95,10 @@ function goToProfile(username: string) {
   router.push(`/user/${username}`)
 }
 
-function goToProduct(productId: string) {
-  router.push(`/product/${productId}`)
+function goToProduct(productId: string, productSlug?: string | null) {
+  const productKey = buildSlugKey(productSlug, productId, 'product')
+  if (!productKey) return
+  router.push(`/product/${productKey}`)
 }
 
 // Загрузка данных
@@ -358,7 +361,7 @@ onMounted(async () => {
                   <Package class="w-5 h-5 text-blue-400" />
                   {{ $t('pages.admin.dealPage.productInfo') }}
                 </h2>
-                <button @click="goToProduct(deal.product.id)"
+                <button @click="goToProduct(deal.product.id, deal.product.slug)"
                   class="admin-btn admin-btn-primary admin-btn-sm">
                   <ExternalLink class="w-4 h-4" />
                   {{ $t('common.view') }}
@@ -370,13 +373,13 @@ onMounted(async () => {
                 <div class="flex-shrink-0">
                   <img :src="getProductImageUrl()" :alt="deal.product.title"
                     class="w-24 h-24 rounded-lg object-cover border border-dark-400 cursor-pointer"
-                    @click="goToProduct(deal.product.id)" />
+                    @click="goToProduct(deal.product.id, deal.product.slug)" />
                 </div>
 
                 <!-- Product details -->
                 <div class="flex-1 min-w-0">
                   <h3 class="text-xl font-semibold text-white mb-2 line-clamp-2 cursor-pointer"
-                    @click="goToProduct(deal.product.id)">
+                    @click="goToProduct(deal.product.id, deal.product.slug)">
                     {{ deal.product.title }}
                   </h3>
 

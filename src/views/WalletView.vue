@@ -26,6 +26,7 @@ import {
   getCurrencySymbol,
   preferredCurrency,
 } from '@/utils/currency'
+import { buildSlugKey } from '@/utils/urlKeys'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -472,7 +473,11 @@ const typeLabel = (type: string) => {
                         {{ formatDate(tx.created_at) }}
                       </div>
                       <div class="text-xs text-gray-500" v-if="tx.title">
-                        <router-link v-if="tx.product_id" :to="`/product/${tx.product_id}`" class="text-blue-400 hover:underline">
+                        <router-link
+                          v-if="tx.product_id"
+                          :to="`/product/${buildSlugKey(tx.title, tx.product_id, 'product')}`"
+                          class="text-blue-400 hover:underline"
+                        >
                           {{ tx.title }}
                         </router-link>
                         <span v-else>{{ tx.title }}</span>

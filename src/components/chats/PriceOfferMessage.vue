@@ -6,6 +6,7 @@ import { getErrorMessage } from '@/utils/errorsMap'
 import { formatCurrencyAmount } from '@/utils/currency'
 import type { ChatMessageUnion } from '@/validation/chat/chatMessage'
 import { useRouter } from 'vue-router'
+import { buildProductKey } from '@/utils/urlKeys'
 
 const props = defineProps<{
   message: Extract<ChatMessageUnion, { message_type: 'price_offer_message' }>
@@ -68,8 +69,10 @@ async function rejectOffer() {
   isProcessing.value = false
 }
 
-function handleViewProduct(productId: string) {
-  router.push(`/product/${productId}`)
+function handleViewProduct() {
+  const productKey = buildProductKey(props.message.product)
+  if (!productKey) return
+  router.push(`/product/${productKey}`)
 }
 </script>
 
@@ -78,7 +81,7 @@ function handleViewProduct(productId: string) {
     <div class="w-full min-w-0 overflow-hidden rounded-xl border border-dark-700 bg-dark-800/40 p-4">
       <div
         class="mb-3 flex w-full min-w-0 cursor-pointer gap-3 rounded-lg border border-dark-700 bg-dark-700/45 p-3 transition hover:bg-dark-700/70"
-        @click="handleViewProduct(message.product.id)"
+        @click="handleViewProduct"
       >
         <div class="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-dark-600 bg-dark-800">
           <img

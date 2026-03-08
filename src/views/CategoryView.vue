@@ -9,6 +9,7 @@ import type { Product } from '@/validation/product/product'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import { buildCategoryKey, extractIdFromSlugKey } from '@/utils/urlKeys'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -17,7 +18,7 @@ const API_HOST = import.meta.env.VITE_API_HOST
 
 const category = ref<Category | null>(null)
 const subcategories = ref<Category[]>([])
-const selectedSubcategoryId = ref('')
+const selectedSubcategorySlug = ref('')
 const products = ref<Product[]>([])
 const currentPage = ref(1)
 const totalPages = ref(1)
@@ -28,8 +29,8 @@ const isLoadingMore = ref(false)
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 
-const categoryId = computed(() => String(route.params.categoryId ?? ''))
-const requestedSubcategoryId = computed(() => {
+const categoryKey = computed(() => String(route.params.categoryId ?? ''))
+const requestedSubcategoryRaw = computed(() => {
   const subcategory = route.query.subcategory
   if (Array.isArray(subcategory)) {
     return String(subcategory[0] ?? '')
@@ -51,33 +52,54 @@ function resolveCategoryImageUrl(imageUrl: string | null): string {
   return `${API_HOST}${imageUrl}`
 }
 
-function goToProduct(id: string) {
-  router.push({ path: `/product/${id}` })
+function goToProduct(productKey: string) {
+  if (!productKey) return
+  router.push({ path: `/product/${productKey}` })
 }
 
-function getActiveCategoryFilterId() {
-  return selectedSubcategoryId.value || categoryId.value
+function getSubcategoryBySlug(slug: string) {
+  return subcategories.value.find((subcategory) => subcategory.slug === slug) ?? null
 }
 
-async function onSubcategoryClick(id: string) {
-  if (!id) {
+function getSubcategoryByQueryKey(key: string) {
+  const normalizedKey = key.trim()
+  if (!normalizedKey) return null
+
+  const bySlug = getSubcategoryBySlug(normalizedKey)
+  if (bySlug) return bySlug
+
+  const extractedId = extractIdFromSlugKey(normalizedKey)
+  if (!extractedId) return null
+  return subcategories.value.find((subcategory) => subcategory.id === extractedId) ?? null
+}
+
+function getActiveCategoryFilterKey() {
+  if (!selectedSubcategorySlug.value) {
+    return categoryKey.value
+  }
+  return selectedSubcategorySlug.value
+}
+
+async function onSubcategoryClick(slug: string) {
+  if (!slug) {
     return
   }
 
-  if (selectedSubcategoryId.value === id) {
-    selectedSubcategoryId.value = ''
+  if (selectedSubcategorySlug.value === slug) {
+    selectedSubcategorySlug.value = ''
   } else {
-    selectedSubcategoryId.value = id
+    selectedSubcategorySlug.value = slug
   }
 
-  if (selectedSubcategoryId.value) {
+  const resolvedCategoryKey = buildCategoryKey(category.value) || categoryKey.value
+  if (selectedSubcategorySlug.value) {
     await router.replace({
-      path: `/category/${categoryId.value}`,
-      query: { subcategory: selectedSubcategoryId.value },
+      path: `/category/${resolvedCategoryKey}`,
+      query: { subcategory: selectedSubcategorySlug.value },
     })
   } else {
     await router.replace({
-      path: `/category/${categoryId.value}`,
+      path: `/category/${resolvedCategoryKey}`,
       query: {},
     })
   }
@@ -87,16 +109,46 @@ async function onSubcategoryClick(id: string) {
 
 async function loadCategoryMeta() {
   isCategoryLoading.value = true
-  category.value = await categoryService.getCategoryById(categoryId.value)
-  const subcategoriesResponse = await categoryService.getSubcategories(categoryId.value, 1, 100)
+  category.value = await categoryService.getCategoryById(categoryKey.value)
+  const resolvedCategoryKey = buildCategoryKey(category.value) || categoryKey.value
+
+  if (!category.value) {
+    subcategories.value = []
+    selectedSubcategorySlug.value = ''
+    isCategoryLoading.value = false
+    return
+  }
+
+  if (resolvedCategoryKey && resolvedCategoryKey !== categoryKey.value) {
+    await router.replace({
+      path: `/category/${resolvedCategoryKey}`,
+      query: route.query,
+    })
+  }
+
+  const subcategoriesResponse = await categoryService.getSubcategories(resolvedCategoryKey, 1, 100)
   subcategories.value = subcategoriesResponse.categories
-  if (
-    requestedSubcategoryId.value
-    && subcategories.value.some((subcategory) => subcategory.id === requestedSubcategoryId.value)
-  ) {
-    selectedSubcategoryId.value = requestedSubcategoryId.value
+  const requestedSubcategory = getSubcategoryByQueryKey(requestedSubcategoryRaw.value)
+  if (requestedSubcategory) {
+    selectedSubcategorySlug.value = requestedSubcategory.slug
+    const canonicalSubcategoryKey = requestedSubcategory.slug
+    if (
+      canonicalSubcategoryKey
+      && canonicalSubcategoryKey !== requestedSubcategoryRaw.value
+    ) {
+      await router.replace({
+        path: `/category/${resolvedCategoryKey}`,
+        query: { subcategory: canonicalSubcategoryKey },
+      })
+    }
   } else {
-    selectedSubcategoryId.value = ''
+    selectedSubcategorySlug.value = ''
+    if (requestedSubcategoryRaw.value) {
+      await router.replace({
+        path: `/category/${resolvedCategoryKey}`,
+        query: {},
+      })
+    }
   }
   isCategoryLoading.value = false
 }
@@ -107,7 +159,7 @@ async function loadCategoryProducts(page = 1, append = false) {
   if (!append) isProductsLoading.value = true
 
   const response = await productService.getProductsByCategory(
-    getActiveCategoryFilterId(),
+    getActiveCategoryFilterKey(),
     page,
     perPage.value,
   )
@@ -120,7 +172,7 @@ async function loadCategoryProducts(page = 1, append = false) {
 }
 
 async function loadCategoryPageData() {
-  if (!categoryId.value) return
+  if (!categoryKey.value) return
   await loadCategoryMeta()
   await loadCategoryProducts(1, false)
 }
@@ -130,34 +182,35 @@ async function loadMoreProducts() {
   await loadCategoryProducts(currentPage.value + 1, true)
 }
 
-watch(categoryId, async () => {
+watch(categoryKey, async () => {
   await loadCategoryPageData()
 })
 
-watch(requestedSubcategoryId, async (newValue) => {
+watch(requestedSubcategoryRaw, async (newValue) => {
   if (!newValue) {
-    if (!selectedSubcategoryId.value) {
+    if (!selectedSubcategorySlug.value) {
       return
     }
-    selectedSubcategoryId.value = ''
+    selectedSubcategorySlug.value = ''
     await loadCategoryProducts(1, false)
     return
   }
 
-  if (!subcategories.value.some((subcategory) => subcategory.id === newValue)) {
-    if (!selectedSubcategoryId.value) {
+  const resolvedSubcategory = getSubcategoryByQueryKey(newValue)
+  if (!resolvedSubcategory) {
+    if (!selectedSubcategorySlug.value) {
       return
     }
-    selectedSubcategoryId.value = ''
+    selectedSubcategorySlug.value = ''
     await loadCategoryProducts(1, false)
     return
   }
 
-  if (selectedSubcategoryId.value === newValue) {
+  if (selectedSubcategorySlug.value === resolvedSubcategory.slug) {
     return
   }
 
-  selectedSubcategoryId.value = newValue
+  selectedSubcategorySlug.value = resolvedSubcategory.slug
   await loadCategoryProducts(1, false)
 })
 
@@ -234,10 +287,10 @@ onBeforeUnmount(() => {
             :key="subcategory.id"
             type="button"
             class="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm text-white transition"
-            :class="selectedSubcategoryId === subcategory.id
+            :class="selectedSubcategorySlug === subcategory.slug
               ? 'border-blue-500 bg-blue-600/20'
               : 'border-dark-600 bg-dark-700/30 hover:bg-dark-700/50'"
-            @click="onSubcategoryClick(subcategory.id)"
+            @click="onSubcategoryClick(subcategory.slug)"
           >
             <img
               v-if="subcategory.image_url"

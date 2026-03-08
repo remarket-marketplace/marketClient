@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 import DealStatusTag from '../DealStatusTag.vue';
 import { useRouter } from 'vue-router';
 import { formatCurrencyAmount } from '@/utils/currency';
+import { buildProductKey } from '@/utils/urlKeys';
 
 defineProps<{
     product: Product | null,
@@ -16,8 +17,10 @@ const API_HOST = import.meta.env.VITE_API_HOST
 const { t } = useI18n()
 const router = useRouter()
 
-function handleViewProduct(productId: string) {
-  router.push(`/product/${productId}`)
+function handleViewProduct(product: Product | null) {
+  const productKey = buildProductKey(product)
+  if (!productKey) return
+  router.push(`/product/${productKey}`)
 }
 </script>
 
@@ -30,7 +33,7 @@ function handleViewProduct(productId: string) {
 
         <!-- Product -->
         <div
-          @click="handleViewProduct(product!.id)"
+          @click="handleViewProduct(product)"
           class="mt-3 flex w-full min-w-0 cursor-pointer items-center gap-3 overflow-hidden rounded-md bg-gray-800/50 p-2"
         >
             <img v-if="product?.images[0]?.image_url" :src="`${API_HOST}${product.images[0].image_url}`" alt="product"

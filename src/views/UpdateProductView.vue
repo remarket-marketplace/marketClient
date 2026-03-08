@@ -20,6 +20,7 @@ import {
   preferredCurrency,
   setUsdRubRate,
 } from '@/utils/currency'
+import { buildProductKey } from '@/utils/urlKeys'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const route = useRoute()
@@ -345,7 +346,7 @@ async function updateProduct() {
     )
 
     if (result) {
-      router.push(`/product/${productId.value}`)
+      router.push(`/product/${buildProductKey(result)}`)
     } else {
       errorMessage.value = t('pages.forms.editProduct.errorUpdatingProduct')
     }
@@ -367,7 +368,10 @@ async function updateProduct() {
 </script>
 
 <template>
-  <div v-if="isLoadingProduct" class="w-full h-full flex items-center justify-center">
+  <div
+    v-if="isLoadingProduct"
+    class="w-full min-h-[calc(100dvh-7rem)] md:min-h-[calc(100dvh-3.5rem)] flex items-center justify-center"
+  >
     <Loader />
   </div>
 

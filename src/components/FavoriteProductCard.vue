@@ -7,6 +7,7 @@ import { productService } from '@/api/product/ProductService'
 import UserAvatar from '@/components/UserAvatar.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
+import { buildProductKey } from '@/utils/urlKeys'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -22,7 +23,7 @@ const emit = defineEmits<{
 const API_HOST = import.meta.env.VITE_API_HOST
 
 function onClick() {
-  router.push(`/product/${props.product.id}`)
+  router.push(`/product/${buildProductKey(props.product)}`)
 }
 
 function goToSeller(e: Event) {

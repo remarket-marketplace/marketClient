@@ -7,6 +7,7 @@ import ProductStatusTag from './ProductStatusTag.vue'
 import UserRating from './UserRating.vue'
 import StyledUsername from './StyledUsername.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
+import { buildProductKey } from '@/utils/urlKeys'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -17,14 +18,14 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  click: [id: string]
+  click: [productKey: string]
 }>()
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
 
 function onClick() {
-  emit('click', props.product.id)
+  emit('click', buildProductKey(props.product))
 }
 
 function goToSeller() {

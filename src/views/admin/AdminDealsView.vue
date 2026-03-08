@@ -25,6 +25,7 @@ import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import CustomSelect from '@/components/CustomSelect.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
+import { buildSlugKey } from '@/utils/urlKeys'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -71,8 +72,10 @@ function goToProfile(username: string) {
   router.push(`/user/${username}`)
 }
 
-function goToProduct(productId: string) {
-  router.push(`/product/${productId}`)
+function goToProduct(productId: string, productSlug?: string | null) {
+  const productKey = buildSlugKey(productSlug, productId, 'product')
+  if (!productKey) return
+  router.push(`/product/${productKey}`)
 }
 
 const normalizedQuery = computed(() => searchQuery.value.trim().toLowerCase())
@@ -449,11 +452,11 @@ watch([searchQuery, sortBy, statusFilter], () => {
               <div class="flex-shrink-0">
                 <img :src="getProductImageUrl(deal)" :alt="deal.product.title"
                   class="w-20 h-20 sm:w-24 sm:h-24 rounded-lg object-cover border border-dark-400 cursor-pointer"
-                  @click="goToProduct(deal.product.id)" />
+                  @click="goToProduct(deal.product.id, deal.product.slug)" />
               </div>
               <div class="flex-1 min-w-0">
                 <h3 class="text-lg sm:text-xl font-semibold text-mainText line-clamp-2 mb-2 cursor-pointer"
-                  @click="goToProduct(deal.product.id)">
+                  @click="goToProduct(deal.product.id, deal.product.slug)">
                   {{ deal.product.title }}
                 </h3>
                 <div class="flex items-center gap-2 text-sm text-text-secondary mb-2">

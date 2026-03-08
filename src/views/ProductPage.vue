@@ -20,6 +20,7 @@ import UserAvatar from '@/components/UserAvatar.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
 import { formatCurrencyAmount, getCurrencySymbol, resolvePreferredCurrency } from '@/utils/currency'
 import { storeToRefs } from 'pinia'
+import { buildCategoryKey, buildProductKey } from '@/utils/urlKeys'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const NORMALIZED_API_HOST = String(API_HOST || '').replace(/\/$/, '')
@@ -28,7 +29,13 @@ const RAIKA_LOGO_URL = `${NORMALIZED_API_HOST}/assets/raika-logo.png`
 const route = useRoute('/product/[productId]')
 const router = useRouter()
 const { locale, t } = useI18n()
-const productId = computed(() => String(route.params.productId ?? ''))
+const PRODUCT_PAGE_ROUTE_NAME = 'product page'
+const productKey = computed(() => {
+  if (route.name !== PRODUCT_PAGE_ROUTE_NAME) {
+    return ''
+  }
+  return String(route.params.productId ?? '')
+})
 
 
 const store = useUserStore()
@@ -107,8 +114,8 @@ async function loadCategoryBreadcrumb(category: Category | null | undefined) {
 }
 
 async function loadSimilarProducts(baseProduct: Product) {
-  const categoryId = baseProduct.category?.id
-  if (!categoryId) {
+  const categoryKey = buildCategoryKey(baseProduct.category)
+  if (!categoryKey) {
     similarProducts.value = []
     return
   }
@@ -131,7 +138,7 @@ async function loadSimilarProducts(baseProduct: Product) {
   }
 
   const firstPageResponse = await productService.getProductsByCategory(
-    categoryId,
+    categoryKey,
     1,
     SIMILAR_PRODUCTS_LIMIT + 1,
   )
@@ -141,7 +148,7 @@ async function loadSimilarProducts(baseProduct: Product) {
   let nextPage = 2
   while (collected.length < SIMILAR_PRODUCTS_LIMIT && nextPage <= firstPageResponse.totalPages) {
     const nextPageResponse = await productService.getProductsByCategory(
-      categoryId,
+      categoryKey,
       nextPage,
       SIMILAR_PRODUCTS_LIMIT + 1,
     )
@@ -154,7 +161,7 @@ async function loadSimilarProducts(baseProduct: Product) {
 }
 
 async function loadProductData() {
-  if (!productId.value) return
+  if (!productKey.value) return
 
   product.value = null
   selectedImage.value = null
@@ -162,10 +169,15 @@ async function loadProductData() {
   similarProducts.value = []
 
   try {
-    product.value = await productService.getProductById(productId.value) ?? null
+    product.value = await productService.getProductById(productKey.value) ?? null
     selectedImage.value = product.value?.images?.[0] ?? null
     if (!product.value) {
       return
+    }
+
+    const canonicalProductKey = buildProductKey(product.value)
+    if (canonicalProductKey && canonicalProductKey !== productKey.value) {
+      await router.replace({ path: `/product/${canonicalProductKey}` })
     }
 
     await Promise.all([
@@ -188,24 +200,30 @@ onMounted(async () => {
   await loadProductData()
 })
 
-function goToCategoryPage(categoryId: string) {
-  if (!categoryId) return
-  router.push({ path: `/category/${categoryId}` })
+function goToCategoryPage(category: Category | null | undefined) {
+  const categoryKey = buildCategoryKey(category)
+  if (!categoryKey) return
+  router.push({ path: `/category/${categoryKey}` })
 }
 
-function goToCategoryPageWithSubcategory(categoryId: string, subcategoryId: string) {
-  if (!categoryId || !subcategoryId) return
+function goToCategoryPageWithSubcategory(
+  category: Category | null | undefined,
+  subcategory: Category | null | undefined,
+) {
+  const categoryKey = buildCategoryKey(category)
+  const subcategoryKey = buildCategoryKey(subcategory)
+  if (!categoryKey || !subcategoryKey) return
   router.push({
-    path: `/category/${categoryId}`,
-    query: { subcategory: subcategoryId },
+    path: `/category/${categoryKey}`,
+    query: { subcategory: subcategoryKey },
   })
 }
 
-function goToProductPage(id: string) {
-  if (!id || id === productId.value) {
+function goToProductPage(nextProductKey: string) {
+  if (!nextProductKey || nextProductKey === productKey.value) {
     return
   }
-  router.push({ path: `/product/${id}` })
+  router.push({ path: `/product/${nextProductKey}` })
 }
 
 function selectImage(image: ProductImage) {
@@ -221,8 +239,13 @@ function formatFullDate(dateStr: string): string {
   })
 }
 
-function editProduct() {
-  router.push(`/product/edit/${product.value?.id}`)
+async function editProduct() {
+  const currentProductId = product.value?.id
+  if (!currentProductId) return
+  await router.push({
+    name: 'edit product',
+    params: { productId: currentProductId },
+  })
 }
 
 function openDeleteConfirm() {
@@ -419,8 +442,8 @@ onMounted(() => {
   document.addEventListener('keydown', handleKeydown)
 })
 
-watch(productId, async (newProductId, oldProductId) => {
-  if (!newProductId || newProductId === oldProductId) {
+watch(productKey, async (newProductKey, oldProductKey) => {
+  if (!newProductKey || newProductKey === oldProductKey) {
     return
   }
   await loadProductData()
@@ -519,7 +542,7 @@ onUnmounted(() => {
               <button
                 type="button"
                 class="truncate text-left text-white transition hover:text-blue-300 hover:underline"
-                @click="goToCategoryPage(displayedCategory.id)"
+                @click="goToCategoryPage(displayedCategory)"
               >
                 {{ displayedCategory.name }}
               </button>
@@ -528,7 +551,7 @@ onUnmounted(() => {
                 <button
                   type="button"
                   class="truncate text-left text-white transition hover:text-blue-300 hover:underline"
-                  @click="goToCategoryPageWithSubcategory(displayedCategory.id, displayedSubcategory.id)"
+                  @click="goToCategoryPageWithSubcategory(displayedCategory, displayedSubcategory)"
                 >
                   {{ displayedSubcategory.name }}
                 </button>
@@ -611,8 +634,9 @@ onUnmounted(() => {
           <div v-if="!product.is_sold" class="flex flex-col gap-3 sm:flex-row justify-end">
             <div class="w-full flex gap-6 pr-4 items-center justify-end" v-if="product.is_owner">
               <button
+                type="button"
                 class="rounded-lg flex-1 lg:flex-none bg-blue-600 px-4 py-4 text-sm text-white font-semibold transition hover:bg-blue-700 sm:px-6"
-                @click="editProduct">
+                @click.stop="editProduct">
                 {{ $t('common.edit') }}
               </button>
               <Trash2 @click="openDeleteConfirm" class="cursor-pointer w-6 h-6" />

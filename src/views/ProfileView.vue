@@ -22,6 +22,7 @@ import BackButton from '@/components/navigation/BackButton.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
+import { buildProductKey } from '@/utils/urlKeys'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -351,7 +352,10 @@ function switchTab(tab: 'products' | 'reviews' | 'purchases') {
   }
 }
 
-function goToProduct(productId: string) { router.push(`/product/${productId}`) }
+function goToProduct(productKey: string) {
+  if (!productKey) return
+  router.push(`/product/${productKey}`)
+}
 function goToProfile(username: string) { router.push(`/user/${username}`) }
 
 onMounted(async () => {
@@ -678,7 +682,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                   :key="product.id"
                   :product="product"
                   :is-owner="isOwner"
-                  @click="goToProduct(product.id)"
+                  @click="goToProduct"
                 />
               </div>
 
@@ -790,7 +794,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                   </div>
 
                   <!-- Карточка товара -->
-                  <div @click="goToProduct(deal.product.id)"
+                  <div @click="goToProduct(buildProductKey(deal.product))"
                     class="flex gap-4 p-3 rounded-lg bg-dark-700/50 hover:bg-dark-700 transition-colors cursor-pointer">
                     <div class="flex-shrink-0">
                       <img :src="deal.product.images[0] ? `${API_HOST}${deal.product.images[0].image_url}` : ''"
