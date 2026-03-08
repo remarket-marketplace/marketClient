@@ -291,21 +291,8 @@ async function loadMoreMainCategories() {
   isLoadingMoreCategories.value = false
 }
 
-async function onMainCategoryClick(id: string) {
-  if (selectedMainCategoryId.value === id) {
-    await resetAllFilters()
-    return
-  }
-  selectedMainCategoryId.value = id
-  selectedSubCategoryId.value = ''
-  subCategories.value = []
-  subCategoryPage.value = 1
-  isSubCategoriesLoading.value = true
-  const res = await categoryService.getSubcategories(id, subCategoryPage.value, categoriesPerPage.value)
-  subCategories.value = filterVisibleCategories(res.categories)
-  subCategoryTotalPages.value = res.totalPages
-  isSubCategoriesLoading.value = false
-  await loadCategoryProducts(id, 1, false)
+function onMainCategoryClick(id: string) {
+  goToCategoryPage(id)
 }
 
 async function loadMoreSubCategories() {
@@ -512,8 +499,7 @@ onBeforeUnmount(() => {
                class="overflow-x-auto overflow-y-hidden w-full relative">
             <div class="flex min-w-max gap-2 py-1.5 sm:gap-3 sm:py-2">
               <div v-for="cat in mainCategories" :key="cat.id" @click="onMainCategoryClick(cat.id)"
-                class="flex-shrink-0 cursor-pointer flex flex-col items-center p-1.5 rounded-lg transition sm:p-2"
-                :class="selectedMainCategoryId === cat.id ? 'bg-white/20' : ''">
+                class="flex-shrink-0 cursor-pointer flex flex-col items-center p-1.5 rounded-lg transition sm:p-2">
                 <div class="h-12 w-12 flex items-center justify-center bg-dark-700 rounded-lg overflow-hidden border border-white/5 shadow-inner sm:h-16 sm:w-16">
                   <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="w-full h-full object-cover" />
                   <Folder v-else class="h-6 w-6 text-gray-400 sm:h-8 sm:w-8" />
@@ -521,16 +507,6 @@ onBeforeUnmount(() => {
                 <span class="mt-1.5 w-12 truncate text-center text-xs font-medium leading-tight sm:mt-2 sm:w-16 sm:text-sm">{{ cat.name }}</span>
               </div>
             </div>
-          </div>
-        </div>
-
-        <div v-if="subCategories.length" class="mt-3 w-full sm:mt-4">
-          <div class="flex flex-wrap gap-1.5 sm:gap-2">
-            <button v-for="sub in subCategories" :key="sub.id" @click="onSubCategoryClick(sub.id)"
-              class="rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors backdrop-blur-md sm:rounded-xl sm:px-5 sm:py-2.5 sm:text-sm sm:font-bold"
-              :class="selectedSubCategoryId === sub.id ? 'bg-blue-600 text-white border-blue-500' : 'bg-white/5 text-white border-white/10 hover:bg-white/10'">
-              {{ sub.name }}
-            </button>
           </div>
         </div>
 
