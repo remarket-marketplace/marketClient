@@ -11,6 +11,7 @@ export const CategorySchema = z.object({
   description: z.string().max(CATEGORY_DESCRIPTION_MAX_LENGTH).nullable(),
   is_active: z.boolean(),
   image_url: z.string().nullable(),
+  banner_url: z.string().nullable().optional(),
   parent_id: z.string().nullable(),
 })
 

@@ -115,7 +115,8 @@ export const categoryService = {
     name: string,
     description: string,
     file: File,
-    parentId?: string
+    parentId?: string,
+    bannerFile?: File | null,
   ) {
     try {
       const normalizedName = name.trim();
@@ -127,6 +128,9 @@ export const categoryService = {
         formData.append("description", normalizedDescription);
       }
       formData.append("uploaded_image", file);
+      if (bannerFile) {
+        formData.append("uploaded_banner", bannerFile);
+      }
       if (parentId) {
         formData.append("parent_category_id", parentId);
       }

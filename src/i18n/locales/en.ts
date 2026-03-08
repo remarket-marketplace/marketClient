@@ -32,6 +32,7 @@ const en = {
     name: "Name",
     price: "Price",
     image: "Image",
+    banner: "Banner",
     images: "Images",
     products: "Products",
     users: "Users",

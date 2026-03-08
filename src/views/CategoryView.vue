@@ -6,7 +6,6 @@ import BackButton from '@/components/navigation/BackButton.vue'
 import Title from '@/components/Title.vue'
 import type { Category } from '@/validation/category/category'
 import type { Product } from '@/validation/product/product'
-import { Folder } from 'lucide-vue-next'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -36,6 +35,10 @@ const requestedSubcategoryId = computed(() => {
     return String(subcategory[0] ?? '')
   }
   return String(subcategory ?? '')
+})
+
+const categoryBannerUrl = computed(() => {
+  return resolveCategoryImageUrl(category.value?.banner_url ?? null)
 })
 
 function resolveCategoryImageUrl(imageUrl: string | null): string {
@@ -176,32 +179,51 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="relative w-full flex flex-col items-center px-3 pb-10 pt-8 sm:px-4 lg:px-2">
-    <div class="w-full lg:max-w-[1460px]">
-      <div class="mb-3">
-        <BackButton />
+  <section class="relative w-full pb-10">
+    <div class="relative">
+      <div v-if="isCategoryLoading" class="relative h-[336px] sm:h-[432px]">
+        <div class="category-hero-bg-fullbleed absolute inset-y-0 overflow-hidden animate-pulse bg-dark-700/70"></div>
       </div>
-      <div class="rounded-2xl border border-dark-700 bg-dark-600/35 p-4 sm:p-5">
-        <div v-if="isCategoryLoading" class="h-10 w-64 animate-pulse rounded-lg bg-dark-600"></div>
-        <div v-else-if="category" class="flex items-center gap-3">
-          <div class="h-12 w-12 shrink-0 rounded-xl overflow-hidden border border-dark-700 bg-dark-700 flex items-center justify-center">
-            <img
-              v-if="category.image_url"
-              :src="resolveCategoryImageUrl(category.image_url)"
-              :alt="category.name"
-              class="h-full w-full object-cover"
-            />
-            <Folder v-else class="h-6 w-6 text-gray-400" />
+      <div v-else-if="category" class="relative h-[336px] sm:h-[432px]">
+        <div class="category-hero-bg-fullbleed absolute inset-y-0 overflow-hidden">
+          <img
+            v-if="categoryBannerUrl"
+            :src="categoryBannerUrl"
+            :alt="category.name"
+            class="absolute inset-0 h-full w-full object-cover"
+          />
+          <div v-else class="absolute inset-0 category-hero-fallback"></div>
+          <div class="absolute inset-0 bg-black/55"></div>
+          <div class="category-hero-bottom-fade"></div>
+        </div>
+        <div class="category-content-shell relative z-10 flex h-full flex-col">
+          <div class="pt-6 sm:pt-8">
+            <BackButton />
           </div>
-          <div>
-            <h1 class="text-xl font-semibold text-white sm:text-2xl">{{ category.name }}</h1>
-            <p v-if="category.description" class="mt-1 text-sm text-gray-300">{{ category.description }}</p>
+          <div class="mt-auto pb-6 sm:pb-7">
+            <h1 class="max-w-4xl text-3xl font-semibold leading-tight text-white drop-shadow-[0_3px_14px_rgba(0,0,0,0.65)] sm:text-5xl lg:text-6xl">
+              {{ category.name }}
+            </h1>
           </div>
         </div>
-        <div v-else class="text-sm text-gray-300">{{ t('pages.category.notFound') }}</div>
       </div>
+      <div v-else class="relative h-[336px] sm:h-[432px]">
+        <div class="category-hero-bg-fullbleed absolute inset-y-0 overflow-hidden">
+          <div class="absolute inset-0 category-hero-fallback"></div>
+          <div class="absolute inset-0 bg-black/55"></div>
+          <div class="category-hero-bottom-fade"></div>
+        </div>
+        <div class="category-content-shell relative z-10 h-full py-8">
+          <div class="mb-3">
+            <BackButton />
+          </div>
+          <div class="text-sm text-gray-300">{{ t('pages.category.notFound') }}</div>
+        </div>
+      </div>
+    </div>
 
-      <div class="mt-8">
+    <div class="category-content-shell mt-8">
+      <div>
         <Title :text="t('common.subcategories')" />
         <div v-if="isCategoryLoading" class="mt-4 flex gap-2">
           <div v-for="n in 4" :key="n" class="h-10 w-28 animate-pulse rounded-lg bg-dark-600"></div>
@@ -253,6 +275,54 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.category-hero-bg-fullbleed {
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+}
+
+.category-content-shell {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.category-hero-bottom-fade {
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 92px;
+  background: linear-gradient(
+    to bottom,
+    rgba(10, 14, 22, 0) 0%,
+    var(--background-color) 90%
+  );
+}
+
+@media (min-width: 640px) {
+  .category-content-shell {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .category-content-shell {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+
+.category-hero-fallback {
+  background:
+    radial-gradient(120% 120% at 10% 0%, rgba(56, 189, 248, 0.25) 0%, rgba(10, 14, 22, 0.4) 45%, rgba(6, 9, 14, 0.85) 100%),
+    linear-gradient(130deg, rgba(59, 130, 246, 0.2) 0%, rgba(10, 14, 22, 0.9) 62%);
+}
+
 .products-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }

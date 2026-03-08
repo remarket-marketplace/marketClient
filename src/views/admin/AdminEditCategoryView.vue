@@ -39,6 +39,8 @@ const isActive = ref<boolean>(false)
 
 const existingImage = ref<string | null>(null)
 const newImage = ref<File[]>([])
+const existingBanner = ref<string | null>(null)
+const newBanner = ref<File[]>([])
 
 const hasImage = computed(() => {
   return !!existingImage.value || newImage.value.length > 0
@@ -47,6 +49,12 @@ const hasImage = computed(() => {
 watch(newImage, (files) => {
   if (files.length > 0) {
     existingImage.value = null
+  }
+})
+
+watch(newBanner, (files) => {
+  if (files.length > 0) {
+    existingBanner.value = null
   }
 })
 
@@ -61,6 +69,7 @@ async function loadCategory() {
     name.value = data.name
     description.value = data.description ?? ''
     existingImage.value = data.image_url
+    existingBanner.value = data.banner_url ?? null
     isActive.value = data.is_active
   } catch (e) {
     console.error(e)
@@ -100,7 +109,8 @@ async function saveCategory() {
       normalizedName,
       normalizedDescription,
       isActive.value,
-      newImage.value[0] ?? null
+      newImage.value[0] ?? null,
+      newBanner.value[0] ?? null,
     )
 
     if (!success) {
@@ -183,6 +193,23 @@ onMounted(loadCategory)
           <p v-if="!hasImage" class="text-sm text-red-500 mt-2">
             {{ $t('pages.admin.editCategory.imageRequired') }}
           </p>
+        </div>
+
+        <div>
+          <label class="mb-2 block text-sm text-text-secondary">
+            {{ $t('common.banner') }}
+          </label>
+
+          <div v-if="existingBanner" class="relative w-full h-28 mb-3 overflow-hidden rounded-lg border border-dark-600">
+            <img :src="`${API_HOST}${existingBanner}`"
+              class="w-full h-full object-cover" />
+          </div>
+
+          <p v-else class="text-sm text-text-secondary mb-2">
+            {{ $t('common.noImage') }}
+          </p>
+
+          <FileUploader v-model="newBanner" :max-files="1" />
         </div>
 
         <div class="flex items-center gap-3">

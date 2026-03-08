@@ -421,7 +421,14 @@ export const adminService = {
     }
   },
 
-  async updateCategoryData (categoryId: string, name: string, description: string, isActive: boolean, newImage: File | null) {
+  async updateCategoryData (
+    categoryId: string,
+    name: string,
+    description: string,
+    isActive: boolean,
+    newImage: File | null,
+    newBanner: File | null,
+  ) {
     //
     // update category data
     //
@@ -435,6 +442,9 @@ export const adminService = {
       formData.append('is_active', isActive ? '1' : '0')
       if (newImage) {
         formData.append('uploaded_image', newImage)
+      }
+      if (newBanner) {
+        formData.append('uploaded_banner', newBanner)
       }
 
       const response = await httpClient.put(`/admin/category/${categoryId}`, formData);

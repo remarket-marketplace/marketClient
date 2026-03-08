@@ -34,6 +34,7 @@ const ru = {
     name: "Название",
     price: "Цена",
     image: "Изображение",
+    banner: "Баннер",
     images: "Изображения",
     products: "Товары",
     users: "Пользователи",

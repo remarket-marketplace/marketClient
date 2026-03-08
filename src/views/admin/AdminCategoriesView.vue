@@ -44,12 +44,14 @@ const subcategorySort = ref('name_asc')
 const newCategory = ref({
   name: '',
   description: '',
-  image: [] as File[]
+  image: [] as File[],
+  banner: [] as File[]
 })
 const newSubcategory = ref({
   name: '',
   description: '',
-  image: [] as File[]
+  image: [] as File[],
+  banner: [] as File[]
 })
 
 const categoryPage = ref(1)
@@ -121,7 +123,9 @@ async function createCategory() {
     const success = await categoryService.AddCategory(
       normalizedName,
       normalizedDescription,
-      newCategory.value.image[0] as File
+      newCategory.value.image[0] as File,
+      undefined,
+      newCategory.value.banner[0] ?? null,
     )
     if (success) {
       showAddCategoryModal.value = false
@@ -142,7 +146,8 @@ async function createSubcategory() {
       normalizedName,
       normalizedDescription,
       newSubcategory.value.image[0] as File,
-      selectedCategory.value.id
+      selectedCategory.value.id,
+      newSubcategory.value.banner[0] ?? null,
     )
     if (success) {
       showAddSubcategoryModal.value = false
@@ -155,11 +160,11 @@ async function createSubcategory() {
 }
 
 function resetNewCategoryForm() {
-  newCategory.value = { name: '', description: '', image: [] }
+  newCategory.value = { name: '', description: '', image: [], banner: [] }
 }
 
 function resetNewSubcategoryForm() {
-  newSubcategory.value = { name: '', description: '', image: [] }
+  newSubcategory.value = { name: '', description: '', image: [], banner: [] }
 }
 
 async function loadMoreCategories() {
@@ -456,6 +461,10 @@ watch(selectedCategory, () => {
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.image') }} *</label>
             <FileUploader v-model="newCategory.image" :maxFiles="1" />
           </div>
+          <div>
+            <label class="block text-sm text-gray-300 mb-2">{{ t('common.banner') }}</label>
+            <FileUploader v-model="newCategory.banner" :maxFiles="1" />
+          </div>
         </div>
         <div class="flex flex-col sm:flex-row gap-3 mt-6">
           <button class="admin-btn admin-btn-muted flex-1 order-2 sm:order-1" @click="showAddCategoryModal = false">
@@ -488,6 +497,10 @@ watch(selectedCategory, () => {
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.image') }} *</label>
             <FileUploader v-model="newSubcategory.image" :maxFiles="1" />
+          </div>
+          <div>
+            <label class="block text-sm text-gray-300 mb-2">{{ t('common.banner') }}</label>
+            <FileUploader v-model="newSubcategory.banner" :maxFiles="1" />
           </div>
         </div>
         <div class="flex flex-col sm:flex-row gap-3 mt-6">
