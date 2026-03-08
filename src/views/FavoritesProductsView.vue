@@ -119,7 +119,7 @@ function onProductRemoved(productId: string) {
     </div>
 
     <!-- Products grid -->
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div v-else class="products-grid grid gap-1 md:gap-2 w-full">
       <div
         v-for="product in filteredProducts"
         :key="product.id"
@@ -154,5 +154,27 @@ function onProductRemoved(productId: string) {
 
 ::-webkit-scrollbar-thumb:hover {
   background-color: var(--overlay-white-30);
+}
+
+.products-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 680px) {
+  .products-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 980px) {
+  .products-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1360px) {
+  .products-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 </style>

@@ -43,8 +43,8 @@ const isChatLoading = ref(false)
 const isChatPinning = ref(false)
 const isLoadingMoreMessages = ref(false)
 const errorMessage = ref<string | null>(null)
-const isMobile = ref(false)
-const mobileMode = ref<'chats' | 'chat'>('chats')
+const isMobile = ref(typeof window !== 'undefined' ? window.innerWidth < 768 : false)
+const mobileMode = ref<'chats' | 'chat'>(typeof route.query.chatId === 'string' ? 'chat' : 'chats')
 const store = useUserStore()
 const user = ref<UserRead | null>(null)
 const newMessage = ref('')
@@ -165,10 +165,17 @@ function backToChats() {
     }
 }
 
+const checkMobile = () => {
+    isMobile.value = window.innerWidth < 768
+}
+
 let unsubscribeNewMessage: (() => void) | null = null
 let unsubscribeChatUpdated: (() => void) | null = null
 
 onMounted(async () => {
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
     try {
         isLoading.value = true
         await store.fetchUser()
@@ -234,6 +241,9 @@ onMounted(async () => {
             const exists = await ensureChatLoaded(chatIdFromQuery)
             if (exists) {
                 await loadChatMessages(chatIdFromQuery)
+            } else if (isMobile.value) {
+                mobileMode.value = 'chats'
+                updateUrlChatId(null)
             }
         }
     } catch {
@@ -241,19 +251,13 @@ onMounted(async () => {
     } finally {
         isLoading.value = false
     }
-
-    const checkMobile = () => {
-        isMobile.value = window.innerWidth < 768
-    }
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
 })
 
 onUnmounted(() => {
     unsubscribeNewMessage?.()
     unsubscribeChatUpdated?.()
     bottomPin.stop()
-    window.removeEventListener('resize', () => { })
+    window.removeEventListener('resize', checkMobile)
 })
 
 watch([searchQuery, sortBy, presenceFilter, unreadFilter], () => {

@@ -36,6 +36,7 @@ import TermsOfServiceView from "@/views/TermsOfServiceView.vue";
 import PrivacyPolicyView from "@/views/PrivacyPolicyView.vue";
 import PartnerFortniteStatsView from "@/views/partner/PartnerFortniteStatsView.vue";
 import BannedView from "@/views/BannedView.vue";
+import CategoryView from "@/views/CategoryView.vue";
 
 const YANDEX_METRIKA_COUNTER_ID = 106722008;
 
@@ -93,6 +94,11 @@ const routes = [
       path: "/product/:productId",
       name: "product page",
       component: ProductPage,
+    },
+    {
+      path: "/category/:categoryId",
+      name: "category page",
+      component: CategoryView,
     },
     {
       path: "/chats/:chatId?",

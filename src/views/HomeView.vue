@@ -44,6 +44,7 @@ const subCategoryPage = ref(1)
 const subCategoryTotalPages = ref(1)
 const categoriesPerPage = ref(30)
 const searchQuery = ref('')
+const searchableCategories = ref<Category[]>([])
 const isServerPagination = ref(true)
 const isCategoryPagination = ref(false)
 const isLoadingMore = ref(false)
@@ -56,12 +57,39 @@ const isSearchPagination = ref(false)
 const minPriceFilter = ref('')
 const maxPriceFilter = ref('')
 const isFiltersOpen = ref(false)
+const normalizedSearchQuery = computed(() => searchQuery.value.trim().toLowerCase())
+const categorySearchResults = computed(() => {
+  if (normalizedSearchQuery.value.length < 1) return []
+  return searchableCategories.value
+    .filter((category) => category.name.toLowerCase().includes(normalizedSearchQuery.value))
+    .slice(0, 8)
+})
 
 interface PricePreset {
   id: string
   label: string
   minRub?: number
   maxRub?: number
+}
+
+function isVisibleCategory(category: Category): boolean {
+  return category.is_active
+}
+
+function filterVisibleCategories(categories: Category[]): Category[] {
+  return categories.filter(isVisibleCategory)
+}
+
+function isVisibleProduct(product: Product): boolean {
+  return (
+    product.status === 'active'
+    && product.category?.is_active
+    && !product.seller?.is_banned
+  )
+}
+
+function filterVisibleProducts(productsList: Product[]): Product[] {
+  return productsList.filter(isVisibleProduct)
 }
 
 function formatPrice(value: number): string {
@@ -144,6 +172,11 @@ function goToProduct(id: string) {
   router.push({ path: `/product/${id}` })
 }
 
+function goToCategoryPage(id: string) {
+  if (!id) return
+  router.push({ path: `/category/${id}` })
+}
+
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 let filterTimeout: ReturnType<typeof setTimeout> | null = null
 
@@ -161,7 +194,7 @@ function debouncedSearch() {
       perPage.value,
       getProductFiltersParams(),
     )
-    products.value = res.products
+    products.value = filterVisibleProducts(res.products)
     currentPage.value = res.currentPage
     totalPages.value = res.totalPages
     isSearchPagination.value = true
@@ -180,7 +213,8 @@ async function loadProducts(page = 1, append = false) {
     perPage.value,
     getProductFiltersParams(),
   )
-  products.value = append ? [...products.value, ...res.products] : res.products
+  const visibleProducts = filterVisibleProducts(res.products)
+  products.value = append ? [...products.value, ...visibleProducts] : visibleProducts
   currentPage.value = res.currentPage
   totalPages.value = res.totalPages
   isServerPagination.value = true
@@ -199,7 +233,8 @@ async function loadCategoryProducts(categoryId: string, page = 1, append = false
     perPage.value,
     getProductFiltersParams(),
   )
-  products.value = append ? [...products.value, ...res.products] : res.products
+  const visibleProducts = filterVisibleProducts(res.products)
+  products.value = append ? [...products.value, ...visibleProducts] : visibleProducts
   currentPage.value = res.currentPage
   totalPages.value = res.totalPages
   isServerPagination.value = true
@@ -218,7 +253,7 @@ async function loadMoreProducts() {
       perPage.value,
       getProductFiltersParams(),
     )
-    products.value = [...products.value, ...res.products]
+    products.value = [...products.value, ...filterVisibleProducts(res.products)]
     currentPage.value = res.currentPage
     totalPages.value = res.totalPages
     return
@@ -234,10 +269,18 @@ async function loadMoreProducts() {
 async function loadMainCategories(page = 1, append = false) {
   if (!append) isCategoriesLoading.value = true
   const res = await categoryService.getAllCategories(page, categoriesPerPage.value)
-  mainCategories.value = append ? [...mainCategories.value, ...res.categories] : res.categories.filter((c: { parent_id: any }) => !c.parent_id)
+  const visibleMainCategories = filterVisibleCategories(res.categories).filter((category) => !category.parent_id)
+  mainCategories.value = append
+    ? [...mainCategories.value, ...visibleMainCategories]
+    : visibleMainCategories
   categoryPage.value = res.currentPage
   categoryTotalPages.value = res.totalPages
   isCategoriesLoading.value = false
+}
+
+async function loadSearchableCategories() {
+  const categories = await categoryService.getAllCategoriesFlat(100, 20)
+  searchableCategories.value = filterVisibleCategories(categories)
 }
 
 async function loadMoreMainCategories() {
@@ -259,7 +302,7 @@ async function onMainCategoryClick(id: string) {
   subCategoryPage.value = 1
   isSubCategoriesLoading.value = true
   const res = await categoryService.getSubcategories(id, subCategoryPage.value, categoriesPerPage.value)
-  subCategories.value = res.categories
+  subCategories.value = filterVisibleCategories(res.categories)
   subCategoryTotalPages.value = res.totalPages
   isSubCategoriesLoading.value = false
   await loadCategoryProducts(id, 1, false)
@@ -270,7 +313,7 @@ async function loadMoreSubCategories() {
   if (subCategoryPage.value >= subCategoryTotalPages.value) return
   isLoadingMoreSubCategories.value = true
   const res = await categoryService.getSubcategories(selectedMainCategoryId.value, subCategoryPage.value + 1, categoriesPerPage.value)
-  subCategories.value = [...subCategories.value, ...res.categories]
+  subCategories.value = [...subCategories.value, ...filterVisibleCategories(res.categories)]
   subCategoryPage.value = res.currentPage
   isLoadingMoreSubCategories.value = false
 }
@@ -342,7 +385,7 @@ async function applyProductFilters() {
       perPage.value,
       getProductFiltersParams(),
     )
-    products.value = res.products
+    products.value = filterVisibleProducts(res.products)
     currentPage.value = res.currentPage
     totalPages.value = res.totalPages
     isSearchPagination.value = true
@@ -393,8 +436,11 @@ const handleCategoriesWheel = (e: WheelEvent) => {
 }
 
 onMounted(async () => {
-  await loadProducts()
-  await loadMainCategories()
+  await Promise.all([
+    loadProducts(),
+    loadMainCategories(),
+    loadSearchableCategories(),
+  ])
   observer = new IntersectionObserver((entries) => { if (entries[0]!.isIntersecting) loadMoreProducts() }, { rootMargin: '300px' })
   if (loadMoreTrigger.value) observer.observe(loadMoreTrigger.value)
   categoriesObserver = new IntersectionObserver((entries) => { if (entries[0]!.isIntersecting && categoryPage.value < categoryTotalPages.value) loadMoreMainCategories() }, { root: categoriesScroll.value, threshold: 0.1 })
@@ -428,6 +474,31 @@ onBeforeUnmount(() => {
     >
         <SearchField v-model="searchQuery" :placeholder="$t('pages.index.searchPlaceholder')"
           @search-change="debouncedSearch" class="w-full lg:max-w-2xl" />
+
+        <div
+          v-if="categorySearchResults.length"
+          class="mt-2 w-full rounded-xl border border-dark-700 bg-dark-700/70 p-2 lg:max-w-2xl"
+        >
+          <p class="px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
+            {{ t('pages.index.categoriesFound') }}
+          </p>
+          <button
+            v-for="category in categorySearchResults"
+            :key="`search-category-${category.id}`"
+            type="button"
+            class="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-white transition hover:bg-dark-600"
+            @click="goToCategoryPage(category.id)"
+          >
+            <img
+              v-if="category.image_url"
+              :src="`${API_HOST}${category.image_url}`"
+              :alt="category.name"
+              class="h-5 w-5 rounded object-cover border border-dark-600/80"
+            />
+            <Folder v-else class="h-4 w-4 text-gray-400" />
+            <span class="truncate">{{ category.name }}</span>
+          </button>
+        </div>
 
         <div class="mt-10 w-full sm:mt-16">
           <Title :text="t('common.categories')" />

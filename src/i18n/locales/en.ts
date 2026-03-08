@@ -369,12 +369,19 @@ const en = {
     index: {
       searchPlaceholder: "Search products...",
       selectCategory: "Select category",
+      categoriesFound: "Categories",
       allSubcategories: "All subcategories",
       noProducts: "No products for selected category",
       filtersTitle: "Filters",
       priceFrom: "Price from",
       priceTo: "Price to",
       resetFilters: "Reset",
+    },
+
+    category: {
+      notFound: "Category not found",
+      noSubcategories: "No subcategories found",
+      noProducts: "No products in this category",
     },
 
     feedback: {
@@ -560,6 +567,8 @@ const en = {
       loading: "Loading product...",
       sold: "Sold",
       reviews: "Reviews",
+      similarProducts: "Similar products",
+      noSimilarProducts: "No similar products found",
       likesCount: "Likes",
       description: "Description",
       raikaVerifiedPrefix: "This product was verified using the ",

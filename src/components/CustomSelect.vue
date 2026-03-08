@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp } from 'lucide-vue-next'
 interface Option {
   label: string
   value: string | number
+  imageUrl?: string | null
 }
 
 const props = defineProps<{
@@ -39,6 +40,10 @@ const filteredOptions = computed(() => {
 
   return props.options.filter(option => option.label.toLowerCase().includes(normalizedQuery))
 })
+
+const selectedOption = computed(() => (
+  props.options.find(opt => opt.value === props.modelValue) ?? null
+))
 
 function closeDropdown() {
   isOpen.value = false
@@ -90,12 +95,19 @@ watch(isOpen, async (opened) => {
       :disabled="disabled"
       @click="toggle"
     >
-      <span class="truncate text-left">
-        <template v-if="modelValue !== null && modelValue !== ''">
-          {{ options.find(opt => opt.value === modelValue)?.label }}
+      <span class="min-w-0 flex-1 flex items-center gap-2 text-left">
+        <template v-if="modelValue !== null && modelValue !== '' && selectedOption">
+          <img
+            v-if="selectedOption.imageUrl"
+            :src="selectedOption.imageUrl"
+            :alt="selectedOption.label"
+            class="h-5 w-5 rounded object-cover border border-dark-700/80 shrink-0"
+            loading="lazy"
+          />
+          <span class="truncate">{{ selectedOption.label }}</span>
         </template>
         <template v-else>
-          <span class="text-gray-400">{{ placeholder ?? t('common.select') }}</span>
+          <span class="text-gray-400 truncate">{{ placeholder ?? t('common.select') }}</span>
         </template>
       </span>
 
@@ -135,7 +147,16 @@ watch(isOpen, async (opened) => {
           :class="{ 'bg-dark-700': modelValue === opt.value }"
           @click="selectOption(opt.value)"
         >
-          <span class="truncate">{{ opt.label }}</span>
+          <span class="min-w-0 flex-1 flex items-center gap-2">
+            <img
+              v-if="opt.imageUrl"
+              :src="opt.imageUrl"
+              :alt="opt.label"
+              class="h-5 w-5 rounded object-cover border border-dark-700/80 shrink-0"
+              loading="lazy"
+            />
+            <span class="truncate">{{ opt.label }}</span>
+          </span>
           <span v-if="modelValue === opt.value" class="text-xs text-blue-400 font-semibold">✓</span>
         </li>
       </ul>

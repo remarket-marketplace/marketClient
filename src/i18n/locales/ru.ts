@@ -371,12 +371,19 @@ const ru = {
     index: {
       searchPlaceholder: "Поиск товаров...",
       selectCategory: "Выбрать категорию",
+      categoriesFound: "Категории",
       allSubcategories: "Все подкатегории",
       noProducts: "Нет товаров для выбранной категории",
       filtersTitle: "Фильтры",
       priceFrom: "Цена от",
       priceTo: "Цена до",
       resetFilters: "Сбросить",
+    },
+
+    category: {
+      notFound: "Категория не найдена",
+      noSubcategories: "Подкатегории не найдены",
+      noProducts: "Нет товаров в этой категории",
     },
 
     feedback: {
@@ -561,6 +568,8 @@ const ru = {
       loading: "Загрузка товара...",
       sold: "Продан",
       reviews: "Отзывы",
+      similarProducts: "Похожие товары",
+      noSimilarProducts: "Похожие товары не найдены",
       likesCount: "Лайки",
       description: "Описание",
       raikaVerifiedPrefix: "Товар проверен с помощью ",

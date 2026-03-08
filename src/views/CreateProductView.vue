@@ -49,6 +49,32 @@ const selectedCurrency = computed(() => preferredCurrency.value)
 const currencySymbol = computed(() => getCurrencySymbol(selectedCurrency.value))
 const usdRubRate = computed(() => getUsdRubRate())
 
+function toCategoryOptionImageUrl(imageUrl: string | null): string | undefined {
+  if (!imageUrl) {
+    return undefined
+  }
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return imageUrl
+  }
+  return `${API_HOST}${imageUrl}`
+}
+
+const categoryOptions = computed(() => (
+  categories.value.map(category => ({
+    label: category.name,
+    value: category.id,
+    imageUrl: toCategoryOptionImageUrl(category.image_url),
+  }))
+))
+
+const subcategoryOptions = computed(() => (
+  subcategories.value.map(subcategory => ({
+    label: subcategory.name,
+    value: subcategory.id,
+    imageUrl: toCategoryOptionImageUrl(subcategory.image_url),
+  }))
+))
+
 const PRODUCT_LIMITS = {
   title: { min: 10, max: 50 },
   description: { min: 10, max: 1200 },
@@ -511,7 +537,7 @@ async function createProduct() {
                 <span class="text-xs text-red-400 ml-1">*</span>
               </label>
               <CustomSelect v-model="selectedCategoryId"
-                :options="categories.map(c => ({ label: c.name, value: c.id }))"
+                :options="categoryOptions"
                 :placeholder="t('pages.forms.createProduct.selectCategory')"
                 searchable
                 class="w-full" />
@@ -523,7 +549,7 @@ async function createProduct() {
                 <span class="text-xs text-red-400 ml-1">*</span>
               </label>
               <CustomSelect v-model="selectedSubcategoryId"
-                :options="subcategories.map(s => ({ label: s.name, value: s.id }))"
+                :options="subcategoryOptions"
                 :placeholder="t('pages.forms.createProduct.selectSubcategory')"
                 searchable
                 class="w-full" />

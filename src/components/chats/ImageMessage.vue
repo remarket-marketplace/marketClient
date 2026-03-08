@@ -194,6 +194,7 @@ function handleModalImageError() {
     <p v-else>{{ imageMessage.text }}</p>
 
     <div class="mt-1 flex w-full items-center justify-end gap-2 text-xs text-gray-300">
+      <span>{{ formatDate(imageMessage.created_at) }}</span>
       <span
         v-if="isOwnMessage"
         class="inline-flex items-center leading-none select-none transition-colors duration-200"
@@ -214,7 +215,6 @@ function handleModalImageError() {
           aria-hidden="true"
         />
       </span>
-      <span>{{ formatDate(imageMessage.created_at) }}</span>
     </div>
   </div>
 

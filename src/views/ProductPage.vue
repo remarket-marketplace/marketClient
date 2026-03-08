@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import { categoryService } from '@/api/category/CategoryService'
 import { productService } from '@/api/product/ProductService'
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import Loader from '@/components/Loader.vue'
+import MainProductCard from '@/components/mainProductCard.vue'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
 import type { Product, ProductImage } from '@/validation/product/product'
-import { onMounted, ref, onUnmounted, computed } from 'vue'
+import type { Category } from '@/validation/category/category'
+import { onMounted, ref, onUnmounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { ChevronLeft, ChevronRight, X, Heart, Trash, Trash2, Percent, ShoppingBag } from 'lucide-vue-next'
@@ -23,13 +26,16 @@ const RAIKA_BOT_URL = 'https://t.me/Raika_CheckBot'
 const route = useRoute('/product/[productId]')
 const router = useRouter()
 const { locale, t } = useI18n()
-const productId = route.params.productId as string
+const productId = computed(() => String(route.params.productId ?? ''))
 
 
 const store = useUserStore()
 const { user } = storeToRefs(store)
 
 const product = ref<Product | null>(null)
+const parentCategory = ref<Category | null>(null)
+const similarProducts = ref<Product[]>([])
+const isSimilarProductsLoading = ref(false)
 const selectedImage = ref<ProductImage | null>(null)
 const openImageModal = ref(false)
 const showDeleteConfirm = ref(false)
@@ -67,11 +73,103 @@ const moderationRejectReasonLabel = computed(() => {
 
 const offerCurrencyCode = computed(() => resolvePreferredCurrency())
 const offerCurrencySymbol = computed(() => getCurrencySymbol(offerCurrencyCode.value))
+const SIMILAR_PRODUCTS_LIMIT = 8
 
-onMounted(async () => {
+const displayedCategory = computed(() => {
+  const currentCategory = product.value?.category
+  if (!currentCategory) return null
+
+  if (!currentCategory.parent_id) {
+    return currentCategory
+  }
+
+  return parentCategory.value ?? currentCategory
+})
+
+const displayedSubcategory = computed(() => {
+  const currentCategory = product.value?.category
+  if (!currentCategory?.parent_id || !parentCategory.value) {
+    return null
+  }
+
+  return currentCategory
+})
+
+async function loadCategoryBreadcrumb(category: Category | null | undefined) {
+  if (!category?.parent_id) {
+    parentCategory.value = null
+    return
+  }
+
+  parentCategory.value = await categoryService.getCategoryById(category.parent_id)
+}
+
+async function loadSimilarProducts(baseProduct: Product) {
+  const categoryId = baseProduct.category?.id
+  if (!categoryId) {
+    similarProducts.value = []
+    return
+  }
+
+  isSimilarProductsLoading.value = true
+  const collected: Product[] = []
+  const seenIds = new Set<string>()
+
+  const collectProducts = (items: Product[]) => {
+    for (const item of items) {
+      if (item.id === baseProduct.id || seenIds.has(item.id)) {
+        continue
+      }
+      seenIds.add(item.id)
+      collected.push(item)
+      if (collected.length >= SIMILAR_PRODUCTS_LIMIT) {
+        break
+      }
+    }
+  }
+
+  const firstPageResponse = await productService.getProductsByCategory(
+    categoryId,
+    1,
+    SIMILAR_PRODUCTS_LIMIT + 1,
+  )
+
+  collectProducts(firstPageResponse.products)
+
+  let nextPage = 2
+  while (collected.length < SIMILAR_PRODUCTS_LIMIT && nextPage <= firstPageResponse.totalPages) {
+    const nextPageResponse = await productService.getProductsByCategory(
+      categoryId,
+      nextPage,
+      SIMILAR_PRODUCTS_LIMIT + 1,
+    )
+    collectProducts(nextPageResponse.products)
+    nextPage += 1
+  }
+
+  similarProducts.value = collected.slice(0, SIMILAR_PRODUCTS_LIMIT)
+  isSimilarProductsLoading.value = false
+}
+
+async function loadProductData() {
+  if (!productId.value) return
+
+  product.value = null
+  selectedImage.value = null
+  parentCategory.value = null
+  similarProducts.value = []
+
   try {
-    product.value = await productService.getProductById(productId) ?? null
+    product.value = await productService.getProductById(productId.value) ?? null
     selectedImage.value = product.value?.images?.[0] ?? null
+    if (!product.value) {
+      return
+    }
+
+    await Promise.all([
+      loadCategoryBreadcrumb(product.value.category),
+      loadSimilarProducts(product.value),
+    ])
   } catch (error: any) {
     if (error?.response?.status === 404) {
       await router.replace({ name: 'notAccess' })
@@ -79,8 +177,34 @@ onMounted(async () => {
     }
 
     console.error('Failed to load product:', error)
+  } finally {
+    isSimilarProductsLoading.value = false
   }
+}
+
+onMounted(async () => {
+  await loadProductData()
 })
+
+function goToCategoryPage(categoryId: string) {
+  if (!categoryId) return
+  router.push({ path: `/category/${categoryId}` })
+}
+
+function goToCategoryPageWithSubcategory(categoryId: string, subcategoryId: string) {
+  if (!categoryId || !subcategoryId) return
+  router.push({
+    path: `/category/${categoryId}`,
+    query: { subcategory: subcategoryId },
+  })
+}
+
+function goToProductPage(id: string) {
+  if (!id || id === productId.value) {
+    return
+  }
+  router.push({ path: `/product/${id}` })
+}
 
 function selectImage(image: ProductImage) {
   selectedImage.value = image
@@ -293,6 +417,14 @@ onMounted(() => {
   document.addEventListener('keydown', handleKeydown)
 })
 
+watch(productId, async (newProductId, oldProductId) => {
+  if (!newProductId || newProductId === oldProductId) {
+    return
+  }
+  await loadProductData()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+})
+
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
 })
@@ -378,7 +510,29 @@ onUnmounted(() => {
           </div>
           <div class="flex items-center gap-3">
             <span class="text-gray-400 font-medium min-w-20">{{ $t('common.category') }}:</span>
-            <span class="text-white">{{ product.category?.name ?? $t('common.notSpecified') }}</span>
+            <div
+              v-if="displayedCategory"
+              class="min-w-0 flex items-center gap-1 text-white"
+            >
+              <button
+                type="button"
+                class="truncate text-left text-white transition hover:text-blue-300 hover:underline"
+                @click="goToCategoryPage(displayedCategory.id)"
+              >
+                {{ displayedCategory.name }}
+              </button>
+              <template v-if="displayedSubcategory">
+                <span class="text-gray-500">/</span>
+                <button
+                  type="button"
+                  class="truncate text-left text-white transition hover:text-blue-300 hover:underline"
+                  @click="goToCategoryPageWithSubcategory(displayedCategory.id, displayedSubcategory.id)"
+                >
+                  {{ displayedSubcategory.name }}
+                </button>
+              </template>
+            </div>
+            <span v-else class="text-white">{{ $t('common.notSpecified') }}</span>
           </div>
         </div>
 
@@ -525,6 +679,25 @@ onUnmounted(() => {
           <p class="mt-2 text-sm">{{ review.body }}</p>
         </div>
       </div>
+    </div>
+
+    <div class="mt-6 w-full flex flex-col gap-4">
+      <p class="text-3xl font-bold">{{ $t('pages.product.similarProducts') }}</p>
+
+      <div v-if="isSimilarProductsLoading" class="similar-products-grid grid gap-1 md:gap-2 w-full">
+        <div v-for="n in 4" :key="`similar-skeleton-${n}`" class="h-64 bg-dark-600 animate-pulse rounded-2xl" />
+      </div>
+
+      <div v-else-if="similarProducts.length" class="similar-products-grid grid gap-1 md:gap-2 w-full">
+        <MainProductCard
+          v-for="similarProduct in similarProducts"
+          :key="similarProduct.id"
+          :product="similarProduct"
+          @click="goToProductPage"
+        />
+      </div>
+
+      <p v-else class="text-sm text-gray-400">{{ $t('pages.product.noSimilarProducts') }}</p>
     </div>
 
     <!-- Image modal -->
@@ -694,6 +867,22 @@ onUnmounted(() => {
 .product-image-overlay {
   background-image: radial-gradient(circle at top, var(--overlay-white-12), transparent 45%),
     linear-gradient(to bottom, var(--product-image-overlay-top), var(--product-image-overlay-bottom));
+}
+
+.similar-products-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 680px) {
+  .similar-products-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 980px) {
+  .similar-products-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 /* Button hover animations */
