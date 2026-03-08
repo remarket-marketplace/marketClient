@@ -41,10 +41,27 @@ const pendingPlatformToggle = ref<{
   nextValue: boolean
 } | null>(null)
 
+const CHART_COLORS = {
+  axisText: '#9ca3af',
+  legendText: '#e5e7eb',
+  gridBorder: 'rgba(255, 255, 255, 0.08)',
+  revenue: '#0ea5e9',
+  users: '#a855f7',
+  statusPending: '#f59e0b',
+  statusConfirmed: '#22d3ee',
+  statusCompleted: '#22c55e',
+  statusDisputed: '#fb7185',
+  statusCancelled: '#94a3b8',
+  statusRefunded: '#f97316',
+  statusDefault: '#60a5fa',
+  topCategories: '#34d399',
+} as const
+
 const cssVar = (token: string, fallback: string) => {
   if (typeof window === 'undefined') return fallback
   const value = window.getComputedStyle(document.documentElement).getPropertyValue(token).trim()
-  return value || fallback
+  if (!value || value.includes('var(')) return fallback
+  return value
 }
 
 const formatCurrency = (value: number) =>
@@ -87,26 +104,30 @@ const getStatusCount = (status: string) =>
 const revenueSeries = computed(() => {
   const revenue = dashboardData.value?.revenue_by_day ?? []
   const users = dashboardData.value?.new_users_by_day ?? []
+  const toTimestamp = (rawDate: string) => {
+    const parsed = Date.parse(rawDate)
+    return Number.isFinite(parsed) ? parsed : Date.now()
+  }
   return [
     {
       name: t('pages.admin.mainPage.revenue'),
       type: 'area',
-      data: revenue.map(point => [new Date(point.date).getTime(), Number(point.value || 0)]),
+      data: revenue.map(point => [toTimestamp(point.date), Number(point.value || 0)]),
     },
     {
       name: t('pages.admin.mainPage.newUsers'),
       type: 'line',
-      data: users.map(point => [new Date(point.date).getTime(), Number(point.value || 0)]),
+      data: users.map(point => [toTimestamp(point.date), Number(point.value || 0)]),
     },
   ]
 })
 
 const revenueOptions = computed<ApexOptions>(() => {
-  const axisText = cssVar('--chart-axis-text', 'var(--chart-axis-text)')
-  const legendText = cssVar('--chart-legend-text', 'var(--chart-legend-text)')
-  const gridBorder = cssVar('--chart-grid-border', 'var(--chart-grid-border)')
-  const revenueColor = cssVar('--chart-series-revenue', 'var(--chart-series-revenue)')
-  const usersColor = cssVar('--chart-series-users', 'var(--chart-series-users)')
+  const axisText = cssVar('--chart-axis-text', CHART_COLORS.axisText)
+  const legendText = cssVar('--chart-legend-text', CHART_COLORS.legendText)
+  const gridBorder = cssVar('--chart-grid-border', CHART_COLORS.gridBorder)
+  const revenueColor = cssVar('--chart-series-revenue', CHART_COLORS.revenue)
+  const usersColor = cssVar('--chart-series-users', CHART_COLORS.users)
 
   return {
     chart: {
@@ -189,19 +210,23 @@ const revenueOptions = computed<ApexOptions>(() => {
 })
 
 const statusOptions = computed<ApexOptions>(() => {
-  const axisText = cssVar('--chart-axis-text', 'var(--chart-axis-text)')
-  const gridBorder = cssVar('--chart-grid-border', 'var(--chart-grid-border)')
+  const axisText = cssVar('--chart-axis-text', CHART_COLORS.axisText)
+  const gridBorder = cssVar('--chart-grid-border', CHART_COLORS.gridBorder)
   const statuses = dealsStatus.value
-  const categories = statuses.map(s => t(`common.dealStatuses.${s.status}`) ?? s.status)
+  const categories = statuses.map((s) => {
+    const translated = t(`common.dealStatuses.${s.status}`)
+    const label = translated || s.status || t('common.notSpecified')
+    return String(label)
+  })
   const colorsMap: Record<string, string> = {
-    pending: cssVar('--chart-status-pending', 'var(--chart-status-pending)'),
-    confirmed: cssVar('--chart-status-confirmed', 'var(--chart-status-confirmed)'),
-    completed: cssVar('--chart-status-completed', 'var(--chart-status-completed)'),
-    disputed: cssVar('--chart-status-disputed', 'var(--chart-status-disputed)'),
-    cancelled: cssVar('--chart-status-cancelled', 'var(--chart-status-cancelled)'),
-    refunded: cssVar('--chart-status-refunded', 'var(--chart-status-refunded)'),
+    pending: cssVar('--chart-status-pending', CHART_COLORS.statusPending),
+    confirmed: cssVar('--chart-status-confirmed', CHART_COLORS.statusConfirmed),
+    completed: cssVar('--chart-status-completed', CHART_COLORS.statusCompleted),
+    disputed: cssVar('--chart-status-disputed', CHART_COLORS.statusDisputed),
+    cancelled: cssVar('--chart-status-cancelled', CHART_COLORS.statusCancelled),
+    refunded: cssVar('--chart-status-refunded', CHART_COLORS.statusRefunded),
   }
-  const fallbackColor = cssVar('--chart-status-default', 'var(--chart-status-default)')
+  const fallbackColor = cssVar('--chart-status-default', CHART_COLORS.statusDefault)
   const colors = statuses.map(s => colorsMap[s.status] || fallbackColor)
   return {
     chart: { type: 'bar' as const, toolbar: { show: false }, foreColor: axisText },
@@ -242,10 +267,10 @@ const statusSeries = computed(() => [
 ])
 
 const topCategoriesOptions = computed<ApexOptions>(() => {
-  const axisText = cssVar('--chart-axis-text', 'var(--chart-axis-text)')
-  const legendText = cssVar('--chart-legend-text', 'var(--chart-legend-text)')
-  const gridBorder = cssVar('--chart-grid-border', 'var(--chart-grid-border)')
-  const seriesColor = cssVar('--chart-series-top-categories', 'var(--chart-series-top-categories)')
+  const axisText = cssVar('--chart-axis-text', CHART_COLORS.axisText)
+  const legendText = cssVar('--chart-legend-text', CHART_COLORS.legendText)
+  const gridBorder = cssVar('--chart-grid-border', CHART_COLORS.gridBorder)
+  const seriesColor = cssVar('--chart-series-top-categories', CHART_COLORS.topCategories)
 
   return {
     chart: { type: 'bar' as const, toolbar: { show: false }, foreColor: axisText },
@@ -262,7 +287,7 @@ const topCategoriesOptions = computed<ApexOptions>(() => {
       style: { colors: [legendText] },
     },
     xaxis: {
-      categories: topCategories.value.map(c => c.category_name),
+      categories: topCategories.value.map(c => String(c.category_name || t('common.notSpecified'))),
       labels: { style: { colors: axisText } },
     },
     colors: [seriesColor],
