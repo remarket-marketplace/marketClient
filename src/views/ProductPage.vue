@@ -22,8 +22,9 @@ import { formatCurrencyAmount, getCurrencySymbol, resolvePreferredCurrency } fro
 import { storeToRefs } from 'pinia'
 
 const API_HOST = import.meta.env.VITE_API_HOST
+const NORMALIZED_API_HOST = String(API_HOST || '').replace(/\/$/, '')
 const RAIKA_BOT_URL = 'https://raika.gg'
-const RAIKA_LOGO_URL = '/raika-logo.png'
+const RAIKA_LOGO_URL = `${NORMALIZED_API_HOST}/assets/raika-logo.png`
 const route = useRoute('/product/[productId]')
 const router = useRouter()
 const { locale, t } = useI18n()

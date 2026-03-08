@@ -24,8 +24,9 @@ import {
 import { getErrorMessage } from '@/utils/errorsMap'
 
 const API_HOST = import.meta.env.VITE_API_HOST
+const NORMALIZED_API_HOST = String(API_HOST || '').replace(/\/$/, '')
 const RAIKA_BOT_URL = 'https://raika.gg'
-const RAIKA_LOGO_URL = '/raika-logo.png'
+const RAIKA_LOGO_URL = `${NORMALIZED_API_HOST}/assets/raika-logo.png`
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
