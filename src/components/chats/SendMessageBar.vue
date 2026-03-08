@@ -147,7 +147,7 @@ watch(
     <div class="flex flex-none items-end gap-2">
       <button
         type="button"
-        class="h-12 w-12 flex-none rounded-2xl border border-dark-600 bg-dark-700/95 text-gray-300 transition hover:bg-dark-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+        class="h-12 w-12 flex-none rounded-2xl border border-dark-600 bg-dark-700 text-gray-300 transition hover:bg-dark-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
         :disabled="isDisabled || selectedFiles.length >= MAX_IMAGES_PER_MESSAGE"
         @click="openImagesPicker"
       >
@@ -167,7 +167,7 @@ watch(
         class="flex flex-1 items-end rounded-2xl border px-3 py-2 transition"
         :class="isDisabled
           ? 'border-amber-400/40 bg-amber-500/10 opacity-60'
-          : 'border-dark-600 bg-dark-700/95 focus-within:border-blue-400/60'"
+          : 'border-dark-600 bg-dark-700 focus-within:border-blue-400/60'"
       >
         <textarea
           ref="messageInputRef"
@@ -181,7 +181,7 @@ watch(
           maxlength="500"
         />
         <button
-          class="ml-2 flex h-8 w-8 flex-none items-center justify-center self-end rounded-full border border-blue-400/40 bg-blue-600/90 text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:border-amber-400/40 disabled:bg-dark-500 disabled:opacity-60 disabled:hover:bg-dark-500"
+          class="ml-2 flex h-8 w-8 flex-none items-center justify-center self-end rounded-full border border-blue-400/40 bg-blue-600 text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:border-amber-400/40 disabled:bg-dark-500 disabled:opacity-60 disabled:hover:bg-dark-500"
           :disabled="isDisabled || !hasDraftToSend"
           @click="handleSendMessage"
         >
