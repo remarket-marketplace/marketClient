@@ -682,7 +682,7 @@ onUnmounted(() => {
     </div>
 
     <div class="mt-6 w-full flex flex-col gap-4">
-      <p class="text-3xl font-bold">{{ $t('pages.product.similarProducts') }}</p>
+      <p class="text-xl sm:text-2xl font-bold">{{ $t('pages.product.similarProducts') }}</p>
 
       <div v-if="isSimilarProductsLoading" class="similar-products-grid grid gap-1 md:gap-2 w-full">
         <div v-for="n in 4" :key="`similar-skeleton-${n}`" class="h-64 bg-dark-600 animate-pulse rounded-2xl" />

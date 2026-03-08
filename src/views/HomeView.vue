@@ -177,6 +177,14 @@ function goToCategoryPage(id: string) {
   router.push({ path: `/category/${id}` })
 }
 
+function resolveCategoryImageUrl(imageUrl: string | null): string {
+  if (!imageUrl) return ''
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return imageUrl
+  }
+  return `${API_HOST}${imageUrl}`
+}
+
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 let filterTimeout: ReturnType<typeof setTimeout> | null = null
 
@@ -478,12 +486,12 @@ onBeforeUnmount(() => {
           >
             <img
               v-if="category.image_url"
-              :src="`${API_HOST}${category.image_url}`"
+              :src="resolveCategoryImageUrl(category.image_url)"
               :alt="category.name"
-              class="h-5 w-5 rounded object-cover border border-dark-600/80"
+              class="h-6 w-6 rounded object-cover border border-dark-600/80 shrink-0"
             />
-            <Folder v-else class="h-4 w-4 text-gray-400" />
-            <span class="truncate">{{ category.name }}</span>
+            <Folder v-else class="h-5 w-5 text-gray-400 shrink-0" />
+            <span class="truncate text-sm leading-5">{{ category.name }}</span>
           </button>
         </div>
 

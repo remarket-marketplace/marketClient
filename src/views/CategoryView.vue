@@ -2,6 +2,7 @@
 import { categoryService } from '@/api/category/CategoryService'
 import { productService } from '@/api/product/ProductService'
 import MainProductCard from '@/components/mainProductCard.vue'
+import BackButton from '@/components/navigation/BackButton.vue'
 import Title from '@/components/Title.vue'
 import type { Category } from '@/validation/category/category'
 import type { Product } from '@/validation/product/product'
@@ -175,8 +176,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="relative w-full flex flex-col items-center px-1 pb-10 pt-8 sm:px-2 lg:px-2">
+  <section class="relative w-full flex flex-col items-center px-3 pb-10 pt-8 sm:px-4 lg:px-2">
     <div class="w-full lg:max-w-[1460px]">
+      <div class="mb-3">
+        <BackButton />
+      </div>
       <div class="rounded-2xl border border-dark-700 bg-dark-600/35 p-4 sm:p-5">
         <div v-if="isCategoryLoading" class="h-10 w-64 animate-pulse rounded-lg bg-dark-600"></div>
         <div v-else-if="category" class="flex items-center gap-3">
