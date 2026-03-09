@@ -11,6 +11,9 @@ const isProd = process.env.NODE_ENV === 'production'
 const PORT = process.env.PORT || 4173
 const API_BASE = (process.env.API_URL || process.env.VITE_API_HOST || 'http://localhost:8000/v1').replace(/\/$/, '')
 const FILE_BASE = (process.env.FILE_BASE || '').replace(/\/$/, '') || API_BASE
+const DEFAULT_META_TITLE = 'remarket — цифровые товары'
+const DEFAULT_META_DESCRIPTION = 'Маркетплейс цифровых товаров, аккаунтов и услуг.'
+const DEFAULT_META_IMAGE = '/assets/logo.ico'
 
 function toAbsolute(urlPath) {
   if (!urlPath) return ''
@@ -20,43 +23,104 @@ function toAbsolute(urlPath) {
   return `${normalizedBase}${normalizedPath}`
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function normalizeText(value, maxLength = 180) {
+  return String(value ?? '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, maxLength)
+}
+
+function safeDecodePathPart(value) {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
+}
+
+function renderMetaTags(meta) {
+  const title = escapeHtml(meta.title)
+  const description = escapeHtml(meta.description)
+  const image = escapeHtml(meta.image)
+  const imageAlt = escapeHtml(meta.imageAlt || meta.title)
+  const pageUrl = escapeHtml(meta.url)
+  const type = escapeHtml(meta.type)
+
+  return `
+    <meta name="description" content="${description}">
+    <meta property="og:site_name" content="remarket">
+    <meta property="og:locale" content="ru_RU">
+    <meta property="og:title" content="${title}">
+    <meta property="og:description" content="${description}">
+    <meta property="og:image" content="${image}">
+    <meta property="og:image:alt" content="${imageAlt}">
+    <meta property="og:url" content="${pageUrl}">
+    <meta property="og:type" content="${type}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="${title}">
+    <meta name="twitter:description" content="${description}">
+    <meta name="twitter:image" content="${image}">
+    <meta name="twitter:image:alt" content="${imageAlt}">
+  `
+}
+
 async function buildMeta(url, reqHost, reqProto = 'http') {
   const u = new URL(url, `${reqProto}://${reqHost}`)
-  const pathParts = u.pathname.split('/').filter(Boolean)
-  console.log('[meta]', u.toString(), 'API_BASE:', API_BASE, 'parts:', pathParts)
+  const pathParts = u.pathname
+    .split('/')
+    .filter(Boolean)
+    .map(safeDecodePathPart)
+
+  const defaultImage = toAbsolute(DEFAULT_META_IMAGE) || `${reqProto}://${reqHost}/favicon.ico`
   let meta = {
-    title: 'remarket — цифровые товары',
-    description: 'Маркетплейс цифровых товаров, аккаунтов и услуг.',
-    image: `${reqProto}://${reqHost}/logo.png`,
+    title: DEFAULT_META_TITLE,
+    description: DEFAULT_META_DESCRIPTION,
+    image: defaultImage,
+    imageAlt: 'remarket',
     url: u.toString(),
     type: 'website',
   }
 
   try {
     if (pathParts[0] === 'product' && pathParts[1]) {
-      const res = await fetch(`${API_BASE}/products/${pathParts[1]}`)
-      console.log('[meta] product fetch status', res.status)
+      const productKey = encodeURIComponent(pathParts[1])
+      const res = await fetch(`${API_BASE}/products/${productKey}`)
       if (res.ok) {
         const data = await res.json()
         const img = data.images?.[0]?.image_url || data.images?.[0]?.url
+        const productTitle = normalizeText(data.title, 120)
+        const productDescription = normalizeText(data.description, 180)
         meta = {
-          title: `${data.title} — купить на remarket`,
-          description: (data.description || '').slice(0, 180) || meta.description,
+          title: productTitle ? `${productTitle} — купить на remarket` : meta.title,
+          description: productDescription || meta.description,
           image: img ? toAbsolute(img) : meta.image,
+          imageAlt: productTitle || 'Product image',
           url: u.toString(),
           type: 'product',
         }
       }
     } else if (pathParts[0] === 'user' && pathParts[1]) {
-      const res = await fetch(`${API_BASE}/users/${pathParts[1]}`)
-      console.log('[meta] user fetch status', res.status)
+      const username = encodeURIComponent(pathParts[1])
+      const res = await fetch(`${API_BASE}/users/${username}`)
       if (res.ok) {
         const data = await res.json()
         const avatar = data.avatar_url || data.avatar || ''
+        const profileName = normalizeText(data.username, 120)
+        const profileDescription = normalizeText(data.description, 180)
         meta = {
-          title: `${data.username} — профиль на remarket`,
-          description: (data.description || 'Профиль пользователя на remarket.').slice(0, 180),
-          image: toAbsolute(avatar) || toAbsolute('/logo.png'),
+          title: profileName ? `${profileName} — профиль на remarket` : meta.title,
+          description: profileDescription || 'Профиль пользователя на remarket.',
+          image: toAbsolute(avatar) || meta.image,
+          imageAlt: profileName || 'User avatar',
           url: u.toString(),
           type: 'profile',
         }
@@ -66,17 +130,7 @@ async function buildMeta(url, reqHost, reqProto = 'http') {
     console.warn('OG meta fetch failed', e?.message || e)
   }
 
-  return `
-    <meta property="og:title" content="${meta.title}">
-    <meta property="og:description" content="${meta.description}">
-    <meta property="og:image" content="${meta.image}">
-    <meta property="og:url" content="${meta.url}">
-    <meta property="og:type" content="${meta.type}">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="${meta.title}">
-    <meta name="twitter:description" content="${meta.description}">
-    <meta name="twitter:image" content="${meta.image}">
-  `
+  return renderMetaTags(meta)
 }
 
 async function createServer() {
