@@ -34,6 +34,7 @@ import { getErrorMessage } from '@/utils/errorsMap'
 const { t } = useI18n()
 const router = useRouter()
 const API_HOST = import.meta.env.VITE_API_HOST
+const HOME_STEAM_TOPUP_ENABLED = false
 const userStore = useUserStore()
 const { user } = storeToRefs(userStore)
 const selectedCurrency = computed(() => preferredCurrency.value)
@@ -656,6 +657,7 @@ watch(selectedSteamServiceId, () => {
 watch(
   () => user.value?.id,
   async (currentUserId, previousUserId) => {
+    if (!HOME_STEAM_TOPUP_ENABLED) return
     if (!currentUserId) {
       steamServices.value = []
       selectedSteamServiceId.value = null
@@ -674,7 +676,7 @@ onMounted(async () => {
     loadMainCategories(),
     loadSearchableCategories(),
   ])
-  if (user.value) {
+  if (HOME_STEAM_TOPUP_ENABLED && user.value) {
     await loadSteamServices()
   }
   observer = new IntersectionObserver((entries) => { if (entries[0]!.isIntersecting) loadMoreProducts() }, { rootMargin: '300px' })
@@ -737,7 +739,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div
-          v-if="user"
+          v-if="user && HOME_STEAM_TOPUP_ENABLED"
           class="mt-4 w-full rounded-2xl border border-dark-700 bg-dark-700/45 p-4 lg:max-w-2xl"
         >
           <div class="flex flex-col gap-1">
