@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { categoryService } from '@/api/category/CategoryService'
 import { productService } from '@/api/product/ProductService'
+import { steamTopupService } from '@/api/steamTopup/steamTopupService'
 import MainProductCard from '@/components/mainProductCard.vue'
 import SearchField from '@/components/SearchField.vue'
 import Title from '@/components/Title.vue'
@@ -12,9 +13,15 @@ import { useRouter } from 'vue-router'
 import type { ProductsFilterParams } from '@/api/product/ProductService'
 import type { Category } from '@/validation/category/category'
 import type { Product } from '@/validation/product/product'
-import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
+import type {
+  SteamTopUpCreateOrderPayload,
+  SteamTopUpOrder,
+  SteamTopUpService,
+} from '@/validation/steamTopup/steamTopup'
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Folder, SlidersHorizontal } from 'lucide-vue-next'
+import axios from 'axios'
 import {
   convertCurrencyAmount,
   formatCurrencyAmount,
@@ -22,6 +29,7 @@ import {
   preferredCurrency,
 } from '@/utils/currency'
 import { buildCategoryKey } from '@/utils/urlKeys'
+import { getErrorMessage } from '@/utils/errorsMap'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -64,6 +72,69 @@ const categorySearchResults = computed(() => {
   return searchableCategories.value
     .filter((category) => category.name.toLowerCase().includes(normalizedSearchQuery.value))
     .slice(0, 8)
+})
+
+type SteamAmountMode = 'denomination' | 'quantity'
+
+const steamServices = ref<SteamTopUpService[]>([])
+const selectedSteamServiceId = ref<number | null>(null)
+const steamAccount = ref('')
+const steamRegion = ref('')
+const steamServer = ref('')
+const steamQuantity = ref('')
+const steamDenominationId = ref<number | null>(null)
+const steamAmountMode = ref<SteamAmountMode>('denomination')
+const steamOrder = ref<SteamTopUpOrder | null>(null)
+const steamError = ref('')
+const steamSuccess = ref('')
+const steamServicesLoading = ref(false)
+const steamCreatingOrder = ref(false)
+const steamRefreshingOrder = ref(false)
+const steamPayingOrder = ref(false)
+const steamChargedAmountRub = ref<number | null>(null)
+const steamBalanceAfterRub = ref<number | null>(null)
+
+const selectedSteamService = computed(() => {
+  if (selectedSteamServiceId.value === null) return null
+  return steamServices.value.find((service) => service.id === selectedSteamServiceId.value) ?? null
+})
+
+const steamSupportsQuantity = computed(
+  () => selectedSteamService.value?.params?.some((param) => param.param_key === 'Quantity') ?? false,
+)
+const steamSupportsRegion = computed(
+  () => selectedSteamService.value?.params?.some((param) => param.param_key === 'Region') ?? false,
+)
+const steamSupportsServer = computed(
+  () => selectedSteamService.value?.params?.some((param) => param.param_key === 'Server') ?? false,
+)
+const steamHasDenominations = computed(
+  () => (selectedSteamService.value?.denominations?.length ?? 0) > 0,
+)
+const steamCanToggleAmountMode = computed(
+  () => steamSupportsQuantity.value && steamHasDenominations.value,
+)
+const steamOrderStatus = computed(() => steamOrder.value?.status?.toLowerCase() ?? '')
+const steamOrderReadyToPay = computed(() => steamOrderStatus.value === 'verified')
+const steamOrderPaid = computed(
+  () => steamOrderStatus.value === 'paid' || steamOrderStatus.value === 'shipped',
+)
+const steamOrderPriceLabel = computed(() => {
+  if (!steamOrder.value) return ''
+  const price = Number(steamOrder.value.price)
+  const normalizedPrice = Number.isFinite(price) ? price.toLocaleString(undefined, { maximumFractionDigits: 2 }) : steamOrder.value.price
+  return `${normalizedPrice} ${steamOrder.value.currency || 'RUB'}`
+})
+const steamCanCreateOrder = computed(() => {
+  if (!user.value || !selectedSteamService.value) return false
+  if (steamAccount.value.trim().length < 2) return false
+
+  if (steamAmountMode.value === 'denomination') {
+    return steamDenominationId.value !== null
+  }
+
+  const quantity = Number.parseFloat(steamQuantity.value)
+  return Number.isFinite(quantity) && quantity > 0
 })
 
 interface PricePreset {
@@ -186,6 +257,141 @@ function resolveCategoryImageUrl(imageUrl: string | null): string {
     return imageUrl
   }
   return `${API_HOST}${imageUrl}`
+}
+
+function resolveSteamErrorMessage(error: unknown): string {
+  if (axios.isAxiosError(error)) {
+    return getErrorMessage(error.response?.data?.detail ?? error.message, t)
+  }
+  return getErrorMessage(error, t)
+}
+
+function setDefaultSteamService(service: SteamTopUpService | null): void {
+  steamDenominationId.value = service?.denominations?.[0]?.id ?? null
+  if (service?.denominations?.length) {
+    steamAmountMode.value = 'denomination'
+    steamQuantity.value = ''
+  } else if (service?.params?.some((param) => param.param_key === 'Quantity')) {
+    steamAmountMode.value = 'quantity'
+    steamQuantity.value = steamQuantity.value || '1'
+  } else {
+    steamAmountMode.value = 'denomination'
+    steamQuantity.value = ''
+  }
+}
+
+function clearSteamFeedback(): void {
+  steamError.value = ''
+  steamSuccess.value = ''
+}
+
+function buildSteamCreateOrderPayload(): SteamTopUpCreateOrderPayload | null {
+  if (!selectedSteamService.value) return null
+
+  const account = steamAccount.value.trim()
+  if (account.length < 2) return null
+
+  const payload: SteamTopUpCreateOrderPayload = {
+    service_id: selectedSteamService.value.id,
+    account,
+  }
+
+  if (steamSupportsRegion.value && steamRegion.value.trim()) {
+    payload.region = steamRegion.value.trim()
+  }
+  if (steamSupportsServer.value && steamServer.value.trim()) {
+    payload.server = steamServer.value.trim()
+  }
+
+  if (steamAmountMode.value === 'denomination') {
+    if (steamDenominationId.value === null) return null
+    payload.denomination_id = steamDenominationId.value
+    return payload
+  }
+
+  const quantity = Number.parseFloat(steamQuantity.value)
+  if (!Number.isFinite(quantity) || quantity <= 0) return null
+  payload.quantity = quantity
+  return payload
+}
+
+async function loadSteamServices() {
+  if (!user.value) return
+  steamServicesLoading.value = true
+  clearSteamFeedback()
+  try {
+    const response = await steamTopupService.getServices()
+    steamServices.value = response.services
+    if (!steamServices.value.length) {
+      selectedSteamServiceId.value = null
+      steamOrder.value = null
+      return
+    }
+    if (!steamServices.value.some((service) => service.id === selectedSteamServiceId.value)) {
+      selectedSteamServiceId.value = steamServices.value[0]!.id
+    }
+    const selected = selectedSteamService.value ?? steamServices.value[0] ?? null
+    setDefaultSteamService(selected)
+  } catch (error) {
+    steamServices.value = []
+    selectedSteamServiceId.value = null
+    steamOrder.value = null
+    steamError.value = resolveSteamErrorMessage(error)
+  } finally {
+    steamServicesLoading.value = false
+  }
+}
+
+async function createSteamOrder() {
+  if (steamCreatingOrder.value) return
+  const payload = buildSteamCreateOrderPayload()
+  if (!payload) return
+
+  steamCreatingOrder.value = true
+  clearSteamFeedback()
+  steamChargedAmountRub.value = null
+  steamBalanceAfterRub.value = null
+  try {
+    steamOrder.value = await steamTopupService.createOrder(payload)
+    steamSuccess.value = t('pages.index.steamTopUp.orderCreated')
+  } catch (error) {
+    steamError.value = resolveSteamErrorMessage(error)
+  } finally {
+    steamCreatingOrder.value = false
+  }
+}
+
+async function refreshSteamOrder() {
+  if (!steamOrder.value || steamRefreshingOrder.value) return
+
+  steamRefreshingOrder.value = true
+  clearSteamFeedback()
+  try {
+    steamOrder.value = await steamTopupService.getOrder(steamOrder.value.id)
+  } catch (error) {
+    steamError.value = resolveSteamErrorMessage(error)
+  } finally {
+    steamRefreshingOrder.value = false
+  }
+}
+
+async function paySteamOrder() {
+  if (!steamOrder.value || steamPayingOrder.value) return
+
+  steamPayingOrder.value = true
+  clearSteamFeedback()
+  try {
+    const response = await steamTopupService.payOrder(steamOrder.value.id)
+    steamOrder.value = response.order
+    steamChargedAmountRub.value = response.charged_amount_rub
+    steamBalanceAfterRub.value = response.user_balance_after_rub
+    steamSuccess.value = t('pages.index.steamTopUp.orderPaid')
+    await userStore.fetchUser()
+  } catch (error) {
+    steamError.value = resolveSteamErrorMessage(error)
+  } finally {
+    steamPayingOrder.value = false
+  }
 }
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
@@ -433,12 +639,44 @@ const handleCategoriesWheel = (e: WheelEvent) => {
   el.scrollLeft += delta
 }
 
+watch(selectedSteamServiceId, () => {
+  steamOrder.value = null
+  steamChargedAmountRub.value = null
+  steamBalanceAfterRub.value = null
+  setDefaultSteamService(selectedSteamService.value)
+
+  if (!steamSupportsRegion.value) {
+    steamRegion.value = ''
+  }
+  if (!steamSupportsServer.value) {
+    steamServer.value = ''
+  }
+})
+
+watch(
+  () => user.value?.id,
+  async (currentUserId, previousUserId) => {
+    if (!currentUserId) {
+      steamServices.value = []
+      selectedSteamServiceId.value = null
+      steamOrder.value = null
+      return
+    }
+    if (currentUserId !== previousUserId || steamServices.value.length === 0) {
+      await loadSteamServices()
+    }
+  },
+)
+
 onMounted(async () => {
   await Promise.all([
     loadProducts(),
     loadMainCategories(),
     loadSearchableCategories(),
   ])
+  if (user.value) {
+    await loadSteamServices()
+  }
   observer = new IntersectionObserver((entries) => { if (entries[0]!.isIntersecting) loadMoreProducts() }, { rootMargin: '300px' })
   if (loadMoreTrigger.value) observer.observe(loadMoreTrigger.value)
   categoriesObserver = new IntersectionObserver((entries) => { if (entries[0]!.isIntersecting && categoryPage.value < categoryTotalPages.value) loadMoreMainCategories() }, { root: categoriesScroll.value, threshold: 0.1 })
@@ -496,6 +734,202 @@ onBeforeUnmount(() => {
             <Folder v-else class="h-5 w-5 text-gray-400 shrink-0" />
             <span class="truncate text-sm leading-5">{{ category.name }}</span>
           </button>
+        </div>
+
+        <div
+          v-if="user"
+          class="mt-4 w-full rounded-2xl border border-dark-700 bg-dark-700/45 p-4 lg:max-w-2xl"
+        >
+          <div class="flex flex-col gap-1">
+            <h2 class="text-base font-semibold text-white">{{ t('pages.index.steamTopUp.title') }}</h2>
+            <p class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.subtitle') }}</p>
+          </div>
+
+          <p v-if="steamError" class="mt-3 rounded-lg border border-red-500/35 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+            {{ steamError }}
+          </p>
+          <p v-if="steamSuccess" class="mt-3 rounded-lg border border-green-500/35 bg-green-500/10 px-3 py-2 text-sm text-green-200">
+            {{ steamSuccess }}
+          </p>
+
+          <div v-if="steamServicesLoading" class="mt-3 text-sm text-gray-400">
+            {{ t('common.loading') }}
+          </div>
+          <div v-else-if="!steamServices.length" class="mt-3 text-sm text-gray-400">
+            {{ t('pages.index.steamTopUp.noServices') }}
+          </div>
+          <div v-else class="mt-3 space-y-3">
+            <label class="block">
+              <span class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.service') }}</span>
+              <select
+                v-model.number="selectedSteamServiceId"
+                class="mt-1 h-10 w-full rounded-xl border border-dark-600 bg-dark-700/45 px-3 text-sm text-white outline-none transition focus:border-blue-400/40"
+              >
+                <option
+                  v-for="service in steamServices"
+                  :key="service.id"
+                  :value="service.id"
+                >
+                  {{ service.name }}
+                </option>
+              </select>
+            </label>
+
+            <label class="block">
+              <span class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.account') }}</span>
+              <input
+                v-model.trim="steamAccount"
+                type="text"
+                autocomplete="off"
+                class="mt-1 h-10 w-full rounded-xl border border-dark-600 bg-dark-700/45 px-3 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-blue-400/40"
+                :placeholder="t('pages.index.steamTopUp.accountPlaceholder')"
+              />
+            </label>
+
+            <div v-if="steamCanToggleAmountMode">
+              <p class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.amountType') }}</p>
+              <div class="mt-1 flex gap-2">
+                <button
+                  type="button"
+                  class="rounded-lg border px-3 py-1.5 text-xs font-semibold transition"
+                  :class="steamAmountMode === 'denomination'
+                    ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
+                    : 'border-dark-600 bg-dark-700/45 text-gray-300 hover:bg-dark-700/60'"
+                  @click="steamAmountMode = 'denomination'"
+                >
+                  {{ t('pages.index.steamTopUp.amountTypeFixed') }}
+                </button>
+                <button
+                  type="button"
+                  class="rounded-lg border px-3 py-1.5 text-xs font-semibold transition"
+                  :class="steamAmountMode === 'quantity'
+                    ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
+                    : 'border-dark-600 bg-dark-700/45 text-gray-300 hover:bg-dark-700/60'"
+                  @click="steamAmountMode = 'quantity'"
+                >
+                  {{ t('pages.index.steamTopUp.amountTypeCustom') }}
+                </button>
+              </div>
+            </div>
+
+            <label
+              v-if="steamAmountMode === 'denomination' && steamHasDenominations"
+              class="block"
+            >
+              <span class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.denomination') }}</span>
+              <select
+                v-model.number="steamDenominationId"
+                class="mt-1 h-10 w-full rounded-xl border border-dark-600 bg-dark-700/45 px-3 text-sm text-white outline-none transition focus:border-blue-400/40"
+              >
+                <option
+                  v-for="denomination in selectedSteamService?.denominations ?? []"
+                  :key="denomination.id"
+                  :value="denomination.id"
+                >
+                  {{ denomination.name }} ({{ denomination.price }} {{ denomination.currency }})
+                </option>
+              </select>
+            </label>
+
+            <label
+              v-else-if="steamSupportsQuantity"
+              class="block"
+            >
+              <span class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.quantity') }}</span>
+              <input
+                v-model.trim="steamQuantity"
+                type="number"
+                min="0.01"
+                step="0.01"
+                inputmode="decimal"
+                class="mt-1 h-10 w-full rounded-xl border border-dark-600 bg-dark-700/45 px-3 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-blue-400/40"
+                :placeholder="t('pages.index.steamTopUp.quantityPlaceholder')"
+              />
+            </label>
+
+            <div
+              v-if="steamSupportsRegion || steamSupportsServer"
+              class="grid grid-cols-1 gap-3 sm:grid-cols-2"
+            >
+              <label v-if="steamSupportsRegion" class="block">
+                <span class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.region') }}</span>
+                <input
+                  v-model.trim="steamRegion"
+                  type="text"
+                  class="mt-1 h-10 w-full rounded-xl border border-dark-600 bg-dark-700/45 px-3 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-blue-400/40"
+                  :placeholder="t('pages.index.steamTopUp.regionPlaceholder')"
+                />
+              </label>
+              <label v-if="steamSupportsServer" class="block">
+                <span class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.server') }}</span>
+                <input
+                  v-model.trim="steamServer"
+                  type="text"
+                  class="mt-1 h-10 w-full rounded-xl border border-dark-600 bg-dark-700/45 px-3 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-blue-400/40"
+                  :placeholder="t('pages.index.steamTopUp.serverPlaceholder')"
+                />
+              </label>
+            </div>
+
+            <button
+              type="button"
+              class="h-10 rounded-xl border border-blue-400/40 bg-blue-500/10 px-4 text-sm font-semibold text-blue-200 transition hover:bg-blue-500/15 disabled:cursor-not-allowed disabled:opacity-50"
+              :disabled="!steamCanCreateOrder || steamCreatingOrder"
+              @click="createSteamOrder"
+            >
+              {{ steamCreatingOrder ? t('pages.index.steamTopUp.creatingOrder') : t('pages.index.steamTopUp.createOrder') }}
+            </button>
+          </div>
+
+          <div
+            v-if="steamOrder"
+            class="mt-4 rounded-xl border border-dark-600 bg-dark-700/35 p-3"
+          >
+            <p class="text-sm font-semibold text-white">
+              {{ t('pages.index.steamTopUp.orderTitle') }} #{{ steamOrder.id }}
+            </p>
+            <div class="mt-2 grid grid-cols-1 gap-2 text-sm text-gray-300 sm:grid-cols-2">
+              <p>
+                <span class="text-gray-400">{{ t('pages.index.steamTopUp.orderStatus') }}:</span>
+                <span class="ml-1">{{ steamOrder.status }}</span>
+              </p>
+              <p>
+                <span class="text-gray-400">{{ t('pages.index.steamTopUp.orderPrice') }}:</span>
+                <span class="ml-1">{{ steamOrderPriceLabel }}</span>
+              </p>
+              <p v-if="steamOrder.denomination">
+                <span class="text-gray-400">{{ t('pages.index.steamTopUp.denomination') }}:</span>
+                <span class="ml-1">{{ steamOrder.denomination.name }}</span>
+              </p>
+              <p v-if="steamChargedAmountRub !== null">
+                <span class="text-gray-400">{{ t('pages.index.steamTopUp.chargedAmount') }}:</span>
+                <span class="ml-1">{{ formatCurrencyAmount(steamChargedAmountRub, { fromCurrency: 'RUB', currency: 'RUB' }) }}</span>
+              </p>
+              <p v-if="steamBalanceAfterRub !== null">
+                <span class="text-gray-400">{{ t('pages.index.steamTopUp.balanceAfter') }}:</span>
+                <span class="ml-1">{{ formatCurrencyAmount(steamBalanceAfterRub, { fromCurrency: 'RUB', currency: 'RUB' }) }}</span>
+              </p>
+            </div>
+
+            <div class="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                class="h-9 rounded-lg border border-dark-600 bg-dark-700/50 px-3 text-xs font-semibold text-gray-200 transition hover:bg-dark-700/70 disabled:cursor-not-allowed disabled:opacity-50"
+                :disabled="steamRefreshingOrder"
+                @click="refreshSteamOrder"
+              >
+                {{ steamRefreshingOrder ? t('pages.index.steamTopUp.refreshingOrder') : t('pages.index.steamTopUp.refreshOrder') }}
+              </button>
+              <button
+                type="button"
+                class="h-9 rounded-lg border border-emerald-400/35 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-50"
+                :disabled="!steamOrderReadyToPay || steamOrderPaid || steamPayingOrder"
+                @click="paySteamOrder"
+              >
+                {{ steamPayingOrder ? t('pages.index.steamTopUp.payingOrder') : t('pages.index.steamTopUp.payOrder') }}
+              </button>
+            </div>
+          </div>
         </div>
 
         <div class="mt-10 w-full sm:mt-16">

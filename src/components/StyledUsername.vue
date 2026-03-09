@@ -37,8 +37,6 @@ const customInlineStyle = computed<CSSProperties | undefined>(() => {
       ? `-2px 0 6px ${rgbToRgba(config.glowColor, 0.34)}, 2px 0 6px ${rgbToRgba(config.glowColor, 0.34)}, 0 0 14px ${rgbToRgba(config.glowColor, 0.28)}`
       : undefined,
     fontWeight: String(config.fontWeight),
-    fontStyle: config.italic ? 'italic' : 'normal',
-    textDecorationLine: config.underline ? 'underline' : 'none',
   }
 })
 </script>

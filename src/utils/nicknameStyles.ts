@@ -25,15 +25,13 @@ export const CUSTOM_NICKNAME_STYLE_FONT_WEIGHTS = [500, 600, 700, 800, 900] as c
 export type CustomNicknameStyleFontWeight = (typeof CUSTOM_NICKNAME_STYLE_FONT_WEIGHTS)[number]
 
 const CUSTOM_NICKNAME_STYLE_ID_REGEX =
-  /^custom_([0-9a-f]{6})_([0-9a-f]{6})_([0-9a-f]{6})_(500|600|700|800|900)_([01])_([01])_([01])$/
+  /^custom_([0-9a-f]{6})_([0-9a-f]{6})_([0-9a-f]{6})_(500|600|700|800|900)(?:_([01])_([01]))?_([01])$/
 
 export type CustomNicknameStyleConfig = {
   primaryColor: { r: number; g: number; b: number }
   secondaryColor: { r: number; g: number; b: number }
   glowColor: { r: number; g: number; b: number }
   fontWeight: CustomNicknameStyleFontWeight
-  italic: boolean
-  underline: boolean
   glowEnabled: boolean
 }
 
@@ -63,7 +61,7 @@ export function buildCustomNicknameStyleId(config: CustomNicknameStyleConfig): s
   const glowHex = `${toHex(config.glowColor.r)}${toHex(config.glowColor.g)}${toHex(config.glowColor.b)}`
   const fontWeight = normalizeFontWeight(config.fontWeight)
 
-  return `${CUSTOM_NICKNAME_STYLE_PREFIX}${primaryHex}_${secondaryHex}_${glowHex}_${fontWeight}_${config.italic ? 1 : 0}_${config.underline ? 1 : 0}_${config.glowEnabled ? 1 : 0}`
+  return `${CUSTOM_NICKNAME_STYLE_PREFIX}${primaryHex}_${secondaryHex}_${glowHex}_${fontWeight}_${config.glowEnabled ? 1 : 0}`
 }
 
 function parseHexColor(hexColor: string): { r: number; g: number; b: number } {
@@ -81,15 +79,13 @@ export function parseCustomNicknameStyleId(
   const match = normalized.match(CUSTOM_NICKNAME_STYLE_ID_REGEX)
   if (!match) return null
 
-  const [, primaryHex, secondaryHex, glowHex, fontWeightRaw, italicRaw, underlineRaw, glowEnabledRaw] = match
+  const [, primaryHex, secondaryHex, glowHex, fontWeightRaw, _italicRaw, _underlineRaw, glowEnabledRaw] = match
 
   return {
     primaryColor: parseHexColor(primaryHex),
     secondaryColor: parseHexColor(secondaryHex),
     glowColor: parseHexColor(glowHex),
     fontWeight: normalizeFontWeight(Number.parseInt(fontWeightRaw, 10)),
-    italic: italicRaw === '1',
-    underline: underlineRaw === '1',
     glowEnabled: glowEnabledRaw === '1',
   }
 }

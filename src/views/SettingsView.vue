@@ -94,8 +94,6 @@ const customGlowR = ref(244)
 const customGlowG = ref(114)
 const customGlowB = ref(182)
 const customFontWeight = ref<CustomNicknameStyleFontWeight>(700)
-const customItalic = ref(false)
-const customUnderline = ref(false)
 const customGlowEnabled = ref(true)
 
 const currentUsername = computed(() => user.value?.username ?? 'username')
@@ -111,8 +109,6 @@ const customStyleId = computed(() =>
     secondaryColor: { r: customSecondaryR.value, g: customSecondaryG.value, b: customSecondaryB.value },
     glowColor: { r: customGlowR.value, g: customGlowG.value, b: customGlowB.value },
     fontWeight: customFontWeight.value,
-    italic: customItalic.value,
-    underline: customUnderline.value,
     glowEnabled: customGlowEnabled.value,
   }),
 )
@@ -1508,7 +1504,7 @@ onUnmounted(() => {
                     </div>
                   </div>
 
-                  <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                  <div class="grid grid-cols-2 gap-3 lg:grid-cols-2">
                     <label class="rounded-lg border border-dark-600 bg-dark-800/60 px-3 py-2">
                       <div class="text-[11px] uppercase tracking-wide text-gray-400">
                         {{ $t('pages.settingsPage.customFontWeight') }}
@@ -1525,28 +1521,6 @@ onUnmounted(() => {
                           {{ weight }}
                         </option>
                       </select>
-                    </label>
-
-                    <label class="rounded-lg border border-dark-600 bg-dark-800/60 px-3 py-2 text-xs text-gray-200">
-                      <div class="text-[11px] uppercase tracking-wide text-gray-400">
-                        {{ $t('pages.settingsPage.customItalic') }}
-                      </div>
-                      <Checkbox
-                        v-model="customItalic"
-                        class="mt-3"
-                        size="md"
-                      />
-                    </label>
-
-                    <label class="rounded-lg border border-dark-600 bg-dark-800/60 px-3 py-2 text-xs text-gray-200">
-                      <div class="text-[11px] uppercase tracking-wide text-gray-400">
-                        {{ $t('pages.settingsPage.customUnderline') }}
-                      </div>
-                      <Checkbox
-                        v-model="customUnderline"
-                        class="mt-3"
-                        size="md"
-                      />
                     </label>
 
                     <label class="rounded-lg border border-dark-600 bg-dark-800/60 px-3 py-2 text-xs text-gray-200">
