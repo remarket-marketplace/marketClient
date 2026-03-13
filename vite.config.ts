@@ -27,5 +27,35 @@ export default defineConfig({
     outDir: 'dist/client',
     manifest: true,
     ssrManifest: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined
+
+          if (id.includes('apexcharts') || id.includes('vue3-apexcharts')) {
+            return 'vendor-charts'
+          }
+
+          if (
+            id.includes('/vue/') ||
+            id.includes('/vue-router/') ||
+            id.includes('/pinia/') ||
+            id.includes('/vue-i18n/')
+          ) {
+            return 'vendor-vue'
+          }
+
+          if (id.includes('/socket.io-client/')) {
+            return 'vendor-socket'
+          }
+
+          if (id.includes('/lucide-vue-next/')) {
+            return 'vendor-icons'
+          }
+
+          return 'vendor-misc'
+        },
+      },
+    },
   }
 })

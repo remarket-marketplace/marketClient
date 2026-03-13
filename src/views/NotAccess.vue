@@ -17,7 +17,7 @@ const goHome = () => {
     <!-- Фон с анимированными шарами -->
     <div class="absolute inset-0 w-full h-full z-0 pointer-events-none">
         <div class="absolute inset-0 bg-background"></div>
-        <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-soft-light"></div>
+        <div class="absolute inset-0 noise-overlay-bg opacity-20 mix-blend-soft-light"></div>
         
         <div class="absolute inset-0 flex items-center justify-center">
           <div class="text-[30vw] md:text-[25vw] lg:text-[20vw] font-black tracking-tight opacity-[0.03] select-none">

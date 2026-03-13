@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 
 interface Props {
   modelValue: string
@@ -26,11 +26,15 @@ const emit = defineEmits<{
 
 const inputRef = ref<HTMLInputElement>()
 
-// Вычисляемое свойство для двустороннего связывания
-const value = computed({
-  get: () => props.modelValue,
-  set: (val: string) => emit('update:modelValue', val)
-})
+function onInput(event: Event) {
+  const target = event.target as HTMLInputElement | null
+  emit('update:modelValue', target?.value ?? '')
+}
+
+function onChange(event: Event) {
+  const target = event.target as HTMLInputElement | null
+  emit('update:modelValue', target?.value ?? '')
+}
 
 // Проксируем фокус для возможности фокусировки извне
 defineExpose({
@@ -43,7 +47,9 @@ defineExpose({
     <!-- Основной инпут -->
     <input
       ref="inputRef"
-      v-model="value"
+      :value="props.modelValue"
+      @input="onInput"
+      @change="onChange"
       :type="type"
       :placeholder="placeholder"
       :required="required"

@@ -1,4 +1,4 @@
-import { literal, z } from 'zod'
+import { z } from 'zod'
 import { PublicProfileDataSchema } from '../user/userRead'
 import { ChatMessageUnionSchema } from './chatMessage'
 

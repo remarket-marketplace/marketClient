@@ -79,7 +79,15 @@ export function parseCustomNicknameStyleId(
   const match = normalized.match(CUSTOM_NICKNAME_STYLE_ID_REGEX)
   if (!match) return null
 
-  const [, primaryHex, secondaryHex, glowHex, fontWeightRaw, _italicRaw, _underlineRaw, glowEnabledRaw] = match
+  const primaryHex = match[1]
+  const secondaryHex = match[2]
+  const glowHex = match[3]
+  const fontWeightRaw = match[4]
+  const glowEnabledRaw = match[7]
+
+  if (!primaryHex || !secondaryHex || !glowHex || !fontWeightRaw || !glowEnabledRaw) {
+    return null
+  }
 
   return {
     primaryColor: parseHexColor(primaryHex),

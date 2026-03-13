@@ -65,7 +65,7 @@ function goHome() {
     <div class="pointer-events-none absolute inset-0 z-0">
       <div class="absolute inset-0 bg-background"></div>
       <div class="absolute inset-0 bg-[radial-gradient(65%_45%_at_50%_0%,rgba(59,130,246,0.08),transparent_75%)]"></div>
-      <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-soft-light"></div>
+      <div class="absolute inset-0 noise-overlay-bg opacity-10 mix-blend-soft-light"></div>
     </div>
 
     <div class="relative z-10 mx-auto flex h-full w-full max-w-2xl items-center">

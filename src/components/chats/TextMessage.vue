@@ -116,7 +116,7 @@ const shouldRenderAdminMessage = computed(() => {
             </div>
           </div>
           <div class="mt-2 flex items-center justify-end gap-2 text-xs text-gray-400">
-            <span>{{ formatDate(textMessage.created_at) }}</span>
+            <span>{{ textMessage ? formatDate(textMessage.created_at) : '' }}</span>
             <span
               v-if="isOwnMessage"
               class="inline-flex items-center leading-none select-none transition-colors duration-200"
@@ -125,7 +125,7 @@ const shouldRenderAdminMessage = computed(() => {
               :aria-label="readStatusTitle"
             >
               <Check
-                v-if="!textMessage.is_read"
+                v-if="textMessage ? !textMessage.is_read : false"
                 class="h-3.5 w-3.5 translate-y-[0.25px]"
                 :stroke-width="2.35"
                 aria-hidden="true"

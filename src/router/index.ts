@@ -1,258 +1,221 @@
 import { createRouter, createWebHistory, createMemoryHistory } from "vue-router";
-import HomeView from "../views/HomeView.vue";
-import SignIn from "@/views/SignIn.vue";
-import SignUp from "@/views/SignUp.vue";
-import ProfileView from "@/views/ProfileView.vue";
-import CreateProductView from "@/views/CreateProductView.vue";
-import ProductPage from "@/views/ProductPage.vue";
-import ChatsView from "@/views/ChatsView.vue";
-import AdminHomeView from "@/views/admin/AdminHomeView.vue";
 import { authService } from "@/api/auth/AuthService";
-import NotAccess from "@/views/NotAccess.vue";
-import AdminUsersView from "@/views/admin/AdminUsersView.vue";
-import AdminProductsView from "@/views/admin/AdminProductsView.vue";
-import AdminCategoriesView from "@/views/admin/AdminCategoriesView.vue";
-import AdminEditUserView from "@/views/admin/AdminEditUserView.vue";
-import AdminDealsView from "@/views/admin/AdminDealsView.vue";
-import WalletView from "@/views/WalletView.vue";
-import SettingsView from "@/views/SettingsView.vue";
-import UpdateProductView from "@/views/UpdateProductView.vue";
-import EnterResetEmailView from "@/views/resetPassword/EnterResetEmailView.vue";
-import ResetPasswordView from "@/views/resetPassword/ResetPasswordView.vue";
-import AdminEditCategoryView from "@/views/admin/AdminEditCategoryView.vue";
-import FavoritesProductsView from "@/views/FavoritesProductsView.vue";
-import AdminDealView from "@/views/admin/AdminDealView.vue";
-import PaymentSuccessView from "@/views/PaymentSuccessView.vue";
-import PaymentFailedView from "@/views/PaymentFailedView.vue";
-import AdminChatView from "@/views/admin/AdminChatView.vue";
-import AdminChatsView from "@/views/admin/AdminChatsView.vue";
-import FeedbackView from "@/views/FeedbackView.vue";
-import AdminFeedbacksView from "@/views/admin/AdminFeedbacksView.vue";
-import AdminFeedbackView from "@/views/admin/AdminFeedbackView.vue";
-import AdminActivityLogsView from "@/views/admin/AdminActivityLogsView.vue";
-import BecomeSellerView from "@/views/BecomeSellerView.vue";
-import AboutView from "@/views/AboutView.vue";
-import TermsOfServiceView from "@/views/TermsOfServiceView.vue";
-import PrivacyPolicyView from "@/views/PrivacyPolicyView.vue";
-import PartnerFortniteStatsView from "@/views/partner/PartnerFortniteStatsView.vue";
-import BannedView from "@/views/BannedView.vue";
-import CategoryView from "@/views/CategoryView.vue";
 
-const YANDEX_METRIKA_COUNTER_ID = 106722008;
+const YANDEX_METRIKA_COUNTER_ID = 106828907;
 
 const routes = [
     {
       path: "/",
       name: "home",
-      component: HomeView,
+      component: () => import("../views/HomeView.vue"),
     },
     {
       path: "/signin",
       name: "signIn",
-      component: SignIn,
+      component: () => import("@/views/SignIn.vue"),
       meta: { requiredGuest: true },
     },
     {
       path: "/signup",
       name: "signUp",
-      component: SignUp,
+      component: () => import("@/views/SignUp.vue"),
       meta: { requiredGuest: true },
     },
     {
       path: "/password-reset-email",
       name: "password reset email",
-      component: EnterResetEmailView,
+      component: () => import("@/views/resetPassword/EnterResetEmailView.vue"),
     },
     {
       path: "/password-reset-code",
       name: "password reset code",
-      component: ResetPasswordView,
+      component: () => import("@/views/resetPassword/ResetPasswordView.vue"),
     },
     {
       path: "/user/:username",
       name: "profile",
-      component: ProfileView,
+      component: () => import("@/views/ProfileView.vue"),
     },
     {
       path: "/user/products/favorites",
       name: "favorites products",
-      component: FavoritesProductsView,
+      component: () => import("@/views/FavoritesProductsView.vue"),
     },
     {
       path: "/product/create",
       name: "create product",
-      component: CreateProductView,
+      component: () => import("@/views/CreateProductView.vue"),
       meta: { requiredAuthorized: true },
     },
     {
       path: "/product/edit/:productId",
       name: "edit product",
-      component: UpdateProductView,
+      component: () => import("@/views/UpdateProductView.vue"),
       meta: { requiredAuthorized: true },
     },
     {
       path: "/product/:productId",
       name: "product page",
-      component: ProductPage,
+      component: () => import("@/views/ProductPage.vue"),
     },
     {
       path: "/category/:categoryId",
       name: "category page",
-      component: CategoryView,
+      component: () => import("@/views/CategoryView.vue"),
     },
     {
       path: "/chats/:chatId?",
       name: "chats",
-      component: ChatsView,
+      component: () => import("@/views/ChatsView.vue"),
       meta: { requiredAuthorized: true },
     },
     {
       path: "/not-access",
       name: "notAccess",
-      component: NotAccess,
+      component: () => import("@/views/NotAccess.vue"),
     },
     {
       path: "/banned",
       name: "banned",
-      component: BannedView,
+      component: () => import("@/views/BannedView.vue"),
     },
     {
       path: "/admin",
       name: "admin",
-      component: AdminHomeView,
+      component: () => import("@/views/admin/AdminHomeView.vue"),
       meta: { requiredAdmin: true },
     },
     {
       path: "/admin/users",
       name: "admin users",
-      component: AdminUsersView,
+      component: () => import("@/views/admin/AdminUsersView.vue"),
       meta: { requiredAdmin: true },
     },
     {
       path: "/admin/users/edit/:id",
       name: "admin edit user",
-      component: AdminEditUserView,
+      component: () => import("@/views/admin/AdminEditUserView.vue"),
       meta: { requiredAdmin: true },
     },
     {
       path: "/admin/products",
       name: "products",
-      component: AdminProductsView,
+      component: () => import("@/views/admin/AdminProductsView.vue"),
       meta: { requiredAdmin: true },
     },
     {
       path: "/admin/deals",
       name: "deals",
-      component: AdminDealsView,
+      component: () => import("@/views/admin/AdminDealsView.vue"),
       meta: { requiredAdmin: true },
     },
     {
       path: "/admin/deal/:id",
       name: "deal",
-      component: AdminDealView,
+      component: () => import("@/views/admin/AdminDealView.vue"),
       meta: { requiredAdmin: true },
     },
     {
       path: "/admin/categories",
       name: "categories",
-      component: AdminCategoriesView,
+      component: () => import("@/views/admin/AdminCategoriesView.vue"),
       meta: { requiredAdmin: true },
     },
     {
       path: "/admin/support/chats",
       name: "support chats",
-      component: AdminChatsView,
+      component: () => import("@/views/admin/AdminChatsView.vue"),
       meta: { requiredAdmin: true },
     },
     {
       path: "/admin/feedback",
       name: "admin feedbacks",
-      component: AdminFeedbacksView,
+      component: () => import("@/views/admin/AdminFeedbacksView.vue"),
       meta: { requiredAdmin: true },
     },
     {
       path: "/admin/feedback/:feedbackId",
       name: "admin feedback",
-      component: AdminFeedbackView,
+      component: () => import("@/views/admin/AdminFeedbackView.vue"),
       meta: { requiredAdmin: true },
     },
     {
       path: "/admin/activity-logs",
       name: "admin activity logs",
-      component: AdminActivityLogsView,
+      component: () => import("@/views/admin/AdminActivityLogsView.vue"),
       meta: { requiredAdmin: true },
     },
     {
       path: "/admin/categories/edit/:id",
       name: "edit category",
-      component: AdminEditCategoryView,
+      component: () => import("@/views/admin/AdminEditCategoryView.vue"),
       meta: { requiredAuthorized: true },
     },
     {
       path: "/admin/chats/:chatId",
       name: "adminChatView",
-      component: AdminChatView,
+      component: () => import("@/views/admin/AdminChatView.vue"),
       meta: { requiredAdmin: true },
     },
     {
       path: "/partner/fortnite-stats",
       name: "partner fortnite stats",
-      component: PartnerFortniteStatsView,
+      component: () => import("@/views/partner/PartnerFortniteStatsView.vue"),
       meta: { requiredPartner: true },
     },
     {
       path: "/wallet",
       name: "wallet",
-      component: WalletView,
+      component: () => import("@/views/WalletView.vue"),
       meta: { requiredAuthorized: true },
     },
     {
       path: "/settings",
       name: "settings",
-      component: SettingsView,
+      component: () => import("@/views/SettingsView.vue"),
       meta: { requiredAuthorized: true },
     },
     {
       path: "/payment/success",
       name: "success payment",
-      component: PaymentSuccessView,
+      component: () => import("@/views/PaymentSuccessView.vue"),
     },
     {
       path: "/payment/failed",
       name: "failed payment",
-      component: PaymentFailedView,
+      component: () => import("@/views/PaymentFailedView.vue"),
     },
     {
       path: "/feedback",
       name: "feedback",
-      component: FeedbackView,
+      component: () => import("@/views/FeedbackView.vue"),
       meta: { requiredAuthorized: true },
     },
     {
       path: "/become-seller",
       name: "become seller",
-      component: BecomeSellerView,
+      component: () => import("@/views/BecomeSellerView.vue"),
     },
     {
       path: "/about",
       name: "about",
-      component: AboutView,
+      component: () => import("@/views/AboutView.vue"),
     },
     {
       path: "/terms",
       name: "terms",
-      component: TermsOfServiceView,
+      component: () => import("@/views/TermsOfServiceView.vue"),
     },
     {
       path: "/privacy-policy",
       alias: "/privacy",
       name: "privacy policy",
-      component: PrivacyPolicyView,
+      component: () => import("@/views/PrivacyPolicyView.vue"),
     },
     {
       path: "/:pathMatch(.*)*",
       name: "notFound",
-      component: NotAccess,
+      component: () => import("@/views/NotAccess.vue"),
     },
   ]
 

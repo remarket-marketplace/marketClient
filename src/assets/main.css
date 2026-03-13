@@ -8,6 +8,12 @@
 
 
 
+.noise-overlay-bg {
+  background-image: url('/noise.svg');
+  background-repeat: repeat;
+  background-size: 220px 220px;
+}
+
 
 
 /* Отключение зума на инпутах на iOS */

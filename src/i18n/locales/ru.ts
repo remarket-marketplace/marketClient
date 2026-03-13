@@ -1,5 +1,3 @@
-import { de } from "zod/locales";
-
 const ru = {
   common: {
     loading: "Загрузка...",

@@ -107,7 +107,7 @@ function validatePassword() {
     return false
   }
 
-  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password.value)) {
+  if (!/[^A-Za-z0-9]/.test(password.value)) {
     passwordError.value = t('pages.auth.signUp.passwordSpecialCharError')
     return false
   }
@@ -319,7 +319,7 @@ function handleWelcomeFinished() {
             <label for="username" class="mb-1 block text-sm text-text-secondary">{{ $t('common.username') }}</label>
             <TheInput id="username" v-model="username" type="text"
               :placeholder="$t('pages.auth.signUp.usernamePlaceholder')" required @blur="validateUsername"
-              @input="clearUsernameError" :minlength="4" :maxlength="32" />
+              @input="clearUsernameError" :minlength="4" :maxlength="32" autocomplete="username" />
             <p v-if="usernameError" class="text-gray-300 text-sm mt-1">{{ usernameError }}</p>
           </div>
 
@@ -327,7 +327,7 @@ function handleWelcomeFinished() {
           <div>
             <label for="email" class="mb-1 block text-sm text-text-secondary">{{ $t('common.email') }}</label>
             <TheInput id="email" v-model="email" type="email" :placeholder="$t('common.email')" required
-              @blur="validateEmail" @input="clearEmailError" :maxlength="64" />
+              @blur="validateEmail" @input="clearEmailError" :maxlength="64" autocomplete="email" />
             <p v-if="emailError" class="text-gray-300 text-sm mt-1">{{ emailError }}</p>
           </div>
 
@@ -335,7 +335,7 @@ function handleWelcomeFinished() {
           <div>
             <label for="password" class="mb-1 block text-sm text-text-secondary">{{ $t('common.password') }}</label>
             <TheInput id="password" v-model="password" :type="passwordHidden ? 'password' : 'text'" placeholder="••••••••"
-              required :minlength="8" @blur="validatePassword" @input="clearPasswordError">
+              required :minlength="8" @blur="validatePassword" @input="clearPasswordError" autocomplete="new-password">
               <template #append>
                 <button type="button" class="text-gray-400 hover:text-gray-300 transition-colors focus:outline-none p-1"
                   @click="switchPasswordVisibility">
@@ -353,7 +353,7 @@ function handleWelcomeFinished() {
               $t('pages.auth.signUp.confirmPassword')
               }}</label>
             <TheInput id="passwordRepeat" v-model="passwordRepeat" :type="passwordRepeatHidden ? 'password' : 'text'" placeholder="••••••••" required
-              :minlength="8">
+              :minlength="8" autocomplete="new-password">
               <template #append>
                 <button type="button" class="text-gray-400 hover:text-gray-300 transition-colors focus:outline-none p-1"
                   @click="switchPasswordRepeatVisibility">

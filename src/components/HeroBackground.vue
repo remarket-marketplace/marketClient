@@ -12,7 +12,7 @@ withDefaults(
 <template>
   <div class="relative h-full w-full overflow-hidden pointer-events-none" :class="masked ? 'hero-mask' : ''">
     <div class="absolute inset-0 bg-background"></div>
-    <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-soft-light"></div>
+    <div class="absolute inset-0 noise-overlay-bg opacity-20 mix-blend-soft-light"></div>
     <div class="absolute inset-0 hero-grid-pattern"></div>
 
     <div class="absolute top-0 left-1/4 h-[500px] w-[500px] rounded-full bg-blue-600/30 blur-[120px] animate-blob"></div>

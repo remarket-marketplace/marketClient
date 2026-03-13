@@ -190,6 +190,7 @@ onMounted(async () => {
             if (chatIndex === -1) return
 
             const chat = chats.value[chatIndex]
+            if (!chat) return
             const isActiveChat = selectedChatId.value === update.chat_id
             const previousLastMessageId = chat.last_message?.id ?? null
             const incomingLastMessageId = update.last_message?.id ?? null
@@ -197,7 +198,7 @@ onMounted(async () => {
                 incomingLastMessageId && incomingLastMessageId !== previousLastMessageId
             )
 
-            if (update.last_message && chat) {
+            if (update.last_message) {
                 if (shouldApplyLastMessage(chat.last_message ?? null, update.last_message)) {
                     chat.last_message = update.last_message
                     // Перемещаем чат наверх только когда пришло именно новое сообщение.
@@ -208,7 +209,7 @@ onMounted(async () => {
                 }
             }
 
-            if (chat && typeof update.unread_count === 'number') {
+            if (typeof update.unread_count === 'number') {
                 chat.unread_count = isActiveChat ? 0 : update.unread_count
                 if (isActiveChat && update.unread_count > 0) {
                     void chatsService.markChatRead(update.chat_id)
