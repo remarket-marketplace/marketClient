@@ -2,7 +2,9 @@ import {
   ChatArrayUnionSchema,
   ChatMessageUnionSchema,
   ChatUpdateSchema,
+  MessagesReadSchema,
   type ChatMessageUnion,
+  type MessagesReadPayload,
 } from "@/validation/chat/chatMessage";
 import type { Socket } from "socket.io-client";
 import { io } from "socket.io-client";
@@ -18,12 +20,14 @@ let socket: Socket | null = null;
 type MessageCallback = (message: ChatMessageUnion) => void;
 type ChatUpdatedCallback = (data: ChatUpdateSchema) => void;
 type ChatNotificationCallback = (data: ChatUpdateSchema) => void;
+type MessagesReadCallback = (data: MessagesReadPayload) => void;
 
 const WS_API_HOST = import.meta.env.VITE_WS_API_HOST;
 
 const newMessageCallbacks: MessageCallback[] = [];
 const chatUpdatedCallbacks: ChatUpdatedCallback[] = [];
 const chatNotificationCallbacks: ChatNotificationCallback[] = [];
+const messagesReadCallbacks: MessagesReadCallback[] = [];
 
 let lastSubscribedChatId: string | null = null;
 let heartbeatIntervalHandle: number | null = null;
@@ -155,6 +159,15 @@ export const chatsService = {
           console.error("Error validating chat notification:", e);
         }
       });
+
+      socket.on("messages_read", (data: any) => {
+        try {
+          const validated = MessagesReadSchema.parse(data);
+          messagesReadCallbacks.forEach((cb) => cb(validated));
+        } catch (e) {
+          console.error("Error validating messages_read event:", e);
+        }
+      });
     });
   },
 
@@ -213,6 +226,16 @@ export const chatsService = {
     }
   },
 
+  async markChatRead(chatId: string): Promise<boolean> {
+    try {
+      await httpClient.post(`/chats/${chatId}/read`);
+      return true;
+    } catch (e) {
+      console.error("markChatRead error", e);
+      return false;
+    }
+  },
+
     async getChatMessagesByDealId(
     dealId: string,
     page: number,
@@ -248,22 +271,112 @@ export const chatsService = {
     }
   },
 
-  async sendMessage(message: string, chatId: string): Promise<boolean> {
+  async sendMessage(
+    message: string,
+    chatId: string,
+    options?: { isAdminPanelMessage?: boolean },
+  ): Promise<{ success: boolean; errorCode?: string }> {
     if (!this.isConnected()) {
       await new Promise((r) => setTimeout(r, 500));
 
       if (!this.isConnected()) {
         console.error("Socket not connected even after retry");
-        return false;
+        return { success: false, errorCode: "NETWORK_ERROR" };
       }
     }
 
     try {
-      socket!.emit("send_message", { chat_id: chatId, message });
-      return true;
+      const ack = await new Promise<{ success?: boolean; error_code?: string }>(
+        (resolve) => {
+          socket!.emit(
+            "send_message",
+            {
+              chat_id: chatId,
+              message,
+              is_admin_panel_message: options?.isAdminPanelMessage === true,
+            },
+            (response: any) => {
+              resolve(response ?? { success: true });
+            }
+          );
+        }
+      );
+      return {
+        success: ack.success === true,
+        errorCode: ack.error_code,
+      };
     } catch (e) {
       console.error("Error sending message:", e);
-      return false;
+      return { success: false, errorCode: "SERVER_ERROR" };
+    }
+  },
+
+  async sendImages(
+    chatId: string,
+    files: File[],
+  ): Promise<{ success: boolean; errorCode?: string }> {
+    if (files.length === 0) {
+      return { success: true };
+    }
+
+    const MAX_IMAGES_PER_MESSAGE = 5;
+    if (files.length > MAX_IMAGES_PER_MESSAGE) {
+      return { success: false, errorCode: "MAXIMUM_NUMBER_PHOTOS_EXCEEDED" };
+    }
+
+    try {
+      const formData = new FormData();
+      files.forEach((file) => {
+        formData.append("uploaded_images", file);
+      });
+
+      await httpClient.post(`/chats/${chatId}/images`, formData);
+      return { success: true };
+    } catch (e) {
+      console.error("Error sending images:", e);
+      const errorCode =
+        (e as any)?.response?.data?.detail?.error_code
+        || (e as any)?.response?.data?.error_code;
+      return {
+        success: false,
+        errorCode: errorCode || "SERVER_ERROR",
+      };
+    }
+  },
+
+  async sendDirectMessage(
+    username: string,
+    text: string,
+  ): Promise<{ chatId: string | null; errorCode?: string }> {
+    try {
+      const response = await httpClient.post("/chats/direct-message", {
+        username,
+        text,
+      });
+      return { chatId: response.data.chat_id ?? null };
+    } catch (e) {
+      console.error("sendDirectMessage error", e);
+      const errorCode =
+        (e as any)?.response?.data?.detail?.error_code
+        || (e as any)?.response?.data?.error_code;
+      return { chatId: null, errorCode };
+    }
+  },
+
+  async getOrCreateDirectChat(
+    username: string,
+  ): Promise<{ chatId: string | null; errorCode?: string }> {
+    try {
+      const response = await httpClient.post("/chats/direct-chat", {
+        username,
+      });
+      return { chatId: response.data.chat_id ?? null };
+    } catch (e) {
+      console.error("getOrCreateDirectChat error", e);
+      const errorCode =
+        (e as any)?.response?.data?.detail?.error_code
+        || (e as any)?.response?.data?.error_code;
+      return { chatId: null, errorCode };
     }
   },
 
@@ -308,12 +421,25 @@ export const chatsService = {
     };
   },
 
+  onMessagesRead(cb: MessagesReadCallback | null) {
+    if (cb === null) {
+      messagesReadCallbacks.length = 0;
+      return () => {};
+    }
+    messagesReadCallbacks.push(cb);
+    return () => {
+      const idx = messagesReadCallbacks.indexOf(cb);
+      if (idx !== -1) messagesReadCallbacks.splice(idx, 1);
+    };
+  },
+
   disconnect() {
     socket?.disconnect();
     socket = null;
     newMessageCallbacks.length = 0;
     chatUpdatedCallbacks.length = 0;
     chatNotificationCallbacks.length = 0;
+    messagesReadCallbacks.length = 0;
     if (heartbeatIntervalHandle) {
       clearInterval(heartbeatIntervalHandle);
       heartbeatIntervalHandle = null;

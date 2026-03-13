@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, nextTick } from 'vue'
+import { computed, onMounted, onUnmounted, ref, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import {
@@ -17,73 +17,136 @@ import {
 } from 'lucide-vue-next'
 import { adminService } from '@/api/admin/AdminService'
 import type { Deal, DealsList } from '@/validation/deal/deal'
-import { useImages } from '@/composables/useImages'
 import DealStatusTag from '@/components/DealStatusTag.vue'
 import UserRating from '@/components/UserRating.vue'
 import SearchField from '@/components/SearchField.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
+import ConfirmWindow from '@/components/ConfirmWindow.vue'
+import CustomSelect from '@/components/CustomSelect.vue'
+import UserAvatar from '@/components/UserAvatar.vue'
+import { formatCurrencyAmount } from '@/utils/currency'
+import { buildSlugKey } from '@/utils/urlKeys'
 
 const { t } = useI18n()
 const router = useRouter()
 
 // Данные
-const fullDeals = ref<Deal[]>([])
 const deals = ref<Deal[]>([])
 const totalPages = ref(1)
 const currentPage = ref(1)
 const perPage = ref(20)
 const searchQuery = ref('')
+const sortBy = ref('created_desc')
+const statusFilter = ref('all')
 const isLoading = ref(true)
 const processingDealId = ref<string | null>(null)
 const isMobile = ref(false)
 const isFetchingMore = ref(false)
+const totalCount = ref(0)
+const listRef = ref<HTMLElement | null>(null)
 
-const { images } = useImages()
+// Confirm dialog
+const showConfirmModal = ref(false)
+const confirmAction = ref<() => Promise<void>>(() => Promise.resolve())
+const confirmTitle = ref('')
+const confirmMessage = ref('')
+const isActionLoading = ref(false)
+const showStatusModal = ref(false)
+const dealToUpdateStatus = ref<Deal | null>(null)
+const selectedDealStatus = ref<string>('pending')
+const isStatusUpdating = ref(false)
+const showReasonField = ref(false)
+const disputeReason = ref('')
+const reasonError = ref('')
 
 // Навигация
 function goToDeal(id: string) {
   router.push({ path: `/admin/deal/${id}` })
 }
 
-function goToChat(dealId: string) {
-  router.push({ name: 'adminChatView', params: { dealId } })
+function goToChat(chatId: string) {
+  router.push({ name: 'adminChatView', params: { chatId } })
 }
 
 function goToProfile(username: string) {
   router.push(`/user/${username}`)
 }
 
-function goToProduct(productId: string) {
-  router.push(`/product/${productId}`)
+function goToProduct(productId: string, productSlug?: string | null) {
+  const productKey = buildSlugKey(productSlug, productId, 'product')
+  if (!productKey) return
+  router.push(`/product/${productKey}`)
 }
 
-// ===== Поиск =====
-let searchTimeout: ReturnType<typeof setTimeout> | null = null
-function debouncedSearch() {
-  if (searchTimeout) clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(async () => {
-    currentPage.value = 1
-    if (searchQuery.value.trim()) {
-      const searchResults = fullDeals.value.filter(deal =>
-        deal.product.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        deal.seller.username.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        deal.buyer.username.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        deal.product.category.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+const normalizedQuery = computed(() => searchQuery.value.trim().toLowerCase())
+
+const filteredDeals = computed(() => {
+  return deals.value.filter(deal => {
+    const matchesQuery = normalizedQuery.value
+      ? [
+          deal.product.title,
+          deal.product.description,
+          deal.product.category.name,
+          deal.seller.username,
+          deal.buyer.username,
+          deal.id,
+        ]
+          .join(' ')
+          .toLowerCase()
+          .includes(normalizedQuery.value)
+      : true
+
+    const matchesStatus =
+      statusFilter.value === 'all' ? true : deal.status === statusFilter.value
+
+    return matchesQuery && matchesStatus
+  })
+})
+
+const sortedDeals = computed(() => {
+  const data = [...filteredDeals.value]
+  switch (sortBy.value) {
+    case 'created_asc':
+      return data.sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       )
-      deals.value = searchResults.slice(0, perPage.value)
-      totalPages.value = Math.ceil(searchResults.length / perPage.value)
-    } else {
-      await loadDeals(true)
-    }
-  }, 300)
-}
+    case 'price_desc':
+      return data.sort((a, b) => b.price - a.price)
+    case 'price_asc':
+      return data.sort((a, b) => a.price - b.price)
+    case 'status_asc':
+      return data.sort((a, b) => a.status.localeCompare(b.status))
+    case 'status_desc':
+      return data.sort((a, b) => b.status.localeCompare(a.status))
+    default:
+      return data.sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )
+  }
+})
+
+const displayTotal = computed(() => {
+  if (normalizedQuery.value || statusFilter.value !== 'all') {
+    return filteredDeals.value.length
+  }
+  return totalCount.value || deals.value.length
+})
+
+const dealStatusOptions = computed(() => ([
+  { value: 'pending', label: t('common.dealStatuses.pending') },
+  { value: 'confirmed', label: t('common.dealStatuses.confirmed') },
+  { value: 'disputed', label: t('common.dealStatuses.disputed') },
+  { value: 'completed', label: t('common.dealStatuses.completed') },
+  { value: 'cancelled', label: t('common.dealStatuses.cancelled') },
+  { value: 'refunded', label: t('common.dealStatuses.refunded') },
+]))
 
 // ===== Пагинация =====
 async function loadDeals(reset = false) {
   if (reset) {
     currentPage.value = 1
     deals.value = []
-    fullDeals.value = []
+    totalCount.value = 0
   }
 
   isLoading.value = true
@@ -93,21 +156,20 @@ async function loadDeals(reset = false) {
       const dealsData = response.deals || []
       if (reset) {
         deals.value = dealsData
-        fullDeals.value = dealsData
       } else {
         deals.value = [...deals.value, ...dealsData]
-        fullDeals.value = [...fullDeals.value, ...dealsData]
       }
       totalPages.value = response.total_pages || Math.ceil((response.total || 0) / perPage.value)
+      totalCount.value = response.total ?? totalCount.value
     } else {
       deals.value = []
-      fullDeals.value = []
+      totalCount.value = 0
     }
   } catch (error) {
     console.error('Ошибка при загрузке сделок:', error)
     if (reset) {
       deals.value = []
-      fullDeals.value = []
+      totalCount.value = 0
     }
   } finally {
     isLoading.value = false
@@ -128,11 +190,7 @@ function checkMobile() {
 }
 
 function formatPrice(price: number) {
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
-    minimumFractionDigits: 0
-  }).format(price)
+  return formatCurrencyAmount(price)
 }
 
 function formatDate(dateString: string) {
@@ -145,11 +203,6 @@ function getProductImageUrl(deal: Deal) {
     return `${API_HOST}${deal.product.images[0]!.image_url}`
   }
   return '/placeholder-product.jpg'
-}
-
-function getUserAvatarUrl(avatarUrl: string) {
-  const API_HOST = import.meta.env.VITE_API_HOST || ''
-  return avatarUrl ? `${API_HOST}${avatarUrl}` : images.avatars.default
 }
 
 // ===== Управление сделками =====
@@ -189,16 +242,88 @@ async function cancelDeal(dealId: string) {
   }
 }
 
-async function resolveDispute(dealId: string, inFavorOf: 'buyer' | 'seller') {
-  processingDealId.value = dealId
+function openDealStatusModal(deal: Deal) {
+  dealToUpdateStatus.value = deal
+  selectedDealStatus.value = deal.status
+  showStatusModal.value = true
+}
+
+function closeDealStatusModal() {
+  showStatusModal.value = false
+  dealToUpdateStatus.value = null
+}
+
+async function confirmDealStatusUpdate() {
+  if (!dealToUpdateStatus.value) return
+
+  processingDealId.value = dealToUpdateStatus.value.id
+  isStatusUpdating.value = true
+
   try {
-    await adminService.resolveDealDispute(dealId, inFavorOf)
-    await loadDeals(true)
+    const res = await adminService.updateDealStatus(
+      dealToUpdateStatus.value.id,
+      selectedDealStatus.value
+    )
+    if (res) {
+      await loadDeals(true)
+      closeDealStatusModal()
+    }
   } catch (error) {
-    console.error('Ошибка при решении спора:', error)
+    console.error('Ошибка при обновлении статуса сделки:', error)
   } finally {
+    isStatusUpdating.value = false
     processingDealId.value = null
   }
+}
+
+function showConfirmDialog(
+  title: string,
+  message: string,
+  action: () => Promise<void>,
+  options?: { showReason?: boolean }
+) {
+  confirmTitle.value = title
+  confirmMessage.value = message
+  showReasonField.value = options?.showReason ?? false
+  if (!showReasonField.value) {
+    disputeReason.value = ''
+    reasonError.value = ''
+  }
+  confirmAction.value = action
+  showConfirmModal.value = true
+}
+
+async function resolveDispute(dealId: string, inFavorOf: 'buyer' | 'seller') {
+  processingDealId.value = dealId
+  disputeReason.value = ''
+  reasonError.value = ''
+  
+  const title = inFavorOf === 'buyer'
+    ? t('common.resolveForBuyer')
+    : t('common.resolveForSeller')
+
+  const message = inFavorOf === 'buyer'
+    ? t('pages.admin.dealPage.resolveForBuyerMessage')
+    : t('pages.admin.dealPage.resolveForSellerMessage')
+
+  showConfirmDialog(title, message, async () => {
+    isActionLoading.value = true
+    try {
+      const trimmedReason = disputeReason.value.trim()
+      if (trimmedReason.length < 5) {
+        reasonError.value = t('pages.admin.dealPage.reasonRequired')
+        return
+      }
+      await adminService.resolveDealDispute(dealId, inFavorOf, trimmedReason)
+      await loadDeals(true)
+      showConfirmModal.value = false
+    } catch (error) {
+      console.error('Ошибка при решении спора:', error)
+    } finally {
+      isActionLoading.value = false
+      processingDealId.value = null
+    }
+  }, { showReason: true })
 }
 
 let observer: IntersectionObserver
@@ -228,23 +353,54 @@ onUnmounted(() => {
   window.removeEventListener('resize', checkMobile)
   if (observer && sentinel.value) observer.unobserve(sentinel.value)
 })
+
+watch([searchQuery, sortBy, statusFilter], () => {
+  if (listRef.value) listRef.value.scrollTop = 0
+})
 </script>
 
 <template>
-  <section class="h-full w-full flex flex-col gap-3 sm:gap-6 overflow-hidden">
+  <section class="h-full w-full flex flex-col gap-3 sm:gap-6 overflow-hidden pt-3 md:pt-4">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
       <div class="flex gap-2">
         <BackButton />
         <h1 class="text-lg sm:text-2xl font-bold text-mainText">{{ $t('pages.admin.dealsPage.title') }}</h1>
       </div>
       <div class="text-xs sm:text-base text-text-secondary">
-        {{ $t('common.total') }} {{ fullDeals.length }}
+        {{ $t('common.total') }} {{ displayTotal }}
       </div>
     </div>
 
     <!-- Поиск -->
-    <div class="w-full">
-      <SearchField v-model="searchQuery" :placeholder="$t('pages.index.searchPlaceholder')" @search-change="debouncedSearch" />
+    <div class="w-full flex flex-col gap-2">
+      <SearchField v-model="searchQuery" :placeholder="$t('pages.index.searchPlaceholder')" />
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <CustomSelect
+          v-model="sortBy"
+          :options="[
+            { value: 'created_desc', label: t('common.sortOptions.newest') },
+            { value: 'created_asc', label: t('common.sortOptions.oldest') },
+            { value: 'price_desc', label: t('common.sortOptions.priceHigh') },
+            { value: 'price_asc', label: t('common.sortOptions.priceLow') },
+            { value: 'status_asc', label: t('common.sortOptions.statusAsc') },
+            { value: 'status_desc', label: t('common.sortOptions.statusDesc') },
+          ]"
+          :placeholder="$t('common.sortBy')"
+        />
+        <CustomSelect
+          v-model="statusFilter"
+          :options="[
+            { value: 'all', label: t('common.all') },
+            { value: 'pending', label: t('common.dealStatuses.pending') },
+            { value: 'confirmed', label: t('common.dealStatuses.confirmed') },
+            { value: 'disputed', label: t('common.dealStatuses.disputed') },
+            { value: 'completed', label: t('common.dealStatuses.completed') },
+            { value: 'cancelled', label: t('common.dealStatuses.cancelled') },
+            { value: 'refunded', label: t('common.dealStatuses.refunded') },
+          ]"
+          :placeholder="$t('common.filters.status')"
+        />
+      </div>
     </div>
 
     <!-- Список сделок -->
@@ -254,7 +410,7 @@ onUnmounted(() => {
         <span class="ml-2 text-sm sm:text-lg text-gray-400">{{ $t('common.loading') }}</span>
       </div>
 
-      <div v-else-if="deals.length === 0" class="flex items-center justify-center h-32">
+      <div v-else-if="sortedDeals.length === 0" class="flex items-center justify-center h-32">
         <div class="text-center">
           <div class="h-6 w-6 sm:h-12 sm:w-12 text-gray-500 mx-auto mb-1 flex items-center justify-center">
             <span class="text-2xl">🤝</span>
@@ -263,9 +419,9 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div v-else class="h-full overflow-y-auto no-scrollbar space-y-4">
+      <div ref="listRef" v-else class="h-full overflow-y-auto space-y-4">
         <!-- Карточка сделки -->
-        <div v-for="deal in deals" :key="deal.id"
+        <div v-for="deal in sortedDeals" :key="deal.id"
           class="bg-dark-600 border border-dark-700 rounded-xl p-4 hover:border-dark-500 transition-all duration-200">
           <div class="flex flex-col gap-4">
             <!-- Заголовок и статус -->
@@ -275,15 +431,15 @@ onUnmounted(() => {
                 <span class="text-xl font-bold text-green-400">{{ formatPrice(deal.price) }}</span>
               </div>
               <div class="flex gap-2">
-                <button @click="goToChat(deal.id)"
-                  class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
+                <button @click="goToChat(deal.chat_room_id)"
+                  class="admin-btn admin-btn-primary admin-btn-sm"
                   :title="$t('common.viewDeal')">
                   <MessageCircleMore class="w-4 h-4" />
                   <span class="hidden sm:inline">{{ $t('common.toChat') }}</span>
                 </button>
 
                 <button @click="goToDeal(deal.id)"
-                  class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
+                  class="admin-btn admin-btn-primary admin-btn-sm"
                   :title="$t('common.viewDeal')">
                   <Eye class="w-4 h-4" />
                   <span class="hidden sm:inline">{{ $t('common.view') }}</span>
@@ -296,11 +452,11 @@ onUnmounted(() => {
               <div class="flex-shrink-0">
                 <img :src="getProductImageUrl(deal)" :alt="deal.product.title"
                   class="w-20 h-20 sm:w-24 sm:h-24 rounded-lg object-cover border border-dark-400 cursor-pointer"
-                  @click="goToProduct(deal.product.id)" />
+                  @click="goToProduct(deal.product.id, deal.product.slug)" />
               </div>
               <div class="flex-1 min-w-0">
                 <h3 class="text-lg sm:text-xl font-semibold text-mainText line-clamp-2 mb-2 cursor-pointer"
-                  @click="goToProduct(deal.product.id)">
+                  @click="goToProduct(deal.product.id, deal.product.slug)">
                   {{ deal.product.title }}
                 </h3>
                 <div class="flex items-center gap-2 text-sm text-text-secondary mb-2">
@@ -316,7 +472,11 @@ onUnmounted(() => {
               <div @click="goToProfile(deal.seller.username)"
                 class="bg-dark-700 hover:bg-dark-700/80 transition rounded-lg p-3 cursor-pointer">
                 <div class="flex items-center gap-3">
-                  <img :src="getUserAvatarUrl(deal.seller.avatar_url)" :alt="deal.seller.username" class="w-10 h-10 rounded-full object-cover" />
+                  <UserAvatar
+                    :avatar-url="deal.seller.avatar_url"
+                    :alt="deal.seller.username"
+                    class="w-10 h-10 rounded-full object-cover"
+                  />
                   <div class="flex-1 min-w-0">
                     <div class="text-text-secondary text-xs mb-1">{{ $t('common.seller') }}</div>
                     <div class="flex items-center gap-2">
@@ -330,7 +490,11 @@ onUnmounted(() => {
               <div @click="goToProfile(deal.buyer.username)"
                 class="bg-dark-700 hover:bg-dark-700/80 transition rounded-lg p-3 cursor-pointer">
                 <div class="flex items-center gap-3">
-                  <img :src="getUserAvatarUrl(deal.buyer.avatar_url)" :alt="deal.buyer.username" class="w-10 h-10 rounded-full object-cover" />
+                  <UserAvatar
+                    :avatar-url="deal.buyer.avatar_url"
+                    :alt="deal.buyer.username"
+                    class="w-10 h-10 rounded-full object-cover"
+                  />
                   <div class="flex-1 min-w-0">
                     <div class="text-text-secondary text-xs mb-1">{{ $t('common.buyer') }}</div>
                     <div class="flex items-center gap-2">
@@ -361,14 +525,22 @@ onUnmounted(() => {
 
             <!-- Кнопки управления -->
             <div class="flex flex-col sm:flex-row sm:flex-wrap gap-2 pt-2 border-t border-dark-700">
+              <button
+                @click="openDealStatusModal(deal)"
+                :disabled="processingDealId === deal.id"
+                class="admin-btn admin-btn-ghost flex-1 sm:flex-none min-w-[140px]"
+              >
+                <span>{{ $t('common.status') }}</span>
+              </button>
+
               <template v-if="deal.status === 'pending'">
                 <button @click="confirmDeal(deal.id)" :disabled="processingDealId === deal.id"
-                  class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white rounded-lg transition-colors text-sm min-w-[140px]">
+                  class="admin-btn admin-btn-success flex-1 sm:flex-none min-w-[140px]">
                   <Check class="w-4 h-4" />
                   <span>{{ $t('common.confirmDeal') }}</span>
                 </button>
                 <button @click="refundDeal(deal.id)" :disabled="processingDealId === deal.id"
-                  class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white rounded-lg transition-colors text-sm min-w-[140px]">
+                  class="admin-btn admin-btn-accent flex-1 sm:flex-none min-w-[140px]">
                   <Undo2 class="w-4 h-4" />
                   <span>{{ $t('pages.admin.dealsPage.refund') }}</span>
                 </button>
@@ -376,12 +548,12 @@ onUnmounted(() => {
 
               <template v-else-if="deal.status === 'disputed'">
                 <button @click="resolveDispute(deal.id, 'buyer')" :disabled="processingDealId === deal.id"
-                  class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white rounded-lg transition-colors text-sm min-w-[160px]">
+                  class="admin-btn admin-btn-success flex-1 sm:flex-none min-w-[160px]">
                   <UserCheck class="w-4 h-4" />
                   <span>{{ $t('common.resolveForBuyer') }}</span>
                 </button>
                 <button @click="resolveDispute(deal.id, 'seller')" :disabled="processingDealId === deal.id"
-                  class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg transition-colors text-sm min-w-[160px]">
+                  class="admin-btn admin-btn-primary flex-1 sm:flex-none min-w-[160px]">
                   <UserCheck class="w-4 h-4" />
                   <span>{{ $t('common.resolveForSeller') }}</span>
                 </button>
@@ -409,7 +581,7 @@ onUnmounted(() => {
               </template>
 
               <button v-if="['pending', 'disputed'].includes(deal.status)" @click="cancelDeal(deal.id)" :disabled="processingDealId === deal.id"
-                class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg transition-colors text-sm min-w-[140px] sm:ml-auto">
+                class="admin-btn admin-btn-danger flex-1 sm:flex-none min-w-[140px] sm:ml-auto">
                 <XCircle class="w-4 h-4" />
                 <span>{{ $t('common.cancelDeal') }}</span>
               </button>
@@ -427,6 +599,51 @@ onUnmounted(() => {
       </div>
     </div>
   </section>
+
+  <!-- Confirm Modal -->
+  <ConfirmWindow
+    :is-open="showConfirmModal"
+    :title="confirmTitle"
+    :message="confirmMessage"
+    :is-loading="isActionLoading"
+    @confirm="confirmAction"
+    @cancel="() => { showConfirmModal = false; processingDealId = null }"
+  >
+    <template #body>
+      <div v-if="showReasonField" class="space-y-2">
+        <label class="block text-sm text-gray-300">
+          {{ $t('pages.admin.dealPage.disputeReasonLabel') }}
+        </label>
+        <textarea
+          v-model="disputeReason"
+          class="w-full rounded-lg bg-dark-900 border border-dark-700 text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[110px]"
+          :placeholder="$t('pages.admin.dealPage.disputeReasonPlaceholder')"
+        />
+        <p v-if="reasonError" class="text-red-400 text-sm">
+          {{ reasonError }}
+        </p>
+      </div>
+    </template>
+  </ConfirmWindow>
+
+  <ConfirmWindow
+    :is-open="showStatusModal"
+    :title="$t('common.status')"
+    :message="$t('common.edit')"
+    :confirm-text="$t('common.save')"
+    :cancel-text="$t('common.cancel')"
+    :is-loading="isStatusUpdating"
+    @confirm="confirmDealStatusUpdate"
+    @cancel="closeDealStatusModal"
+  >
+    <template #body>
+      <CustomSelect
+        v-model="selectedDealStatus"
+        :options="dealStatusOptions"
+        :placeholder="$t('common.filters.status')"
+      />
+    </template>
+  </ConfirmWindow>
 </template>
 
 <style scoped>
@@ -435,15 +652,6 @@ onUnmounted(() => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
 }
 
 ::-webkit-scrollbar {
@@ -455,11 +663,11 @@ onUnmounted(() => {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #4B5563;
+  background: var(--scrollbar-thumb);
   border-radius: 1px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #6B7280;
+  background: var(--scrollbar-thumb-hover);
 }
 </style>

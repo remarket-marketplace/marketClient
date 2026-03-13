@@ -1,6 +1,9 @@
+import axios from "axios";
 import {
   ProfileDataSchema,
   PublicProfileDataSchema,
+  UserReadSchema,
+  type UserRead,
   type ProfileData,
   type PublicProfileData,
 } from "@/validation/user/userRead";
@@ -21,6 +24,9 @@ export const profileService = {
         return PublicProfileDataSchema.parse(response.data);
       }
     } catch (e) {
+      if (axios.isAxiosError(e) && e.response?.status === 404) {
+        throw e;
+      }
       if (e instanceof ZodError)
         console.error("Ошибка валидации профиля:", e.issues);
       return null;
@@ -74,10 +80,25 @@ export const profileService = {
           "Content-Type": "multipart/form-data",
         },
       });
-      return response.data;
+      return UserReadSchema.parse(response.data).avatar_url;
     } catch (error) {
       console.error("Ошибка загрузки аватара:", error);
       return null;
     }
+  },
+
+  async uploadProfileBackground(file: File): Promise<UserRead> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await httpClient.patch(
+      "/users/profile-background",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return UserReadSchema.parse(response.data);
   },
 };

@@ -8,8 +8,10 @@ import { getErrorMessage } from '@/utils/errorsMap'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Captcha from '@/components/Captcha.vue'
+import { useRouter } from 'vue-router'
 
 const { t } = useI18n()
+const router = useRouter()
 
 const email = ref('')
 
@@ -38,8 +40,8 @@ async function sendLetter() {
 </script>
 
 <template>
-    <div class="h-full w-full flex items-center justify-center bg-background px-4">
-        <div class="max-w-sm w-full border border-dark-700 rounded-2xl bg-background p-8 backdrop-blur-md space-y-6">
+    <div class="h-full w-full flex flex-col items-center overflow-scroll pb-36 pt-10">
+        <div class="max-w-sm w-full border border-dark-700 rounded-2xl bg-background p-8 backdrop-blur-md space-y-6 my-auto">
             <h1 class="text-center text-3xl text-mainText font-bold">
                 {{ $t('pages.resetPassword.title') }}
             </h1>
@@ -66,6 +68,12 @@ async function sendLetter() {
                         " :sended="sended" :disabled="!emailValid || sended" class="w-full" />
                 </div>
 
+
+            <p class="text-center text-sm text-text-secondaryDark">
+                <router-link to="/signin" class="text-text-link hover:underline">
+                    {{ $t('common.backToSignIn') }}
+                </router-link>
+            </p>
             </div>
         </div>
     </div>

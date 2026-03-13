@@ -3,8 +3,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.prod
+      args:
+        VITE_USD_RUB_RATE: ${VITE_USD_RUB_RATE:-90}
     container_name: force-market-frontend-prod
     ports:
-      - "80:80"
+      - "80:4173"
     environment:
       - NODE_ENV=production
+      - API_URL=https://re-market.net/v1
+      - FILE_BASE=https://re-market.net/v1

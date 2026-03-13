@@ -2,16 +2,20 @@
 import { productService } from '@/api/product/ProductService';
 import { reviewService } from '@/api/review/ReviewService';
 import { chatsService } from '@/api/chats/chatsService';
-import router from '@/router';
+import { useRouter } from 'vue-router';
 import type { Product } from '@/validation/product/product';
 import type { RefusalReasonsList } from '@/validation/deal/deal';
 import { ref, computed } from 'vue';
 import { Star, X } from 'lucide-vue-next';
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import { RefreshCcw } from 'lucide-vue-next';
+import { useUserStore } from '@/stores/user';
+import { formatCurrencyAmount } from '@/utils/currency';
+import { buildProductKey } from '@/utils/urlKeys';
 
 const API_HOST = import.meta.env.VITE_API_HOST;
 
+const router = useRouter();
 const isConfirmed = ref(false);
 const isReported = ref(false);
 const isRefunded = ref(false);
@@ -26,6 +30,8 @@ const selectedRefusalId = ref<string | null>(null);
 const customReasonText = ref('');
 const MAX_CUSTOM_REASON_LENGTH = 300;
 const otherReasonId = ref<string | null>(null);
+const userStore = useUserStore();
+const isAdmin = computed(() => userStore.user?.role === 'admin')
 
 const showConfirmModal = ref(false);
 const showRefundModal = ref(false);
@@ -51,7 +57,7 @@ async function openRefusalModal() {
   if (refusalReasons.value.length === 0) {
     const reasons = await chatsService.getRefusalReasons();
     refusalReasons.value = reasons;
-    
+
     // Находим id причины с title "otherReason"
     const otherReason = reasons.find(reason => reason.title === 'otherReason');
     if (otherReason) {
@@ -101,13 +107,13 @@ function openRefundModal() {
 
 async function handleReport(dealId: string) {
   if (!selectedRefusalId.value) return;
-  
+
   let description = null;
   // Если выбрана причина "otherReason" и есть текст, отправляем его
   if (isOtherReasonSelected.value && customReasonText.value.trim()) {
     description = customReasonText.value.trim();
   }
-  
+
   const response = await productService.sendReport(dealId, selectedRefusalId.value, description);
   if (response === true) {
     isReported.value = true;
@@ -115,11 +121,14 @@ async function handleReport(dealId: string) {
   }
 }
 
-function handleViewProduct(productId: string) {
-  router.push(`/product/${productId}`);
+function handleViewProduct(product: Product) {
+  const productKey = buildProductKey(product);
+  if (!productKey) return;
+  router.push(`/product/${productKey}`);
 }
 
 async function handleSendReview(productId: string) {
+  if (isAdmin.value) return;
   if (reviewStars.value < 1) return;
   showReviewForm.value = false;
   const response = await reviewService.createReview(props.dealId!, reviewStars.value, reviewText.value);
@@ -131,10 +140,10 @@ async function handleSendReview(productId: string) {
 </script>
 
 <template>
-  <div class="my-2">
-    <div class="overflow-hidden bg-gray-800/20 rounded-xl shadow-lg">
+  <div class="my-2 w-full min-w-0">
+    <div class="w-full min-w-0 overflow-hidden rounded-xl bg-gray-800/20 shadow-lg">
       <div class="flex flex-col gap-4 p-4 sm:flex-row sm:items-start">
-        <div class="flex-shrink-0 sm:w-1/3 min-w-0 cursor-pointer" @click="handleViewProduct(product.id)">
+        <div class="flex-shrink-0 sm:w-1/3 min-w-0 cursor-pointer" @click="handleViewProduct(product)">
           <div class="relative aspect-square rounded-lg overflow-hidden bg-gray-700 border border-gray-600">
             <img :src="`${API_HOST}${product.images?.[0]?.image_url}`" :alt="product.title"
               class="h-full w-full object-cover" loading="lazy" />
@@ -143,18 +152,26 @@ async function handleSendReview(productId: string) {
 
         <div class="flex-1 text-mainText space-y-3 min-w-0">
           <h3 class="cursor-pointer text-lg font-bold text-white transition-colors duration-200 line-clamp-2"
-            @click="handleViewProduct(product.id)">
+            @click="handleViewProduct(product)">
             {{ product.title }}
           </h3>
 
-          <p class="text-xl text-green-400 font-bold">{{ product.price }}₽</p>
+          <p class="text-xl text-green-400 font-bold">{{ formatCurrencyAmount(product.price) }}</p>
 
-          <div class="space-y-2">
+          <div v-if="product.auto_delivery" class="space-y-2">
             <p class="text-sm font-semibold text-gray-300 uppercase tracking-wide border-b border-gray-700 pb-2">
               {{ $t('pages.chats.productData') }}
             </p>
-            <p class="text-gray-400 text-sm leading-relaxed line-clamp-3">
+            <p class="text-gray-400 text-sm leading-relaxed line-clamp-3 break-words [overflow-wrap:anywhere]">
               {{ product.product_data_string }}
+            </p>
+          </div>
+          <div v-else class="space-y-2">
+            <p class="text-sm font-semibold text-yellow-400 uppercase tracking-wide border-b border-gray-700 pb-2">
+              {{ $t('pages.chats.manualDelivery') }}
+            </p>
+            <p class="text-gray-400 text-sm leading-relaxed">
+              {{ $t('pages.chats.contactSeller') }}
             </p>
           </div>
         </div>
@@ -207,7 +224,7 @@ async function handleSendReview(productId: string) {
 
         <template v-if="!product.is_owner">
           <div class="sm:ml-auto flex flex-col gap-2">
-            <button v-if="!isReported && dealStatus !== 'disputed'" @click="openRefusalModal()"
+            <button v-if="!isReported && dealStatus !== 'disputed' && dealStatus == 'pending'" @click="openRefusalModal()"
               class="flex items-center justify-center gap-2 rounded-lg bg-red-600 px-6 py-3 text-sm font-semibold text-white hover:bg-red-700 border border-red-500 min-w-[160px]">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -229,7 +246,7 @@ async function handleSendReview(productId: string) {
         </template>
       </div>
 
-      <template v-if="(isConfirmed || dealStatus === 'completed') && !localHasReview && !product.is_owner">
+      <template v-if="(isConfirmed || dealStatus === 'completed') && !localHasReview && !product.is_owner && !isAdmin">
         <div class="px-4 pb-4">
           <button v-if="!showReviewForm" @click="showReviewForm = true"
             class="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 border border-blue-500 w-full">
@@ -255,7 +272,6 @@ async function handleSendReview(productId: string) {
           </button>
         </div>
       </template>
-
     </div>
   </div>
 
@@ -278,7 +294,7 @@ async function handleSendReview(productId: string) {
 
         <!-- reasons list -->
         <div class="p-4">
-          <div class="space-y-2 max-h-80 overflow-y-auto pr-1 no-scrollbar">
+          <div class="space-y-2 max-h-80 overflow-y-auto pr-1 ">
             <button v-for="reason in refusalReasons" :key="reason.id" @click="selectedRefusalId = reason.id" :class="[
               'w-full text-left px-4 py-3 rounded-xl transition-all duration-200',
               selectedRefusalId === reason.id
@@ -306,13 +322,9 @@ async function handleSendReview(productId: string) {
 
           <!-- Custom reason textarea (only shown when "otherReason" is selected) -->
           <div v-if="isOtherReasonSelected" class="mt-4">
-            <textarea
-              v-model="customReasonText"
-              :maxlength="MAX_CUSTOM_REASON_LENGTH"
-              rows="4"
+            <textarea v-model="customReasonText" :maxlength="MAX_CUSTOM_REASON_LENGTH" rows="4"
               class="w-full rounded-lg bg-gray-800 border border-gray-700 p-3 text-sm text-gray-200 outline-none focus:border-blue-500"
-              :placeholder="$t('pages.chats.enterCustomReason')"
-            ></textarea>
+              :placeholder="$t('pages.chats.enterCustomReason')"></textarea>
             <div class="flex justify-between items-center mt-2 text-xs text-gray-400">
               <span class="text-red-400" v-if="customReasonText.length >= MAX_CUSTOM_REASON_LENGTH">
                 {{ $t('pages.chats.maxCharactersReached') }}
@@ -330,10 +342,8 @@ async function handleSendReview(productId: string) {
             class="px-5 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700/50 transition-colors font-medium">
             {{ $t('common.cancel') }}
           </button>
-          <button 
-            @click="handleReport(dealId)" 
-            :disabled="!selectedRefusalId || (isOtherReasonSelected && !customReasonText.trim())" 
-            :class="[
+          <button @click="handleReport(dealId)"
+            :disabled="!selectedRefusalId || (isOtherReasonSelected && !customReasonText.trim())" :class="[
               'px-5 py-2.5 rounded-lg font-medium transition-colors',
               !selectedRefusalId || (isOtherReasonSelected && !customReasonText.trim())
                 ? 'bg-gray-700 text-gray-500 cursor-not-allowed'

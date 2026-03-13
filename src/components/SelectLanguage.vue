@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { ChevronDown, ChevronUp, Languages } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 
 interface LanguageOption {
   label: string
@@ -14,8 +15,12 @@ const languageOptions: LanguageOption[] = [
 
 const isOpen = ref(false)
 const wrapperRef = ref<HTMLElement | null>(null)
+const { locale } = useI18n()
+
+const isClient = typeof window !== 'undefined'
 
 const getInitialLanguage = (): 'en' | 'ru' => {
+  if (!isClient) return 'en'
   const saved = localStorage.getItem('user-language') as 'en' | 'ru' | null
   if (saved) return saved
 
@@ -40,6 +45,7 @@ function handleClickOutside(e: MouseEvent) {
 }
 
 onMounted(() => {
+  locale.value = selectedLanguage.value
   document.addEventListener('click', handleClickOutside)
 })
 
@@ -55,45 +61,45 @@ function selectLanguage(value: 'en' | 'ru') {
   if (selectedLanguage.value === value) return
 
   selectedLanguage.value = value
-  localStorage.setItem('user-language', value)
+  locale.value = value
+  if (isClient) {
+    localStorage.setItem('user-language', value)
+  }
   isOpen.value = false
-
-  setTimeout(() => location.reload(), 100)
 }
 </script>
 
 <template>
-  <div ref="wrapperRef" class="relative w-full">
+  <div ref="wrapperRef" class="relative shrink-0 flex items-center">
     <!-- Button -->
     <button
       type="button"
-      class="w-full flex items-center justify-between gap-3 rounded-lg border border-dark-700 bg-dark-600 px-3 lg:px-4 py-2 text-mainText transition hover:border-dark-500 focus:outline-none"
+      class="h-8 min-w-[58px] flex items-center justify-between gap-1.5 rounded-md border border-dark-700 bg-dark-600 px-2 py-1 text-mainText transition hover:border-dark-500 focus:outline-none"
       :aria-expanded="isOpen"
       @click="toggle"
     >
-      <span class="flex items-center gap-2 truncate">
-        <Languages class="h-4 w-4 text-mainText/70" />
-        <span class="hidden lg:block">
-          {{ currentOption?.label }}
+      <span class="flex items-center gap-1.5 truncate">
+        <Languages class="h-3.5 w-3.5 text-mainText/70" />
+        <span class="hidden md:block text-xs font-medium">
+          {{ currentOption?.value.toUpperCase() }}
         </span>
       </span>
 
-      <ChevronUp v-if="isOpen" class="h-3 w-3" />
-      <ChevronDown v-else class="h-3 w-3" />
+      <ChevronUp v-if="isOpen" class="h-2.5 w-2.5" />
+      <ChevronDown v-else class="h-2.5 w-2.5" />
     </button>
 
     <!-- Dropdown -->
     <transition name="fade">
       <ul
         v-show="isOpen"
-        class="absolute right-2 z-50 mt-2 min-w-16 rounded-lg border border-dark-700 bg-dark-800 shadow-xl overflow-hidden"
+        class="absolute top-full right-0 z-50 mt-1.5 min-w-[58px] rounded-md border border-dark-700 bg-dark-800 overflow-hidden"
         role="listbox"
       >
         <li
           v-for="opt in languageOptions"
           :key="opt.value"
-          class="cursor-pointer px-4 py-2 text-sm transition-colors
-                 first:rounded-t-lg last:rounded-b-lg"
+          class="cursor-pointer px-3 py-1.5 text-xs transition-colors first:rounded-t-md last:rounded-b-md"
           :class="selectedLanguage === opt.value
             ? 'bg-blue-500/10 text-blue-400 font-medium'
             : 'text-mainText hover:bg-dark-700'"

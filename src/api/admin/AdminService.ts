@@ -1,23 +1,143 @@
 import { ZodError } from "zod";
 import { httpClient } from "..";
-import { CategorySchema, ProductSchema } from "@/validation/product/product";
+import { ProductSchema } from "@/validation/product/product";
+import { CategorySchema } from "@/validation/category/category";
 import { UserReadSchema } from "@/validation/user/userRead";
 import { DealSchema, DealsListSchema, type Deal } from "@/validation/deal/deal";
+import {
+  AdminFeedbackListSchema,
+  AdminFeedbackSchema,
+  type AdminFeedback,
+} from "@/validation/feedback/adminFeedback";
+import {
+  AuditActionTypesSchema,
+  AuditLogsListSchema,
+  type AuditLog,
+} from "@/validation/audit/activityLog";
+
+export type DashboardStatusBreakdown = { status: string; count: number }
+export type DashboardSeriesPoint = { date: string; value: number }
+export type DashboardCategory = {
+  category_id: string
+  category_name: string
+  total_sales: number
+  total_deals: number
+}
+
+export type DashboardData = {
+  count_of_users: number
+  count_of_products: number
+  count_of_deals: number
+  total_revenue: number
+  active_disputes: number
+  moderation_products: number
+  deals_by_status: DashboardStatusBreakdown[]
+  revenue_by_day: DashboardSeriesPoint[]
+  new_users_by_day: DashboardSeriesPoint[]
+  top_categories: DashboardCategory[]
+}
+
+export type PartnerGame = "fortnite" | "roblox" | "valorant";
+
+export type PartnerStats = {
+  category_slug: string
+  category_name: string
+  total_accounts: number
+  active_listings: number
+  sold_accounts: number
+  raika_verified_accounts: number
+  total_deals: number
+  total_revenue: number
+  average_deal_amount: number
+  sold_share_percent: number
+  deals_by_status: DashboardStatusBreakdown[]
+}
+
+export type ActivityLogFilters = {
+  user_id?: string
+  username?: string
+  action_type?: string
+  ip_address?: string
+  country_code?: string
+  date_from?: string
+  date_to?: string
+}
+
+export type PlatformSettings = {
+  registration_enabled: boolean
+  product_creation_enabled: boolean
+  telegram_integration_enabled: boolean
+}
 
 export const adminService = {
-  async getDashboardData() {
+  async getDashboardData(days = 30): Promise<DashboardData | null> {
     try {
-      const response = await httpClient.get("/admin/dashboard-info");
-      return response.data;
+      const response = await httpClient.get("/admin/dashboard-info", {
+        params: { days },
+      });
+      return response.data as DashboardData;
     } catch (e) {
-      return [];
+      console.error("Failed to load dashboard data", e);
+      return null;
     }
   },
 
-  async getAdminProductList() {
+  async getPlatformSettings(): Promise<PlatformSettings | null> {
     try {
-      const response = await httpClient.get("/admin/products");
-      return response.data.map((product: any) => {
+      const response = await httpClient.get("/admin/platform-settings");
+      return response.data as PlatformSettings;
+    } catch (e) {
+      console.error("Failed to load platform settings", e);
+      return null;
+    }
+  },
+
+  async updatePlatformSettings(
+    settingsPayload: PlatformSettings,
+  ): Promise<PlatformSettings | null> {
+    try {
+      const response = await httpClient.patch(
+        "/admin/platform-settings",
+        settingsPayload,
+      );
+      return response.data as PlatformSettings;
+    } catch (e) {
+      console.error("Failed to update platform settings", e);
+      return null;
+    }
+  },
+
+  async getPartnerStats(game: PartnerGame): Promise<PartnerStats | null> {
+    try {
+      const response = await httpClient.get("/admin/partners/stats", {
+        params: { game },
+      });
+      return response.data as PartnerStats;
+    } catch (e) {
+      console.error("Failed to load partner stats", e);
+      return null;
+    }
+  },
+
+  async getFortnitePartnerStats(): Promise<PartnerStats | null> {
+    try {
+      const response = await httpClient.get("/admin/partners/fortnite-stats");
+      return response.data as PartnerStats;
+    } catch (e) {
+      console.error("Failed to load partner fortnite stats", e);
+      return null;
+    }
+  },
+
+  async getAdminProductList(page = 1, perPage = 20) {
+    try {
+      const response = await httpClient.get("/admin/products", {
+        params: {
+          page,
+          per_page: perPage,
+        },
+      });
+      const products = response.data.products.map((product: any) => {
         const transformedProduct = {
           ...product,
           images: product.images.map((img: any) => ({
@@ -27,11 +147,22 @@ export const adminService = {
         };
         return ProductSchema.parse(transformedProduct);
       });
+      return {
+        products,
+        currentPage: page,
+        totalPages: response.data.total_pages,
+        total: response.data.total,
+      };
     } catch (e) {
       if (e instanceof ZodError) {
         console.error(e.issues);
       }
-      return [];
+      return {
+        products: [],
+        currentPage: 1,
+        totalPages: 1,
+        total: 0,
+      };
     }
   },
 
@@ -49,12 +180,40 @@ export const adminService = {
     }
   },
 
-  async rejectProduct(productId: string) {
+  async rejectProduct(
+    productId: string,
+    reasonCode: string,
+    reasonText?: string | null,
+  ) {
     try {
       const response = await httpClient.post("/admin/products/reject", {
         product_id: productId,
+        reason_code: reasonCode,
+        reason_text: reasonText ?? null,
       });
-      return response.status === 200 && response.data === true;
+      return response.status === 200;
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error(e.issues);
+      }
+      return false;
+    }
+  },
+
+  async updateProductStatus(
+    productId: string,
+    status: string,
+    reasonCode?: string | null,
+    reasonText?: string | null,
+  ) {
+    try {
+      const response = await httpClient.patch("/admin/products/status", {
+        product_id: productId,
+        status,
+        reason_code: reasonCode ?? null,
+        reason_text: reasonText ?? null,
+      });
+      return response.status === 200;
     } catch (e) {
       if (e instanceof ZodError) {
         console.error(e.issues);
@@ -95,10 +254,42 @@ export const adminService = {
     }
   },
 
-  async banUser(userId: string) {
+  async uploadUserAvatar(userId: string, file: File) {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await httpClient.patch(`/admin/user/${userId}/avatar`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return UserReadSchema.parse(response.data);
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error(e.issues);
+      }
+      return false;
+    }
+  },
+
+  async deleteUserAvatar(userId: string) {
+    try {
+      const response = await httpClient.delete(`/admin/user/${userId}/avatar`);
+      return UserReadSchema.parse(response.data);
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error(e.issues);
+      }
+      return false;
+    }
+  },
+
+  async banUser(userId: string, reasonCode: string, reasonText?: string | null) {
     try {
       const response = await httpClient.post("/admin/ban-user", {
         id: userId,
+        reason_code: reasonCode,
+        reason_text: reasonText ?? null,
       });
       return response.status === 200;
     } catch (e) {
@@ -112,7 +303,7 @@ export const adminService = {
   async unbanUser(userId: string) {
     try {
       const response = await httpClient.post("/admin/unban-user", {
-        user_id: userId,
+        id: userId,
       });
       return response.status === 200;
     } catch (e) {
@@ -190,7 +381,7 @@ export const adminService = {
     }
   },
 
-  async resolveDealDispute(dealId: string, inFavorOf: "seller" | "buyer") {
+  async resolveDealDispute(dealId: string, inFavorOf: "seller" | "buyer", reason: string) {
     //
     // resolve deal dispute
     //
@@ -198,6 +389,19 @@ export const adminService = {
       const response = await httpClient.patch("/admin/deals/resolve-dispute", {
         deal_id: dealId,
         resolve_favor: inFavorOf,
+        reason,
+      });
+      return DealSchema.parse(response.data);
+    } catch (e) {
+      return false;
+    }
+  },
+
+  async updateDealStatus(dealId: string, status: string): Promise<Deal | false> {
+    try {
+      const response = await httpClient.patch("/admin/deals/status", {
+        deal_id: dealId,
+        status,
       });
       return DealSchema.parse(response.data);
     } catch (e) {
@@ -217,18 +421,30 @@ export const adminService = {
     }
   },
 
-  async updateCategoryData (categoryId: string, name: string, description: string, isActive: boolean, newImage: File | null) {
+  async updateCategoryData (
+    categoryId: string,
+    name: string,
+    description: string,
+    isActive: boolean,
+    newImage: File | null,
+    newBanner: File | null,
+  ) {
     //
     // update category data
     //
     try {
+      const normalizedName = name.trim()
+      const normalizedDescription = description.trim()
       const formData = new FormData()
 
-      formData.append('name', name)
-      formData.append('description', description)
+      formData.append('name', normalizedName)
+      formData.append('description', normalizedDescription)
       formData.append('is_active', isActive ? '1' : '0')
       if (newImage) {
         formData.append('uploaded_image', newImage)
+      }
+      if (newBanner) {
+        formData.append('uploaded_banner', newBanner)
       }
 
       const response = await httpClient.put(`/admin/category/${categoryId}`, formData);
@@ -250,8 +466,157 @@ export const adminService = {
     }
   },
 
-  async getChatByDealId(dealId: string) {
+  async getAdminChats(page = 1, perPage = 20) {
+  try {
+    const response = await httpClient.get('/admin/chats', {
+      params: {
+        page,
+        per_page: perPage,
+      },
+    })
 
+    return {
+      chats: response.data.chats ?? [],
+      currentPage: page,
+      totalPages: response.data.total_pages ?? 1,
+      total: response.data.total ?? 0,
+    }
+  } catch (e) {
+    if (e instanceof ZodError) {
+      console.error('Validation error:', e.issues)
+    } else {
+      console.error('Error fetching admin chats:', e)
+    }
+
+    return {
+      chats: [],
+      currentPage: 1,
+      totalPages: 1,
+      total: 0,
+    }
   }
+},
+
+  async getAdminFeedbacks(page = 1, perPage = 20) {
+    try {
+      const response = await httpClient.get('/admin/feedback', {
+        params: {
+          page,
+          per_page: perPage,
+        },
+      })
+
+      const parsed = AdminFeedbackListSchema.parse(response.data)
+
+      return {
+        feedbacks: parsed.feedbacks,
+        currentPage: page,
+        totalPages: parsed.total_pages,
+        total: parsed.total,
+      }
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error('Validation error:', e.issues)
+      } else {
+        console.error('Error fetching admin feedbacks:', e)
+      }
+
+      return {
+        feedbacks: [],
+        currentPage: 1,
+        totalPages: 1,
+        total: 0,
+      }
+    }
+  },
+
+  async getAdminFeedbackById(feedbackId: string): Promise<AdminFeedback | null> {
+    try {
+      const response = await httpClient.get(`/admin/feedback/${feedbackId}`)
+      return AdminFeedbackSchema.parse(response.data)
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error('Validation error:', e.issues)
+      } else {
+        console.error('Error fetching admin feedback by id:', e)
+      }
+      return null
+    }
+  },
+
+  async getChatParticipants(chatId: string) {
+    try {
+      const response = await httpClient.get(`/admin/chat/${chatId}/participants`)
+      return response.data as {
+        id: string
+        buyer: { id: string; username: string; avatar_url: string | null; is_active: boolean } | null
+        seller: { id: string; username: string; avatar_url: string | null; is_active: boolean } | null
+        support_user: { id: string; username: string; avatar_url: string | null; is_active: boolean } | null
+      }
+    } catch (e) {
+      console.error('Error fetching chat participants', e)
+      return null
+    }
+  },
+
+  async getActivityLogs(
+    page = 1,
+    perPage = 30,
+    filters: ActivityLogFilters = {},
+  ): Promise<{
+    logs: AuditLog[]
+    currentPage: number
+    totalPages: number
+    total: number
+  }> {
+    try {
+      const params: Record<string, string | number> = {
+        page,
+        per_page: perPage,
+      }
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && String(value).trim() !== "") {
+          params[key] = String(value).trim()
+        }
+      })
+
+      const response = await httpClient.get("/admin/activity-logs", { params })
+      const parsed = AuditLogsListSchema.parse(response.data)
+      return {
+        logs: parsed.logs,
+        currentPage: page,
+        totalPages: parsed.total_pages,
+        total: parsed.total,
+      }
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error("Activity logs validation error:", e.issues)
+      } else {
+        console.error("Error fetching activity logs:", e)
+      }
+      return {
+        logs: [],
+        currentPage: 1,
+        totalPages: 1,
+        total: 0,
+      }
+    }
+  },
+
+  async getActivityLogActionTypes(): Promise<string[]> {
+    try {
+      const response = await httpClient.get("/admin/activity-logs/action-types")
+      const parsed = AuditActionTypesSchema.parse(response.data)
+      return parsed.action_types
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error("Activity action types validation error:", e.issues)
+      } else {
+        console.error("Error fetching activity action types:", e)
+      }
+      return []
+    }
+  },
 
 };

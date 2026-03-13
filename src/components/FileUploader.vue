@@ -1,19 +1,29 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { Upload, Trash2, Image, X } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
   modelValue: File[]
   maxFiles?: number
   label?: string
   hint?: string
+  compact?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: File[]): void
 }>()
+const { t } = useI18n()
 
-const previews = ref<string[]>([])
+type PreviewItem = {
+  id: string
+  file: File
+  src: string
+}
+
+const previews = ref<PreviewItem[]>([])
+
 const fileInput = ref<HTMLInputElement | null>(null)
 const errorMessage = ref('')
 const isDragging = ref(false)
@@ -23,19 +33,16 @@ const maxFiles = props.maxFiles || 8
 const filesCount = computed(() => props.modelValue.length)
 const canAddMore = computed(() => maxFiles === undefined || filesCount.value < maxFiles)
 const remainingSlots = computed(() => maxFiles - filesCount.value)
+const isSingleFileMode = computed(() => maxFiles === 1)
 
-// Генерация превью
 watch(
   () => props.modelValue,
-  (newFiles) => {
-    previews.value = []
-    for (const file of newFiles) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        previews.value.push(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
+  (files) => {
+    previews.value = files.map((file) => ({
+      id: `${file.name}-${file.size}-${file.lastModified}`,
+      file,
+      src: URL.createObjectURL(file),
+    }))
   },
   { immediate: true }
 )
@@ -45,14 +52,14 @@ function addFiles(files: File[]) {
   const validFiles = files.filter((f) => f.type.startsWith('image/'))
 
   if (!validFiles.length) {
-    errorMessage.value = 'Пожалуйста, загружайте только изображения'
+    errorMessage.value = t('components.fileUploader.errorOnlyImages')
     return
   }
 
   if (maxFiles) {
     const remaining = maxFiles - props.modelValue.length
     if (remaining <= 0) {
-      errorMessage.value = `Максимум ${maxFiles} изображений`
+      errorMessage.value = t('components.fileUploader.errorMaxFiles', { maxFiles })
       return
     }
     validFiles.splice(remaining)
@@ -91,6 +98,27 @@ function handleChange(event: Event) {
   target.value = ''
 }
 
+// Clipboard paste
+function getClipboardFiles(data: DataTransfer | null): File[] {
+  if (!data) return []
+
+  const fromFiles = Array.from(data.files || [])
+  if (fromFiles.length) return fromFiles
+
+  return Array.from(data.items || [])
+    .filter((item) => item.kind === 'file')
+    .map((item) => item.getAsFile())
+    .filter((file): file is File => file !== null)
+}
+
+function handlePaste(event: ClipboardEvent) {
+  const files = getClipboardFiles(event.clipboardData)
+  if (!files.length) return
+
+  event.preventDefault()
+  addFiles(files)
+}
+
 // Удаление файла
 function removeImage(index: number) {
   const updated = [...props.modelValue]
@@ -105,7 +133,12 @@ function clearAll() {
 </script>
 
 <template>
-  <div class="w-full space-y-3">
+  <div
+    class="w-full space-y-3"
+    :class="{ 'single-file-mode': isSingleFileMode }"
+    tabindex="0"
+    @paste="handlePaste"
+  >
     <!-- Заголовок и счетчик -->
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
@@ -123,22 +156,34 @@ function clearAll() {
         class="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors"
       >
         <X class="w-3 h-3" />
-        Очистить все
+        {{ $t('components.fileUploader.clearAll') }}
       </button>
     </div>
 
     <!-- Контейнер для превью и кнопки загрузки -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+    <div 
+      class="grid gap-3"
+      :class="[
+        isSingleFileMode 
+          ? 'grid-cols-1 max-w-xs mx-auto' 
+          : 'file-uploader-grid'
+      ]"
+      @dragover="isSingleFileMode ? handleDragOver : null"
+      @dragleave="isSingleFileMode ? handleDragLeave : null"
+      @drop="isSingleFileMode ? handleDrop : null"
+    >
       <!-- Превью изображений -->
       <div
-        v-for="(src, index) in previews"
-        :key="index"
-        class="group relative aspect-square rounded-lg overflow-hidden border border-dark-700 bg-dark-600 transition-all duration-200 hover:border-blue-500"
+        v-for="(item, index) in previews"
+        :key="item.id"
+        class="group relative rounded-lg overflow-hidden border border-dark-700 bg-dark-600 transition-all duration-200 hover:border-blue-500"
+        :class="isSingleFileMode ? 'w-full' : 'aspect-square'"
       >
         <img 
-          :src="src" 
+          :src="item.src"
           :alt="`Изображение ${index + 1}`" 
           class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          :class="isSingleFileMode ? 'max-h-64' : ''"
         />
         
         <!-- Номер изображения -->
@@ -157,57 +202,58 @@ function clearAll() {
         </button>
         
         <!-- Затемнение при наведении -->
-        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200"></div>
+        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 pointer-events-none"></div>
       </div>
 
       <!-- Кнопка загрузки (показывается если есть свободные слоты) -->
       <div
         v-if="canAddMore"
-        class="aspect-square"
-        @dragover="handleDragOver"
-        @dragleave="handleDragLeave"
-        @drop="handleDrop"
+        :class="isSingleFileMode ? 'w-full' : 'aspect-square'"
+        @dragover="!isSingleFileMode ? handleDragOver : null"
+        @dragleave="!isSingleFileMode ? handleDragLeave : null"
+        @drop="!isSingleFileMode ? handleDrop : null"
       >
         <input
           ref="fileInput"
           type="file"
           accept="image/*"
-          :multiple="maxFiles === undefined || maxFiles > 1"
+          :multiple="!isSingleFileMode"
           class="hidden"
           @change="handleChange"
         />
         
-        <!-- Кнопка загрузки (квадрат с плюсом) -->
+        <!-- Кнопка загрузки -->
         <button
           type="button"
           @click="fileInput?.click()"
-          class="w-full h-full flex flex-col items-center justify-center rounded-lg border-2 border-dashed transition-all duration-200"
+          class="w-full h-full flex flex-col items-center justify-center rounded-lg border-2 border-dashed transition-all duration-200 p-3 sm:p-4"
           :class="[
             isDragging 
               ? 'border-blue-500 bg-blue-500/10' 
-              : 'border-dark-700 hover:border-blue-500 hover:bg-blue-500/5'
+              : 'border-dark-700 hover:border-blue-500 hover:bg-blue-500/5',
+            isSingleFileMode ? 'min-h-32' : ''
           ]"
           :title="$t('components.fileUploader.upload')"
         >
           <!-- Иконка -->
-          <div class="mb-2">
-            <div class="w-10 h-10 rounded-full bg-dark-700 flex items-center justify-center">
+          <div class="mb-2 sm:mb-3">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-dark-700 flex items-center justify-center">
               <Upload 
-                class="w-5 h-5" 
+                class="w-5 h-5 sm:w-6 sm:h-6" 
                 :class="isDragging ? 'text-blue-400' : 'text-gray-400'" 
               />
             </div>
           </div>
           
           <!-- Текст -->
-          <span class="text-xs font-medium" :class="isDragging ? 'text-blue-400' : 'text-gray-400'">
-            {{ $t('components.fileUploader.addPhoto') }}
-          </span>
-          
-          <!-- Дополнительный текст (только для десктопа) -->
-          <span v-if="remainingSlots > 0 && remainingSlots < maxFiles" class="text-xs text-gray-500 mt-1 hidden lg:block">
-            Осталось: {{ remainingSlots }}
-          </span>
+          <div class="text-center leading-tight">
+            <span class="text-xs sm:text-sm font-medium block break-words" :class="isDragging ? 'text-blue-400' : 'text-gray-400'">
+              {{ $t('components.fileUploader.addPhoto') }}
+            </span>
+            <span v-if="isSingleFileMode" class="text-xs text-gray-500 mt-1 block">
+              {{ $t('components.fileUploader.singleFileHint') }}
+            </span>
+          </div>
         </button>
       </div>
     </div>
@@ -223,10 +269,13 @@ function clearAll() {
       {{ errorMessage }}
     </div>
 
-    <!-- Информация о поддерживаемых форматах (только на мобиле) -->
-    <div class="lg:hidden text-xs text-gray-400 flex items-center gap-1">
+    <!-- Информация о поддерживаемых форматах -->
+    <div class="text-xs text-gray-400 flex items-center gap-1">
       <Image class="w-3 h-3" />
       {{ $t('components.fileUploader.supportOnlyImages') }}
+    </div>
+    <div class="text-xs text-gray-400">
+      {{ $t('components.fileUploader.pasteHint') }}
     </div>
   </div>
 </template>
@@ -240,7 +289,7 @@ function clearAll() {
 /* Кастомный скролл для контейнера с превью */
 .grid {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-color: var(--overlay-white-20) transparent;
 }
 
 .grid::-webkit-scrollbar {
@@ -252,12 +301,22 @@ function clearAll() {
 }
 
 .grid::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--overlay-white-20);
   border-radius: 3px;
 }
 
 /* Эффект при наведении на изображение */
 img {
   will-change: transform;
+}
+
+/* Специальные стили для режима одного файла */
+.single-file-mode .grid {
+  max-width: 100%;
+}
+
+/* Adaptive grid for multi-image mode: keeps cards readable in narrow columns. */
+.file-uploader-grid {
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
 }
 </style>

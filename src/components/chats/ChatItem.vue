@@ -2,40 +2,58 @@
 import type { ChatListItem } from '@/validation/chat/ChatList';
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n';
-
-const API_HOST = import.meta.env.VITE_API_HOST
+import { ShoppingBag, Headphones, Image as ImageIcon } from 'lucide-vue-next';
+import UserAvatar from '@/components/UserAvatar.vue';
+import StyledUsername from '@/components/StyledUsername.vue';
 
 const { t } = useI18n()
 
 const props = defineProps<{
     chat: ChatListItem,
-    selectedChatId: string | null
+    selectedChatId: string | null,
+    showSupportAsUser?: boolean
 }>()
 
+const emit = defineEmits<{
+    loadChatMessages: [chatId: string]
+}>()
 
 const isMobile = ref(false)
 
 const formattedLastMessage = computed((): string | null => {
-
     if (!props.chat.last_message) {
         return null
     }
 
     let text = null;
     switch (props.chat.last_message.message_type) {
+        case "price_offer_message":
+            text = t('pages.chats.newPriceOffer')
+            break
         case "purchase_message":
             text = t('pages.chats.newPurchase')
             break
         case "text_message":
-            text = props.chat.last_message.text
+            // Check if this is an admin message
+            const last = props.chat.last_message as any
+            const dataKey = last.data?.i18n_key
+            if (dataKey) {
+                const prefix = t(String(dataKey))
+                const reason = last.data?.reason || ''
+                text = `${prefix} ${reason}`.trim()
+            } else {
+                text = props.chat.last_message.text
+            }
             if (text.length > 60) {
                 text = text.substring(0, 57) + '...'
             }
             break
+        case "image_message":
+            text = t('pages.chats.imageMessage')
+            break
         case "update_deal_status_message":
             text = t('pages.chats.updateDealStatus')
             break
-
         case "review_message":
             text = t('pages.chats.newReview')
             break
@@ -43,14 +61,49 @@ const formattedLastMessage = computed((): string | null => {
     return text
 })
 
-const isSelected = props.chat.id === props.selectedChatId
-const userInitial = computed(() => {
-    return props.chat.another_user.username.charAt(0).toUpperCase()
+const isSelected = computed(() => props.chat.id === props.selectedChatId)
+
+const isUserOnline = computed(() => {
+    if (isSupportChat.value && !props.showSupportAsUser) {
+        return true
+    }
+    return props.chat.another_user.is_active
 })
 
-// Онлайн статус пользователя
-const isUserOnline = computed(() => {
-    return props.chat.another_user.is_active
+const isSupportChat = computed(() => {
+    return props.chat.chat_type === 'support_chat'
+})
+
+const isAdminMessage = computed(() => {
+    return props.chat.last_message?.message_type === 'text_message' 
+        && (props.chat.last_message as any).is_admin_message 
+        && !isSupportChat.value
+})
+
+// Вычисляемое свойство для отображения имени
+const displayName = computed(() => {
+    if (isSupportChat.value && !props.showSupportAsUser) {
+        return t('pages.chats.support')
+    }
+    return props.chat.another_user.username
+})
+
+const unreadCount = computed(() => props.chat.unread_count ?? 0)
+
+// Вычисляемое свойство для цвета имени
+const displayNameColor = computed(() => {
+    if (isSupportChat.value && !props.showSupportAsUser) {
+        return 'text-blue-500'
+    }
+    return 'text-mainText'
+})
+
+// Вычисляемое свойство для аватара
+const displayAvatarUrl = computed(() => {
+    if (isSupportChat.value && !props.showSupportAsUser) {
+        return null
+    }
+    return props.chat.another_user.avatar_url
 })
 
 const checkMobile = () => {
@@ -69,53 +122,65 @@ onMounted(() => {
         :class="['flex cursor-pointer items-center gap-3 py-3 px-4 transition hover:bg-dark-800/50 group', !isMobile && isSelected ? 'bg-dark-800/50' : '']"
         @click="$emit('loadChatMessages', chat.id)"
     >
-        <!-- Аватар с индикатором онлайн статуса -->
         <div class="flex-shrink-0 relative">
             <div class="h-12 w-12 flex items-center justify-center">
-                <img
-                    v-if="chat.another_user.avatar_url"
-                    :src="`${API_HOST}${chat.another_user.avatar_url}`"
-                    class="h-12 w-12 border-2 border-dark-600 rounded-full object-cover"
-                    :alt="chat.another_user.username"
-                >
+                <!-- Support chat with icon -->
                 <div
-                    v-else
-                    class="h-12 w-12 flex items-center justify-center rounded-full bg-gray-700 text-lg text-mainText font-bold uppercase"
+                    v-if="isSupportChat && !showSupportAsUser"
+                    class="h-12 w-12 flex items-center justify-center rounded-full bg-blue-500/20 border-2 border-blue-500/30"
                 >
-                    {{ userInitial }}
+                    <Headphones class="w-6 h-6 text-blue-400" />
                 </div>
+                <!-- Regular chat avatar (or support chat in admin mode) -->
+                <template v-else>
+                    <UserAvatar
+                        :avatar-url="displayAvatarUrl"
+                        :alt="displayName"
+                        class="h-12 w-12 border-2 border-dark-600 rounded-full object-cover"
+                    />
+                </template>
             </div>
             
-            <!-- Индикатор онлайн статуса -->
+            <!-- Online status indicator -->
             <div
-                v-if="isUserOnline"
-                class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-1 border-dark-800 rounded-full"
+                class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full"
                 :class="{
-                    'border-white': isSelected && !isMobile,
+                    'bg-green-500 border-1 border-dark-800': isUserOnline,
+                    'bg-gray-500 border-1 border-dark-800': !isUserOnline,
                     'border-dark-800': !isSelected || isMobile
                 }"
             >
-                <!-- Анимация пульсации для онлайн статуса -->
-                <div class="w-full h-full bg-green-500 rounded-full animate-ping opacity-75"></div>
+                <div 
+                    v-if="isUserOnline"
+                    class="w-full h-full bg-green-500 rounded-full animate-ping opacity-75"
+                ></div>
             </div>
-            
-            <!-- Индикатор оффлайн статуса (опционально) -->
-            <div
-                v-else
-                class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-gray-500 border-1 border-dark-800 rounded-full"
-                :class="{
-                    'border-white': isSelected && !isMobile,
-                    'border-dark-800': !isSelected || isMobile
-                }"
-            ></div>
         </div>
 
-        <!-- Информация о чате -->
         <div class="flex flex-col flex-1 min-w-0">
             <div class="flex items-center justify-between gap-2">
-                <p class="truncate text-mainText font-semibold text-base">
-                    {{ chat.another_user.username }}
-                </p>
+                <div class="flex min-w-0 flex-1 items-center gap-2">
+                    <!-- Name based on context -->
+                    <p
+                        v-if="isSupportChat && !showSupportAsUser"
+                        :class="['truncate font-semibold text-base', displayNameColor]"
+                    >
+                        {{ displayName }}
+                    </p>
+                    <div v-else class="min-w-0 flex-1 truncate">
+                        <StyledUsername
+                            :username="displayName"
+                            :style-id="chat.another_user.nickname_style_id"
+                            class="text-base font-semibold"
+                        />
+                    </div>
+                    <span
+                        v-if="unreadCount > 0"
+                        class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-red-500 text-white text-[11px] font-semibold"
+                    >
+                        {{ unreadCount > 99 ? '99+' : unreadCount }}
+                    </span>
+                </div>
                 <span 
                     v-if="chat.last_message?.created_at" 
                     class="flex-shrink-0 text-xs text-gray-500 whitespace-nowrap"
@@ -129,12 +194,36 @@ onMounted(() => {
                     class="truncate text-sm flex-1 min-w-0"
                     :class="{
                         'text-blue-500 font-light': chat.last_message?.message_type === 'purchase_message'
+                        || chat.last_message?.message_type === 'price_offer_message'
+                        || chat.last_message?.message_type === 'image_message'
                         || chat.last_message?.message_type === 'update_deal_status_message'
-                        || chat.last_message?.message_type === 'review_message',
-                        'text-gray-500': chat.last_message?.message_type === 'text_message'
+                        || chat.last_message?.message_type === 'review_message'
+                        || isAdminMessage,
+                        'text-gray-500': chat.last_message?.message_type === 'text_message' && !isAdminMessage
                     }"
                 >
-                    {{ formattedLastMessage }}
+                    <!-- Message type icon -->
+                    <component
+                        v-if="chat.last_message?.message_type === 'price_offer_message'"
+                        :is="ShoppingBag"
+                        class="inline-block w-3 h-3 mr-1.5 -mt-0.5"
+                    />
+                    <component
+                        v-if="chat.last_message?.message_type === 'purchase_message'"
+                        :is="ShoppingBag"
+                        class="inline-block w-3 h-3 mr-1.5 -mt-0.5"
+                    />
+                    <component
+                        v-else-if="chat.last_message?.message_type === 'image_message'"
+                        :is="ImageIcon"
+                        class="inline-block w-3 h-3 mr-1.5 -mt-0.5"
+                    />
+                    <component
+                        v-else-if="isAdminMessage"
+                        :is="Headphones"
+                        class="inline-block w-3 h-3 mr-1.5 -mt-0.5"
+                    />
+                    {{ formattedLastMessage || t('pages.chats.noMessages') }}
                 </p>
             </div>
         </div>
@@ -143,7 +232,7 @@ onMounted(() => {
 
 <style scoped>
 .group:hover .text-gray-500 {
-    color: #d1d5db;
+    color: var(--text-hover-muted);
 }
 
 .min-w-0 {
@@ -154,7 +243,6 @@ onMounted(() => {
     transition: all 0.3s ease;
 }
 
-/* Анимация пульсации для онлайн статуса */
 @keyframes ping {
     0% {
         transform: scale(1);

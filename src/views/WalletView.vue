@@ -1,33 +1,148 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
-  CreditCard,
   ArrowDownToLine,
   ArrowUpFromLine,
   Clock,
   CheckCircle,
   XCircle,
   Plus,
-  Minus
+  Minus,
+  Wallet as WalletIcon,
+  CreditCard,
+  Banknote,
+  History,
+  Loader2
 } from 'lucide-vue-next'
 import { walletService } from '@/api/wallet/walletService'
-import type { Balance, Transaction } from '@/validation/wallet/wallet'
-import type { z } from 'zod'
+import type { Balance, WalletHistoryItem } from '@/validation/wallet/wallet'
+import BackButton from '@/components/navigation/BackButton.vue'
+import { useRoute, useRouter } from 'vue-router'
+import type { LocationQueryValue } from 'vue-router'
+import {
+  convertCurrencyAmount,
+  formatCurrencyAmount,
+  getCurrencySymbol,
+  preferredCurrency,
+} from '@/utils/currency'
+import { buildSlugKey } from '@/utils/urlKeys'
 
 const { t } = useI18n()
+const route = useRoute()
+const router = useRouter()
 
 const balance = ref(0)
 const isLoading = ref(false)
 
-const transactions = ref<Transaction[]>([])
+const historyItems = ref<WalletHistoryItem[]>([])
 const page = ref(1)
 const perPage = 10
 const totalPages = ref(1)
 const isFetchingTransactions = ref(false)
+const MIN_DEPOSIT_RUB = 10
+const MAX_DEPOSIT_RUB = 100000
 
 const depositAmount = ref('')
 const withdrawAmount = ref('')
+const selectedCurrency = computed(() => preferredCurrency.value)
+const currencySymbol = computed(() => getCurrencySymbol(selectedCurrency.value))
+const currencyFractionDigits = computed(() => (selectedCurrency.value === 'USD' ? 2 : 0))
+const currencyInputStep = computed(() => (selectedCurrency.value === 'USD' ? 0.01 : 1))
+
+const parsedDepositAmount = computed(() => Number.parseFloat(depositAmount.value))
+const parsedWithdrawAmount = computed(() => Number.parseFloat(withdrawAmount.value))
+
+const depositAmountInRub = computed(() => {
+  return convertCurrencyAmount(parsedDepositAmount.value, selectedCurrency.value, 'RUB')
+})
+
+const withdrawAmountInRub = computed(() => {
+  return convertCurrencyAmount(parsedWithdrawAmount.value, selectedCurrency.value, 'RUB')
+})
+
+const depositInputMin = computed(() => {
+  const converted = convertCurrencyAmount(MIN_DEPOSIT_RUB, 'RUB', selectedCurrency.value)
+  return selectedCurrency.value === 'USD' ? Number(converted.toFixed(2)) : Math.ceil(converted)
+})
+
+const depositInputMax = computed(() => {
+  const converted = convertCurrencyAmount(MAX_DEPOSIT_RUB, 'RUB', selectedCurrency.value)
+  return selectedCurrency.value === 'USD' ? Number(converted.toFixed(2)) : Math.floor(converted)
+})
+
+const isDepositAmountValid = computed(() => {
+  return (
+    Number.isFinite(parsedDepositAmount.value)
+    && parsedDepositAmount.value > 0
+    && Number.isFinite(depositAmountInRub.value)
+    && depositAmountInRub.value >= MIN_DEPOSIT_RUB
+    && depositAmountInRub.value <= MAX_DEPOSIT_RUB
+  )
+})
+
+const availableBalanceInSelectedCurrency = computed(() =>
+  convertCurrencyAmount(balance.value, 'RUB', selectedCurrency.value)
+)
+
+const withdrawInputMin = computed(() => (selectedCurrency.value === 'USD' ? 0.01 : 1))
+const withdrawInputMax = computed(() => {
+  return selectedCurrency.value === 'USD'
+    ? Number(availableBalanceInSelectedCurrency.value.toFixed(2))
+    : Math.max(0, Math.floor(availableBalanceInSelectedCurrency.value))
+})
+
+const isWithdrawAmountValid = computed(() => {
+  return (
+    Number.isFinite(parsedWithdrawAmount.value)
+    && parsedWithdrawAmount.value > 0
+    && Number.isFinite(withdrawAmountInRub.value)
+    && withdrawAmountInRub.value <= balance.value
+  )
+})
+
+// New states for modals
+const showDepositModal = ref(false)
+const showWithdrawModal = ref(false)
+
+function getSingleQueryValue(
+  value: LocationQueryValue | LocationQueryValue[] | undefined,
+): string | null {
+  if (Array.isArray(value)) return typeof value[0] === 'string' ? value[0] : null
+  if (typeof value === 'string') return value
+  return null
+}
+
+function resolveDepositAmountFromRub(amountRub: number): string {
+  const converted = convertCurrencyAmount(amountRub, 'RUB', selectedCurrency.value)
+  if (selectedCurrency.value === 'USD') {
+    return converted.toFixed(2)
+  }
+  return Math.ceil(converted).toString()
+}
+
+function clearAutoDepositQuery() {
+  const nextQuery = { ...route.query }
+  delete nextQuery.open_deposit
+  delete nextQuery.amount_rub
+  router.replace({ query: nextQuery })
+}
+
+function applyAutoDepositFromQuery() {
+  const shouldOpen = getSingleQueryValue(route.query.open_deposit) === '1'
+  if (!shouldOpen) return
+
+  const amountRubRaw = getSingleQueryValue(route.query.amount_rub)
+  const amountRub = Number.parseFloat(amountRubRaw ?? '')
+
+  showDepositModal.value = true
+
+  if (Number.isFinite(amountRub) && amountRub > 0) {
+    depositAmount.value = resolveDepositAmountFromRub(amountRub)
+  }
+
+  clearAutoDepositQuery()
+}
 
 onMounted(async () => {
   isLoading.value = true
@@ -37,21 +152,22 @@ onMounted(async () => {
     balance.value = userBalance.balance
   }
 
-  await loadTransactions()
+  await loadHistory()
+  applyAutoDepositFromQuery()
   isLoading.value = false
 })
 
-const loadTransactions = async () => {
+const loadHistory = async () => {
   if (isFetchingTransactions.value) return
   if (page.value > totalPages.value) return
 
   isFetchingTransactions.value = true
 
-  const response = await walletService.GetTransactionsList(page.value, perPage)
+  const response = await walletService.getHistory(page.value, perPage)
 
   if (response) {
-    transactions.value.push(...response.transactions)
-    totalPages.value = response.totalPages
+    historyItems.value.push(...response.items)
+    totalPages.value = response.total_pages
     page.value++
   }
 
@@ -61,16 +177,19 @@ const loadTransactions = async () => {
 const handleScroll = async (event: Event) => {
   const target = event.target as HTMLElement
   if (target.scrollTop + target.clientHeight >= target.scrollHeight - 50) {
-    await loadTransactions()
+    await loadHistory()
   }
 }
 
 const handleDeposit = async () => {
-  if (!depositAmount.value || parseFloat(depositAmount.value) <= 0) return
+  if (!isDepositAmountValid.value) return
+
+  const baseAmount = Math.round(depositAmountInRub.value)
+  if (!Number.isFinite(baseAmount) || baseAmount < MIN_DEPOSIT_RUB) return
 
   isLoading.value = true
   const paymentUrl = await walletService.TopUpUserBalance(
-    parseInt(depositAmount.value)
+    baseAmount
   )
 
   if (paymentUrl) {
@@ -78,13 +197,13 @@ const handleDeposit = async () => {
   }
 
   isLoading.value = false
+  showDepositModal.value = false
 }
 
 const handleWithdraw = () => {
-  if (!withdrawAmount.value) return
+  if (!isWithdrawAmountValid.value) return
 
-  const amount = parseFloat(withdrawAmount.value)
-  if (amount <= 0 || amount > balance.value) return
+  const amount = withdrawAmountInRub.value
 
   isLoading.value = true
 
@@ -92,15 +211,17 @@ const handleWithdraw = () => {
     balance.value -= amount
     withdrawAmount.value = ''
     isLoading.value = false
+    showWithdrawModal.value = false
   }, 1000)
 }
 
 const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
-    minimumFractionDigits: 0
-  }).format(amount)
+  return formatCurrencyAmount(amount, {
+    fromCurrency: 'RUB',
+    currency: selectedCurrency.value,
+    minimumFractionDigits: currencyFractionDigits.value,
+    maximumFractionDigits: currencyFractionDigits.value,
+  })
 }
 
 const formatDate = (dateString: string) => {
@@ -113,12 +234,15 @@ const formatDate = (dateString: string) => {
 }
 
 const getStatusIcon = (status: string) => {
-  switch (status) {
+  switch (status.toLowerCase()) {
     case 'completed':
+    case 'confirmed':
       return CheckCircle
     case 'pending':
       return Clock
     case 'rejected':
+    case 'cancelled':
+    case 'canceled':
       return XCircle
     default:
       return Clock
@@ -126,168 +250,443 @@ const getStatusIcon = (status: string) => {
 }
 
 const getStatusColor = (status: string) => {
-  switch (status) {
+  switch (status.toLowerCase()) {
     case 'completed':
+    case 'confirmed':
       return 'text-green-400'
     case 'pending':
       return 'text-yellow-400'
     case 'rejected':
+    case 'cancelled':
+    case 'canceled':
       return 'text-red-400'
     default:
       return 'text-gray-400'
   }
 }
 
-const getStatusText = (status: string) => {
-  switch (status) {
-    case 'completed':
-      return 'Завершено'
-    case 'pending':
-      return 'В обработке'
-    case 'rejected':
-      return 'Отклонено'
-    default:
-      return status
+const getStatusText = (status: string, type: string) => {
+  const map: Record<string, string> = {
+    completed: 'Завершено',
+    confirmed: 'Завершено',
+    pending: 'В обработке',
+    rejected: 'Отклонено',
+    cancelled: 'Отменено',
+    canceled: 'Отменено',
+    refunded: 'Возврат',
   }
+  if (type === 'purchase' && status === 'pending') return 'Заморожено'
+  return map[status.toLowerCase()] ?? status
 }
 
-const getTypeIcon = (amount: number) => {
-  return amount > 0 ? Plus : Minus
+const getTypeIcon = (item: WalletHistoryItem) => {
+  return (item.amount ?? 0) >= 0 ? Plus : Minus
 }
 
-const getTypeColor = (amount: number) => {
-  return amount > 0 ? 'text-green-400' : 'text-red-400'
+const getTypeColor = (item: WalletHistoryItem) => {
+  return (item.amount ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
+}
+
+const formatSigned = (amount: number) => {
+  const sign = amount >= 0 ? '+' : ''
+  return `${sign}${formatCurrency(amount)}`
+}
+
+const minimumDepositText = computed(() => formatCurrencyAmount(MIN_DEPOSIT_RUB, {
+  fromCurrency: 'RUB',
+  currency: selectedCurrency.value,
+  minimumFractionDigits: currencyFractionDigits.value,
+  maximumFractionDigits: currencyFractionDigits.value,
+}))
+
+const availableBalanceForInput = () => {
+  const converted = availableBalanceInSelectedCurrency.value
+  return selectedCurrency.value === 'USD'
+    ? converted.toFixed(2)
+    : Math.round(converted).toString()
+}
+
+const typeLabel = (type: string) => {
+  const map: Record<string, string> = {
+    top_up: t('pages.walletTypes.top_up'),
+    purchase: t('pages.walletTypes.purchase'),
+    sale: t('pages.walletTypes.sale'),
+    refund: t('pages.walletTypes.refund'),
+    withdrawal: t('pages.walletTypes.withdrawal'),
+    adjustment: t('pages.walletTypes.adjustment'),
+  }
+  return map[type] ?? type
 }
 </script>
 
 <template>
-  <div class="h-full w-full flex flex-col overflow-hidden">
-    <div class="flex-1 overflow-auto no-scrollbar">
-      <div class="max-w-4xl mx-auto w-full px-4 py-6 space-y-6">
-        <div class="text-center space-y-4">
-          <h1 class="text-2xl md:text-3xl font-bold text-white">
-            Управление балансом
-          </h1>
+  <div class="w-full h-full overflow-scroll  lg:overflow-hidden pb-16 md:pb-0">
+    <!-- Mobile header -->
+    <div class="mb-6 lg:hidden px-4 pt-4">
+      <div class="flex gap-2">
+        <BackButton />
+        <h1 class="text-2xl font-bold text-white">
+          {{ $t('pages.wallet.title') }}
+        </h1>
+      </div>
+    </div>
 
-          <div class="bg-dark-800 border border-gray-700 rounded-2xl p-6 max-w-md mx-auto">
-            <p class="text-gray-400 mb-2">Текущий баланс</p>
-            <p class="text-4xl font-bold text-green-400">
-              {{ formatCurrency(balance) }}
-            </p>
-          </div>
-        </div>
+    <!-- Desktop layout -->
+    <div class="lg:flex lg:min-h-[calc(100dvh-3.5rem)]">
+      <!-- Left column - Wallet info -->
+      <div class="lg:w-96 lg:flex-shrink-0 lg:sticky lg:top-0 lg:min-h-[calc(100dvh-3.5rem)] lg:border-r border-dark-700 px-4 lg:px-0 lg:pt-6 lg:pr-6">
+        <div class="pt-6 lg:pt-0">
+          <div class="space-y-6">
+            <!-- Desktop header -->
+            <div class="hidden lg:block">
+              <div class="flex gap-2">
+                <BackButton />
+                <h1 class="text-2xl font-bold text-white">
+                  {{ $t('pages.wallet.title') }}
+                </h1>
+              </div>
+            </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div class="bg-dark-800 border border-gray-700 rounded-2xl p-6 space-y-4">
-            <h2 class="text-xl font-semibold text-white flex items-center gap-2">
-              <ArrowDownToLine class="text-green-400" />
-              Пополнение
-            </h2>
-
-            <input
-              v-model="depositAmount"
-              type="number"
-              placeholder="0"
-              class="w-full px-4 py-3 bg-dark-900 border border-gray-600 rounded-xl text-white"
-            />
-
-            <button
-              @click="handleDeposit"
-              :disabled="isLoading"
-              class="w-full bg-green-600 hover:bg-green-700 py-3 rounded-xl font-semibold"
-            >
-              Пополнить
-            </button>
-          </div>
-
-          <div class="bg-dark-800 border border-gray-700 rounded-2xl p-6 space-y-4">
-            <h2 class="text-xl font-semibold text-white flex items-center gap-2">
-              <ArrowUpFromLine class="text-red-400" />
-              Вывод
-            </h2>
-
-            <input
-              v-model="withdrawAmount"
-              type="number"
-              :max="balance"
-              placeholder="0"
-              class="w-full px-4 py-3 bg-dark-900 border border-gray-600 rounded-xl text-white"
-            />
-
-            <button
-              @click="handleWithdraw"
-              :disabled="isLoading"
-              class="w-full bg-red-600 hover:bg-red-700 py-3 rounded-xl font-semibold"
-            >
-              Вывести
-            </button>
-          </div>
-        </div>
-
-        <div class="bg-dark-800 border border-gray-700 rounded-2xl p-6">
-          <h2 class="text-xl font-semibold text-white mb-4">
-            История операций
-          </h2>
-
-          <div
-            class="space-y-3 max-h-96 overflow-y-auto history-container"
-            @scroll="handleScroll"
-          >
-            <div
-              v-for="tx in transactions"
-              :key="tx.id"
-              class="flex items-center justify-between bg-dark-900 border border-gray-700 rounded-xl p-4"
-            >
-              <div class="flex items-center gap-3">
-                <component
-                  :is="getTypeIcon(tx.amount)"
-                  :class="getTypeColor(tx.amount)"
-                />
-                <div>
-                  <p class="text-white font-medium">
-                    {{ formatCurrency(tx.amount) }}
-                  </p>
-                  <p class="text-gray-400 text-sm">
-                    {{ formatDate(tx.created_at) }}
-                  </p>
+            <!-- Balance card -->
+            <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-6 space-y-6">
+              <div class="flex items-center justify-between">
+                <div class="space-y-1">
+                  <div class="text-sm text-gray-300 font-medium">{{ $t('pages.wallet.currentBalance') }}</div>
+                  <div class="text-3xl font-bold text-blue-100">{{ formatCurrency(balance) }}</div>
+                </div>
+                <div class="w-12 h-12 rounded-full border border-dark-500 bg-dark-700/70 flex items-center justify-center">
+                  <WalletIcon class="w-6 h-6 text-gray-200" />
                 </div>
               </div>
 
-              <div class="flex items-center gap-2">
-                <component
-                  :is="getStatusIcon(tx.status)"
-                  :class="getStatusColor(tx.status)"
-                />
-                <span class="text-sm text-gray-300">
-                  {{ getStatusText(tx.status) }}
-                </span>
+              <!-- Quick actions -->
+              <div class="grid grid-cols-2 gap-3">
+                <button 
+                  @click="showDepositModal = true"
+                  class="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-dark-600 bg-dark-700/50 hover:bg-dark-700 transition-all duration-200"
+                >
+                  <div class="w-10 h-10 rounded-full border border-dark-500 bg-dark-700/70 flex items-center justify-center">
+                    <ArrowDownToLine class="w-5 h-5 text-gray-200" />
+                  </div>
+                  <span class="text-sm font-medium text-white">{{ $t('pages.wallet.deposit') }}</span>
+                </button>
+
+                <button 
+                  @click="showWithdrawModal = true"
+                  class="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-dark-600 bg-dark-700/50 hover:bg-dark-700 transition-all duration-200"
+                >
+                  <div class="w-10 h-10 rounded-full border border-dark-500 bg-dark-700/70 flex items-center justify-center">
+                    <ArrowUpFromLine class="w-5 h-5 text-gray-200" />
+                  </div>
+                  <span class="text-sm font-medium text-white">{{ $t('pages.wallet.withdraw') }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Info cards -->
+            <div class="space-y-3">
+              <div class="flex items-center gap-3 p-4 rounded-lg border border-dark-600 bg-dark-700/30">
+                <div class="w-8 h-8 rounded-full border border-dark-600 bg-dark-700/70 flex items-center justify-center">
+                  <CreditCard class="w-4 h-4 text-gray-300" />
+                </div>
+                <div class="space-y-1">
+                  <div class="text-sm font-medium text-gray-300">{{ $t('pages.wallet.instantDeposit') }}</div>
+                  <div class="text-xs text-gray-400">{{ $t('pages.wallet.instantDepositHint') }}</div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3 p-4 rounded-lg border border-dark-600 bg-dark-700/30">
+                <div class="w-8 h-8 rounded-full border border-dark-600 bg-dark-700/70 flex items-center justify-center">
+                  <Banknote class="w-4 h-4 text-gray-300" />
+                </div>
+                <div class="space-y-1">
+                  <div class="text-sm font-medium text-gray-300">{{ $t('pages.wallet.fastWithdrawal') }}</div>
+                  <div class="text-xs text-gray-400">{{ $t('pages.wallet.fastWithdrawalHint') }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right column - Transactions -->
+      <div class="lg:flex-1 overflow-y-auto  mt-6 lg:mt-0 lg:pt-6 lg:pl-6">
+        <div class="px-4 lg:px-0 lg:pb-6 space-y-6">
+          <!-- Transactions header -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <History class="w-5 h-5 text-gray-400" />
+              <h2 class="text-xl font-bold text-white">{{ $t('pages.wallet.transactionHistory') }}</h2>
+            </div>
+            <div class="text-sm text-gray-400">
+              {{ $t('pages.wallet.totalTransactions', { count: historyItems.length }) }}
+            </div>
+          </div>
+
+          <!-- Transactions list -->
+          <div 
+            class="space-y-3 max-h-[calc(100vh-240px)] overflow-y-auto pr-2"
+            @scroll="handleScroll"
+          >
+            <div v-if="isLoading && historyItems.length === 0" class="flex items-center justify-center py-12">
+              <Loader2 class="w-6 h-6 animate-spin text-blue-500" />
+            </div>
+
+            <div v-else-if="historyItems.length === 0" class="text-center py-12">
+              <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-dark-700/50 border border-dark-600 flex items-center justify-center">
+                <History class="w-8 h-8 text-gray-500" />
+              </div>
+              <h3 class="text-lg font-semibold text-gray-300 mb-2">{{ $t('pages.wallet.noTransactions') }}</h3>
+              <p class="text-sm text-gray-400 max-w-md mx-auto">
+                {{ $t('pages.wallet.noTransactionsHint') }}
+              </p>
+            </div>
+
+            <div v-else class="space-y-3">
+              <div
+                v-for="tx in historyItems"
+                :key="tx.id"
+                class="group border border-dark-700 rounded-xl bg-dark-600/40 hover:bg-dark-600/60 hover:border-blue-500/30 transition-all duration-200 p-4"
+              >
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="relative">
+                      <div class="w-10 h-10 rounded-full bg-dark-700 flex items-center justify-center">
+                        <component
+                          :is="getTypeIcon(tx)"
+                          :class="`w-5 h-5 ${getTypeColor(tx)}`"
+                        />
+                      </div>
+                      <div class="absolute -bottom-1 -right-1">
+                        <component
+                          :is="getStatusIcon(tx.status)"
+                          :class="`w-4 h-4 ${getStatusColor(tx.status)}`"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div class="space-y-1">
+                      <div class="text-base font-semibold text-white">
+                        {{ formatSigned(tx.amount) }}
+                      </div>
+                      <div class="text-xs text-gray-400">
+                        {{ formatDate(tx.created_at) }}
+                      </div>
+                      <div class="text-xs text-gray-500" v-if="tx.title">
+                        <router-link
+                          v-if="tx.product_id"
+                          :to="`/product/${buildSlugKey(tx.title, tx.product_id, 'product')}`"
+                          class="text-blue-400 hover:underline"
+                        >
+                          {{ tx.title }}
+                        </router-link>
+                        <span v-else>{{ tx.title }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm px-2 py-1 rounded-full bg-dark-700 text-gray-300">
+                      {{ getStatusText(tx.status, tx.type) }}
+                    </span>
+                    <span class="text-xs px-2 py-1 rounded-full bg-dark-700/60 text-gray-400 border border-dark-600">
+                      {{ typeLabel(tx.type) }}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
             <div
               v-if="isFetchingTransactions"
-              class="text-center text-gray-400 py-4"
+              class="flex items-center justify-center py-4"
             >
-              Загрузка...
+              <Loader2 class="w-5 h-5 animate-spin text-blue-500 mr-2" />
+              <span class="text-sm text-gray-400">{{ $t('common.loading') }}</span>
             </div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Deposit Modal -->
+    <Teleport to="body">
+      <div 
+        v-if="showDepositModal" 
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+      >
+        <div class="relative w-full max-w-md border border-dark-600 rounded-2xl bg-dark-800/95 backdrop-blur-sm p-6 space-y-6">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full border border-dark-500 bg-dark-700/70 flex items-center justify-center">
+                <ArrowDownToLine class="w-5 h-5 text-gray-200" />
+              </div>
+              <h3 class="text-xl font-bold text-white">{{ $t('pages.wallet.deposit') }}</h3>
+            </div>
+            <button 
+              @click="showDepositModal = false"
+              class="w-8 h-8 flex items-center justify-center rounded-lg border border-dark-600 bg-dark-700/50 hover:bg-dark-700 transition-colors"
+            >
+              <XCircle class="w-4 h-4 text-gray-300" />
+            </button>
+          </div>
+          
+          <div class="space-y-4">
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-300">
+                {{ $t('pages.wallet.depositAmount') }}
+              </label>
+              <div class="relative">
+                <input
+                  v-model="depositAmount"
+                  type="number"
+                  :min="depositInputMin"
+                  :max="depositInputMax"
+                  :step="currencyInputStep"
+                  placeholder="0"
+                  class="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-white text-lg font-semibold outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                />
+                <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 text-sm font-medium">
+                  {{ currencySymbol }}
+                </div>
+              </div>
+              <p class="text-xs text-gray-400 mt-2">
+                {{ $t('pages.wallet.depositMin', { amount: minimumDepositText }) }}
+              </p>
+            </div>
+
+            <button
+              @click="handleDeposit"
+              :disabled="!isDepositAmountValid || isLoading"
+              class="w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 py-3.5 text-white font-semibold hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-blue-500/20"
+            >
+              <span v-if="isLoading" class="flex items-center justify-center gap-2">
+                <Loader2 class="w-4 h-4 animate-spin text-white" />
+                {{ $t('common.loading') }}
+              </span>
+              <span v-else>
+                {{ $t('pages.wallet.proceedToPayment') }}
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Withdraw Modal -->
+    <Teleport to="body">
+      <div 
+        v-if="showWithdrawModal" 
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+      >
+        <div class="relative w-full max-w-md border border-dark-600 rounded-2xl bg-dark-800/95 backdrop-blur-sm p-6 space-y-6">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full border border-emerald-500/35 bg-emerald-500/10 flex items-center justify-center">
+                <ArrowUpFromLine class="w-5 h-5 text-emerald-300" />
+              </div>
+              <h3 class="text-xl font-bold text-white">{{ $t('pages.wallet.withdraw') }}</h3>
+            </div>
+            <button 
+              @click="showWithdrawModal = false"
+              class="w-8 h-8 flex items-center justify-center rounded-lg border border-dark-600 bg-dark-700/50 hover:bg-dark-700 transition-colors"
+            >
+              <XCircle class="w-4 h-4 text-gray-300" />
+            </button>
+          </div>
+          
+          <div class="space-y-4">
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-300">
+                {{ $t('pages.wallet.withdrawAmount') }}
+              </label>
+              <div class="relative">
+                <input
+                  v-model="withdrawAmount"
+                  type="number"
+                  :max="withdrawInputMax"
+                  :min="withdrawInputMin"
+                  :step="currencyInputStep"
+                  placeholder="0"
+                  class="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-white text-lg font-semibold outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                />
+                <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 text-sm font-medium">
+                  {{ currencySymbol }}
+                </div>
+              </div>
+              <div class="flex items-center justify-between text-xs mt-2">
+                <span class="text-gray-400">
+                  {{ $t('pages.wallet.available') }}: <span class="text-green-400">{{ formatCurrency(balance) }}</span>
+                </span>
+                <button 
+                  @click="withdrawAmount = availableBalanceForInput()"
+                  class="text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  {{ $t('pages.wallet.useAll') }}
+                </button>
+              </div>
+            </div>
+
+            <button
+              @click="handleWithdraw"
+              :disabled="!isWithdrawAmountValid || isLoading"
+              class="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 py-3.5 text-white font-semibold hover:from-emerald-700 hover:to-teal-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-emerald-500/20"
+            >
+              <span v-if="isLoading" class="flex items-center justify-center gap-2">
+                <Loader2 class="w-4 h-4 animate-spin text-white" />
+                {{ $t('common.loading') }}
+              </span>
+              <span v-else>
+                {{ $t('pages.wallet.confirmWithdrawal') }}
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
-<style scoped>
-.history-container {
+<style>
+/* Remove number input arrows */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Custom scrollbar for transactions */
+.overflow-y-auto {
   scrollbar-width: thin;
-  scrollbar-color: #4B5563 #1F2937;
+  scrollbar-color: var(--overlay-white-20) transparent;
 }
 
-.history-container::-webkit-scrollbar {
-  width: 4px;
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
 }
 
-.history-container::-webkit-scrollbar-thumb {
-  background: #4B5563;
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 10px 0;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background-color: var(--overlay-white-20);
+  border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background-color: var(--overlay-white-30);
+}
+
+/* Ensure proper scrolling on mobile */
+@media (max-width: 1023px) {
+  .lg\:sticky {
+    position: static;
+  }
 }
 </style>

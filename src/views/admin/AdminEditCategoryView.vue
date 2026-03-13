@@ -1,13 +1,18 @@
 <script setup lang="ts">
 import { adminService } from '@/api/admin/AdminService'
 import type { z } from 'zod'
-import { CategorySchema } from '@/validation/category/category'
+import {
+  CategorySchema,
+  CATEGORY_NAME_MAX_LENGTH,
+  CATEGORY_DESCRIPTION_MAX_LENGTH,
+} from '@/validation/category/category'
 import { onMounted, ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import SuccessMessage from '@/components/SuccessMessage.vue'
 import TheInput from '@/components/TheInput.vue'
+import Checkbox from '@/components/Checkbox.vue'
 import FileUploader from '@/components/FileUploader.vue'
 import { Loader2, X } from 'lucide-vue-next'
 import BackButton from '@/components/navigation/BackButton.vue'
@@ -34,6 +39,8 @@ const isActive = ref<boolean>(false)
 
 const existingImage = ref<string | null>(null)
 const newImage = ref<File[]>([])
+const existingBanner = ref<string | null>(null)
+const newBanner = ref<File[]>([])
 
 const hasImage = computed(() => {
   return !!existingImage.value || newImage.value.length > 0
@@ -42,6 +49,12 @@ const hasImage = computed(() => {
 watch(newImage, (files) => {
   if (files.length > 0) {
     existingImage.value = null
+  }
+})
+
+watch(newBanner, (files) => {
+  if (files.length > 0) {
+    existingBanner.value = null
   }
 })
 
@@ -54,8 +67,9 @@ async function loadCategory() {
 
     category.value = data
     name.value = data.name
-    description.value = data.description
+    description.value = data.description ?? ''
     existingImage.value = data.image_url
+    existingBanner.value = data.banner_url ?? null
     isActive.value = data.is_active
   } catch (e) {
     console.error(e)
@@ -77,8 +91,10 @@ async function saveCategory() {
   try {
     isSaving.value = true
     errorMessage.value = ''
+    const normalizedName = name.value.trim()
+    const normalizedDescription = description.value.trim()
 
-    if (!name.value.trim()) {
+    if (!normalizedName) {
       errorMessage.value = t('pages.admin.editCategory.nameRequired')
       return
     }
@@ -90,10 +106,11 @@ async function saveCategory() {
 
     const success = await adminService.updateCategoryData(
       categoryId,
-      name.value,
-      description.value,
+      normalizedName,
+      normalizedDescription,
       isActive.value,
-      newImage.value[0] ?? null
+      newImage.value[0] ?? null,
+      newBanner.value[0] ?? null,
     )
 
     if (!success) {
@@ -115,7 +132,7 @@ onMounted(loadCategory)
 </script>
 
 <template>
-  <div class="no-scrollbar h-full w-full flex flex-col items-center overflow-scroll pb-36">
+  <div class=" h-full w-full flex flex-col items-center overflow-scroll pb-36 pt-3 md:pt-4">
     <div class="w-full">
       <BackButton/>
     </div>
@@ -142,14 +159,14 @@ onMounted(loadCategory)
           <label class="mb-1 block text-sm text-text-secondary">
             {{ $t('common.name') }}
           </label>
-          <TheInput v-model="name" type="text" required />
+          <TheInput v-model="name" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" required />
         </div>
 
         <div>
           <label class="mb-1 block text-sm text-text-secondary">
             {{ $t('common.description') }}
           </label>
-          <textarea v-model="description" rows="3"
+          <textarea v-model="description" rows="3" :maxlength="CATEGORY_DESCRIPTION_MAX_LENGTH"
             class="w-full max-h-28 px-3 py-2 border border-dark-700 rounded-lg bg-dark-600 text-mainText resize-none" />
         </div>
 
@@ -179,10 +196,27 @@ onMounted(loadCategory)
         </div>
 
         <div>
-          <label class="mb-1 block text-sm text-text-secondary">
+          <label class="mb-2 block text-sm text-text-secondary">
+            {{ $t('common.banner') }}
+          </label>
+
+          <div v-if="existingBanner" class="relative w-full h-28 mb-3 overflow-hidden rounded-lg border border-dark-600">
+            <img :src="`${API_HOST}${existingBanner}`"
+              class="w-full h-full object-cover" />
+          </div>
+
+          <p v-else class="text-sm text-text-secondary mb-2">
+            {{ $t('common.noImage') }}
+          </p>
+
+          <FileUploader v-model="newBanner" :max-files="1" />
+        </div>
+
+        <div class="flex items-center gap-3">
+          <Checkbox v-model="isActive" />
+          <label class="text-sm text-text-secondary">
             {{ $t('common.isActive') }}
           </label>
-          <input type="checkbox" v-model="isActive" :value="isActive" :true-value="true" :false-value="false">
         </div>
 
         <div v-if="category" class="border-t border-dark-700 pt-4 text-sm space-y-2">
@@ -196,13 +230,13 @@ onMounted(loadCategory)
         <SuccessMessage v-if="successMessage" :success-message="successMessage" />
 
         <div class="flex gap-3 pt-4">
-          <button type="button" @click="cancel" class="flex-1 px-4 py-2 border border-dark-700 rounded-lg"
+          <button type="button" @click="cancel" class="admin-btn flex-1"
             :disabled="isSaving">
             {{ $t('common.cancel') }}
           </button>
 
           <button type="submit" :disabled="isSaving || !hasImage"
-            class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg flex justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+            class="admin-btn admin-btn-primary flex-1">
             <Loader2 v-if="isSaving" class="h-4 w-4 animate-spin" />
             {{ isSaving ? $t('common.loading') : $t('common.save') }}
           </button>

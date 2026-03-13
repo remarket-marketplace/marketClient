@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { ReviewsListSchema } from '../review/review'
+import { CategorySchema } from '../category/category'
 
 export const UUIDSchema = z.string()
 
@@ -10,6 +11,7 @@ export const ProductImageSchema = z.object({
 
 export const SellerSchema = z.object({
   username: z.string(),
+  nickname_style_id: z.string().max(64).nullish().transform((value) => value ?? 'default'),
   avatar_url: z.string(),
   is_active: z.boolean(),
   is_banned: z.boolean(),
@@ -17,18 +19,9 @@ export const SellerSchema = z.object({
   created_at: z.string(),
 }).strip()
 
-export const CategorySchema = z.object({
-  id: UUIDSchema,
-  name: z.string(),
-  slug: z.string(),
-  description: z.string(),
-  is_active: z.boolean(),
-  image_url: z.string().nullable(),
-  parent_id: z.string().nullable(),
-}).strip()
-
 export const ProductSchema = z.object({
   id: UUIDSchema,
+  slug: z.string(),
   title: z.string(),
   description: z.string(),
   is_sold: z.boolean(),
@@ -39,6 +32,10 @@ export const ProductSchema = z.object({
   seller: SellerSchema,
   images: z.array(ProductImageSchema),
   count: z.number(),
+  auto_delivery: z.boolean(),
+  is_raika_verified: z.boolean().optional(),
+  moderation_reject_reason_code: z.string().nullable().optional(),
+  moderation_reject_reason_text: z.string().nullable().optional(),
   reviews: ReviewsListSchema.nullable().optional(),
   is_owner: z.boolean().optional(),
   product_data_string: z.string().nullable().optional(),
@@ -49,3 +46,4 @@ export const ProductSchema = z.object({
 export type Product = z.infer<typeof ProductSchema>
 export type ProductImage = z.infer<typeof ProductImageSchema>
 export type ProductEdit = z.infer<typeof ProductSchema>
+export { CategorySchema }

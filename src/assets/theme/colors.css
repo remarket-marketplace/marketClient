@@ -1,0 +1,198 @@
+:root {
+  /* Core palette tokens (RGB channels for alpha support in utility classes)
+   * These are base shades used by Tailwind/Uno classes like:
+   * bg-blue-600, text-gray-400, border-dark-700, etc.
+   */
+  --palette-brand: 30 64 175;
+  --palette-light-100: 245 245 245;
+  --palette-light-200: 229 229 229;
+
+  --palette-dark-200: 50 50 50;
+  --palette-dark-400: 34 34 34;
+  --palette-dark-500: 34 34 34;
+  --palette-dark-600: 28 28 30;
+  --palette-dark-700: 42 42 42;
+  --palette-dark-800: 31 31 31;
+  --palette-dark-900: 18 18 18;
+
+  --palette-gray-50: 249 250 251;
+  --palette-gray-100: 243 244 246;
+  --palette-gray-200: 229 231 235;
+  --palette-gray-300: 209 213 219;
+  --palette-gray-400: 156 163 175;
+  --palette-gray-500: 107 114 128;
+  --palette-gray-600: 75 85 99;
+  --palette-gray-700: 55 65 81;
+  --palette-gray-800: 31 41 55;
+  --palette-gray-900: 17 24 39;
+
+  --palette-zinc-600: 82 82 91;
+  --palette-zinc-700: 63 63 70;
+  --palette-zinc-800: 39 39 42;
+  --palette-zinc-900: 24 24 27;
+
+  --palette-blue-100: 219 234 254;
+  --palette-blue-200: 191 219 254;
+  --palette-blue-300: 147 197 253;
+  --palette-blue-400: 96 165 250;
+  --palette-blue-500: 59 130 246;
+  --palette-blue-600: 37 99 235;
+  --palette-blue-700: 29 78 216;
+  --palette-blue-800: 30 64 175;
+  --palette-blue-900: 30 58 138;
+
+  --palette-cyan-200: 165 243 252;
+  --palette-cyan-300: 103 232 249;
+  --palette-cyan-400: 34 211 238;
+  --palette-cyan-500: 6 182 212;
+  --palette-cyan-900: 22 78 99;
+
+  --palette-sky-500: 14 165 233;
+  --palette-indigo-500: 99 102 241;
+  --palette-violet-500: 139 92 246;
+  --palette-purple-300: 216 180 254;
+  --palette-purple-400: 192 132 252;
+  --palette-purple-500: 168 85 247;
+  --palette-purple-600: 147 51 234;
+  --palette-pink-400: 244 114 182;
+  --palette-pink-500: 236 72 153;
+  --palette-pink-900: 131 24 67;
+  --palette-rose-400: 251 113 133;
+
+  --palette-emerald-100: 209 250 229;
+  --palette-emerald-200: 167 243 208;
+  --palette-emerald-300: 110 231 183;
+  --palette-emerald-400: 52 211 153;
+  --palette-emerald-500: 16 185 129;
+  --palette-emerald-600: 5 150 105;
+  --palette-emerald-700: 4 120 87;
+  --palette-emerald-900: 6 78 59;
+
+  --palette-green-100: 220 252 231;
+  --palette-green-300: 134 239 172;
+  --palette-green-400: 74 222 128;
+  --palette-green-500: 34 197 94;
+  --palette-green-600: 22 163 74;
+  --palette-green-700: 21 128 61;
+
+  --palette-lime-500: 132 204 22;
+
+  --palette-yellow-200: 254 240 138;
+  --palette-yellow-300: 253 224 71;
+  --palette-yellow-400: 250 204 21;
+  --palette-yellow-500: 234 179 8;
+
+  --palette-amber-200: 253 230 138;
+  --palette-amber-300: 252 211 77;
+  --palette-amber-400: 251 191 36;
+  --palette-amber-500: 245 158 11;
+  --palette-amber-700: 180 83 9;
+  --palette-amber-900: 120 53 15;
+
+  --palette-orange-300: 253 186 116;
+  --palette-orange-400: 251 146 60;
+  --palette-orange-500: 249 115 22;
+  --palette-orange-600: 234 88 12;
+  --palette-orange-700: 194 65 12;
+
+  --palette-red-100: 254 226 226;
+  --palette-red-200: 254 202 202;
+  --palette-red-300: 252 165 165;
+  --palette-red-400: 248 113 113;
+  --palette-red-500: 239 68 68;
+  --palette-red-600: 220 38 38;
+  --palette-red-700: 185 28 28;
+  --palette-red-800: 153 27 27;
+  --palette-red-900: 127 29 29;
+
+  /* Semantic app tokens (recommended for fast restyling) */
+  --primary-color: rgb(var(--palette-blue-600)); /* Main accent across app (links, active accents). */
+  --background-color: rgb(var(--palette-dark-900)); /* Global page background. */
+  --main-text: rgb(var(--palette-gray-50)); /* Main readable text color. */
+  --link-text: rgb(var(--palette-blue-600)); /* Link color in text content. */
+  --error-text: rgb(var(--palette-red-500)); /* Error text and validation states. */
+  --secondary-text: rgb(var(--palette-gray-300)); /* Secondary text on cards/sections. */
+  --secondary-dark-text: rgb(var(--palette-gray-500)); /* Muted helper text. */
+  --color-button-primary: rgb(var(--palette-blue-600)); /* Primary button background. */
+  --color-button-hover: rgb(25 118 210); /* Primary button hover background. */
+  --color-input: rgb(var(--palette-gray-500)); /* Input border/text accent tone. */
+
+  /* Shared UI surface and overlay tokens */
+  --white-solid: rgb(255 255 255); /* Absolute white for icons/text on dark backgrounds. */
+  --overlay-white-03: rgb(255 255 255 / 0.03); /* Very subtle white overlay (grid/noise accents). */
+  --overlay-white-04: rgb(255 255 255 / 0.04); /* Soft white overlay for decorative patterns. */
+  --overlay-white-05: rgb(255 255 255 / 0.05); /* Light glass/ghost hover fill. */
+  --overlay-white-08: rgb(255 255 255 / 0.08); /* Chart grid and subtle separators. */
+  --overlay-white-12: rgb(255 255 255 / 0.12); /* Thin dividers in info sections. */
+  --overlay-white-15: rgb(255 255 255 / 0.15); /* Mobile nav top border and glass edges. */
+  --overlay-white-20: rgb(255 255 255 / 0.2); /* Soft scrollbar thumb and weak overlays. */
+  --overlay-white-30: rgb(255 255 255 / 0.3); /* Soft scrollbar hover and stronger overlay state. */
+  --glass-bg-dark: rgb(23 23 23 / 0.2); /* Bottom mobile glass nav background. */
+  --shadow-black-40: rgb(0 0 0 / 0.4); /* Main dark floating shadow. */
+  --shadow-blue-600-30: rgb(var(--palette-blue-600) / 0.3); /* Hero blue button shadow on hover. */
+  --shadow-blue-600-40: rgb(var(--palette-blue-600) / 0.4); /* 404 blue button shadow on hover. */
+
+  --soft-divider: var(--overlay-white-12); /* Generic soft line divider. */
+  --step-border: rgb(var(--palette-blue-400) / 0.5); /* Outline for step badges (seller/about pages). */
+  --step-text: rgb(var(--palette-blue-200)); /* Text color inside step badges. */
+  --body-copy-strong: rgb(var(--palette-gray-200)); /* Strong body copy on dark cards. */
+  --text-hover-muted: rgb(var(--palette-gray-300)); /* Hover color for muted gray text. */
+
+  /* Scrollbars */
+  --scrollbar-track: rgb(var(--palette-gray-800)); /* Scrollbar track background. */
+  --scrollbar-thumb: rgb(var(--palette-gray-600)); /* Scrollbar thumb default color. */
+  --scrollbar-thumb-hover: rgb(var(--palette-gray-500)); /* Scrollbar thumb hover color. */
+  --scrollbar-thumb-soft: var(--overlay-white-20); /* Soft scrollbar thumb for glass blocks. */
+  --scrollbar-thumb-soft-hover: var(--overlay-white-30); /* Soft scrollbar thumb hover. */
+
+  /* Product image overlays */
+  --product-image-overlay-top: rgb(2 6 23 / 0.08); /* Top gradient tint on product hero image. */
+  --product-image-overlay-bottom: rgb(2 6 23 / 0.5); /* Bottom gradient tint on product hero image. */
+
+  /* Error banner */
+  --error-banner-icon: rgb(var(--palette-red-400)); /* Error icon background circle. */
+  --error-banner-start: rgb(var(--palette-red-500)); /* Banner gradient start. */
+  --error-banner-end: rgb(var(--palette-red-600)); /* Banner gradient end. */
+  --error-banner-shadow: rgb(var(--palette-red-500) / 0.15); /* Banner shadow glow. */
+
+  /* Decorative grid patterns */
+  --grid-pattern-stroke-soft: var(--overlay-white-03); /* Footer grid line color. */
+  --grid-pattern-stroke-strong: var(--overlay-white-04); /* Hero grid line color. */
+
+  /* Admin charts */
+  --chart-axis-text: rgb(var(--palette-gray-400)); /* Chart axis labels and ticks. */
+  --chart-legend-text: rgb(var(--palette-gray-200)); /* Chart legend labels and data labels. */
+  --chart-grid-border: var(--overlay-white-08); /* Chart grid lines. */
+  --chart-series-revenue: rgb(var(--palette-sky-500)); /* Revenue line/area series color. */
+  --chart-series-users: rgb(var(--palette-purple-500)); /* New users line series color. */
+  --chart-status-pending: rgb(var(--palette-amber-500)); /* Pending deals bar color. */
+  --chart-status-confirmed: rgb(var(--palette-cyan-400)); /* Confirmed deals bar color. */
+  --chart-status-completed: rgb(var(--palette-green-500)); /* Completed deals bar color. */
+  --chart-status-disputed: rgb(var(--palette-rose-400)); /* Disputed deals bar color. */
+  --chart-status-cancelled: rgb(148 163 184); /* Cancelled deals bar color. */
+  --chart-status-refunded: rgb(var(--palette-orange-500)); /* Refunded deals bar color. */
+  --chart-status-default: rgb(var(--palette-blue-400)); /* Fallback status bar color. */
+  --chart-series-top-categories: rgb(var(--palette-emerald-400)); /* Top categories bar series color. */
+
+  /* Admin controls */
+  --admin-btn-bg: rgb(var(--palette-gray-800)); /* Default admin button background. */
+  --admin-btn-border: rgb(var(--palette-gray-700)); /* Default admin button border. */
+  --admin-btn-text: rgb(var(--palette-gray-100)); /* Default admin button text color. */
+  --admin-btn-hover-bg: rgb(39 50 68); /* Default admin button hover background. */
+  --admin-btn-hover-border: rgb(var(--palette-gray-600)); /* Default admin button hover border. */
+  --admin-btn-text-strong: rgb(var(--palette-gray-50)); /* Strong text on active/filled buttons. */
+  --admin-btn-success-bg: rgb(var(--palette-green-600)); /* Success action button background. */
+  --admin-btn-success-hover-bg: rgb(var(--palette-green-700)); /* Success action hover background. */
+  --admin-btn-danger-bg: rgb(var(--palette-red-600)); /* Danger action button background. */
+  --admin-btn-danger-hover-bg: rgb(var(--palette-red-700)); /* Danger action hover background. */
+  --admin-btn-accent-bg: rgb(var(--palette-indigo-500)); /* Accent action button background. */
+  --admin-btn-accent-hover-bg: rgb(67 56 202); /* Accent action hover background. */
+  --admin-btn-muted-bg: rgb(var(--palette-gray-600)); /* Muted/secondary action background. */
+  --admin-btn-muted-hover-bg: rgb(var(--palette-gray-700)); /* Muted/secondary action hover. */
+  --admin-btn-ghost-text: rgb(var(--palette-gray-400)); /* Ghost button text color. */
+  --admin-btn-ghost-hover-bg: rgb(255 255 255 / 0.05); /* Ghost button hover fill. */
+  --admin-btn-tab-text: rgb(var(--palette-gray-400)); /* Admin tab text (inactive). */
+  --admin-btn-tab-hover-bg: rgb(255 255 255 / 0.05); /* Admin tab hover background. */
+  --admin-btn-tab-active-bg: rgb(var(--palette-blue-600) / 0.2); /* Admin tab active background. */
+  --admin-btn-tab-active-border: rgb(var(--palette-blue-500) / 0.45); /* Admin tab active border. */
+}

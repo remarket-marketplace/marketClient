@@ -28,9 +28,9 @@ const errorText = computed(() => {
       <span class="icon">
         <!-- SVG-иконка ошибки -->
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="12" cy="12" r="12" fill="#F87171" />
-          <path d="M12 7v5" stroke="white" stroke-width="2" stroke-linecap="round" />
-          <circle cx="12" cy="16" r="1.2" fill="white" />
+          <circle cx="12" cy="12" r="12" fill="var(--error-banner-icon)" />
+          <path d="M12 7v5" stroke="var(--white-solid)" stroke-width="2" stroke-linecap="round" />
+          <circle cx="12" cy="16" r="1.2" fill="var(--white-solid)" />
         </svg>
       </span>
       <span class="text">{{ errorText }}</span>
@@ -45,10 +45,10 @@ const errorText = computed(() => {
   justify-content: center;
   gap: 0.75rem;
   width: 100%;
-  background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
-  color: #fff;
+  background: linear-gradient(90deg, var(--error-banner-start) 0%, var(--error-banner-end) 100%);
+  color: var(--white-solid);
   border-radius: 0.5rem;
-  box-shadow: 0 4px 16px 0 rgba(239, 68, 68, 0.15);
+  box-shadow: 0 4px 16px 0 var(--error-banner-shadow);
   padding: 0.8rem 1.5rem;
   letter-spacing: 0.01em;
   margin-bottom: 1rem;

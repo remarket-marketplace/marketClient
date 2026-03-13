@@ -1,86 +1,183 @@
 <script setup lang="ts">
-import { Heart } from 'lucide-vue-next'
-import router from '@/router'
+import { Heart, ExternalLink, Star } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
 import type { Product } from '@/validation/product/product'
 import { useI18n } from 'vue-i18n'
-import ProductStatusTag from './ProductStatusTag.vue'
 import { productService } from '@/api/product/ProductService'
+import UserAvatar from '@/components/UserAvatar.vue'
+import StyledUsername from '@/components/StyledUsername.vue'
+import { formatCurrencyAmount } from '@/utils/currency'
+import { buildProductKey } from '@/utils/urlKeys'
 
 const { t } = useI18n()
-
+const router = useRouter()
 const props = defineProps<{
-    product: Product
-    isOwner: boolean
+  product: Product
+  isOwner: boolean
 }>()
 
 const emit = defineEmits<{
-    removed: [id: string]
+  removed: [id: string]
 }>()
 
 const API_HOST = import.meta.env.VITE_API_HOST
 
 function onClick() {
-    router.push(`/product/${props.product.id}`)
+  router.push(`/product/${buildProductKey(props.product)}`)
 }
 
-function goToSeller() {
-    if (!props.isOwner) {
-        router.push(`/user/${props.product.seller.username}`)
-    }
+function goToSeller(e: Event) {
+  e.stopPropagation()
+  if (!props.isOwner) {
+    router.push(`/user/${props.product.seller.username}`)
+  }
 }
 
-async function removeProductLike(productId: string) {
-    try {
-        const result = await productService.removeProductLike(productId)
-        if (result) {
-            emit('removed', productId)
-        }
-    } catch (e) {
-        console.error('Failed to remove product like', e)
+async function removeProductFromFavorites(e: Event) {
+  e.stopPropagation()
+  try {
+    const result = await productService.removeProductLike(props.product.id)
+    if (result) {
+      emit('removed', props.product.id)
     }
+  } catch (e) {
+    console.error('Failed to remove product from favorites', e)
+  }
+}
+
+// Форматирование даты
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'short'
+  })
 }
 </script>
 
 <template>
-    <div class="flex space-x-4 p-4 cursor-pointer" @click="onClick">
-        <div class="flex-shrink-0">
-            <img v-if="product.images.length" :src="`${API_HOST}${product.images[0]?.image_url}`"
-                class="h-24 w-24 sm:h-32 sm:w-32 object-cover rounded-lg border border-dark-600" alt="product image" />
-            <div v-else
-                class="h-24 w-24 sm:h-32 sm:w-32 flex items-center justify-center rounded-lg bg-dark-800 border border-dark-600 text-xs text-text-secondaryDark">
-                {{ $t('common.noImage') }}
-            </div>
+  <div
+    class="flex flex-col h-full cursor-pointer"
+    @click="onClick"
+  >
+    <!-- Product image -->
+    <div class="relative mb-3 aspect-square w-full overflow-hidden bg-dark-700">
+      <img
+        v-if="product.images && product.images.length > 0"
+        :src="`${API_HOST}${product.images[0]?.image_url}`"
+        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        :alt="product.title"
+        @error="(e: any) => e.target.src = '/api/placeholder/400/400'"
+      />
+      <div
+        v-else
+        class="w-full h-full flex items-center justify-center"
+      >
+        <div class="text-center">
+          <div class="w-12 h-12 mx-auto mb-2 rounded-full bg-dark-600 flex items-center justify-center">
+            <span class="text-2xl">📷</span>
+          </div>
+          <span class="text-xs text-gray-500">{{ $t('common.noImage') }}</span>
         </div>
+      </div>
 
-        <div class="flex flex-col justify-between flex-grow min-w-0">
-            <div class="flex justify-between items-start">
-                <h3 class="truncate text-lg text-mainText font-bold">
-                    {{ product.title }}
-                </h3>
+      <!-- Status badge -->
+      <div
+        v-if="product.is_sold"
+        class="absolute top-2 left-2 px-2 py-1 rounded-md bg-dark-900/90 backdrop-blur-sm text-xs font-medium text-gray-300"
+      >
+        {{ $t('common.productStatuses.sold') }}
+      </div>
+      
+      <!-- Heart button -->
+      <button
+        @click.stop="removeProductFromFavorites"
+        class="absolute top-2 right-2 p-2 rounded-full bg-dark-900/90 backdrop-blur-sm hover:bg-red-900/90 transition-colors"
+        :title="$t('pages.favoriteProducts.remove')"
+      >
+        <Heart
+          class="w-5 h-5 text-red-500"
+          :style="{ fill: 'currentColor' }"
+        />
+      </button>
 
-                <div class="flex space-x-3">
-                    <ProductStatusTag :product-status="product.status" />
-
-                    <Heart class="w-6 h-6 text-red-500 cursor-pointer" :style="{ fill: 'currentColor' }"
-                        @click.stop="removeProductLike(product.id)" />
-                </div>
-            </div>
-
-            <p class="text-sm text-gray-400 line-clamp-2 mt-1 mb-2">
-                {{ product.description }}
-            </p>
-
-            <div class="flex items-end justify-between mt-auto">
-                <div v-if="!isOwner" class="text-sm">
-                    <p class="text-blue-400 transition hover:text-blue-300" @click.stop="goToSeller">
-                        {{ product.seller.username }}
-                    </p>
-                </div>
-
-                <span class="text-xl text-mainText font-semibold">
-                    {{ product.price }}₽
-                </span>
-            </div>
-        </div>
+      <!-- Count badge -->
+      <div
+        v-if="product.count > 1"
+        class="absolute bottom-2 left-2 px-2 py-1 rounded-md bg-blue-900/90 backdrop-blur-sm text-xs font-medium text-blue-300"
+      >
+        ×{{ product.count }}
+      </div>
     </div>
+
+    <!-- Product info -->
+    <div class="flex flex-col flex-1 px-3 pb-3">
+      <!-- Title -->
+      <h3 class="text-sm font-semibold text-white line-clamp-2 mb-2 leading-tight">
+        {{ product.title }}
+      </h3>
+
+      <!-- Category -->
+      <div class="mb-2">
+        <span class="px-2 py-1 rounded text-xs bg-dark-700 text-gray-400">
+          {{ product.category.name }}
+        </span>
+      </div>
+
+      <!-- Description -->
+      <p class="text-xs text-gray-400 line-clamp-2 mb-3 flex-1">
+        {{ product.description }}
+      </p>
+
+      <!-- Seller and price -->
+      <div class="flex items-center justify-between gap-2">
+        <!-- Seller -->
+        <button
+          @click.stop="goToSeller"
+          class="flex items-center gap-2 min-w-0 group"
+        >
+          <div class="relative flex-shrink-0">
+            <UserAvatar
+              :avatar-url="product.seller.avatar_url"
+              :alt="product.seller.username"
+              class="w-6 h-6 rounded-full border border-dark-600 object-cover"
+            />
+            <div
+              v-if="product.seller.is_active"
+              class="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-green-500 border border-dark-700"
+            />
+          </div>
+          <div class="min-w-0">
+            <StyledUsername
+              :username="product.seller.username"
+              :style-id="product.seller.nickname_style_id"
+              class="text-xs truncate transition-colors"
+            />
+            <div class="flex items-center gap-1 text-xs text-gray-500">
+              <Star class="w-3 h-3 text-yellow-500 fill-current" />
+              <span>{{ product.seller.rating.toFixed(1) }}</span>
+            </div>
+          </div>
+        </button>
+
+        <!-- Price -->
+        <div class="text-right flex-shrink-0">
+          <div class="text-base font-bold text-white">
+            {{ formatCurrencyAmount(product.price) }}
+          </div>
+          <div class="text-xs text-gray-500">
+            {{ formatDate(product.created_at) }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
+
+<style scoped>
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+</style>

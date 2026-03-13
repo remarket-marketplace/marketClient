@@ -15,7 +15,17 @@ export const TextMessageSchema = BaseMessageSchema.extend({
   message_type: z.literal('text_message'),
   sender_id: z.string(),
   text: z.string(),
+  is_admin_message: z.boolean(),
   is_read: z.boolean(),
+  data: z.record(z.string(), z.any()).nullable().optional(),
+})
+
+export const ImageMessageSchema = BaseMessageSchema.extend({
+  message_type: z.literal('image_message'),
+  sender_id: z.string(),
+  text: z.string(),
+  is_read: z.boolean(),
+  data: z.record(z.string(), z.any()).nullable().optional(),
 })
 
 // Сообщение о покупке
@@ -39,12 +49,26 @@ export const ReviewMessageSchema = BaseMessageSchema.extend({
   review: ReviewSchema,
 })
 
+export const PriceOfferMessageSchema = BaseMessageSchema.extend({
+  message_type: z.literal('price_offer_message'),
+  product: ProductSchema,
+  offer_id: z.uuid(),
+  offered_price: z.number(),
+  offer_status: z.string(),
+  offer_message: z.string().nullable().optional(),
+  buyer_id: z.uuid(),
+  seller_id: z.uuid(),
+  accepted_deal_id: z.uuid().nullable().optional(),
+})
+
 // discriminated union по полю message_type
 export const ChatMessageUnionSchema = z.discriminatedUnion('message_type', [
   TextMessageSchema,
+  ImageMessageSchema,
   ProductMessageSchema,
   DealStatusMessageSchema,
   ReviewMessageSchema,
+  PriceOfferMessageSchema,
 ])
 
 // Схема обновления чата
@@ -54,10 +78,16 @@ export const ChatUpdateSchema = z.object({
   unread_count: z.number(),
 })
 
+export const MessagesReadSchema = z.object({
+  chat_id: z.string(),
+  message_ids: z.array(z.string()),
+})
+
 // Массив сообщений
 export const ChatArrayUnionSchema = z.array(ChatMessageUnionSchema)
 
 export type ChatMessageUnion = z.infer<typeof ChatMessageUnionSchema>
 export type ChatUpdateSchema = z.infer<typeof ChatUpdateSchema>
+export type MessagesReadPayload = z.infer<typeof MessagesReadSchema>
 
 export type DealStatusMessageSchema = z.infer<typeof DealStatusMessageSchema>

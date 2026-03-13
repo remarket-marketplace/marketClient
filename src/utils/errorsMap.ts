@@ -19,8 +19,10 @@ export const errorCodeMap: Record<string, string> = {
   USER_IS_BANNED: 'errors.USER_IS_BANNED',
   INSUFFICIENT_PERMISSIONS: 'errors.INSUFFICIENT_PERMISSIONS',
   CREATE_PRODUCT_ERROR: 'errors.CREATE_PRODUCT_ERROR',
+  PRODUCT_CREATION_DISABLED: 'errors.PRODUCT_CREATION_DISABLED',
   SELLER_NOT_FOUND: 'errors.SELLER_NOT_FOUND',
   REGISTRATION_FAILED: 'errors.REGISTRATION_FAILED',
+  REGISTRATION_DISABLED: 'errors.REGISTRATION_DISABLED',
   WRONG_VERIFICATION_CODE: 'errors.WRONG_VERIFICATION_CODE',
   FAILED_TO_SEND_VERIFICATION_CODE: 'errors.FAILED_TO_SEND_VERIFICATION_CODE',
   WRONG_IMAGE_FORMAT: 'errors.WRONG_IMAGE_FORMAT',
@@ -38,6 +40,7 @@ export const errorCodeMap: Record<string, string> = {
   EMAIL_ALREADY_EXISTS: 'errors.EMAIL_ALREADY_EXISTS',
   EMAIL_VERIFICATION_MAX_COUNT_OF_TRIES_EXCEEDED: 'errors.EMAIL_VERIFICATION_MAX_COUNT_OF_TRIES_EXCEEDED',
   NETWORK_ERROR: 'errors.NETWORK_ERROR',
+  VERIFY_CAPTCHA_TOKEN_FAILED: 'errors.VERIFY_CAPTCHA_TOKEN_FAILED',
   FILL_REQUIRED_FIELDS: 'errors.FILL_REQUIRED_FIELDS',
   INVALID_PASSWORD: 'errors.INVALID_PASSWORD',
   PASSWORD_SAME_AS_CURRENT: 'errors.PASSWORD_SAME_AS_CURRENT',
@@ -45,14 +48,69 @@ export const errorCodeMap: Record<string, string> = {
   PRODUCT_EDIT_PERMISSION_DENIED: 'errors.PRODUCT_EDIT_PERMISSION_DENIED',
   INVALID_PRODUCT_DATA: 'errors.INVALID_PRODUCT_DATA',
   PRODUCT_ALREADY_SOLD: 'errors.PRODUCT_ALREADY_SOLD',
+  AT_LEAST_ONE_IMAGE_REQUIRED: 'errors.AT_LEAST_ONE_IMAGE_REQUIRED',
+  PRODUCT_PRICE_INVALID: 'errors.PRODUCT_PRICE_INVALID',
+  PRODUCT_PRICE_OUT_OF_RANGE: 'errors.PRODUCT_PRICE_OUT_OF_RANGE',
+  PRODUCT_PRICE_CURRENCY_UNSUPPORTED: 'errors.PRODUCT_PRICE_CURRENCY_UNSUPPORTED',
+  INVALID_PRICE_OFFER: 'errors.INVALID_PRICE_OFFER',
+  PRICE_OFFER_ALREADY_EXISTS: 'errors.PRICE_OFFER_ALREADY_EXISTS',
+  PRICE_OFFER_NOT_FOUND: 'errors.PRICE_OFFER_NOT_FOUND',
+  PRICE_OFFER_ALREADY_PROCESSED: 'errors.PRICE_OFFER_ALREADY_PROCESSED',
+  PRICE_OFFER_PRODUCT_UNAVAILABLE: 'errors.PRICE_OFFER_PRODUCT_UNAVAILABLE',
+  PRICE_OFFER_BUYER_NOT_ENOUGH_BALANCE: 'errors.PRICE_OFFER_BUYER_NOT_ENOUGH_BALANCE',
+  MESSAGE_LIMIT_WAIT_FOR_SELLER_REPLY: 'errors.MESSAGE_LIMIT_WAIT_FOR_SELLER_REPLY',
+  INVALID_DIRECT_MESSAGE_TARGET: 'errors.INVALID_DIRECT_MESSAGE_TARGET',
+  RECIPIENT_IS_BANNED: 'errors.RECIPIENT_IS_BANNED',
+  NICKNAME_STYLE_NOT_FOUND: 'errors.NICKNAME_STYLE_NOT_FOUND',
+  NICKNAME_STYLE_ALREADY_OWNED: 'errors.NICKNAME_STYLE_ALREADY_OWNED',
+  NICKNAME_STYLE_NOT_OWNED: 'errors.NICKNAME_STYLE_NOT_OWNED',
+  PROFILE_BACKGROUND_NOT_UNLOCKED: 'errors.PROFILE_BACKGROUND_NOT_UNLOCKED',
+  PROFILE_BACKGROUND_ALREADY_UNLOCKED: 'errors.PROFILE_BACKGROUND_ALREADY_UNLOCKED',
+  TELEGRAM_NOT_CONFIGURED: 'errors.TELEGRAM_NOT_CONFIGURED',
+  TELEGRAM_NOT_CONNECTED: 'errors.TELEGRAM_NOT_CONNECTED',
+  TELEGRAM_INTEGRATION_DISABLED: 'errors.TELEGRAM_INTEGRATION_DISABLED',
+  STEAM_TOPUP_DISABLED: 'errors.STEAM_TOPUP_DISABLED',
+  STEAM_TOPUP_PROVIDER_ERROR: 'errors.STEAM_TOPUP_PROVIDER_ERROR',
+  STEAM_TOPUP_SERVICE_NOT_FOUND: 'errors.STEAM_TOPUP_SERVICE_NOT_FOUND',
+  STEAM_TOPUP_ORDER_NOT_READY: 'errors.STEAM_TOPUP_ORDER_NOT_READY',
+  STEAM_TOPUP_INVALID_CURRENCY: 'errors.STEAM_TOPUP_INVALID_CURRENCY',
+  STEAM_TOPUP_INVALID_AMOUNT: 'errors.STEAM_TOPUP_INVALID_AMOUNT',
 }
 
 // errorDetail = { error_code: 'TOKEN_NOT_FOUND', error_message: 'Token not found' }
-export function getErrorMessage(errorDetail: { error_code: string, error_message?: string }, t: (key: string) => string): string {
-  const i18nKey = errorCodeMap[errorDetail.error_code]
-  if (i18nKey) {
-    return t(i18nKey)
+export function getErrorMessage(errorDetail: unknown, t: (key: string) => string): string {
+  if (!errorDetail) {
+    return t('errors.SERVER_ERROR')
   }
-  // fallback: don't have key - return original error message
-  return errorDetail.error_message || errorDetail.error_code
+
+  if (typeof errorDetail === 'string') {
+    const mappedByCode = errorCodeMap[errorDetail]
+    return mappedByCode ? t(mappedByCode) : errorDetail
+  }
+
+  if (Array.isArray(errorDetail)) {
+    const firstError = errorDetail[0] as { msg?: string } | undefined
+    if (firstError?.msg) {
+      return firstError.msg
+    }
+    return t('errors.SERVER_ERROR')
+  }
+
+  if (typeof errorDetail === 'object') {
+    const detail = errorDetail as { error_code?: string; error_message?: string; message?: string }
+
+    if (detail.error_code) {
+      const i18nKey = errorCodeMap[detail.error_code]
+      if (i18nKey) {
+        return t(i18nKey)
+      }
+      return detail.error_message || detail.error_code
+    }
+
+    if (detail.message) {
+      return detail.message
+    }
+  }
+
+  return t('errors.SERVER_ERROR')
 }

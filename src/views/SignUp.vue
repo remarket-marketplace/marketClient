@@ -3,13 +3,13 @@ import { authService } from '@/api/auth/AuthService'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import TheInput from '@/components/TheInput.vue'
 import { Eye, EyeOff } from 'lucide-vue-next'
-import { nextTick, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import TheButton from './forms/TheButton.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
-import SuccessMessage from '@/components/SuccessMessage.vue'
 import Captcha from '@/components/Captcha.vue'
+import AuthWelcomeTyping from '@/components/AuthWelcomeTyping.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -31,7 +31,9 @@ const codeDigits = ref<string[]>(['', '', '', '', '', ''])
 const codeInputs = ref<(HTMLInputElement | null)[]>([])
 const errorMessage = ref('')
 const passwordHidden = ref(true)
+const passwordRepeatHidden = ref(true)
 const successShown = ref(false)
+const isWelcomeRedirecting = ref(false)
 
 // Ошибки валидации
 const usernameError = ref('')
@@ -40,13 +42,15 @@ const passwordError = ref('')
 
 function validateUsername() {
   usernameError.value = ''
+  const normalizedUsername = username.value.trim()
+  username.value = normalizedUsername
 
-  if (username.value.length < 3 || username.value.length > 16) {
+  if (normalizedUsername.length < 4 || normalizedUsername.length > 32) {
     usernameError.value = t('pages.auth.signUp.usernameLengthError')
     return false
   }
 
-  if (!/^[A-Za-z0-9_]+$/.test(username.value)) {
+  if (!/^[A-Za-z0-9_]+$/.test(normalizedUsername)) {
     usernameError.value = t('pages.auth.signUp.usernameCharsError')
     return false
   }
@@ -56,9 +60,23 @@ function validateUsername() {
 
 function validateEmail() {
   emailError.value = ''
+  const normalizedEmail = email.value.trim()
+  email.value = normalizedEmail
+
+  if (normalizedEmail.length > 64) {
+    emailError.value = t('pages.auth.signUp.emailLengthError')
+    return false
+  }
+
+  const atIndex = normalizedEmail.indexOf('@')
+  const localPart = atIndex >= 0 ? normalizedEmail.slice(0, atIndex) : ''
+  if (localPart.length > 64) {
+    emailError.value = t('pages.auth.signUp.emailLengthError')
+    return false
+  }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(email.value)) {
+  if (!emailRegex.test(normalizedEmail)) {
     emailError.value = t('pages.auth.signUp.invalidEmail')
     return false
   }
@@ -89,7 +107,7 @@ function validatePassword() {
     return false
   }
 
-  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password.value)) {
+  if (!/[^A-Za-z0-9]/.test(password.value)) {
     passwordError.value = t('pages.auth.signUp.passwordSpecialCharError')
     return false
   }
@@ -105,28 +123,55 @@ function validateForm() {
   return isUsernameValid && isEmailValid && isPasswordValid
 }
 
+function normalizeCredentials() {
+  username.value = username.value.trim()
+  email.value = email.value.trim()
+}
+
+function resolveRequestError(error: any): string {
+  const detail = error?.response?.data?.detail
+  if (detail) {
+    return getErrorMessage(detail, t)
+  }
+
+  if (error?.code === 'ECONNABORTED' || error?.code === 'ERR_NETWORK') {
+    return t('errors.NETWORK_ERROR')
+  }
+
+  return t('errors.SERVER_ERROR')
+}
+
 async function sendCode() {
+  if (sended.value) {
+    return
+  }
+
   if (!captchaToken.value) {
     errorMessage.value = t('pages.auth.signUp.completeCaptcha')
     return
   }
 
-  if (!validateForm()) return
+  normalizeCredentials()
 
-  if (await passwordsEquals()) {
-    errorMessage.value = ''
-    sended.value = true
-    try {
-      await authService.sendVerificationCode(email.value, username.value, captchaToken.value)
-      showCodeInput.value = true
-    } catch (error: any) {
-      const detail = error?.response?.data?.detail
-      errorMessage.value = getErrorMessage(detail, t)
-    } finally {
-      sended.value = false
-    }
-  } else {
-    errorMessage.value = t('pages.auth.signUp.passwordsMustEqual')
+  if (!validateForm()) {
+    return
+  }
+
+  if (!(await passwordsEquals())) {
+    return
+  }
+
+  errorMessage.value = ''
+  sended.value = true
+
+  try {
+    await authService.sendVerificationCode(email.value, username.value, captchaToken.value)
+    showCodeInput.value = true
+    codeDigits.value = ['', '', '', '', '', '']
+  } catch (error) {
+    errorMessage.value = resolveRequestError(error)
+  } finally {
+    sended.value = false
   }
 }
 
@@ -150,6 +195,10 @@ function switchPasswordVisibility() {
   passwordHidden.value = !passwordHidden.value
 }
 
+function switchPasswordRepeatVisibility() {
+  passwordRepeatHidden.value = !passwordRepeatHidden.value
+}
+
 async function passwordsEquals(): Promise<boolean> {
   if (password.value !== passwordRepeat.value) {
     errorMessage.value = t('pages.auth.signUp.passwordsMismatch')
@@ -159,26 +208,33 @@ async function passwordsEquals(): Promise<boolean> {
 }
 
 async function completeSignUp() {
-  if (await passwordsEquals()) {
-    const code = codeDigits.value.join('')
-    if (!code || code.length !== 6) {
-      errorMessage.value = t('pages.auth.signUp.invalidCode')
-      return
-    }
-    errorMessage.value = ''
-    sended.value = true
-    const result = await authService.signUp(email.value, password.value, username.value, code)
-    if (result) {
-      showCodeInput.value = false
-      successShown.value = true
+  if (sended.value) {
+    return
+  }
 
-      setTimeout(() => {
-        router.push('/')
-      }, 2000)
-    } else {
-      errorMessage.value = t('pages.auth.signUp.invalidCode')
-    }
+  normalizeCredentials()
 
+  if (!(await passwordsEquals())) {
+    return
+  }
+
+  const code = codeDigits.value.join('')
+  if (!code || code.length !== 6) {
+    errorMessage.value = t('pages.auth.signUp.invalidCode')
+    return
+  }
+
+  errorMessage.value = ''
+  sended.value = true
+
+  try {
+    await authService.signUp(email.value, password.value, username.value, code)
+    showCodeInput.value = false
+    successShown.value = true
+    isWelcomeRedirecting.value = false
+  } catch (error) {
+    errorMessage.value = resolveRequestError(error)
+  } finally {
     sended.value = false
   }
 }
@@ -219,96 +275,154 @@ function clearEmailError() {
 function clearPasswordError() {
   passwordError.value = ''
 }
+
+const welcomeText = computed(() => {
+  const safeUsername = username.value.trim() || t('common.user')
+  return t('pages.auth.signIn.welcomeTitle', { username: safeUsername })
+})
+
+function handleWelcomeFinished() {
+  if (isWelcomeRedirecting.value) {
+    return
+  }
+
+  isWelcomeRedirecting.value = true
+  router.push('/')
+}
 </script>
 
 <template>
-  <div class="no-scrollbar h-full w-full flex flex-col items-center overflow-scroll pb-36">
-    <div
-      class="max-w-sm w-full border border-dark-700 rounded-2xl bg-background p-8 backdrop-blur-md space-y-6 my-auto">
-      <h1 class="text-center text-3xl text-mainText font-bold">
-        {{ $t('pages.auth.signUp.title') }}
-      </h1>
+  <div class="h-full w-full flex flex-col items-center overflow-scroll pb-36 pt-10">
+    <transition name="signin-stage" mode="out-in">
+      <div v-if="successShown" key="welcome" class="my-auto w-full px-4">
+        <AuthWelcomeTyping
+          :text="welcomeText"
+          :duration-ms="900"
+          :hold-ms="220"
+          @finished="handleWelcomeFinished"
+        />
+      </div>
 
-      <!-- Форма регистрации -->
-      <form v-if="!showCodeInput && !successShown" class="space-y-4" @submit.prevent>
-        <!-- Username -->
-        <div>
-          <label for="username" class="mb-1 block text-sm text-text-secondary">{{ $t('common.username') }}</label>
-          <TheInput id="username" v-model="username" type="text"
-            :placeholder="$t('pages.auth.signUp.usernamePlaceholder')" required @blur="validateUsername"
-            @input="clearUsernameError" />
-          <p v-if="usernameError" class="text-gray-300 text-sm mt-1">{{ usernameError }}</p>
-        </div>
+      <div
+        v-else
+        key="form"
+        class="max-w-sm w-full border border-dark-700 rounded-2xl bg-background p-8 backdrop-blur-md space-y-6 my-auto"
+      >
+        <h1 class="text-center text-3xl text-mainText font-bold">
+          {{ $t('pages.auth.signUp.title') }}
+        </h1>
 
-        <!-- Email -->
-        <div>
-          <label for="email" class="mb-1 block text-sm text-text-secondary">{{ $t('common.email') }}</label>
-          <TheInput id="email" v-model="email" type="email" :placeholder="$t('common.email')" required
-            @blur="validateEmail" @input="clearEmailError" />
-          <p v-if="emailError" class="text-gray-300 text-sm mt-1">{{ emailError }}</p>
-        </div>
-
-        <!-- Password с иконкой глаза -->
-        <div>
-          <label for="password" class="mb-1 block text-sm text-text-secondary">{{ $t('common.password') }}</label>
-          <TheInput id="password" v-model="password" :type="passwordHidden ? 'password' : 'text'" placeholder="••••••••"
-            required :minlength="8" @blur="validatePassword" @input="clearPasswordError">
-            <template #append>
-              <button type="button" class="text-gray-400 hover:text-gray-300 transition-colors focus:outline-none p-1"
-                @click="switchPasswordVisibility">
-                <EyeOff v-if="passwordHidden" class="w-5 h-5" />
-                <Eye v-else class="w-5 h-5" />
-              </button>
-            </template>
-          </TheInput>
-          <p v-if="passwordError" class="text-gray-300 text-sm mt-1">{{ passwordError }}</p>
-        </div>
-
-        <!-- Confirm Password -->
-        <div>
-          <label for="passwordRepeat" class="mb-1 block text-sm text-text-secondary">{{
-            $t('pages.auth.signUp.confirmPassword')
-          }}</label>
-          <TheInput id="passwordRepeat" v-model="passwordRepeat" type="password" placeholder="••••••••" required
-            :minlength="8" />
-        </div>
-        <Captcha @verified="(token: string) => captchaToken = token" />
-
-        <TheButton @click="sendCode" :button-text="sended ? $t('common.sending') : $t('pages.auth.signUp.getCode')"
-          :sended="sended" class="w-full" />
-
-        <ErrorBanner :message="errorMessage" />
-      </form>
-
-      <SuccessMessage v-if="successShown" :success-message="$t('pages.auth.signUp.success')" />
-
-
-      <!-- Форма ввода кода -->
-      <form v-if="showCodeInput && !successShown" class="space-y-4">
-        <div class="space-y-2">
-          <label class="block text-sm text-text-secondary">{{ $t('pages.auth.signUp.enterCode') }}</label>
-          <div class="grid grid-cols-6 gap-2">
-            <input v-for="(digit, index) in 6" :key="index" :ref="el => codeInputs[index] = el as HTMLInputElement"
-              v-model="codeDigits[index]" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*"
-              class="flex-1 aspect-square min-w-0 border border-1 border-dark-700 rounded-lg bg-dark-600 text-center text-lg text-mainText font-bold transition-all focus:border-blue-500 focus:outline-none"
-              @input="handleCodeInput($event, index)" @keydown="handleKeyDown($event, index)" @paste="handlePaste">
+        <!-- Форма регистрации -->
+        <form v-if="!showCodeInput" class="space-y-4" novalidate @submit.prevent="sendCode">
+          <!-- Username -->
+          <div>
+            <label for="username" class="mb-1 block text-sm text-text-secondary">{{ $t('common.username') }}</label>
+            <TheInput id="username" v-model="username" type="text"
+              :placeholder="$t('pages.auth.signUp.usernamePlaceholder')" required @blur="validateUsername"
+              @input="clearUsernameError" :minlength="4" :maxlength="32" autocomplete="username" />
+            <p v-if="usernameError" class="text-gray-300 text-sm mt-1">{{ usernameError }}</p>
           </div>
-        </div>
 
-        <div>
+          <!-- Email -->
+          <div>
+            <label for="email" class="mb-1 block text-sm text-text-secondary">{{ $t('common.email') }}</label>
+            <TheInput id="email" v-model="email" type="email" :placeholder="$t('common.email')" required
+              @blur="validateEmail" @input="clearEmailError" :maxlength="64" autocomplete="email" />
+            <p v-if="emailError" class="text-gray-300 text-sm mt-1">{{ emailError }}</p>
+          </div>
+
+          <!-- Password с иконкой глаза -->
+          <div>
+            <label for="password" class="mb-1 block text-sm text-text-secondary">{{ $t('common.password') }}</label>
+            <TheInput id="password" v-model="password" :type="passwordHidden ? 'password' : 'text'" placeholder="••••••••"
+              required :minlength="8" @blur="validatePassword" @input="clearPasswordError" autocomplete="new-password">
+              <template #append>
+                <button type="button" class="text-gray-400 hover:text-gray-300 transition-colors focus:outline-none p-1"
+                  @click="switchPasswordVisibility">
+                  <EyeOff v-if="passwordHidden" class="w-5 h-5" />
+                  <Eye v-else class="w-5 h-5" />
+                </button>
+              </template>
+            </TheInput>
+            <p v-if="passwordError" class="text-gray-300 text-sm mt-1">{{ passwordError }}</p>
+          </div>
+
+          <!-- Confirm Password с иконкой глаза -->
+          <div>
+            <label for="passwordRepeat" class="mb-1 block text-sm text-text-secondary">{{
+              $t('pages.auth.signUp.confirmPassword')
+              }}</label>
+            <TheInput id="passwordRepeat" v-model="passwordRepeat" :type="passwordRepeatHidden ? 'password' : 'text'" placeholder="••••••••" required
+              :minlength="8" autocomplete="new-password">
+              <template #append>
+                <button type="button" class="text-gray-400 hover:text-gray-300 transition-colors focus:outline-none p-1"
+                  @click="switchPasswordRepeatVisibility">
+                  <EyeOff v-if="passwordRepeatHidden" class="w-5 h-5" />
+                  <Eye v-else class="w-5 h-5" />
+                </button>
+              </template>
+            </TheInput>
+          </div>
+          <Captcha @verified="(token: string) => captchaToken = token" />
+
+          <p class="text-xs text-gray-400 leading-relaxed">
+            {{ $t('pages.auth.signUp.legalPrefix') }}
+            <router-link to="/terms" class="text-blue-400 hover:text-blue-300 hover:underline transition-colors">
+              {{ $t('pages.auth.signUp.legalTerms') }}
+            </router-link>
+            {{ ' ' + $t('pages.auth.signUp.legalAnd') + ' ' }}
+            <router-link to="/privacy-policy" class="text-blue-400 hover:text-blue-300 hover:underline transition-colors">
+              {{ $t('pages.auth.signUp.legalPrivacy') }}
+            </router-link>.
+          </p>
+
+          <TheButton :button-text="sended ? $t('common.sending') : $t('pages.auth.signUp.getCode')"
+            :sended="sended" class="w-full" />
+
           <ErrorBanner :message="errorMessage" />
-        </div>
+        </form>
 
-        <TheButton @click="completeSignUp" :button-text="$t('pages.auth.signUp.completeRegistration')"
-          :sended="sended" />
-      </form>
+        <!-- Форма ввода кода -->
+        <form v-if="showCodeInput" class="space-y-4" @submit.prevent="completeSignUp">
+          <div class="space-y-2">
+            <label class="block text-sm text-text-secondary">{{ $t('pages.auth.signUp.enterCode') }}</label>
+            <div class="grid grid-cols-6 gap-2">
+              <input v-for="(digit, index) in 6" :key="index" :ref="el => codeInputs[index] = el as HTMLInputElement"
+                v-model="codeDigits[index]" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*"
+                class="flex-1 aspect-square min-w-0 border border-1 border-dark-700 rounded-lg bg-dark-600 text-center text-lg text-mainText font-bold transition-all focus:border-blue-500 focus:outline-none"
+                @input="handleCodeInput($event, index)" @keydown="handleKeyDown($event, index)" @paste="handlePaste">
+            </div>
+          </div>
 
-      <p class="text-center text-sm text-text-secondaryDark">
-        {{ $t('pages.auth.signUp.haveAccount') }}
-        <router-link to="/signin" class="text-text-link hover:underline">
-          {{ $t('pages.auth.signUp.login') }}
-        </router-link>
-      </p>
-    </div>
+          <div>
+            <ErrorBanner :message="errorMessage" />
+          </div>
+
+          <TheButton :button-text="$t('pages.auth.signUp.completeRegistration')" :sended="sended" />
+        </form>
+
+        <p class="text-center text-sm text-text-secondaryDark">
+          {{ $t('pages.auth.signUp.haveAccount') }}
+          <router-link to="/signin" class="text-text-link hover:underline">
+            {{ $t('pages.auth.signUp.login') }}
+          </router-link>
+        </p>
+      </div>
+    </transition>
   </div>
 </template>
+
+<style scoped>
+.signin-stage-enter-active,
+.signin-stage-leave-active {
+  transition:
+    opacity 0.28s ease,
+    transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.signin-stage-enter-from,
+.signin-stage-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+</style>

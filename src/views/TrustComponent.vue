@@ -4,7 +4,7 @@
 
 <template>
 	<div class="mt-6 rounded-2xl border border-dark-700 bg-dark-600/40 p-4 lg:p-6">
-	          <div class="grid grid-cols-1 sm:grid-cols-2 lg:flex gap-2 lg:gap-6">
+	          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 lg:gap-4">
 	            <div class="flex flex-col gap-1 p-3 sm:p-4 rounded-xl lg:bg-transparent lg:p-0">
 	              <div class="flex items-center gap-3">
 	                <div

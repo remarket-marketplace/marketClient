@@ -65,7 +65,7 @@ onBeforeUnmount(() => {
     
     <!-- Modal -->
     <div
-      class="relative w-full max-w-md bg-dark-800 rounded-xl shadow-2xl overflow-hidden border border-dark-700"
+      class="relative w-full max-w-md bg-dark-800 rounded-xl shadow-2xl overflow-visible border border-dark-700"
     >
       <!-- Header -->
       <div class="px-6 py-5 border-b border-dark-700">
@@ -84,10 +84,11 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Message -->
-      <div class="px-6 py-5">
+      <div class="px-6 py-5 space-y-4">
         <p class="text-gray-300 leading-relaxed">
           {{ message }}
         </p>
+        <slot name="body"></slot>
       </div>
 
       <!-- Actions -->

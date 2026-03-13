@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
@@ -20,11 +20,14 @@ import {
 } from 'lucide-vue-next'
 import { adminService } from '@/api/admin/AdminService'
 import type { Deal } from '@/validation/deal/deal'
-import { useImages } from '@/composables/useImages'
 import DealStatusTag from '@/components/DealStatusTag.vue'
 import UserRating from '@/components/UserRating.vue'
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
+import UserAvatar from '@/components/UserAvatar.vue'
+import CustomSelect from '@/components/CustomSelect.vue'
+import { formatCurrencyAmount } from '@/utils/currency'
+import { buildSlugKey } from '@/utils/urlKeys'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -35,21 +38,32 @@ const deal = ref<Deal | null>(null)
 const isLoading = ref(true)
 const isActionLoading = ref(false)
 const errorMessage = ref('')
+const actionError = ref('')
+const actionSuccess = ref('')
 const showConfirmModal = ref(false)
 const confirmAction = ref<() => Promise<void>>(() => Promise.resolve())
 const confirmTitle = ref('')
 const confirmMessage = ref('')
+const showReasonField = ref(false)
+const disputeReason = ref('')
+const reasonError = ref('')
+const selectedForcedStatus = ref<string>('pending')
+const isForcedStatusUpdating = ref(false)
 
-const { images } = useImages()
 const API_HOST = import.meta.env.VITE_API_HOST || ''
+
+const dealStatusOptions = computed(() => ([
+  { value: 'pending', label: t('common.dealStatuses.pending') },
+  { value: 'confirmed', label: t('common.dealStatuses.confirmed') },
+  { value: 'disputed', label: t('common.dealStatuses.disputed') },
+  { value: 'completed', label: t('common.dealStatuses.completed') },
+  { value: 'cancelled', label: t('common.dealStatuses.cancelled') },
+  { value: 'refunded', label: t('common.dealStatuses.refunded') },
+]))
 
 // Форматирование
 function formatPrice(price: number) {
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
-    minimumFractionDigits: 0
-  }).format(price)
+  return formatCurrencyAmount(price)
 }
 
 function formatDate(dateString: string) {
@@ -62,18 +76,14 @@ function formatDate(dateString: string) {
   })
 }
 
-function goToChat(dealId: string) {
-  router.push({ name: 'adminChatView', params: { dealId } })
+function goToChat(chatId: string) {
+  router.push({ name: 'adminChatView', params: { chatId } })
 }
 
 // URL изображений
 function getProductImageUrl() {
   if (!deal.value || deal.value.product.images.length === 0) return '/placeholder-product.jpg'
   return `${API_HOST}${deal.value.product.images[0]!.image_url}`
-}
-
-function getUserAvatarUrl(avatarUrl: string) {
-  return avatarUrl ? `${API_HOST}${avatarUrl}` : images.avatars.default
 }
 
 // Навигация
@@ -85,8 +95,10 @@ function goToProfile(username: string) {
   router.push(`/user/${username}`)
 }
 
-function goToProduct(productId: string) {
-  router.push(`/product/${productId}`)
+function goToProduct(productId: string, productSlug?: string | null) {
+  const productKey = buildSlugKey(productSlug, productId, 'product')
+  if (!productKey) return
+  router.push(`/product/${productKey}`)
 }
 
 // Загрузка данных
@@ -100,6 +112,7 @@ async function loadDeal() {
 
     if (response) {
       deal.value = response
+      selectedForcedStatus.value = response.status
     } else {
       errorMessage.value = t('common.notFound')
     }
@@ -112,9 +125,19 @@ async function loadDeal() {
 }
 
 // Действия администратора
-function showConfirmDialog(title: string, message: string, action: () => Promise<void>) {
+function showConfirmDialog(
+  title: string,
+  message: string,
+  action: () => Promise<void>,
+  options?: { showReason?: boolean }
+) {
   confirmTitle.value = title
   confirmMessage.value = message
+  showReasonField.value = options?.showReason ?? false
+  if (!showReasonField.value) {
+    disputeReason.value = ''
+    reasonError.value = ''
+  }
   confirmAction.value = action
   showConfirmModal.value = true
 }
@@ -130,6 +153,7 @@ async function confirmDealAction() {
       try {
         await adminService.confirmDeal(deal.value!.id)
         await loadDeal()
+        showConfirmModal.value = false
       } catch (error) {
         console.error(error)
       } finally {
@@ -150,6 +174,7 @@ async function refundDealAction() {
       try {
         await adminService.refundDeal(deal.value!.id)
         await loadDeal()
+        showConfirmModal.value = false
       } catch (error) {
         console.error(error)
       } finally {
@@ -170,6 +195,7 @@ async function cancelDealAction() {
       try {
         await adminService.cancelDeal(deal.value!.id)
         await loadDeal()
+        showConfirmModal.value = false
       } catch (error) {
         console.error(error)
       } finally {
@@ -181,6 +207,8 @@ async function cancelDealAction() {
 
 async function resolveDispute(inFavorOf: 'buyer' | 'seller') {
   if (!deal.value) return
+  disputeReason.value = ''
+  reasonError.value = ''
 
   const title = inFavorOf === 'buyer'
     ? t('common.resolveForBuyer')
@@ -192,15 +220,65 @@ async function resolveDispute(inFavorOf: 'buyer' | 'seller') {
 
   showConfirmDialog(title, message, async () => {
     isActionLoading.value = true
+    actionError.value = ''
+    actionSuccess.value = ''
     try {
-      await adminService.resolveDealDispute(deal.value!.id, inFavorOf)
-      await loadDeal()
+      const trimmedReason = disputeReason.value.trim()
+      if (trimmedReason.length < 5) {
+        reasonError.value = t('pages.admin.dealPage.reasonRequired')
+        return
+      }
+      const res = await adminService.resolveDealDispute(deal.value!.id, inFavorOf, trimmedReason)
+      if (!res) {
+        actionError.value = t('errors.SERVER_ERROR')
+      } else {
+        actionSuccess.value = t('common.success')
+        await loadDeal()
+        showConfirmModal.value = false
+      }
     } catch (error) {
       console.error(error)
+      actionError.value = t('errors.SERVER_ERROR')
     } finally {
       isActionLoading.value = false
     }
-  })
+  }, { showReason: true })
+}
+
+function forceUpdateDealStatus() {
+  if (!deal.value) return
+
+  const statusLabel = t(`common.dealStatuses.${selectedForcedStatus.value}`)
+
+  showConfirmDialog(
+    t('common.status'),
+    `${t('common.status')}: ${statusLabel}`,
+    async () => {
+      isActionLoading.value = true
+      isForcedStatusUpdating.value = true
+      actionError.value = ''
+      actionSuccess.value = ''
+      try {
+        const res = await adminService.updateDealStatus(
+          deal.value!.id,
+          selectedForcedStatus.value
+        )
+        if (!res) {
+          actionError.value = t('errors.SERVER_ERROR')
+          return
+        }
+        actionSuccess.value = t('common.saved')
+        await loadDeal()
+        showConfirmModal.value = false
+      } catch (error) {
+        console.error(error)
+        actionError.value = t('errors.SERVER_ERROR')
+      } finally {
+        isActionLoading.value = false
+        isForcedStatusUpdating.value = false
+      }
+    }
+  )
 }
 
 // Инициализация
@@ -210,11 +288,17 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="w-full h-full overflow-scroll no-scrollbar lg:overflow-hidden pb-16 md:pb-0">
+  <div class="w-full h-full overflow-scroll  lg:overflow-hidden pb-16 md:pb-0">
+    <div v-if="actionError" class="mx-4 mt-4 bg-red-500/15 border border-red-500/30 text-red-100 px-3 py-2 rounded-lg">
+      {{ actionError }}
+    </div>
+    <div v-if="actionSuccess" class="mx-4 mt-2 bg-green-500/15 border border-green-500/30 text-green-100 px-3 py-2 rounded-lg">
+      {{ actionSuccess }}
+    </div>
     <!-- Mobile header -->
     <div class="mb-6 lg:hidden px-4 pt-4">
       <div class="flex items-center gap-3 mb-4">
-        <button @click="goBack" class="p-2 rounded-lg bg-dark-700 hover:bg-dark-600 transition-colors">
+        <button @click="goBack" class="admin-btn admin-btn-ghost admin-btn-icon">
           <ArrowLeft class="w-5 h-5 text-white" />
         </button>
         <h1 class="text-2xl font-bold text-white">
@@ -232,12 +316,12 @@ onMounted(async () => {
     <!-- Desktop layout -->
     <div class="lg:flex lg:h-full">
       <!-- Left column - Main information -->
-      <div class="lg:flex-1 overflow-y-auto no-scrollbar lg:pr-6 lg:pt-6">
+      <div class="lg:flex-1 overflow-y-auto  lg:pr-6 lg:pt-6">
         <div class="px-4 lg:px-0 lg:pb-6 space-y-6">
           <!-- Desktop header -->
           <div class="hidden lg:flex items-center justify-between mb-6">
             <div class="flex items-center gap-4">
-              <button @click="goBack" class="p-2 rounded-lg bg-dark-700 hover:bg-dark-600 transition-colors">
+              <button @click="goBack" class="admin-btn admin-btn-ghost admin-btn-icon">
                 <ArrowLeft class="w-5 h-5 text-white" />
               </button>
               <div>
@@ -277,8 +361,8 @@ onMounted(async () => {
                   <Package class="w-5 h-5 text-blue-400" />
                   {{ $t('pages.admin.dealPage.productInfo') }}
                 </h2>
-                <button @click="goToProduct(deal.product.id)"
-                  class="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                <button @click="goToProduct(deal.product.id, deal.product.slug)"
+                  class="admin-btn admin-btn-primary admin-btn-sm">
                   <ExternalLink class="w-4 h-4" />
                   {{ $t('common.view') }}
                 </button>
@@ -289,13 +373,13 @@ onMounted(async () => {
                 <div class="flex-shrink-0">
                   <img :src="getProductImageUrl()" :alt="deal.product.title"
                     class="w-24 h-24 rounded-lg object-cover border border-dark-400 cursor-pointer"
-                    @click="goToProduct(deal.product.id)" />
+                    @click="goToProduct(deal.product.id, deal.product.slug)" />
                 </div>
 
                 <!-- Product details -->
                 <div class="flex-1 min-w-0">
                   <h3 class="text-xl font-semibold text-white mb-2 line-clamp-2 cursor-pointer"
-                    @click="goToProduct(deal.product.id)">
+                    @click="goToProduct(deal.product.id, deal.product.slug)">
                     {{ deal.product.title }}
                   </h3>
 
@@ -345,9 +429,12 @@ onMounted(async () => {
                 </h3>
 
                 <div class="flex items-center gap-3 mb-4">
-                  <img :src="getUserAvatarUrl(deal.seller.avatar_url)" :alt="deal.seller.username"
+                  <UserAvatar
+                    :avatar-url="deal.seller.avatar_url"
+                    :alt="deal.seller.username"
                     class="w-14 h-14 rounded-full object-cover border-2 border-green-500/30 cursor-pointer"
-                    @click="goToProfile(deal.seller.username)" />
+                    @click="goToProfile(deal.seller.username)"
+                  />
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 mb-1">
                       <span class="text-lg font-semibold text-white truncate cursor-pointer"
@@ -382,9 +469,12 @@ onMounted(async () => {
                 </h3>
 
                 <div class="flex items-center gap-3 mb-4">
-                  <img :src="getUserAvatarUrl(deal.buyer.avatar_url)" :alt="deal.buyer.username"
+                  <UserAvatar
+                    :avatar-url="deal.buyer.avatar_url"
+                    :alt="deal.buyer.username"
                     class="w-14 h-14 rounded-full object-cover border-2 border-blue-500/30 cursor-pointer"
-                    @click="goToProfile(deal.buyer.username)" />
+                    @click="goToProfile(deal.buyer.username)"
+                  />
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 mb-1">
                       <span class="text-lg font-semibold text-white truncate cursor-pointer"
@@ -484,16 +574,31 @@ onMounted(async () => {
 
               <!-- Actions based on deal status -->
               <div class="space-y-3">
+                <div class="space-y-2 pb-2 border-b border-dark-700">
+                  <CustomSelect
+                    v-model="selectedForcedStatus"
+                    :options="dealStatusOptions"
+                    :placeholder="$t('common.filters.status')"
+                  />
+                  <button
+                    @click="forceUpdateDealStatus"
+                    :disabled="isActionLoading || isForcedStatusUpdating"
+                    class="admin-btn admin-btn-ghost w-full py-3"
+                  >
+                    <span>{{ $t('common.save') }}</span>
+                  </button>
+                </div>
+
                 <!-- Pending deals -->
                 <template v-if="deal.status === 'pending'">
                   <button @click="confirmDealAction" :disabled="isActionLoading"
-                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white rounded-lg transition-colors">
+                    class="admin-btn admin-btn-success w-full py-3">
                     <CheckCircle class="w-5 h-5" />
                     <span>{{ $t('common.confirmDeal') }}</span>
                   </button>
 
                   <button @click="refundDealAction" :disabled="isActionLoading"
-                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white rounded-lg transition-colors">
+                    class="admin-btn admin-btn-accent w-full py-3">
                     <Undo2 class="w-5 h-5" />
                     <span>{{ $t('pages.admin.dealsPage.refund') }}</span>
                   </button>
@@ -502,13 +607,13 @@ onMounted(async () => {
                 <!-- Disputed deals -->
                 <template v-else-if="deal.status === 'disputed'">
                   <button @click="resolveDispute('buyer')" :disabled="isActionLoading"
-                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white rounded-lg transition-colors">
+                    class="admin-btn admin-btn-success w-full py-3">
                     <UserCheck class="w-5 h-5" />
                     <span>{{ $t('common.resolveForBuyer') }}</span>
                   </button>
 
                   <button @click="resolveDispute('seller')" :disabled="isActionLoading"
-                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg transition-colors">
+                    class="admin-btn admin-btn-primary w-full py-3">
                     <UserCheck class="w-5 h-5" />
                     <span>{{ $t('common.resolveForSeller') }}</span>
                   </button>
@@ -536,13 +641,13 @@ onMounted(async () => {
                 <!-- Cancel button (for pending and disputed) -->
                 <button v-if="['pending', 'disputed'].includes(deal.status)" @click="cancelDealAction"
                   :disabled="isActionLoading"
-                  class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg transition-colors">
+                  class="admin-btn admin-btn-danger w-full py-3">
                   <XCircle class="w-5 h-5" />
                   <span>{{ $t('common.cancelDeal') }}</span>
                 </button>
 
-                <button @click="goToChat(deal.id)"
-                  class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-green-800 text-white rounded-lg transition-colors">
+                <button @click="goToChat(deal.chat_room_id)"
+                  class="admin-btn admin-btn-primary w-full py-3">
                   <MessageCircleMore class="w-4 h-4" />
                   <span class="hidden sm:inline">{{ $t('common.toChat') }}</span>
                 </button>
@@ -555,23 +660,33 @@ onMounted(async () => {
   </div>
 
   <!-- Confirm Modal -->
-  <ConfirmWindow :is-open="showConfirmModal" :title="confirmTitle" :message="confirmMessage"
-    :is-loading="isActionLoading" @confirm="async () => {
-      await confirmAction()
-      showConfirmModal = false
-    }" @cancel="showConfirmModal = false" />
+  <ConfirmWindow
+    :is-open="showConfirmModal"
+    :title="confirmTitle"
+    :message="confirmMessage"
+    :is-loading="isActionLoading"
+    @confirm="confirmAction"
+    @cancel="showConfirmModal = false"
+  >
+    <template #body>
+      <div v-if="showReasonField" class="space-y-2">
+        <label class="block text-sm text-gray-300">
+          {{ $t('pages.admin.dealPage.disputeReasonLabel') }}
+        </label>
+        <textarea
+          v-model="disputeReason"
+          class="w-full rounded-lg bg-dark-900 border border-dark-700 text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[110px]"
+          :placeholder="$t('pages.admin.dealPage.disputeReasonPlaceholder')"
+        />
+        <p v-if="reasonError" class="text-red-400 text-sm">
+          {{ reasonError }}
+        </p>
+      </div>
+    </template>
+  </ConfirmWindow>
 </template>
 
 <style>
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -590,7 +705,7 @@ onMounted(async () => {
 @media (min-width: 1024px) {
   .lg\:overflow-y-auto {
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    scrollbar-color: var(--overlay-white-20) transparent;
   }
 
   .lg\:overflow-y-auto::-webkit-scrollbar {
@@ -603,12 +718,12 @@ onMounted(async () => {
   }
 
   .lg\:overflow-y-auto::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: var(--overlay-white-20);
     border-radius: 3px;
   }
 
   .lg\:overflow-y-auto::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: var(--overlay-white-30);
   }
 }
 </style>

@@ -1,42 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+@import './theme/colors.css';
 
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-.no-scrollbar {
-  /* Firefox */
-  scrollbar-width: none;        /* Firefox 64+ */
-  -ms-overflow-style: none;     /* Internet Explorer 10+ / Edge (Legacy) */
+
+
+.noise-overlay-bg {
+  background-image: url('/noise.svg');
+  background-repeat: repeat;
+  background-size: 220px 220px;
 }
 
-/* WebKit (Chrome, Safari, Opera) */
-.no-scrollbar::-webkit-scrollbar {
-  display: none; /* прячет полосу прокрутки в WebKit-браузерах */
-}
-
-
-
-
-:root {
-  /* фон */
-  --background-color: #121212;
-
-  /* текст */
-  --main-text: #ffffff;
-  --link-text: #2563eb;
-  --error-text: #ef4444;
-  --secondary-text: #D1D5DB;
-  --secondary-dark-text: #6B7280;
-
-  /* кнопки */
-  --color-button-primary: #2563eb;
-  --color-button-hover: #1976d2;
-
-  /* инпуты */
-  --color-input: #6B7280;
-}
 
 
 /* Отключение зума на инпутах на iOS */
@@ -61,6 +38,8 @@ input, textarea, select {
 /* Отключение зума при двойном тапе */
 html {
   touch-action: pan-y pinch-zoom; /* Разрешаем только вертикальный скролл и пинч-зум */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 /* Для инпутов особые настройки */
@@ -84,6 +63,178 @@ textarea {
   }
 }
 
-.title {
+/* .title {
   font-family: 'Outfit', sans-serif;
+} */
+
+
+
+
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+html, body {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Keep routing scroll reset deterministic on mobile */
+html {
+  scroll-behavior: auto;
+}
+
+/* For WebKit browsers */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Optional: сохранить функциональность прокрутки */
+body {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Unified admin buttons (clean, no shadows) */
+@layer components {
+  .admin-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--admin-btn-border);
+    background-color: var(--admin-btn-bg);
+    color: var(--admin-btn-text);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    padding: 0.625rem 1rem;
+    text-align: center;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+  }
+
+  .admin-btn:hover {
+    background-color: var(--admin-btn-hover-bg);
+    border-color: var(--admin-btn-hover-border);
+    color: var(--admin-btn-text-strong);
+  }
+
+  .admin-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .admin-btn-primary {
+    background-color: var(--color-button-primary);
+    border-color: transparent;
+    color: var(--admin-btn-text-strong);
+  }
+
+  .admin-btn-primary:hover {
+    background-color: var(--color-button-hover);
+    border-color: transparent;
+  }
+
+  .admin-btn-success {
+    background-color: var(--admin-btn-success-bg);
+    border-color: transparent;
+    color: var(--admin-btn-text-strong);
+  }
+
+  .admin-btn-success:hover {
+    background-color: var(--admin-btn-success-hover-bg);
+    border-color: transparent;
+  }
+
+  .admin-btn-danger {
+    background-color: var(--admin-btn-danger-bg);
+    border-color: transparent;
+    color: var(--admin-btn-text-strong);
+  }
+
+  .admin-btn-danger:hover {
+    background-color: var(--admin-btn-danger-hover-bg);
+    border-color: transparent;
+  }
+
+  .admin-btn-accent {
+    background-color: var(--admin-btn-accent-bg);
+    border-color: transparent;
+    color: var(--admin-btn-text-strong);
+  }
+
+  .admin-btn-accent:hover {
+    background-color: var(--admin-btn-accent-hover-bg);
+    border-color: transparent;
+  }
+
+  .admin-btn-muted {
+    background-color: var(--admin-btn-muted-bg);
+    border-color: transparent;
+    color: var(--admin-btn-text-strong);
+  }
+
+  .admin-btn-muted:hover {
+    background-color: var(--admin-btn-muted-hover-bg);
+    border-color: transparent;
+  }
+
+  .admin-btn-ghost {
+    background-color: transparent;
+    color: var(--admin-btn-ghost-text);
+  }
+
+  .admin-btn-ghost:hover {
+    background-color: var(--admin-btn-ghost-hover-bg);
+    color: var(--admin-btn-text-strong);
+  }
+
+  .admin-btn-icon {
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0.5rem;
+  }
+
+  .admin-btn-xs {
+    padding: 0.45rem 0.7rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
+  .admin-btn-sm {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+  }
+
+  .admin-btn-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    border: 1px solid transparent;
+    background-color: transparent;
+    color: var(--admin-btn-tab-text);
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+    font-weight: 600;
+    padding: 0.45rem 0.75rem;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  }
+
+  .admin-btn-tab:hover {
+    background-color: var(--admin-btn-tab-hover-bg);
+    color: var(--admin-btn-text-strong);
+  }
+
+  .admin-btn-tab-active {
+    background-color: var(--admin-btn-tab-active-bg);
+    border-color: var(--admin-btn-tab-active-border);
+    color: var(--admin-btn-text-strong);
+  }
 }

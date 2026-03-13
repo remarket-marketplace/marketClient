@@ -3,24 +3,35 @@ import { productService } from '@/api/product/ProductService'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import FileUploader from '@/components/FileUploader.vue'
 import Loader from '@/components/Loader.vue'
-import router from '@/router'
+import Checkbox from '@/components/Checkbox.vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import type { ProductEdit } from '@/validation/product/product'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
 import { getErrorMessage } from '@/utils/errorsMap'
 import { X, Info, AlertCircle, Tag, Package, Percent, Calculator } from 'lucide-vue-next'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
+import {
+  convertCurrencyAmount,
+  formatCurrencyAmount,
+  getCurrencySymbol,
+  getUsdRubRate,
+  preferredCurrency,
+  setUsdRubRate,
+} from '@/utils/currency'
+import { buildProductKey } from '@/utils/urlKeys'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const route = useRoute()
+const router = useRouter()
 const { t } = useI18n()
 
 const title = ref('')
 const description = ref('')
 const price = ref('')
 const productDataString = ref('')
+const autoDelivery = ref<boolean>(true)
 const newImages = ref<File[]>([])
 const existingImages = ref<{ id: string; image_url: string }[]>([])
 const count = ref<number>()
@@ -30,6 +41,25 @@ const errorMessage = ref('')
 const productData = ref<ProductEdit | null>(null)
 const isLoadingProduct = ref(true)
 const commissionInterest = ref<number | null>(null)
+const selectedCurrency = computed(() => preferredCurrency.value)
+const currencySymbol = computed(() => getCurrencySymbol(selectedCurrency.value))
+const usdRubRate = computed(() => getUsdRubRate())
+
+const PRODUCT_LIMITS = {
+  title: { min: 10, max: 50 },
+  description: { min: 10, max: 1200 },
+  productData: { min: 10, max: 128 },
+  count: { min: 1, max: 5000 },
+  images: { min: 1, max: 10 }
+}
+const DEFAULT_PRICE_RANGE_RUB = { min: 10, max: 1000000 }
+const minPriceRub = ref(DEFAULT_PRICE_RANGE_RUB.min)
+const maxPriceRub = ref(DEFAULT_PRICE_RANGE_RUB.max)
+
+function getMultipartTransportLength(value: string): number {
+  // Multipart form payload normalizes LF to CRLF, so backend sees this length.
+  return value.replace(/\r?\n/g, '\r\n').length
+}
 
 const productId = computed(() => route.params.productId as string)
 
@@ -39,7 +69,7 @@ const user = await store.getUser()
 // Максимальное количество новых файлов с учетом существующих
 const computedMaxNewFiles = computed(() => {
   const remainingExisting = existingImages.value.length
-  return Math.max(0, 8 - remainingExisting)
+  return Math.max(0, PRODUCT_LIMITS.images.max - remainingExisting)
 })
 
 const totalImagesAfterUpdate = computed(() => {
@@ -47,33 +77,179 @@ const totalImagesAfterUpdate = computed(() => {
   return remainingExisting + newImages.value.length
 })
 
+const normalizedTitle = computed(() => title.value.trim())
+const normalizedDescription = computed(() => description.value.trim())
+const normalizedProductData = computed(() => productDataString.value.trim())
+const normalizedDescriptionLength = computed(() => getMultipartTransportLength(normalizedDescription.value))
+const normalizedProductDataLength = computed(() => getMultipartTransportLength(normalizedProductData.value))
+const priceValueInput = computed(() => Number(price.value))
+const priceValueRub = computed(() => {
+  if (!Number.isFinite(priceValueInput.value)) return NaN
+  return convertCurrencyAmount(priceValueInput.value, selectedCurrency.value, 'RUB')
+})
+const countValue = computed(() => Number(count.value))
+
+const titleLengthValid = computed(() => (
+  normalizedTitle.value.length >= PRODUCT_LIMITS.title.min
+  && normalizedTitle.value.length <= PRODUCT_LIMITS.title.max
+))
+const descriptionLengthValid = computed(() => (
+  normalizedDescriptionLength.value >= PRODUCT_LIMITS.description.min
+  && normalizedDescriptionLength.value <= PRODUCT_LIMITS.description.max
+))
+const productDataLengthValid = computed(() => (
+  normalizedProductDataLength.value >= PRODUCT_LIMITS.productData.min
+  && normalizedProductDataLength.value <= PRODUCT_LIMITS.productData.max
+))
+const productDataValidForForm = computed(() => (
+  !autoDelivery.value || productDataLengthValid.value
+))
+const priceInputMin = computed(() => {
+  if (selectedCurrency.value === 'RUB') return minPriceRub.value
+  return Number((minPriceRub.value / usdRubRate.value).toFixed(2))
+})
+
+const priceInputMax = computed(() => {
+  if (selectedCurrency.value === 'RUB') return maxPriceRub.value
+  return Number((maxPriceRub.value / usdRubRate.value).toFixed(2))
+})
+
+const priceInputStep = computed(() => (selectedCurrency.value === 'USD' ? 0.01 : 1))
+
+const priceValid = computed(() => (
+  Number.isFinite(priceValueInput.value)
+  && priceValueInput.value >= priceInputMin.value
+  && priceValueInput.value <= priceInputMax.value
+  && Number.isFinite(priceValueRub.value)
+  && priceValueRub.value >= minPriceRub.value
+  && priceValueRub.value <= maxPriceRub.value
+))
+const countValid = computed(() => (
+  Number.isFinite(countValue.value)
+  && countValue.value >= PRODUCT_LIMITS.count.min
+  && countValue.value <= PRODUCT_LIMITS.count.max
+))
+const imagesCountValid = computed(() => (
+  totalImagesAfterUpdate.value >= PRODUCT_LIMITS.images.min
+  && totalImagesAfterUpdate.value <= PRODUCT_LIMITS.images.max
+))
+
 // Calculate seller's final amount
+const totalPriceInRub = computed(() => priceValueRub.value * (count.value || 1))
+const commissionAmountInRub = computed(() => {
+  if (!commissionInterest.value) return 0
+  return totalPriceInRub.value * (commissionInterest.value / 100)
+})
+
 const sellerAmount = computed(() => {
   if (!price.value || !commissionInterest.value) return 0
-  const total = Number(price.value) * (count.value || 1)
-  const commission = total * (commissionInterest.value / 100)
-  return Math.max(0, total - commission)
+  return Math.max(0, totalPriceInRub.value - commissionAmountInRub.value)
 })
 
 // Price formatting
 const formatPrice = (value: number) => {
-  return value.toLocaleString('ru-RU', {
+  return formatCurrencyAmount(value, {
+    fromCurrency: 'RUB',
+    currency: selectedCurrency.value,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
-  }) + '₽'
+  })
 }
+
+function formatPriceRangeBound(value: number): string {
+  if (selectedCurrency.value === 'USD') {
+    return `${value.toFixed(2)} ${currencySymbol.value}`
+  }
+  return `${Math.round(value)} ${currencySymbol.value}`
+}
+
+const priceRangeMinLabel = computed(() => formatPriceRangeBound(priceInputMin.value))
+const priceRangeMaxLabel = computed(() => formatPriceRangeBound(priceInputMax.value))
 
 // Валидация формы
 const isFormValid = computed(() => {
-  return title.value.trim() &&
-    description.value.trim() &&
-    price.value &&
-    productDataString.value.trim() &&
-    totalImagesAfterUpdate.value > 0
+  return Boolean(
+    titleLengthValid.value &&
+    descriptionLengthValid.value &&
+    productDataValidForForm.value &&
+    priceValid.value &&
+    countValid.value &&
+    imagesCountValid.value
+  )
+})
+
+const validationIssues = computed(() => {
+  const issues: string[] = []
+
+  if (!titleLengthValid.value) {
+    issues.push(
+      t('pages.forms.editProduct.validationTitleLength', {
+        min: PRODUCT_LIMITS.title.min,
+        max: PRODUCT_LIMITS.title.max,
+      }),
+    )
+  }
+  if (!descriptionLengthValid.value) {
+    issues.push(
+      t('pages.forms.editProduct.validationDescriptionLength', {
+        min: PRODUCT_LIMITS.description.min,
+        max: PRODUCT_LIMITS.description.max,
+      }),
+    )
+  }
+  if (autoDelivery.value && !productDataLengthValid.value) {
+    issues.push(
+      t('pages.forms.editProduct.validationProductDataLength', {
+        min: PRODUCT_LIMITS.productData.min,
+        max: PRODUCT_LIMITS.productData.max,
+      }),
+    )
+  }
+  if (!priceValid.value) {
+    issues.push(
+      t('pages.forms.editProduct.validationPriceRange', {
+        min: priceRangeMinLabel.value,
+        max: priceRangeMaxLabel.value,
+      }),
+    )
+  }
+  if (!countValid.value) {
+    issues.push(
+      t('pages.forms.editProduct.validationCountRange', {
+        min: PRODUCT_LIMITS.count.min,
+        max: PRODUCT_LIMITS.count.max,
+      }),
+    )
+  }
+  if (!imagesCountValid.value) {
+    issues.push(
+      t('pages.forms.editProduct.validationImagesRange', {
+        min: PRODUCT_LIMITS.images.min,
+        max: PRODUCT_LIMITS.images.max,
+      }),
+    )
+  }
+
+  return issues
 })
 
 onMounted(async () => {
   try {
+    const currencyConfig = await productService.getCurrencyConfig()
+    if (currencyConfig?.usd_rub_rate) {
+      setUsdRubRate(currencyConfig.usd_rub_rate)
+    }
+    if (
+      currencyConfig
+      && Number.isFinite(currencyConfig.min_price_rub)
+      && Number.isFinite(currencyConfig.max_price_rub)
+      && currencyConfig.min_price_rub > 0
+      && currencyConfig.max_price_rub >= currencyConfig.min_price_rub
+    ) {
+      minPriceRub.value = currencyConfig.min_price_rub
+      maxPriceRub.value = currencyConfig.max_price_rub
+    }
+
     await store.fetchUser()
 
     // Загружаем данные товара для редактирования
@@ -91,8 +267,9 @@ onMounted(async () => {
     // Инициализируем поля данными товара
     title.value = productData.value.title
     description.value = productData.value.description
-    price.value = productData.value.price.toString()
+    price.value = convertCurrencyAmount(productData.value.price, 'RUB', selectedCurrency.value).toString()
     productDataString.value = productData.value.product_data_string ?? ''
+    autoDelivery.value = productData.value.auto_delivery
     existingImages.value = [...productData.value.images]
     count.value = productData.value.count
 
@@ -108,6 +285,17 @@ onMounted(async () => {
   }
 })
 
+watch(selectedCurrency, (nextCurrency, prevCurrency) => {
+  if (!prevCurrency || nextCurrency === prevCurrency) return
+  const currentInput = Number(price.value)
+  if (!Number.isFinite(currentInput)) return
+
+  const converted = convertCurrencyAmount(currentInput, prevCurrency, nextCurrency)
+  price.value = nextCurrency === 'USD'
+    ? converted.toFixed(2)
+    : Math.round(converted).toString()
+})
+
 // Удаление существующего изображения
 function deleteExistingImage(id: string) {
   const index = existingImages.value.findIndex(img => img.id === id)
@@ -121,7 +309,7 @@ async function updateProduct() {
   errorMessage.value = ''
 
   if (!isFormValid.value) {
-    errorMessage.value = t('common.fillAllFields')
+    errorMessage.value = t('pages.forms.editProduct.fixFormToSave')
     return
   }
 
@@ -132,20 +320,22 @@ async function updateProduct() {
   }
 
   // Проверка максимального количества изображений
-  if (totalImagesAfterUpdate.value > 8) {
-    errorMessage.value = t('pages.forms.editProduct.maxImagesExceeded', { max: 8 })
+  if (totalImagesAfterUpdate.value > PRODUCT_LIMITS.images.max) {
+    errorMessage.value = t('pages.forms.editProduct.maxImagesExceeded', { max: PRODUCT_LIMITS.images.max })
     return
   }
 
   sended.value = true
   try {
     const productDataObj = {
-      title: title.value,
-      description: description.value,
+      title: normalizedTitle.value,
+      description: normalizedDescription.value,
       price: Number(price.value),
-      product_data: productDataString.value,
+      price_currency: selectedCurrency.value,
+      product_data: autoDelivery.value ? normalizedProductData.value : undefined,
       category_id: productData.value!.category.id,
-      count: count.value
+      count: count.value,
+      auto_delivery: autoDelivery.value,
     }
 
     const result = await productService.updateProduct(
@@ -156,16 +346,17 @@ async function updateProduct() {
     )
 
     if (result) {
-      router.push(`/product/${productId.value}`)
+      router.push(`/product/${buildProductKey(result)}`)
     } else {
       errorMessage.value = t('pages.forms.editProduct.errorUpdatingProduct')
     }
   } catch (err: any) {
     console.error('Ошибка при обновлении товара:', err)
-    if (err?.response?.data?.detail?.error_code) {
-      errorMessage.value = getErrorMessage(err.response.data.detail, t)
-    } else if (err.response?.data?.detail && Array.isArray(err.response.data.detail)) {
-      const errors = err.response.data.detail.map((e: any) => e.msg).join(', ')
+    const detail = err?.response?.data?.detail
+    if (detail?.error_code) {
+      errorMessage.value = getErrorMessage(detail, t)
+    } else if (Array.isArray(detail)) {
+      const errors = detail.map((e: any) => e.msg).join(', ')
       errorMessage.value = `${t('common.validationErrors')} ${errors}`
     } else {
       errorMessage.value = t('pages.forms.editProduct.errorUpdatingProduct')
@@ -177,11 +368,14 @@ async function updateProduct() {
 </script>
 
 <template>
-  <div v-if="isLoadingProduct" class="w-full h-full flex items-center justify-center">
+  <div
+    v-if="isLoadingProduct"
+    class="w-full min-h-[calc(100dvh-7rem)] md:min-h-[calc(100dvh-3.5rem)] flex items-center justify-center"
+  >
     <Loader />
   </div>
 
-  <div v-else-if="productData" class="w-full h-full overflow-scroll no-scrollbar lg:overflow-hidden pb-16 md:pb-0">
+  <div v-else-if="productData" class="w-full h-full overflow-scroll  lg:overflow-hidden pb-16 md:pb-0">
     <!-- Mobile header -->
     <div class="mb-6 lg:hidden px-4 pt-4">
       <h1 class="text-2xl font-bold text-white">
@@ -195,7 +389,7 @@ async function updateProduct() {
     <!-- Desktop layout -->
     <div class="lg:flex lg:h-full">
       <!-- Left column - Main form -->
-      <div class="lg:flex-1 overflow-y-auto no-scrollbar lg:pr-6 lg:pt-6">
+      <div class="lg:flex-1 overflow-y-auto  lg:pr-6 lg:pt-6">
         <div class="px-4 lg:px-0 pb-24 lg:pb-6 space-y-6">
           <!-- Desktop header -->
           <div class="hidden lg:block">
@@ -216,7 +410,7 @@ async function updateProduct() {
               </label>
               <div class="flex items-center gap-2">
                 <span class="text-xs text-gray-400">
-                  {{ existingImages.length }}/8
+                  {{ existingImages.length }}/{{ PRODUCT_LIMITS.images.max }}
                 </span>
                 <span v-if="imagesToDelete.length > 0" class="text-xs text-red-400">
                   {{ $t('pages.forms.editProduct.deleting') }}: {{ imagesToDelete.length }}
@@ -272,29 +466,70 @@ async function updateProduct() {
             <FileUploader v-model="newImages" :max-files="computedMaxNewFiles"
               :hint="$t('pages.forms.createProduct.imageHint')" />
 
-            <div class="text-xs text-gray-400 flex items-center gap-1">
+            <div class="text-xs flex items-center gap-1" :class="imagesCountValid ? 'text-gray-400' : 'text-red-400'">
               <AlertCircle class="w-3 h-3 text-yellow-400" />
               <span>
-                {{ $t('pages.forms.editProduct.totalImagesInfo') }}:
-                <span :class="totalImagesAfterUpdate > 8 ? 'text-red-400' : 'text-green-400'">
-                  {{ totalImagesAfterUpdate }}/8
-                </span>
+                {{
+                  $t('pages.forms.editProduct.validationImagesRange', {
+                    min: PRODUCT_LIMITS.images.min,
+                    max: PRODUCT_LIMITS.images.max,
+                  })
+                }}
               </span>
             </div>
+            <p class="text-xs text-right text-gray-400">
+              {{ $t('pages.forms.editProduct.totalImagesInfo') }}:
+              <span :class="imagesCountValid ? 'text-green-400' : 'text-red-400'">
+                {{ totalImagesAfterUpdate }}/{{ PRODUCT_LIMITS.images.max }}
+              </span>
+            </p>
           </div>
 
-          <!-- Title -->
-          <div class="space-y-2">
-            <label for="title" class="text-sm font-medium text-gray-300">
-              {{ $t('pages.forms.createProduct.productName') }}
-              <span class="text-xs text-red-400 ml-1">*</span>
-            </label>
-            <input id="title" v-model="title" type="text" maxlength="50" minlength="10"
-              :placeholder="$t('pages.forms.createProduct.productNamePlaceholder')"
-              class="w-full outline-none rounded-lg bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white placeholder-gray-500 " />
-            <p class="text-xs text-gray-400 text-right">
-              {{ title.length }}/50
-            </p>
+          <!-- Title and quantity -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label for="title" class="text-sm font-medium text-gray-300">
+                {{ $t('pages.forms.createProduct.productName') }}
+                <span class="text-xs text-red-400 ml-1">*</span>
+              </label>
+              <input id="title" v-model="title" type="text" :maxlength="PRODUCT_LIMITS.title.max" :minlength="PRODUCT_LIMITS.title.min"
+                :placeholder="$t('pages.forms.createProduct.productNamePlaceholder')"
+                class="w-full outline-none rounded-lg bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white placeholder-gray-500 " />
+              <div class="flex items-center justify-between gap-3">
+                <p class="text-xs" :class="titleLengthValid ? 'text-gray-400' : 'text-red-400'">
+                  {{
+                    $t('pages.forms.editProduct.validationTitleLength', {
+                      min: PRODUCT_LIMITS.title.min,
+                      max: PRODUCT_LIMITS.title.max,
+                    })
+                  }}
+                </p>
+                <p class="text-xs text-gray-400 text-right">
+                  {{ title.length }}/{{ PRODUCT_LIMITS.title.max }}
+                </p>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label for="count" class="text-sm font-medium text-gray-300">
+                {{ $t('pages.forms.createProduct.count') }}
+              </label>
+              <div class="relative">
+                <input id="count" v-model.number="count" type="number" :min="PRODUCT_LIMITS.count.min" :max="PRODUCT_LIMITS.count.max"
+                  class="w-full rounded-lg outline-none bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white" />
+                <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                  {{ $t('common.items') }}
+                </div>
+              </div>
+              <p class="text-xs" :class="countValid ? 'text-gray-400' : 'text-red-400'">
+                {{
+                  $t('pages.forms.editProduct.validationCountRange', {
+                    min: PRODUCT_LIMITS.count.min,
+                    max: PRODUCT_LIMITS.count.max,
+                  })
+                }}
+              </p>
+            </div>
           </div>
 
           <!-- Description -->
@@ -303,16 +538,49 @@ async function updateProduct() {
               {{ $t('common.description') }}
               <span class="text-xs text-red-400 ml-1">*</span>
             </label>
-            <textarea id="description" v-model="description" rows="8" maxlength="500" minlength="10"
+            <textarea id="description" v-model="description" rows="8" :maxlength="PRODUCT_LIMITS.description.max" :minlength="PRODUCT_LIMITS.description.min"
               :placeholder="$t('pages.forms.createProduct.descriptionPlaceholder')"
               class="w-full rounded-lg outline-none bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white placeholder-gray-500 resize-none"></textarea>
-            <p class="text-xs text-gray-400 text-right">
-              {{ description.length }}/500
-            </p>
+            <div class="flex items-center justify-between gap-3">
+              <p class="text-xs" :class="descriptionLengthValid ? 'text-gray-400' : 'text-red-400'">
+                {{
+                  $t('pages.forms.editProduct.validationDescriptionLength', {
+                    min: PRODUCT_LIMITS.description.min,
+                    max: PRODUCT_LIMITS.description.max,
+                  })
+                }}
+              </p>
+              <p class="text-xs text-gray-400 text-right">
+                {{ normalizedDescriptionLength }}/{{ PRODUCT_LIMITS.description.max }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Auto delivery -->
+          <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-5 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="space-y-1">
+                <h4 class="text-sm font-semibold text-white">
+                  {{ $t('pages.forms.createProduct.autoDelivery') }}
+                </h4>
+                <p class="text-xs text-gray-400 leading-relaxed">
+                  {{ $t('pages.forms.createProduct.autoDeliveryHint') }}
+                </p>
+              </div>
+              <Checkbox v-model="autoDelivery" size="lg" />
+            </div>
+            <div v-if="autoDelivery" class="mt-3">
+              <div class="p-3 rounded-lg bg-blue-900/20 border border-blue-800/30">
+                <p class="text-xs text-blue-300 leading-relaxed flex items-start gap-2">
+                  <Info class="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  {{ $t('pages.forms.createProduct.autoDeliveryEnabledHint') }}
+                </p>
+              </div>
+            </div>
           </div>
 
           <!-- Product data -->
-          <div class="space-y-2">
+          <div v-if="autoDelivery" class="space-y-2">
             <div class="flex items-center gap-2">
               <label for="productData" class="text-sm font-medium text-gray-300">
                 {{ $t('pages.forms.createProduct.productData') }}
@@ -323,25 +591,21 @@ async function updateProduct() {
                 <span>{{ $t('pages.forms.createProduct.productDataHint') }}</span>
               </div>
             </div>
-            <textarea id="productData" v-model="productDataString" rows="6" maxlength="300"
+            <textarea id="productData" v-model="productDataString" rows="6" :maxlength="PRODUCT_LIMITS.productData.max" :minlength="PRODUCT_LIMITS.productData.min"
               :placeholder="$t('pages.forms.createProduct.productDataPlaceholder')"
               class="w-full rounded-lg outline-none bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white placeholder-gray-500 resize-none font-mono"></textarea>
-            <p class="text-xs text-gray-400 text-right">
-              {{ productDataString.length }}/300
-            </p>
-          </div>
-
-          <!-- Quantity -->
-          <div class="space-y-2">
-            <label for="count" class="text-sm font-medium text-gray-300">
-              {{ $t('pages.forms.createProduct.count') }}
-            </label>
-            <div class="relative">
-              <input id="count" v-model.number="count" type="number" min="1" max="100000"
-                class="w-full rounded-lg outline-none bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white" />
-              <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
-                {{ $t('common.items') }}
-              </div>
+            <div class="flex items-center justify-between gap-3">
+              <p class="text-xs" :class="productDataLengthValid ? 'text-gray-400' : 'text-red-400'">
+                {{
+                  $t('pages.forms.editProduct.validationProductDataLength', {
+                    min: PRODUCT_LIMITS.productData.min,
+                    max: PRODUCT_LIMITS.productData.max,
+                  })
+                }}
+              </p>
+              <p class="text-xs text-gray-400 text-right">
+                {{ normalizedProductDataLength }}/{{ PRODUCT_LIMITS.productData.max }}
+              </p>
             </div>
           </div>
 
@@ -364,17 +628,25 @@ async function updateProduct() {
                 </label>
                 <div class="flex items-center gap-2">
                   <Calculator class="w-4 h-4 text-blue-400" />
-                  <span class="text-xs text-gray-400">₽</span>
+                  <span class="text-xs text-gray-400">{{ currencySymbol }}</span>
                 </div>
               </div>
               <div class="relative">
-                <input id="price" v-model.number="price" type="number" min="1"
+                <input id="price" v-model.number="price" type="number" :min="priceInputMin" :max="priceInputMax" :step="priceInputStep"
                   :placeholder="$t('pages.forms.createProduct.pricePlaceholder')"
                   class="w-full rounded-lg outline-none bg-dark-600 border border-dark-700 px-4 py-3 text-lg font-semibold text-white" />
                 <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 text-sm font-medium">
-                  ₽
+                  {{ currencySymbol }}
                 </div>
               </div>
+              <p class="text-xs" :class="priceValid ? 'text-gray-400' : 'text-red-400'">
+                {{
+                  $t('pages.forms.editProduct.validationPriceRange', {
+                    min: priceRangeMinLabel,
+                    max: priceRangeMaxLabel,
+                  })
+                }}
+              </p>
             </div>
 
             <!-- Calculations -->
@@ -389,7 +661,7 @@ async function updateProduct() {
                 <div class="flex items-center justify-between">
                   <span class="text-sm text-gray-400">{{ $t('pages.forms.createProduct.totalPrice') }}:</span>
                   <span class="text-sm font-medium text-white">
-                    {{ formatPrice(Number(price) * (count || 1)) }}
+                    {{ formatPrice(totalPriceInRub) }}
                   </span>
                 </div>
 
@@ -402,7 +674,7 @@ async function updateProduct() {
                     </span>
                   </span>
                   <span class="text-sm font-medium text-red-400">
-                    -{{ formatPrice((Number(price) * (count || 1)) * (commissionInterest! / 100)) }}
+                    -{{ formatPrice(commissionAmountInRub) }}
                   </span>
                 </div>
 
@@ -468,7 +740,7 @@ async function updateProduct() {
                   <span class="text-sm text-gray-400">{{ $t('common.images') }}:</span>
                   <div class="flex flex-col items-end">
                     <span class="text-sm font-medium text-white">
-                      {{ totalImagesAfterUpdate }}/8
+                      {{ totalImagesAfterUpdate }}/{{ PRODUCT_LIMITS.images.max }}
                     </span>
                     <span v-if="imagesToDelete.length > 0" class="text-xs text-red-400">
                       -{{ imagesToDelete.length }} {{ $t('pages.forms.editProduct.deleting') }}
@@ -489,6 +761,24 @@ async function updateProduct() {
                   {{ $t('pages.forms.editProduct.categoryCannotBeChanged') }}
                 </p>
               </div>
+            </div>
+
+            <div
+              v-if="!isFormValid"
+              class="rounded-lg border border-amber-700/40 bg-amber-900/15 p-3"
+            >
+              <p class="text-xs text-amber-200 font-medium mb-2">
+                {{ t('pages.forms.editProduct.fixFormToSave') }}
+              </p>
+              <ul class="space-y-1">
+                <li
+                  v-for="issue in validationIssues"
+                  :key="issue"
+                  class="text-xs text-amber-300"
+                >
+                  • {{ issue }}
+                </li>
+              </ul>
             </div>
 
             <!-- Save button -->
@@ -542,7 +832,7 @@ input[type="number"] {
 @media (min-width: 1024px) {
   .lg\:overflow-y-auto {
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    scrollbar-color: var(--overlay-white-20) transparent;
   }
 
   .lg\:overflow-y-auto::-webkit-scrollbar {
@@ -555,12 +845,12 @@ input[type="number"] {
   }
 
   .lg\:overflow-y-auto::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: var(--overlay-white-20);
     border-radius: 3px;
   }
 
   .lg\:overflow-y-auto::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: var(--overlay-white-30);
   }
 }
 

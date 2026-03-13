@@ -7,13 +7,12 @@ import TheInput from '@/components/TheInput.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import Loader from '@/components/Loader.vue'
-import router from '@/router'
 
 const { t } = useI18n()
-
 const route = useRoute()
+const router = useRouter()
 const resetPasswordToken = route.query.reset_token
 
 const errorMessage = ref('')
@@ -78,6 +77,12 @@ onMounted(async () => {
         </div>
 
       </div>
+
+      <p class="text-center text-sm text-text-secondaryDark">
+        <router-link to="/signin" class="text-text-link hover:underline">
+          {{ $t('common.backToSignIn') }}
+        </router-link>
+      </p>
     </div>
 
     <div v-if="tokenIsNotExpired === false">

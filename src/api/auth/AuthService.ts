@@ -2,6 +2,7 @@ import { ZodError } from "zod";
 import { httpClient } from "..";
 import { UserReadSchema, type UserRead } from "@/validation/user/userRead";
 import { useUserStore } from "@/stores/user";
+import { chatsService } from "@/api/chats/chatsService";
 
 export const authService = {
   async getUser(): Promise<UserRead | null> {
@@ -46,6 +47,7 @@ export const authService = {
   },
 
   async signIn(email: string, password: string, captchaToken: string) {
+    chatsService.disconnect();
     const response = await httpClient.post("/auth/login", {
       email,
       password,
@@ -62,25 +64,19 @@ export const authService = {
     username: string,
     code: string
   ) {
-    try {
-      const response = await httpClient.post(
-        "/auth/confirm-verification-code",
-        {
-          email,
-          username,
-          password,
-          email_code: code,
-        }
-      );
-      const userData = UserReadSchema.parse(response.data);
-      await useUserStore().setUser(userData);
-      return true;
-    } catch (e) {
-      if (e instanceof ZodError) {
-        console.error("Ошибка валидации пользователя:", e.issues);
+    chatsService.disconnect();
+    const response = await httpClient.post(
+      "/auth/confirm-verification-code",
+      {
+        email,
+        username,
+        password,
+        email_code: code,
       }
-      return false;
-    }
+    );
+    const userData = UserReadSchema.parse(response.data);
+    await useUserStore().setUser(userData);
+    return userData;
   },
 
   async refreshTokens() {
@@ -106,6 +102,8 @@ export const authService = {
       }
       await useUserStore().clearUser();
       return false;
+    } finally {
+      chatsService.disconnect();
     }
   },
 

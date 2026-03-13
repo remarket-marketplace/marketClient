@@ -5,5 +5,5 @@
 </script>
 
 <template>
-    <p class="text-2xl font-bold title">{{ text }}</p>
+    <p class="text-2xl font-bold">{{ text }}</p>
 </template>
