@@ -16,8 +16,6 @@ import {
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
-import { storeToRefs } from 'pinia'
 import SelectLanguage from '@/components/SelectLanguage.vue'
 import SelectCurrency from '@/components/SelectCurrency.vue'
 import type { FunctionalComponent } from 'vue'
@@ -37,11 +35,9 @@ interface NavGroup {
   items: NavItem[]
 }
 
-const store = useUserStore()
 const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
-const { user } = storeToRefs(store)
 
 const isDesktop = ref(false)
 const mobileSidebarOpen = ref(false)
@@ -238,15 +234,6 @@ onUnmounted(() => {
             </section>
           </div>
 
-          <div class="mt-4 rounded-xl border border-dark-700/80 bg-dark-800/50 p-3 space-y-3">
-            <div class="grid grid-cols-2 gap-2">
-              <SelectCurrency />
-              <SelectLanguage />
-            </div>
-            <p v-if="user?.username" class="text-[11px] text-gray-400 truncate px-1">
-              @{{ user.username }}
-            </p>
-          </div>
         </div>
       </aside>
 
@@ -318,10 +305,6 @@ onUnmounted(() => {
               </section>
             </div>
 
-            <div class="mt-4 grid grid-cols-2 gap-2">
-              <SelectCurrency />
-              <SelectLanguage />
-            </div>
           </div>
         </aside>
       </Transition>
