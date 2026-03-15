@@ -38,6 +38,8 @@ interface ProductDirectUploadResponsePayload {
 export interface ProductsFilterParams {
   minPrice?: number;
   maxPrice?: number;
+  createdFrom?: string;
+  createdTo?: string;
 }
 
 export interface ProductCurrencyConfig {
@@ -58,6 +60,8 @@ function buildProductsFilterParams(filters?: ProductsFilterParams) {
 
   if (filters.minPrice !== undefined) params.min_price = filters.minPrice;
   if (filters.maxPrice !== undefined) params.max_price = filters.maxPrice;
+  if (filters.createdFrom) params.created_from = filters.createdFrom;
+  if (filters.createdTo) params.created_to = filters.createdTo;
 
   return params;
 }
@@ -80,6 +84,45 @@ export const productService = {
   ) {
     try {
       const response = await httpClient.get("/products/get/all", {
+        params: {
+          page,
+          per_page: perPage,
+          ...buildProductsFilterParams(filters),
+        },
+      });
+      return {
+        products: response.data.products.map((product: any) => {
+          const transformedProduct = {
+            ...product,
+            images: product.images.map((img: any) => ({
+              ...img,
+              url: img.url || img.image_url || "",
+            })),
+          };
+          return ProductSchema.parse(transformedProduct);
+        }),
+        totalPages: response.data.total_pages,
+        currentPage: response.data.page || page,
+        total: response.data.total,
+      };
+    } catch (e) {
+      if (e instanceof ZodError) console.error(e.issues);
+      return { products: [], totalPages: 1, currentPage: 1, total: 0 };
+    }
+  },
+
+  async getPopularProducts(
+    page: number,
+    perPage: number,
+    filters?: ProductsFilterParams,
+  ): Promise<{
+    products: Product[];
+    totalPages: number;
+    currentPage: number;
+    total: number;
+  }> {
+    try {
+      const response = await httpClient.get("/products/popular", {
         params: {
           page,
           per_page: perPage,

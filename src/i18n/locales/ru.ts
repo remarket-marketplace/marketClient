@@ -382,6 +382,10 @@ const ru = {
       filtersTitle: "Фильтры",
       priceFrom: "Цена от",
       priceTo: "Цена до",
+      dateFrom: "Добавлено с",
+      dateTo: "Добавлено до",
+      popularTitle: "Популярное",
+      popularEmpty: "Пока нет популярных товаров",
       resetFilters: "Сбросить",
       steamTopUp: {
         title: "Пополнение Steam",

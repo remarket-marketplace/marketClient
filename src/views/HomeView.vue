@@ -45,9 +45,11 @@ const subCategories = ref<Category[]>([])
 const selectedMainCategoryId = ref('')
 const selectedSubCategoryId = ref('')
 const products = ref<Product[]>([])
+const popularProducts = ref<Product[]>([])
 const totalPages = ref(1)
 const currentPage = ref(1)
 const perPage = ref(30)
+const popularPerPage = ref(8)
 const categoryPage = ref(1)
 const categoryTotalPages = ref(1)
 const subCategoryPage = ref(1)
@@ -66,7 +68,10 @@ const isLoadingMoreSubCategories = ref(false)
 const isSearchPagination = ref(false)
 const minPriceFilter = ref('')
 const maxPriceFilter = ref('')
+const createdFromFilter = ref('')
+const createdToFilter = ref('')
 const isFiltersOpen = ref(false)
+const isPopularProductsLoading = ref(false)
 const normalizedSearchQuery = computed(() => searchQuery.value.trim().toLowerCase())
 const categorySearchResults = computed(() => {
   if (normalizedSearchQuery.value.length < 1) return []
@@ -228,7 +233,7 @@ function isPricePresetActive(preset: PricePreset): boolean {
 
 async function onPricePresetClick(preset: PricePreset) {
   if (isPricePresetActive(preset)) {
-    clearProductFilters()
+    clearPriceFilters()
     await applyProductFilters()
     return
   }
@@ -441,6 +446,16 @@ async function loadProducts(page = 1, append = false) {
   isProductsLoading.value = false
 }
 
+async function loadPopularProducts() {
+  isPopularProductsLoading.value = true
+  const res = await productService.getPopularProducts(
+    1,
+    popularPerPage.value,
+  )
+  popularProducts.value = filterVisibleProducts(res.products)
+  isPopularProductsLoading.value = false
+}
+
 async function loadCategoryProducts(categoryId: string, page = 1, append = false) {
   if (append && isLoadingMore.value) return
   isLoadingMore.value = append
@@ -558,26 +573,62 @@ function parseFilterNumber(value: string | number | null | undefined): number | 
   return Number.isNaN(parsed) ? undefined : parsed
 }
 
+function parseDateFilter(value: string | null | undefined): string | undefined {
+  if (!value) return undefined
+  const normalized = value.trim()
+  if (!normalized) return undefined
+
+  const parsedDate = new Date(`${normalized}T00:00:00`)
+  if (Number.isNaN(parsedDate.getTime())) return undefined
+
+  return normalized
+}
+
 function getProductFiltersParams(): ProductsFilterParams {
   const minPriceRaw = parsePriceFilterInRub(minPriceFilter.value)
   const maxPriceRaw = parsePriceFilterInRub(maxPriceFilter.value)
+  const createdFromRaw = parseDateFilter(createdFromFilter.value)
+  const createdToRaw = parseDateFilter(createdToFilter.value)
 
-  if (minPriceRaw !== undefined && maxPriceRaw !== undefined && minPriceRaw > maxPriceRaw) {
-    return {
-      minPrice: maxPriceRaw,
-      maxPrice: minPriceRaw,
-    }
-  }
+  const minPrice =
+    minPriceRaw !== undefined && maxPriceRaw !== undefined && minPriceRaw > maxPriceRaw
+      ? maxPriceRaw
+      : minPriceRaw
+  const maxPrice =
+    minPriceRaw !== undefined && maxPriceRaw !== undefined && minPriceRaw > maxPriceRaw
+      ? minPriceRaw
+      : maxPriceRaw
+
+  const createdFrom =
+    createdFromRaw && createdToRaw && createdFromRaw > createdToRaw
+      ? createdToRaw
+      : createdFromRaw
+  const createdTo =
+    createdFromRaw && createdToRaw && createdFromRaw > createdToRaw
+      ? createdFromRaw
+      : createdToRaw
 
   return {
-    minPrice: minPriceRaw,
-    maxPrice: maxPriceRaw,
+    minPrice,
+    maxPrice,
+    createdFrom,
+    createdTo,
   }
 }
 
 function clearProductFilters() {
+  clearPriceFilters()
+  clearDateFilters()
+}
+
+function clearPriceFilters() {
   minPriceFilter.value = ''
   maxPriceFilter.value = ''
+}
+
+function clearDateFilters() {
+  createdFromFilter.value = ''
+  createdToFilter.value = ''
 }
 
 async function applyProductFilters() {
@@ -673,6 +724,7 @@ watch(
 onMounted(async () => {
   await Promise.all([
     loadProducts(),
+    loadPopularProducts(),
     loadMainCategories(),
     loadSearchableCategories(),
   ])
@@ -691,6 +743,7 @@ onBeforeUnmount(() => {
   observer?.disconnect()
   categoriesObserver?.disconnect()
 })
+
 </script>
 
 <template>
@@ -934,6 +987,47 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
+        <Title class="mt-12 w-full" :text="t('pages.index.popularTitle')" />
+
+        <div class="mt-4 w-full">
+          <div v-if="isPopularProductsLoading" class="products-grid grid gap-1 md:gap-2 w-full">
+            <div v-for="n in popularPerPage" :key="`popular-skeleton-${n}`" class="h-64 bg-dark-600 animate-pulse rounded-2xl" />
+          </div>
+
+          <div v-else-if="popularProducts.length === 0" class="w-full text-center text-sm text-gray-400">
+            {{ t('pages.index.popularEmpty') }}
+          </div>
+
+        <div v-else class="popular-marquee w-full">
+          <div class="popular-track">
+              <div class="popular-group">
+                <div
+                  v-for="product in popularProducts"
+                  :key="`popular-${product.id}`"
+                  class="popular-item"
+                >
+                  <MainProductCard
+                    :product="product"
+                    @click="goToProduct"
+                  />
+                </div>
+              </div>
+              <div class="popular-group" aria-hidden="true">
+                <div
+                  v-for="product in popularProducts"
+                  :key="`popular-loop-${product.id}`"
+                  class="popular-item"
+                >
+                  <MainProductCard
+                    :product="product"
+                    @click="goToProduct"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="mt-10 w-full sm:mt-16">
           <Title :text="t('common.categories')" />
 
@@ -941,12 +1035,19 @@ onBeforeUnmount(() => {
             <div v-for="n in 5" :key="n" class="h-16 w-16 bg-dark-600 animate-pulse rounded-lg sm:h-20 sm:w-20" />
           </div>
 
-          <div v-else ref="categoriesScroll" 
-               @wheel="handleCategoriesWheel"
-               class="overflow-x-auto overflow-y-hidden w-full relative">
+          <div
+            v-else
+            ref="categoriesScroll"
+            @wheel="handleCategoriesWheel"
+            class="overflow-x-auto overflow-y-hidden w-full relative"
+          >
             <div class="flex min-w-max gap-2 py-1.5 sm:gap-3 sm:py-2">
-              <div v-for="cat in mainCategories" :key="cat.id" @click="onMainCategoryClick(cat)"
-                class="flex-shrink-0 cursor-pointer flex flex-col items-center p-1.5 rounded-lg transition sm:p-2">
+              <div
+                v-for="cat in mainCategories"
+                :key="cat.id"
+                @click="onMainCategoryClick(cat)"
+                class="flex-shrink-0 cursor-pointer flex flex-col items-center p-1.5 rounded-lg transition sm:p-2"
+              >
                 <div class="h-12 w-12 flex items-center justify-center bg-dark-700 rounded-lg overflow-hidden border border-white/5 shadow-inner sm:h-16 sm:w-16">
                   <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="w-full h-full object-cover" />
                   <Folder v-else class="h-6 w-6 text-gray-400 sm:h-8 sm:w-8" />
@@ -1032,6 +1133,30 @@ onBeforeUnmount(() => {
                   </div>
                 </label>
               </div>
+
+              <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+                <label class="rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2.5 transition focus-within:border-blue-400/40 focus-within:bg-dark-700/55">
+                  <span class="block text-xs text-gray-400">{{ t('pages.index.dateFrom') }}</span>
+                  <input
+                    v-model="createdFromFilter"
+                    type="date"
+                    class="mt-1.5 w-full bg-transparent text-sm text-white outline-none placeholder-gray-500"
+                    :max="createdToFilter || undefined"
+                    @input="debouncedApplyProductFilters"
+                  />
+                </label>
+
+                <label class="rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2.5 transition focus-within:border-blue-400/40 focus-within:bg-dark-700/55">
+                  <span class="block text-xs text-gray-400">{{ t('pages.index.dateTo') }}</span>
+                  <input
+                    v-model="createdToFilter"
+                    type="date"
+                    class="mt-1.5 w-full bg-transparent text-sm text-white outline-none placeholder-gray-500"
+                    :min="createdFromFilter || undefined"
+                    @input="debouncedApplyProductFilters"
+                  />
+                </label>
+              </div>
             </div>
           </transition>
         </div>
@@ -1058,9 +1183,79 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.popular-marquee {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    #000 8%,
+    #000 92%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    #000 8%,
+    #000 92%,
+    transparent 100%
+  );
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+
+.popular-track {
+  display: flex;
+  width: max-content;
+  animation: popular-scroll 40s linear infinite;
+  will-change: transform;
+}
+
+.popular-group {
+  display: flex;
+  gap: 0.4rem;
+  padding-right: 0.4rem;
+}
+
+.popular-item {
+  flex: 0 0 176px;
+}
+
+.popular-item :deep(.product-title) {
+  font-size: 0.8rem;
+  line-height: 1.1rem;
+  height: 2.15rem;
+}
+
+.popular-item :deep(.group.relative.w-full) {
+  font-size: 0.75rem;
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+}
+
+.popular-marquee:hover .popular-track {
+  animation-play-state: paused;
+}
+
+@keyframes popular-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
 @media (min-width: 680px) {
   .products-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .popular-item {
+    flex-basis: 188px;
   }
 }
 
@@ -1068,11 +1263,25 @@ onBeforeUnmount(() => {
   .products-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+
+  .popular-item {
+    flex-basis: 200px;
+  }
 }
 
 @media (min-width: 1360px) {
   .products-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .popular-item {
+    flex-basis: 212px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popular-track {
+    animation: none;
   }
 }
 </style>

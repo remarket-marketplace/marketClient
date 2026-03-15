@@ -382,6 +382,10 @@ const en = {
       filtersTitle: "Filters",
       priceFrom: "Price from",
       priceTo: "Price to",
+      dateFrom: "Added from",
+      dateTo: "Added to",
+      popularTitle: "Popular",
+      popularEmpty: "No popular products yet",
       resetFilters: "Reset",
       steamTopUp: {
         title: "Steam Top-Up",
