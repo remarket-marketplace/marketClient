@@ -55,6 +55,7 @@ const offerError = ref<string | null>(null)
 const isOfferSubmitting = ref(false)
 const offeredPrice = ref<number | null>(null)
 const offerMessage = ref('')
+const OFFER_DISCOUNT_PRESETS = [10, 15, 20] as const
 const showInsufficientBalanceModal = ref(false)
 const insufficientBalanceDetails = ref<{
   balance: number
@@ -286,6 +287,34 @@ function openOfferConfirm() {
 function closeOfferConfirm() {
   showOfferConfirm.value = false
   offerError.value = null
+}
+
+function getOfferPriceForDiscount(discountPercent: number): number | null {
+  if (!product.value) return null
+
+  const currentPrice = Number(product.value.price)
+  if (!Number.isFinite(currentPrice) || currentPrice <= 0) return null
+
+  const discounted = currentPrice * (1 - discountPercent / 100)
+  const rounded = Number(discounted.toFixed(2))
+  const maxAllowed = Number((currentPrice - 0.01).toFixed(2))
+  return Math.max(0.01, Math.min(rounded, maxAllowed))
+}
+
+function applyOfferDiscount(discountPercent: number) {
+  const priceFromPreset = getOfferPriceForDiscount(discountPercent)
+  if (priceFromPreset === null) return
+
+  offeredPrice.value = priceFromPreset
+  offerError.value = null
+}
+
+function isDiscountPresetActive(discountPercent: number): boolean {
+  const currentOfferedPrice = Number(offeredPrice.value)
+  const presetPrice = getOfferPriceForDiscount(discountPercent)
+  if (!Number.isFinite(currentOfferedPrice) || presetPrice === null) return false
+
+  return Math.abs(currentOfferedPrice - presetPrice) < 0.001
 }
 
 async function handleOfferConfirm() {
@@ -795,6 +824,20 @@ onUnmounted(() => {
         <div class="space-y-3">
           <div>
             <label class="text-xs text-gray-300">{{ $t('pages.product.offerPriceConfirm.offeredPriceLabel') }}</label>
+            <div class="mt-2 flex flex-wrap gap-2">
+              <button
+                v-for="discount in OFFER_DISCOUNT_PRESETS"
+                :key="discount"
+                type="button"
+                class="rounded-md border px-2.5 py-1 text-xs font-medium transition-colors"
+                :class="isDiscountPresetActive(discount)
+                  ? 'border-emerald-400 bg-emerald-500/25 text-emerald-100'
+                  : 'border-emerald-700/50 bg-emerald-900/20 text-emerald-200 hover:bg-emerald-900/35'"
+                @click="applyOfferDiscount(discount)"
+              >
+                -{{ discount }}%
+              </button>
+            </div>
             <div class="relative mt-1">
               <input
                 v-model.number="offeredPrice"
