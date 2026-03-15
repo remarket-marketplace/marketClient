@@ -411,6 +411,13 @@ async function loadMoreMessages() {
 }
 
 async function loadChatMessages(chatId: string) {
+    if (selectedChatId.value === chatId) {
+        if (isMobile.value) {
+            mobileMode.value = 'chat'
+        }
+        return
+    }
+
     isLoading.value = true
     isChatLoading.value = true
     isChatPinning.value = false
