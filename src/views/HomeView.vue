@@ -3,6 +3,7 @@ import { categoryService } from '@/api/category/CategoryService'
 import { productService } from '@/api/product/ProductService'
 import { steamTopupService } from '@/api/steamTopup/steamTopupService'
 import MainProductCard from '@/components/mainProductCard.vue'
+import HomeProductListCard from '@/components/HomeProductListCard.vue'
 import SearchField from '@/components/SearchField.vue'
 import Title from '@/components/Title.vue'
 import HeroSection from '@/components/HeroSection.vue'
@@ -20,7 +21,7 @@ import type {
 } from '@/validation/steamTopup/steamTopup'
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Folder, SlidersHorizontal } from 'lucide-vue-next'
+import { Folder, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
 import axios from 'axios'
 import {
   convertCurrencyAmount,
@@ -69,6 +70,14 @@ const maxPriceFilter = ref('')
 const createdFromFilter = ref('')
 const createdToFilter = ref('')
 const isFiltersOpen = ref(false)
+type ProductCardViewMode = 'grid' | 'list'
+const PRODUCT_CARD_VIEW_MODE_STORAGE_KEY = 'home_product_card_view_mode'
+const productCardViewMode = ref<ProductCardViewMode>('grid')
+const loadingSkeletonCount = computed(() => (
+  productCardViewMode.value === 'grid'
+    ? perPage.value
+    : Math.min(perPage.value, 12)
+))
 const normalizedSearchQuery = computed(() => searchQuery.value.trim().toLowerCase())
 const categorySearchResults = computed(() => {
   if (normalizedSearchQuery.value.length < 1) return []
@@ -76,6 +85,17 @@ const categorySearchResults = computed(() => {
     .filter((category) => category.name.toLowerCase().includes(normalizedSearchQuery.value))
     .slice(0, 8)
 })
+
+function setProductCardViewMode(mode: ProductCardViewMode): void {
+  if (productCardViewMode.value === mode) return
+  productCardViewMode.value = mode
+}
+
+function restoreProductCardViewModeFromStorage(): void {
+  if (typeof window === 'undefined') return
+  const saved = window.localStorage.getItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY)
+  productCardViewMode.value = saved === 'list' ? 'list' : 'grid'
+}
 
 type SteamAmountMode = 'denomination' | 'quantity'
 
@@ -708,7 +728,13 @@ watch(
   },
 )
 
+watch(productCardViewMode, (mode) => {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY, mode)
+})
+
 onMounted(async () => {
+  restoreProductCardViewModeFromStorage()
   await Promise.all([
     loadProducts(),
     loadMainCategories(),
@@ -1006,20 +1032,54 @@ onBeforeUnmount(() => {
         <Title class="mt-12 w-full" :text="t('common.products')" />
 
         <div class="mt-4 w-full">
-          <button
-            type="button"
-            class="inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-semibold transition"
-            :class="isFiltersOpen
-              ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
-              : 'border-dark-600 bg-dark-700/40 text-gray-300 hover:border-dark-500 hover:bg-dark-700/55'"
-            :aria-expanded="isFiltersOpen"
-            :aria-label="t('pages.index.filtersTitle')"
-            :title="t('pages.index.filtersTitle')"
-            @click="toggleFiltersVisibility"
-          >
-            <SlidersHorizontal class="h-4 w-4" />
-            <span>{{ t('pages.index.filtersTitle') }}</span>
-          </button>
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <button
+              type="button"
+              class="inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-semibold transition"
+              :class="isFiltersOpen
+                ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
+                : 'border-dark-600 bg-dark-700/40 text-gray-300 hover:border-dark-500 hover:bg-dark-700/55'"
+              :aria-expanded="isFiltersOpen"
+              :aria-label="t('pages.index.filtersTitle')"
+              :title="t('pages.index.filtersTitle')"
+              @click="toggleFiltersVisibility"
+            >
+              <SlidersHorizontal class="h-4 w-4" />
+              <span>{{ t('pages.index.filtersTitle') }}</span>
+            </button>
+
+            <div
+              class="inline-flex h-10 items-center gap-1 rounded-xl border border-dark-600 bg-dark-700/40 p-1"
+              role="group"
+              :aria-label="t('pages.index.viewSwitcherLabel')"
+            >
+              <button
+                type="button"
+                class="inline-flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-semibold transition sm:px-3 sm:text-sm"
+                :class="productCardViewMode === 'grid'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+                :title="t('pages.index.viewGrid')"
+                @click="setProductCardViewMode('grid')"
+              >
+                <LayoutGrid class="h-4 w-4" />
+                <span class="hidden sm:inline">{{ t('pages.index.viewGrid') }}</span>
+              </button>
+
+              <button
+                type="button"
+                class="inline-flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-semibold transition sm:px-3 sm:text-sm"
+                :class="productCardViewMode === 'list'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+                :title="t('pages.index.viewList')"
+                @click="setProductCardViewMode('list')"
+              >
+                <Rows3 class="h-4 w-4" />
+                <span class="hidden sm:inline">{{ t('pages.index.viewList') }}</span>
+              </button>
+            </div>
+          </div>
 
           <transition
             enter-active-class="transition-all duration-200 ease-out"
@@ -1106,16 +1166,44 @@ onBeforeUnmount(() => {
           </transition>
         </div>
 
-        <div v-if="isProductsLoading" class="products-grid grid gap-1 md:gap-2 mt-6 w-full">
-          <div v-for="n in perPage" :key="n" class="h-64 bg-dark-600 animate-pulse rounded-2xl" />
+        <div
+          v-if="isProductsLoading"
+          class="mt-6 w-full"
+          :class="productCardViewMode === 'grid'
+            ? 'products-grid grid gap-1 md:gap-2'
+            : 'products-list flex flex-col gap-2 md:gap-3'"
+        >
+          <div
+            v-for="n in loadingSkeletonCount"
+            :key="n"
+            class="animate-pulse rounded-2xl bg-dark-600"
+            :class="productCardViewMode === 'grid' ? 'h-64' : 'h-[118px] sm:h-[134px]'"
+          />
         </div>
 
         <div v-else-if="products.length === 0" class="text-center text-gray-400 py-20">
           {{ t('pages.index.noProducts') }}
         </div>
 
-        <div v-else class="products-grid grid gap-1 md:gap-2 mt-6 w-full">
-          <MainProductCard v-for="product in products" :key="product.id" :product="product" @click="goToProduct" />
+        <div
+          v-else-if="productCardViewMode === 'grid'"
+          class="products-grid grid gap-1 md:gap-2 mt-6 w-full"
+        >
+          <MainProductCard
+            v-for="product in products"
+            :key="product.id"
+            :product="product"
+            @click="goToProduct"
+          />
+        </div>
+
+        <div v-else class="products-list mt-6 flex w-full flex-col gap-2 md:gap-3">
+          <HomeProductListCard
+            v-for="product in products"
+            :key="product.id"
+            :product="product"
+            @click="goToProduct"
+          />
         </div>
     </div>
 
