@@ -381,12 +381,17 @@ export const productService = {
     }
   },
 
-  async buyProduct(productId: string) {
+  async buyProduct(
+    productId: string,
+  ): Promise<{ success: boolean; chatId?: string; error?: ApiError }> {
     try {
-      await httpClient.post(`/products/buy`, {
+      const response = await httpClient.post(`/products/buy`, {
         product_id: productId,
       });
-      return { success: true };
+      return {
+        success: true,
+        chatId: response.data?.chat_room_id ?? undefined,
+      };
     } catch (error) {
       const apiError = ErrorHandler.handleApiError(error);
       return {

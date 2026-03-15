@@ -53,7 +53,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="h-full w-full flex items-center justify-center bg-background px-4">
+  <div class="w-full min-h-[calc(100dvh-7rem)] md:min-h-[calc(100dvh-3.5rem)] flex items-center justify-center bg-background px-4">
     <Loader v-if="tokenIsNotExpired === null" />
 
     <div v-if="tokenIsNotExpired === true"

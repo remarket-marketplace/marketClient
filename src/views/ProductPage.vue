@@ -21,6 +21,7 @@ import StyledUsername from '@/components/StyledUsername.vue'
 import { formatCurrencyAmount, getCurrencySymbol, resolvePreferredCurrency } from '@/utils/currency'
 import { storeToRefs } from 'pinia'
 import { buildCategoryKey, buildProductKey } from '@/utils/urlKeys'
+import { calculateDiscountPercent, calculateOfferedPriceByPercent } from '@/utils/priceOffer'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const NORMALIZED_API_HOST = String(API_HOST || '').replace(/\/$/, '')
@@ -82,7 +83,18 @@ const moderationRejectReasonLabel = computed(() => {
 
 const offerCurrencyCode = computed(() => resolvePreferredCurrency())
 const offerCurrencySymbol = computed(() => getCurrencySymbol(offerCurrencyCode.value))
+const OFFER_DISCOUNT_PRESETS = [10, 20, 30, 40] as const
 const SIMILAR_PRODUCTS_LIMIT = 8
+
+const productOfferBasePrice = computed(() => Number(product.value?.price ?? 0))
+const offerDiscountPercent = computed(() => calculateDiscountPercent(
+  productOfferBasePrice.value,
+  Number(offeredPrice.value),
+))
+const selectedOfferPreset = computed(() => {
+  if (offerDiscountPercent.value === null) return null
+  return OFFER_DISCOUNT_PRESETS.find((percent) => percent === offerDiscountPercent.value) ?? null
+})
 
 const displayedCategory = computed(() => {
   const currentCategory = product.value?.category
@@ -277,10 +289,20 @@ function openBuyConfirm() {
 
 function openOfferConfirm() {
   if (!product.value) return
-  offeredPrice.value = Math.max(1, Math.floor(Number(product.value.price) - 1))
+  const productPrice = Number(product.value.price)
+  offeredPrice.value = calculateOfferedPriceByPercent(productPrice, OFFER_DISCOUNT_PRESETS[0])
+    ?? Math.max(0.01, Math.round((productPrice - 0.01) * 100) / 100)
   offerMessage.value = ''
   offerError.value = null
   showOfferConfirm.value = true
+}
+
+function applyOfferDiscountPreset(percent: number) {
+  if (!product.value) return
+  const nextPrice = calculateOfferedPriceByPercent(Number(product.value.price), percent)
+  if (nextPrice === null) return
+  offeredPrice.value = nextPrice
+  offerError.value = null
 }
 
 function closeOfferConfirm() {
@@ -330,7 +352,11 @@ async function handleBuyConfirm() {
   showBuyConfirm.value = false
 
   if (result.success) {
-    router.push('/chats')
+    if (result.chatId) {
+      router.push({ name: 'chats', query: { chatId: result.chatId } })
+    } else {
+      router.push('/chats')
+    }
     return
   }
 
@@ -805,6 +831,40 @@ onUnmounted(() => {
               />
               <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 whitespace-nowrap text-xs text-gray-300">
                 {{ offerCurrencySymbol }} {{ offerCurrencyCode }}
+              </span>
+            </div>
+          </div>
+          <div>
+            <p class="text-xs text-gray-300">{{ $t('pages.product.offerPriceConfirm.quickDiscountsLabel') }}</p>
+            <div class="mt-2 flex flex-wrap gap-2">
+              <button
+                v-for="percent in OFFER_DISCOUNT_PRESETS"
+                :key="`offer-discount-${percent}`"
+                type="button"
+                class="rounded-full border px-3 py-1 text-xs font-semibold transition-colors"
+                :class="selectedOfferPreset === percent
+                  ? 'border-emerald-500/60 bg-emerald-500/20 text-emerald-200'
+                  : 'border-dark-600 bg-dark-700/50 text-gray-300 hover:border-emerald-500/40 hover:text-emerald-200'"
+                @click="applyOfferDiscountPreset(percent)"
+              >
+                -{{ percent }}%
+              </button>
+            </div>
+          </div>
+          <div
+            v-if="offerDiscountPercent !== null"
+            class="rounded-lg border border-emerald-700/30 bg-emerald-900/15 p-3"
+          >
+            <p class="text-xs text-gray-300">{{ $t('pages.product.offerPriceConfirm.previewLabel') }}</p>
+            <div class="mt-1 flex flex-wrap items-center gap-2">
+              <span class="text-xs text-gray-500 line-through">
+                {{ formatCurrencyAmount(Number(product?.price ?? 0), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+              </span>
+              <span class="text-sm font-semibold text-emerald-300">
+                {{ formatCurrencyAmount(Number(offeredPrice ?? 0), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+              </span>
+              <span class="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-200">
+                {{ $t('pages.product.offerPriceConfirm.discountBadge', { percent: offerDiscountPercent }) }}
               </span>
             </div>
           </div>

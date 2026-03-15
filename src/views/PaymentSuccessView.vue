@@ -3,7 +3,7 @@ import { CheckCircle } from 'lucide-vue-next'
 </script>
 
 <template>
-    <div class="h-full w-full flex items-center justify-center px-4">
+    <div class="w-full min-h-[calc(100dvh-7rem)] md:min-h-[calc(100dvh-3.5rem)] flex items-center justify-center px-4">
         <div class="max-w-md w-full bg-zinc-900/70 border border-zinc-800 rounded-2xl p-8 text-center shadow-xl">
             <div class="flex justify-center mb-6">
                 <div class="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
