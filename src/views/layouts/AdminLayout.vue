@@ -137,8 +137,6 @@ const navGroups = computed<NavGroup[]>(() => {
   ]
 })
 
-const mobileQuickNavItems = computed(() => pickNavItems(navItems.value, ['dashboard', 'users', 'deals', 'chats']))
-
 function isActiveRoute(item: NavItem): boolean {
   const currentPath = route.path
 
@@ -335,30 +333,12 @@ onUnmounted(() => {
         <main class="flex-1 min-h-0 overflow-hidden">
           <div
             class="h-full w-full 2xl:w-1/2 mx-auto px-1.5 lg:px-3"
-            :class="{ 'pb-16': !isDesktop }"
           >
             <slot />
           </div>
         </main>
       </div>
     </div>
-
-    <nav class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-30 h-14 border-t border-gray-700 lg:hidden">
-      <div class="grid h-full w-full grid-cols-4 items-center px-1">
-        <router-link
-          v-for="item in mobileQuickNavItems"
-          :key="item.id"
-          :to="item.to"
-          class="flex min-w-0 flex-col items-center justify-center rounded-md px-1 py-1.5 text-[10px] transition-colors"
-          :class="isActiveRoute(item)
-            ? 'bg-white/10 text-white'
-            : 'text-gray-400 hover:text-white hover:bg-white/5'"
-        >
-          <component :is="item.icon" class="h-4.5 w-4.5" />
-          <span class="mt-1 truncate max-w-full">{{ item.title }}</span>
-        </router-link>
-      </div>
-    </nav>
   </div>
 </template>
 
@@ -366,15 +346,6 @@ onUnmounted(() => {
 .h-full-dvh {
   height: 100vh;
   height: 100dvh;
-}
-
-.mobile-nav-glass {
-  background-color: var(--glass-bg-dark);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
-  border-top-width: 1px;
-  border-top-color: var(--overlay-white-15);
-  box-shadow: 0 -8px 24px var(--shadow-black-40);
 }
 
 .fade-enter-active,
