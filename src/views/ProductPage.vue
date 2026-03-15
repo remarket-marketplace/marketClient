@@ -56,7 +56,6 @@ const offerError = ref<string | null>(null)
 const isOfferSubmitting = ref(false)
 const offeredPrice = ref<number | null>(null)
 const offerMessage = ref('')
-const OFFER_DISCOUNT_PRESETS = [10, 15, 20] as const
 const showInsufficientBalanceModal = ref(false)
 const insufficientBalanceDetails = ref<{
   balance: number
