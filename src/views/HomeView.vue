@@ -45,11 +45,9 @@ const subCategories = ref<Category[]>([])
 const selectedMainCategoryId = ref('')
 const selectedSubCategoryId = ref('')
 const products = ref<Product[]>([])
-const popularProducts = ref<Product[]>([])
 const totalPages = ref(1)
 const currentPage = ref(1)
 const perPage = ref(30)
-const popularPerPage = ref(8)
 const categoryPage = ref(1)
 const categoryTotalPages = ref(1)
 const subCategoryPage = ref(1)
@@ -71,7 +69,6 @@ const maxPriceFilter = ref('')
 const createdFromFilter = ref('')
 const createdToFilter = ref('')
 const isFiltersOpen = ref(false)
-const isPopularProductsLoading = ref(false)
 const normalizedSearchQuery = computed(() => searchQuery.value.trim().toLowerCase())
 const categorySearchResults = computed(() => {
   if (normalizedSearchQuery.value.length < 1) return []
@@ -446,16 +443,6 @@ async function loadProducts(page = 1, append = false) {
   isProductsLoading.value = false
 }
 
-async function loadPopularProducts() {
-  isPopularProductsLoading.value = true
-  const res = await productService.getPopularProducts(
-    1,
-    popularPerPage.value,
-  )
-  popularProducts.value = filterVisibleProducts(res.products)
-  isPopularProductsLoading.value = false
-}
-
 async function loadCategoryProducts(categoryId: string, page = 1, append = false) {
   if (append && isLoadingMore.value) return
   isLoadingMore.value = append
@@ -724,7 +711,6 @@ watch(
 onMounted(async () => {
   await Promise.all([
     loadProducts(),
-    loadPopularProducts(),
     loadMainCategories(),
     loadSearchableCategories(),
   ])
@@ -987,47 +973,6 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <Title class="mt-12 w-full" :text="t('pages.index.popularTitle')" />
-
-        <div class="mt-4 w-full">
-          <div v-if="isPopularProductsLoading" class="products-grid grid gap-1 md:gap-2 w-full">
-            <div v-for="n in popularPerPage" :key="`popular-skeleton-${n}`" class="h-64 bg-dark-600 animate-pulse rounded-2xl" />
-          </div>
-
-          <div v-else-if="popularProducts.length === 0" class="w-full text-center text-sm text-gray-400">
-            {{ t('pages.index.popularEmpty') }}
-          </div>
-
-        <div v-else class="popular-marquee w-full">
-          <div class="popular-track">
-              <div class="popular-group">
-                <div
-                  v-for="product in popularProducts"
-                  :key="`popular-${product.id}`"
-                  class="popular-item"
-                >
-                  <MainProductCard
-                    :product="product"
-                    @click="goToProduct"
-                  />
-                </div>
-              </div>
-              <div class="popular-group" aria-hidden="true">
-                <div
-                  v-for="product in popularProducts"
-                  :key="`popular-loop-${product.id}`"
-                  class="popular-item"
-                >
-                  <MainProductCard
-                    :product="product"
-                    @click="goToProduct"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div class="mt-10 w-full sm:mt-16">
           <Title :text="t('common.categories')" />
 
@@ -1183,79 +1128,9 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.popular-marquee {
-  position: relative;
-  overflow: hidden;
-  width: 100%;
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent 0%,
-    #000 8%,
-    #000 92%,
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to right,
-    transparent 0%,
-    #000 8%,
-    #000 92%,
-    transparent 100%
-  );
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-size: 100% 100%;
-  mask-size: 100% 100%;
-}
-
-.popular-track {
-  display: flex;
-  width: max-content;
-  animation: popular-scroll 40s linear infinite;
-  will-change: transform;
-}
-
-.popular-group {
-  display: flex;
-  gap: 0.4rem;
-  padding-right: 0.4rem;
-}
-
-.popular-item {
-  flex: 0 0 176px;
-}
-
-.popular-item :deep(.product-title) {
-  font-size: 0.8rem;
-  line-height: 1.1rem;
-  height: 2.15rem;
-}
-
-.popular-item :deep(.group.relative.w-full) {
-  font-size: 0.75rem;
-  padding-top: 0.35rem;
-  padding-bottom: 0.35rem;
-}
-
-.popular-marquee:hover .popular-track {
-  animation-play-state: paused;
-}
-
-@keyframes popular-scroll {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
 @media (min-width: 680px) {
   .products-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .popular-item {
-    flex-basis: 188px;
   }
 }
 
@@ -1263,25 +1138,11 @@ onBeforeUnmount(() => {
   .products-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
-
-  .popular-item {
-    flex-basis: 200px;
-  }
 }
 
 @media (min-width: 1360px) {
   .products-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .popular-item {
-    flex-basis: 212px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .popular-track {
-    animation: none;
   }
 }
 </style>
