@@ -356,7 +356,17 @@ function switchTab(tab: 'products' | 'reviews' | 'purchases') {
 async function openReviewsTab() {
   switchTab('reviews')
   await nextTick()
-  tabsRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  if (!window.matchMedia('(min-width: 1024px)').matches) {
+    tabsRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+}
+
+async function openProductsTab() {
+  switchTab('products')
+  await nextTick()
+  if (!window.matchMedia('(min-width: 1024px)').matches) {
+    tabsRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 }
 
 function goToProduct(productKey: string) {
@@ -515,10 +525,18 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
             <!-- Stats -->
             <div class="grid grid-cols-3 gap-3">
-              <div class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600 min-h-[76px] space-y-1">
+              <button
+                type="button"
+                @click="openProductsTab"
+                :title="t('common.products')"
+                class="text-center p-3 rounded-lg bg-dark-700/50 border min-h-[76px] space-y-1 transition-colors"
+                :class="activeTab === 'products'
+                  ? 'border-blue-500/50 bg-blue-500/15'
+                  : 'border-dark-600 hover:border-blue-500/30 hover:bg-blue-500/10'"
+              >
                 <div class="text-lg font-bold text-white">{{ products.length }}</div>
                 <div class="text-xs text-gray-400">{{ t('common.products') }}</div>
-              </div>
+              </button>
               <button
                 type="button"
                 @click="openReviewsTab"
@@ -530,12 +548,6 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
               >
                 <div class="text-lg font-bold text-white">{{ reviews.length }}</div>
                 <div class="text-xs text-gray-400">{{ t('pages.profile.reviews') }}</div>
-                <div
-                  class="text-[11px]"
-                  :class="activeTab === 'reviews' ? 'text-blue-200' : 'text-blue-300/80'"
-                >
-                  {{ t('common.reviewsOpen', 'Открыть отзывы') }}
-                </div>
               </button>
               <div class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600 min-h-[76px] space-y-1">
                 <div class="text-lg font-bold text-white">{{ currentProfileData.rating }}</div>
