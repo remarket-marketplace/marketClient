@@ -345,6 +345,11 @@ const en = {
       feedback: "Feedback",
       activityLogs: "Logs",
       backToSite: "Back to site",
+      sections: {
+        overview: "Overview",
+        management: "Management",
+        communication: "Communication",
+      },
     },
     button: {
       about: "About",

@@ -345,6 +345,11 @@ const ru = {
       feedback: "Обращения",
       activityLogs: "Логи",
       backToSite: "Вернуться на сайт",
+      sections: {
+        overview: "Обзор",
+        management: "Управление",
+        communication: "Коммуникации",
+      },
     },
     button: {
       about: "О шаблоне",
