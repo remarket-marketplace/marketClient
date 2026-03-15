@@ -130,13 +130,31 @@ function formatDateLabelByKey(dateKey: string): string | null {
 
   const todayStart = toLocalDayStart(new Date())
   const diffDays = Math.round((todayStart.getTime() - date.getTime()) / msPerDay)
+  const localeCode = locale.value.startsWith('ru') ? 'ru-RU' : 'en-US'
 
-  if (diffDays === 0) return t('pages.chats.today')
-  if (diffDays === 1) return t('pages.chats.yesterday')
+  if (diffDays === 0) return capitalizeDateLabel(t('pages.chats.today'))
+  if (diffDays === 1) return capitalizeDateLabel(t('pages.chats.yesterday'))
   if (diffDays < 0) return null
 
+  const formatted = new Intl.DateTimeFormat(localeCode, { day: 'numeric', month: 'long' }).format(date)
+  return capitalizeDateLabel(formatted)
+}
+
+function capitalizeDateLabel(label: string): string {
   const localeCode = locale.value.startsWith('ru') ? 'ru-RU' : 'en-US'
-  return new Intl.DateTimeFormat(localeCode, { day: 'numeric', month: 'long' }).format(date)
+
+  return label
+    .split(' ')
+    .map((token) => {
+      const firstLetterIndex = token.search(/[A-Za-zА-Яа-яЁё]/)
+      if (firstLetterIndex === -1) return token
+
+      const prefix = token.slice(0, firstLetterIndex)
+      const first = token.charAt(firstLetterIndex).toLocaleUpperCase(localeCode)
+      const rest = token.slice(firstLetterIndex + 1)
+      return `${prefix}${first}${rest}`
+    })
+    .join(' ')
 }
 
 const chatTimelineItems = computed<ChatTimelineItem[]>(() => {
