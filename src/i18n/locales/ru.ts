@@ -160,6 +160,7 @@ const ru = {
       moderation: "Модерация",
       rejected: "Отклонено",
       purchased: "Продано",
+      sold: "Продано",
       completed: "Завершено",
       cancelled: "Отменено",
       disputed: "Спор",

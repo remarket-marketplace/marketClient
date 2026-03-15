@@ -161,6 +161,7 @@ const en = {
       moderation: "moderation",
       rejected: "rejected",
       purchased: "purchased",
+      sold: "sold",
       completed: "completed",
       cancelled: "cancelled",
       disputed: "disputed",
