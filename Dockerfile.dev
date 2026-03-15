@@ -2,12 +2,16 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
+RUN corepack enable && corepack prepare pnpm@8.15.8 --activate
 
-RUN npm install
+COPY package.json pnpm-lock.yaml ./
+
+RUN pnpm config set fetch-retries 10 \
+    && pnpm config set fetch-retry-maxtimeout 120000 \
+    && pnpm install --frozen-lockfile
 
 COPY . .
 
 EXPOSE 3333
 
-CMD ["npm", "run", "dev", "--", "--host"]
+CMD ["pnpm", "dev", "--host", "0.0.0.0", "--port", "3333"]

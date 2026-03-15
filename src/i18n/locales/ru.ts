@@ -678,6 +678,8 @@ const ru = {
       refundConfirmMessage: "Вы уверены что хотите сделать возврат по этой сделке?",
       report: "Пожаловаться",
       messagePlaceholder: "Введите сообщение...",
+      today: "Сегодня",
+      yesterday: "Вчера",
       waitReplyReminderSender: "Чтобы продолжить общение, дождитесь ответа собеседника.",
       waitReplyReminderRecipient: "Пользователь сможет отправлять вам сообщения только после вашего ответа.",
       newPurchase: "Новая покупка",
