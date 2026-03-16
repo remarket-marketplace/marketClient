@@ -985,7 +985,7 @@ async function createProduct() {
                         :max="priceInputMax"
                         :step="priceInputStep"
                         :placeholder="$t('pages.forms.createProduct.pricePlaceholder')"
-                        class="w-full outline-none rounded-lg bg-dark-600 border border-dark-700 px-4 py-3 text-lg font-semibold text-white"
+                        class="h-12 w-full rounded-lg border border-dark-700 bg-dark-600 px-4 pr-10 text-base font-semibold text-white outline-none"
                       />
                       <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 text-sm font-medium">
                         {{ currencySymbol }}
@@ -1012,7 +1012,7 @@ async function createProduct() {
                         type="number"
                         :min="PRODUCT_LIMITS.count.min"
                         :max="PRODUCT_LIMITS.count.max"
-                        class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white outline-none"
+                        class="h-12 w-full rounded-lg border border-dark-700 bg-dark-600 px-4 pr-14 text-base text-white outline-none"
                       />
                       <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
                         {{ $t('common.items') }}
