@@ -1049,33 +1049,33 @@ onBeforeUnmount(() => {
             </button>
 
             <div
-              class="inline-flex h-10 items-center gap-1 rounded-xl border border-dark-600 bg-dark-700/40 p-1"
+              class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-dark-600 bg-dark-700/40 p-0.5"
               role="group"
               :aria-label="t('pages.index.viewSwitcherLabel')"
             >
               <button
                 type="button"
-                class="inline-flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-semibold transition sm:px-3 sm:text-sm"
+                class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
                 :class="productCardViewMode === 'grid'
                   ? 'bg-blue-600 text-white'
                   : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
                 :title="t('pages.index.viewGrid')"
                 @click="setProductCardViewMode('grid')"
               >
-                <LayoutGrid class="h-4 w-4" />
+                <LayoutGrid class="h-3.5 w-3.5" />
                 <span class="hidden sm:inline">{{ t('pages.index.viewGrid') }}</span>
               </button>
 
               <button
                 type="button"
-                class="inline-flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-semibold transition sm:px-3 sm:text-sm"
+                class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
                 :class="productCardViewMode === 'list'
                   ? 'bg-blue-600 text-white'
                   : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
                 :title="t('pages.index.viewList')"
                 @click="setProductCardViewMode('list')"
               >
-                <Rows3 class="h-4 w-4" />
+                <Rows3 class="h-3.5 w-3.5" />
                 <span class="hidden sm:inline">{{ t('pages.index.viewList') }}</span>
               </button>
             </div>
@@ -1216,21 +1216,46 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-@media (min-width: 680px) {
+@media (min-width: 640px) {
   .products-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-@media (min-width: 980px) {
+@media (min-width: 860px) {
   .products-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
-@media (min-width: 1360px) {
+@media (min-width: 1080px) {
+  .products-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1320px) {
+  .products-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+/* When main content switches to 50% width (2xl layout), reset density to 4 cards. */
+@media (min-width: 1536px) {
   .products-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1920px) {
+  .products-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 2320px) {
+  .products-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
 </style>
