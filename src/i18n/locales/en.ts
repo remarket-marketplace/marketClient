@@ -972,6 +972,8 @@ const en = {
       notificationsTelegramStartHint: "Click connect and run the bot via /start in Telegram.",
       notificationsSaved: "Notification settings saved",
       notificationsConnectLinkOpened: "Link opened. Complete the setup in Telegram.",
+      notificationsTelegramPopupBlocked: "Could not open a new tab automatically. Click “Open Telegram” below.",
+      notificationsTelegramOpenLink: "Open Telegram",
       nicknameStyleCatalog: {
         default: {
           name: "Classic",
