@@ -279,7 +279,6 @@ function handleStepClick(step: StepNumber): void {
   const invalidStep = getFirstInvalidStep()
   if (invalidStep) {
     setCurrentStep(invalidStep)
-    showStepIssues.value = true
   }
 }
 
