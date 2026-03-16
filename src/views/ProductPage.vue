@@ -43,7 +43,7 @@ const store = useUserStore()
 const { user } = storeToRefs(store)
 
 const product = ref<Product | null>(null)
-const parentCategory = ref<Category | null>(null)
+const categoryBreadcrumbs = ref<Category[]>([])
 const similarProducts = ref<Product[]>([])
 const isSimilarProductsLoading = ref(false)
 const selectedImage = ref<ProductImage | null>(null)
@@ -96,33 +96,28 @@ const selectedOfferPreset = computed(() => {
   return OFFER_DISCOUNT_PRESETS.find((percent) => percent === offerDiscountPercent.value) ?? null
 })
 
-const displayedCategory = computed(() => {
-  const currentCategory = product.value?.category
-  if (!currentCategory) return null
-
-  if (!currentCategory.parent_id) {
-    return currentCategory
-  }
-
-  return parentCategory.value ?? currentCategory
-})
-
-const displayedSubcategory = computed(() => {
-  const currentCategory = product.value?.category
-  if (!currentCategory?.parent_id || !parentCategory.value) {
-    return null
-  }
-
-  return currentCategory
-})
-
 async function loadCategoryBreadcrumb(category: Category | null | undefined) {
-  if (!category?.parent_id) {
-    parentCategory.value = null
+  if (!category) {
+    categoryBreadcrumbs.value = []
     return
   }
 
-  parentCategory.value = await categoryService.getCategoryById(category.parent_id)
+  const breadcrumbs: Category[] = [category]
+  const visitedCategoryIds = new Set<string>([category.id])
+  let currentParentId = category.parent_id
+
+  while (currentParentId) {
+    const parent = await categoryService.getCategoryById(currentParentId)
+    if (!parent || visitedCategoryIds.has(parent.id)) {
+      break
+    }
+
+    breadcrumbs.unshift(parent)
+    visitedCategoryIds.add(parent.id)
+    currentParentId = parent.parent_id
+  }
+
+  categoryBreadcrumbs.value = breadcrumbs
 }
 
 async function loadSimilarProducts(baseProduct: Product) {
@@ -177,7 +172,7 @@ async function loadProductData() {
 
   product.value = null
   selectedImage.value = null
-  parentCategory.value = null
+  categoryBreadcrumbs.value = []
   similarProducts.value = []
 
   try {
@@ -212,22 +207,26 @@ onMounted(async () => {
   await loadProductData()
 })
 
-function goToCategoryPage(category: Category | null | undefined) {
-  const categoryKey = buildCategoryKey(category)
-  if (!categoryKey) return
-  router.push({ path: `/category/${categoryKey}` })
+function getCategoryRouteKey(category: Category | null | undefined) {
+  const categoryKey = buildCategoryKey(category) || category?.id
+  return categoryKey ?? ''
 }
 
-function goToCategoryPageWithSubcategory(
-  category: Category | null | undefined,
-  subcategory: Category | null | undefined,
-) {
-  const categoryKey = buildCategoryKey(category)
-  const subcategoryKey = buildCategoryKey(subcategory)
-  if (!categoryKey || !subcategoryKey) return
+function goToCategoryBreadcrumb(index: number) {
+  const rootCategory = categoryBreadcrumbs.value[0]
+  const rootCategoryKey = getCategoryRouteKey(rootCategory)
+  if (!rootCategoryKey) return
+
+  const nextPathSegments = categoryBreadcrumbs.value
+    .slice(1, index + 1)
+    .map((category) => getCategoryRouteKey(category))
+    .filter(Boolean)
+
+  const pathQuery = nextPathSegments.join('/')
+
   router.push({
-    path: `/category/${categoryKey}`,
-    query: { subcategory: subcategoryKey },
+    path: `/category/${rootCategoryKey}`,
+    query: pathQuery ? { path: pathQuery } : {},
   })
 }
 
@@ -517,6 +516,33 @@ onUnmounted(() => {
       <BackButton />
     </div>
 
+    <div
+      v-if="categoryBreadcrumbs.length"
+      class="w-full flex flex-wrap items-center gap-1 text-xs text-gray-300 sm:text-sm"
+    >
+      <button
+        type="button"
+        class="rounded px-1 py-0.5 transition hover:text-white"
+        @click="router.push('/')"
+      >
+        {{ $t('common.home') }}
+      </button>
+      <ChevronRight class="h-3.5 w-3.5 text-gray-500" />
+      <template v-for="(breadcrumb, index) in categoryBreadcrumbs" :key="`${breadcrumb.id}-${index}`">
+        <button
+          type="button"
+          class="rounded px-1 py-0.5 text-left transition hover:text-white"
+          @click="goToCategoryBreadcrumb(index)"
+        >
+          {{ breadcrumb.name }}
+        </button>
+        <ChevronRight
+          v-if="index < categoryBreadcrumbs.length - 1"
+          class="h-3.5 w-3.5 text-gray-500"
+        />
+      </template>
+    </div>
+
     <!-- Image gallery -->
     <div class="w-full grid grid-cols-1 gap-5 lg:gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
       <div class="w-full min-w-0 space-y-4">
@@ -590,25 +616,18 @@ onUnmounted(() => {
           <div class="flex items-center gap-3">
             <span class="text-gray-400 font-medium min-w-20">{{ $t('common.category') }}:</span>
             <div
-              v-if="displayedCategory"
-              class="min-w-0 flex items-center gap-1 text-white"
+              v-if="categoryBreadcrumbs.length"
+              class="min-w-0 flex flex-wrap items-center gap-1 text-white"
             >
-              <button
-                type="button"
-                class="truncate text-left text-white transition hover:text-blue-300 hover:underline"
-                @click="goToCategoryPage(displayedCategory)"
-              >
-                {{ displayedCategory.name }}
-              </button>
-              <template v-if="displayedSubcategory">
-                <span class="text-gray-500">/</span>
+              <template v-for="(breadcrumb, index) in categoryBreadcrumbs" :key="`${breadcrumb.id}-meta-${index}`">
                 <button
                   type="button"
                   class="truncate text-left text-white transition hover:text-blue-300 hover:underline"
-                  @click="goToCategoryPageWithSubcategory(displayedCategory, displayedSubcategory)"
+                  @click="goToCategoryBreadcrumb(index)"
                 >
-                  {{ displayedSubcategory.name }}
+                  {{ breadcrumb.name }}
                 </button>
+                <span v-if="index < categoryBreadcrumbs.length - 1" class="text-gray-500">/</span>
               </template>
             </div>
             <span v-else class="text-white">{{ $t('common.notSpecified') }}</span>
