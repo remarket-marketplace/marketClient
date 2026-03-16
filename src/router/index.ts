@@ -22,7 +22,8 @@ const routes = [
       meta: { requiredGuest: true },
     },
     {
-      path: "/password-reset-email",
+      path: "/password-reset",
+      alias: "/password-reset-email",
       name: "password reset email",
       component: () => import("@/views/resetPassword/EnterResetEmailView.vue"),
     },
