@@ -529,10 +529,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 type="button"
                 @click="openProductsTab"
                 :title="t('common.products')"
-                class="text-center p-3 rounded-lg bg-dark-700/50 border min-h-[76px] space-y-1 transition-colors"
-                :class="activeTab === 'products'
-                  ? 'border-blue-500/50 bg-blue-500/15'
-                  : 'border-dark-600 hover:border-blue-500/30 hover:bg-blue-500/10'"
+                class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600 min-h-[76px] space-y-1"
               >
                 <div class="text-lg font-bold text-white">{{ products.length }}</div>
                 <div class="text-xs text-gray-400">{{ t('common.products') }}</div>
@@ -541,10 +538,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 type="button"
                 @click="openReviewsTab"
                 :title="t('pages.profile.reviews')"
-                class="text-center p-3 rounded-lg bg-dark-700/50 border min-h-[76px] space-y-1 transition-colors"
-                :class="activeTab === 'reviews'
-                  ? 'border-blue-500/50 bg-blue-500/15'
-                  : 'border-dark-600 hover:border-blue-500/30 hover:bg-blue-500/10'"
+                class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600 min-h-[76px] space-y-1"
               >
                 <div class="text-lg font-bold text-white">{{ reviews.length }}</div>
                 <div class="text-xs text-gray-400">{{ t('pages.profile.reviews') }}</div>
