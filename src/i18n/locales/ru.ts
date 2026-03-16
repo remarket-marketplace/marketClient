@@ -957,6 +957,8 @@ const ru = {
       notificationsTelegramStartHint: "Нажмите кнопку и запустите бота в Telegram через команду /start.",
       notificationsSaved: "Настройки уведомлений сохранены",
       notificationsConnectLinkOpened: "Ссылка открыта. Завершите подключение в Telegram.",
+      notificationsTelegramPopupBlocked: "Не удалось автоматически открыть вкладку. Нажмите «Открыть Telegram» ниже.",
+      notificationsTelegramOpenLink: "Открыть Telegram",
       customPrimaryColor: "Основной цвет",
       customSecondaryColor: "Вторичный цвет",
       customGlowColor: "Цвет свечения",
