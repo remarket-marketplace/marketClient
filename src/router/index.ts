@@ -111,6 +111,12 @@ const routes = [
       meta: { requiredAdmin: true },
     },
     {
+      path: "/admin/payments",
+      name: "admin payments",
+      component: () => import("@/views/admin/AdminPaymentsView.vue"),
+      meta: { requiredAdmin: true },
+    },
+    {
       path: "/admin/deal/:id",
       name: "deal",
       component: () => import("@/views/admin/AdminDealView.vue"),
