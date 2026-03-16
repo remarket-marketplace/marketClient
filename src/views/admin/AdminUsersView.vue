@@ -12,6 +12,7 @@ import {
   Ban,
   UserCheck,
   Loader2,
+  SlidersHorizontal,
 } from 'lucide-vue-next';
 import SearchField from '@/components/SearchField.vue';
 import CustomSelect from '@/components/CustomSelect.vue';
@@ -30,6 +31,7 @@ const searchQuery = ref('')
 const sortBy = ref('created_desc')
 const statusFilter = ref('all')
 const roleFilter = ref('all')
+const isMobileFiltersOpen = ref(false)
 const dropdownOpenId = ref<string | null>(null); // Для отслеживания открытого dropdown
 const confirmWindowOpen = ref(false)
 const userToBan = ref<string | null>(null)
@@ -321,7 +323,28 @@ watch(sortedUsers, () => {
         :placeholder="$t('common.search')"
     />
 
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+    <div class="sm:hidden">
+      <button
+        type="button"
+        class="admin-btn admin-btn-ghost w-full justify-center"
+        :class="{ 'border-blue-500/40 text-blue-300': isMobileFiltersOpen }"
+        @click="isMobileFiltersOpen = !isMobileFiltersOpen"
+      >
+        <SlidersHorizontal class="w-4 h-4" />
+        <span>
+          {{
+            isMobileFiltersOpen
+              ? $t('pages.admin.activityLogs.hideFilters')
+              : $t('pages.admin.activityLogs.showFilters')
+          }}
+        </span>
+      </button>
+    </div>
+
+    <div
+      class="grid grid-cols-1 sm:grid-cols-3 gap-2"
+      :class="{ 'hidden sm:grid': !isMobileFiltersOpen }"
+    >
       <CustomSelect
         v-model="sortBy"
         :options="[

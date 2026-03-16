@@ -529,10 +529,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 type="button"
                 @click="openProductsTab"
                 :title="t('common.products')"
-                class="text-center p-3 rounded-lg bg-dark-700/50 border min-h-[76px] space-y-1 transition-colors"
-                :class="activeTab === 'products'
-                  ? 'border-blue-500/50 bg-blue-500/15'
-                  : 'border-dark-600 hover:border-blue-500/30 hover:bg-blue-500/10'"
+                class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600 min-h-[76px] space-y-1"
               >
                 <div class="text-lg font-bold text-white">{{ products.length }}</div>
                 <div class="text-xs text-gray-400">{{ t('common.products') }}</div>
@@ -541,10 +538,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 type="button"
                 @click="openReviewsTab"
                 :title="t('pages.profile.reviews')"
-                class="text-center p-3 rounded-lg bg-dark-700/50 border min-h-[76px] space-y-1 transition-colors"
-                :class="activeTab === 'reviews'
-                  ? 'border-blue-500/50 bg-blue-500/15'
-                  : 'border-dark-600 hover:border-blue-500/30 hover:bg-blue-500/10'"
+                class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600 min-h-[76px] space-y-1"
               >
                 <div class="text-lg font-bold text-white">{{ reviews.length }}</div>
                 <div class="text-xs text-gray-400">{{ t('pages.profile.reviews') }}</div>
@@ -909,14 +903,20 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
             <div class="space-y-2">
               <label class="block text-sm font-medium text-gray-300">{{ t('pages.profile.profileLink') }}</label>
-              <div class="flex flex-col sm:flex-row gap-2">
-                <div class="w-full min-w-0 flex-1">
-                  <input type="text" :value="profileUrl" readonly
-                    class="w-full min-w-0 px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-sm text-white outline-none" />
+              <div class="space-y-2">
+                <div class="w-full min-w-0">
+                  <input
+                    type="text"
+                    :value="profileUrl"
+                    readonly
+                    class="w-full min-w-0 px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-sm text-white outline-none"
+                  />
                 </div>
-                <button @click="copyProfileLink"
-                  class="w-full sm:w-auto sm:flex-shrink-0 rounded-lg border border-transparent px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 flex items-center justify-center gap-2 whitespace-nowrap"
-                  :class="isCopied ? 'bg-green-600 hover:bg-green-700' : 'bg-button-main hover:bg-blue-700'">
+                <button
+                  @click="copyProfileLink"
+                  class="w-full rounded-lg border border-transparent px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 flex items-center justify-center gap-2"
+                  :class="isCopied ? 'bg-green-600 hover:bg-green-700' : 'bg-button-main hover:bg-blue-700'"
+                >
                   <Check v-if="isCopied" class="w-4 h-4" />
                   <Copy v-else class="w-4 h-4" />
                   {{ isCopied ? t('common.copied') : t('common.copy') }}

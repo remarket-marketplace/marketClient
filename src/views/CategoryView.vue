@@ -10,6 +10,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { buildCategoryKey, extractIdFromSlugKey } from '@/utils/urlKeys'
+import { ChevronRight } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -18,28 +19,47 @@ const API_HOST = import.meta.env.VITE_API_HOST
 
 const category = ref<Category | null>(null)
 const subcategories = ref<Category[]>([])
-const selectedSubcategorySlug = ref('')
+const selectedCategoryPath = ref<Category[]>([])
 const products = ref<Product[]>([])
 const currentPage = ref(1)
 const totalPages = ref(1)
 const perPage = ref(30)
 const isCategoryLoading = ref(true)
+const isSubcategoriesLoading = ref(false)
 const isProductsLoading = ref(true)
 const isLoadingMore = ref(false)
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 
 const categoryKey = computed(() => String(route.params.categoryId ?? ''))
-const requestedSubcategoryRaw = computed(() => {
-  const subcategory = route.query.subcategory
-  if (Array.isArray(subcategory)) {
-    return String(subcategory[0] ?? '')
+const requestedPathRaw = computed(() => {
+  const path = route.query.path
+  if (Array.isArray(path)) {
+    return String(path[0] ?? '')
   }
-  return String(subcategory ?? '')
+  if (typeof path === 'string' && path.trim()) {
+    return path
+  }
+
+  // Legacy single-level query support.
+  const legacySubcategory = route.query.subcategory
+  if (Array.isArray(legacySubcategory)) {
+    return String(legacySubcategory[0] ?? '')
+  }
+  return String(legacySubcategory ?? '')
 })
 
 const categoryBannerUrl = computed(() => {
   return resolveCategoryImageUrl(category.value?.banner_url ?? null)
+})
+
+const breadcrumbItems = computed(() => {
+  const items: Category[] = []
+  if (category.value) {
+    items.push(category.value)
+  }
+  items.push(...selectedCategoryPath.value)
+  return items
 })
 
 function resolveCategoryImageUrl(imageUrl: string | null): string {
@@ -57,98 +77,153 @@ function goToProduct(productKey: string) {
   router.push({ path: `/product/${productKey}` })
 }
 
-function getSubcategoryBySlug(slug: string) {
-  return subcategories.value.find((subcategory) => subcategory.slug === slug) ?? null
+function goHome() {
+  router.push('/')
 }
 
-function getSubcategoryByQueryKey(key: string) {
-  const normalizedKey = key.trim()
+function getRootCategoryKey() {
+  return buildCategoryKey(category.value) || categoryKey.value
+}
+
+function normalizePathQueryValue(value: string): string {
+  return value
+    .split('/')
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+    .join('/')
+}
+
+function splitPathQueryValue(value: string): string[] {
+  const normalized = normalizePathQueryValue(value)
+  if (!normalized) return []
+  return normalized.split('/')
+}
+
+function findCategoryByQueryKey(categories: Category[], rawKey: string) {
+  const normalizedKey = rawKey.trim()
   if (!normalizedKey) return null
 
-  const bySlug = getSubcategoryBySlug(normalizedKey)
+  const bySlug = categories.find((item) => item.slug === normalizedKey)
   if (bySlug) return bySlug
 
   const extractedId = extractIdFromSlugKey(normalizedKey)
-  if (!extractedId) return null
-  return subcategories.value.find((subcategory) => subcategory.id === extractedId) ?? null
+  if (extractedId) {
+    const byExtractedId = categories.find((item) => item.id === extractedId)
+    if (byExtractedId) return byExtractedId
+  }
+
+  return categories.find((item) => item.id === normalizedKey) ?? null
+}
+
+function getPathQueryFromState(path = selectedCategoryPath.value): string {
+  return path
+    .map((item) => buildCategoryKey(item) || item.id)
+    .filter(Boolean)
+    .join('/')
 }
 
 function getActiveCategoryFilterKey() {
-  if (!selectedSubcategorySlug.value) {
-    return categoryKey.value
+  const activeCategory = selectedCategoryPath.value[selectedCategoryPath.value.length - 1]
+  if (activeCategory) {
+    return buildCategoryKey(activeCategory) || activeCategory.id
   }
-  return selectedSubcategorySlug.value
+  return getRootCategoryKey()
 }
 
-async function onSubcategoryClick(slug: string) {
-  if (!slug) {
+async function syncPathQueryWithState() {
+  const resolvedCategoryKey = getRootCategoryKey()
+  const currentPath = normalizePathQueryValue(requestedPathRaw.value)
+  const nextPath = getPathQueryFromState()
+  const hasLegacySubcategoryQuery = Object.prototype.hasOwnProperty.call(route.query, 'subcategory')
+
+  if (currentPath === nextPath && !hasLegacySubcategoryQuery) {
     return
   }
 
-  if (selectedSubcategorySlug.value === slug) {
-    selectedSubcategorySlug.value = ''
+  const nextQuery = { ...route.query } as Record<string, string | string[] | null | undefined>
+  delete nextQuery.subcategory
+  if (nextPath) {
+    nextQuery.path = nextPath
   } else {
-    selectedSubcategorySlug.value = slug
+    delete nextQuery.path
   }
 
-  const resolvedCategoryKey = buildCategoryKey(category.value) || categoryKey.value
-  if (selectedSubcategorySlug.value) {
-    await router.replace({
-      path: `/category/${resolvedCategoryKey}`,
-      query: { subcategory: selectedSubcategorySlug.value },
-    })
-  } else {
-    await router.replace({
-      path: `/category/${resolvedCategoryKey}`,
-      query: {},
-    })
+  await router.replace({ path: `/category/${resolvedCategoryKey}`, query: nextQuery })
+}
+
+async function resolveCategoryPath(pathSegments: string[]) {
+  const resolvedPath: Category[] = []
+  let parentKey = getRootCategoryKey()
+
+  for (const segment of pathSegments) {
+    const response = await categoryService.getSubcategories(parentKey, 1, 100)
+    const matched = findCategoryByQueryKey(response.categories, segment)
+    if (!matched) break
+    resolvedPath.push(matched)
+    parentKey = buildCategoryKey(matched) || matched.id
   }
 
-  await loadCategoryProducts(1, false)
+  return resolvedPath
+}
+
+async function loadSubcategoriesForActiveCategory() {
+  isSubcategoriesLoading.value = true
+  try {
+    const response = await categoryService.getSubcategories(getActiveCategoryFilterKey(), 1, 100)
+    subcategories.value = response.categories
+  } finally {
+    isSubcategoriesLoading.value = false
+  }
+}
+
+async function applyPathFromQuery(pathRaw: string) {
+  if (!category.value) return
+  const requestedPath = splitPathQueryValue(pathRaw)
+  selectedCategoryPath.value = await resolveCategoryPath(requestedPath)
+  await Promise.all([
+    loadSubcategoriesForActiveCategory(),
+    loadCategoryProducts(1, false),
+  ])
+  await syncPathQueryWithState()
+}
+
+async function onSubcategoryClick(subcategory: Category) {
+  selectedCategoryPath.value = [...selectedCategoryPath.value, subcategory]
+  await syncPathQueryWithState()
+  await Promise.all([
+    loadSubcategoriesForActiveCategory(),
+    loadCategoryProducts(1, false),
+  ])
+}
+
+async function onBreadcrumbClick(index: number) {
+  if (!category.value) return
+  // index 0 is root category; following items are nested path entries.
+  selectedCategoryPath.value = index <= 0 ? [] : selectedCategoryPath.value.slice(0, index)
+  await syncPathQueryWithState()
+  await Promise.all([
+    loadSubcategoriesForActiveCategory(),
+    loadCategoryProducts(1, false),
+  ])
 }
 
 async function loadCategoryMeta() {
   isCategoryLoading.value = true
   category.value = await categoryService.getCategoryById(categoryKey.value)
-  const resolvedCategoryKey = buildCategoryKey(category.value) || categoryKey.value
 
   if (!category.value) {
     subcategories.value = []
-    selectedSubcategorySlug.value = ''
+    selectedCategoryPath.value = []
     isCategoryLoading.value = false
     return
   }
 
+  const resolvedCategoryKey = getRootCategoryKey()
   if (resolvedCategoryKey && resolvedCategoryKey !== categoryKey.value) {
     await router.replace({
       path: `/category/${resolvedCategoryKey}`,
       query: route.query,
     })
-  }
-
-  const subcategoriesResponse = await categoryService.getSubcategories(resolvedCategoryKey, 1, 100)
-  subcategories.value = subcategoriesResponse.categories
-  const requestedSubcategory = getSubcategoryByQueryKey(requestedSubcategoryRaw.value)
-  if (requestedSubcategory) {
-    selectedSubcategorySlug.value = requestedSubcategory.slug
-    const canonicalSubcategoryKey = requestedSubcategory.slug
-    if (
-      canonicalSubcategoryKey
-      && canonicalSubcategoryKey !== requestedSubcategoryRaw.value
-    ) {
-      await router.replace({
-        path: `/category/${resolvedCategoryKey}`,
-        query: { subcategory: canonicalSubcategoryKey },
-      })
-    }
-  } else {
-    selectedSubcategorySlug.value = ''
-    if (requestedSubcategoryRaw.value) {
-      await router.replace({
-        path: `/category/${resolvedCategoryKey}`,
-        query: {},
-      })
-    }
   }
   isCategoryLoading.value = false
 }
@@ -174,7 +249,12 @@ async function loadCategoryProducts(page = 1, append = false) {
 async function loadCategoryPageData() {
   if (!categoryKey.value) return
   await loadCategoryMeta()
-  await loadCategoryProducts(1, false)
+  if (!category.value) {
+    products.value = []
+    isProductsLoading.value = false
+    return
+  }
+  await applyPathFromQuery(requestedPathRaw.value)
 }
 
 async function loadMoreProducts() {
@@ -186,32 +266,15 @@ watch(categoryKey, async () => {
   await loadCategoryPageData()
 })
 
-watch(requestedSubcategoryRaw, async (newValue) => {
-  if (!newValue) {
-    if (!selectedSubcategorySlug.value) {
-      return
-    }
-    selectedSubcategorySlug.value = ''
-    await loadCategoryProducts(1, false)
+watch(requestedPathRaw, async (nextValue) => {
+  if (!category.value) return
+  const nextPath = normalizePathQueryValue(nextValue)
+  const currentPath = getPathQueryFromState()
+  const hasLegacySubcategoryQuery = Object.prototype.hasOwnProperty.call(route.query, 'subcategory')
+  if (nextPath === currentPath && !hasLegacySubcategoryQuery) {
     return
   }
-
-  const resolvedSubcategory = getSubcategoryByQueryKey(newValue)
-  if (!resolvedSubcategory) {
-    if (!selectedSubcategorySlug.value) {
-      return
-    }
-    selectedSubcategorySlug.value = ''
-    await loadCategoryProducts(1, false)
-    return
-  }
-
-  if (selectedSubcategorySlug.value === resolvedSubcategory.slug) {
-    return
-  }
-
-  selectedSubcategorySlug.value = resolvedSubcategory.slug
-  await loadCategoryProducts(1, false)
+  await applyPathFromQuery(nextValue)
 })
 
 onMounted(async () => {
@@ -276,9 +339,38 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="category-content-shell mt-8">
+      <div
+        v-if="breadcrumbItems.length"
+        class="mb-5 flex flex-wrap items-center gap-1.5 text-xs text-gray-300 sm:text-sm"
+      >
+        <button
+          type="button"
+          class="rounded px-1 py-0.5 transition hover:text-white"
+          @click="goHome"
+        >
+          {{ t('common.home') }}
+        </button>
+        <ChevronRight class="h-3.5 w-3.5 text-gray-500" />
+        <template v-for="(breadcrumb, index) in breadcrumbItems" :key="`${breadcrumb.id}-${index}`">
+          <button
+            type="button"
+            class="rounded px-1 py-0.5 transition"
+            :class="index === breadcrumbItems.length - 1 ? 'text-white cursor-default' : 'hover:text-white'"
+            :disabled="index === breadcrumbItems.length - 1"
+            @click="onBreadcrumbClick(index)"
+          >
+            {{ breadcrumb.name }}
+          </button>
+          <ChevronRight
+            v-if="index < breadcrumbItems.length - 1"
+            class="h-3.5 w-3.5 text-gray-500"
+          />
+        </template>
+      </div>
+
       <div>
         <Title :text="t('common.subcategories')" />
-        <div v-if="isCategoryLoading" class="mt-4 flex gap-2">
+        <div v-if="isCategoryLoading || isSubcategoriesLoading" class="mt-4 flex gap-2">
           <div v-for="n in 4" :key="n" class="h-10 w-28 animate-pulse rounded-lg bg-dark-600"></div>
         </div>
         <div v-else-if="subcategories.length" class="mt-4 flex flex-wrap gap-2">
@@ -286,11 +378,8 @@ onBeforeUnmount(() => {
             v-for="subcategory in subcategories"
             :key="subcategory.id"
             type="button"
-            class="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm text-white transition"
-            :class="selectedSubcategorySlug === subcategory.slug
-              ? 'border-blue-500 bg-blue-600/20'
-              : 'border-dark-600 bg-dark-700/30 hover:bg-dark-700/50'"
-            @click="onSubcategoryClick(subcategory.slug)"
+            class="inline-flex items-center gap-2 rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2 text-sm text-white transition hover:bg-dark-700/50"
+            @click="onSubcategoryClick(subcategory)"
           >
             <img
               v-if="subcategory.image_url"

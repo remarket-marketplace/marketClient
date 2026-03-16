@@ -202,6 +202,11 @@ const routes = [
       component: () => import("@/views/AboutView.vue"),
     },
     {
+      path: "/rules",
+      name: "market rules",
+      component: () => import("@/views/MarketplaceRulesView.vue"),
+    },
+    {
       path: "/terms",
       name: "terms",
       component: () => import("@/views/TermsOfServiceView.vue"),

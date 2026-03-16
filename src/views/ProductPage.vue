@@ -91,10 +91,6 @@ const offerDiscountPercent = computed(() => calculateDiscountPercent(
   productOfferBasePrice.value,
   Number(offeredPrice.value),
 ))
-const selectedOfferPreset = computed(() => {
-  if (offerDiscountPercent.value === null) return null
-  return OFFER_DISCOUNT_PRESETS.find((percent) => percent === offerDiscountPercent.value) ?? null
-})
 
 const displayedCategory = computed(() => {
   const currentCategory = product.value?.category
@@ -295,14 +291,6 @@ function openOfferConfirm() {
   offerMessage.value = ''
   offerError.value = null
   showOfferConfirm.value = true
-}
-
-function applyOfferDiscountPreset(percent: number) {
-  if (!product.value) return
-  const nextPrice = calculateOfferedPriceByPercent(Number(product.value.price), percent)
-  if (nextPrice === null) return
-  offeredPrice.value = nextPrice
-  offerError.value = null
 }
 
 function closeOfferConfirm() {
@@ -874,23 +862,6 @@ onUnmounted(() => {
               <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 whitespace-nowrap text-xs text-gray-300">
                 {{ offerCurrencySymbol }} {{ offerCurrencyCode }}
               </span>
-            </div>
-          </div>
-          <div>
-            <p class="text-xs text-gray-300">{{ $t('pages.product.offerPriceConfirm.quickDiscountsLabel') }}</p>
-            <div class="mt-2 flex flex-wrap gap-2">
-              <button
-                v-for="percent in OFFER_DISCOUNT_PRESETS"
-                :key="`offer-discount-${percent}`"
-                type="button"
-                class="rounded-full border px-3 py-1 text-xs font-semibold transition-colors"
-                :class="selectedOfferPreset === percent
-                  ? 'border-emerald-500/60 bg-emerald-500/20 text-emerald-200'
-                  : 'border-dark-600 bg-dark-700/50 text-gray-300 hover:border-emerald-500/40 hover:text-emerald-200'"
-                @click="applyOfferDiscountPreset(percent)"
-              >
-                -{{ percent }}%
-              </button>
             </div>
           </div>
           <div
