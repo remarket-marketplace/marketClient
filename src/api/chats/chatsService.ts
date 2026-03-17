@@ -14,6 +14,10 @@ import {
   RefusalReasonsListSchema,
   type RefusalReasonsList,
 } from "@/validation/deal/deal";
+import {
+  InboxNotificationSchema,
+  type InboxNotification,
+} from "@/validation/user/inboxNotifications";
 
 let socket: Socket | null = null;
 
@@ -21,6 +25,7 @@ type MessageCallback = (message: ChatMessageUnion) => void;
 type ChatUpdatedCallback = (data: ChatUpdateSchema) => void;
 type ChatNotificationCallback = (data: ChatUpdateSchema) => void;
 type MessagesReadCallback = (data: MessagesReadPayload) => void;
+type NotificationCreatedCallback = (data: InboxNotification) => void;
 
 const WS_API_HOST = import.meta.env.VITE_WS_API_HOST;
 
@@ -28,6 +33,7 @@ const newMessageCallbacks: MessageCallback[] = [];
 const chatUpdatedCallbacks: ChatUpdatedCallback[] = [];
 const chatNotificationCallbacks: ChatNotificationCallback[] = [];
 const messagesReadCallbacks: MessagesReadCallback[] = [];
+const notificationCreatedCallbacks: NotificationCreatedCallback[] = [];
 
 let lastSubscribedChatId: string | null = null;
 let heartbeatIntervalHandle: number | null = null;
@@ -166,6 +172,15 @@ export const chatsService = {
           messagesReadCallbacks.forEach((cb) => cb(validated));
         } catch (e) {
           console.error("Error validating messages_read event:", e);
+        }
+      });
+
+      socket.on("notification_created", (data: any) => {
+        try {
+          const validated = InboxNotificationSchema.parse(data);
+          notificationCreatedCallbacks.forEach((cb) => cb(validated));
+        } catch (e) {
+          console.error("Error validating notification_created event:", e);
         }
       });
     });
@@ -433,6 +448,18 @@ export const chatsService = {
     };
   },
 
+  onNotificationCreated(cb: NotificationCreatedCallback | null) {
+    if (cb === null) {
+      notificationCreatedCallbacks.length = 0;
+      return () => {};
+    }
+    notificationCreatedCallbacks.push(cb);
+    return () => {
+      const idx = notificationCreatedCallbacks.indexOf(cb);
+      if (idx !== -1) notificationCreatedCallbacks.splice(idx, 1);
+    };
+  },
+
   disconnect() {
     socket?.disconnect();
     socket = null;
@@ -440,6 +467,7 @@ export const chatsService = {
     chatUpdatedCallbacks.length = 0;
     chatNotificationCallbacks.length = 0;
     messagesReadCallbacks.length = 0;
+    notificationCreatedCallbacks.length = 0;
     if (heartbeatIntervalHandle) {
       clearInterval(heartbeatIntervalHandle);
       heartbeatIntervalHandle = null;

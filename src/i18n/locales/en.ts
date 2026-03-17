@@ -154,6 +154,37 @@ const en = {
     hidePassword: "Hide password",
     emailPlaceholder: "Enter your email",
     supportAutoReply: "Thanks for reaching out! Your request is being processed and we will reply shortly.",
+    notifications: {
+      title: "Notifications",
+      subtitle: "Key account events",
+      markAllRead: "Mark all read",
+      empty: "No notifications yet",
+      chatFallback: "Chat",
+      types: {
+        newPurchase: "New purchase",
+        newSale: "New sale",
+        newPriceOffer: "New price offer",
+        priceOfferUpdated: "Price offer updated",
+        dealStatusUpdated: "Deal status updated",
+        newReview: "New review",
+        newChatMessage: "New message",
+        newImageMessage: "New image",
+        newSupportMessage: "Support message",
+        productStatusUpdated: "Product status updated",
+        generic: "New notification",
+      },
+      body: {
+        messagePreview: "{text}",
+        productOnly: "{product}",
+        priceOffer: "{product} • {price}",
+        priceOfferStatus: "{product} • {status}",
+        dealStatus: "{product} • {status}",
+        reviewText: "{text}",
+        productStatus: "{product} • {status}",
+        productStatusWithReason: "{product} • {status}. Reason: {reason}",
+        empty: "Open chat to view details.",
+      },
+    },
 
     // product statuses
     productStatuses: {

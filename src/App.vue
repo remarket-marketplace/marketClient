@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from './stores/user'
 import { useChatStore } from './stores/chat'
+import { useNotificationStore } from './stores/notification'
 import { chatsService } from './api/chats/chatsService'
 import DefaultLayout from './views/layouts/DefaultLayout.vue'
 import AdminLayout from './views/layouts/AdminLayout.vue'
@@ -13,9 +14,11 @@ import MainPageLayout from './views/layouts/MainPageLayout.vue'
 
 const store = useUserStore()
 const chatStore = useChatStore()
+const notificationStore = useNotificationStore()
 const route = useRoute()
 const isUserLoaded = ref(false)
 let unsubscribeChatUpdated: (() => void) | null = null
+let unsubscribeNotificationCreated: (() => void) | null = null
 let onlinePingIntervalHandle: number | null = null
 let chatSyncVersion = 0
 let isResyncingChats = false
@@ -91,6 +94,7 @@ async function initChats(userId: string, syncVersion: number) {
   chatStore.setChats(chats)
 
   unsubscribeChatUpdated?.()
+  unsubscribeNotificationCreated?.()
   unsubscribeChatUpdated = chatsService.onChatUpdated((update) => {
     const hasChatInStore = chatStore.chats.some((chat) => chat.id === update.chat_id)
     if (!hasChatInStore) {
@@ -99,11 +103,16 @@ async function initChats(userId: string, syncVersion: number) {
     }
     chatStore.updateChatFromSocket(update)
   })
+  unsubscribeNotificationCreated = chatsService.onNotificationCreated((notification) => {
+    notificationStore.pushRealtimeNotification(notification)
+  })
 }
 
 function clearChats() {
   unsubscribeChatUpdated?.()
+  unsubscribeNotificationCreated?.()
   unsubscribeChatUpdated = null
+  unsubscribeNotificationCreated = null
   chatStore.clear()
 }
 
@@ -116,9 +125,12 @@ watch(
     if (!userId) {
       chatsService.disconnect()
       clearChats()
+      notificationStore.clear()
       return
     }
 
+    notificationStore.initForUser(userId)
+    await notificationStore.loadInbox(true)
     await initChats(userId, syncVersion)
   },
   { immediate: true }
@@ -147,6 +159,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   unsubscribeChatUpdated?.()
+  unsubscribeNotificationCreated?.()
   stopOnlinePing()
   window.removeEventListener('focus', handleWindowFocus)
   window.removeEventListener('online', handleWindowOnline)

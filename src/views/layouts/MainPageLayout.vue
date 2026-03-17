@@ -16,6 +16,7 @@ import { storeToRefs } from 'pinia'
 import SelectLanguage from '@/components/SelectLanguage.vue'
 import SelectCurrency from '@/components/SelectCurrency.vue'
 import MainPageFooter from '@/components/layout/MainPageFooter.vue'
+import NotificationsMenu from '@/components/layout/NotificationsMenu.vue'
 import type { FunctionalComponent } from 'vue'
 import type { LucideProps } from 'lucide-vue-next'
 
@@ -194,6 +195,7 @@ const mobileNavGridStyle = computed(() => ({
                             </span>
                         </router-link>
                     </nav>
+                    <NotificationsMenu v-if="user?.username" />
                     <SelectCurrency />
                     <SelectLanguage />
                 </div>
