@@ -77,14 +77,18 @@ export const useNotificationStore = defineStore('notification', {
       }
     },
 
-    shouldCreateNotification(message: ChatMessageUnion, context: NotificationContext, unreadCount: number): boolean {
-      if (unreadCount <= 0) return false
-
+    shouldCreateNotification(
+      message: ChatMessageUnion,
+      context: NotificationContext,
+      unreadCount: number,
+      options?: { isRealtime?: boolean },
+    ): boolean {
       if (message.message_type === 'text_message' || message.message_type === 'image_message') {
+        if (unreadCount <= 0) return false
         return message.sender_id !== context.userId
       }
 
-      return true
+      return options?.isRealtime === true || unreadCount > 0
     },
 
     upsertMessageNotification(params: {
@@ -187,7 +191,14 @@ export const useNotificationStore = defineStore('notification', {
       }
 
       if (!update.last_message) return
-      if (!this.shouldCreateNotification(update.last_message, context, update.unread_count ?? 0)) return
+      if (
+        !this.shouldCreateNotification(
+          update.last_message,
+          context,
+          update.unread_count ?? 0,
+          { isRealtime: true },
+        )
+      ) return
 
       const chat = chats.find((item) => item.id === update.chat_id)
       this.upsertMessageNotification({
