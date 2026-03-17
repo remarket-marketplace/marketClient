@@ -91,6 +91,28 @@ const offerDiscountPercent = computed(() => calculateDiscountPercent(
   productOfferBasePrice.value,
   Number(offeredPrice.value),
 ))
+const offerMessageTemplates = computed(() => {
+  const offeredValue = Number(offeredPrice.value)
+  const priceLabel = formatCurrencyAmount(
+    Number.isFinite(offeredValue) && offeredValue > 0 ? offeredValue : productOfferBasePrice.value,
+    { minimumFractionDigits: 2, maximumFractionDigits: 2 },
+  )
+
+  return [
+    {
+      id: 'buy-now',
+      text: t('pages.product.offerPriceConfirm.messageTemplateBuyNow', { price: priceLabel }),
+    },
+    {
+      id: 'quick-decision',
+      text: t('pages.product.offerPriceConfirm.messageTemplateQuickDecision', { price: priceLabel }),
+    },
+    {
+      id: 'ready-today',
+      text: t('pages.product.offerPriceConfirm.messageTemplateReadyToday', { price: priceLabel }),
+    },
+  ]
+})
 
 const displayedCategory = computed(() => {
   const currentCategory = product.value?.category
@@ -324,6 +346,10 @@ function isDiscountPresetActive(discountPercent: number): boolean {
   if (!Number.isFinite(currentOfferedPrice) || presetPrice === null) return false
 
   return Math.abs(currentOfferedPrice - presetPrice) < 0.001
+}
+
+function applyOfferMessageTemplate(templateText: string) {
+  offerMessage.value = templateText
 }
 
 async function handleOfferConfirm() {
@@ -890,6 +916,22 @@ onUnmounted(() => {
               class="mt-1 w-full resize-none rounded-lg border border-dark-700 bg-dark-700/60 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500"
               :placeholder="$t('pages.product.offerPriceConfirm.messagePlaceholder')"
             />
+            <div class="mt-2">
+              <p class="text-[11px] font-medium text-gray-400">
+                {{ $t('pages.product.offerPriceConfirm.messageTemplatesLabel') }}
+              </p>
+              <div class="mt-1.5 flex flex-wrap gap-1.5">
+                <button
+                  v-for="template in offerMessageTemplates"
+                  :key="template.id"
+                  type="button"
+                  class="rounded-md border border-emerald-700/50 bg-emerald-900/20 px-2.5 py-1 text-left text-[11px] leading-4 text-emerald-200 transition-colors hover:bg-emerald-900/35"
+                  @click="applyOfferMessageTemplate(template.text)"
+                >
+                  {{ template.text }}
+                </button>
+              </div>
+            </div>
           </div>
           <p v-if="offerError" class="text-xs text-red-400">{{ offerError }}</p>
         </div>
