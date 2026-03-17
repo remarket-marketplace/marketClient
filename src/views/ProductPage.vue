@@ -103,14 +103,6 @@ const offerMessageTemplates = computed(() => {
       id: 'buy-now',
       text: t('pages.product.offerPriceConfirm.messageTemplateBuyNow', { price: priceLabel }),
     },
-    {
-      id: 'quick-decision',
-      text: t('pages.product.offerPriceConfirm.messageTemplateQuickDecision', { price: priceLabel }),
-    },
-    {
-      id: 'ready-today',
-      text: t('pages.product.offerPriceConfirm.messageTemplateReadyToday', { price: priceLabel }),
-    },
   ]
 })
 

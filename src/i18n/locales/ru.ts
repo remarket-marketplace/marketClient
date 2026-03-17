@@ -728,8 +728,6 @@ const ru = {
         messagePlaceholder: "Например: Готов купить сегодня, если устроит цена",
         messageTemplatesLabel: "Быстрые варианты сообщения",
         messageTemplateBuyNow: "Здравствуйте! Готов купить за {price}.",
-        messageTemplateQuickDecision: "Если согласны на {price}, оформлю прямо сейчас.",
-        messageTemplateReadyToday: "Рассмотрите {price}, готов закрыть сделку сегодня.",
         confirm: "Отправить предложение",
         cancel: "Отмена",
       },

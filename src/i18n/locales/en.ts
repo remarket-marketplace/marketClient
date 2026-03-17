@@ -729,8 +729,6 @@ const en = {
         messagePlaceholder: "For example: I can buy today if this works for you",
         messageTemplatesLabel: "Quick message templates",
         messageTemplateBuyNow: "Hi! I can buy it for {price}.",
-        messageTemplateQuickDecision: "If {price} works for you, I can pay right now.",
-        messageTemplateReadyToday: "Please consider {price}, ready to complete the deal today.",
         confirm: "Send offer",
         cancel: "Cancel",
       },
