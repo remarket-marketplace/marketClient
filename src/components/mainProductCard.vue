@@ -63,23 +63,23 @@ const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
       <!-- Bottom section with seller and button -->
       <div class="mt-auto flex w-full flex-col gap-2">
         <!-- Seller info-->
-        <div class="flex w-full min-w-0 items-center gap-1 sm:gap-2">
+        <div class="flex w-full min-w-0 items-center gap-1 sm:gap-2 min-h-6">
           <button
             type="button"
-            class="min-w-0 shrink text-left text-xs sm:text-sm underline decoration-transparent hover:decoration-blue-300"
+            class="inline-flex min-h-6 min-w-0 shrink items-center text-left text-xs sm:text-sm"
             @click.stop="goToSeller"
           >
             <StyledUsername
               :username="product.seller.username"
               :style-id="product.seller.nickname_style_id"
-              class="block truncate transition"
+              class="block truncate leading-none transition"
             />
           </button>
 
-          <span v-if="product.seller.is_active" class="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" title="Online" />
+          <span v-if="product.seller.is_active" class="w-2 h-2 rounded-full bg-green-500 flex-shrink-0 self-center" title="Online" />
 
           <!-- Rating -->
-          <div class="flex-shrink-0">
+          <div class="inline-flex flex-shrink-0 items-center self-center">
             <UserRating :rating="product.seller.rating" />
           </div>
         </div>

@@ -8,7 +8,7 @@ import Loader from '@/components/Loader.vue'
 import ProfileProductCard from '@/components/ProfileProductCard.vue'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import type { Product } from '@/validation/product/product'
@@ -86,6 +86,7 @@ const profileBackgroundLayerStyle = computed(() => {
   }
 })
 const activeTab = ref<'products' | 'reviews' | 'purchases'>('products')
+const tabsRef = ref<HTMLElement | null>(null)
 
 // Пагинация для товаров
 const products = ref<Product[]>([])
@@ -352,6 +353,22 @@ function switchTab(tab: 'products' | 'reviews' | 'purchases') {
   }
 }
 
+async function openReviewsTab() {
+  switchTab('reviews')
+  await nextTick()
+  if (!window.matchMedia('(min-width: 1024px)').matches) {
+    tabsRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+}
+
+async function openProductsTab() {
+  switchTab('products')
+  await nextTick()
+  if (!window.matchMedia('(min-width: 1024px)').matches) {
+    tabsRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+}
+
 function goToProduct(productKey: string) {
   if (!productKey) return
   router.push(`/product/${productKey}`)
@@ -508,14 +525,24 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
             <!-- Stats -->
             <div class="grid grid-cols-3 gap-3">
-              <div class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600 min-h-[76px] space-y-1">
+              <button
+                type="button"
+                @click="openProductsTab"
+                :title="t('common.products')"
+                class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600 min-h-[76px] space-y-1"
+              >
                 <div class="text-lg font-bold text-white">{{ products.length }}</div>
                 <div class="text-xs text-gray-400">{{ t('common.products') }}</div>
-              </div>
-              <div class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600 min-h-[76px] space-y-1">
+              </button>
+              <button
+                type="button"
+                @click="openReviewsTab"
+                :title="t('pages.profile.reviews')"
+                class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600 min-h-[76px] space-y-1"
+              >
                 <div class="text-lg font-bold text-white">{{ reviews.length }}</div>
                 <div class="text-xs text-gray-400">{{ t('pages.profile.reviews') }}</div>
-              </div>
+              </button>
               <div class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600 min-h-[76px] space-y-1">
                 <div class="text-lg font-bold text-white">{{ currentProfileData.rating }}</div>
                 <div class="text-xs text-gray-400">{{ t('common.rating') }}</div>
@@ -616,7 +643,10 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
       <div class="relative z-0 lg:flex-1 overflow-y-auto  mt-6 lg:mt-0 lg:pt-6 lg:pl-6">
         <div class="px-4 lg:px-0 lg:pb-6 space-y-6">
           <!-- Tabs -->
-          <div class="flex items-center gap-1 sm:gap-2 rounded-xl bg-dark-700/30 p-1 border border-dark-600">
+          <div
+            ref="tabsRef"
+            class="flex items-center gap-1 sm:gap-2 rounded-xl bg-dark-700/30 p-1 border border-dark-600"
+          >
             <button @click="switchTab('products')"
               class="flex-1 min-w-0 px-2 sm:px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
               :class="activeTab === 'products'
@@ -717,11 +747,30 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
               <div v-else class="space-y-4">
                 <div v-for="review in reviews" :key="review.id"
                   class="border border-dark-700 rounded-xl bg-dark-600/40 p-4 space-y-3">
-                  <div class="flex items-start justify-between">
-                    <div class="flex items-center gap-3">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                      <button
+                        v-if="review.reviewer?.username"
+                        type="button"
+                        class="group inline-flex items-center gap-2 min-w-0 rounded-lg px-1.5 py-1 transition-colors hover:bg-dark-700/60"
+                        @click="goToProfile(review.reviewer.username)"
+                      >
+                        <UserAvatar
+                          :avatar-url="review.reviewer.avatar_url"
+                          :alt="review.reviewer.username"
+                          class="w-8 h-8 rounded-full object-cover border border-dark-600 flex-shrink-0"
+                        />
+                        <StyledUsername
+                          :username="review.reviewer.username"
+                          :style-id="review.reviewer.nickname_style_id"
+                          class="text-sm font-medium text-gray-200 group-hover:text-white truncate"
+                        />
+                      </button>
+
                       <UserRating :rating="review.rating" />
-                      <span class="text-sm text-gray-400">{{ formatFullDate(review.created_at) }}</span>
                     </div>
+
+                    <span class="text-sm text-gray-400 whitespace-nowrap">{{ formatFullDate(review.created_at) }}</span>
                   </div>
 
                   <p class="text-sm text-gray-300 leading-relaxed">{{ review.body }}</p>
@@ -854,14 +903,20 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
             <div class="space-y-2">
               <label class="block text-sm font-medium text-gray-300">{{ t('pages.profile.profileLink') }}</label>
-              <div class="flex flex-col sm:flex-row gap-2">
-                <div class="w-full min-w-0 flex-1">
-                  <input type="text" :value="profileUrl" readonly
-                    class="w-full min-w-0 px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-sm text-white outline-none" />
+              <div class="space-y-2">
+                <div class="w-full min-w-0">
+                  <input
+                    type="text"
+                    :value="profileUrl"
+                    readonly
+                    class="w-full min-w-0 px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-sm text-white outline-none"
+                  />
                 </div>
-                <button @click="copyProfileLink"
-                  class="w-full sm:w-auto sm:flex-shrink-0 rounded-lg border border-transparent px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 flex items-center justify-center gap-2 whitespace-nowrap"
-                  :class="isCopied ? 'bg-green-600 hover:bg-green-700' : 'bg-button-main hover:bg-blue-700'">
+                <button
+                  @click="copyProfileLink"
+                  class="w-full rounded-lg border border-transparent px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 flex items-center justify-center gap-2"
+                  :class="isCopied ? 'bg-green-600 hover:bg-green-700' : 'bg-button-main hover:bg-blue-700'"
+                >
                   <Check v-if="isCopied" class="w-4 h-4" />
                   <Copy v-else class="w-4 h-4" />
                   {{ isCopied ? t('common.copied') : t('common.copy') }}

@@ -13,7 +13,8 @@ import {
   XCircle,
   Folder,
   Loader2,
-  MessageCircleMore
+  MessageCircleMore,
+  SlidersHorizontal,
 } from 'lucide-vue-next'
 import { adminService } from '@/api/admin/AdminService'
 import type { Deal, DealsList } from '@/validation/deal/deal'
@@ -38,6 +39,7 @@ const perPage = ref(20)
 const searchQuery = ref('')
 const sortBy = ref('created_desc')
 const statusFilter = ref('all')
+const isMobileFiltersOpen = ref(false)
 const isLoading = ref(true)
 const processingDealId = ref<string | null>(null)
 const isMobile = ref(false)
@@ -374,7 +376,27 @@ watch([searchQuery, sortBy, statusFilter], () => {
     <!-- Поиск -->
     <div class="w-full flex flex-col gap-2">
       <SearchField v-model="searchQuery" :placeholder="$t('pages.index.searchPlaceholder')" />
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div class="sm:hidden">
+        <button
+          type="button"
+          class="admin-btn admin-btn-ghost w-full justify-center"
+          :class="{ 'border-blue-500/40 text-blue-300': isMobileFiltersOpen }"
+          @click="isMobileFiltersOpen = !isMobileFiltersOpen"
+        >
+          <SlidersHorizontal class="w-4 h-4" />
+          <span>
+            {{
+              isMobileFiltersOpen
+                ? $t('pages.admin.activityLogs.hideFilters')
+                : $t('pages.admin.activityLogs.showFilters')
+            }}
+          </span>
+        </button>
+      </div>
+      <div
+        class="grid grid-cols-1 sm:grid-cols-2 gap-2"
+        :class="{ 'hidden sm:grid': !isMobileFiltersOpen }"
+      >
         <CustomSelect
           v-model="sortBy"
           :options="[

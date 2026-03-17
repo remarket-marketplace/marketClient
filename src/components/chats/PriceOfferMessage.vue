@@ -4,9 +4,11 @@ import { useI18n } from 'vue-i18n'
 import { productService } from '@/api/product/ProductService'
 import { getErrorMessage } from '@/utils/errorsMap'
 import { formatCurrencyAmount } from '@/utils/currency'
+import { calculateDiscountPercent } from '@/utils/priceOffer'
 import type { ChatMessageUnion } from '@/validation/chat/chatMessage'
 import { useRouter } from 'vue-router'
 import { buildProductKey } from '@/utils/urlKeys'
+import { decodePriceOfferTemplateKey } from '@/utils/priceOfferMessageTemplate'
 
 const props = defineProps<{
   message: Extract<ChatMessageUnion, { message_type: 'price_offer_message' }>
@@ -23,6 +25,10 @@ const actionError = ref<string | null>(null)
 const isSeller = computed(() => props.user?.id === props.message.seller_id)
 const isPending = computed(() => props.message.offer_status === 'pending')
 const canProcess = computed(() => isSeller.value && isPending.value)
+const offerDiscountPercent = computed(() => calculateDiscountPercent(
+  Number(props.message.product.price),
+  Number(props.message.offered_price),
+))
 
 const statusLabel = computed(() => {
   const key = `pages.chats.priceOfferStatuses.${props.message.offer_status}`
@@ -41,6 +47,17 @@ const statusClass = computed(() => {
     default:
       return 'bg-blue-500/20 text-blue-300 border-blue-500/30'
   }
+})
+
+const localizedOfferMessage = computed(() => {
+  const templateKey = decodePriceOfferTemplateKey(props.message.offer_message)
+  if (!templateKey) {
+    return props.message.offer_message
+  }
+
+  const translationKey = `pages.chats.priceOfferTemplates.${templateKey}`
+  const translatedText = t(translationKey, { price: formatCurrencyAmount(Number(props.message.offered_price)) })
+  return translatedText === translationKey ? props.message.offer_message : translatedText
 })
 
 async function acceptOffer() {
@@ -113,12 +130,23 @@ function handleViewProduct() {
         </div>
         <div class="rounded-lg border border-dark-700 bg-dark-700/50 p-3">
           <p class="text-xs text-gray-400">{{ t('pages.chats.offeredPrice') }}</p>
+          <div class="mt-1 flex flex-wrap items-center gap-2">
+            <span class="text-xs text-gray-500 line-through">
+              {{ formatCurrencyAmount(message.product.price) }}
+            </span>
+            <span
+              v-if="offerDiscountPercent !== null"
+              class="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-200"
+            >
+              -{{ offerDiscountPercent }}%
+            </span>
+          </div>
           <p class="mt-1 font-semibold text-emerald-300">{{ formatCurrencyAmount(message.offered_price) }}</p>
         </div>
       </div>
 
-      <p v-if="message.offer_message" class="mt-3 whitespace-pre-line text-sm text-gray-200 break-words [overflow-wrap:anywhere]">
-        {{ message.offer_message }}
+      <p v-if="localizedOfferMessage" class="mt-3 whitespace-pre-line text-sm text-gray-200 break-words [overflow-wrap:anywhere]">
+        {{ localizedOfferMessage }}
       </p>
 
       <div v-if="canProcess" class="mt-4 flex flex-wrap gap-2">

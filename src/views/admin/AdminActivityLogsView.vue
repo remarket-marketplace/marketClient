@@ -6,7 +6,7 @@ import type { AuditLog } from '@/validation/audit/activityLog'
 import BackButton from '@/components/navigation/BackButton.vue'
 import SearchField from '@/components/SearchField.vue'
 import CustomSelect from '@/components/CustomSelect.vue'
-import { Loader2, Link2, History } from 'lucide-vue-next'
+import { Loader2, Link2, History, SlidersHorizontal } from 'lucide-vue-next'
 
 const { t } = useI18n()
 
@@ -19,6 +19,7 @@ const currentPage = ref(1)
 const totalPages = ref(1)
 const total = ref(0)
 const perPage = 30
+const isFiltersVisible = ref(false)
 
 const userIdQuery = ref('')
 const usernameQuery = ref('')
@@ -213,54 +214,73 @@ onMounted(async () => {
           </p>
         </div>
       </div>
-      <div class="inline-flex items-center gap-2 text-xs sm:text-base text-text-secondary">
-        <History class="h-4 w-4" />
-        <span>{{ $t('common.total') }} {{ total }}</span>
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          class="admin-btn admin-btn-sm text-xs"
+          @click="isFiltersVisible = !isFiltersVisible"
+        >
+          <SlidersHorizontal class="h-3.5 w-3.5" />
+          {{
+            isFiltersVisible
+              ? $t('pages.admin.activityLogs.hideFilters')
+              : $t('pages.admin.activityLogs.showFilters')
+          }}
+        </button>
+        <div class="inline-flex items-center gap-2 text-xs sm:text-base text-text-secondary">
+          <History class="h-4 w-4" />
+          <span>{{ $t('common.total') }} {{ total }}</span>
+        </div>
       </div>
     </div>
 
-    <SearchField
-      v-model="usernameQuery"
-      :placeholder="$t('pages.admin.activityLogs.searchByUsername')"
-    />
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-      <input
-        v-model="userIdQuery"
-        class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText focus:border-blue-500 focus:outline-none"
-        :placeholder="$t('pages.admin.activityLogs.searchByUserId')"
+    <div
+      v-if="isFiltersVisible"
+      class="space-y-2 rounded-xl border border-dark-700 bg-dark-700/30 p-3"
+    >
+      <SearchField
+        v-model="usernameQuery"
+        :placeholder="$t('pages.admin.activityLogs.searchByUsername')"
       />
 
-      <CustomSelect
-        v-model="actionType"
-        :options="actionOptions"
-        :placeholder="$t('pages.admin.activityLogs.actionType')"
-      />
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        <input
+          v-model="userIdQuery"
+          class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText focus:border-blue-500 focus:outline-none"
+          :placeholder="$t('pages.admin.activityLogs.searchByUserId')"
+        />
 
-      <input
-        v-model="ipAddress"
-        class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText focus:border-blue-500 focus:outline-none"
-        :placeholder="$t('pages.admin.activityLogs.ipAddress')"
-      />
+        <CustomSelect
+          v-model="actionType"
+          :options="actionOptions"
+          :placeholder="$t('pages.admin.activityLogs.actionType')"
+        />
 
-      <input
-        v-model="countryCode"
-        maxlength="3"
-        class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm uppercase text-mainText focus:border-blue-500 focus:outline-none"
-        :placeholder="$t('pages.admin.activityLogs.countryCode')"
-      />
+        <input
+          v-model="ipAddress"
+          class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText focus:border-blue-500 focus:outline-none"
+          :placeholder="$t('pages.admin.activityLogs.ipAddress')"
+        />
 
-      <input
-        v-model="dateFrom"
-        type="datetime-local"
-        class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText focus:border-blue-500 focus:outline-none"
-      />
+        <input
+          v-model="countryCode"
+          maxlength="3"
+          class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm uppercase text-mainText focus:border-blue-500 focus:outline-none"
+          :placeholder="$t('pages.admin.activityLogs.countryCode')"
+        />
 
-      <input
-        v-model="dateTo"
-        type="datetime-local"
-        class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText focus:border-blue-500 focus:outline-none"
-      />
+        <input
+          v-model="dateFrom"
+          type="datetime-local"
+          class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText focus:border-blue-500 focus:outline-none"
+        />
+
+        <input
+          v-model="dateTo"
+          type="datetime-local"
+          class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText focus:border-blue-500 focus:outline-none"
+        />
+      </div>
     </div>
 
     <div class="flex-1 overflow-hidden">

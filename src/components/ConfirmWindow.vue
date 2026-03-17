@@ -19,6 +19,41 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
+const MODAL_OPEN_CLASS = 'modal-open'
+let scrollLockCount = 0
+let lockedScrollY = 0
+
+function lockPageScroll() {
+  if (typeof document === 'undefined') return
+  if (scrollLockCount === 0) {
+    lockedScrollY = window.scrollY || document.documentElement.scrollTop || 0
+    document.documentElement.classList.add(MODAL_OPEN_CLASS)
+    document.body.classList.add(MODAL_OPEN_CLASS)
+    document.body.style.top = `-${lockedScrollY}px`
+  }
+  scrollLockCount += 1
+}
+
+function unlockPageScroll() {
+  if (typeof document === 'undefined' || scrollLockCount === 0) return
+  scrollLockCount -= 1
+  if (scrollLockCount > 0) return
+
+  const offsetTop = document.body.style.top
+  document.documentElement.classList.remove(MODAL_OPEN_CLASS)
+  document.body.classList.remove(MODAL_OPEN_CLASS)
+  document.body.style.top = ''
+
+  const restoredScrollY = Number.parseInt(offsetTop || '0', 10)
+  window.scrollTo({
+    top: Number.isFinite(restoredScrollY) ? Math.abs(restoredScrollY) : lockedScrollY,
+    left: 0,
+    behavior: 'auto',
+  })
+}
+
+const isScrollLockedByThisModal = ref(false)
+
 function handleConfirm() {
   emit('confirm')
 }
@@ -33,13 +68,29 @@ function handleEsc(e: KeyboardEvent) {
   }
 }
 
-watch(() => _props.isOpen, (newVal) => {
-  if (newVal) {
-    document.body.classList.add('modal-open')
-  } else {
-    document.body.classList.remove('modal-open')
-  }
-}, { immediate: true })
+function lockIfNeeded() {
+  if (isScrollLockedByThisModal.value) return
+  lockPageScroll()
+  isScrollLockedByThisModal.value = true
+}
+
+function unlockIfNeeded() {
+  if (!isScrollLockedByThisModal.value) return
+  unlockPageScroll()
+  isScrollLockedByThisModal.value = false
+}
+
+watch(
+  () => _props.isOpen,
+  (isOpen) => {
+    if (isOpen) {
+      lockIfNeeded()
+      return
+    }
+    unlockIfNeeded()
+  },
+  { immediate: true },
+)
 
 onMounted(() => {
   document.addEventListener('keydown', handleEsc)
@@ -47,7 +98,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => { 
   document.removeEventListener('keydown', handleEsc)
-  document.body.classList.remove('modal-open') 
+  unlockIfNeeded()
 })
 </script>
 
@@ -136,8 +187,17 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.modal-open {
+:global(html.modal-open),
+:global(body.modal-open) {
   overflow: hidden;
+  overscroll-behavior: none;
+}
+
+:global(body.modal-open) {
+  position: fixed;
+  left: 0;
+  right: 0;
+  width: 100%;
 }
 
 /* Smooth backdrop animation */

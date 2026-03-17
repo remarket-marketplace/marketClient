@@ -46,6 +46,17 @@ const props = defineProps<{
 }>();
 
 const localHasReview = ref(props.has_review ?? false);
+const isDealDisputed = computed(() => props.dealStatus === 'disputed');
+const canSendReport = computed(() => (
+  !props.product.is_owner
+  && props.dealStatus === 'pending'
+  && !isConfirmed.value
+  && !isReported.value
+  && !isDealDisputed.value
+));
+const showReportedBadge = computed(() => (
+  !props.product.is_owner && (isReported.value || isDealDisputed.value)
+));
 
 // Вычисляемое свойство для проверки, выбрана ли причина "otherReason"
 const isOtherReasonSelected = computed(() => {
@@ -223,18 +234,23 @@ async function handleSendReview(productId: string) {
         </template>
 
         <template v-if="!product.is_owner">
-          <div class="sm:ml-auto flex flex-col gap-2">
-            <button v-if="!isReported && dealStatus !== 'disputed' && dealStatus == 'pending'" @click="openRefusalModal()"
-              class="flex items-center justify-center gap-2 rounded-lg bg-red-600 px-6 py-3 text-sm font-semibold text-white hover:bg-red-700 border border-red-500 min-w-[160px]">
+          <div v-if="canSendReport" class="sm:ml-auto flex flex-col gap-2">
+            <button
+              @click="openRefusalModal()"
+              class="flex items-center justify-center gap-2 rounded-lg bg-red-600 px-6 py-3 text-sm font-semibold text-white hover:bg-red-700 border border-red-500 min-w-[160px]"
+            >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
               {{ $t('pages.chats.report') }}
             </button>
+          </div>
 
-            <div v-else
-              class="flex items-center justify-center gap-2 rounded-lg bg-gray-800 px-6 py-3 text-sm font-semibold text-gray-300 border border-gray-600 min-w-[160px]">
+          <div v-else-if="showReportedBadge" class="sm:ml-auto flex flex-col gap-2">
+            <div
+              class="flex items-center justify-center gap-2 rounded-lg bg-gray-800 px-6 py-3 text-sm font-semibold text-gray-300 border border-gray-600 min-w-[160px]"
+            >
               <svg class="w-4 h-4 text-red-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd"
                   d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"

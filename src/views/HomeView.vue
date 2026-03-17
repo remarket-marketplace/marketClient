@@ -3,6 +3,7 @@ import { categoryService } from '@/api/category/CategoryService'
 import { productService } from '@/api/product/ProductService'
 import { steamTopupService } from '@/api/steamTopup/steamTopupService'
 import MainProductCard from '@/components/mainProductCard.vue'
+import HomeProductListCard from '@/components/HomeProductListCard.vue'
 import SearchField from '@/components/SearchField.vue'
 import Title from '@/components/Title.vue'
 import HeroSection from '@/components/HeroSection.vue'
@@ -20,7 +21,7 @@ import type {
 } from '@/validation/steamTopup/steamTopup'
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Folder, SlidersHorizontal } from 'lucide-vue-next'
+import { Folder, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
 import axios from 'axios'
 import {
   convertCurrencyAmount,
@@ -66,7 +67,17 @@ const isLoadingMoreSubCategories = ref(false)
 const isSearchPagination = ref(false)
 const minPriceFilter = ref('')
 const maxPriceFilter = ref('')
+const createdFromFilter = ref('')
+const createdToFilter = ref('')
 const isFiltersOpen = ref(false)
+type ProductCardViewMode = 'grid' | 'list'
+const PRODUCT_CARD_VIEW_MODE_STORAGE_KEY = 'home_product_card_view_mode'
+const productCardViewMode = ref<ProductCardViewMode>('grid')
+const loadingSkeletonCount = computed(() => (
+  productCardViewMode.value === 'grid'
+    ? perPage.value
+    : Math.min(perPage.value, 12)
+))
 const normalizedSearchQuery = computed(() => searchQuery.value.trim().toLowerCase())
 const categorySearchResults = computed(() => {
   if (normalizedSearchQuery.value.length < 1) return []
@@ -74,6 +85,17 @@ const categorySearchResults = computed(() => {
     .filter((category) => category.name.toLowerCase().includes(normalizedSearchQuery.value))
     .slice(0, 8)
 })
+
+function setProductCardViewMode(mode: ProductCardViewMode): void {
+  if (productCardViewMode.value === mode) return
+  productCardViewMode.value = mode
+}
+
+function restoreProductCardViewModeFromStorage(): void {
+  if (typeof window === 'undefined') return
+  const saved = window.localStorage.getItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY)
+  productCardViewMode.value = saved === 'list' ? 'list' : 'grid'
+}
 
 type SteamAmountMode = 'denomination' | 'quantity'
 
@@ -228,7 +250,7 @@ function isPricePresetActive(preset: PricePreset): boolean {
 
 async function onPricePresetClick(preset: PricePreset) {
   if (isPricePresetActive(preset)) {
-    clearProductFilters()
+    clearPriceFilters()
     await applyProductFilters()
     return
   }
@@ -558,26 +580,62 @@ function parseFilterNumber(value: string | number | null | undefined): number | 
   return Number.isNaN(parsed) ? undefined : parsed
 }
 
+function parseDateFilter(value: string | null | undefined): string | undefined {
+  if (!value) return undefined
+  const normalized = value.trim()
+  if (!normalized) return undefined
+
+  const parsedDate = new Date(`${normalized}T00:00:00`)
+  if (Number.isNaN(parsedDate.getTime())) return undefined
+
+  return normalized
+}
+
 function getProductFiltersParams(): ProductsFilterParams {
   const minPriceRaw = parsePriceFilterInRub(minPriceFilter.value)
   const maxPriceRaw = parsePriceFilterInRub(maxPriceFilter.value)
+  const createdFromRaw = parseDateFilter(createdFromFilter.value)
+  const createdToRaw = parseDateFilter(createdToFilter.value)
 
-  if (minPriceRaw !== undefined && maxPriceRaw !== undefined && minPriceRaw > maxPriceRaw) {
-    return {
-      minPrice: maxPriceRaw,
-      maxPrice: minPriceRaw,
-    }
-  }
+  const minPrice =
+    minPriceRaw !== undefined && maxPriceRaw !== undefined && minPriceRaw > maxPriceRaw
+      ? maxPriceRaw
+      : minPriceRaw
+  const maxPrice =
+    minPriceRaw !== undefined && maxPriceRaw !== undefined && minPriceRaw > maxPriceRaw
+      ? minPriceRaw
+      : maxPriceRaw
+
+  const createdFrom =
+    createdFromRaw && createdToRaw && createdFromRaw > createdToRaw
+      ? createdToRaw
+      : createdFromRaw
+  const createdTo =
+    createdFromRaw && createdToRaw && createdFromRaw > createdToRaw
+      ? createdFromRaw
+      : createdToRaw
 
   return {
-    minPrice: minPriceRaw,
-    maxPrice: maxPriceRaw,
+    minPrice,
+    maxPrice,
+    createdFrom,
+    createdTo,
   }
 }
 
 function clearProductFilters() {
+  clearPriceFilters()
+  clearDateFilters()
+}
+
+function clearPriceFilters() {
   minPriceFilter.value = ''
   maxPriceFilter.value = ''
+}
+
+function clearDateFilters() {
+  createdFromFilter.value = ''
+  createdToFilter.value = ''
 }
 
 async function applyProductFilters() {
@@ -670,7 +728,13 @@ watch(
   },
 )
 
+watch(productCardViewMode, (mode) => {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY, mode)
+})
+
 onMounted(async () => {
+  restoreProductCardViewModeFromStorage()
   await Promise.all([
     loadProducts(),
     loadMainCategories(),
@@ -691,6 +755,7 @@ onBeforeUnmount(() => {
   observer?.disconnect()
   categoriesObserver?.disconnect()
 })
+
 </script>
 
 <template>
@@ -941,12 +1006,19 @@ onBeforeUnmount(() => {
             <div v-for="n in 5" :key="n" class="h-16 w-16 bg-dark-600 animate-pulse rounded-lg sm:h-20 sm:w-20" />
           </div>
 
-          <div v-else ref="categoriesScroll" 
-               @wheel="handleCategoriesWheel"
-               class="overflow-x-auto overflow-y-hidden w-full relative">
+          <div
+            v-else
+            ref="categoriesScroll"
+            @wheel="handleCategoriesWheel"
+            class="overflow-x-auto overflow-y-hidden w-full relative"
+          >
             <div class="flex min-w-max gap-2 py-1.5 sm:gap-3 sm:py-2">
-              <div v-for="cat in mainCategories" :key="cat.id" @click="onMainCategoryClick(cat)"
-                class="flex-shrink-0 cursor-pointer flex flex-col items-center p-1.5 rounded-lg transition sm:p-2">
+              <div
+                v-for="cat in mainCategories"
+                :key="cat.id"
+                @click="onMainCategoryClick(cat)"
+                class="flex-shrink-0 cursor-pointer flex flex-col items-center p-1.5 rounded-lg transition sm:p-2"
+              >
                 <div class="h-12 w-12 flex items-center justify-center bg-dark-700 rounded-lg overflow-hidden border border-white/5 shadow-inner sm:h-16 sm:w-16">
                   <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="w-full h-full object-cover" />
                   <Folder v-else class="h-6 w-6 text-gray-400 sm:h-8 sm:w-8" />
@@ -960,20 +1032,54 @@ onBeforeUnmount(() => {
         <Title class="mt-12 w-full" :text="t('common.products')" />
 
         <div class="mt-4 w-full">
-          <button
-            type="button"
-            class="inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-semibold transition"
-            :class="isFiltersOpen
-              ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
-              : 'border-dark-600 bg-dark-700/40 text-gray-300 hover:border-dark-500 hover:bg-dark-700/55'"
-            :aria-expanded="isFiltersOpen"
-            :aria-label="t('pages.index.filtersTitle')"
-            :title="t('pages.index.filtersTitle')"
-            @click="toggleFiltersVisibility"
-          >
-            <SlidersHorizontal class="h-4 w-4" />
-            <span>{{ t('pages.index.filtersTitle') }}</span>
-          </button>
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <button
+              type="button"
+              class="inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-semibold transition"
+              :class="isFiltersOpen
+                ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
+                : 'border-dark-600 bg-dark-700/40 text-gray-300 hover:border-dark-500 hover:bg-dark-700/55'"
+              :aria-expanded="isFiltersOpen"
+              :aria-label="t('pages.index.filtersTitle')"
+              :title="t('pages.index.filtersTitle')"
+              @click="toggleFiltersVisibility"
+            >
+              <SlidersHorizontal class="h-4 w-4" />
+              <span>{{ t('pages.index.filtersTitle') }}</span>
+            </button>
+
+            <div
+              class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-dark-600 bg-dark-700/40 p-0.5"
+              role="group"
+              :aria-label="t('pages.index.viewSwitcherLabel')"
+            >
+              <button
+                type="button"
+                class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
+                :class="productCardViewMode === 'grid'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+                :title="t('pages.index.viewGrid')"
+                @click="setProductCardViewMode('grid')"
+              >
+                <LayoutGrid class="h-3.5 w-3.5" />
+                <span class="hidden sm:inline">{{ t('pages.index.viewGrid') }}</span>
+              </button>
+
+              <button
+                type="button"
+                class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
+                :class="productCardViewMode === 'list'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+                :title="t('pages.index.viewList')"
+                @click="setProductCardViewMode('list')"
+              >
+                <Rows3 class="h-3.5 w-3.5" />
+                <span class="hidden sm:inline">{{ t('pages.index.viewList') }}</span>
+              </button>
+            </div>
+          </div>
 
           <transition
             enter-active-class="transition-all duration-200 ease-out"
@@ -1032,20 +1138,72 @@ onBeforeUnmount(() => {
                   </div>
                 </label>
               </div>
+
+              <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+                <label class="rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2.5 transition focus-within:border-blue-400/40 focus-within:bg-dark-700/55">
+                  <span class="block text-xs text-gray-400">{{ t('pages.index.dateFrom') }}</span>
+                  <input
+                    v-model="createdFromFilter"
+                    type="date"
+                    class="mt-1.5 w-full bg-transparent text-sm text-white outline-none placeholder-gray-500"
+                    :max="createdToFilter || undefined"
+                    @input="debouncedApplyProductFilters"
+                  />
+                </label>
+
+                <label class="rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2.5 transition focus-within:border-blue-400/40 focus-within:bg-dark-700/55">
+                  <span class="block text-xs text-gray-400">{{ t('pages.index.dateTo') }}</span>
+                  <input
+                    v-model="createdToFilter"
+                    type="date"
+                    class="mt-1.5 w-full bg-transparent text-sm text-white outline-none placeholder-gray-500"
+                    :min="createdFromFilter || undefined"
+                    @input="debouncedApplyProductFilters"
+                  />
+                </label>
+              </div>
             </div>
           </transition>
         </div>
 
-        <div v-if="isProductsLoading" class="products-grid grid gap-1 md:gap-2 mt-6 w-full">
-          <div v-for="n in perPage" :key="n" class="h-64 bg-dark-600 animate-pulse rounded-2xl" />
+        <div
+          v-if="isProductsLoading"
+          class="mt-6 w-full"
+          :class="productCardViewMode === 'grid'
+            ? 'products-grid grid gap-1 md:gap-2'
+            : 'products-list flex flex-col gap-2 md:gap-3'"
+        >
+          <div
+            v-for="n in loadingSkeletonCount"
+            :key="n"
+            class="animate-pulse rounded-2xl bg-dark-600"
+            :class="productCardViewMode === 'grid' ? 'h-64' : 'h-[118px] sm:h-[134px]'"
+          />
         </div>
 
         <div v-else-if="products.length === 0" class="text-center text-gray-400 py-20">
           {{ t('pages.index.noProducts') }}
         </div>
 
-        <div v-else class="products-grid grid gap-1 md:gap-2 mt-6 w-full">
-          <MainProductCard v-for="product in products" :key="product.id" :product="product" @click="goToProduct" />
+        <div
+          v-else-if="productCardViewMode === 'grid'"
+          class="products-grid grid gap-1 md:gap-2 mt-6 w-full"
+        >
+          <MainProductCard
+            v-for="product in products"
+            :key="product.id"
+            :product="product"
+            @click="goToProduct"
+          />
+        </div>
+
+        <div v-else class="products-list mt-6 flex w-full flex-col gap-2 md:gap-3">
+          <HomeProductListCard
+            v-for="product in products"
+            :key="product.id"
+            :product="product"
+            @click="goToProduct"
+          />
         </div>
     </div>
 
@@ -1058,21 +1216,46 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-@media (min-width: 680px) {
+@media (min-width: 640px) {
   .products-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-@media (min-width: 980px) {
+@media (min-width: 860px) {
   .products-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
-@media (min-width: 1360px) {
+@media (min-width: 1080px) {
+  .products-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1320px) {
+  .products-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+/* When main content switches to 50% width (2xl layout), reset density to 4 cards. */
+@media (min-width: 1536px) {
   .products-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1920px) {
+  .products-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 2320px) {
+  .products-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
 </style>

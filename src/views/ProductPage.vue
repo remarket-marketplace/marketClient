@@ -21,6 +21,12 @@ import StyledUsername from '@/components/StyledUsername.vue'
 import { formatCurrencyAmount, getCurrencySymbol, resolvePreferredCurrency } from '@/utils/currency'
 import { storeToRefs } from 'pinia'
 import { buildCategoryKey, buildProductKey } from '@/utils/urlKeys'
+import { calculateDiscountPercent, calculateOfferedPriceByPercent } from '@/utils/priceOffer'
+import {
+  PRICE_OFFER_MESSAGE_TEMPLATE_KEYS,
+  encodePriceOfferTemplateMessage,
+  type PriceOfferMessageTemplateKey,
+} from '@/utils/priceOfferMessageTemplate'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const NORMALIZED_API_HOST = String(API_HOST || '').replace(/\/$/, '')
@@ -55,6 +61,7 @@ const offerError = ref<string | null>(null)
 const isOfferSubmitting = ref(false)
 const offeredPrice = ref<number | null>(null)
 const offerMessage = ref('')
+const selectedOfferMessageTemplateKey = ref<PriceOfferMessageTemplateKey | null>(null)
 const showInsufficientBalanceModal = ref(false)
 const insufficientBalanceDetails = ref<{
   balance: number
@@ -82,7 +89,31 @@ const moderationRejectReasonLabel = computed(() => {
 
 const offerCurrencyCode = computed(() => resolvePreferredCurrency())
 const offerCurrencySymbol = computed(() => getCurrencySymbol(offerCurrencyCode.value))
+const OFFER_DISCOUNT_PRESETS = [5, 10, 15] as const
 const SIMILAR_PRODUCTS_LIMIT = 8
+
+const productOfferBasePrice = computed(() => Number(product.value?.price ?? 0))
+const offerDiscountPercent = computed(() => calculateDiscountPercent(
+  productOfferBasePrice.value,
+  Number(offeredPrice.value),
+))
+function getOfferMessageTemplateText(templateKey: PriceOfferMessageTemplateKey): string {
+  const offeredValue = Number(offeredPrice.value)
+  const priceLabel = formatCurrencyAmount(
+    Number.isFinite(offeredValue) && offeredValue > 0 ? offeredValue : productOfferBasePrice.value,
+    { minimumFractionDigits: 2, maximumFractionDigits: 2 },
+  )
+
+  switch (templateKey) {
+    case 'price_offer_buy_now':
+      return t('pages.product.offerPriceConfirm.messageTemplateBuyNow', { price: priceLabel })
+  }
+}
+
+const offerMessageTemplates = computed(() => PRICE_OFFER_MESSAGE_TEMPLATE_KEYS.map(templateKey => ({
+  id: templateKey,
+  text: getOfferMessageTemplateText(templateKey),
+})))
 
 const displayedCategory = computed(() => {
   const currentCategory = product.value?.category
@@ -277,8 +308,11 @@ function openBuyConfirm() {
 
 function openOfferConfirm() {
   if (!product.value) return
-  offeredPrice.value = Math.max(1, Math.floor(Number(product.value.price) - 1))
+  const productPrice = Number(product.value.price)
+  offeredPrice.value = calculateOfferedPriceByPercent(productPrice, OFFER_DISCOUNT_PRESETS[0])
+    ?? Math.max(0.01, Math.round((productPrice - 0.01) * 100) / 100)
   offerMessage.value = ''
+  selectedOfferMessageTemplateKey.value = null
   offerError.value = null
   showOfferConfirm.value = true
 }
@@ -286,6 +320,48 @@ function openOfferConfirm() {
 function closeOfferConfirm() {
   showOfferConfirm.value = false
   offerError.value = null
+}
+
+function getOfferPriceForDiscount(discountPercent: number): number | null {
+  if (!product.value) return null
+
+  const currentPrice = Number(product.value.price)
+  if (!Number.isFinite(currentPrice) || currentPrice <= 0) return null
+
+  const discounted = currentPrice * (1 - discountPercent / 100)
+  const rounded = Number(discounted.toFixed(2))
+  const maxAllowed = Number((currentPrice - 0.01).toFixed(2))
+  return Math.max(0.01, Math.min(rounded, maxAllowed))
+}
+
+function applyOfferDiscount(discountPercent: number) {
+  const priceFromPreset = getOfferPriceForDiscount(discountPercent)
+  if (priceFromPreset === null) return
+
+  offeredPrice.value = priceFromPreset
+  offerError.value = null
+}
+
+function isDiscountPresetActive(discountPercent: number): boolean {
+  const currentOfferedPrice = Number(offeredPrice.value)
+  const presetPrice = getOfferPriceForDiscount(discountPercent)
+  if (!Number.isFinite(currentOfferedPrice) || presetPrice === null) return false
+
+  return Math.abs(currentOfferedPrice - presetPrice) < 0.001
+}
+
+function applyOfferMessageTemplate(templateKey: PriceOfferMessageTemplateKey) {
+  selectedOfferMessageTemplateKey.value = templateKey
+  offerMessage.value = getOfferMessageTemplateText(templateKey)
+}
+
+function handleOfferMessageInput() {
+  if (!selectedOfferMessageTemplateKey.value) return
+
+  const selectedTemplateText = getOfferMessageTemplateText(selectedOfferMessageTemplateKey.value).trim()
+  if (offerMessage.value.trim() !== selectedTemplateText) {
+    selectedOfferMessageTemplateKey.value = null
+  }
 }
 
 async function handleOfferConfirm() {
@@ -297,12 +373,26 @@ async function handleOfferConfirm() {
     return
   }
 
+  const trimmedOfferMessage = offerMessage.value.trim()
+  const selectedTemplateText = selectedOfferMessageTemplateKey.value
+    ? getOfferMessageTemplateText(selectedOfferMessageTemplateKey.value).trim()
+    : null
+  const shouldSendTemplateKey = Boolean(
+    selectedOfferMessageTemplateKey.value
+    && selectedTemplateText
+    && trimmedOfferMessage
+    && trimmedOfferMessage === selectedTemplateText,
+  )
+  const offerMessageToSend = shouldSendTemplateKey
+    ? encodePriceOfferTemplateMessage(selectedOfferMessageTemplateKey.value as PriceOfferMessageTemplateKey)
+    : (trimmedOfferMessage || undefined)
+
   isOfferSubmitting.value = true
   offerError.value = null
   const result = await productService.createPriceOffer(
     product.value.id,
     priceNumber,
-    offerMessage.value,
+    offerMessageToSend,
   )
   isOfferSubmitting.value = false
 
@@ -330,7 +420,11 @@ async function handleBuyConfirm() {
   showBuyConfirm.value = false
 
   if (result.success) {
-    router.push('/chats')
+    if (result.chatId) {
+      router.push({ name: 'chats', query: { chatId: result.chatId } })
+    } else {
+      router.push('/chats')
+    }
     return
   }
 
@@ -449,6 +543,14 @@ watch(productKey, async (newProductKey, oldProductKey) => {
   await loadProductData()
   window.scrollTo({ top: 0, behavior: 'smooth' })
 })
+
+watch(
+  [offeredPrice, locale],
+  () => {
+    if (!selectedOfferMessageTemplateKey.value) return
+    offerMessage.value = getOfferMessageTemplateText(selectedOfferMessageTemplateKey.value)
+  },
+)
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
@@ -795,6 +897,20 @@ onUnmounted(() => {
         <div class="space-y-3">
           <div>
             <label class="text-xs text-gray-300">{{ $t('pages.product.offerPriceConfirm.offeredPriceLabel') }}</label>
+            <div class="mt-2 flex flex-wrap gap-2">
+              <button
+                v-for="discount in OFFER_DISCOUNT_PRESETS"
+                :key="discount"
+                type="button"
+                class="rounded-md border px-2.5 py-1 text-xs font-medium transition-colors"
+                :class="isDiscountPresetActive(discount)
+                  ? 'border-emerald-400 bg-emerald-500/25 text-emerald-100'
+                  : 'border-emerald-700/50 bg-emerald-900/20 text-emerald-200 hover:bg-emerald-900/35'"
+                @click="applyOfferDiscount(discount)"
+              >
+                -{{ discount }}%
+              </button>
+            </div>
             <div class="relative mt-1">
               <input
                 v-model.number="offeredPrice"
@@ -808,6 +924,23 @@ onUnmounted(() => {
               </span>
             </div>
           </div>
+          <div
+            v-if="offerDiscountPercent !== null"
+            class="rounded-lg border border-emerald-700/30 bg-emerald-900/15 p-3"
+          >
+            <p class="text-xs text-gray-300">{{ $t('pages.product.offerPriceConfirm.previewLabel') }}</p>
+            <div class="mt-1 flex flex-wrap items-center gap-2">
+              <span class="text-xs text-gray-500 line-through">
+                {{ formatCurrencyAmount(Number(product?.price ?? 0), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+              </span>
+              <span class="text-sm font-semibold text-emerald-300">
+                {{ formatCurrencyAmount(Number(offeredPrice ?? 0), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+              </span>
+              <span class="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-200">
+                {{ $t('pages.product.offerPriceConfirm.discountBadge', { percent: offerDiscountPercent }) }}
+              </span>
+            </div>
+          </div>
           <div>
             <label class="text-xs text-gray-300">{{ $t('pages.product.offerPriceConfirm.messageLabel') }}</label>
             <textarea
@@ -816,7 +949,27 @@ onUnmounted(() => {
               maxlength="500"
               class="mt-1 w-full resize-none rounded-lg border border-dark-700 bg-dark-700/60 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500"
               :placeholder="$t('pages.product.offerPriceConfirm.messagePlaceholder')"
+              @input="handleOfferMessageInput"
             />
+            <div class="mt-2">
+              <p class="text-[11px] font-medium text-gray-400">
+                {{ $t('pages.product.offerPriceConfirm.messageTemplatesLabel') }}
+              </p>
+              <div class="mt-1.5 flex flex-wrap gap-1.5">
+                <button
+                  v-for="template in offerMessageTemplates"
+                  :key="template.id"
+                  type="button"
+                  class="rounded-md border px-2.5 py-1 text-left text-[11px] leading-4 transition-colors"
+                  :class="selectedOfferMessageTemplateKey === template.id
+                    ? 'border-emerald-400 bg-emerald-500/25 text-emerald-100'
+                    : 'border-emerald-700/50 bg-emerald-900/20 text-emerald-200 hover:bg-emerald-900/35'"
+                  @click="applyOfferMessageTemplate(template.id)"
+                >
+                  {{ template.text }}
+                </button>
+              </div>
+            </div>
           </div>
           <p v-if="offerError" class="text-xs text-red-400">{{ offerError }}</p>
         </div>

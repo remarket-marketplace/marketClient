@@ -2,6 +2,7 @@
 import { chatsService } from '@/api/chats/chatsService'
 import ChatItem from '@/components/chats/ChatItem.vue'
 import ChatMessage from '@/components/chats/ChatMessage.vue'
+import FloatingDateHeader from '@/components/chats/FloatingDateHeader.vue'
 import SendMessageBar from '@/components/chats/SendMessageBar.vue'
 import Loader from '@/components/Loader.vue'
 import { useUserStore } from '@/stores/user'
@@ -21,7 +22,7 @@ import { createBottomPinController } from '@/utils/chatScroll'
 
 const route = useRoute()
 const router = useRouter()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 // Состояние списка чатов
 const chats = ref<ChatListItem[]>([])
@@ -48,6 +49,10 @@ const mobileMode = ref<'chats' | 'chat'>(typeof route.query.chatId === 'string' 
 const store = useUserStore()
 const user = ref<UserRead | null>(null)
 const newMessage = ref('')
+const floatingDateLabel = ref<string | null>(null)
+const isFloatingDateVisible = ref(false)
+let floatingDateRafId: number | null = null
+let floatingDateHideTimerId: number | null = null
 
 const messagesCurrentPage = ref(1)
 const messagesTotalPages = ref(0)
@@ -127,6 +132,182 @@ function getMessageTimestamp(message: ChatMessageUnion): number {
     return Number.isFinite(timestamp) ? timestamp : 0
 }
 
+type ChatTimelineItem = {
+    message: ChatMessageUnion
+    index: number
+    dateKey: string | null
+    dateLabel: string | null
+    showDateDivider: boolean
+}
+
+const msPerDay = 24 * 60 * 60 * 1000
+
+function toLocalDayStart(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+function toDateKey(date: Date): string {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+}
+
+function parseMessageDateKey(message: ChatMessageUnion): string | null {
+    const parsed = new Date(message.created_at)
+    if (Number.isNaN(parsed.getTime())) return null
+
+    const messageDayStart = toLocalDayStart(parsed)
+    const todayStart = toLocalDayStart(new Date())
+
+    if (messageDayStart.getTime() > todayStart.getTime()) return null
+    return toDateKey(messageDayStart)
+}
+
+function formatDateLabelByKey(dateKey: string): string | null {
+    const [yearStr, monthStr, dayStr] = dateKey.split('-')
+    const year = Number(yearStr)
+    const month = Number(monthStr)
+    const day = Number(dayStr)
+    if (!year || !month || !day) return null
+
+    const date = new Date(year, month - 1, day)
+    if (Number.isNaN(date.getTime())) return null
+
+    const todayStart = toLocalDayStart(new Date())
+    const diffDays = Math.round((todayStart.getTime() - date.getTime()) / msPerDay)
+    const localeCode = locale.value.startsWith('ru') ? 'ru-RU' : 'en-US'
+
+    if (diffDays === 0) return capitalizeDateLabel(t('pages.chats.today'))
+    if (diffDays === 1) return capitalizeDateLabel(t('pages.chats.yesterday'))
+    if (diffDays < 0) return null
+
+    const formatted = new Intl.DateTimeFormat(localeCode, { day: 'numeric', month: 'long' }).format(date)
+    return capitalizeDateLabel(formatted)
+}
+
+function capitalizeDateLabel(label: string): string {
+    const localeCode = locale.value.startsWith('ru') ? 'ru-RU' : 'en-US'
+
+    return label
+        .split(' ')
+        .map((token) => {
+            const firstLetterIndex = token.search(/[A-Za-zА-Яа-яЁё]/)
+            if (firstLetterIndex === -1) return token
+
+            const prefix = token.slice(0, firstLetterIndex)
+            const first = token.charAt(firstLetterIndex).toLocaleUpperCase(localeCode)
+            const rest = token.slice(firstLetterIndex + 1)
+            return `${prefix}${first}${rest}`
+        })
+        .join(' ')
+}
+
+const chatTimelineItems = computed<ChatTimelineItem[]>(() => {
+    let previousDateKey: string | null = null
+
+    return chatMessages.value.map((message, index) => {
+        const dateKey = parseMessageDateKey(message)
+        const dateLabel = dateKey ? formatDateLabelByKey(dateKey) : null
+        const showDateDivider = Boolean(dateLabel && dateKey !== previousDateKey)
+        previousDateKey = dateKey
+
+        return {
+            message,
+            index,
+            dateKey,
+            dateLabel,
+            showDateDivider,
+        }
+    })
+})
+
+function updateFloatingDateLabel() {
+    const container = messageContainerRef.value
+    if (
+        !container
+        || !selectedChatId.value
+        || isChatLoading.value
+        || isChatPinning.value
+        || chatTimelineItems.value.length === 0
+    ) {
+        floatingDateLabel.value = null
+        return
+    }
+
+    const messageNodes = container.querySelectorAll<HTMLElement>('[data-chat-message-index]')
+    if (!messageNodes.length) {
+        floatingDateLabel.value = null
+        return
+    }
+
+    const containerTop = container.getBoundingClientRect().top
+    let activeIndex: number | null = null
+    let activeNode: HTMLElement | null = null
+
+    for (let i = 0; i < messageNodes.length; i++) {
+        const node = messageNodes[i]
+        if (!node) continue
+        const rect = node.getBoundingClientRect()
+        if (rect.bottom > containerTop + 1) {
+            const index = Number(node.dataset.chatMessageIndex)
+            if (Number.isFinite(index)) {
+                activeIndex = index
+                activeNode = node
+            }
+            break
+        }
+    }
+
+    if (activeIndex === null) {
+        const lastNode = messageNodes[messageNodes.length - 1]
+        const lastIndex = Number(lastNode?.dataset.chatMessageIndex)
+        if (Number.isFinite(lastIndex)) {
+            activeIndex = lastIndex
+            activeNode = lastNode ?? null
+        }
+    }
+
+    const activeItem = activeIndex !== null ? chatTimelineItems.value[activeIndex] : null
+    if (!activeItem?.dateLabel) {
+        floatingDateLabel.value = null
+        return
+    }
+
+    // Prevent overlap with the inline date divider when it is already visible at the top.
+    if (activeNode && activeItem.showDateDivider) {
+        const activeNodeTop = activeNode.getBoundingClientRect().top
+        const isDividerVisibleNearTop = activeNodeTop <= containerTop + 44
+        if (isDividerVisibleNearTop) {
+            floatingDateLabel.value = null
+            return
+        }
+    }
+
+    floatingDateLabel.value = activeItem.dateLabel
+}
+
+function scheduleFloatingDateLabelUpdate() {
+    if (floatingDateRafId !== null) return
+    floatingDateRafId = requestAnimationFrame(() => {
+        floatingDateRafId = null
+        updateFloatingDateLabel()
+    })
+}
+
+function showFloatingDateTemporarily() {
+    if (!selectedChatId.value || chatTimelineItems.value.length === 0) return
+    isFloatingDateVisible.value = true
+
+    if (floatingDateHideTimerId !== null) {
+        clearTimeout(floatingDateHideTimerId)
+    }
+    floatingDateHideTimerId = window.setTimeout(() => {
+        isFloatingDateVisible.value = false
+        floatingDateHideTimerId = null
+    }, 900)
+}
+
 function shouldApplyLastMessage(
     currentMessage?: ChatMessageUnion | null,
     incomingMessage?: ChatMessageUnion | null,
@@ -163,6 +344,10 @@ function backToChats() {
         selectedChatId.value = null
         updateUrlChatId(null)
     }
+}
+
+function goToAdminHome() {
+    router.push('/admin')
 }
 
 const checkMobile = () => {
@@ -258,12 +443,45 @@ onUnmounted(() => {
     unsubscribeNewMessage?.()
     unsubscribeChatUpdated?.()
     bottomPin.stop()
+    if (floatingDateRafId !== null) {
+        cancelAnimationFrame(floatingDateRafId)
+        floatingDateRafId = null
+    }
+    if (floatingDateHideTimerId !== null) {
+        clearTimeout(floatingDateHideTimerId)
+        floatingDateHideTimerId = null
+    }
     window.removeEventListener('resize', checkMobile)
 })
 
 watch([searchQuery, sortBy, presenceFilter, unreadFilter], () => {
     if (chatsContainerRef.value) chatsContainerRef.value.scrollTop = 0
 })
+
+watch(selectedChatId, () => {
+    floatingDateLabel.value = null
+    isFloatingDateVisible.value = false
+    if (floatingDateHideTimerId !== null) {
+        clearTimeout(floatingDateHideTimerId)
+        floatingDateHideTimerId = null
+    }
+})
+
+watch(
+    () => [
+        chatTimelineItems.value.length,
+        selectedChatId.value,
+        locale.value,
+        isChatLoading.value,
+        isChatPinning.value,
+    ],
+    () => {
+        void nextTick(() => {
+            scheduleFloatingDateLabelUpdate()
+        })
+    },
+    { flush: 'post' }
+)
 
 // Загрузка чатов с пагинацией
 async function loadChats() {
@@ -364,6 +582,8 @@ function cancelChatPinning() {
 
 async function handleMessagesScroll() {
     const el = messageContainerRef.value
+    scheduleFloatingDateLabelUpdate()
+    showFloatingDateTemporarily()
     if (!el || isChatLoading.value || isChatPinning.value || isLoadingMoreMessages.value || !hasMoreMessages.value) return
 
     const currentScrollTop = el.scrollTop
@@ -403,6 +623,7 @@ async function loadMoreMessages() {
             el.scrollTop = el.scrollHeight - oldHeight
             previousMessageScrollTop.value = el.scrollTop
         }
+        scheduleFloatingDateLabelUpdate()
     } else {
         hasMoreMessages.value = false
     }
@@ -411,6 +632,13 @@ async function loadMoreMessages() {
 }
 
 async function loadChatMessages(chatId: string) {
+    if (selectedChatId.value === chatId) {
+        if (isMobile.value) {
+            mobileMode.value = 'chat'
+        }
+        return
+    }
+
     isLoading.value = true
     isChatLoading.value = true
     isChatPinning.value = false
@@ -431,6 +659,7 @@ async function loadChatMessages(chatId: string) {
         chatMessages.value = response.messages
         messagesTotalPages.value = response.totalPages
         hasMoreMessages.value = 1 < messagesTotalPages.value
+        scheduleFloatingDateLabelUpdate()
 
         const chat = chats.value.find(c => c.id === chatId)
         if (chat) chat.unread_count = 0
@@ -455,6 +684,7 @@ async function loadChatMessages(chatId: string) {
                     previousMessageScrollTop.value = container.scrollTop
                     hasUserScrolledAwayFromTop.value = container.scrollTop > topLoadThresholdPx
                 }
+                scheduleFloatingDateLabelUpdate()
             } finally {
                 isChatPinning.value = false
             }
@@ -514,14 +744,20 @@ async function sendMessage(payload: { files: File[] }) {
             <div v-if="!isMobile || (isMobile && mobileMode === 'chats')"
                 class="h-full lg:max-w-sm flex flex-col md:pr-5 transition-all duration-300 min-h-0" :class="[
                     isMobile && mobileMode === 'chats'
-                        ? 'fixed inset-0 z-10 w-full bg-background'
+                        ? 'fixed inset-x-0 bottom-0 top-14 z-10 w-full bg-background'
                         : 'w-3/12',
                 ]">
-                <!-- Восстанавливаем pt-16 для мобильной версии -->
-                <div class="h-full flex flex-col border-dark-600 lg:border-1 md:rounded-3xl" :class="{
-                    'pb-20': isMobile && mobileMode === 'chats',
-                    'pt-16': isMobile && mobileMode === 'chats',
-                }">
+                <div class="h-full flex flex-col border-dark-600 lg:border-1 md:rounded-3xl">
+                    <div v-if="isMobile" class="px-4 pt-3">
+                        <button
+                            type="button"
+                            class="inline-flex items-center gap-2 rounded-lg border border-dark-700 bg-dark-700/40 px-3 py-2 text-xs text-gray-200"
+                            @click="goToAdminHome"
+                        >
+                            <ArrowLeft class="h-4 w-4" />
+                            <span>{{ $t('common.back') }}</span>
+                        </button>
+                    </div>
                     <p class="my-4 text-2xl px-4 text-mainText font-semibold">
                         {{ $t('pages.admin.supportChats.supportChats') }}
                     </p>
@@ -588,13 +824,10 @@ async function sendMessage(payload: { files: File[] }) {
             <div v-if="!isMobile || (isMobile && mobileMode === 'chat')"
                 class="h-full flex flex-1 min-h-0 transition-all duration-300" :class="[
                     isMobile && mobileMode === 'chat'
-                        ? 'fixed inset-0 z-10 w-full bg-background'
+                        ? 'fixed inset-x-0 bottom-0 top-14 z-10 w-full bg-background'
                         : 'flex-1 min-w-0 border-1 border-dark-400 rounded-3xl',
                 ]">
-                <div class="h-full w-full flex flex-col min-h-0 px-2 md:rounded-xl" :class="{
-                    'pb-16': isMobile && mobileMode === 'chat',
-                    'pt-16': isMobile && mobileMode === 'chat',
-                }">
+                <div class="h-full w-full flex flex-col min-h-0 px-2 md:rounded-xl">
                     <div class="flex flex-1 flex-col min-h-0 w-full">
                         <!-- chat title -->
                         <div v-if="currentChat"
@@ -634,6 +867,7 @@ async function sendMessage(payload: { files: File[] }) {
 
                         <!-- message -->
                         <div class="relative flex flex-1 min-h-0 flex-col overflow-hidden">
+                            <FloatingDateHeader :label="isFloatingDateVisible ? floatingDateLabel : null" />
                             <div ref="messageContainerRef" class="flex-1 min-h-0 overflow-y-auto overscroll-y-contain pb-2"
                                 @scroll="handleMessagesScroll"
                                 @wheel.passive="cancelChatPinning"
@@ -649,10 +883,27 @@ async function sendMessage(payload: { files: File[] }) {
                                             <Loader size="sm" />
                                         </div>
 
-                                        <div v-if="chatMessages.length > 0" class="flex flex-1 flex-col justify-start min-h-0">
-                                            <div class="flex flex-col gap-3 py-2">
-                                                <ChatMessage v-for="message in chatMessages" :key="message.id" :message="message"
-                                                    :user="user" :showAdminBadge="false" />
+                                        <div v-if="chatTimelineItems.length > 0" class="flex flex-1 flex-col justify-start min-h-0">
+                                            <div class="flex flex-col pt-2 pb-18">
+                                                <template v-for="item in chatTimelineItems" :key="item.message.id">
+                                                    <div v-if="item.showDateDivider && item.dateLabel" class="flex justify-center py-2">
+                                                        <span class="rounded-full border border-dark-600/70 bg-dark-900/70 px-3 py-1 text-xs font-medium text-mainText/90">
+                                                            {{ item.dateLabel }}
+                                                        </span>
+                                                    </div>
+
+                                                    <div
+                                                        class="mb-3"
+                                                        :data-chat-message-index="item.index"
+                                                        :data-chat-date-key="item.dateKey ?? ''"
+                                                    >
+                                                        <ChatMessage
+                                                            :message="item.message"
+                                                            :user="user"
+                                                            :showAdminBadge="false"
+                                                        />
+                                                    </div>
+                                                </template>
                                             </div>
                                         </div>
 
