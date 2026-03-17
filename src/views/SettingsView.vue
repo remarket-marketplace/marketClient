@@ -959,69 +959,69 @@ onUnmounted(() => {
             <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-4 space-y-4">
               <button
                 type="button"
-                class="w-full flex items-center gap-3 p-3 rounded-lg text-left transition"
+                class="w-full flex items-start gap-3 p-3 rounded-lg text-left transition"
                 :class="isSectionActive('security')
                   ? 'bg-blue-600/20 border border-blue-500/30'
                   : 'border border-transparent hover:bg-dark-700/60'"
                 @click="switchSection('security')"
               >
-                <div class="w-8 h-8 rounded-full bg-dark-700 flex items-center justify-center">
-                  <Shield class="w-4 h-4" :class="isSectionActive('security') ? 'text-blue-300' : 'text-gray-400'" />
+                <div class="mt-0.5 h-8 w-8 shrink-0 rounded-full bg-dark-700 flex items-center justify-center overflow-visible">
+                  <Shield class="h-4 w-4 shrink-0" :class="isSectionActive('security') ? 'text-blue-300' : 'text-gray-400'" />
                 </div>
-                <div>
-                  <h3 class="font-semibold text-white">{{ $t('pages.settingsPage.security') }}</h3>
-                  <p class="text-xs text-gray-300">{{ $t('pages.settingsPage.securityHint') }}</p>
+                <div class="min-w-0">
+                  <h3 class="font-semibold leading-5 text-white">{{ $t('pages.settingsPage.security') }}</h3>
+                  <p class="mt-0.5 text-xs leading-4 text-gray-300">{{ $t('pages.settingsPage.securityHint') }}</p>
                 </div>
               </button>
 
               <button
                 type="button"
-                class="w-full flex items-center gap-3 p-3 rounded-lg text-left transition"
+                class="w-full flex items-start gap-3 p-3 rounded-lg text-left transition"
                 :class="isSectionActive('nickname')
                   ? 'bg-emerald-600/20 border border-emerald-500/30'
                   : 'border border-transparent hover:bg-dark-700/60'"
                 @click="switchSection('nickname')"
               >
-                <div class="w-8 h-8 rounded-full bg-dark-700 flex items-center justify-center">
-                  <AtSign class="w-4 h-4" :class="isSectionActive('nickname') ? 'text-emerald-300' : 'text-gray-400'" />
+                <div class="mt-0.5 h-8 w-8 shrink-0 rounded-full bg-dark-700 flex items-center justify-center overflow-visible">
+                  <AtSign class="h-4 w-4 shrink-0" :class="isSectionActive('nickname') ? 'text-emerald-300' : 'text-gray-400'" />
                 </div>
-                <div>
-                  <h3 class="font-semibold text-white">{{ $t('pages.settingsPage.nicknameMenu') }}</h3>
-                  <p class="text-xs text-gray-300">{{ $t('pages.settingsPage.nicknameHint') }}</p>
+                <div class="min-w-0">
+                  <h3 class="font-semibold leading-5 text-white">{{ $t('pages.settingsPage.nicknameMenu') }}</h3>
+                  <p class="mt-0.5 text-xs leading-4 text-gray-300">{{ $t('pages.settingsPage.nicknameHint') }}</p>
                 </div>
               </button>
 
               <button
                 type="button"
-                class="w-full flex items-center gap-3 p-3 rounded-lg text-left transition"
+                class="w-full flex items-start gap-3 p-3 rounded-lg text-left transition"
                 :class="isSectionActive('nickname-styles')
                   ? 'bg-violet-600/20 border border-violet-500/30'
                   : 'border border-transparent hover:bg-dark-700/60'"
                 @click="switchSection('nickname-styles')"
               >
-                <div class="w-8 h-8 rounded-full bg-dark-700 flex items-center justify-center">
-                  <Palette class="w-4 h-4" :class="isSectionActive('nickname-styles') ? 'text-violet-300' : 'text-gray-400'" />
+                <div class="mt-0.5 h-8 w-8 shrink-0 rounded-full bg-dark-700 flex items-center justify-center overflow-visible">
+                  <Palette class="h-4 w-4 shrink-0" :class="isSectionActive('nickname-styles') ? 'text-violet-300' : 'text-gray-400'" />
                 </div>
-                <div>
-                  <h3 class="font-semibold text-white">{{ $t('pages.settingsPage.nicknameStylesMenu') }}</h3>
-                  <p class="text-xs text-gray-300">{{ $t('pages.settingsPage.nicknameStylesHint') }}</p>
+                <div class="min-w-0">
+                  <h3 class="font-semibold leading-5 text-white">{{ $t('pages.settingsPage.nicknameStylesMenu') }}</h3>
+                  <p class="mt-0.5 text-xs leading-4 text-gray-300">{{ $t('pages.settingsPage.nicknameStylesHint') }}</p>
                 </div>
               </button>
 
               <button
                 type="button"
-                class="w-full flex items-center gap-3 p-3 rounded-lg text-left transition"
+                class="w-full flex items-start gap-3 p-3 rounded-lg text-left transition"
                 :class="isSectionActive('notifications')
                   ? 'bg-amber-600/20 border border-amber-500/30'
                   : 'border border-transparent hover:bg-dark-700/60'"
                 @click="switchSection('notifications')"
               >
-                <div class="w-8 h-8 rounded-full bg-dark-700 flex items-center justify-center">
-                  <Bell class="w-4 h-4" :class="isSectionActive('notifications') ? 'text-amber-300' : 'text-gray-400'" />
+                <div class="mt-0.5 h-8 w-8 shrink-0 rounded-full bg-dark-700 flex items-center justify-center overflow-visible">
+                  <Bell class="h-4 w-4 shrink-0" :class="isSectionActive('notifications') ? 'text-amber-300' : 'text-gray-400'" />
                 </div>
-                <div>
-                  <h3 class="font-semibold text-white">{{ $t('pages.settingsPage.notificationsMenu') }}</h3>
-                  <p class="text-xs text-gray-300">{{ $t('pages.settingsPage.notificationsHint') }}</p>
+                <div class="min-w-0">
+                  <h3 class="font-semibold leading-5 text-white">{{ $t('pages.settingsPage.notificationsMenu') }}</h3>
+                  <p class="mt-0.5 text-xs leading-4 text-gray-300">{{ $t('pages.settingsPage.notificationsHint') }}</p>
                 </div>
               </button>
             </div>
