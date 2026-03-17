@@ -89,7 +89,7 @@ const moderationRejectReasonLabel = computed(() => {
 
 const offerCurrencyCode = computed(() => resolvePreferredCurrency())
 const offerCurrencySymbol = computed(() => getCurrencySymbol(offerCurrencyCode.value))
-const OFFER_DISCOUNT_PRESETS = [10, 20, 30, 40] as const
+const OFFER_DISCOUNT_PRESETS = [5, 10, 15] as const
 const SIMILAR_PRODUCTS_LIMIT = 8
 
 const productOfferBasePrice = computed(() => Number(product.value?.price ?? 0))
