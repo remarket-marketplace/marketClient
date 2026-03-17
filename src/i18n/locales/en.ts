@@ -343,6 +343,9 @@ const en = {
       sell: "Sell",
       login: "Login",
       admin: "Admin",
+      wallet: "Wallet",
+      notifications: "Notifications",
+      walletBalance: "Current balance: {balance}",
     },
     admin: {
       main: "Main",
