@@ -13,17 +13,14 @@ import {
   ShieldAlert,
   Image as ImageIcon,
 } from 'lucide-vue-next'
-import { useNotificationStore, type InboxNotificationItem } from '@/stores/notification'
-import { useUserStore } from '@/stores/user'
-import { storeToRefs } from 'pinia'
+import { useNotificationStore } from '@/stores/notification'
+import type { InboxNotification } from '@/validation/user/inboxNotifications'
 import { formatCurrencyAmount } from '@/utils/currency'
 
 const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const notificationStore = useNotificationStore()
-const userStore = useUserStore()
-const { user } = storeToRefs(userStore)
 
 const rootRef = ref<HTMLElement | null>(null)
 const isOpen = ref(false)
@@ -31,8 +28,30 @@ const isOpen = ref(false)
 const unreadTotal = computed(() => notificationStore.unreadTotal)
 const notifications = computed(() => notificationStore.sortedItems)
 
+function normalizeBodyParams(item: InboxNotification): Record<string, unknown> {
+  const source = item.body_i18n_params ?? {}
+  const params: Record<string, unknown> = { ...source }
+
+  const statusKey = params.status_key
+  if (typeof statusKey === 'string') {
+    params.status = t(statusKey)
+    delete params.status_key
+  }
+
+  const priceAmount = params.price_amount
+  if (typeof priceAmount === 'number') {
+    params.price = formatCurrencyAmount(priceAmount)
+    delete params.price_amount
+  }
+
+  return params
+}
+
 function toggleMenu() {
   isOpen.value = !isOpen.value
+  if (isOpen.value) {
+    void notificationStore.loadInbox()
+  }
 }
 
 function closeMenu() {
@@ -40,7 +59,7 @@ function closeMenu() {
 }
 
 function markAllAsRead() {
-  notificationStore.markAllAsRead()
+  void notificationStore.markAllAsRead()
 }
 
 function formatDate(value: string): string {
@@ -49,95 +68,79 @@ function formatDate(value: string): string {
   return date.toLocaleString(undefined, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
-function getNotificationTitle(item: InboxNotificationItem): string {
-  const message = item.message
+function getNotificationTitle(item: InboxNotification): string {
+  const translated = t(item.title_i18n_key)
+  return translated === item.title_i18n_key
+    ? t('common.notifications.types.generic')
+    : translated
+}
 
-  switch (message.message_type) {
-    case 'purchase_message': {
-      const currentUsername = user.value?.username ?? ''
-      const isSeller = message.product.seller.username === currentUsername
-      return isSeller
-        ? t('common.notifications.types.newSale')
-        : t('common.notifications.types.newPurchase')
+function getNotificationBody(item: InboxNotification): string {
+  if (item.body_i18n_key) {
+    const translated = t(item.body_i18n_key, normalizeBodyParams(item))
+    if (translated !== item.body_i18n_key) {
+      return translated
     }
-    case 'price_offer_message':
-      return t('common.notifications.types.newPriceOffer')
-    case 'update_deal_status_message':
-      return t('common.notifications.types.dealStatusUpdated')
-    case 'review_message':
-      return t('common.notifications.types.newReview')
-    case 'image_message':
-      return t('common.notifications.types.newImageMessage')
-    case 'text_message':
-      return message.is_admin_message
-        ? t('common.notifications.types.newSupportMessage')
-        : t('common.notifications.types.newChatMessage')
-    default:
-      return t('common.notifications.types.generic')
   }
-}
 
-function resolveMessageByI18nKey(item: InboxNotificationItem): string | null {
-  if (item.message.message_type !== 'text_message') return null
-  const i18nKey = item.message.data?.i18n_key
-  if (!i18nKey || typeof i18nKey !== 'string') return null
-
-  const translated = t(i18nKey, item.message.data ?? {})
-  return translated === i18nKey ? null : translated
-}
-
-function getNotificationBody(item: InboxNotificationItem): string {
-  const message = item.message
-  switch (message.message_type) {
-    case 'purchase_message':
-      return message.product.title
-    case 'price_offer_message':
-      return t('common.notifications.body.priceOffer', {
-        product: message.product.title,
-        price: formatCurrencyAmount(message.offered_price),
-      })
-    case 'update_deal_status_message':
-      return t('common.notifications.body.dealStatus', {
-        product: message.product.title,
-        status: t(`common.dealStatuses.${message.new_status}`),
-      })
-    case 'review_message':
-      return message.review.body || t('pages.chats.withoutReviewText')
-    case 'image_message':
-      return t('pages.chats.imageMessage')
-    case 'text_message': {
-      const translated = resolveMessageByI18nKey(item)
-      if (translated) return translated
-      return message.text || t('common.notifications.body.empty')
-    }
-    default:
-      return t('common.notifications.body.empty')
+  const payload = item.payload ?? {}
+  if (typeof payload.product_title === 'string' && payload.product_title.trim().length > 0) {
+    return payload.product_title
   }
+  if (typeof payload.text === 'string' && payload.text.trim().length > 0) {
+    return payload.text
+  }
+  return t('common.notifications.body.empty')
 }
 
-function getIconComponent(item: InboxNotificationItem) {
-  switch (item.message.message_type) {
-    case 'purchase_message':
+function getNotificationMeta(item: InboxNotification): string {
+  const payload = item.payload ?? {}
+  if (typeof payload.sender_username === 'string' && payload.sender_username.trim().length > 0) {
+    return payload.sender_username
+  }
+  if (typeof payload.product_title === 'string' && payload.product_title.trim().length > 0) {
+    return payload.product_title
+  }
+  return t('common.notifications.chatFallback')
+}
+
+function getIconComponent(item: InboxNotification) {
+  switch (item.event_type) {
+    case 'new_purchase':
+    case 'new_sale':
       return ShoppingBag
-    case 'price_offer_message':
+    case 'new_price_offer':
+    case 'price_offer_status_updated':
       return Tag
-    case 'update_deal_status_message':
+    case 'deal_status_updated':
       return CircleDot
-    case 'review_message':
+    case 'new_review':
       return Star
-    case 'image_message':
+    case 'new_support_message':
+    case 'product_status_updated':
+      return ShieldAlert
+    case 'new_image_message':
       return ImageIcon
-    case 'text_message':
-      return item.message.is_admin_message ? ShieldAlert : MessageCircle
+    case 'new_chat_message':
+      return MessageCircle
     default:
       return Bell
   }
 }
 
-function openNotification(item: InboxNotificationItem) {
-  notificationStore.markAsRead(item.id)
+function openNotification(item: InboxNotification) {
+  void notificationStore.markAsRead(item.id)
   closeMenu()
-  void router.push({ name: 'chats', query: { chatId: item.chat_id } })
+
+  if (item.target_url) {
+    void router.push(item.target_url)
+    return
+  }
+
+  const chatId = item.payload?.chat_id
+  if (typeof chatId === 'string' && chatId.length > 0) {
+    void router.push({ name: 'chats', query: { chatId } })
+  }
 }
 
 function handleOutsideClick(event: MouseEvent) {
@@ -174,10 +177,10 @@ onUnmounted(() => {
   <div ref="rootRef" class="relative">
     <button
       type="button"
-      class="relative flex h-9 w-9 items-center justify-center rounded-xl border border-dark-700 bg-dark-800/80 text-gray-200 transition hover:border-dark-500 hover:text-white"
+      class="relative flex h-8 w-8 items-center justify-center rounded-md border border-dark-700 bg-dark-600 text-mainText transition hover:border-dark-500 focus:outline-none"
       @click="toggleMenu"
     >
-      <Bell class="h-4.5 w-4.5" />
+      <Bell class="h-3.5 w-3.5 text-mainText/70" />
       <span
         v-if="unreadTotal > 0"
         class="absolute -right-1 -top-1 inline-flex min-w-[17px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-4 text-white"
@@ -196,12 +199,11 @@ onUnmounted(() => {
     >
       <div
         v-if="isOpen"
-        class="absolute right-0 top-11 z-50 w-[340px] overflow-hidden rounded-2xl border border-dark-700 bg-dark-900/98 shadow-2xl backdrop-blur"
+        class="fixed left-2 right-2 top-16 z-50 w-auto overflow-hidden rounded-2xl border border-dark-700 bg-dark-900/98 shadow-2xl backdrop-blur md:absolute md:left-auto md:right-0 md:top-11 md:w-[340px]"
       >
         <div class="flex items-center justify-between border-b border-dark-700 px-4 py-3">
           <div>
             <p class="text-sm font-semibold text-white">{{ t('common.notifications.title') }}</p>
-            <p class="text-xs text-gray-400">{{ t('common.notifications.subtitle') }}</p>
           </div>
           <button
             type="button"
@@ -242,7 +244,7 @@ onUnmounted(() => {
                 />
               </div>
               <p class="mt-0.5 truncate text-xs text-gray-400">
-                {{ item.chat_title || t('common.notifications.chatFallback') }}
+                {{ getNotificationMeta(item) }}
               </p>
               <p class="mt-1 line-clamp-2 text-xs text-gray-300">
                 {{ getNotificationBody(item) }}
