@@ -165,6 +165,10 @@ function backToChats() {
     }
 }
 
+function goToAdminHome() {
+    router.push('/admin')
+}
+
 const checkMobile = () => {
     isMobile.value = window.innerWidth < 768
 }
@@ -411,6 +415,13 @@ async function loadMoreMessages() {
 }
 
 async function loadChatMessages(chatId: string) {
+    if (selectedChatId.value === chatId) {
+        if (isMobile.value) {
+            mobileMode.value = 'chat'
+        }
+        return
+    }
+
     isLoading.value = true
     isChatLoading.value = true
     isChatPinning.value = false
@@ -514,14 +525,20 @@ async function sendMessage(payload: { files: File[] }) {
             <div v-if="!isMobile || (isMobile && mobileMode === 'chats')"
                 class="h-full lg:max-w-sm flex flex-col md:pr-5 transition-all duration-300 min-h-0" :class="[
                     isMobile && mobileMode === 'chats'
-                        ? 'fixed inset-0 z-10 w-full bg-background'
+                        ? 'fixed inset-x-0 bottom-0 top-14 z-10 w-full bg-background'
                         : 'w-3/12',
                 ]">
-                <!-- Восстанавливаем pt-16 для мобильной версии -->
-                <div class="h-full flex flex-col border-dark-600 lg:border-1 md:rounded-3xl" :class="{
-                    'pb-20': isMobile && mobileMode === 'chats',
-                    'pt-16': isMobile && mobileMode === 'chats',
-                }">
+                <div class="h-full flex flex-col border-dark-600 lg:border-1 md:rounded-3xl">
+                    <div v-if="isMobile" class="px-4 pt-3">
+                        <button
+                            type="button"
+                            class="inline-flex items-center gap-2 rounded-lg border border-dark-700 bg-dark-700/40 px-3 py-2 text-xs text-gray-200"
+                            @click="goToAdminHome"
+                        >
+                            <ArrowLeft class="h-4 w-4" />
+                            <span>{{ $t('common.back') }}</span>
+                        </button>
+                    </div>
                     <p class="my-4 text-2xl px-4 text-mainText font-semibold">
                         {{ $t('pages.admin.supportChats.supportChats') }}
                     </p>
@@ -588,13 +605,10 @@ async function sendMessage(payload: { files: File[] }) {
             <div v-if="!isMobile || (isMobile && mobileMode === 'chat')"
                 class="h-full flex flex-1 min-h-0 transition-all duration-300" :class="[
                     isMobile && mobileMode === 'chat'
-                        ? 'fixed inset-0 z-10 w-full bg-background'
+                        ? 'fixed inset-x-0 bottom-0 top-14 z-10 w-full bg-background'
                         : 'flex-1 min-w-0 border-1 border-dark-400 rounded-3xl',
                 ]">
-                <div class="h-full w-full flex flex-col min-h-0 px-2 md:rounded-xl" :class="{
-                    'pb-16': isMobile && mobileMode === 'chat',
-                    'pt-16': isMobile && mobileMode === 'chat',
-                }">
+                <div class="h-full w-full flex flex-col min-h-0 px-2 md:rounded-xl">
                     <div class="flex flex-1 flex-col min-h-0 w-full">
                         <!-- chat title -->
                         <div v-if="currentChat"

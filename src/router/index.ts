@@ -22,7 +22,8 @@ const routes = [
       meta: { requiredGuest: true },
     },
     {
-      path: "/password-reset-email",
+      path: "/password-reset",
+      alias: "/password-reset-email",
       name: "password reset email",
       component: () => import("@/views/resetPassword/EnterResetEmailView.vue"),
     },
@@ -200,6 +201,11 @@ const routes = [
       path: "/about",
       name: "about",
       component: () => import("@/views/AboutView.vue"),
+    },
+    {
+      path: "/rules",
+      name: "market rules",
+      component: () => import("@/views/MarketplaceRulesView.vue"),
     },
     {
       path: "/terms",

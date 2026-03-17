@@ -44,7 +44,7 @@ const pendingPlatformToggle = ref<{
 const CHART_COLORS = {
   axisText: '#9ca3af',
   legendText: '#e5e7eb',
-  gridBorder: 'rgba(255, 255, 255, 0.08)',
+  gridBorder: '#334155',
   revenue: '#0ea5e9',
   users: '#a855f7',
   statusPending: '#f59e0b',
@@ -57,11 +57,48 @@ const CHART_COLORS = {
   topCategories: '#34d399',
 } as const
 
+function normalizeApexColor(value: string, fallback: string): string {
+  const parse = (input: string): [number, number, number] | null => {
+    const normalized = input.trim()
+    if (!normalized || normalized.includes('var(')) return null
+
+    const hex = normalized.match(/^#([a-f\d]{3}|[a-f\d]{6})$/i)
+    if (hex) {
+      const source = hex[1] ?? ''
+      if (!source) return null
+      if (source.length === 3) {
+        return source.split('').map((part) => Number.parseInt(`${part}${part}`, 16)) as [number, number, number]
+      }
+      return [
+        Number.parseInt(source.slice(0, 2), 16),
+        Number.parseInt(source.slice(2, 4), 16),
+        Number.parseInt(source.slice(4, 6), 16),
+      ]
+    }
+
+    const rgbLike = normalized.match(/^rgba?\((.+)\)$/i)
+    if (!rgbLike) return null
+
+    const body = rgbLike[1] ?? ''
+    if (!body) return null
+    const numbers = body.match(/[\d.]+/g)
+    if (!numbers || numbers.length < 3) return null
+
+    const r = Math.max(0, Math.min(255, Math.round(Number(numbers[0]))))
+    const g = Math.max(0, Math.min(255, Math.round(Number(numbers[1]))))
+    const b = Math.max(0, Math.min(255, Math.round(Number(numbers[2]))))
+    if (!Number.isFinite(r) || !Number.isFinite(g) || !Number.isFinite(b)) return null
+    return [r, g, b]
+  }
+
+  const rgb = parse(value) ?? parse(fallback) ?? [96, 165, 250]
+  return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`
+}
+
 const cssVar = (token: string, fallback: string) => {
-  if (typeof window === 'undefined') return fallback
+  if (typeof window === 'undefined') return normalizeApexColor('', fallback)
   const value = window.getComputedStyle(document.documentElement).getPropertyValue(token).trim()
-  if (!value || value.includes('var(')) return fallback
-  return value
+  return normalizeApexColor(value, fallback)
 }
 
 const formatCurrency = (value: number) =>
@@ -87,11 +124,43 @@ const calcTrend = (series?: { value: number }[]): Trend => {
   return { diff, percent, isUp: diff > 0, isFlat: diff === 0 }
 }
 
+const toSafeNumber = (value: unknown, fallback = 0) => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+const toSafeString = (value: unknown, fallback: string) => {
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (trimmed) return trimmed
+  }
+  return fallback
+}
+
 const revenueTrend = computed(() => calcTrend(dashboardData.value?.revenue_by_day))
 const usersTrend = computed(() => calcTrend(dashboardData.value?.new_users_by_day))
 
-const dealsStatus = computed(() => dashboardData.value?.deals_by_status ?? [])
-const topCategories = computed(() => dashboardData.value?.top_categories ?? [])
+const dealsStatus = computed(() => {
+  const rows = dashboardData.value?.deals_by_status
+  if (!Array.isArray(rows)) return []
+
+  return rows.map((row) => ({
+    status: toSafeString((row as any)?.status, 'unknown').toLowerCase(),
+    count: Math.max(0, Math.round(toSafeNumber((row as any)?.count, 0))),
+  }))
+})
+
+const topCategories = computed(() => {
+  const rows = dashboardData.value?.top_categories
+  if (!Array.isArray(rows)) return []
+
+  return rows.map((row) => ({
+    category_id: String((row as any)?.category_id ?? ''),
+    category_name: toSafeString((row as any)?.category_name, t('common.notSpecified')),
+    total_sales: Math.max(0, toSafeNumber((row as any)?.total_sales, 0)),
+    total_deals: Math.max(0, Math.round(toSafeNumber((row as any)?.total_deals, 0))),
+  }))
+})
 
 const avgCheck = computed(() => {
   if (!dashboardData.value || !dashboardData.value.count_of_deals) return 0
@@ -102,9 +171,14 @@ const getStatusCount = (status: string) =>
   dealsStatus.value.find(item => item.status === status)?.count ?? 0
 
 const revenueSeries = computed(() => {
-  const revenue = dashboardData.value?.revenue_by_day ?? []
-  const users = dashboardData.value?.new_users_by_day ?? []
-  const toTimestamp = (rawDate: string) => {
+  const revenue = Array.isArray(dashboardData.value?.revenue_by_day)
+    ? dashboardData.value.revenue_by_day
+    : []
+  const users = Array.isArray(dashboardData.value?.new_users_by_day)
+    ? dashboardData.value.new_users_by_day
+    : []
+  const toTimestamp = (rawDate: unknown) => {
+    if (typeof rawDate !== 'string') return Date.now()
     const parsed = Date.parse(rawDate)
     return Number.isFinite(parsed) ? parsed : Date.now()
   }
@@ -112,12 +186,12 @@ const revenueSeries = computed(() => {
     {
       name: t('pages.admin.mainPage.revenue'),
       type: 'area',
-      data: revenue.map(point => [toTimestamp(point.date), Number(point.value || 0)]),
+      data: revenue.map(point => [toTimestamp((point as any)?.date), toSafeNumber((point as any)?.value, 0)]),
     },
     {
       name: t('pages.admin.mainPage.newUsers'),
       type: 'line',
-      data: users.map(point => [toTimestamp(point.date), Number(point.value || 0)]),
+      data: users.map(point => [toTimestamp((point as any)?.date), toSafeNumber((point as any)?.value, 0)]),
     },
   ]
 })
@@ -135,6 +209,7 @@ const revenueOptions = computed<ApexOptions>(() => {
       toolbar: { show: false },
       background: 'transparent',
       foreColor: axisText,
+      fontFamily: 'Outfit, sans-serif',
     },
     dataLabels: { enabled: false },
     stroke: { curve: 'smooth', width: [3, 2.4] },
@@ -229,7 +304,12 @@ const statusOptions = computed<ApexOptions>(() => {
   const fallbackColor = cssVar('--chart-status-default', CHART_COLORS.statusDefault)
   const colors = statuses.map(s => colorsMap[s.status] || fallbackColor)
   return {
-    chart: { type: 'bar' as const, toolbar: { show: false }, foreColor: axisText },
+    chart: {
+      type: 'bar' as const,
+      toolbar: { show: false },
+      foreColor: axisText,
+      fontFamily: 'Outfit, sans-serif',
+    },
     plotOptions: {
       bar: {
         columnWidth: '50%',
@@ -273,7 +353,12 @@ const topCategoriesOptions = computed<ApexOptions>(() => {
   const seriesColor = cssVar('--chart-series-top-categories', CHART_COLORS.topCategories)
 
   return {
-    chart: { type: 'bar' as const, toolbar: { show: false }, foreColor: axisText },
+    chart: {
+      type: 'bar' as const,
+      toolbar: { show: false },
+      foreColor: axisText,
+      fontFamily: 'Outfit, sans-serif',
+    },
     plotOptions: {
       bar: {
         horizontal: true,

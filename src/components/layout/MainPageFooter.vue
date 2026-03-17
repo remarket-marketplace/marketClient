@@ -79,6 +79,11 @@
                 </router-link>
               </li>
               <li>
+                <router-link to="/rules" class="text-gray-400 hover:text-white transition-colors duration-300 font-light">
+                  {{ $t('footer.marketRules', 'Правила площадки') }}
+                </router-link>
+              </li>
+              <li>
                 <a href="mailto:legal@re-market.net" class="text-gray-400 hover:text-white transition-colors duration-300 font-light">
                   legal@re-market.net
                 </a>
