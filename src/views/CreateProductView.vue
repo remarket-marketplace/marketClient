@@ -63,6 +63,7 @@ const draftImages = ref<string[]>([])
 const currentStep = ref<StepNumber>(1)
 const showStepIssues = ref(false)
 const stepTransitionName = ref<'wizard-step-forward' | 'wizard-step-back'>('wizard-step-forward')
+const showSubmittedToModerationModal = ref(false)
 
 const selectedCurrency = computed(() => preferredCurrency.value)
 const currencySymbol = computed(() => getCurrencySymbol(selectedCurrency.value))
@@ -594,10 +595,10 @@ async function createProduct() {
     }
 
     const result = await productService.createProduct(productDataObj, images.value)
-    const username = store.user?.username
 
-    if (result && username) {
-      await router.push(`/user/${username}`)
+    if (result) {
+      clearForm()
+      showSubmittedToModerationModal.value = true
     } else {
       errorMessage.value = t('pages.forms.createProduct.errorCreatingProduct')
     }
@@ -620,6 +621,20 @@ async function createProduct() {
   } finally {
     sended.value = false
   }
+}
+
+function closeSubmittedToModerationModal() {
+  showSubmittedToModerationModal.value = false
+}
+
+async function goToProfileAfterCreate() {
+  const username = store.user?.username
+  showSubmittedToModerationModal.value = false
+  if (username) {
+    await router.push(`/user/${username}`)
+    return
+  }
+  await router.push('/')
 }
 </script>
 
@@ -1157,6 +1172,43 @@ async function createProduct() {
         </div>
       </div>
     </div>
+
+    <Teleport to="body">
+      <div
+        v-if="showSubmittedToModerationModal"
+        class="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+      >
+        <div class="w-full max-w-md rounded-2xl border border-dark-600 bg-dark-700 p-5 shadow-2xl">
+          <div class="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-blue-600/20 text-blue-300">
+            <Check class="h-5 w-5" />
+          </div>
+
+          <h3 class="text-lg font-semibold text-white">
+            {{ $t('pages.forms.createProduct.submittedToModerationTitle') }}
+          </h3>
+          <p class="mt-2 text-sm text-gray-300">
+            {{ $t('pages.forms.createProduct.submittedToModerationMessage') }}
+          </p>
+
+          <div class="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              class="rounded-lg border border-dark-500 bg-dark-600 px-4 py-2 text-sm font-medium text-gray-200 transition hover:bg-dark-500"
+              @click="closeSubmittedToModerationModal"
+            >
+              {{ $t('pages.forms.createProduct.submittedToModerationSecondaryAction') }}
+            </button>
+            <button
+              type="button"
+              class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+              @click="goToProfileAfterCreate"
+            >
+              {{ $t('pages.forms.createProduct.submittedToModerationPrimaryAction') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
