@@ -29,6 +29,7 @@ import type {
   NicknameStyleCatalogResponse,
 } from '@/validation/user/nicknameStyle'
 import type { NotificationSettings } from '@/validation/user/notificationSettings'
+import type { TwoFactorSettings } from '@/validation/user/twoFactorSettings'
 
 type SettingsSection = 'security' | 'notifications' | 'nickname' | 'nickname-styles'
 type ColorPickerGroup = 'primary' | 'secondary' | 'glow'
@@ -65,6 +66,11 @@ const isNotificationsLoading = ref(false)
 const isNotificationsSaving = ref(false)
 const isTelegramConnectLoading = ref(false)
 const isTelegramDisconnectLoading = ref(false)
+const twoFactorData = ref<TwoFactorSettings | null>(null)
+const twoFactorErrorMessage = ref<string | null>(null)
+const twoFactorSuccessMessage = ref<string | null>(null)
+const isTwoFactorLoading = ref(false)
+const isTwoFactorSaving = ref(false)
 const pendingTelegramConnectUrl = ref<string | null>(null)
 let isNotificationsSilentRefreshInFlight = false
 let telegramStatusPollingTimer: ReturnType<typeof window.setInterval> | null = null
@@ -149,6 +155,7 @@ const telegramIntegrationEnabled = computed(
 const telegramConnected = computed(() => notificationsData.value?.telegram_connected === true)
 const telegramUsername = computed(() => notificationsData.value?.telegram_username ?? null)
 const telegramBotUsername = computed(() => notificationsData.value?.telegram_bot_username ?? null)
+const twoFactorEnabled = computed(() => twoFactorData.value?.enabled ?? false)
 const activeSection = computed<SettingsSection>(() => normalizeSettingsSection(route.query.section))
 const canChangeUsername = computed(() => {
   const normalized = changingUsername.value.trim()
@@ -255,6 +262,15 @@ function setNotificationsSuccessMessage(value: string) {
   window.setTimeout(() => {
     if (notificationsSuccessMessage.value === value) {
       notificationsSuccessMessage.value = null
+    }
+  }, 2600)
+}
+
+function setTwoFactorSuccessMessage(value: string) {
+  twoFactorSuccessMessage.value = value
+  window.setTimeout(() => {
+    if (twoFactorSuccessMessage.value === value) {
+      twoFactorSuccessMessage.value = null
     }
   }, 2600)
 }
@@ -435,6 +451,48 @@ async function loadNotificationSettings() {
 
   applyNotificationSettings(result.data)
   isNotificationsLoading.value = false
+}
+
+async function loadTwoFactorSettings() {
+  isTwoFactorLoading.value = true
+  twoFactorErrorMessage.value = null
+
+  const result = await settingsService.getTwoFactorSettings()
+  if (!result.success || !result.data) {
+    twoFactorErrorMessage.value = getErrorMessage(
+      result.error,
+      t as unknown as (key: string) => string,
+    )
+    isTwoFactorLoading.value = false
+    return
+  }
+
+  twoFactorData.value = result.data
+  isTwoFactorLoading.value = false
+}
+
+async function toggleTwoFactorSettings() {
+  if (!twoFactorData.value || isTwoFactorSaving.value) return
+
+  isTwoFactorSaving.value = true
+  twoFactorErrorMessage.value = null
+  twoFactorSuccessMessage.value = null
+
+  const result = await settingsService.updateTwoFactorSettings({
+    enabled: !twoFactorData.value.enabled,
+  })
+  if (!result.success || !result.data) {
+    twoFactorErrorMessage.value = getErrorMessage(
+      result.error,
+      t as unknown as (key: string) => string,
+    )
+    isTwoFactorSaving.value = false
+    return
+  }
+
+  twoFactorData.value = result.data
+  setTwoFactorSuccessMessage(t('pages.settingsPage.twoFactorSaved'))
+  isTwoFactorSaving.value = false
 }
 
 async function updateNotificationSettings(payload: {
@@ -881,6 +939,9 @@ watch(
     if (section === 'nickname-styles' && !stylesCatalog.value && !isStylesLoading.value) {
       void loadNicknameStyles()
     }
+    if (section === 'security' && !twoFactorData.value && !isTwoFactorLoading.value) {
+      void loadTwoFactorSettings()
+    }
     if (section === 'notifications' && !isNotificationsLoading.value) {
       if (!notificationsData.value) {
         void loadNotificationSettings()
@@ -1056,6 +1117,48 @@ onUnmounted(() => {
             <div>
               <h2 class="text-xl font-bold text-white">{{ $t('pages.settingsPage.changePassword') }}</h2>
               <p class="text-sm text-gray-400">{{ $t('pages.settingsPage.changePasswordHint') }}</p>
+            </div>
+
+            <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-6 space-y-4">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 text-white font-semibold">
+                    <Mail class="w-4 h-4 text-blue-300" />
+                    <span>{{ $t('pages.settingsPage.twoFactorTitle') }}</span>
+                  </div>
+                  <p class="mt-1 text-xs text-gray-300">{{ $t('pages.settingsPage.twoFactorHint') }}</p>
+                </div>
+                <Checkbox
+                  size="md"
+                  :model-value="twoFactorEnabled"
+                  :disabled="isTwoFactorLoading || isTwoFactorSaving || !twoFactorData"
+                  @update:model-value="toggleTwoFactorSettings"
+                />
+              </div>
+
+              <div class="rounded-lg border border-dark-700 bg-dark-700/35 px-3 py-2 text-xs text-gray-300">
+                <span
+                  class="font-semibold"
+                  :class="twoFactorEnabled ? 'text-emerald-300' : 'text-amber-200'"
+                >
+                  {{ twoFactorEnabled ? $t('pages.settingsPage.twoFactorEnabled') : $t('pages.settingsPage.twoFactorDisabled') }}
+                </span>
+                <span class="ml-1">{{ $t('pages.settingsPage.twoFactorEmailHint') }}</span>
+              </div>
+
+              <div v-if="isTwoFactorLoading || isTwoFactorSaving" class="flex items-center gap-2 text-sm text-gray-300">
+                <Loader2 class="w-4 h-4 animate-spin" />
+                <span>{{ t('common.loading') }}</span>
+              </div>
+
+              <ErrorMessage
+                v-if="twoFactorErrorMessage"
+                :error-message="twoFactorErrorMessage"
+              />
+              <SuccessMessage
+                v-if="twoFactorSuccessMessage"
+                :success-message="twoFactorSuccessMessage"
+              />
             </div>
 
             <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-6 space-y-6">
