@@ -5,7 +5,9 @@ import {
     PlusCircle,
     User,
     Shield,
-    BarChart3
+    BarChart3,
+    Bell,
+    Wallet,
 } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -16,6 +18,7 @@ import { storeToRefs } from 'pinia'
 import SelectLanguage from '@/components/SelectLanguage.vue'
 import SelectCurrency from '@/components/SelectCurrency.vue'
 import MainPageFooter from '@/components/layout/MainPageFooter.vue'
+import { formatCurrencyAmount } from '@/utils/currency'
 import NotificationsMenu from '@/components/layout/NotificationsMenu.vue'
 import type { FunctionalComponent } from 'vue'
 import type { LucideProps } from 'lucide-vue-next'
@@ -152,6 +155,41 @@ const navItems = computed(() => {
     return items
 })
 
+const roleNavItems = computed(() =>
+    navItems.value.filter((item) => item.id === 'admin' || item.id === 'partner-stats'),
+)
+
+const primaryNavItems = computed(() =>
+    navItems.value.filter((item) => item.id !== 'admin' && item.id !== 'partner-stats'),
+)
+
+const walletBalanceLabel = computed(() =>
+    formatCurrencyAmount(Number(user.value?.balance ?? 0), {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }),
+)
+
+const walletTitle = computed(() =>
+    t('navigation.market.walletBalance', { balance: walletBalanceLabel.value }),
+)
+
+function goToWallet() {
+    if (!user.value) {
+        router.push('/signin')
+        return
+    }
+    router.push('/wallet')
+}
+
+function goToNotifications() {
+    if (!user.value) {
+        router.push('/signin')
+        return
+    }
+    router.push({ path: '/settings', query: { section: 'notifications' } })
+}
+
 const mobileNavGridStyle = computed(() => ({
     gridTemplateColumns: `repeat(${Math.max(1, navItems.value.length)}, minmax(0, 1fr))`,
 }))
@@ -168,7 +206,7 @@ const mobileNavGridStyle = computed(() => ({
                 </div>
                 <div class="flex items-center gap-3">
                     <nav class="hidden items-center gap-6 md:flex">
-                        <router-link v-for="item in navItems" :key="item.id" :to="item.to"
+                        <router-link v-for="item in primaryNavItems" :key="item.id" :to="item.to"
                             class="flex items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"
                             :class="{
                                 'text-white': isActiveRoute(item),
@@ -194,7 +232,84 @@ const mobileNavGridStyle = computed(() => ({
                                 {{ item.title }}
                             </span>
                         </router-link>
+
+                        <button
+                            v-if="user && user.role !== 'admin'"
+                            type="button"
+                            class="inline-flex h-8 items-center gap-1.5 rounded-md border border-white/15 bg-white/10 px-2.5 text-xs text-mainText backdrop-blur-md transition hover:border-white/25 hover:bg-white/15"
+                            :title="walletTitle"
+                            @click="goToWallet"
+                        >
+                            <Wallet class="h-3.5 w-3.5 text-emerald-300" />
+                            <span class="font-medium">{{ walletBalanceLabel }}</span>
+                        </button>
+
+                        <router-link v-for="item in roleNavItems" :key="item.id" :to="item.to"
+                            class="flex items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"
+                            :class="{
+                                'text-white': isActiveRoute(item),
+                                'text-gray-400': !isActiveRoute(item)
+                            }">
+                            <div class="relative">
+                                <component :is="item.icon" :class="[
+                                    item.sell ? 'text-2xl' : 'text-xl',
+                                    item.admin ? 'text-purple-400' : '',
+                                    item.partner ? 'text-cyan-300' : '',
+                                    isActiveRoute(item) ? 'text-white' : 'text-gray-400',
+                                    'transition-colors duration-300 group-hover:text-white'
+                                ]" :size="item.sell ? 24 : 20" stroke-width="1.5" />
+                                <span
+                                    v-if="item.id === 'chats' && unreadTotal > 0"
+                                    class="absolute -top-1 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-[10px] text-white font-semibold flex items-center justify-center shadow-lg"
+                                >
+                                    {{ unreadTotal > 99 ? '99+' : unreadTotal }}
+                                </span>
+                            </div>
+                            <span class="ml-1 transition-colors duration-300 group-hover:text-white"
+                                :class="{ 'text-purple-300': item.admin, 'text-cyan-200': item.partner }">
+                                {{ item.title }}
+                            </span>
+                        </router-link>
+
+                        <button
+                            v-if="user && user.role === 'admin'"
+                            type="button"
+                            class="inline-flex h-8 items-center gap-1.5 rounded-md border border-white/15 bg-white/10 px-2.5 text-xs text-mainText backdrop-blur-md transition hover:border-white/25 hover:bg-white/15"
+                            :title="walletTitle"
+                            @click="goToWallet"
+                        >
+                            <Wallet class="h-3.5 w-3.5 text-emerald-300" />
+                            <span class="font-medium">{{ walletBalanceLabel }}</span>
+                        </button>
                     </nav>
+
+                    <div v-if="user" class="hidden md:flex items-center gap-2">
+                        <button
+                            type="button"
+                            class="relative inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/15 bg-white/10 text-mainText backdrop-blur-md transition hover:border-white/25 hover:bg-white/15"
+                            :title="$t('navigation.market.notifications')"
+                            @click="goToNotifications"
+                        >
+                            <Bell class="h-4 w-4 text-mainText/85" />
+                        </button>
+                    </div>
+
+                    <div class="md:order-2">
+                        <SelectLanguage />
+                    </div>
+                    <button
+                        v-if="user"
+                        type="button"
+                        class="inline-flex h-8 items-center gap-1 rounded-md border border-white/15 bg-white/10 px-2 text-[10px] text-mainText backdrop-blur-md transition hover:border-white/25 hover:bg-white/15 md:hidden"
+                        :title="walletTitle"
+                        @click="goToWallet"
+                    >
+                        <Wallet class="h-3.5 w-3.5 text-emerald-300" />
+                        <span class="max-w-[72px] truncate font-medium">{{ walletBalanceLabel }}</span>
+                    </button>
+                    <div class="md:order-1">
+                        <SelectCurrency />
+                    </div>
                     <NotificationsMenu v-if="user?.username" />
                     <SelectCurrency />
                     <SelectLanguage />

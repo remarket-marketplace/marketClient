@@ -378,6 +378,9 @@ const ru = {
       sell: "Продать",
       login: "Войти",
       admin: "Админка",
+      wallet: "Кошелек",
+      notifications: "Уведомления",
+      walletBalance: "Текущий баланс: {balance}",
     },
     admin: {
       main: "Главная",
