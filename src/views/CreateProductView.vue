@@ -2,6 +2,7 @@
 import { categoryService } from '@/api/category/CategoryService'
 import { productService } from '@/api/product/ProductService'
 import { raikaService } from '@/api/raika/RaikaService'
+import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import CustomSelect from '@/components/CustomSelect.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import FileUploader from '@/components/FileUploader.vue'
@@ -1173,42 +1174,15 @@ async function goToProfileAfterCreate() {
       </div>
     </div>
 
-    <Teleport to="body">
-      <div
-        v-if="showSubmittedToModerationModal"
-        class="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
-      >
-        <div class="w-full max-w-md rounded-2xl border border-dark-600 bg-dark-700 p-5 shadow-2xl">
-          <div class="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-blue-600/20 text-blue-300">
-            <Check class="h-5 w-5" />
-          </div>
-
-          <h3 class="text-lg font-semibold text-white">
-            {{ $t('pages.forms.createProduct.submittedToModerationTitle') }}
-          </h3>
-          <p class="mt-2 text-sm text-gray-300">
-            {{ $t('pages.forms.createProduct.submittedToModerationMessage') }}
-          </p>
-
-          <div class="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              class="rounded-lg border border-dark-500 bg-dark-600 px-4 py-2 text-sm font-medium text-gray-200 transition hover:bg-dark-500"
-              @click="closeSubmittedToModerationModal"
-            >
-              {{ $t('pages.forms.createProduct.submittedToModerationSecondaryAction') }}
-            </button>
-            <button
-              type="button"
-              class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
-              @click="goToProfileAfterCreate"
-            >
-              {{ $t('pages.forms.createProduct.submittedToModerationPrimaryAction') }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <ConfirmWindow
+      :is-open="showSubmittedToModerationModal"
+      :title="$t('pages.forms.createProduct.submittedToModerationTitle')"
+      :message="$t('pages.forms.createProduct.submittedToModerationMessage')"
+      :confirm-text="$t('pages.forms.createProduct.submittedToModerationPrimaryAction')"
+      :cancel-text="$t('pages.forms.createProduct.submittedToModerationSecondaryAction')"
+      @confirm="goToProfileAfterCreate"
+      @cancel="closeSubmittedToModerationModal"
+    />
   </div>
 </template>
 
