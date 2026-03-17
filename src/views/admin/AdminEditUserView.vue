@@ -33,6 +33,9 @@ const description = ref('');
 const currentAvatarUrl = ref('');
 const removeAvatarAfterSave = ref(false);
 const avatarFiles = ref<File[]>([]);
+const currentProfileBackgroundUrl = ref('');
+const removeProfileBackgroundAfterSave = ref(false);
+const profileBackgroundFiles = ref<File[]>([]);
 const balance = ref('');
 const rating = ref('');
 const isBanned = ref(false);
@@ -41,7 +44,6 @@ const role = ref<'user' | 'admin' | 'partner'>('user');
 const hasFrozenBalance = ref(false);
 const nicknameStyleId = ref('default');
 const profileBackgroundUnlocked = ref(false);
-const profileBackgroundUrl = ref('');
 const twoFactorEnabled = ref(false);
 const newPassword = ref('');
 const confirmNewPassword = ref('');
@@ -58,6 +60,21 @@ const avatarPreviewUrl = computed(() => {
     return currentAvatarUrl.value
   }
   return `${API_HOST}${currentAvatarUrl.value}`
+})
+const hasCurrentProfileBackground = computed(
+  () => Boolean(currentProfileBackgroundUrl.value) && !removeProfileBackgroundAfterSave.value,
+)
+const profileBackgroundPreviewStyle = computed(() => {
+  if (!hasCurrentProfileBackground.value) return {}
+  const rawUrl = currentProfileBackgroundUrl.value
+  const resolvedUrl = rawUrl.startsWith('http://') || rawUrl.startsWith('https://')
+    ? rawUrl
+    : `${API_HOST}${rawUrl}`
+  return {
+    backgroundImage: `url(${resolvedUrl})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+  } as Record<string, string>
 })
 
 // Заглушка для получения пользователя
@@ -80,6 +97,9 @@ async function loadUser() {
       currentAvatarUrl.value = userData.avatar_url || '';
       removeAvatarAfterSave.value = false;
       avatarFiles.value = [];
+      currentProfileBackgroundUrl.value = userData.profile_background_url || '';
+      removeProfileBackgroundAfterSave.value = false;
+      profileBackgroundFiles.value = [];
       balance.value = userData.balance.toString();
       rating.value = userData.rating.toString();
       isBanned.value = userData.is_banned;
@@ -88,7 +108,6 @@ async function loadUser() {
       hasFrozenBalance.value = userData.has_frozen_balance;
       nicknameStyleId.value = userData.nickname_style_id || 'default';
       profileBackgroundUnlocked.value = userData.profile_background_unlocked || false;
-      profileBackgroundUrl.value = userData.profile_background_url || '';
       twoFactorEnabled.value = userData.two_factor_enabled || false;
       newPassword.value = '';
       confirmNewPassword.value = '';
@@ -157,12 +176,6 @@ async function saveUser() {
       return;
     }
 
-    const normalizedProfileBackgroundUrl = profileBackgroundUrl.value.trim();
-    if (normalizedProfileBackgroundUrl.length > 255) {
-      errorMessage.value = t('pages.admin.editUser.backgroundUrlTooLong');
-      return;
-    }
-
     const hasPasswordInput = newPassword.value.length > 0 || confirmNewPassword.value.length > 0;
     if (hasPasswordInput) {
       if (!newPassword.value || !confirmNewPassword.value) {
@@ -191,7 +204,6 @@ async function saveUser() {
       has_frozen_balance: hasFrozenBalance.value,
       nickname_style_id: normalizedNicknameStyleId,
       profile_background_unlocked: profileBackgroundUnlocked.value,
-      profile_background_url: profileBackgroundUnlocked.value ? normalizedProfileBackgroundUrl : '',
       two_factor_enabled: twoFactorEnabled.value,
     };
 
@@ -218,7 +230,7 @@ async function saveUser() {
     hasFrozenBalance.value = updateResponse.has_frozen_balance;
     nicknameStyleId.value = updateResponse.nickname_style_id || 'default';
     profileBackgroundUnlocked.value = updateResponse.profile_background_unlocked || false;
-    profileBackgroundUrl.value = updateResponse.profile_background_url || '';
+    currentProfileBackgroundUrl.value = updateResponse.profile_background_url || '';
     twoFactorEnabled.value = updateResponse.two_factor_enabled || false;
     newPassword.value = '';
     confirmNewPassword.value = '';
@@ -240,6 +252,30 @@ async function saveUser() {
       }
       currentAvatarUrl.value = avatarResponse.avatar_url || ''
       removeAvatarAfterSave.value = false
+    }
+
+    if (profileBackgroundFiles.value.length > 0) {
+      const backgroundResponse = await adminService.uploadUserProfileBackground(
+        userId.value,
+        profileBackgroundFiles.value[0]!,
+      )
+      if (backgroundResponse === false) {
+        errorMessage.value = t('pages.admin.editUser.errorSaving');
+        return;
+      }
+      currentProfileBackgroundUrl.value = backgroundResponse.profile_background_url || ''
+      profileBackgroundUnlocked.value = backgroundResponse.profile_background_unlocked || false
+      removeProfileBackgroundAfterSave.value = false
+      profileBackgroundFiles.value = []
+    } else if (removeProfileBackgroundAfterSave.value && currentProfileBackgroundUrl.value) {
+      const backgroundResponse = await adminService.deleteUserProfileBackground(userId.value)
+      if (backgroundResponse === false) {
+        errorMessage.value = t('pages.admin.editUser.errorSaving');
+        return;
+      }
+      currentProfileBackgroundUrl.value = backgroundResponse.profile_background_url || ''
+      profileBackgroundUnlocked.value = backgroundResponse.profile_background_unlocked || false
+      removeProfileBackgroundAfterSave.value = false
     }
 
     successMessage.value = t('common.saved');
@@ -270,6 +306,16 @@ function cancelAvatarDelete() {
   removeAvatarAfterSave.value = false
 }
 
+function markProfileBackgroundForDelete() {
+  if (!currentProfileBackgroundUrl.value) return
+  removeProfileBackgroundAfterSave.value = true
+  profileBackgroundFiles.value = []
+}
+
+function cancelProfileBackgroundDelete() {
+  removeProfileBackgroundAfterSave.value = false
+}
+
 onMounted(() => {
   loadUser();
 });
@@ -288,305 +334,342 @@ watch(isActive, (value) => {
 
 watch(profileBackgroundUnlocked, (value) => {
   if (!value) {
-    profileBackgroundUrl.value = '';
+    removeProfileBackgroundAfterSave.value = true
+    profileBackgroundFiles.value = []
   }
 });
 </script>
 
 <template>
-  <div class=" h-full w-full flex flex-col items-center overflow-scroll pb-36 pt-3 md:pt-4">
-    <div class="max-w-md w-full border border-dark-700 rounded-2xl bg-background p-6 sm:p-8 backdrop-blur-md space-y-6">
-      <div class="text-center">
-        <h1 class="text-2xl sm:text-3xl text-mainText font-bold">
-          {{ $t('pages.admin.editUser.title') }}
-        </h1>
-        <p class="text-text-secondary mt-2" v-if="user">
-          {{ $t('pages.admin.editUser.editing') }}: {{ user.username }}
-        </p>
-      </div>
-
-      <!-- Состояние загрузки -->
-      <div v-if="isLoading" class="flex items-center justify-center h-32">
-        <Loader2 class="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-blue-500" />
-        <span class="ml-3 text-text-secondary">{{ $t('common.loading') }}</span>
-      </div>
-
-      <!-- Edit form -->
-      <form v-else @submit.prevent="saveUser" class="space-y-4">
-
-        <!-- Email -->
-        <div>
-          <label for="email" class="mb-1 block text-sm text-text-secondary">
-            {{ $t('common.email') }}
-          </label>
-          <TheInput id="email" v-model="email" type="email" :placeholder="$t('common.email')" required :maxlength="64" />
-        </div>
-
-        <!-- Username -->
-        <div>
-          <label for="username" class="mb-1 block text-sm text-text-secondary">
-            {{ $t('common.username') }}
-          </label>
-          <TheInput id="username" v-model="username" type="text" :placeholder="$t('common.username')" required
-            :minlength="4" :maxlength="32" />
-        </div>
-
-        <!-- Description -->
-        <div>
-          <label for="description" class="mb-1 block text-sm text-text-secondary">
-            {{ $t('common.description') }}
-          </label>
-          <textarea id="description" v-model="description" :placeholder="$t('common.description')"
-            class="w-full max-h-28 px-3 py-2 border border-dark-700 rounded-lg bg-dark-600 text-mainText placeholder-text-secondary focus:outline-none focus:border-blue-500 transition-colors resize-none"
-            rows="3" :maxlength="500"></textarea>
-          <div class="text-xs text-text-secondary mt-1 text-right">
-            {{ description.length }}/500
-          </div>
-        </div>
-
-        <!-- Avatar -->
-        <div>
-          <label class="mb-2 block text-sm text-text-secondary">
-            {{ $t('pages.admin.editUser.avatarLabel') }}
-          </label>
-          <div class="mb-3 flex items-center gap-3 rounded-xl border border-dark-700 bg-dark-600/40 p-3">
-            <img
-              :src="avatarPreviewUrl"
-              :alt="$t('pages.admin.editUser.avatarLabel')"
-              class="h-14 w-14 rounded-full border border-dark-500 object-cover"
-            />
-            <div class="flex flex-col gap-2">
-              <button
-                type="button"
-                class="admin-btn admin-btn-danger admin-btn-xs"
-                :disabled="!hasCurrentAvatar"
-                @click="markAvatarForDelete"
-              >
-                {{ $t('pages.admin.editUser.removeAvatar') }}
-              </button>
-              <button
-                v-if="removeAvatarAfterSave && currentAvatarUrl"
-                type="button"
-                class="admin-btn admin-btn-ghost admin-btn-xs"
-                @click="cancelAvatarDelete"
-              >
-                {{ $t('common.cancel') }}
-              </button>
-            </div>
-          </div>
-
-          <FileUploader
-            v-model="avatarFiles"
-            :max-files="1"
-            :label="$t('pages.admin.editUser.newAvatarLabel')"
-          />
-
-          <p v-if="removeAvatarAfterSave && avatarFiles.length === 0" class="mt-2 text-xs text-orange-300">
-            {{ $t('pages.admin.editUser.avatarWillBeRemoved') }}
-          </p>
-        </div>
-
-        <!-- Balance and rating  -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <!-- Balance -->
+  <div class="h-full w-full overflow-y-auto pb-20 pt-3 md:pt-4">
+    <div class="w-full px-1 sm:px-2">
+      <div class="p-3 sm:p-5 lg:p-6 space-y-8">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <label for="balance" class="mb-1 block text-sm text-text-secondary">
-              {{ $t('common.balance') }}
-            </label>
-            <TheInput id="balance" v-model="balance" type="text" inputmode="decimal"
-              :placeholder="$t('common.balance')" />
-          </div>
-
-          <!-- Rating -->
-          <div>
-            <label for="rating" class="mb-1 block text-sm text-text-secondary">
-              {{ $t('common.rating') }}
-            </label>
-            <TheInput id="rating" v-model="rating" type="text" inputmode="numeric" :placeholder="$t('common.rating')" />
-          </div>
-        </div>
-
-        <!-- Status and role -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <!-- Status -->
-          <div>
-            <label class="mb-1 block text-sm text-text-secondary">
-              {{ $t('common.status') }}
-            </label>
-            <div class="space-y-2">
-              <label class="flex items-center">
-                <Checkbox v-model="isBanned" />
-                <span class="ml-2 text-sm text-mainText">
-                  {{ $t('common.banned') }}
-                </span>
-              </label>
-              <label class="flex items-center">
-                <Checkbox v-model="isActive" />
-                <span class="ml-2 text-sm text-mainText">
-                  {{ $t('common.isActive') }}
-                </span>
-              </label>
-              <label class="flex items-center">
-                <Checkbox v-model="hasFrozenBalance" />
-                <span class="ml-2 text-sm text-mainText">
-                  {{ $t('pages.admin.editUser.frozenBalance') }}
-                </span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Role -->
-          <div>
-            <label class="mb-1 block text-sm text-text-secondary">
-              {{ $t('common.role') }}
-            </label>
-            <div class="space-y-2">
-              <label class="flex items-center">
-                <RadioButton v-model="role" name="role" value="user">
-                  <span class="text-sm text-mainText">
-                    {{ $t('common.user') }}
-                  </span>
-                </RadioButton>
-              </label>
-              <label class="flex items-center">
-                <RadioButton v-model="role" name="role" value="admin">
-                  <span class="text-sm text-mainText">
-                    {{ $t('common.admin') }}
-                  </span>
-                </RadioButton>
-              </label>
-              <label class="flex items-center">
-                <RadioButton v-model="role" name="role" value="partner">
-                  <span class="text-sm text-mainText">
-                    {{ $t('common.partner') }}
-                  </span>
-                </RadioButton>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <!-- Security and appearance -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="space-y-2">
-            <label class="mb-1 block text-sm text-text-secondary">
-              {{ $t('pages.admin.editUser.securityTitle') }}
-            </label>
-            <label class="flex items-center">
-              <Checkbox v-model="twoFactorEnabled" />
-              <span class="ml-2 text-sm text-mainText">
-                {{ $t('pages.admin.editUser.twoFactorEnabled') }}
-              </span>
-            </label>
-          </div>
-
-          <div class="space-y-2">
-            <label class="mb-1 block text-sm text-text-secondary">
-              {{ $t('pages.admin.editUser.backgroundSettingsTitle') }}
-            </label>
-            <label class="flex items-center">
-              <Checkbox v-model="profileBackgroundUnlocked" />
-              <span class="ml-2 text-sm text-mainText">
-                {{ $t('pages.admin.editUser.backgroundUnlocked') }}
-              </span>
-            </label>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label for="nicknameStyleId" class="mb-1 block text-sm text-text-secondary">
-              {{ $t('pages.admin.editUser.nicknameStyleId') }}
-            </label>
-            <TheInput
-              id="nicknameStyleId"
-              v-model="nicknameStyleId"
-              type="text"
-              :maxlength="64"
-              :placeholder="$t('pages.admin.editUser.nicknameStyleIdPlaceholder')"
-            />
-            <button
-              type="button"
-              class="mt-2 admin-btn admin-btn-ghost admin-btn-xs"
-              @click="nicknameStyleId = 'default'"
-            >
-              {{ $t('pages.admin.editUser.resetNicknameStyle') }}
-            </button>
-          </div>
-
-          <div>
-            <label for="profileBackgroundUrl" class="mb-1 block text-sm text-text-secondary">
-              {{ $t('pages.admin.editUser.backgroundUrl') }}
-            </label>
-            <TheInput
-              id="profileBackgroundUrl"
-              v-model="profileBackgroundUrl"
-              type="text"
-              :maxlength="255"
-              :placeholder="$t('pages.admin.editUser.backgroundUrlPlaceholder')"
-              :disabled="!profileBackgroundUnlocked"
-            />
-          </div>
-        </div>
-
-        <!-- Password reset -->
-        <div class="space-y-3 rounded-xl border border-dark-700 bg-dark-600/30 p-4">
-          <div>
-            <label class="mb-1 block text-sm text-text-secondary">
-              {{ $t('pages.admin.editUser.passwordResetTitle') }}
-            </label>
-            <p class="text-xs text-text-secondary">
-              {{ $t('pages.admin.editUser.passwordResetHint') }}
+            <h1 class="text-2xl sm:text-3xl font-bold text-mainText">
+              {{ $t('pages.admin.editUser.title') }}
+            </h1>
+            <p v-if="user" class="mt-2 text-sm text-text-secondary">
+              {{ $t('pages.admin.editUser.editing') }}: <span class="text-mainText font-semibold">{{ user.username }}</span>
             </p>
           </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <TheInput
-              id="newPassword"
-              v-model="newPassword"
-              type="password"
-              :placeholder="$t('pages.admin.editUser.newPasswordPlaceholder')"
-              autocomplete="new-password"
-            />
-            <TheInput
-              id="confirmNewPassword"
-              v-model="confirmNewPassword"
-              type="password"
-              :placeholder="$t('pages.admin.editUser.confirmNewPasswordPlaceholder')"
-              autocomplete="new-password"
-            />
-          </div>
-        </div>
-
-        <!-- Readonly info -->
-        <div v-if="user" class="border-t border-dark-700 pt-4 space-y-2 text-sm">
-          <div class="flex justify-between items-center">
-            <span class="text-text-secondary">{{ $t('common.memberSince') }}</span>
-            <span class="text-mainText">{{ new Date(user.created_at).toLocaleDateString('ru-RU') }}</span>
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="text-text-secondary">{{ $t('common.userId') }}:</span>
-            <span class="text-mainText font-mono text-xs">{{ user.id }}</span>
-          </div>
-        </div>
-
-        <ErrorBanner :message="errorMessage" />
-        <SuccessMessage v-if="successMessage" :success-message="successMessage" />
-
-        <!-- Action buttons -->
-        <div class="flex gap-3 pt-4">
-          <button type="button" @click="cancel"
-            class="admin-btn flex-1"
-            :disabled="isSaving">
+          <button
+            type="button"
+            class="admin-btn admin-btn-ghost self-start sm:self-auto"
+            :disabled="isSaving"
+            @click="cancel"
+          >
             {{ $t('common.cancel') }}
           </button>
-          <button type="submit" :disabled="isSaving"
-            class="admin-btn admin-btn-primary flex-1">
-            <Loader2 v-if="isSaving" class="h-4 w-4 animate-spin" />
-            {{ isSaving ? $t('common.loading') : $t('common.save') }}
-          </button>
         </div>
-      </form>
+
+        <div v-if="isLoading" class="flex h-40 items-center justify-center rounded-xl bg-dark-600/25">
+          <Loader2 class="h-7 w-7 animate-spin text-blue-400" />
+          <span class="ml-3 text-text-secondary">{{ $t('common.loading') }}</span>
+        </div>
+
+        <form v-else class="space-y-8" @submit.prevent="saveUser">
+          <div class="grid grid-cols-1 gap-8 lg:grid-cols-[300px,1fr]">
+            <section class="space-y-4">
+              <h2 class="text-sm font-semibold tracking-wide text-gray-300 uppercase">
+                {{ $t('pages.admin.editUser.avatarLabel') }}
+              </h2>
+              <div class="flex items-center gap-3">
+                <img
+                  :src="avatarPreviewUrl"
+                  :alt="$t('pages.admin.editUser.avatarLabel')"
+                  class="h-16 w-16 rounded-full border border-dark-500 object-cover"
+                />
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-medium text-mainText">{{ username || '-' }}</p>
+                  <p class="mt-1 truncate text-xs text-text-secondary">{{ email || '-' }}</p>
+                </div>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  class="admin-btn admin-btn-danger admin-btn-xs"
+                  :disabled="!hasCurrentAvatar"
+                  @click="markAvatarForDelete"
+                >
+                  {{ $t('pages.admin.editUser.removeAvatar') }}
+                </button>
+                <button
+                  v-if="removeAvatarAfterSave && currentAvatarUrl"
+                  type="button"
+                  class="admin-btn admin-btn-ghost admin-btn-xs"
+                  @click="cancelAvatarDelete"
+                >
+                  {{ $t('common.cancel') }}
+                </button>
+              </div>
+              <FileUploader
+                v-model="avatarFiles"
+                :max-files="1"
+                :label="$t('pages.admin.editUser.newAvatarLabel')"
+              />
+              <p v-if="removeAvatarAfterSave && avatarFiles.length === 0" class="text-xs text-orange-300">
+                {{ $t('pages.admin.editUser.avatarWillBeRemoved') }}
+              </p>
+
+              <div v-if="user" class="pt-2 text-sm space-y-2 border-t border-dark-700/70">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-text-secondary">{{ $t('common.memberSince') }}</span>
+                  <span class="text-mainText">{{ new Date(user.created_at).toLocaleDateString('ru-RU') }}</span>
+                </div>
+                <div class="space-y-1">
+                  <span class="text-text-secondary">{{ $t('common.userId') }}</span>
+                  <p class="break-all font-mono text-xs text-mainText">{{ user.id }}</p>
+                </div>
+              </div>
+            </section>
+
+            <section class="space-y-8">
+              <div class="space-y-4">
+                <h2 class="text-sm font-semibold tracking-wide text-gray-300 uppercase">
+                  {{ $t('common.account') }}
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label for="email" class="mb-1 block text-sm text-text-secondary">
+                      {{ $t('common.email') }}
+                    </label>
+                    <TheInput
+                      id="email"
+                      v-model="email"
+                      type="email"
+                      :placeholder="$t('common.email')"
+                      required
+                      :maxlength="64"
+                    />
+                  </div>
+                  <div>
+                    <label for="username" class="mb-1 block text-sm text-text-secondary">
+                      {{ $t('common.username') }}
+                    </label>
+                    <TheInput
+                      id="username"
+                      v-model="username"
+                      type="text"
+                      :placeholder="$t('common.username')"
+                      required
+                      :minlength="4"
+                      :maxlength="32"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label for="description" class="mb-1 block text-sm text-text-secondary">
+                    {{ $t('common.description') }}
+                  </label>
+                  <textarea
+                    id="description"
+                    v-model="description"
+                    :placeholder="$t('common.description')"
+                    class="w-full max-h-32 px-3 py-2 rounded-lg bg-dark-600 text-mainText placeholder-text-secondary focus:outline-none focus:ring-1 focus:ring-blue-500/70 transition-colors resize-none"
+                    rows="4"
+                    :maxlength="500"
+                  />
+                  <div class="mt-1 text-right text-xs text-text-secondary">
+                    {{ description.length }}/500
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-4">
+                <h2 class="text-sm font-semibold tracking-wide text-gray-300 uppercase">
+                  {{ $t('common.settings') }}
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label for="balance" class="mb-1 block text-sm text-text-secondary">
+                      {{ $t('common.balance') }}
+                    </label>
+                    <TheInput
+                      id="balance"
+                      v-model="balance"
+                      type="text"
+                      inputmode="decimal"
+                      :placeholder="$t('common.balance')"
+                    />
+                  </div>
+                  <div>
+                    <label for="rating" class="mb-1 block text-sm text-text-secondary">
+                      {{ $t('common.rating') }}
+                    </label>
+                    <TheInput
+                      id="rating"
+                      v-model="rating"
+                      type="text"
+                      inputmode="numeric"
+                      :placeholder="$t('common.rating')"
+                    />
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="space-y-2">
+                    <p class="text-sm text-text-secondary">{{ $t('common.status') }}</p>
+                    <label class="flex items-center gap-2 py-1">
+                      <Checkbox v-model="isBanned" />
+                      <span class="text-sm text-mainText">{{ $t('common.banned') }}</span>
+                    </label>
+                    <label class="flex items-center gap-2 py-1">
+                      <Checkbox v-model="isActive" />
+                      <span class="text-sm text-mainText">{{ $t('common.isActive') }}</span>
+                    </label>
+                    <label class="flex items-center gap-2 py-1">
+                      <Checkbox v-model="hasFrozenBalance" />
+                      <span class="text-sm text-mainText">{{ $t('pages.admin.editUser.frozenBalance') }}</span>
+                    </label>
+                  </div>
+
+                  <div class="space-y-2">
+                    <p class="text-sm text-text-secondary">{{ $t('common.role') }}</p>
+                    <label class="flex items-center py-1">
+                      <RadioButton v-model="role" name="role" value="user">
+                        <span class="text-sm text-mainText">{{ $t('common.user') }}</span>
+                      </RadioButton>
+                    </label>
+                    <label class="flex items-center py-1">
+                      <RadioButton v-model="role" name="role" value="admin">
+                        <span class="text-sm text-mainText">{{ $t('common.admin') }}</span>
+                      </RadioButton>
+                    </label>
+                    <label class="flex items-center py-1">
+                      <RadioButton v-model="role" name="role" value="partner">
+                        <span class="text-sm text-mainText">{{ $t('common.partner') }}</span>
+                      </RadioButton>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-4">
+                <h2 class="text-sm font-semibold tracking-wide text-gray-300 uppercase">
+                  {{ $t('pages.admin.editUser.securityTitle') }}
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <label class="flex items-center gap-2 py-1">
+                    <Checkbox v-model="twoFactorEnabled" />
+                    <span class="text-sm text-mainText">{{ $t('pages.admin.editUser.twoFactorEnabled') }}</span>
+                  </label>
+                  <label class="flex items-center gap-2 py-1">
+                    <Checkbox v-model="profileBackgroundUnlocked" />
+                    <span class="text-sm text-mainText">{{ $t('pages.admin.editUser.backgroundUnlocked') }}</span>
+                  </label>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label for="nicknameStyleId" class="mb-1 block text-sm text-text-secondary">
+                      {{ $t('pages.admin.editUser.nicknameStyleId') }}
+                    </label>
+                    <TheInput
+                      id="nicknameStyleId"
+                      v-model="nicknameStyleId"
+                      type="text"
+                      :maxlength="64"
+                      :placeholder="$t('pages.admin.editUser.nicknameStyleIdPlaceholder')"
+                    />
+                    <button
+                      type="button"
+                      class="mt-2 admin-btn admin-btn-ghost admin-btn-xs"
+                      @click="nicknameStyleId = 'default'"
+                    >
+                      {{ $t('pages.admin.editUser.resetNicknameStyle') }}
+                    </button>
+                  </div>
+                  <div class="space-y-2">
+                    <p class="text-sm text-text-secondary">
+                      {{ $t('pages.admin.editUser.backgroundPreview') }}
+                    </p>
+                    <div
+                      class="h-20 rounded-lg border border-dark-700 bg-dark-700/35"
+                      :style="profileBackgroundPreviewStyle"
+                    />
+                    <div class="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        class="admin-btn admin-btn-danger admin-btn-xs"
+                        :disabled="!hasCurrentProfileBackground"
+                        @click="markProfileBackgroundForDelete"
+                      >
+                        {{ $t('pages.admin.editUser.removeBackground') }}
+                      </button>
+                      <button
+                        v-if="removeProfileBackgroundAfterSave && currentProfileBackgroundUrl"
+                        type="button"
+                        class="admin-btn admin-btn-ghost admin-btn-xs"
+                        @click="cancelProfileBackgroundDelete"
+                      >
+                        {{ $t('common.cancel') }}
+                      </button>
+                    </div>
+                    <FileUploader
+                      v-model="profileBackgroundFiles"
+                      :max-files="1"
+                      :label="$t('pages.admin.editUser.newBackgroundLabel')"
+                    />
+                    <p
+                      v-if="removeProfileBackgroundAfterSave && profileBackgroundFiles.length === 0"
+                      class="text-xs text-orange-300"
+                    >
+                      {{ $t('pages.admin.editUser.backgroundWillBeRemoved') }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-4">
+                <h2 class="text-sm font-semibold tracking-wide text-gray-300 uppercase">
+                  {{ $t('pages.admin.editUser.passwordResetTitle') }}
+                </h2>
+                <p class="text-xs text-text-secondary">
+                  {{ $t('pages.admin.editUser.passwordResetHint') }}
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <TheInput
+                    id="newPassword"
+                    v-model="newPassword"
+                    type="password"
+                    :placeholder="$t('pages.admin.editUser.newPasswordPlaceholder')"
+                    autocomplete="new-password"
+                  />
+                  <TheInput
+                    id="confirmNewPassword"
+                    v-model="confirmNewPassword"
+                    type="password"
+                    :placeholder="$t('pages.admin.editUser.confirmNewPasswordPlaceholder')"
+                    autocomplete="new-password"
+                  />
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <ErrorBanner :message="errorMessage" />
+          <SuccessMessage v-if="successMessage" :success-message="successMessage" />
+
+          <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end pt-1">
+            <button
+              type="button"
+              class="admin-btn min-w-32"
+              :disabled="isSaving"
+              @click="cancel"
+            >
+              {{ $t('common.cancel') }}
+            </button>
+            <button
+              type="submit"
+              class="admin-btn admin-btn-primary min-w-40 inline-flex items-center justify-center gap-2"
+              :disabled="isSaving"
+            >
+              <Loader2 v-if="isSaving" class="h-4 w-4 animate-spin" />
+              {{ isSaving ? $t('common.loading') : $t('common.save') }}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 </template>

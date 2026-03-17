@@ -322,6 +322,36 @@ export const adminService = {
     }
   },
 
+  async uploadUserProfileBackground(userId: string, file: File) {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await httpClient.patch(`/admin/user/${userId}/profile-background`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return UserReadSchema.parse(response.data);
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error(e.issues);
+      }
+      return false;
+    }
+  },
+
+  async deleteUserProfileBackground(userId: string) {
+    try {
+      const response = await httpClient.delete(`/admin/user/${userId}/profile-background`);
+      return UserReadSchema.parse(response.data);
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error(e.issues);
+      }
+      return false;
+    }
+  },
+
   async banUser(userId: string, reasonCode: string, reasonText?: string | null) {
     try {
       const response = await httpClient.post("/admin/ban-user", {
