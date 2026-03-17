@@ -22,6 +22,11 @@ import { formatCurrencyAmount, getCurrencySymbol, resolvePreferredCurrency } fro
 import { storeToRefs } from 'pinia'
 import { buildCategoryKey, buildProductKey } from '@/utils/urlKeys'
 import { calculateDiscountPercent, calculateOfferedPriceByPercent } from '@/utils/priceOffer'
+import {
+  PRICE_OFFER_MESSAGE_TEMPLATE_KEYS,
+  encodePriceOfferTemplateMessage,
+  type PriceOfferMessageTemplateKey,
+} from '@/utils/priceOfferMessageTemplate'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const NORMALIZED_API_HOST = String(API_HOST || '').replace(/\/$/, '')
@@ -56,6 +61,7 @@ const offerError = ref<string | null>(null)
 const isOfferSubmitting = ref(false)
 const offeredPrice = ref<number | null>(null)
 const offerMessage = ref('')
+const selectedOfferMessageTemplateKey = ref<PriceOfferMessageTemplateKey | null>(null)
 const showInsufficientBalanceModal = ref(false)
 const insufficientBalanceDetails = ref<{
   balance: number
@@ -91,20 +97,23 @@ const offerDiscountPercent = computed(() => calculateDiscountPercent(
   productOfferBasePrice.value,
   Number(offeredPrice.value),
 ))
-const offerMessageTemplates = computed(() => {
+function getOfferMessageTemplateText(templateKey: PriceOfferMessageTemplateKey): string {
   const offeredValue = Number(offeredPrice.value)
   const priceLabel = formatCurrencyAmount(
     Number.isFinite(offeredValue) && offeredValue > 0 ? offeredValue : productOfferBasePrice.value,
     { minimumFractionDigits: 2, maximumFractionDigits: 2 },
   )
 
-  return [
-    {
-      id: 'buy-now',
-      text: t('pages.product.offerPriceConfirm.messageTemplateBuyNow', { price: priceLabel }),
-    },
-  ]
-})
+  switch (templateKey) {
+    case 'price_offer_buy_now':
+      return t('pages.product.offerPriceConfirm.messageTemplateBuyNow', { price: priceLabel })
+  }
+}
+
+const offerMessageTemplates = computed(() => PRICE_OFFER_MESSAGE_TEMPLATE_KEYS.map(templateKey => ({
+  id: templateKey,
+  text: getOfferMessageTemplateText(templateKey),
+})))
 
 const displayedCategory = computed(() => {
   const currentCategory = product.value?.category
@@ -303,6 +312,7 @@ function openOfferConfirm() {
   offeredPrice.value = calculateOfferedPriceByPercent(productPrice, OFFER_DISCOUNT_PRESETS[0])
     ?? Math.max(0.01, Math.round((productPrice - 0.01) * 100) / 100)
   offerMessage.value = ''
+  selectedOfferMessageTemplateKey.value = null
   offerError.value = null
   showOfferConfirm.value = true
 }
@@ -340,8 +350,18 @@ function isDiscountPresetActive(discountPercent: number): boolean {
   return Math.abs(currentOfferedPrice - presetPrice) < 0.001
 }
 
-function applyOfferMessageTemplate(templateText: string) {
-  offerMessage.value = templateText
+function applyOfferMessageTemplate(templateKey: PriceOfferMessageTemplateKey) {
+  selectedOfferMessageTemplateKey.value = templateKey
+  offerMessage.value = getOfferMessageTemplateText(templateKey)
+}
+
+function handleOfferMessageInput() {
+  if (!selectedOfferMessageTemplateKey.value) return
+
+  const selectedTemplateText = getOfferMessageTemplateText(selectedOfferMessageTemplateKey.value).trim()
+  if (offerMessage.value.trim() !== selectedTemplateText) {
+    selectedOfferMessageTemplateKey.value = null
+  }
 }
 
 async function handleOfferConfirm() {
@@ -353,12 +373,26 @@ async function handleOfferConfirm() {
     return
   }
 
+  const trimmedOfferMessage = offerMessage.value.trim()
+  const selectedTemplateText = selectedOfferMessageTemplateKey.value
+    ? getOfferMessageTemplateText(selectedOfferMessageTemplateKey.value).trim()
+    : null
+  const shouldSendTemplateKey = Boolean(
+    selectedOfferMessageTemplateKey.value
+    && selectedTemplateText
+    && trimmedOfferMessage
+    && trimmedOfferMessage === selectedTemplateText,
+  )
+  const offerMessageToSend = shouldSendTemplateKey
+    ? encodePriceOfferTemplateMessage(selectedOfferMessageTemplateKey.value as PriceOfferMessageTemplateKey)
+    : (trimmedOfferMessage || undefined)
+
   isOfferSubmitting.value = true
   offerError.value = null
   const result = await productService.createPriceOffer(
     product.value.id,
     priceNumber,
-    offerMessage.value,
+    offerMessageToSend,
   )
   isOfferSubmitting.value = false
 
@@ -509,6 +543,14 @@ watch(productKey, async (newProductKey, oldProductKey) => {
   await loadProductData()
   window.scrollTo({ top: 0, behavior: 'smooth' })
 })
+
+watch(
+  [offeredPrice, locale],
+  () => {
+    if (!selectedOfferMessageTemplateKey.value) return
+    offerMessage.value = getOfferMessageTemplateText(selectedOfferMessageTemplateKey.value)
+  },
+)
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
@@ -907,6 +949,7 @@ onUnmounted(() => {
               maxlength="500"
               class="mt-1 w-full resize-none rounded-lg border border-dark-700 bg-dark-700/60 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500"
               :placeholder="$t('pages.product.offerPriceConfirm.messagePlaceholder')"
+              @input="handleOfferMessageInput"
             />
             <div class="mt-2">
               <p class="text-[11px] font-medium text-gray-400">
@@ -917,8 +960,11 @@ onUnmounted(() => {
                   v-for="template in offerMessageTemplates"
                   :key="template.id"
                   type="button"
-                  class="rounded-md border border-emerald-700/50 bg-emerald-900/20 px-2.5 py-1 text-left text-[11px] leading-4 text-emerald-200 transition-colors hover:bg-emerald-900/35"
-                  @click="applyOfferMessageTemplate(template.text)"
+                  class="rounded-md border px-2.5 py-1 text-left text-[11px] leading-4 transition-colors"
+                  :class="selectedOfferMessageTemplateKey === template.id
+                    ? 'border-emerald-400 bg-emerald-500/25 text-emerald-100'
+                    : 'border-emerald-700/50 bg-emerald-900/20 text-emerald-200 hover:bg-emerald-900/35'"
+                  @click="applyOfferMessageTemplate(template.id)"
                 >
                   {{ template.text }}
                 </button>

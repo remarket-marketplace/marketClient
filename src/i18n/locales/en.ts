@@ -824,6 +824,9 @@ const en = {
         rejected: "Rejected",
         expired: "Unavailable",
       },
+      priceOfferTemplates: {
+        price_offer_buy_now: "Hi! I can buy it for {price}.",
+      },
     },
 
     profile: {

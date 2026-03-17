@@ -821,6 +821,9 @@ const ru = {
         rejected: "Отклонено",
         expired: "Недоступно",
       },
+      priceOfferTemplates: {
+        price_offer_buy_now: "Здравствуйте! Готов купить за {price}.",
+      },
     },
 
     profile: {
