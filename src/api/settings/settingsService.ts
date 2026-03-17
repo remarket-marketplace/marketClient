@@ -13,6 +13,12 @@ import {
   type NotificationSettingsUpdate,
   type TelegramConnectLink,
 } from "@/validation/user/notificationSettings"
+import {
+  TwoFactorSettingsSchema,
+  UpdateTwoFactorSettingsSchema,
+  type TwoFactorSettings,
+  type UpdateTwoFactorSettings,
+} from "@/validation/user/twoFactorSettings"
 import { normalizeCustomNicknameStyleId } from "@/utils/nicknameStyles"
 import { ZodError } from "zod"
 
@@ -252,6 +258,47 @@ export const settingsService = {
             return {
                 success: true,
                 data: NotificationSettingsSchema.parse(response.data),
+            }
+        }
+        catch (error) {
+            if (error instanceof ZodError) {
+                console.error(error.issues)
+            }
+            return {
+                success: false,
+                error: ErrorHandler.handleApiError(error),
+            }
+        }
+    },
+
+    async getTwoFactorSettings(): Promise<{ success: boolean; data?: TwoFactorSettings; error?: ApiError }> {
+        try {
+            const response = await httpClient.get('/users/security/two-factor')
+            return {
+                success: true,
+                data: TwoFactorSettingsSchema.parse(response.data),
+            }
+        }
+        catch (error) {
+            if (error instanceof ZodError) {
+                console.error(error.issues)
+            }
+            return {
+                success: false,
+                error: ErrorHandler.handleApiError(error),
+            }
+        }
+    },
+
+    async updateTwoFactorSettings(
+      payload: UpdateTwoFactorSettings,
+    ): Promise<{ success: boolean; data?: TwoFactorSettings; error?: ApiError }> {
+        try {
+            const parsedPayload = UpdateTwoFactorSettingsSchema.parse(payload)
+            const response = await httpClient.patch('/users/security/two-factor', parsedPayload)
+            return {
+                success: true,
+                data: TwoFactorSettingsSchema.parse(response.data),
             }
         }
         catch (error) {

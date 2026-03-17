@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { Eye, EyeOff } from 'lucide-vue-next'
@@ -23,6 +23,11 @@ const showWelcomeScreen = ref(false)
 const welcomeUsername = ref('')
 const isWelcomeRedirecting = ref(false)
 const errorMessage = ref('')
+
+const authStage = ref<'credentials' | 'twoFactor'>('credentials')
+const twoFactorToken = ref('')
+const codeDigits = ref<string[]>(['', '', '', '', '', ''])
+const codeInputs = ref<(HTMLInputElement | null)[]>([])
 
 const { t } = useI18n()
 const router = useRouter()
@@ -61,8 +66,21 @@ function refreshCaptcha() {
   captchaRenderKey.value += 1
 }
 
+function resetTwoFactorState() {
+  authStage.value = 'credentials'
+  twoFactorToken.value = ''
+  codeDigits.value = ['', '', '', '', '', '']
+  errorMessage.value = ''
+}
+
+function showWelcome() {
+  welcomeUsername.value = resolveWelcomeUsername()
+  isWelcomeRedirecting.value = false
+  showWelcomeScreen.value = true
+}
+
 async function signIn() {
-  if (sended.value) return
+  if (sended.value || authStage.value !== 'credentials') return
 
   if (!captchaToken.value) {
     errorMessage.value = t('pages.auth.signIn.completeCaptcha')
@@ -78,17 +96,29 @@ async function signIn() {
       return
     }
 
-    const success = await authService.signIn(email.value, password.value, captchaToken.value)
+    const result = await authService.signIn(email.value, password.value, captchaToken.value)
 
-    if (!success) {
+    if (result.two_factor_required) {
+      if (!result.two_factor_token) {
+        errorMessage.value = t('errors.SERVER_ERROR')
+        refreshCaptcha()
+        return
+      }
+      twoFactorToken.value = result.two_factor_token
+      codeDigits.value = ['', '', '', '', '', '']
+      authStage.value = 'twoFactor'
+      await nextTick()
+      codeInputs.value[0]?.focus()
+      return
+    }
+
+    if (!result.user) {
       errorMessage.value = t('errors.INCORRECT_EMAIL_OR_PASSWORD')
       refreshCaptcha()
       return
     }
 
-    welcomeUsername.value = resolveWelcomeUsername()
-    isWelcomeRedirecting.value = false
-    showWelcomeScreen.value = true
+    showWelcome()
   } catch (e: any) {
     const detail = e?.response?.data?.detail
     const errorCode = detail?.error_code
@@ -117,6 +147,78 @@ async function signIn() {
   }
 }
 
+async function confirmTwoFactorSignIn() {
+  if (sended.value || authStage.value !== 'twoFactor') return
+
+  const code = codeDigits.value.join('')
+  if (code.length !== 6) {
+    errorMessage.value = t('pages.auth.signIn.twoFactor.invalidCode')
+    return
+  }
+
+  if (!twoFactorToken.value) {
+    errorMessage.value = t('errors.SERVER_ERROR')
+    resetTwoFactorState()
+    return
+  }
+
+  sended.value = true
+  errorMessage.value = ''
+  try {
+    await authService.confirmTwoFactorLogin(twoFactorToken.value, code)
+    showWelcome()
+  } catch (e: any) {
+    const detail = e?.response?.data?.detail
+    const errorCode = detail?.error_code
+    if (errorCode) {
+      errorMessage.value = getErrorMessage(detail, t)
+    } else {
+      errorMessage.value = t('errors.SERVER_ERROR')
+    }
+  } finally {
+    sended.value = false
+  }
+}
+
+function handleCodeInput(event: Event, index: number) {
+  const target = event.target as HTMLInputElement
+  const value = target.value.replace(/\D/g, '')
+
+  const digit = value[0] ?? ''
+  codeDigits.value[index] = digit
+  target.value = digit
+
+  if (digit && index < 5) {
+    nextTick(() => {
+      codeInputs.value[index + 1]?.focus()
+    })
+  }
+}
+
+function handleCodeKeyDown(event: KeyboardEvent, index: number) {
+  if (event.key === 'Backspace' && !codeDigits.value[index] && index > 0) {
+    event.preventDefault()
+    nextTick(() => {
+      codeInputs.value[index - 1]?.focus()
+    })
+  }
+}
+
+function handleCodePaste(event: ClipboardEvent) {
+  event.preventDefault()
+  const paste = event.clipboardData?.getData('text') ?? ''
+  const digits = paste.replace(/\D/g, '').slice(0, 6).split('')
+
+  digits.forEach((digit, i) => {
+    codeDigits.value[i] = digit
+  })
+
+  nextTick(() => {
+    const nextIndex = digits.length < 6 ? digits.length : 5
+    codeInputs.value[nextIndex]?.focus()
+  })
+}
+
 function switchPasswordVisibility() {
   passwordHidden.value = !passwordHidden.value
 }
@@ -141,7 +243,7 @@ function switchPasswordVisibility() {
       >
         <Title :text="t('pages.auth.signIn.title')" class="text-center text-4xl" />
 
-        <form class="space-y-4" @submit.prevent>
+        <form v-if="authStage === 'credentials'" class="space-y-4" @submit.prevent>
           <div>
             <label for="email" class="mb-1 block text-sm text-gray-300">
               {{ $t('common.email') }}
@@ -193,14 +295,53 @@ function switchPasswordVisibility() {
           <ErrorBanner :message="errorMessage" />
         </form>
 
-        <p class="text-center text-sm text-text-secondaryDark">
+        <form v-else class="space-y-4" @submit.prevent="confirmTwoFactorSignIn">
+          <div class="space-y-2">
+            <label class="block text-sm text-text-secondary">{{ $t('pages.auth.signIn.twoFactor.title') }}</label>
+            <p class="text-xs text-gray-400">{{ $t('pages.auth.signIn.twoFactor.hint') }}</p>
+            <div class="grid grid-cols-6 gap-2">
+              <input
+                v-for="(_, index) in 6"
+                :key="index"
+                :ref="el => codeInputs[index] = el as HTMLInputElement"
+                v-model="codeDigits[index]"
+                type="text"
+                maxlength="1"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                class="flex-1 aspect-square min-w-0 border border-1 border-dark-700 rounded-lg bg-dark-600 text-center text-lg text-mainText font-bold transition-all focus:border-blue-500 focus:outline-none"
+                @input="handleCodeInput($event, index)"
+                @keydown="handleCodeKeyDown($event, index)"
+                @paste="handleCodePaste"
+              >
+            </div>
+          </div>
+
+          <ErrorBanner :message="errorMessage" />
+
+          <TheButton
+            @click="confirmTwoFactorSignIn"
+            :button-text="!sended ? $t('pages.auth.signIn.twoFactor.confirm') : $t('common.sending')"
+            :sended="sended"
+          />
+
+          <button
+            type="button"
+            class="w-full text-center text-sm text-text-link hover:underline"
+            @click="resetTwoFactorState"
+          >
+            {{ $t('pages.auth.signIn.twoFactor.useAnotherAccount') }}
+          </button>
+        </form>
+
+        <p v-if="authStage === 'credentials'" class="text-center text-sm text-text-secondaryDark">
           {{ $t('pages.auth.signIn.noAccount') }}
           <router-link to="/signup" class="text-text-link hover:underline">
             {{ $t('pages.auth.signIn.register') }}
           </router-link>
         </p>
 
-        <p class="text-center text-sm text-text-secondaryDark">
+        <p v-if="authStage === 'credentials'" class="text-center text-sm text-text-secondaryDark">
           <router-link to="/password-reset" class="text-text-link hover:underline">
             {{ $t('pages.auth.signIn.forgotPassword') }}
           </router-link>
