@@ -6,7 +6,6 @@ import {
     User,
     Shield,
     BarChart3,
-    Bell,
     Wallet,
 } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
@@ -182,14 +181,6 @@ function goToWallet() {
     router.push('/wallet')
 }
 
-function goToNotifications() {
-    if (!user.value) {
-        router.push('/signin')
-        return
-    }
-    router.push({ path: '/settings', query: { section: 'notifications' } })
-}
-
 const mobileNavGridStyle = computed(() => ({
     gridTemplateColumns: `repeat(${Math.max(1, navItems.value.length)}, minmax(0, 1fr))`,
 }))
@@ -283,17 +274,6 @@ const mobileNavGridStyle = computed(() => ({
                         </button>
                     </nav>
 
-                    <div v-if="user" class="hidden md:flex items-center gap-2">
-                        <button
-                            type="button"
-                            class="relative inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/15 bg-white/10 text-mainText backdrop-blur-md transition hover:border-white/25 hover:bg-white/15"
-                            :title="$t('navigation.market.notifications')"
-                            @click="goToNotifications"
-                        >
-                            <Bell class="h-4 w-4 text-mainText/85" />
-                        </button>
-                    </div>
-
                     <div class="md:order-2">
                         <SelectLanguage />
                     </div>
@@ -311,8 +291,6 @@ const mobileNavGridStyle = computed(() => ({
                         <SelectCurrency />
                     </div>
                     <NotificationsMenu v-if="user?.username" />
-                    <SelectCurrency />
-                    <SelectLanguage />
                 </div>
             </div>
         </header>
