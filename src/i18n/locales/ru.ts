@@ -726,6 +726,8 @@ const ru = {
         discountBadge: "Ниже на {percent}%",
         messageLabel: "Сообщение продавцу",
         messagePlaceholder: "Например: Готов купить сегодня, если устроит цена",
+        messageTemplatesLabel: "Быстрые варианты сообщения",
+        messageTemplateBuyNow: "Здравствуйте! Готов купить за {price}.",
         confirm: "Отправить предложение",
         cancel: "Отмена",
       },
@@ -818,6 +820,9 @@ const ru = {
         accepted: "Принято",
         rejected: "Отклонено",
         expired: "Недоступно",
+      },
+      priceOfferTemplates: {
+        price_offer_buy_now: "Здравствуйте! Готов купить за {price}.",
       },
     },
 

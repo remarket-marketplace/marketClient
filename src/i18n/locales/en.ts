@@ -727,6 +727,8 @@ const en = {
         discountBadge: "{percent}% lower",
         messageLabel: "Message to seller",
         messagePlaceholder: "For example: I can buy today if this works for you",
+        messageTemplatesLabel: "Quick message templates",
+        messageTemplateBuyNow: "Hi! I can buy it for {price}.",
         confirm: "Send offer",
         cancel: "Cancel",
       },
@@ -821,6 +823,9 @@ const en = {
         accepted: "Accepted",
         rejected: "Rejected",
         expired: "Unavailable",
+      },
+      priceOfferTemplates: {
+        price_offer_buy_now: "Hi! I can buy it for {price}.",
       },
     },
 
