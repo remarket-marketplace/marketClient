@@ -2,6 +2,7 @@
 import { categoryService } from '@/api/category/CategoryService'
 import { productService } from '@/api/product/ProductService'
 import MainProductCard from '@/components/mainProductCard.vue'
+import HomeProductListCard from '@/components/HomeProductListCard.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
 import Title from '@/components/Title.vue'
 import type { Category } from '@/validation/category/category'
@@ -10,7 +11,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { buildCategoryKey, extractIdFromSlugKey } from '@/utils/urlKeys'
-import { ChevronRight } from 'lucide-vue-next'
+import { ChevronRight, LayoutGrid, Rows3 } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -28,6 +29,14 @@ const isCategoryLoading = ref(true)
 const isSubcategoriesLoading = ref(false)
 const isProductsLoading = ref(true)
 const isLoadingMore = ref(false)
+type ProductCardViewMode = 'grid' | 'list'
+const PRODUCT_CARD_VIEW_MODE_STORAGE_KEY = 'home_product_card_view_mode'
+const productCardViewMode = ref<ProductCardViewMode>('grid')
+const loadingSkeletonCount = computed(() => (
+  productCardViewMode.value === 'grid'
+    ? perPage.value
+    : Math.min(perPage.value, 12)
+))
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 
@@ -79,6 +88,17 @@ function goToProduct(productKey: string) {
 
 function goHome() {
   router.push('/')
+}
+
+function setProductCardViewMode(mode: ProductCardViewMode): void {
+  if (productCardViewMode.value === mode) return
+  productCardViewMode.value = mode
+}
+
+function restoreProductCardViewModeFromStorage(): void {
+  if (typeof window === 'undefined') return
+  const saved = window.localStorage.getItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY)
+  productCardViewMode.value = saved === 'list' ? 'list' : 'grid'
 }
 
 function getRootCategoryKey() {
@@ -277,7 +297,13 @@ watch(requestedPathRaw, async (nextValue) => {
   await applyPathFromQuery(nextValue)
 })
 
+watch(productCardViewMode, (mode) => {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY, mode)
+})
+
 onMounted(async () => {
+  restoreProductCardViewModeFromStorage()
   await loadCategoryPageData()
   observer = new IntersectionObserver((entries) => {
     if (entries[0]?.isIntersecting) {
@@ -395,14 +421,70 @@ onBeforeUnmount(() => {
 
       <div class="mt-10">
         <Title :text="t('common.products')" />
-        <div v-if="isProductsLoading" class="products-grid grid gap-1 md:gap-2 mt-6 w-full">
-          <div v-for="n in perPage" :key="n" class="h-64 animate-pulse rounded-2xl bg-dark-600"></div>
+        <div class="mt-4 flex justify-end">
+          <div
+            class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-dark-600 bg-dark-700/40 p-0.5"
+            role="group"
+            :aria-label="t('pages.index.viewSwitcherLabel')"
+          >
+            <button
+              type="button"
+              class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
+              :class="productCardViewMode === 'grid'
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+              :title="t('pages.index.viewGrid')"
+              @click="setProductCardViewMode('grid')"
+            >
+              <LayoutGrid class="h-3.5 w-3.5" />
+              <span class="hidden sm:inline">{{ t('pages.index.viewGrid') }}</span>
+            </button>
+
+            <button
+              type="button"
+              class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
+              :class="productCardViewMode === 'list'
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+              :title="t('pages.index.viewList')"
+              @click="setProductCardViewMode('list')"
+            >
+              <Rows3 class="h-3.5 w-3.5" />
+              <span class="hidden sm:inline">{{ t('pages.index.viewList') }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div
+          v-if="isProductsLoading"
+          class="mt-6 w-full"
+          :class="productCardViewMode === 'grid'
+            ? 'products-grid grid gap-1 md:gap-2'
+            : 'flex flex-col gap-2'"
+        >
+          <div
+            v-for="n in loadingSkeletonCount"
+            :key="n"
+            class="animate-pulse rounded-2xl bg-dark-600"
+            :class="productCardViewMode === 'grid' ? 'h-64' : 'h-[118px] sm:h-[134px]'"
+          ></div>
         </div>
         <div v-else-if="products.length === 0" class="mt-6 text-sm text-gray-400">
           {{ t('pages.category.noProducts') }}
         </div>
-        <div v-else class="products-grid grid gap-1 md:gap-2 mt-6 w-full">
+        <div
+          v-else-if="productCardViewMode === 'grid'"
+          class="products-grid grid gap-1 md:gap-2 mt-6 w-full"
+        >
           <MainProductCard
+            v-for="product in products"
+            :key="product.id"
+            :product="product"
+            @click="goToProduct"
+          />
+        </div>
+        <div v-else class="mt-6 w-full flex flex-col gap-2">
+          <HomeProductListCard
             v-for="product in products"
             :key="product.id"
             :product="product"

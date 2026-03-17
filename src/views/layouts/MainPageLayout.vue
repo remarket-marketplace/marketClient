@@ -19,6 +19,7 @@ import SelectLanguage from '@/components/SelectLanguage.vue'
 import SelectCurrency from '@/components/SelectCurrency.vue'
 import MainPageFooter from '@/components/layout/MainPageFooter.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
+import NotificationsMenu from '@/components/layout/NotificationsMenu.vue'
 import type { FunctionalComponent } from 'vue'
 import type { LucideProps } from 'lucide-vue-next'
 
@@ -309,6 +310,9 @@ const mobileNavGridStyle = computed(() => ({
                     <div class="md:order-1">
                         <SelectCurrency />
                     </div>
+                    <NotificationsMenu v-if="user?.username" />
+                    <SelectCurrency />
+                    <SelectLanguage />
                 </div>
             </div>
         </header>

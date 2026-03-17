@@ -1,6 +1,7 @@
 import { ZodError } from "zod";
 import { httpClient } from "..";
 import { UserReadSchema, type UserRead } from "@/validation/user/userRead";
+import { LoginResponseSchema, type LoginResponse } from "@/validation/auth/login";
 import { useUserStore } from "@/stores/user";
 import { chatsService } from "@/api/chats/chatsService";
 
@@ -46,16 +47,35 @@ export const authService = {
     });
   },
 
-  async signIn(email: string, password: string, captchaToken: string) {
+  async signIn(
+    email: string,
+    password: string,
+    captchaToken: string,
+  ): Promise<LoginResponse> {
     chatsService.disconnect();
     const response = await httpClient.post("/auth/login", {
       email,
       password,
       captcha_token: captchaToken
     });
+    const loginResponse = LoginResponseSchema.parse(response.data);
+
+    if (!loginResponse.two_factor_required && loginResponse.user) {
+      await useUserStore().setUser(loginResponse.user);
+    }
+
+    return loginResponse;
+  },
+
+  async confirmTwoFactorLogin(twoFactorToken: string, code: string): Promise<UserRead> {
+    chatsService.disconnect();
+    const response = await httpClient.post("/auth/login/2fa", {
+      two_factor_token: twoFactorToken,
+      code,
+    });
     const userData = UserReadSchema.parse(response.data);
     await useUserStore().setUser(userData);
-    return response;
+    return userData;
   },
 
   async signUp(

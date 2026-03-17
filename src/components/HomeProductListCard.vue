@@ -65,7 +65,7 @@ function goToSeller() {
       <div class="mt-auto flex w-full min-w-0 items-center gap-1.5 sm:gap-2 min-h-6">
         <button
           type="button"
-          class="inline-flex min-h-6 min-w-0 shrink items-center text-left text-xs underline decoration-transparent hover:decoration-blue-300 sm:text-sm"
+          class="inline-flex min-h-6 min-w-0 shrink items-center text-left text-xs sm:text-sm"
           @click.stop="goToSeller"
         >
           <StyledUsername

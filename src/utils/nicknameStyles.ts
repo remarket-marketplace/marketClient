@@ -98,6 +98,14 @@ export function parseCustomNicknameStyleId(
   }
 }
 
+export function normalizeCustomNicknameStyleId(
+  styleId: string | null | undefined,
+): string | null {
+  const config = parseCustomNicknameStyleId(styleId)
+  if (!config) return null
+  return buildCustomNicknameStyleId(config)
+}
+
 export function isKnownNicknameStyleId(
   styleId: string | null | undefined,
 ): styleId is KnownNicknameStyleId {
@@ -110,8 +118,12 @@ export function isCustomNicknameStyleId(styleId: string | null | undefined): boo
 
 export function resolveNicknameStyleId(styleId: string | null | undefined): NicknameStyleId {
   const normalized = normalizeStyleId(styleId)
-  if (isKnownNicknameStyleId(normalized) || isCustomNicknameStyleId(normalized)) {
+  if (isKnownNicknameStyleId(normalized)) {
     return normalized
+  }
+  const normalizedCustomStyleId = normalizeCustomNicknameStyleId(normalized)
+  if (normalizedCustomStyleId) {
+    return normalizedCustomStyleId
   }
   return DEFAULT_NICKNAME_STYLE_ID
 }
