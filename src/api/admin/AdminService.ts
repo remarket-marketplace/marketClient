@@ -17,8 +17,10 @@ import {
 import {
   adminPaymentSchema,
   adminPaymentsListSchema,
-  type AdminPayment,
+  type AdminPayment as AdminPaymentModel,
 } from "@/validation/payment/adminPayment";
+
+export type AdminPayment = AdminPaymentModel
 
 export type DashboardStatusBreakdown = { status: string; count: number }
 export type DashboardSeriesPoint = { date: string; value: number }
@@ -72,6 +74,23 @@ export type PlatformSettings = {
   registration_enabled: boolean
   product_creation_enabled: boolean
   telegram_integration_enabled: boolean
+}
+
+export type AdminUpdateUserPayload = {
+  email?: string
+  username?: string
+  balance?: number
+  description?: string
+  has_frozen_balance?: boolean
+  is_banned?: boolean
+  is_active?: boolean
+  rating?: number
+  role?: "user" | "admin" | "partner"
+  nickname_style_id?: string
+  profile_background_unlocked?: boolean
+  profile_background_url?: string
+  two_factor_enabled?: boolean
+  new_password?: string
 }
 
 export type PaymentStatus = "PENDING" | "CONFIRMED" | "CANCELED" | "CHARGEBACKED"
@@ -261,10 +280,14 @@ export const adminService = {
     }
   },
 
-  async updateUserData(userId: string, updateData: any) {
+  async updateUserData(userId: string, updateData: AdminUpdateUserPayload) {
     try {
-      await httpClient.patch(`/admin/user/${userId}`, updateData);
+      const response = await httpClient.patch(`/admin/user/${userId}`, updateData);
+      return UserReadSchema.parse(response.data);
     } catch (e) {
+      if (e instanceof ZodError) {
+        console.error(e.issues);
+      }
       return false;
     }
   },

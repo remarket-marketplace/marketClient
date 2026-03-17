@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { adminService } from '@/api/admin/AdminService';
+import { adminService, type AdminUpdateUserPayload } from '@/api/admin/AdminService';
 import type { UserRead } from '@/validation/user/userRead';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -39,6 +39,12 @@ const isBanned = ref(false);
 const isActive = ref(true);
 const role = ref<'user' | 'admin' | 'partner'>('user');
 const hasFrozenBalance = ref(false);
+const nicknameStyleId = ref('default');
+const profileBackgroundUnlocked = ref(false);
+const profileBackgroundUrl = ref('');
+const twoFactorEnabled = ref(false);
+const newPassword = ref('');
+const confirmNewPassword = ref('');
 
 const hasCurrentAvatar = computed(() => Boolean(currentAvatarUrl.value) && !removeAvatarAfterSave.value)
 const avatarPreviewUrl = computed(() => {
@@ -80,6 +86,12 @@ async function loadUser() {
       isActive.value = userData.is_active;
       role.value = userData.role;
       hasFrozenBalance.value = userData.has_frozen_balance;
+      nicknameStyleId.value = userData.nickname_style_id || 'default';
+      profileBackgroundUnlocked.value = userData.profile_background_unlocked || false;
+      profileBackgroundUrl.value = userData.profile_background_url || '';
+      twoFactorEnabled.value = userData.two_factor_enabled || false;
+      newPassword.value = '';
+      confirmNewPassword.value = '';
     }
   } catch (error) {
     console.error('Error loading user:', error);
@@ -139,7 +151,35 @@ async function saveUser() {
       return;
     }
 
-    const userData = {
+    const normalizedNicknameStyleId = nicknameStyleId.value.trim() || 'default';
+    if (normalizedNicknameStyleId.length > 64) {
+      errorMessage.value = t('pages.admin.editUser.nicknameStyleIdTooLong');
+      return;
+    }
+
+    const normalizedProfileBackgroundUrl = profileBackgroundUrl.value.trim();
+    if (normalizedProfileBackgroundUrl.length > 255) {
+      errorMessage.value = t('pages.admin.editUser.backgroundUrlTooLong');
+      return;
+    }
+
+    const hasPasswordInput = newPassword.value.length > 0 || confirmNewPassword.value.length > 0;
+    if (hasPasswordInput) {
+      if (!newPassword.value || !confirmNewPassword.value) {
+        errorMessage.value = t('pages.admin.editUser.passwordFieldsRequired');
+        return;
+      }
+      if (newPassword.value !== confirmNewPassword.value) {
+        errorMessage.value = t('pages.admin.editUser.passwordsDoNotMatch');
+        return;
+      }
+      if (newPassword.value.length < 8) {
+        errorMessage.value = t('pages.auth.signUp.passwordLengthError');
+        return;
+      }
+    }
+
+    const userData: AdminUpdateUserPayload = {
       email: email.value,
       username: username.value,
       description: description.value,
@@ -149,14 +189,39 @@ async function saveUser() {
       is_active: isActive.value,
       role: role.value,
       has_frozen_balance: hasFrozenBalance.value,
+      nickname_style_id: normalizedNicknameStyleId,
+      profile_background_unlocked: profileBackgroundUnlocked.value,
+      profile_background_url: profileBackgroundUnlocked.value ? normalizedProfileBackgroundUrl : '',
+      two_factor_enabled: twoFactorEnabled.value,
     };
 
-    const success = await adminService.updateUserData(userId.value, userData);
+    if (hasPasswordInput && newPassword.value) {
+      userData.new_password = newPassword.value;
+    }
 
-    if (success === false) {
+    const updateResponse = await adminService.updateUserData(userId.value, userData);
+
+    if (updateResponse === false) {
       errorMessage.value = t('pages.admin.editUser.errorSaving');
       return;
     }
+
+    user.value = updateResponse;
+    email.value = updateResponse.email;
+    username.value = updateResponse.username;
+    description.value = updateResponse.description || '';
+    balance.value = updateResponse.balance.toString();
+    rating.value = updateResponse.rating.toString();
+    isBanned.value = updateResponse.is_banned;
+    isActive.value = updateResponse.is_active;
+    role.value = updateResponse.role;
+    hasFrozenBalance.value = updateResponse.has_frozen_balance;
+    nicknameStyleId.value = updateResponse.nickname_style_id || 'default';
+    profileBackgroundUnlocked.value = updateResponse.profile_background_unlocked || false;
+    profileBackgroundUrl.value = updateResponse.profile_background_url || '';
+    twoFactorEnabled.value = updateResponse.two_factor_enabled || false;
+    newPassword.value = '';
+    confirmNewPassword.value = '';
 
     if (avatarFiles.value.length > 0) {
       const avatarResponse = await adminService.uploadUserAvatar(userId.value, avatarFiles.value[0]!)
@@ -218,6 +283,12 @@ watch(isBanned, (value) => {
 watch(isActive, (value) => {
   if (value && isBanned.value) {
     isBanned.value = false;
+  }
+});
+
+watch(profileBackgroundUnlocked, (value) => {
+  if (!value) {
+    profileBackgroundUrl.value = '';
   }
 });
 </script>
@@ -392,6 +463,98 @@ watch(isActive, (value) => {
                 </RadioButton>
               </label>
             </div>
+          </div>
+        </div>
+
+        <!-- Security and appearance -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label class="mb-1 block text-sm text-text-secondary">
+              {{ $t('pages.admin.editUser.securityTitle') }}
+            </label>
+            <label class="flex items-center">
+              <Checkbox v-model="twoFactorEnabled" />
+              <span class="ml-2 text-sm text-mainText">
+                {{ $t('pages.admin.editUser.twoFactorEnabled') }}
+              </span>
+            </label>
+          </div>
+
+          <div class="space-y-2">
+            <label class="mb-1 block text-sm text-text-secondary">
+              {{ $t('pages.admin.editUser.backgroundSettingsTitle') }}
+            </label>
+            <label class="flex items-center">
+              <Checkbox v-model="profileBackgroundUnlocked" />
+              <span class="ml-2 text-sm text-mainText">
+                {{ $t('pages.admin.editUser.backgroundUnlocked') }}
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="nicknameStyleId" class="mb-1 block text-sm text-text-secondary">
+              {{ $t('pages.admin.editUser.nicknameStyleId') }}
+            </label>
+            <TheInput
+              id="nicknameStyleId"
+              v-model="nicknameStyleId"
+              type="text"
+              :maxlength="64"
+              :placeholder="$t('pages.admin.editUser.nicknameStyleIdPlaceholder')"
+            />
+            <button
+              type="button"
+              class="mt-2 admin-btn admin-btn-ghost admin-btn-xs"
+              @click="nicknameStyleId = 'default'"
+            >
+              {{ $t('pages.admin.editUser.resetNicknameStyle') }}
+            </button>
+          </div>
+
+          <div>
+            <label for="profileBackgroundUrl" class="mb-1 block text-sm text-text-secondary">
+              {{ $t('pages.admin.editUser.backgroundUrl') }}
+            </label>
+            <TheInput
+              id="profileBackgroundUrl"
+              v-model="profileBackgroundUrl"
+              type="text"
+              :maxlength="255"
+              :placeholder="$t('pages.admin.editUser.backgroundUrlPlaceholder')"
+              :disabled="!profileBackgroundUnlocked"
+            />
+          </div>
+        </div>
+
+        <!-- Password reset -->
+        <div class="space-y-3 rounded-xl border border-dark-700 bg-dark-600/30 p-4">
+          <div>
+            <label class="mb-1 block text-sm text-text-secondary">
+              {{ $t('pages.admin.editUser.passwordResetTitle') }}
+            </label>
+            <p class="text-xs text-text-secondary">
+              {{ $t('pages.admin.editUser.passwordResetHint') }}
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <TheInput
+              id="newPassword"
+              v-model="newPassword"
+              type="password"
+              :placeholder="$t('pages.admin.editUser.newPasswordPlaceholder')"
+              autocomplete="new-password"
+            />
+            <TheInput
+              id="confirmNewPassword"
+              v-model="confirmNewPassword"
+              type="password"
+              :placeholder="$t('pages.admin.editUser.confirmNewPasswordPlaceholder')"
+              autocomplete="new-password"
+            />
           </div>
         </div>
 

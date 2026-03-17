@@ -19,6 +19,7 @@ export const UserReadSchema = z.object({
     .optional()
     .transform((value) => value ?? ''),
   profile_background_unlocked: z.boolean().optional().transform((value) => value ?? false),
+  two_factor_enabled: z.boolean().optional().transform((value) => value ?? false),
   description: z.string().max(500).nullable(),
   created_at: z.string().pipe(z.coerce.date()),
   has_frozen_balance: z.boolean(),
