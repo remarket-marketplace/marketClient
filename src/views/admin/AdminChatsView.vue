@@ -918,14 +918,26 @@ async function sendMessage(payload: { files: File[] }) {
                                         </div>
                                     </div>
                                 </template>
+
+                                <div
+                                    v-if="selectedChatId"
+                                    aria-hidden="true"
+                                    class="w-full flex-none md:h-[108px]"
+                                    :class="isMobile ? 'h-[180px]' : 'h-[124px]'"
+                                />
                             </div>
 
-                            <div v-if="selectedChatId" class="z-20 mt-2 bg-transparent pb-1 pt-2">
-                                <SendMessageBar
-                                    v-model:newMessage="newMessage"
-                                    @sendMessage="sendMessage"
-                                    class="flex-none"
-                                />
+                            <div
+                                v-if="selectedChatId"
+                                class="pointer-events-none absolute inset-x-0 z-20 bg-transparent px-1 pb-2 pt-0 md:bottom-0"
+                                :class="isMobile ? 'bottom-14' : 'bottom-0'"
+                            >
+                                <div class="pointer-events-auto">
+                                    <SendMessageBar
+                                        v-model:newMessage="newMessage"
+                                        @sendMessage="sendMessage"
+                                    />
+                                </div>
                             </div>
 
                             <div
