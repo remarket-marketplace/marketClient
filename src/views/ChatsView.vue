@@ -653,6 +653,13 @@ async function loadMoreMessages() {
 }
 
 async function loadChatMessages(chatId: string) {
+  if (selectedChatId.value === chatId) {
+    if (isMobile.value) {
+      mobileMode.value = 'chat'
+    }
+    return
+  }
+
   isChatLoading.value = true
   isChatPinning.value = false
   let shouldScrollToBottom = false
@@ -808,7 +815,7 @@ async function sendMessage(payload: { files: File[] }) {
         class="flex flex-1 transition-all duration-300 min-h-0" :class="[
           isMobile && mobileMode === 'chat'
             ? 'fixed inset-0 z-10 w-full bg-background'
-            : 'flex-1 w-9/12 border-1 border-dark-400 rounded-3xl',
+            : 'flex-1 w-9/12 border-1 border-dark-400 rounded-3xl overflow-hidden',
         ]">
         <div class="flex w-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-2 md:rounded-xl" :class="{
           'pb-16': isMobile && mobileMode === 'chat',
@@ -816,7 +823,7 @@ async function sendMessage(payload: { files: File[] }) {
         }">
           <div class="flex w-full min-w-0 flex-grow flex-col overflow-hidden">
             <div v-if="currentChat"
-              class="flex items-center gap-2 sticky top-0 bg-background px-2 py-2 lg:py-3 lg:px-3 z-10 lg:border-b border-dark-700">
+              class="sticky top-0 z-10 mx-1 flex items-center gap-2 bg-background px-2 py-2 lg:mx-2 lg:border-b lg:border-dark-700 lg:px-3 lg:py-3">
               <button v-if="isMobile" class="text-xl font-bold flex-shrink-0" @click="backToChats">
                 <ArrowLeft />
               </button>

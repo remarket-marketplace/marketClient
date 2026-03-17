@@ -14,6 +14,11 @@ import {
   AuditLogsListSchema,
   type AuditLog,
 } from "@/validation/audit/activityLog";
+import {
+  adminPaymentSchema,
+  adminPaymentsListSchema,
+  type AdminPayment,
+} from "@/validation/payment/adminPayment";
 
 export type DashboardStatusBreakdown = { status: string; count: number }
 export type DashboardSeriesPoint = { date: string; value: number }
@@ -67,6 +72,16 @@ export type PlatformSettings = {
   registration_enabled: boolean
   product_creation_enabled: boolean
   telegram_integration_enabled: boolean
+}
+
+export type PaymentStatus = "PENDING" | "CONFIRMED" | "CANCELED" | "CHARGEBACKED"
+
+export type AdminPaymentsFilters = {
+  status?: PaymentStatus | "all"
+  user_query?: string
+  provider_tx_id?: string
+  date_from?: string
+  date_to?: string
 }
 
 export const adminService = {
@@ -616,6 +631,74 @@ export const adminService = {
         console.error("Error fetching activity action types:", e)
       }
       return []
+    }
+  },
+
+  async getAdminPayments(
+    page = 1,
+    perPage = 20,
+    filters: AdminPaymentsFilters = {},
+  ): Promise<{
+    payments: AdminPayment[]
+    currentPage: number
+    totalPages: number
+    total: number
+  }> {
+    try {
+      const params: Record<string, string | number> = {
+        page,
+        per_page: perPage,
+      }
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value === undefined || value === null) return
+        const normalized = String(value).trim()
+        if (!normalized || normalized === "all") return
+        params[key] = normalized
+      })
+
+      const response = await httpClient.get("/admin/payments", { params })
+      const parsed = adminPaymentsListSchema.parse(response.data)
+      return {
+        payments: parsed.payments,
+        currentPage: page,
+        totalPages: parsed.total_pages,
+        total: parsed.total,
+      }
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error("Admin payments validation error:", e.issues)
+      } else {
+        console.error("Error fetching admin payments:", e)
+      }
+      return {
+        payments: [],
+        currentPage: 1,
+        totalPages: 1,
+        total: 0,
+      }
+    }
+  },
+
+  async updateAdminPaymentStatus(
+    paymentId: string,
+    status: PaymentStatus,
+    reason?: string | null,
+  ): Promise<AdminPayment | null> {
+    try {
+      const response = await httpClient.patch("/admin/payments/status", {
+        payment_id: paymentId,
+        status,
+        reason: reason?.trim() ? reason.trim() : null,
+      })
+      return adminPaymentSchema.parse(response.data)
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error("Admin payment status validation error:", e.issues)
+      } else {
+        console.error("Error updating admin payment status:", e)
+      }
+      return null
     }
   },
 

@@ -65,6 +65,12 @@ const isNotificationsLoading = ref(false)
 const isNotificationsSaving = ref(false)
 const isTelegramConnectLoading = ref(false)
 const isTelegramDisconnectLoading = ref(false)
+const pendingTelegramConnectUrl = ref<string | null>(null)
+let isNotificationsSilentRefreshInFlight = false
+let telegramStatusPollingTimer: ReturnType<typeof window.setInterval> | null = null
+let telegramStatusPollingAttempts = 0
+const TELEGRAM_STATUS_POLL_INTERVAL_MS = 2500
+const TELEGRAM_STATUS_POLL_MAX_ATTEMPTS = 48
 
 const isStylesLoading = ref(false)
 const stylesErrorMessage = ref<string | null>(null)
@@ -374,6 +380,45 @@ function applyNotificationSettings(data: NotificationSettings) {
   notificationsData.value = data
 }
 
+async function refreshNotificationSettingsSilently() {
+  if (isNotificationsSilentRefreshInFlight) return
+  isNotificationsSilentRefreshInFlight = true
+
+  const result = await settingsService.getNotificationSettings()
+  if (result.success && result.data) {
+    applyNotificationSettings(result.data)
+  }
+
+  isNotificationsSilentRefreshInFlight = false
+}
+
+function stopTelegramStatusPolling() {
+  if (telegramStatusPollingTimer) {
+    window.clearInterval(telegramStatusPollingTimer)
+    telegramStatusPollingTimer = null
+  }
+  telegramStatusPollingAttempts = 0
+}
+
+function startTelegramStatusPolling() {
+  stopTelegramStatusPolling()
+  telegramStatusPollingAttempts = 0
+
+  telegramStatusPollingTimer = window.setInterval(async () => {
+    if (activeSection.value !== 'notifications') return
+
+    telegramStatusPollingAttempts += 1
+    await refreshNotificationSettingsSilently()
+
+    if (
+      telegramConnected.value
+      || telegramStatusPollingAttempts >= TELEGRAM_STATUS_POLL_MAX_ATTEMPTS
+    ) {
+      stopTelegramStatusPolling()
+    }
+  }, TELEGRAM_STATUS_POLL_INTERVAL_MS)
+}
+
 async function loadNotificationSettings() {
   isNotificationsLoading.value = true
   notificationsErrorMessage.value = null
@@ -434,8 +479,16 @@ async function connectTelegram() {
   if (isTelegramConnectLoading.value) return
   notificationsErrorMessage.value = null
   notificationsSuccessMessage.value = null
+  pendingTelegramConnectUrl.value = null
   isTelegramConnectLoading.value = true
-  const pendingWindow = window.open('', '_blank', 'noopener,noreferrer')
+  const pendingWindow = window.open('about:blank', '_blank')
+  if (pendingWindow) {
+    try {
+      pendingWindow.opener = null
+    } catch {
+      // no-op: browser may disallow changing opener
+    }
+  }
 
   const result = await settingsService.createTelegramConnectLink()
   if (!result.success || !result.data) {
@@ -453,8 +506,10 @@ async function connectTelegram() {
   if (pendingWindow && !pendingWindow.closed) {
     pendingWindow.location.href = result.data.connect_url
   } else {
-    window.location.assign(result.data.connect_url)
+    pendingTelegramConnectUrl.value = result.data.connect_url
+    notificationsErrorMessage.value = t('pages.settingsPage.notificationsTelegramPopupBlocked')
   }
+  startTelegramStatusPolling()
   setNotificationsSuccessMessage(t('pages.settingsPage.notificationsConnectLinkOpened'))
   isTelegramConnectLoading.value = false
 }
@@ -826,19 +881,46 @@ watch(
     if (section === 'nickname-styles' && !stylesCatalog.value && !isStylesLoading.value) {
       void loadNicknameStyles()
     }
-    if (section === 'notifications' && !notificationsData.value && !isNotificationsLoading.value) {
-      void loadNotificationSettings()
+    if (section === 'notifications' && !isNotificationsLoading.value) {
+      if (!notificationsData.value) {
+        void loadNotificationSettings()
+      } else {
+        void refreshNotificationSettingsSilently()
+      }
     }
   },
   { immediate: true },
 )
 
+watch(telegramConnected, (connected) => {
+  if (connected) {
+    stopTelegramStatusPolling()
+    pendingTelegramConnectUrl.value = null
+  }
+})
+
+function handleWindowFocus() {
+  if (activeSection.value !== 'notifications') return
+  void refreshNotificationSettingsSilently()
+}
+
+function handleWindowVisibilityChange() {
+  if (document.visibilityState !== 'visible') return
+  if (activeSection.value !== 'notifications') return
+  void refreshNotificationSettingsSilently()
+}
+
 onMounted(() => {
   window.addEventListener('click', handleOutsidePaletteClick)
+  window.addEventListener('focus', handleWindowFocus)
+  document.addEventListener('visibilitychange', handleWindowVisibilityChange)
 })
 
 onUnmounted(() => {
   window.removeEventListener('click', handleOutsidePaletteClick)
+  window.removeEventListener('focus', handleWindowFocus)
+  document.removeEventListener('visibilitychange', handleWindowVisibilityChange)
+  stopTelegramStatusPolling()
 })
 </script>
 
@@ -1188,6 +1270,7 @@ onUnmounted(() => {
 
                 <div class="flex flex-wrap items-center gap-2">
                   <button
+                    v-if="!telegramConnected"
                     type="button"
                     class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
                     :disabled="isTelegramConnectLoading"
@@ -1198,7 +1281,7 @@ onUnmounted(() => {
                   </button>
 
                   <button
-                    v-if="telegramConnected"
+                    v-else
                     type="button"
                     class="inline-flex items-center gap-2 rounded-lg border border-dark-600 px-3 py-2 text-sm font-semibold text-gray-200 hover:bg-dark-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
                     :disabled="isTelegramDisconnectLoading"
@@ -1208,6 +1291,17 @@ onUnmounted(() => {
                     <Link2Off v-else class="w-4 h-4" />
                     <span>{{ $t('pages.settingsPage.notificationsTelegramDisconnect') }}</span>
                   </button>
+
+                  <a
+                    v-if="pendingTelegramConnectUrl && !telegramConnected"
+                    :href="pendingTelegramConnectUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex items-center gap-2 rounded-lg border border-blue-500/40 bg-blue-500/10 px-3 py-2 text-sm font-semibold text-blue-200 hover:bg-blue-500/20 transition"
+                  >
+                    <Send class="w-4 h-4" />
+                    <span>{{ $t('pages.settingsPage.notificationsTelegramOpenLink') }}</span>
+                  </a>
                 </div>
               </div>
 

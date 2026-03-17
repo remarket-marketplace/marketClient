@@ -66,6 +66,10 @@ const subcategoriesSentinelRef = ref<HTMLElement | null>(null)
 let categoriesObserver: IntersectionObserver | null = null
 let subcategoriesObserver: IntersectionObserver | null = null
 
+const isCreateCategoryModalOpen = computed(
+  () => showAddCategoryModal.value || showAddSubcategoryModal.value,
+)
+
 onMounted(async () => {
   await loadCategories()
 })
@@ -278,6 +282,7 @@ function setupSubcategoriesObserver() {
 onUnmounted(() => {
   categoriesObserver?.disconnect()
   subcategoriesObserver?.disconnect()
+  document.body.style.overflow = ''
 })
 
 watch([categorySearch, categorySort], () => {
@@ -292,6 +297,10 @@ watch(selectedCategory, () => {
   subcategorySearch.value = ''
   subcategorySort.value = 'name_asc'
   nextTick(setupSubcategoriesObserver)
+})
+
+watch(isCreateCategoryModalOpen, (isOpen) => {
+  document.body.style.overflow = isOpen ? 'hidden' : ''
 })
 </script>
 
@@ -440,8 +449,12 @@ watch(selectedCategory, () => {
       </div>
     </div>
 
-    <div v-if="showAddCategoryModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="showAddCategoryModal = false">
-      <div class="bg-dark-600 border border-dark-700 rounded-xl p-6 w-full max-w-sm sm:max-w-md">
+    <div
+      v-if="showAddCategoryModal"
+      class="fixed inset-0 z-50 bg-black/50 p-4 flex items-start sm:items-center justify-center overflow-y-auto overscroll-contain"
+      @click.self="showAddCategoryModal = false"
+    >
+      <div class="bg-dark-600 border border-dark-700 rounded-xl p-6 w-full max-w-sm sm:max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-xl font-bold text-mainText">{{ t('pages.admin.categoriesPage.addCategory') }}</h3>
           <button @click="showAddCategoryModal = false" class="text-gray-400 hover:text-white transition-colors">
@@ -477,8 +490,12 @@ watch(selectedCategory, () => {
       </div>
     </div>
 
-    <div v-if="showAddSubcategoryModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="showAddSubcategoryModal = false">
-      <div class="bg-dark-600 border border-dark-700 rounded-xl p-6 w-full max-w-sm sm:max-w-md">
+    <div
+      v-if="showAddSubcategoryModal"
+      class="fixed inset-0 z-50 bg-black/50 p-4 flex items-start sm:items-center justify-center overflow-y-auto overscroll-contain"
+      @click.self="showAddSubcategoryModal = false"
+    >
+      <div class="bg-dark-600 border border-dark-700 rounded-xl p-6 w-full max-w-sm sm:max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-xl font-bold text-mainText">{{ t('pages.admin.categoriesPage.addSubcategory') }}</h3>
           <button @click="showAddSubcategoryModal = false" class="text-gray-400 hover:text-white transition-colors">

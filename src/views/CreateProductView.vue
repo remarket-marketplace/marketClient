@@ -279,7 +279,6 @@ function handleStepClick(step: StepNumber): void {
   const invalidStep = getFirstInvalidStep()
   if (invalidStep) {
     setCurrentStep(invalidStep)
-    showStepIssues.value = true
   }
 }
 
@@ -967,7 +966,7 @@ async function createProduct() {
               <div class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div class="space-y-3">
-                    <div class="flex items-center justify-between">
+                    <div class="flex h-6 items-center justify-between">
                       <label for="price" class="text-sm font-medium text-gray-300">
                         {{ $t('common.price') }}
                         <span class="text-xs text-red-400 ml-1">*</span>
@@ -986,7 +985,7 @@ async function createProduct() {
                         :max="priceInputMax"
                         :step="priceInputStep"
                         :placeholder="$t('pages.forms.createProduct.pricePlaceholder')"
-                        class="w-full outline-none rounded-lg bg-dark-600 border border-dark-700 px-4 py-3 text-lg font-semibold text-white"
+                        class="h-12 w-full rounded-lg border border-dark-700 bg-dark-600 px-4 pr-16 text-base font-semibold text-white outline-none"
                       />
                       <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 text-sm font-medium">
                         {{ currencySymbol }}
@@ -1002,10 +1001,12 @@ async function createProduct() {
                     </p>
                   </div>
 
-                  <div class="space-y-2">
-                    <label for="count" class="text-sm font-medium text-gray-300">
-                      {{ $t('pages.forms.createProduct.count') }}
-                    </label>
+                  <div class="space-y-3">
+                    <div class="flex h-6 items-center">
+                      <label for="count" class="text-sm font-medium text-gray-300">
+                        {{ $t('pages.forms.createProduct.count') }}
+                      </label>
+                    </div>
                     <div class="relative">
                       <input
                         id="count"
@@ -1013,7 +1014,7 @@ async function createProduct() {
                         type="number"
                         :min="PRODUCT_LIMITS.count.min"
                         :max="PRODUCT_LIMITS.count.max"
-                        class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white outline-none"
+                        class="h-12 w-full rounded-lg border border-dark-700 bg-dark-600 px-4 pr-20 text-base font-semibold text-white outline-none"
                       />
                       <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
                         {{ $t('common.items') }}

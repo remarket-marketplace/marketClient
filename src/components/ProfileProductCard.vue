@@ -63,20 +63,20 @@ function goToSeller() {
       <hr class="mb-2 border-dark-700 opacity-80" />
 
       <div class="mt-auto flex w-full flex-col gap-2">
-        <div v-if="!isOwner" class="flex w-full min-w-0 items-center gap-1.5 sm:gap-2">
+        <div v-if="!isOwner" class="flex w-full min-w-0 items-center gap-1.5 sm:gap-2 min-h-6">
           <button
             type="button"
-            class="min-w-0 shrink truncate text-left text-xs underline decoration-transparent transition hover:decoration-blue-300 sm:text-sm"
+            class="inline-flex min-h-6 min-w-0 shrink items-center truncate text-left text-xs transition sm:text-sm"
             @click.stop="goToSeller"
           >
             <StyledUsername
               :username="product.seller.username"
               :style-id="product.seller.nickname_style_id"
-              class="block truncate"
+              class="block truncate leading-none"
             />
           </button>
-          <span v-if="product.seller.is_active" class="h-2 w-2 flex-shrink-0 rounded-full bg-green-500" />
-          <div class="flex-shrink-0">
+          <span v-if="product.seller.is_active" class="h-2 w-2 flex-shrink-0 self-center rounded-full bg-green-500" />
+          <div class="inline-flex flex-shrink-0 items-center self-center">
             <UserRating :rating="product.seller.rating" />
           </div>
         </div>

@@ -8,6 +8,7 @@ import { calculateDiscountPercent } from '@/utils/priceOffer'
 import type { ChatMessageUnion } from '@/validation/chat/chatMessage'
 import { useRouter } from 'vue-router'
 import { buildProductKey } from '@/utils/urlKeys'
+import { decodePriceOfferTemplateKey } from '@/utils/priceOfferMessageTemplate'
 
 const props = defineProps<{
   message: Extract<ChatMessageUnion, { message_type: 'price_offer_message' }>
@@ -46,6 +47,17 @@ const statusClass = computed(() => {
     default:
       return 'bg-blue-500/20 text-blue-300 border-blue-500/30'
   }
+})
+
+const localizedOfferMessage = computed(() => {
+  const templateKey = decodePriceOfferTemplateKey(props.message.offer_message)
+  if (!templateKey) {
+    return props.message.offer_message
+  }
+
+  const translationKey = `pages.chats.priceOfferTemplates.${templateKey}`
+  const translatedText = t(translationKey, { price: formatCurrencyAmount(Number(props.message.offered_price)) })
+  return translatedText === translationKey ? props.message.offer_message : translatedText
 })
 
 async function acceptOffer() {
@@ -133,8 +145,8 @@ function handleViewProduct() {
         </div>
       </div>
 
-      <p v-if="message.offer_message" class="mt-3 whitespace-pre-line text-sm text-gray-200 break-words [overflow-wrap:anywhere]">
-        {{ message.offer_message }}
+      <p v-if="localizedOfferMessage" class="mt-3 whitespace-pre-line text-sm text-gray-200 break-words [overflow-wrap:anywhere]">
+        {{ localizedOfferMessage }}
       </p>
 
       <div v-if="canProcess" class="mt-4 flex flex-wrap gap-2">
