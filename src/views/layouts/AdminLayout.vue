@@ -4,6 +4,7 @@ import {
   Users,
   Package,
   ShoppingCart,
+  CreditCard,
   Folder,
   MessageCircle,
   MessageSquareText,
@@ -90,6 +91,12 @@ const navItems = computed<NavItem[]>(() => [
     to: '/admin/deals',
   },
   {
+    id: 'payments',
+    title: t('navigation.admin.payments'),
+    icon: CreditCard,
+    to: '/admin/payments',
+  },
+  {
     id: 'categories',
     title: t('navigation.admin.categories'),
     icon: Folder,
@@ -127,7 +134,7 @@ const navGroups = computed<NavGroup[]>(() => {
     {
       id: 'management',
       title: t('navigation.admin.sections.management'),
-      items: pickNavItems(items, ['users', 'products', 'deals', 'categories']),
+      items: pickNavItems(items, ['users', 'products', 'deals', 'payments', 'categories']),
     },
     {
       id: 'communication',

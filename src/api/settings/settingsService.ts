@@ -19,6 +19,7 @@ import {
   type TwoFactorSettings,
   type UpdateTwoFactorSettings,
 } from "@/validation/user/twoFactorSettings"
+import { normalizeCustomNicknameStyleId } from "@/utils/nicknameStyles"
 import { ZodError } from "zod"
 
 export const settingsService = {
@@ -83,9 +84,11 @@ export const settingsService = {
     },
 
     async purchaseNicknameStyle(styleId: string): Promise<{ success: boolean; data?: NicknameStyleCatalogResponse; error?: ApiError }> {
+        const normalizedCustomStyleId = normalizeCustomNicknameStyleId(styleId)
+        const payloadStyleId = normalizedCustomStyleId ?? styleId
         try {
             const response = await httpClient.post('/users/nickname-styles/purchase', {
-                style_id: styleId,
+                style_id: payloadStyleId,
             })
             return {
                 success: true,
@@ -104,9 +107,11 @@ export const settingsService = {
     },
 
     async activateNicknameStyle(styleId: string): Promise<{ success: boolean; data?: NicknameStyleCatalogResponse; error?: ApiError }> {
+        const normalizedCustomStyleId = normalizeCustomNicknameStyleId(styleId)
+        const payloadStyleId = normalizedCustomStyleId ?? styleId
         try {
             const response = await httpClient.patch('/users/nickname-styles/active', {
-                style_id: styleId,
+                style_id: payloadStyleId,
             })
             return {
                 success: true,

@@ -4,13 +4,14 @@ import { productService } from '@/api/product/ProductService'
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import Loader from '@/components/Loader.vue'
 import MainProductCard from '@/components/mainProductCard.vue'
+import HomeProductListCard from '@/components/HomeProductListCard.vue'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
 import type { Product, ProductImage } from '@/validation/product/product'
 import type { Category } from '@/validation/category/category'
 import { onMounted, ref, onUnmounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { ChevronLeft, ChevronRight, X, Heart, Trash2, Percent, ShoppingBag } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, X, Heart, Trash2, Percent, ShoppingBag, LayoutGrid, Rows3 } from 'lucide-vue-next'
 import UserRating from '@/components/UserRating.vue'
 import TrustComponent from './TrustComponent.vue'
 import { useUserStore } from '@/stores/user'
@@ -22,6 +23,11 @@ import { formatCurrencyAmount, getCurrencySymbol, resolvePreferredCurrency } fro
 import { storeToRefs } from 'pinia'
 import { buildCategoryKey, buildProductKey } from '@/utils/urlKeys'
 import { calculateDiscountPercent, calculateOfferedPriceByPercent } from '@/utils/priceOffer'
+import {
+  PRICE_OFFER_MESSAGE_TEMPLATE_KEYS,
+  encodePriceOfferTemplateMessage,
+  type PriceOfferMessageTemplateKey,
+} from '@/utils/priceOfferMessageTemplate'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const NORMALIZED_API_HOST = String(API_HOST || '').replace(/\/$/, '')
@@ -56,6 +62,7 @@ const offerError = ref<string | null>(null)
 const isOfferSubmitting = ref(false)
 const offeredPrice = ref<number | null>(null)
 const offerMessage = ref('')
+const selectedOfferMessageTemplateKey = ref<PriceOfferMessageTemplateKey | null>(null)
 const showInsufficientBalanceModal = ref(false)
 const insufficientBalanceDetails = ref<{
   balance: number
@@ -83,14 +90,39 @@ const moderationRejectReasonLabel = computed(() => {
 
 const offerCurrencyCode = computed(() => resolvePreferredCurrency())
 const offerCurrencySymbol = computed(() => getCurrencySymbol(offerCurrencyCode.value))
-const OFFER_DISCOUNT_PRESETS = [10, 20, 30, 40] as const
+const OFFER_DISCOUNT_PRESETS = [5, 10, 15] as const
 const SIMILAR_PRODUCTS_LIMIT = 8
+type ProductCardViewMode = 'grid' | 'list'
+const PRODUCT_CARD_VIEW_MODE_STORAGE_KEY = 'home_product_card_view_mode'
+const productCardViewMode = ref<ProductCardViewMode>('grid')
+const similarProductsLoadingSkeletonCount = computed(() => (
+  productCardViewMode.value === 'grid'
+    ? 4
+    : 3
+))
 
 const productOfferBasePrice = computed(() => Number(product.value?.price ?? 0))
 const offerDiscountPercent = computed(() => calculateDiscountPercent(
   productOfferBasePrice.value,
   Number(offeredPrice.value),
 ))
+function getOfferMessageTemplateText(templateKey: PriceOfferMessageTemplateKey): string {
+  const offeredValue = Number(offeredPrice.value)
+  const priceLabel = formatCurrencyAmount(
+    Number.isFinite(offeredValue) && offeredValue > 0 ? offeredValue : productOfferBasePrice.value,
+    { minimumFractionDigits: 2, maximumFractionDigits: 2 },
+  )
+
+  switch (templateKey) {
+    case 'price_offer_buy_now':
+      return t('pages.product.offerPriceConfirm.messageTemplateBuyNow', { price: priceLabel })
+  }
+}
+
+const offerMessageTemplates = computed(() => PRICE_OFFER_MESSAGE_TEMPLATE_KEYS.map(templateKey => ({
+  id: templateKey,
+  text: getOfferMessageTemplateText(templateKey),
+})))
 
 const displayedCategory = computed(() => {
   const currentCategory = product.value?.category
@@ -111,6 +143,17 @@ const displayedSubcategory = computed(() => {
 
   return currentCategory
 })
+
+function setProductCardViewMode(mode: ProductCardViewMode): void {
+  if (productCardViewMode.value === mode) return
+  productCardViewMode.value = mode
+}
+
+function restoreProductCardViewModeFromStorage(): void {
+  if (typeof window === 'undefined') return
+  const saved = window.localStorage.getItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY)
+  productCardViewMode.value = saved === 'list' ? 'list' : 'grid'
+}
 
 async function loadCategoryBreadcrumb(category: Category | null | undefined) {
   if (!category?.parent_id) {
@@ -205,7 +248,13 @@ async function loadProductData() {
 }
 
 onMounted(async () => {
+  restoreProductCardViewModeFromStorage()
   await loadProductData()
+})
+
+watch(productCardViewMode, (mode) => {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY, mode)
 })
 
 function goToCategoryPage(category: Category | null | undefined) {
@@ -289,6 +338,7 @@ function openOfferConfirm() {
   offeredPrice.value = calculateOfferedPriceByPercent(productPrice, OFFER_DISCOUNT_PRESETS[0])
     ?? Math.max(0.01, Math.round((productPrice - 0.01) * 100) / 100)
   offerMessage.value = ''
+  selectedOfferMessageTemplateKey.value = null
   offerError.value = null
   showOfferConfirm.value = true
 }
@@ -326,6 +376,20 @@ function isDiscountPresetActive(discountPercent: number): boolean {
   return Math.abs(currentOfferedPrice - presetPrice) < 0.001
 }
 
+function applyOfferMessageTemplate(templateKey: PriceOfferMessageTemplateKey) {
+  selectedOfferMessageTemplateKey.value = templateKey
+  offerMessage.value = getOfferMessageTemplateText(templateKey)
+}
+
+function handleOfferMessageInput() {
+  if (!selectedOfferMessageTemplateKey.value) return
+
+  const selectedTemplateText = getOfferMessageTemplateText(selectedOfferMessageTemplateKey.value).trim()
+  if (offerMessage.value.trim() !== selectedTemplateText) {
+    selectedOfferMessageTemplateKey.value = null
+  }
+}
+
 async function handleOfferConfirm() {
   if (!product.value || user.value === null) return
 
@@ -335,12 +399,26 @@ async function handleOfferConfirm() {
     return
   }
 
+  const trimmedOfferMessage = offerMessage.value.trim()
+  const selectedTemplateText = selectedOfferMessageTemplateKey.value
+    ? getOfferMessageTemplateText(selectedOfferMessageTemplateKey.value).trim()
+    : null
+  const shouldSendTemplateKey = Boolean(
+    selectedOfferMessageTemplateKey.value
+    && selectedTemplateText
+    && trimmedOfferMessage
+    && trimmedOfferMessage === selectedTemplateText,
+  )
+  const offerMessageToSend = shouldSendTemplateKey
+    ? encodePriceOfferTemplateMessage(selectedOfferMessageTemplateKey.value as PriceOfferMessageTemplateKey)
+    : (trimmedOfferMessage || undefined)
+
   isOfferSubmitting.value = true
   offerError.value = null
   const result = await productService.createPriceOffer(
     product.value.id,
     priceNumber,
-    offerMessage.value,
+    offerMessageToSend,
   )
   isOfferSubmitting.value = false
 
@@ -491,6 +569,14 @@ watch(productKey, async (newProductKey, oldProductKey) => {
   await loadProductData()
   window.scrollTo({ top: 0, behavior: 'smooth' })
 })
+
+watch(
+  [offeredPrice, locale],
+  () => {
+    if (!selectedOfferMessageTemplateKey.value) return
+    offerMessage.value = getOfferMessageTemplateText(selectedOfferMessageTemplateKey.value)
+  },
+)
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
@@ -759,13 +845,68 @@ onUnmounted(() => {
 
     <div class="mt-6 w-full flex flex-col gap-4">
       <p class="text-xl sm:text-2xl font-bold">{{ $t('pages.product.similarProducts') }}</p>
+      <div class="flex justify-end">
+        <div
+          class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-dark-600 bg-dark-700/40 p-0.5"
+          role="group"
+          :aria-label="t('pages.index.viewSwitcherLabel')"
+        >
+          <button
+            type="button"
+            class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
+            :class="productCardViewMode === 'grid'
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+            :title="t('pages.index.viewGrid')"
+            @click="setProductCardViewMode('grid')"
+          >
+            <LayoutGrid class="h-3.5 w-3.5" />
+            <span class="hidden sm:inline">{{ t('pages.index.viewGrid') }}</span>
+          </button>
 
-      <div v-if="isSimilarProductsLoading" class="similar-products-grid grid gap-1 md:gap-2 w-full">
-        <div v-for="n in 4" :key="`similar-skeleton-${n}`" class="h-64 bg-dark-600 animate-pulse rounded-2xl" />
+          <button
+            type="button"
+            class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
+            :class="productCardViewMode === 'list'
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+            :title="t('pages.index.viewList')"
+            @click="setProductCardViewMode('list')"
+          >
+            <Rows3 class="h-3.5 w-3.5" />
+            <span class="hidden sm:inline">{{ t('pages.index.viewList') }}</span>
+          </button>
+        </div>
       </div>
 
-      <div v-else-if="similarProducts.length" class="similar-products-grid grid gap-1 md:gap-2 w-full">
+      <div
+        v-if="isSimilarProductsLoading"
+        class="w-full"
+        :class="productCardViewMode === 'grid'
+          ? 'similar-products-grid grid gap-1 md:gap-2'
+          : 'flex flex-col gap-2'"
+      >
+        <div
+          v-for="n in similarProductsLoadingSkeletonCount"
+          :key="`similar-skeleton-${n}`"
+          class="bg-dark-600 animate-pulse rounded-2xl"
+          :class="productCardViewMode === 'grid' ? 'h-64' : 'h-[118px] sm:h-[134px]'"
+        />
+      </div>
+
+      <div
+        v-else-if="similarProducts.length && productCardViewMode === 'grid'"
+        class="similar-products-grid grid gap-1 md:gap-2 w-full"
+      >
         <MainProductCard
+          v-for="similarProduct in similarProducts"
+          :key="similarProduct.id"
+          :product="similarProduct"
+          @click="goToProductPage"
+        />
+      </div>
+      <div v-else-if="similarProducts.length" class="w-full flex flex-col gap-2">
+        <HomeProductListCard
           v-for="similarProduct in similarProducts"
           :key="similarProduct.id"
           :product="similarProduct"
@@ -889,7 +1030,27 @@ onUnmounted(() => {
               maxlength="500"
               class="mt-1 w-full resize-none rounded-lg border border-dark-700 bg-dark-700/60 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500"
               :placeholder="$t('pages.product.offerPriceConfirm.messagePlaceholder')"
+              @input="handleOfferMessageInput"
             />
+            <div class="mt-2">
+              <p class="text-[11px] font-medium text-gray-400">
+                {{ $t('pages.product.offerPriceConfirm.messageTemplatesLabel') }}
+              </p>
+              <div class="mt-1.5 flex flex-wrap gap-1.5">
+                <button
+                  v-for="template in offerMessageTemplates"
+                  :key="template.id"
+                  type="button"
+                  class="rounded-md border px-2.5 py-1 text-left text-[11px] leading-4 transition-colors"
+                  :class="selectedOfferMessageTemplateKey === template.id
+                    ? 'border-emerald-400 bg-emerald-500/25 text-emerald-100'
+                    : 'border-emerald-700/50 bg-emerald-900/20 text-emerald-200 hover:bg-emerald-900/35'"
+                  @click="applyOfferMessageTemplate(template.id)"
+                >
+                  {{ template.text }}
+                </button>
+              </div>
+            </div>
           </div>
           <p v-if="offerError" class="text-xs text-red-400">{{ offerError }}</p>
         </div>
