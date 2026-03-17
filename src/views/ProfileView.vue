@@ -6,15 +6,16 @@ import { profileService } from '@/api/profile/ProfileService'
 import { reviewService } from '@/api/review/ReviewService'
 import Loader from '@/components/Loader.vue'
 import ProfileProductCard from '@/components/ProfileProductCard.vue'
+import HomeProductListCard from '@/components/HomeProductListCard.vue'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
-import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import type { Product } from '@/validation/product/product'
 import type { PublicProfileData, UserRead } from '@/validation/user/userRead'
 import type { ReviewSchema } from '@/validation/review/review'
-import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart, Edit, Calendar, Package, ShoppingBag, MessageSquare, Loader2 } from 'lucide-vue-next'
+import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart, Edit, Calendar, Package, ShoppingBag, MessageSquare, Loader2, LayoutGrid, Rows3 } from 'lucide-vue-next'
 import QrcodeVue from 'qrcode.vue'
 import type { Deal } from '@/validation/deal/deal'
 import UserRating from '@/components/UserRating.vue'
@@ -87,6 +88,9 @@ const profileBackgroundLayerStyle = computed(() => {
 })
 const activeTab = ref<'products' | 'reviews' | 'purchases'>('products')
 const tabsRef = ref<HTMLElement | null>(null)
+type ProductCardViewMode = 'grid' | 'list'
+const PRODUCT_CARD_VIEW_MODE_STORAGE_KEY = 'home_product_card_view_mode'
+const productCardViewMode = ref<ProductCardViewMode>('grid')
 
 // Пагинация для товаров
 const products = ref<Product[]>([])
@@ -375,11 +379,28 @@ function goToProduct(productKey: string) {
 }
 function goToProfile(username: string) { router.push(`/user/${username}`) }
 
+function setProductCardViewMode(mode: ProductCardViewMode): void {
+  if (productCardViewMode.value === mode) return
+  productCardViewMode.value = mode
+}
+
+function restoreProductCardViewModeFromStorage(): void {
+  if (typeof window === 'undefined') return
+  const saved = window.localStorage.getItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY)
+  productCardViewMode.value = saved === 'list' ? 'list' : 'grid'
+}
+
 onMounted(async () => {
+  restoreProductCardViewModeFromStorage()
   const profileLoaded = await loadProfileData()
   if (profileLoaded) {
     await Promise.all([loadUserProducts(), loadReviews()])
   }
+})
+
+watch(productCardViewMode, (mode) => {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY, mode)
 })
 
 onUnmounted(() => document.removeEventListener('click', handleClickOutside))
@@ -706,12 +727,54 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 <h3 class="text-lg font-semibold text-gray-300 mb-2">{{ t('pages.profile.noProducts') }}</h3>
               </div>
 
-              <div v-else class="profile-products-grid grid gap-1 md:gap-2 mt-6 w-full">
+              <div v-else class="mt-4 flex justify-end">
+                <div
+                  class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-dark-600 bg-dark-700/40 p-0.5"
+                  role="group"
+                  :aria-label="t('pages.index.viewSwitcherLabel')"
+                >
+                  <button
+                    type="button"
+                    class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
+                    :class="productCardViewMode === 'grid'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+                    :title="t('pages.index.viewGrid')"
+                    @click="setProductCardViewMode('grid')"
+                  >
+                    <LayoutGrid class="h-3.5 w-3.5" />
+                    <span class="hidden sm:inline">{{ t('pages.index.viewGrid') }}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
+                    :class="productCardViewMode === 'list'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+                    :title="t('pages.index.viewList')"
+                    @click="setProductCardViewMode('list')"
+                  >
+                    <Rows3 class="h-3.5 w-3.5" />
+                    <span class="hidden sm:inline">{{ t('pages.index.viewList') }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div v-if="products.length && productCardViewMode === 'grid'" class="profile-products-grid grid gap-1 md:gap-2 mt-6 w-full">
                 <ProfileProductCard
                   v-for="product in products"
                   :key="product.id"
                   :product="product"
                   :is-owner="isOwner"
+                  @click="goToProduct"
+                />
+              </div>
+              <div v-else-if="products.length" class="mt-6 w-full flex flex-col gap-2">
+                <HomeProductListCard
+                  v-for="product in products"
+                  :key="product.id"
+                  :product="product"
                   @click="goToProduct"
                 />
               </div>

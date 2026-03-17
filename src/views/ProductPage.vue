@@ -4,13 +4,14 @@ import { productService } from '@/api/product/ProductService'
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import Loader from '@/components/Loader.vue'
 import MainProductCard from '@/components/mainProductCard.vue'
+import HomeProductListCard from '@/components/HomeProductListCard.vue'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
 import type { Product, ProductImage } from '@/validation/product/product'
 import type { Category } from '@/validation/category/category'
 import { onMounted, ref, onUnmounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { ChevronLeft, ChevronRight, X, Heart, Trash2, Percent, ShoppingBag } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, X, Heart, Trash2, Percent, ShoppingBag, LayoutGrid, Rows3 } from 'lucide-vue-next'
 import UserRating from '@/components/UserRating.vue'
 import TrustComponent from './TrustComponent.vue'
 import { useUserStore } from '@/stores/user'
@@ -91,6 +92,14 @@ const offerCurrencyCode = computed(() => resolvePreferredCurrency())
 const offerCurrencySymbol = computed(() => getCurrencySymbol(offerCurrencyCode.value))
 const OFFER_DISCOUNT_PRESETS = [5, 10, 15] as const
 const SIMILAR_PRODUCTS_LIMIT = 8
+type ProductCardViewMode = 'grid' | 'list'
+const PRODUCT_CARD_VIEW_MODE_STORAGE_KEY = 'home_product_card_view_mode'
+const productCardViewMode = ref<ProductCardViewMode>('grid')
+const similarProductsLoadingSkeletonCount = computed(() => (
+  productCardViewMode.value === 'grid'
+    ? 4
+    : 3
+))
 
 const productOfferBasePrice = computed(() => Number(product.value?.price ?? 0))
 const offerDiscountPercent = computed(() => calculateDiscountPercent(
@@ -134,6 +143,17 @@ const displayedSubcategory = computed(() => {
 
   return currentCategory
 })
+
+function setProductCardViewMode(mode: ProductCardViewMode): void {
+  if (productCardViewMode.value === mode) return
+  productCardViewMode.value = mode
+}
+
+function restoreProductCardViewModeFromStorage(): void {
+  if (typeof window === 'undefined') return
+  const saved = window.localStorage.getItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY)
+  productCardViewMode.value = saved === 'list' ? 'list' : 'grid'
+}
 
 async function loadCategoryBreadcrumb(category: Category | null | undefined) {
   if (!category?.parent_id) {
@@ -228,7 +248,13 @@ async function loadProductData() {
 }
 
 onMounted(async () => {
+  restoreProductCardViewModeFromStorage()
   await loadProductData()
+})
+
+watch(productCardViewMode, (mode) => {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY, mode)
 })
 
 function goToCategoryPage(category: Category | null | undefined) {
@@ -819,13 +845,68 @@ onUnmounted(() => {
 
     <div class="mt-6 w-full flex flex-col gap-4">
       <p class="text-xl sm:text-2xl font-bold">{{ $t('pages.product.similarProducts') }}</p>
+      <div class="flex justify-end">
+        <div
+          class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-dark-600 bg-dark-700/40 p-0.5"
+          role="group"
+          :aria-label="t('pages.index.viewSwitcherLabel')"
+        >
+          <button
+            type="button"
+            class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
+            :class="productCardViewMode === 'grid'
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+            :title="t('pages.index.viewGrid')"
+            @click="setProductCardViewMode('grid')"
+          >
+            <LayoutGrid class="h-3.5 w-3.5" />
+            <span class="hidden sm:inline">{{ t('pages.index.viewGrid') }}</span>
+          </button>
 
-      <div v-if="isSimilarProductsLoading" class="similar-products-grid grid gap-1 md:gap-2 w-full">
-        <div v-for="n in 4" :key="`similar-skeleton-${n}`" class="h-64 bg-dark-600 animate-pulse rounded-2xl" />
+          <button
+            type="button"
+            class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
+            :class="productCardViewMode === 'list'
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+            :title="t('pages.index.viewList')"
+            @click="setProductCardViewMode('list')"
+          >
+            <Rows3 class="h-3.5 w-3.5" />
+            <span class="hidden sm:inline">{{ t('pages.index.viewList') }}</span>
+          </button>
+        </div>
       </div>
 
-      <div v-else-if="similarProducts.length" class="similar-products-grid grid gap-1 md:gap-2 w-full">
+      <div
+        v-if="isSimilarProductsLoading"
+        class="w-full"
+        :class="productCardViewMode === 'grid'
+          ? 'similar-products-grid grid gap-1 md:gap-2'
+          : 'flex flex-col gap-2'"
+      >
+        <div
+          v-for="n in similarProductsLoadingSkeletonCount"
+          :key="`similar-skeleton-${n}`"
+          class="bg-dark-600 animate-pulse rounded-2xl"
+          :class="productCardViewMode === 'grid' ? 'h-64' : 'h-[118px] sm:h-[134px]'"
+        />
+      </div>
+
+      <div
+        v-else-if="similarProducts.length && productCardViewMode === 'grid'"
+        class="similar-products-grid grid gap-1 md:gap-2 w-full"
+      >
         <MainProductCard
+          v-for="similarProduct in similarProducts"
+          :key="similarProduct.id"
+          :product="similarProduct"
+          @click="goToProductPage"
+        />
+      </div>
+      <div v-else-if="similarProducts.length" class="w-full flex flex-col gap-2">
+        <HomeProductListCard
           v-for="similarProduct in similarProducts"
           :key="similarProduct.id"
           :product="similarProduct"

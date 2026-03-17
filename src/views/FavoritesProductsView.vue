@@ -1,17 +1,23 @@
 <script setup lang="ts">
 import { productService } from '@/api/product/ProductService'
 import type { Product } from '@/validation/product/product'
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
 import Loader from '@/components/Loader.vue'
 import FavoriteProductCard from '@/components/FavoriteProductCard.vue'
+import HomeProductListCard from '@/components/HomeProductListCard.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
-import { Heart, Search, AlertCircle } from 'lucide-vue-next'
+import { Heart, Search, AlertCircle, LayoutGrid, Rows3 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
 const { t } = useI18n()
+const router = useRouter()
 const products = ref<Product[]>([])
 const isLoading = ref(true)
 const searchQuery = ref('')
+type ProductCardViewMode = 'grid' | 'list'
+const PRODUCT_CARD_VIEW_MODE_STORAGE_KEY = 'home_product_card_view_mode'
+const productCardViewMode = ref<ProductCardViewMode>('grid')
 
 const filteredProducts = computed(() => {
   if (!searchQuery.value.trim()) return products.value
@@ -25,7 +31,19 @@ const filteredProducts = computed(() => {
   )
 })
 
+function setProductCardViewMode(mode: ProductCardViewMode): void {
+  if (productCardViewMode.value === mode) return
+  productCardViewMode.value = mode
+}
+
+function restoreProductCardViewModeFromStorage(): void {
+  if (typeof window === 'undefined') return
+  const saved = window.localStorage.getItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY)
+  productCardViewMode.value = saved === 'list' ? 'list' : 'grid'
+}
+
 onMounted(async () => {
+  restoreProductCardViewModeFromStorage()
   try {
     isLoading.value = true
     const result = await productService.getFavoritesProducts()
@@ -42,6 +60,16 @@ function onProductRemoved(productId: string) {
     product => product.id !== productId
   )
 }
+
+function goToProduct(productKey: string) {
+  if (!productKey) return
+  router.push(`/product/${productKey}`)
+}
+
+watch(productCardViewMode, (mode) => {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY, mode)
+})
 
 </script>
 
@@ -83,6 +111,38 @@ function onProductRemoved(productId: string) {
             <Heart class="w-4 h-4" />
             <span class="text-sm">{{ $t('pages.favoriteProducts.favorites') }}</span>
           </div>
+
+          <div
+            class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-dark-600 bg-dark-700/40 p-0.5"
+            role="group"
+            :aria-label="t('pages.index.viewSwitcherLabel')"
+          >
+            <button
+              type="button"
+              class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
+              :class="productCardViewMode === 'grid'
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+              :title="t('pages.index.viewGrid')"
+              @click="setProductCardViewMode('grid')"
+            >
+              <LayoutGrid class="h-3.5 w-3.5" />
+              <span class="hidden sm:inline">{{ t('pages.index.viewGrid') }}</span>
+            </button>
+
+            <button
+              type="button"
+              class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
+              :class="productCardViewMode === 'list'
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+              :title="t('pages.index.viewList')"
+              @click="setProductCardViewMode('list')"
+            >
+              <Rows3 class="h-3.5 w-3.5" />
+              <span class="hidden sm:inline">{{ t('pages.index.viewList') }}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -119,7 +179,10 @@ function onProductRemoved(productId: string) {
     </div>
 
     <!-- Products grid -->
-    <div v-else class="products-grid grid gap-1 md:gap-2 w-full">
+    <div
+      v-else-if="productCardViewMode === 'grid'"
+      class="products-grid grid gap-1 md:gap-2 w-full"
+    >
       <div
         v-for="product in filteredProducts"
         :key="product.id"
@@ -131,6 +194,14 @@ function onProductRemoved(productId: string) {
           @removed="onProductRemoved" 
         />
       </div>
+    </div>
+    <div v-else class="w-full flex flex-col gap-2">
+      <HomeProductListCard
+        v-for="product in filteredProducts"
+        :key="product.id"
+        :product="product"
+        @click="goToProduct"
+      />
     </div>
 
   </div>
