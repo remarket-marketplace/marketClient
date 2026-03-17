@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from './stores/user'
 import { useChatStore } from './stores/chat'
+import { useNotificationStore } from './stores/notification'
 import { chatsService } from './api/chats/chatsService'
 import DefaultLayout from './views/layouts/DefaultLayout.vue'
 import AdminLayout from './views/layouts/AdminLayout.vue'
@@ -13,6 +14,7 @@ import MainPageLayout from './views/layouts/MainPageLayout.vue'
 
 const store = useUserStore()
 const chatStore = useChatStore()
+const notificationStore = useNotificationStore()
 const route = useRoute()
 const isUserLoaded = ref(false)
 let unsubscribeChatUpdated: (() => void) | null = null
@@ -73,6 +75,7 @@ async function resyncChats(userId: string, syncVersion: number) {
       const chats = await chatsService.getChats()
       if (syncVersion !== chatSyncVersion || store.user?.id !== userId) return
       chatStore.setChats(chats)
+      notificationStore.syncFromChats(chats, { userId })
     } while (needResyncChats)
   } finally {
     isResyncingChats = false
@@ -89,9 +92,12 @@ async function initChats(userId: string, syncVersion: number) {
   if (syncVersion !== chatSyncVersion || store.user?.id !== userId) return
 
   chatStore.setChats(chats)
+  notificationStore.syncFromChats(chats, { userId })
 
   unsubscribeChatUpdated?.()
   unsubscribeChatUpdated = chatsService.onChatUpdated((update) => {
+    notificationStore.handleChatUpdate(update, chatStore.chats, { userId })
+
     const hasChatInStore = chatStore.chats.some((chat) => chat.id === update.chat_id)
     if (!hasChatInStore) {
       void resyncChats(userId, syncVersion)
@@ -116,9 +122,11 @@ watch(
     if (!userId) {
       chatsService.disconnect()
       clearChats()
+      notificationStore.clear()
       return
     }
 
+    notificationStore.initForUser(userId)
     await initChats(userId, syncVersion)
   },
   { immediate: true }

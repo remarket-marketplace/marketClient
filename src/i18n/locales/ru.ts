@@ -139,6 +139,29 @@ const ru = {
     hidePassword: "Скрыть пароль",
     emailPlaceholder: "Введите ваш email",
     supportAutoReply: "Спасибо за обращение! Ваша заявка уже в обработке, мы ответим вам в ближайшее время.",
+    notifications: {
+      title: "Уведомления",
+      subtitle: "Основные события аккаунта",
+      markAllRead: "Прочитать все",
+      empty: "Пока уведомлений нет",
+      chatFallback: "Чат",
+      types: {
+        newPurchase: "Новая покупка",
+        newSale: "Новая продажа",
+        newPriceOffer: "Новое предложение цены",
+        dealStatusUpdated: "Обновление статуса сделки",
+        newReview: "Новый отзыв",
+        newChatMessage: "Новое сообщение",
+        newImageMessage: "Новое изображение",
+        newSupportMessage: "Сообщение от поддержки",
+        generic: "Новое уведомление",
+      },
+      body: {
+        priceOffer: "{product} • {price}",
+        dealStatus: "{product} • {status}",
+        empty: "Откройте чат, чтобы посмотреть детали.",
+      },
+    },
 
     trust: {
       guaranteeTitle: "Гарантия сделки",
