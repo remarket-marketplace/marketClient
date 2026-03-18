@@ -5,6 +5,7 @@ import {
   Package,
   ShoppingCart,
   CreditCard,
+  TicketPercent,
   Folder,
   MessageCircle,
   MessageSquareText,
@@ -97,6 +98,12 @@ const navItems = computed<NavItem[]>(() => [
     to: '/admin/payments',
   },
   {
+    id: 'steam-topups',
+    title: t('navigation.admin.steamTopups'),
+    icon: TicketPercent,
+    to: '/admin/steam-topups',
+  },
+  {
     id: 'categories',
     title: t('navigation.admin.categories'),
     icon: Folder,
@@ -134,7 +141,7 @@ const navGroups = computed<NavGroup[]>(() => {
     {
       id: 'management',
       title: t('navigation.admin.sections.management'),
-      items: pickNavItems(items, ['users', 'products', 'deals', 'payments', 'categories']),
+      items: pickNavItems(items, ['users', 'products', 'deals', 'payments', 'steam-topups', 'categories']),
     },
     {
       id: 'communication',

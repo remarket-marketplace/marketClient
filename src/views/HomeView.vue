@@ -17,11 +17,14 @@ import type { Product } from '@/validation/product/product'
 import type {
   SteamTopUpCreateOrderPayload,
   SteamTopUpOrder,
+  SteamTopUpPayOrderPayload,
   SteamTopUpService,
 } from '@/validation/steamTopup/steamTopup'
+import { isValidSteamTopUpAccount, normalizeSteamTopUpAccount } from '@/validation/steamTopup/steamTopup'
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Folder, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
+import { Icon } from '@iconify/vue'
 import axios from 'axios'
 import {
   convertCurrencyAmount,
@@ -35,7 +38,7 @@ import { getErrorMessage } from '@/utils/errorsMap'
 const { t } = useI18n()
 const router = useRouter()
 const API_HOST = import.meta.env.VITE_API_HOST
-const HOME_STEAM_TOPUP_ENABLED = false
+const HOME_STEAM_TOPUP_ENABLED = true
 const userStore = useUserStore()
 const { user } = storeToRefs(userStore)
 const selectedCurrency = computed(() => preferredCurrency.value)
@@ -98,6 +101,9 @@ function restoreProductCardViewModeFromStorage(): void {
 }
 
 type SteamAmountMode = 'denomination' | 'quantity'
+type SteamPaymentMethod = 'balance'
+type SteamCheckoutCurrency = 'RUB' | 'USD'
+type SteamCheckoutPaymentMethod = 'balance' | 'card' | 'sbp'
 
 const steamServices = ref<SteamTopUpService[]>([])
 const selectedSteamServiceId = ref<number | null>(null)
@@ -107,6 +113,8 @@ const steamServer = ref('')
 const steamQuantity = ref('')
 const steamDenominationId = ref<number | null>(null)
 const steamAmountMode = ref<SteamAmountMode>('denomination')
+const steamPaymentMethod = ref<SteamPaymentMethod>('balance')
+const steamPromoCode = ref('')
 const steamOrder = ref<SteamTopUpOrder | null>(null)
 const steamError = ref('')
 const steamSuccess = ref('')
@@ -116,6 +124,15 @@ const steamRefreshingOrder = ref(false)
 const steamPayingOrder = ref(false)
 const steamChargedAmountRub = ref<number | null>(null)
 const steamBalanceAfterRub = ref<number | null>(null)
+const steamDiscountAmountRub = ref<number | null>(null)
+const steamAppliedPromoCode = ref<string | null>(null)
+const steamPromoDiscountPercent = ref<number | null>(null)
+const steamCheckoutModalOpen = ref(false)
+const steamCheckoutCurrency = ref<SteamCheckoutCurrency>(
+  selectedCurrency.value === 'USD' ? 'USD' : 'RUB',
+)
+const steamCheckoutPaymentMethod = ref<SteamCheckoutPaymentMethod>('balance')
+const steamCheckoutSubmitting = ref(false)
 
 const selectedSteamService = computed(() => {
   if (selectedSteamServiceId.value === null) return null
@@ -148,9 +165,42 @@ const steamOrderPriceLabel = computed(() => {
   const normalizedPrice = Number.isFinite(price) ? price.toLocaleString(undefined, { maximumFractionDigits: 2 }) : steamOrder.value.price
   return `${normalizedPrice} ${steamOrder.value.currency || 'RUB'}`
 })
+const selectedSteamDenomination = computed(() => {
+  if (steamDenominationId.value === null) return null
+  return selectedSteamService.value?.denominations?.find((item) => item.id === steamDenominationId.value) ?? null
+})
+const steamAmountPreviewLabel = computed(() => {
+  if (steamAmountMode.value === 'denomination' && selectedSteamDenomination.value) {
+    const denominationPrice = Number(selectedSteamDenomination.value.price)
+    const normalizedPrice = Number.isFinite(denominationPrice)
+      ? denominationPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })
+      : selectedSteamDenomination.value.price
+    const denominationCurrency = selectedSteamDenomination.value.currency || selectedSteamService.value?.currency || ''
+    return `${normalizedPrice} ${denominationCurrency}`.trim()
+  }
+
+  const quantity = Number.parseFloat(steamQuantity.value)
+  if (!Number.isFinite(quantity) || quantity <= 0) {
+    return t('pages.index.steamTopUp.quantityPlaceholder')
+  }
+
+  const serviceCurrency = selectedSteamService.value?.currency || selectedSteamService.value?.in_game_currency || ''
+  return `${quantity.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${serviceCurrency}`.trim()
+})
+const steamAmountInputDisabled = computed(() => !steamSupportsQuantity.value)
+const steamCheckoutCurrencySymbol = computed(() => (steamCheckoutCurrency.value === 'USD' ? '$' : '₽'))
+const steamCheckoutAmountLabel = computed(() => {
+  const numericAmount = Number.parseFloat(steamQuantity.value)
+  if (Number.isFinite(numericAmount) && numericAmount > 0) {
+    return `${numericAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${steamCheckoutCurrencySymbol.value}`
+  }
+  return steamAmountPreviewLabel.value
+})
+const steamNormalizedAccount = computed(() => normalizeSteamTopUpAccount(steamAccount.value))
+const steamIsAccountValid = computed(() => isValidSteamTopUpAccount(steamAccount.value))
 const steamCanCreateOrder = computed(() => {
   if (!user.value || !selectedSteamService.value) return false
-  if (steamAccount.value.trim().length < 2) return false
+  if (!steamIsAccountValid.value) return false
 
   if (steamAmountMode.value === 'denomination') {
     return steamDenominationId.value !== null
@@ -291,15 +341,23 @@ function resolveSteamErrorMessage(error: unknown): string {
 
 function setDefaultSteamService(service: SteamTopUpService | null): void {
   steamDenominationId.value = service?.denominations?.[0]?.id ?? null
-  if (service?.denominations?.length) {
+  if (service?.params?.some((param) => param.param_key === 'Quantity')) {
+    steamAmountMode.value = 'quantity'
+    steamQuantity.value = steamQuantity.value || '1000'
+  } else if (service?.denominations?.length) {
     steamAmountMode.value = 'denomination'
     steamQuantity.value = ''
-  } else if (service?.params?.some((param) => param.param_key === 'Quantity')) {
-    steamAmountMode.value = 'quantity'
-    steamQuantity.value = steamQuantity.value || '1'
   } else {
     steamAmountMode.value = 'denomination'
     steamQuantity.value = ''
+  }
+}
+
+function buildSteamPayOrderPayload(): SteamTopUpPayOrderPayload {
+  const promoCode = steamPromoCode.value.trim().toUpperCase()
+  return {
+    payment_method: steamPaymentMethod.value,
+    promo_code: promoCode || undefined,
   }
 }
 
@@ -311,8 +369,8 @@ function clearSteamFeedback(): void {
 function buildSteamCreateOrderPayload(): SteamTopUpCreateOrderPayload | null {
   if (!selectedSteamService.value) return null
 
-  const account = steamAccount.value.trim()
-  if (account.length < 2) return null
+  if (!steamIsAccountValid.value) return null
+  const account = steamNormalizedAccount.value
 
   const payload: SteamTopUpCreateOrderPayload = {
     service_id: selectedSteamService.value.id,
@@ -374,6 +432,9 @@ async function createSteamOrder() {
   clearSteamFeedback()
   steamChargedAmountRub.value = null
   steamBalanceAfterRub.value = null
+  steamDiscountAmountRub.value = null
+  steamAppliedPromoCode.value = null
+  steamPromoDiscountPercent.value = null
   try {
     steamOrder.value = await steamTopupService.createOrder(payload)
     steamSuccess.value = t('pages.index.steamTopUp.orderCreated')
@@ -404,16 +465,63 @@ async function paySteamOrder() {
   steamPayingOrder.value = true
   clearSteamFeedback()
   try {
-    const response = await steamTopupService.payOrder(steamOrder.value.id)
+    const response = await steamTopupService.payOrder(
+      steamOrder.value.id,
+      buildSteamPayOrderPayload(),
+    )
     steamOrder.value = response.order
     steamChargedAmountRub.value = response.charged_amount_rub
     steamBalanceAfterRub.value = response.user_balance_after_rub
+    steamDiscountAmountRub.value = response.discount_amount_rub ?? null
+    steamAppliedPromoCode.value = response.applied_promo_code ?? null
+    steamPromoDiscountPercent.value = response.promo_discount_percent ?? null
     steamSuccess.value = t('pages.index.steamTopUp.orderPaid')
     await userStore.fetchUser()
   } catch (error) {
     steamError.value = resolveSteamErrorMessage(error)
   } finally {
     steamPayingOrder.value = false
+  }
+}
+
+function openSteamCheckoutModal() {
+  if (!steamCanCreateOrder.value) return
+  steamCheckoutCurrency.value = selectedCurrency.value === 'USD' ? 'USD' : 'RUB'
+  steamCheckoutPaymentMethod.value = 'balance'
+  steamCheckoutModalOpen.value = true
+}
+
+function closeSteamCheckoutModal() {
+  if (steamCheckoutSubmitting.value) return
+  steamCheckoutModalOpen.value = false
+}
+
+async function confirmSteamCheckout() {
+  if (steamCheckoutSubmitting.value) return
+
+  steamCheckoutSubmitting.value = true
+  clearSteamFeedback()
+  try {
+    if (steamCheckoutPaymentMethod.value !== 'balance') {
+      steamError.value = t('pages.index.steamTopUp.paymentMethodUnavailable')
+      return
+    }
+
+    steamPaymentMethod.value = 'balance'
+    await createSteamOrder()
+    if (!steamOrder.value) return
+
+    if (!steamOrderReadyToPay.value) {
+      await refreshSteamOrder()
+    }
+
+    if (steamOrderReadyToPay.value && !steamOrderPaid.value) {
+      await paySteamOrder()
+    }
+
+    steamCheckoutModalOpen.value = false
+  } finally {
+    steamCheckoutSubmitting.value = false
   }
 }
 
@@ -702,6 +810,9 @@ watch(selectedSteamServiceId, () => {
   steamOrder.value = null
   steamChargedAmountRub.value = null
   steamBalanceAfterRub.value = null
+  steamDiscountAmountRub.value = null
+  steamAppliedPromoCode.value = null
+  steamPromoDiscountPercent.value = null
   setDefaultSteamService(selectedSteamService.value)
 
   if (!steamSupportsRegion.value) {
@@ -720,6 +831,12 @@ watch(
       steamServices.value = []
       selectedSteamServiceId.value = null
       steamOrder.value = null
+      steamChargedAmountRub.value = null
+      steamBalanceAfterRub.value = null
+      steamDiscountAmountRub.value = null
+      steamAppliedPromoCode.value = null
+      steamPromoDiscountPercent.value = null
+      steamCheckoutModalOpen.value = false
       return
     }
     if (currentUserId !== previousUserId || steamServices.value.length === 0) {
@@ -805,11 +922,15 @@ onBeforeUnmount(() => {
 
         <div
           v-if="user && HOME_STEAM_TOPUP_ENABLED"
-          class="mt-4 w-full rounded-2xl border border-dark-700 bg-dark-700/45 p-4 lg:max-w-2xl"
+          class="mt-4 w-full rounded-2xl bg-dark-700/45 p-4 lg:max-w-2xl"
         >
           <div class="flex flex-col gap-1">
-            <h2 class="text-base font-semibold text-white">{{ t('pages.index.steamTopUp.title') }}</h2>
-            <p class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.subtitle') }}</p>
+            <div class="flex items-center gap-2">
+              <h2 class="text-base font-semibold text-white">{{ t('pages.index.steamTopUp.title') }}</h2>
+              <span class="inline-flex h-5 min-w-8 items-center justify-center rounded-md border border-blue-400/35 bg-blue-500/10 px-1.5 text-[11px] font-semibold leading-none text-blue-300">
+                5%
+              </span>
+            </div>
           </div>
 
           <p v-if="steamError" class="mt-3 rounded-lg border border-red-500/35 bg-red-500/10 px-3 py-2 text-sm text-red-200">
@@ -825,127 +946,51 @@ onBeforeUnmount(() => {
           <div v-else-if="!steamServices.length" class="mt-3 text-sm text-gray-400">
             {{ t('pages.index.steamTopUp.noServices') }}
           </div>
-          <div v-else class="mt-3 space-y-3">
-            <label class="block">
-              <span class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.service') }}</span>
-              <select
-                v-model.number="selectedSteamServiceId"
-                class="mt-1 h-10 w-full rounded-xl border border-dark-600 bg-dark-700/45 px-3 text-sm text-white outline-none transition focus:border-blue-400/40"
-              >
-                <option
-                  v-for="service in steamServices"
-                  :key="service.id"
-                  :value="service.id"
-                >
-                  {{ service.name }}
-                </option>
-              </select>
-            </label>
+          <div v-else class="mt-3">
+            <div class="rounded-2xl border border-slate-700/90 bg-gradient-to-br from-[#1b2838] via-[#16202d] to-[#101822] p-3 shadow-[0_16px_40px_rgba(0,0,0,0.38)] lg:p-4">
+              <div class="flex flex-col gap-3 lg:flex-row lg:items-start">
+                <div class="flex items-start">
+                  <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-500/40 bg-[#0f141b]/70 text-[#66c0f4] shadow-inner">
+                    <Icon icon="mdi:steam" class="h-7 w-7" />
+                  </span>
+                </div>
 
-            <label class="block">
-              <span class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.account') }}</span>
-              <input
-                v-model.trim="steamAccount"
-                type="text"
-                autocomplete="off"
-                class="mt-1 h-10 w-full rounded-xl border border-dark-600 bg-dark-700/45 px-3 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-blue-400/40"
-                :placeholder="t('pages.index.steamTopUp.accountPlaceholder')"
-              />
-            </label>
+                <label class="block flex-[1.35]">
+                  <input
+                    v-model.trim="steamAccount"
+                    type="text"
+                    autocomplete="off"
+                    class="h-11 w-full rounded-xl border border-slate-600/75 bg-[#0f141b]/80 px-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-[#66c0f4]/50"
+                    :placeholder="t('pages.index.steamTopUp.account')"
+                  />
+                </label>
 
-            <div v-if="steamCanToggleAmountMode">
-              <p class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.amountType') }}</p>
-              <div class="mt-1 flex gap-2">
+                <label class="block lg:w-36">
+                  <input
+                    v-model.trim="steamQuantity"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    inputmode="decimal"
+                    :disabled="steamAmountInputDisabled"
+                    class="steam-topup-amount-input h-11 w-full rounded-xl border border-slate-600/75 bg-[#0f141b]/80 px-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-[#66c0f4]/50 disabled:cursor-not-allowed disabled:opacity-75"
+                    :placeholder="t('pages.index.steamTopUp.quantity')"
+                  />
+                  <p v-if="steamAmountInputDisabled" class="mt-1 text-[11px] text-slate-400">
+                    {{ t('pages.index.steamTopUp.amountLockedHint') }}
+                  </p>
+                </label>
+
                 <button
                   type="button"
-                  class="rounded-lg border px-3 py-1.5 text-xs font-semibold transition"
-                  :class="steamAmountMode === 'denomination'
-                    ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
-                    : 'border-dark-600 bg-dark-700/45 text-gray-300 hover:bg-dark-700/60'"
-                  @click="steamAmountMode = 'denomination'"
+                  class="h-11 rounded-xl border border-slate-500/60 bg-[#1a2431] px-4 text-sm font-semibold text-slate-100 transition-colors duration-300 hover:border-blue-500 hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-55 lg:min-w-[160px]"
+                  :disabled="!steamCanCreateOrder || steamCreatingOrder || steamRefreshingOrder || steamPayingOrder"
+                  @click="openSteamCheckoutModal"
                 >
-                  {{ t('pages.index.steamTopUp.amountTypeFixed') }}
-                </button>
-                <button
-                  type="button"
-                  class="rounded-lg border px-3 py-1.5 text-xs font-semibold transition"
-                  :class="steamAmountMode === 'quantity'
-                    ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
-                    : 'border-dark-600 bg-dark-700/45 text-gray-300 hover:bg-dark-700/60'"
-                  @click="steamAmountMode = 'quantity'"
-                >
-                  {{ t('pages.index.steamTopUp.amountTypeCustom') }}
+                  {{ t('pages.index.steamTopUp.payNow') }}
                 </button>
               </div>
             </div>
-
-            <label
-              v-if="steamAmountMode === 'denomination' && steamHasDenominations"
-              class="block"
-            >
-              <span class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.denomination') }}</span>
-              <select
-                v-model.number="steamDenominationId"
-                class="mt-1 h-10 w-full rounded-xl border border-dark-600 bg-dark-700/45 px-3 text-sm text-white outline-none transition focus:border-blue-400/40"
-              >
-                <option
-                  v-for="denomination in selectedSteamService?.denominations ?? []"
-                  :key="denomination.id"
-                  :value="denomination.id"
-                >
-                  {{ denomination.name }} ({{ denomination.price }} {{ denomination.currency }})
-                </option>
-              </select>
-            </label>
-
-            <label
-              v-else-if="steamSupportsQuantity"
-              class="block"
-            >
-              <span class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.quantity') }}</span>
-              <input
-                v-model.trim="steamQuantity"
-                type="number"
-                min="0.01"
-                step="0.01"
-                inputmode="decimal"
-                class="mt-1 h-10 w-full rounded-xl border border-dark-600 bg-dark-700/45 px-3 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-blue-400/40"
-                :placeholder="t('pages.index.steamTopUp.quantityPlaceholder')"
-              />
-            </label>
-
-            <div
-              v-if="steamSupportsRegion || steamSupportsServer"
-              class="grid grid-cols-1 gap-3 sm:grid-cols-2"
-            >
-              <label v-if="steamSupportsRegion" class="block">
-                <span class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.region') }}</span>
-                <input
-                  v-model.trim="steamRegion"
-                  type="text"
-                  class="mt-1 h-10 w-full rounded-xl border border-dark-600 bg-dark-700/45 px-3 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-blue-400/40"
-                  :placeholder="t('pages.index.steamTopUp.regionPlaceholder')"
-                />
-              </label>
-              <label v-if="steamSupportsServer" class="block">
-                <span class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.server') }}</span>
-                <input
-                  v-model.trim="steamServer"
-                  type="text"
-                  class="mt-1 h-10 w-full rounded-xl border border-dark-600 bg-dark-700/45 px-3 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-blue-400/40"
-                  :placeholder="t('pages.index.steamTopUp.serverPlaceholder')"
-                />
-              </label>
-            </div>
-
-            <button
-              type="button"
-              class="h-10 rounded-xl border border-blue-400/40 bg-blue-500/10 px-4 text-sm font-semibold text-blue-200 transition hover:bg-blue-500/15 disabled:cursor-not-allowed disabled:opacity-50"
-              :disabled="!steamCanCreateOrder || steamCreatingOrder"
-              @click="createSteamOrder"
-            >
-              {{ steamCreatingOrder ? t('pages.index.steamTopUp.creatingOrder') : t('pages.index.steamTopUp.createOrder') }}
-            </button>
           </div>
 
           <div
@@ -972,6 +1017,17 @@ onBeforeUnmount(() => {
                 <span class="text-gray-400">{{ t('pages.index.steamTopUp.chargedAmount') }}:</span>
                 <span class="ml-1">{{ formatCurrencyAmount(steamChargedAmountRub, { fromCurrency: 'RUB', currency: 'RUB' }) }}</span>
               </p>
+              <p v-if="steamDiscountAmountRub !== null && steamDiscountAmountRub > 0">
+                <span class="text-gray-400">{{ t('pages.index.steamTopUp.discountAmount') }}:</span>
+                <span class="ml-1">{{ formatCurrencyAmount(steamDiscountAmountRub, { fromCurrency: 'RUB', currency: 'RUB' }) }}</span>
+              </p>
+              <p v-if="steamAppliedPromoCode">
+                <span class="text-gray-400">{{ t('pages.index.steamTopUp.appliedPromo') }}:</span>
+                <span class="ml-1">{{ steamAppliedPromoCode }}</span>
+                <span v-if="steamPromoDiscountPercent !== null" class="ml-1 text-xs text-gray-400">
+                  ({{ steamPromoDiscountPercent }}%)
+                </span>
+              </p>
               <p v-if="steamBalanceAfterRub !== null">
                 <span class="text-gray-400">{{ t('pages.index.steamTopUp.balanceAfter') }}:</span>
                 <span class="ml-1">{{ formatCurrencyAmount(steamBalanceAfterRub, { fromCurrency: 'RUB', currency: 'RUB' }) }}</span>
@@ -997,6 +1053,93 @@ onBeforeUnmount(() => {
               </button>
             </div>
           </div>
+
+          <Teleport to="body">
+            <div
+              v-if="steamCheckoutModalOpen"
+              class="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 px-4 backdrop-blur-[2px]"
+              @click.self="closeSteamCheckoutModal"
+            >
+              <div class="steam-checkout-modal w-full max-w-md rounded-2xl border border-zinc-500/35 p-4 shadow-[0_30px_90px_rgba(0,0,0,0.62)]">
+                <div class="flex items-center gap-2">
+                  <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-500/40 bg-[#0f141b]/70 text-[#66c0f4]">
+                    <Icon icon="mdi:steam" class="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p class="text-base font-semibold text-white">{{ t('pages.index.steamTopUp.checkoutTitle') }}</p>
+                    <p class="text-xs text-slate-300">{{ t('pages.index.steamTopUp.checkoutSubtitle') }}</p>
+                  </div>
+                </div>
+
+                <div class="mt-4 space-y-3">
+                  <label class="block">
+                    <span class="text-xs text-slate-300">{{ t('pages.index.steamTopUp.checkoutCurrency') }}</span>
+                    <select
+                      v-model="steamCheckoutCurrency"
+                      class="steam-checkout-select mt-1 h-10 w-full rounded-lg border border-slate-600/75 bg-[#0f141b]/80 px-3 text-sm text-white outline-none transition focus:border-[#66c0f4]/50"
+                    >
+                      <option value="RUB">RUB (₽)</option>
+                      <option value="USD">USD ($)</option>
+                    </select>
+                  </label>
+
+                  <label class="block">
+                    <span class="text-xs text-slate-300">{{ t('pages.index.steamTopUp.checkoutMethod') }}</span>
+                    <select
+                      v-model="steamCheckoutPaymentMethod"
+                      class="steam-checkout-select mt-1 h-10 w-full rounded-lg border border-slate-600/75 bg-[#0f141b]/80 px-3 text-sm text-white outline-none transition focus:border-[#66c0f4]/50"
+                    >
+                      <option value="balance">{{ t('pages.index.steamTopUp.paymentMethodBalance') }}</option>
+                      <option value="card">{{ t('pages.index.steamTopUp.paymentMethodCard') }}</option>
+                      <option value="sbp">{{ t('pages.index.steamTopUp.paymentMethodSbp') }}</option>
+                    </select>
+                  </label>
+
+                  <label class="block">
+                    <span class="text-xs text-slate-300">{{ t('pages.index.steamTopUp.promoCode') }}</span>
+                    <input
+                      v-model.trim="steamPromoCode"
+                      type="text"
+                      maxlength="64"
+                      autocomplete="off"
+                      class="mt-1 h-10 w-full rounded-lg border border-slate-600/75 bg-[#0f141b]/80 px-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-[#66c0f4]/50"
+                      :placeholder="t('pages.index.steamTopUp.promoCodePlaceholder')"
+                    />
+                  </label>
+
+                  <p class="rounded-lg border border-slate-600/75 bg-[#0f141b]/80 px-3 py-2 text-sm text-slate-200">
+                    {{ t('pages.index.steamTopUp.checkoutAmount') }}: {{ steamCheckoutAmountLabel }}
+                  </p>
+
+                  <p
+                    v-if="steamCheckoutPaymentMethod !== 'balance'"
+                    class="rounded-lg border border-amber-500/35 bg-amber-500/10 px-3 py-2 text-xs text-amber-200"
+                  >
+                    {{ t('pages.index.steamTopUp.paymentMethodUnavailable') }}
+                  </p>
+                </div>
+
+                <div class="mt-4 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    class="h-10 rounded-lg border border-slate-600/80 bg-[#0f141b]/70 px-3 text-sm text-slate-200 transition hover:bg-[#111b27]"
+                    :disabled="steamCheckoutSubmitting"
+                    @click="closeSteamCheckoutModal"
+                  >
+                    {{ t('common.cancel') }}
+                  </button>
+                  <button
+                    type="button"
+                    class="h-10 rounded-lg border border-slate-500/60 bg-[#1a2431] px-4 text-sm font-semibold text-slate-100 transition-colors duration-300 hover:border-blue-500 hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-55"
+                    :disabled="steamCheckoutSubmitting || steamCheckoutPaymentMethod !== 'balance'"
+                    @click="confirmSteamCheckout"
+                  >
+                    {{ steamCheckoutSubmitting ? t('pages.index.steamTopUp.payingOrder') : t('pages.index.steamTopUp.checkoutContinue') }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Teleport>
         </div>
 
         <div class="mt-10 w-full sm:mt-16">
@@ -1257,5 +1400,39 @@ onBeforeUnmount(() => {
   .products-grid {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
+}
+
+.steam-topup-amount-input[type='number'] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.steam-topup-amount-input[type='number']::-webkit-outer-spin-button,
+.steam-topup-amount-input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.steam-checkout-modal {
+  background: linear-gradient(
+    165deg,
+    rgba(39, 42, 48, 0.82) 0%,
+    rgba(31, 34, 39, 0.8) 52%,
+    rgba(24, 27, 31, 0.82) 100%
+  );
+  backdrop-filter: blur(18px) saturate(115%);
+  -webkit-backdrop-filter: blur(18px) saturate(115%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.steam-checkout-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 20 20%27 fill=%27none%27%3E%3Cpath d=%27M6 8l4 4 4-4%27 stroke=%27%2394a3b8%27 stroke-width=%271.8%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+  background-size: 0.85rem 0.85rem;
 }
 </style>

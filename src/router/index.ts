@@ -117,6 +117,12 @@ const routes = [
       meta: { requiredAdmin: true },
     },
     {
+      path: "/admin/steam-topups",
+      name: "admin steam topups",
+      component: () => import("@/views/admin/AdminSteamTopupsView.vue"),
+      meta: { requiredAdmin: true },
+    },
+    {
       path: "/admin/deal/:id",
       name: "deal",
       component: () => import("@/views/admin/AdminDealView.vue"),
