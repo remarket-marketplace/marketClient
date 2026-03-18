@@ -227,7 +227,7 @@ const mobileNavGridStyle = computed(() => ({
                         <button
                             v-if="user && user.role !== 'admin'"
                             type="button"
-                            class="inline-flex h-8 items-center gap-1.5 rounded-md border border-white/15 bg-white/10 px-2.5 text-xs text-mainText backdrop-blur-md transition hover:border-white/25 hover:bg-white/15"
+                            class="inline-flex h-8 items-center gap-1.5 rounded-md border border-dark-700 bg-dark-600 px-2.5 text-xs text-mainText transition hover:border-dark-500 focus:outline-none"
                             :title="walletTitle"
                             @click="goToWallet"
                         >
@@ -265,7 +265,7 @@ const mobileNavGridStyle = computed(() => ({
                         <button
                             v-if="user && user.role === 'admin'"
                             type="button"
-                            class="inline-flex h-8 items-center gap-1.5 rounded-md border border-white/15 bg-white/10 px-2.5 text-xs text-mainText backdrop-blur-md transition hover:border-white/25 hover:bg-white/15"
+                            class="inline-flex h-8 items-center gap-1.5 rounded-md border border-dark-700 bg-dark-600 px-2.5 text-xs text-mainText transition hover:border-dark-500 focus:outline-none"
                             :title="walletTitle"
                             @click="goToWallet"
                         >
@@ -280,7 +280,7 @@ const mobileNavGridStyle = computed(() => ({
                     <button
                         v-if="user"
                         type="button"
-                        class="inline-flex h-8 items-center gap-1 rounded-md border border-white/15 bg-white/10 px-2 text-[10px] text-mainText backdrop-blur-md transition hover:border-white/25 hover:bg-white/15 md:hidden"
+                        class="inline-flex h-8 items-center gap-1 rounded-md border border-dark-700 bg-dark-600 px-2 text-[10px] text-mainText transition hover:border-dark-500 focus:outline-none md:hidden"
                         :title="walletTitle"
                         @click="goToWallet"
                     >
