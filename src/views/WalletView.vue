@@ -40,8 +40,8 @@ const page = ref(1)
 const perPage = 10
 const totalPages = ref(1)
 const isFetchingTransactions = ref(false)
-const MIN_DEPOSIT_RUB = 10
-const MAX_DEPOSIT_RUB = 100000
+const minDepositRub = ref(10)
+const maxDepositRub = ref(100000)
 
 const depositAmount = ref('')
 const withdrawAmount = ref('')
@@ -62,12 +62,12 @@ const withdrawAmountInRub = computed(() => {
 })
 
 const depositInputMin = computed(() => {
-  const converted = convertCurrencyAmount(MIN_DEPOSIT_RUB, 'RUB', selectedCurrency.value)
+  const converted = convertCurrencyAmount(minDepositRub.value, 'RUB', selectedCurrency.value)
   return selectedCurrency.value === 'USD' ? Number(converted.toFixed(2)) : Math.ceil(converted)
 })
 
 const depositInputMax = computed(() => {
-  const converted = convertCurrencyAmount(MAX_DEPOSIT_RUB, 'RUB', selectedCurrency.value)
+  const converted = convertCurrencyAmount(maxDepositRub.value, 'RUB', selectedCurrency.value)
   return selectedCurrency.value === 'USD' ? Number(converted.toFixed(2)) : Math.floor(converted)
 })
 
@@ -76,8 +76,8 @@ const isDepositAmountValid = computed(() => {
     Number.isFinite(parsedDepositAmount.value)
     && parsedDepositAmount.value > 0
     && Number.isFinite(depositAmountInRub.value)
-    && depositAmountInRub.value >= MIN_DEPOSIT_RUB
-    && depositAmountInRub.value <= MAX_DEPOSIT_RUB
+    && depositAmountInRub.value >= minDepositRub.value
+    && depositAmountInRub.value <= maxDepositRub.value
   )
 })
 
@@ -150,6 +150,8 @@ onMounted(async () => {
   const userBalance: Balance | null = await walletService.getUserBalance()
   if (userBalance) {
     balance.value = userBalance.balance
+    minDepositRub.value = userBalance.top_up_min_amount
+    maxDepositRub.value = userBalance.top_up_max_amount
   }
 
   await loadHistory()
@@ -185,7 +187,11 @@ const handleDeposit = async () => {
   if (!isDepositAmountValid.value) return
 
   const baseAmount = Math.round(depositAmountInRub.value)
-  if (!Number.isFinite(baseAmount) || baseAmount < MIN_DEPOSIT_RUB) return
+  if (
+    !Number.isFinite(baseAmount)
+    || baseAmount < minDepositRub.value
+    || baseAmount > maxDepositRub.value
+  ) return
 
   isLoading.value = true
   const paymentUrl = await walletService.TopUpUserBalance(
@@ -292,7 +298,7 @@ const formatSigned = (amount: number) => {
   return `${sign}${formatCurrency(amount)}`
 }
 
-const minimumDepositText = computed(() => formatCurrencyAmount(MIN_DEPOSIT_RUB, {
+const minimumDepositText = computed(() => formatCurrencyAmount(minDepositRub.value, {
   fromCurrency: 'RUB',
   currency: selectedCurrency.value,
   minimumFractionDigits: currencyFractionDigits.value,

@@ -2,6 +2,8 @@ import z from "zod";
 
 export const balanceSchema = z.object({
   balance: z.number(),
+  top_up_min_amount: z.number().int().positive(),
+  top_up_max_amount: z.number().int().positive(),
 });
 
 export const topUpBalanceResponse = z.object({
