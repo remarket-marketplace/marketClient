@@ -2,11 +2,13 @@ import { ZodError } from 'zod'
 import { httpClient } from '..'
 import {
   steamTopUpCreateOrderSchema,
+  steamTopUpPayOrderInputSchema,
   steamTopUpOrderSchema,
   steamTopUpPayOrderSchema,
   steamTopUpServicesSchema,
   type SteamTopUpCreateOrderPayload,
   type SteamTopUpOrder,
+  type SteamTopUpPayOrderPayload,
   type SteamTopUpPayOrderResponse,
   type SteamTopUpServicesResponse,
 } from '@/validation/steamTopup/steamTopup'
@@ -49,9 +51,13 @@ export const steamTopupService = {
     }
   },
 
-  async payOrder(orderId: number): Promise<SteamTopUpPayOrderResponse> {
+  async payOrder(
+    orderId: number,
+    payload: SteamTopUpPayOrderPayload = { payment_method: 'balance' },
+  ): Promise<SteamTopUpPayOrderResponse> {
+    const validatedPayload = steamTopUpPayOrderInputSchema.parse(payload)
     try {
-      const response = await httpClient.post(`/steam-topup/orders/${orderId}/pay`)
+      const response = await httpClient.post(`/steam-topup/orders/${orderId}/pay`, validatedPayload)
       return steamTopUpPayOrderSchema.parse(response.data)
     } catch (error) {
       if (error instanceof ZodError) {

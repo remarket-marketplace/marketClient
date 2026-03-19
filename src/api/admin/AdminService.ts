@@ -19,8 +19,20 @@ import {
   adminPaymentsListSchema,
   type AdminPayment as AdminPaymentModel,
 } from "@/validation/payment/adminPayment";
+import {
+  adminSteamTopupPromoSchema,
+  adminSteamTopupPromosListSchema,
+  createAdminSteamTopupPromoSchema,
+  updateAdminSteamTopupPromoSchema,
+  type AdminSteamTopupPromo as AdminSteamTopupPromoModel,
+  type CreateAdminSteamTopupPromoPayload as CreateAdminSteamTopupPromoPayloadModel,
+  type UpdateAdminSteamTopupPromoPayload as UpdateAdminSteamTopupPromoPayloadModel,
+} from "@/validation/steamTopup/adminSteamTopupPromo";
 
 export type AdminPayment = AdminPaymentModel
+export type AdminSteamTopupPromo = AdminSteamTopupPromoModel
+export type CreateAdminSteamTopupPromoPayload = CreateAdminSteamTopupPromoPayloadModel
+export type UpdateAdminSteamTopupPromoPayload = UpdateAdminSteamTopupPromoPayloadModel
 
 export type DashboardStatusBreakdown = { status: string; count: number }
 export type DashboardSeriesPoint = { date: string; value: number }
@@ -101,6 +113,11 @@ export type AdminPaymentsFilters = {
   provider_tx_id?: string
   date_from?: string
   date_to?: string
+}
+
+export type AdminSteamTopupPromosFilters = {
+  search?: string
+  is_active?: "all" | "active" | "inactive"
 }
 
 export const adminService = {
@@ -750,6 +767,97 @@ export const adminService = {
         console.error("Admin payment status validation error:", e.issues)
       } else {
         console.error("Error updating admin payment status:", e)
+      }
+      return null
+    }
+  },
+
+  async getSteamTopupPromos(
+    page = 1,
+    perPage = 20,
+    filters: AdminSteamTopupPromosFilters = {},
+  ): Promise<{
+    promos: AdminSteamTopupPromo[]
+    currentPage: number
+    totalPages: number
+    total: number
+  }> {
+    try {
+      const params: Record<string, string | number | boolean> = {
+        page,
+        per_page: perPage,
+      }
+
+      const normalizedSearch = filters.search?.trim()
+      if (normalizedSearch) {
+        params.search = normalizedSearch
+      }
+
+      if (filters.is_active === "active") {
+        params.is_active = true
+      } else if (filters.is_active === "inactive") {
+        params.is_active = false
+      }
+
+      const response = await httpClient.get("/admin/steam-topup/promocodes", { params })
+      const parsed = adminSteamTopupPromosListSchema.parse(response.data)
+      return {
+        promos: parsed.promos,
+        currentPage: page,
+        totalPages: parsed.total_pages,
+        total: parsed.total,
+      }
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error("Steam top-up promos validation error:", e.issues)
+      } else {
+        console.error("Error fetching steam top-up promos:", e)
+      }
+      return {
+        promos: [],
+        currentPage: 1,
+        totalPages: 1,
+        total: 0,
+      }
+    }
+  },
+
+  async createSteamTopupPromo(
+    payload: CreateAdminSteamTopupPromoPayload,
+  ): Promise<AdminSteamTopupPromo | null> {
+    const normalizedPayload = createAdminSteamTopupPromoSchema.parse(payload)
+    try {
+      const response = await httpClient.post(
+        "/admin/steam-topup/promocodes",
+        normalizedPayload,
+      )
+      return adminSteamTopupPromoSchema.parse(response.data)
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error("Steam top-up promo create validation error:", e.issues)
+      } else {
+        console.error("Error creating steam top-up promo:", e)
+      }
+      return null
+    }
+  },
+
+  async updateSteamTopupPromo(
+    promoId: string,
+    payload: UpdateAdminSteamTopupPromoPayload,
+  ): Promise<AdminSteamTopupPromo | null> {
+    const normalizedPayload = updateAdminSteamTopupPromoSchema.parse(payload)
+    try {
+      const response = await httpClient.patch(
+        `/admin/steam-topup/promocodes/${promoId}`,
+        normalizedPayload,
+      )
+      return adminSteamTopupPromoSchema.parse(response.data)
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error("Steam top-up promo update validation error:", e.issues)
+      } else {
+        console.error("Error updating steam top-up promo:", e)
       }
       return null
     }
