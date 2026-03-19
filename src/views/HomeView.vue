@@ -101,9 +101,7 @@ function restoreProductCardViewModeFromStorage(): void {
 }
 
 type SteamAmountMode = 'denomination' | 'quantity'
-type SteamPaymentMethod = 'balance' | 'card' | 'sbp' | 'lava'
 type SteamCheckoutCurrency = 'RUB' | 'USD'
-type SteamCheckoutPaymentMethod = 'balance' | 'card' | 'sbp'
 
 const steamServices = ref<SteamTopUpService[]>([])
 const selectedSteamServiceId = ref<number | null>(null)
@@ -113,7 +111,6 @@ const steamServer = ref('')
 const steamQuantity = ref('')
 const steamDenominationId = ref<number | null>(null)
 const steamAmountMode = ref<SteamAmountMode>('denomination')
-const steamPaymentMethod = ref<SteamPaymentMethod>('balance')
 const steamPromoCode = ref('')
 const steamOrder = ref<SteamTopUpOrder | null>(null)
 const steamError = ref('')
@@ -131,7 +128,6 @@ const steamCheckoutModalOpen = ref(false)
 const steamCheckoutCurrency = ref<SteamCheckoutCurrency>(
   selectedCurrency.value === 'USD' ? 'USD' : 'RUB',
 )
-const steamCheckoutPaymentMethod = ref<SteamCheckoutPaymentMethod>('balance')
 const steamCheckoutSubmitting = ref(false)
 
 const selectedSteamService = computed(() => {
@@ -356,7 +352,7 @@ function setDefaultSteamService(service: SteamTopUpService | null): void {
 function buildSteamPayOrderPayload(): SteamTopUpPayOrderPayload {
   const promoCode = steamPromoCode.value.trim().toUpperCase()
   return {
-    payment_method: steamPaymentMethod.value,
+    payment_method: 'lava',
     promo_code: promoCode || undefined,
   }
 }
@@ -493,7 +489,6 @@ async function paySteamOrder() {
 function openSteamCheckoutModal() {
   if (!steamCanCreateOrder.value) return
   steamCheckoutCurrency.value = selectedCurrency.value === 'USD' ? 'USD' : 'RUB'
-  steamCheckoutPaymentMethod.value = 'card'
   steamCheckoutModalOpen.value = true
 }
 
@@ -508,7 +503,6 @@ async function confirmSteamCheckout() {
   steamCheckoutSubmitting.value = true
   clearSteamFeedback()
   try {
-    steamPaymentMethod.value = steamCheckoutPaymentMethod.value
     await createSteamOrder()
     if (!steamOrder.value) return
 
@@ -1081,18 +1075,6 @@ onBeforeUnmount(() => {
                     >
                       <option value="RUB">RUB (₽)</option>
                       <option value="USD">USD ($)</option>
-                    </select>
-                  </label>
-
-                  <label class="block">
-                    <span class="text-xs text-slate-300">{{ t('pages.index.steamTopUp.checkoutMethod') }}</span>
-                    <select
-                      v-model="steamCheckoutPaymentMethod"
-                      class="steam-checkout-select mt-1 h-10 w-full rounded-lg border border-slate-600/75 bg-[#0f141b]/80 px-3 text-sm text-white outline-none transition focus:border-[#66c0f4]/50"
-                    >
-                      <option value="balance">{{ t('pages.index.steamTopUp.paymentMethodBalance') }}</option>
-                      <option value="card">{{ t('pages.index.steamTopUp.paymentMethodCard') }}</option>
-                      <option value="sbp">{{ t('pages.index.steamTopUp.paymentMethodSbp') }}</option>
                     </select>
                   </label>
 
