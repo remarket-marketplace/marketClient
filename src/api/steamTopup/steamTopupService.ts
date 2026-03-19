@@ -53,7 +53,7 @@ export const steamTopupService = {
 
   async payOrder(
     orderId: number,
-    payload: SteamTopUpPayOrderPayload = { payment_method: 'balance' },
+    payload: SteamTopUpPayOrderPayload = { payment_method: 'lava' },
   ): Promise<SteamTopUpPayOrderResponse> {
     const validatedPayload = steamTopUpPayOrderInputSchema.parse(payload)
     try {
