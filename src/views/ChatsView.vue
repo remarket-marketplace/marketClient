@@ -85,6 +85,10 @@ function getMessageTimestamp(message: ChatMessageUnion): number {
   return Number.isFinite(timestamp) ? timestamp : 0
 }
 
+function normalizeMessagesChronological(messages: ChatMessageUnion[]): ChatMessageUnion[] {
+  return [...messages].sort((a, b) => getMessageTimestamp(a) - getMessageTimestamp(b))
+}
+
 type ChatTimelineItem = {
   message: ChatMessageUnion
   index: number
@@ -635,7 +639,7 @@ async function loadMoreMessages() {
   totalMessagesInChat.value = response.total
 
   if (response.messages.length) {
-    chatMessages.value.unshift(...response.messages)
+    chatMessages.value.unshift(...normalizeMessagesChronological(response.messages))
     currentPage.value++
     totalPages.value = response.totalPages
     hasMoreMessages.value = currentPage.value < totalPages.value
@@ -679,7 +683,7 @@ async function loadChatMessages(chatId: string) {
     updateUrlChatId(chatId)
 
     const response = await chatsService.getChatMessages(chatId, 1, perPage.value)
-    chatMessages.value = response.messages
+    chatMessages.value = normalizeMessagesChronological(response.messages)
     totalMessagesInChat.value = response.total
     totalPages.value = response.totalPages
     hasMoreMessages.value = 1 < totalPages.value
