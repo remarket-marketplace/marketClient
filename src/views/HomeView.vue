@@ -38,7 +38,7 @@ import { getErrorMessage } from '@/utils/errorsMap'
 const { t } = useI18n()
 const router = useRouter()
 const API_HOST = import.meta.env.VITE_API_HOST
-const HOME_STEAM_TOPUP_ENABLED = true
+const HOME_STEAM_TOPUP_ENABLED = import.meta.env.VITE_STEAM_TOPUP_ENABLED !== 'false'
 const userStore = useUserStore()
 const { user } = storeToRefs(userStore)
 const selectedCurrency = computed(() => preferredCurrency.value)
@@ -101,7 +101,7 @@ function restoreProductCardViewModeFromStorage(): void {
 }
 
 type SteamAmountMode = 'denomination' | 'quantity'
-type SteamPaymentMethod = 'balance'
+type SteamPaymentMethod = 'balance' | 'card' | 'sbp' | 'lava'
 type SteamCheckoutCurrency = 'RUB' | 'USD'
 type SteamCheckoutPaymentMethod = 'balance' | 'card' | 'sbp'
 
@@ -475,6 +475,12 @@ async function paySteamOrder() {
     steamDiscountAmountRub.value = response.discount_amount_rub ?? null
     steamAppliedPromoCode.value = response.applied_promo_code ?? null
     steamPromoDiscountPercent.value = response.promo_discount_percent ?? null
+    if (response.payment_url) {
+      steamSuccess.value = t('pages.index.steamTopUp.redirectToPayment')
+      window.location.href = response.payment_url
+      return
+    }
+
     steamSuccess.value = t('pages.index.steamTopUp.orderPaid')
     await userStore.fetchUser()
   } catch (error) {
@@ -487,7 +493,7 @@ async function paySteamOrder() {
 function openSteamCheckoutModal() {
   if (!steamCanCreateOrder.value) return
   steamCheckoutCurrency.value = selectedCurrency.value === 'USD' ? 'USD' : 'RUB'
-  steamCheckoutPaymentMethod.value = 'balance'
+  steamCheckoutPaymentMethod.value = 'card'
   steamCheckoutModalOpen.value = true
 }
 
@@ -502,12 +508,7 @@ async function confirmSteamCheckout() {
   steamCheckoutSubmitting.value = true
   clearSteamFeedback()
   try {
-    if (steamCheckoutPaymentMethod.value !== 'balance') {
-      steamError.value = t('pages.index.steamTopUp.paymentMethodUnavailable')
-      return
-    }
-
-    steamPaymentMethod.value = 'balance'
+    steamPaymentMethod.value = steamCheckoutPaymentMethod.value
     await createSteamOrder()
     if (!steamOrder.value) return
 
@@ -1110,13 +1111,6 @@ onBeforeUnmount(() => {
                   <p class="rounded-lg border border-slate-600/75 bg-[#0f141b]/80 px-3 py-2 text-sm text-slate-200">
                     {{ t('pages.index.steamTopUp.checkoutAmount') }}: {{ steamCheckoutAmountLabel }}
                   </p>
-
-                  <p
-                    v-if="steamCheckoutPaymentMethod !== 'balance'"
-                    class="rounded-lg border border-amber-500/35 bg-amber-500/10 px-3 py-2 text-xs text-amber-200"
-                  >
-                    {{ t('pages.index.steamTopUp.paymentMethodUnavailable') }}
-                  </p>
                 </div>
 
                 <div class="mt-4 flex justify-end gap-2">
@@ -1131,7 +1125,7 @@ onBeforeUnmount(() => {
                   <button
                     type="button"
                     class="h-10 rounded-lg border border-slate-500/60 bg-[#1a2431] px-4 text-sm font-semibold text-slate-100 transition-colors duration-300 hover:border-blue-500 hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-55"
-                    :disabled="steamCheckoutSubmitting || steamCheckoutPaymentMethod !== 'balance'"
+                    :disabled="steamCheckoutSubmitting"
                     @click="confirmSteamCheckout"
                   >
                     {{ steamCheckoutSubmitting ? t('pages.index.steamTopUp.payingOrder') : t('pages.index.steamTopUp.checkoutContinue') }}
