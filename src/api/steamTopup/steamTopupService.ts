@@ -1,11 +1,15 @@
 import { ZodError } from 'zod'
 import { httpClient } from '..'
 import {
+  steamTopUpCreatePaymentInputSchema,
+  steamTopUpCreatePaymentSchema,
   steamTopUpCreateOrderSchema,
   steamTopUpPayOrderInputSchema,
   steamTopUpOrderSchema,
   steamTopUpPayOrderSchema,
   steamTopUpServicesSchema,
+  type SteamTopUpCreatePaymentPayload,
+  type SteamTopUpCreatePaymentResponse,
   type SteamTopUpCreateOrderPayload,
   type SteamTopUpOrder,
   type SteamTopUpPayOrderPayload,
@@ -14,6 +18,19 @@ import {
 } from '@/validation/steamTopup/steamTopup'
 
 export const steamTopupService = {
+  async createPayment(payload: SteamTopUpCreatePaymentPayload): Promise<SteamTopUpCreatePaymentResponse> {
+    const validatedPayload = steamTopUpCreatePaymentInputSchema.parse(payload)
+    try {
+      const response = await httpClient.post('/steam-topup/payments', validatedPayload)
+      return steamTopUpCreatePaymentSchema.parse(response.data)
+    } catch (error) {
+      if (error instanceof ZodError) {
+        console.error(error.issues)
+      }
+      throw error
+    }
+  },
+
   async getServices(): Promise<SteamTopUpServicesResponse> {
     try {
       const response = await httpClient.get('/steam-topup/services')
