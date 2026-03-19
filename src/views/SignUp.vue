@@ -39,6 +39,72 @@ const isWelcomeRedirecting = ref(false)
 const usernameError = ref('')
 const emailError = ref('')
 const passwordError = ref('')
+const passwordSpecialCharRegex = /[!@#$%^&*]/
+
+const usernameRules = computed(() => [
+  {
+    key: 'length',
+    isValid: username.value.trim().length >= 4 && username.value.trim().length <= 32,
+    message: t('pages.auth.signUp.usernameLengthError'),
+  },
+  {
+    key: 'chars',
+    isValid: /^[A-Za-z0-9_]+$/.test(username.value.trim()),
+    message: t('pages.auth.signUp.usernameCharsError'),
+  },
+])
+
+const emailRules = computed(() => {
+  const normalizedEmail = email.value.trim()
+  const atIndex = normalizedEmail.indexOf('@')
+  const localPart = atIndex >= 0 ? normalizedEmail.slice(0, atIndex) : ''
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+  return [
+    {
+      key: 'length',
+      isValid: normalizedEmail.length <= 64 && localPart.length <= 64,
+      message: t('pages.auth.signUp.emailLengthError'),
+    },
+    {
+      key: 'format',
+      isValid: emailRegex.test(normalizedEmail),
+      message: t('pages.auth.signUp.invalidEmail'),
+    },
+  ]
+})
+
+const passwordRules = computed(() => [
+  {
+    key: 'length',
+    isValid: password.value.length >= 8,
+    message: t('pages.auth.signUp.passwordLengthError'),
+  },
+  {
+    key: 'uppercase',
+    isValid: /[A-Z]/.test(password.value),
+    message: t('pages.auth.signUp.passwordUppercaseError'),
+  },
+  {
+    key: 'lowercase',
+    isValid: /[a-z]/.test(password.value),
+    message: t('pages.auth.signUp.passwordLowercaseError'),
+  },
+  {
+    key: 'digit',
+    isValid: /\d/.test(password.value),
+    message: t('pages.auth.signUp.passwordDigitError'),
+  },
+  {
+    key: 'special',
+    isValid: passwordSpecialCharRegex.test(password.value),
+    message: t('pages.auth.signUp.passwordSpecialCharError'),
+  },
+])
+
+const unmetUsernameRules = computed(() => usernameRules.value.filter((rule) => !rule.isValid))
+const unmetEmailRules = computed(() => emailRules.value.filter((rule) => !rule.isValid))
+const unmetPasswordRules = computed(() => passwordRules.value.filter((rule) => !rule.isValid))
 
 function validateUsername() {
   usernameError.value = ''
@@ -84,31 +150,31 @@ function validateEmail() {
   return true
 }
 
-function validatePassword() {
+function validatePassword(showError = true) {
   passwordError.value = ''
 
   if (password.value.length < 8) {
-    passwordError.value = t('pages.auth.signUp.passwordLengthError')
+    if (showError) passwordError.value = t('pages.auth.signUp.passwordLengthError')
     return false
   }
 
   if (!/[A-Z]/.test(password.value)) {
-    passwordError.value = t('pages.auth.signUp.passwordUppercaseError')
+    if (showError) passwordError.value = t('pages.auth.signUp.passwordUppercaseError')
     return false
   }
 
   if (!/[a-z]/.test(password.value)) {
-    passwordError.value = t('pages.auth.signUp.passwordLowercaseError')
+    if (showError) passwordError.value = t('pages.auth.signUp.passwordLowercaseError')
     return false
   }
 
   if (!/\d/.test(password.value)) {
-    passwordError.value = t('pages.auth.signUp.passwordDigitError')
+    if (showError) passwordError.value = t('pages.auth.signUp.passwordDigitError')
     return false
   }
 
-  if (!/[^A-Za-z0-9]/.test(password.value)) {
-    passwordError.value = t('pages.auth.signUp.passwordSpecialCharError')
+  if (!passwordSpecialCharRegex.test(password.value)) {
+    if (showError) passwordError.value = t('pages.auth.signUp.passwordSpecialCharError')
     return false
   }
 
@@ -118,7 +184,7 @@ function validatePassword() {
 function validateForm() {
   const isUsernameValid = validateUsername()
   const isEmailValid = validateEmail()
-  const isPasswordValid = validatePassword()
+  const isPasswordValid = validatePassword(false)
 
   return isUsernameValid && isEmailValid && isPasswordValid
 }
@@ -318,17 +384,15 @@ function handleWelcomeFinished() {
           <div>
             <label for="username" class="mb-1 block text-sm text-text-secondary">{{ $t('common.username') }}</label>
             <TheInput id="username" v-model="username" type="text"
-              :placeholder="$t('pages.auth.signUp.usernamePlaceholder')" required @blur="validateUsername"
+              placeholder="" required @blur="validateUsername"
               @input="clearUsernameError" :minlength="4" :maxlength="32" autocomplete="username" />
-            <p v-if="usernameError" class="text-gray-300 text-sm mt-1">{{ usernameError }}</p>
           </div>
 
           <!-- Email -->
           <div>
             <label for="email" class="mb-1 block text-sm text-text-secondary">{{ $t('common.email') }}</label>
-            <TheInput id="email" v-model="email" type="email" :placeholder="$t('common.email')" required
+            <TheInput id="email" v-model="email" type="email" placeholder="" required
               @blur="validateEmail" @input="clearEmailError" :maxlength="64" autocomplete="email" />
-            <p v-if="emailError" class="text-gray-300 text-sm mt-1">{{ emailError }}</p>
           </div>
 
           <!-- Password с иконкой глаза -->
@@ -344,10 +408,23 @@ function handleWelcomeFinished() {
                 </button>
               </template>
             </TheInput>
-            <p class="mt-1 text-xs text-gray-400">
-              {{ $t('pages.auth.signUp.passwordRulesHint') }}
+            <ul
+              v-if="password.length > 0 && unmetPasswordRules.length > 0"
+              class="mt-2 space-y-1 text-xs text-gray-400"
+            >
+              <li
+                v-for="rule in unmetPasswordRules"
+                :key="rule.key"
+              >
+                {{ rule.message }}
+              </li>
+            </ul>
+            <p
+              v-if="passwordError && password.length > 0 && unmetPasswordRules.length === 0"
+              class="text-gray-300 text-sm mt-1"
+            >
+              {{ passwordError }}
             </p>
-            <p v-if="passwordError" class="text-gray-300 text-sm mt-1">{{ passwordError }}</p>
           </div>
 
           <!-- Confirm Password с иконкой глаза -->
