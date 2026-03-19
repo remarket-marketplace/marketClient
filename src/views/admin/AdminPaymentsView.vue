@@ -55,9 +55,9 @@ const statusOptions = computed(() => [
 ])
 
 const allowedTransitions: Record<PaymentStatus, PaymentStatus[]> = {
-  PENDING: ['CONFIRMED', 'CANCELED', 'CHARGEBACKED'],
-  CANCELED: ['CONFIRMED', 'CHARGEBACKED'],
-  CONFIRMED: ['CANCELED', 'CHARGEBACKED'],
+  PENDING: ['CONFIRMED', 'CANCELED'],
+  CANCELED: ['CONFIRMED'],
+  CONFIRMED: ['CANCELED'],
   CHARGEBACKED: [],
 }
 
@@ -365,14 +365,6 @@ watch(watchedFilters, () => {
               {{ $t('pages.admin.paymentsPage.actionCancel') }}
             </button>
 
-            <button
-              v-if="canSetStatus(payment, 'CHARGEBACKED')"
-              type="button"
-              class="admin-btn admin-btn-accent admin-btn-sm text-xs"
-              @click="openModerationModal(payment, 'CHARGEBACKED')"
-            >
-              {{ $t('pages.admin.paymentsPage.actionChargeback') }}
-            </button>
           </div>
         </article>
 

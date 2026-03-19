@@ -220,7 +220,7 @@ const en = {
       PENDING: "Pending",
       CONFIRMED: "Confirmed",
       CANCELED: "Canceled",
-      CHARGEBACKED: "Chargebacked",
+      CHARGEBACKED: "Payment reversed",
     },
 
     refusalReasons: {
@@ -1254,7 +1254,7 @@ const en = {
         moderationReasonPlaceholder: "Example: confirmed after manual verification",
         actionConfirm: "Confirm",
         actionCancel: "Cancel",
-        actionChargeback: "Chargeback",
+        actionChargeback: "Reverse payment",
         amount: "Amount",
         createdAt: "Created",
         confirmedAt: "Confirmed",
@@ -1397,7 +1397,7 @@ const en = {
           wallet_top_up_requested: "Top-up requested",
           wallet_top_up_confirmed: "Top-up confirmed",
           wallet_top_up_canceled: "Top-up canceled",
-          wallet_top_up_chargebacked: "Top-up chargebacked",
+          wallet_top_up_chargebacked: "Top-up reversed",
           wallet_top_up_moderated_by_admin: "Top-up moderated by admin",
           feedback_submitted: "Feedback submitted",
           profile_description_updated: "Profile description updated",
