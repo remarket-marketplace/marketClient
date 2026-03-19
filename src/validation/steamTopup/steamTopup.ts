@@ -78,10 +78,14 @@ export const steamTopUpPayOrderSchema = z.object({
   applied_promo_code: z.string().nullable().optional(),
   promo_discount_percent: z.number().nullable().optional(),
   payment_method: z.string().optional(),
+  payment_url: z.string().url().nullable().optional(),
+  payment_status: z.string().nullable().optional(),
+  provider: z.string().nullable().optional(),
+  provider_tx_id: z.string().nullable().optional(),
 }).strip()
 
 export const steamTopUpPayOrderInputSchema = z.object({
-  payment_method: z.enum(['balance']).default('balance'),
+  payment_method: z.enum(['balance', 'card', 'sbp', 'lava']).default('balance'),
   promo_code: z.string().trim().max(64).optional(),
 }).strip()
 
