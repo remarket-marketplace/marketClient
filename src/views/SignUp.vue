@@ -344,6 +344,9 @@ function handleWelcomeFinished() {
                 </button>
               </template>
             </TheInput>
+            <p class="mt-1 text-xs text-gray-400">
+              {{ $t('pages.auth.signUp.passwordRulesHint') }}
+            </p>
             <p v-if="passwordError" class="text-gray-300 text-sm mt-1">{{ passwordError }}</p>
           </div>
 
