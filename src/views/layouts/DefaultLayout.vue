@@ -295,7 +295,7 @@ const mobileNavGridStyle = computed(() => ({
               :title="walletTitle"
               @click="goToWallet"
             >
-              <Wallet class="h-3.5 w-3.5 text-blue-400" />
+              <Wallet class="h-3.5 w-3.5 text-white" />
               <span class="max-w-[72px] truncate font-medium">{{ walletBalanceLabel }}</span>
             </button>
             <div class="md:order-1">
