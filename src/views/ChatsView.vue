@@ -788,13 +788,12 @@ async function sendMessage(payload: { files: File[] }) {
 
     <div v-else class="w-full flex flex-1 overflow-hidden">
       <div v-if="!isMobile || (isMobile && mobileMode === 'chats')"
-        class="h-full lg:max-w-sm flex flex-col md:pr-5 transition-all duration-300 min-h-0" :class="[
+        class="md:h-full lg:max-w-sm flex flex-col md:pr-5 transition-all duration-300 min-h-0" :class="[
           isMobile && mobileMode === 'chats'
-            ? 'fixed inset-0 z-10 w-full bg-background'
+            ? 'fixed inset-x-0 top-0 bottom-14 z-10 w-full bg-background'
             : 'w-3/12',
         ]">
         <div class="h-full flex flex-col border-dark-600 lg:border-1 md:rounded-3xl" :class="{
-          'pb-20': isMobile && mobileMode === 'chats',
           'pt-16': isMobile && mobileMode === 'chats',
         }">
           <p class="my-4 text-2xl px-4 text-mainText font-semibold">
