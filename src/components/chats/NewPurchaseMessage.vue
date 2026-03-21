@@ -310,26 +310,26 @@ async function handleSendReview(productId: string) {
 
         <!-- reasons list -->
         <div class="p-4">
-          <div class="space-y-2 max-h-80 overflow-y-auto pr-1 ">
+          <div class="space-y-2 max-h-80 overflow-y-auto pr-1">
             <button v-for="reason in refusalReasons" :key="reason.id" @click="selectedRefusalId = reason.id" :class="[
-              'w-full text-left px-4 py-3 rounded-xl transition-all duration-200',
+              'w-full text-left rounded-2xl border px-4 py-3.5 transition-colors duration-200',
               selectedRefusalId === reason.id
-                ? 'bg-blue-500/10 border border-blue-500/30 text-blue-400'
-                : 'bg-gray-800/50 hover:bg-gray-700/50 border border-transparent text-gray-300'
+                ? 'border-blue-500/45 bg-dark-700/75 text-white'
+                : 'border-dark-600 bg-dark-700/40 text-gray-300 hover:border-dark-500 hover:bg-dark-700/55 hover:text-white'
             ]">
               <div class="flex items-center">
                 <div class="flex-shrink-0 mr-3">
                   <div :class="[
-                    'w-4 h-4 rounded-full border flex items-center justify-center',
+                    'h-5 w-5 rounded-full border flex items-center justify-center transition-colors duration-200',
                     selectedRefusalId === reason.id
-                      ? 'border-blue-400 bg-blue-500/20'
-                      : 'border-gray-600'
+                      ? 'border-blue-400 bg-blue-500/15 ring-1 ring-blue-500/30'
+                      : 'border-gray-500 bg-dark-900/90'
                   ]">
-                    <div v-if="selectedRefusalId === reason.id" class="w-2 h-2 rounded-full bg-blue-400"></div>
+                    <div v-if="selectedRefusalId === reason.id" class="h-2.5 w-2.5 rounded-full bg-blue-400"></div>
                   </div>
                 </div>
 
-                <span class="text-sm leading-relaxed">
+                <span class="text-sm leading-relaxed font-medium">
                   {{ $t(`common.refusalReasons.${reason.title}`) }}
                 </span>
               </div>
@@ -339,7 +339,7 @@ async function handleSendReview(productId: string) {
           <!-- Custom reason textarea (only shown when "otherReason" is selected) -->
           <div v-if="isOtherReasonSelected" class="mt-4">
             <textarea v-model="customReasonText" :maxlength="MAX_CUSTOM_REASON_LENGTH" rows="4"
-              class="w-full rounded-lg bg-gray-800 border border-gray-700 p-3 text-sm text-gray-200 outline-none focus:border-blue-500"
+              class="w-full rounded-2xl border border-dark-500 bg-dark-700/55 p-3 text-sm text-gray-100 outline-none transition-colors placeholder:text-gray-500 focus:border-blue-500/60 focus:bg-dark-700/75"
               :placeholder="$t('pages.chats.enterCustomReason')"></textarea>
             <div class="flex justify-between items-center mt-2 text-xs text-gray-400">
               <span class="text-red-400" v-if="customReasonText.length >= MAX_CUSTOM_REASON_LENGTH">
