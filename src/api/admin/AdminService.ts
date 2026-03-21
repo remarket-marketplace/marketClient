@@ -106,6 +106,7 @@ export type AdminUpdateUserPayload = {
 }
 
 export type PaymentStatus = "PENDING" | "CONFIRMED" | "CANCELED" | "CHARGEBACKED"
+export type PaymentModerationStatus = "CONFIRMED" | "CANCELED"
 
 export type AdminPaymentsFilters = {
   status?: PaymentStatus | "all"
@@ -752,7 +753,7 @@ export const adminService = {
 
   async updateAdminPaymentStatus(
     paymentId: string,
-    status: PaymentStatus,
+    status: PaymentModerationStatus,
     reason?: string | null,
   ): Promise<AdminPayment | null> {
     try {
