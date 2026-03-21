@@ -848,7 +848,7 @@ const en = {
       confirmReceipt: "Confirm Receipt",
       confirmReceipted: "Receipt confirmed",
       confirmFulfillment: "Confirm fulfillment",
-      confirmFulfillmentMessage: "This will start the deal auto-confirmation timer for the buyer.",
+      confirmFulfillmentMessage: "By clicking this, you confirm that you have fulfilled the deal terms.",
       fulfillmentConfirmed: "Fulfillment confirmed",
       awaitSellerFulfillment: "Waiting for seller confirmation",
       dealCompleted: "Deal completed",
