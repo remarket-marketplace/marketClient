@@ -259,15 +259,35 @@ const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
     case 'completed':
     case 'confirmed':
-      return 'text-green-400'
+      return 'text-emerald-300'
     case 'pending':
-      return 'text-yellow-400'
+      return 'text-amber-300'
     case 'rejected':
     case 'cancelled':
     case 'canceled':
-      return 'text-red-400'
+      return 'text-rose-300'
+    case 'refunded':
+      return 'text-sky-300'
     default:
       return 'text-gray-400'
+  }
+}
+
+const getStatusBadgeClass = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'completed':
+    case 'confirmed':
+      return 'border-emerald-400/25 bg-emerald-400/12 text-emerald-200'
+    case 'pending':
+      return 'border-amber-400/25 bg-amber-400/12 text-amber-200'
+    case 'rejected':
+    case 'cancelled':
+    case 'canceled':
+      return 'border-rose-400/25 bg-rose-400/12 text-rose-200'
+    case 'refunded':
+      return 'border-sky-400/25 bg-sky-400/12 text-sky-200'
+    default:
+      return 'border-dark-500 bg-dark-700/80 text-gray-200'
   }
 }
 
@@ -291,6 +311,19 @@ const getTypeIcon = (item: WalletHistoryItem) => {
 
 const getTypeColor = (item: WalletHistoryItem) => {
   return (item.amount ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
+}
+
+const getTypeBadgeClass = (type: string) => {
+  const accentMap: Record<string, string> = {
+    top_up: 'text-blue-100/80',
+    purchase: 'text-gray-300',
+    sale: 'text-violet-200',
+    refund: 'text-sky-200',
+    withdrawal: 'text-orange-200',
+    adjustment: 'text-gray-200',
+  }
+
+  return `border-dark-600/80 bg-dark-800/85 ${accentMap[type] ?? 'text-gray-300'}`
 }
 
 const formatSigned = (amount: number) => {
@@ -452,50 +485,68 @@ const typeLabel = (type: string) => {
               <div
                 v-for="tx in historyItems"
                 :key="tx.id"
-                class="group border border-dark-700 rounded-xl bg-dark-600/40 hover:bg-dark-600/60 hover:border-blue-500/30 transition-all duration-200 p-4"
+                class="group rounded-2xl border border-dark-700 bg-dark-600/40 p-4 transition-all duration-200 hover:border-blue-500/20 hover:bg-dark-600/60 sm:p-5"
               >
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-3">
-                    <div class="relative">
-                      <div class="w-10 h-10 rounded-full bg-dark-700 flex items-center justify-center">
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-start gap-3 sm:gap-4">
+                      <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-dark-600 bg-dark-700/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:h-12 sm:w-12">
                         <component
                           :is="getTypeIcon(tx)"
-                          :class="`w-5 h-5 ${getTypeColor(tx)}`"
+                          :class="`h-5 w-5 ${getTypeColor(tx)}`"
                         />
                       </div>
-                      <div class="absolute -bottom-1 -right-1">
-                        <component
-                          :is="getStatusIcon(tx.status)"
-                          :class="`w-4 h-4 ${getStatusColor(tx.status)}`"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div class="space-y-1">
-                      <div class="text-base font-semibold text-white">
-                        {{ formatSigned(tx.amount) }}
-                      </div>
-                      <div class="text-xs text-gray-400">
-                        {{ formatDate(tx.created_at) }}
-                      </div>
-                      <div class="text-xs text-gray-500" v-if="tx.title">
-                        <router-link
-                          v-if="tx.product_id"
-                          :to="`/product/${buildSlugKey(tx.title, tx.product_id, 'product')}`"
-                          class="text-blue-400 hover:underline"
+
+                      <div class="min-w-0 flex-1 space-y-2">
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <div class="text-xl font-semibold tracking-tight text-white sm:text-[1.65rem]">
+                            {{ formatSigned(tx.amount) }}
+                          </div>
+                          <div class="inline-flex items-center gap-1.5 rounded-full border border-dark-600/80 bg-dark-800/80 px-2.5 py-1 text-xs font-medium text-gray-300">
+                            <component
+                              :is="getStatusIcon(tx.status)"
+                              :class="`h-3.5 w-3.5 ${getStatusColor(tx.status)}`"
+                            />
+                            <span>{{ formatDate(tx.created_at) }}</span>
+                          </div>
+                        </div>
+
+                        <div
+                          v-if="tx.title"
+                          class="max-w-2xl text-sm font-medium leading-5 text-gray-200/92"
                         >
-                          {{ tx.title }}
-                        </router-link>
-                        <span v-else>{{ tx.title }}</span>
+                          <router-link
+                            v-if="tx.product_id"
+                            :to="`/product/${buildSlugKey(tx.title, tx.product_id, 'product')}`"
+                            class="transition-colors duration-200 hover:text-blue-200"
+                            style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"
+                          >
+                            {{ tx.title }}
+                          </router-link>
+                          <span
+                            v-else
+                            style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"
+                          >
+                            {{ tx.title }}
+                          </span>
+                        </div>
+
+                        <div v-else class="text-sm text-gray-500">
+                          {{ typeLabel(tx.type) }}
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div class="flex items-center gap-2">
-                    <span class="text-sm px-2 py-1 rounded-full bg-dark-700 text-gray-300">
+                  <div class="flex flex-wrap items-center gap-2 lg:max-w-[16rem] lg:justify-end">
+                    <span
+                      :class="['inline-flex min-h-9 items-center rounded-full border px-3 py-1.5 text-sm font-semibold tracking-tight', getStatusBadgeClass(tx.status)]"
+                    >
                       {{ getStatusText(tx.status, tx.type) }}
                     </span>
-                    <span class="text-xs px-2 py-1 rounded-full bg-dark-700/60 text-gray-400 border border-dark-600">
+                    <span
+                      :class="['inline-flex min-h-9 items-center rounded-full border px-3 py-1.5 text-sm font-medium', getTypeBadgeClass(tx.type)]"
+                    >
                       {{ typeLabel(tx.type) }}
                     </span>
                   </div>
