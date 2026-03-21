@@ -18,7 +18,9 @@
     "preview:watch": "run-p build:client:watch build:ssr:watch preview:watch:server",
     "preview:watch:server": "NODE_ENV=production node --watch --watch-path=dist/server --watch-path=dist/client server.js",
     "type-check": "vue-tsc --build",
-    "tw:init": "tailwindcss init -p"
+    "tw:init": "tailwindcss init -p",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
     "@iconify/vue": "^5.0.0",
@@ -41,6 +43,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@playwright/test": "^1.54.2",
     "@tsconfig/node22": "^22.0.2",
     "@types/node": "^22.18.6",
     "@unocss/preset-icons": "^66.5.4",
