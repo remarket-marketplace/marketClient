@@ -7,6 +7,7 @@ import {
   Clock,
   CheckCircle,
   Flame,
+  X,
   XCircle,
   Plus,
   Minus,
@@ -95,7 +96,7 @@ const depositProviderOptions = computed(() => ([
     description: t('pages.wallet.paymentProviderPlategaHint'),
     icon: Landmark,
     surfaceClass: 'bg-gradient-to-br from-sky-400/22 via-sky-400/8 to-transparent',
-    activeClass: 'border-sky-400/60 bg-sky-500/10 shadow-[0_0_0_1px_rgba(56,189,248,0.22),0_18px_45px_-25px_rgba(56,189,248,0.45)]',
+    activeClass: 'border-sky-400/60 bg-sky-500/10',
     activeIconClass: 'border-sky-300/35 bg-sky-400/15 text-sky-50',
     activeIndicatorClass: 'border-sky-300/70 bg-sky-300/18',
     activeCopyClass: 'text-sky-100/88',
@@ -106,7 +107,7 @@ const depositProviderOptions = computed(() => ([
     description: t('pages.wallet.paymentProviderLavaHint'),
     icon: Flame,
     surfaceClass: 'bg-gradient-to-br from-orange-400/22 via-amber-400/8 to-transparent',
-    activeClass: 'border-orange-400/60 bg-orange-500/10 shadow-[0_0_0_1px_rgba(251,146,60,0.22),0_18px_45px_-25px_rgba(251,146,60,0.42)]',
+    activeClass: 'border-orange-400/60 bg-orange-500/10',
     activeIconClass: 'border-orange-300/35 bg-orange-400/15 text-orange-50',
     activeIndicatorClass: 'border-orange-300/70 bg-orange-300/18',
     activeCopyClass: 'text-orange-100/88',
@@ -392,7 +393,10 @@ const typeLabel = (type: string) => {
 </script>
 
 <template>
-  <div class="w-full h-full overflow-scroll  lg:overflow-hidden pb-16 md:pb-0">
+  <div
+    class="w-full h-full overflow-x-hidden overflow-y-auto pb-16 md:pb-0 lg:overflow-hidden"
+    @scroll.passive="handleScroll"
+  >
     <!-- Mobile header -->
     <div class="mb-6 lg:hidden px-4 pt-4">
       <div class="flex gap-2">
@@ -482,8 +486,8 @@ const typeLabel = (type: string) => {
       </div>
 
       <!-- Right column - Transactions -->
-      <div class="lg:flex-1 overflow-y-auto  mt-6 lg:mt-0 lg:pt-6 lg:pl-6">
-        <div class="px-4 lg:px-0 lg:pb-6 space-y-6">
+      <div class="mt-6 lg:mt-0 lg:flex lg:min-h-[calc(100dvh-3.5rem)] lg:flex-1 lg:flex-col lg:overflow-hidden lg:pt-6 lg:pl-6">
+        <div class="space-y-6 px-4 lg:flex lg:flex-1 lg:min-h-0 lg:flex-col lg:px-0 lg:pb-6">
           <!-- Transactions header -->
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
@@ -497,8 +501,8 @@ const typeLabel = (type: string) => {
 
           <!-- Transactions list -->
           <div 
-            class="space-y-3 max-h-[calc(100vh-240px)] overflow-y-auto pr-2"
-            @scroll="handleScroll"
+            class="space-y-3 lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pr-2 lg:pb-1"
+            @scroll.passive="handleScroll"
           >
             <div v-if="isLoading && historyItems.length === 0" class="flex items-center justify-center py-12">
               <Loader2 class="w-6 h-6 animate-spin text-blue-500" />
@@ -614,10 +618,12 @@ const typeLabel = (type: string) => {
               <h3 class="text-xl font-bold text-white">{{ $t('pages.wallet.deposit') }}</h3>
             </div>
             <button 
+              type="button"
               @click="showDepositModal = false"
-              class="w-8 h-8 flex items-center justify-center rounded-lg border border-dark-600 bg-dark-700/50 hover:bg-dark-700 transition-colors"
+              class="rounded-full p-1 text-gray-400 transition-colors duration-150 hover:text-gray-300"
+              aria-label="Close"
             >
-              <XCircle class="w-4 h-4 text-gray-300" />
+              <X class="w-5 h-5" />
             </button>
           </div>
           
@@ -717,7 +723,7 @@ const typeLabel = (type: string) => {
             <button
               @click="handleDeposit"
               :disabled="!canSubmitDeposit || isLoading"
-              class="w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 py-3.5 text-white font-semibold hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-blue-500/20"
+              class="market-btn market-btn-primary w-full rounded-xl py-3.5"
             >
               <span v-if="isLoading" class="flex items-center justify-center gap-2">
                 <Loader2 class="w-4 h-4 animate-spin text-white" />
@@ -747,10 +753,12 @@ const typeLabel = (type: string) => {
               <h3 class="text-xl font-bold text-white">{{ $t('pages.wallet.withdraw') }}</h3>
             </div>
             <button 
+              type="button"
               @click="showWithdrawModal = false"
-              class="w-8 h-8 flex items-center justify-center rounded-lg border border-dark-600 bg-dark-700/50 hover:bg-dark-700 transition-colors"
+              class="rounded-full p-1 text-gray-400 transition-colors duration-150 hover:text-gray-300"
+              aria-label="Close"
             >
-              <XCircle class="w-4 h-4 text-gray-300" />
+              <X class="w-5 h-5" />
             </button>
           </div>
           
@@ -789,7 +797,7 @@ const typeLabel = (type: string) => {
             <button
               @click="handleWithdraw"
               :disabled="!isWithdrawAmountValid || isLoading"
-              class="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 py-3.5 text-white font-semibold hover:from-emerald-700 hover:to-teal-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-emerald-500/20"
+              class="market-btn market-btn-success w-full rounded-xl py-3.5"
             >
               <span v-if="isLoading" class="flex items-center justify-center gap-2">
                 <Loader2 class="w-4 h-4 animate-spin text-white" />

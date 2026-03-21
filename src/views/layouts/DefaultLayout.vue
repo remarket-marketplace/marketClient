@@ -17,8 +17,9 @@ import { storeToRefs } from 'pinia'
 import SelectLanguage from '@/components/SelectLanguage.vue'
 import SelectCurrency from '@/components/SelectCurrency.vue'
 import MainPageFooter from '@/components/layout/MainPageFooter.vue'
-import { formatCurrencyAmount } from '@/utils/currency'
+import { formatCompactCurrencyAmount, formatCurrencyAmount } from '@/utils/currency'
 import NotificationsMenu from '@/components/layout/NotificationsMenu.vue'
+import MobileHeaderSettingsMenu from '@/components/layout/MobileHeaderSettingsMenu.vue'
 import type { FunctionalComponent } from 'vue'
 import type { LucideProps } from 'lucide-vue-next'
 
@@ -174,6 +175,10 @@ const walletBalanceLabel = computed(() =>
   }),
 )
 
+const walletBalanceCompactLabel = computed(() =>
+  formatCompactCurrencyAmount(Number(user.value?.balance ?? 0)),
+)
+
 const walletTitle = computed(() =>
   t('navigation.market.walletBalance', { balance: walletBalanceLabel.value }),
 )
@@ -200,13 +205,13 @@ const mobileNavGridStyle = computed(() => ({
       class="fixed inset-x-0 top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
     >
       <div class="mx-auto w-full 2xl:w-1/2">
-        <div class="mx-auto h-14 w-full flex items-center justify-between px-2 lg:px-4">
-          <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold"
+        <div class="mx-auto h-14 w-full flex items-center justify-between gap-3 px-2 lg:px-4">
+          <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-lg text-mainText font-semibold sm:text-xl"
             @click="router.push('/')">
             remarket
           </div>
 
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2 md:gap-3">
             <nav class="hidden items-center gap-6 md:flex">
               <router-link v-for="item in primaryNavItems" :key="item.id" :to="item.to"
                 class="flex items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"
@@ -285,7 +290,7 @@ const mobileNavGridStyle = computed(() => ({
               </button>
             </nav>
 
-            <div class="md:order-2">
+            <div class="hidden md:block md:order-2">
               <SelectLanguage />
             </div>
             <button
@@ -296,11 +301,12 @@ const mobileNavGridStyle = computed(() => ({
               @click="goToWallet"
             >
               <Wallet class="h-3.5 w-3.5 text-blue-400" />
-              <span class="max-w-[72px] truncate font-medium">{{ walletBalanceLabel }}</span>
+              <span class="block max-w-[64px] truncate font-medium">{{ walletBalanceCompactLabel }}</span>
             </button>
-            <div class="md:order-1">
+            <div class="hidden md:block md:order-1">
               <SelectCurrency />
             </div>
+            <MobileHeaderSettingsMenu />
             <NotificationsMenu v-if="user?.username" />
           </div>
         </div>

@@ -1210,7 +1210,7 @@ onUnmounted(() => {
 
               <button
                 :disabled="isLoading || !changingPasswordCurrentPassword || !changingPasswordNewPassword"
-                class="w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 py-3.5 text-white font-semibold hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
+                class="market-btn market-btn-primary w-full rounded-xl py-3.5"
                 @click="changePassword"
               >
                 <Loader2 v-if="isLoading" class="w-4 h-4 animate-spin" />
@@ -1298,7 +1298,7 @@ onUnmounted(() => {
 
               <button
                 type="button"
-                class="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 py-3.5 text-white font-semibold hover:from-emerald-700 hover:to-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
+                class="market-btn market-btn-success w-full rounded-xl py-3.5"
                 :disabled="!canChangeUsername"
                 @click="requestUsernameChangeConfirmation"
               >
