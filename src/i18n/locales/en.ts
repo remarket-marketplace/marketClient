@@ -210,12 +210,12 @@ const en = {
 
     // deals statuses
     dealStatuses: {
-      pending: "Pending",
-      confirmed: "Confirmed",
-      disputed: "disputed",
-      completed: "completed",
-      cancelled: "cancelled",
-      refunded: "refunded",
+      pending: "Awaiting fulfillment",
+      confirmed: "Fulfilled by seller",
+      disputed: "Disputed",
+      completed: "Completed",
+      cancelled: "Cancelled",
+      refunded: "Refunded",
     },
 
     paymentStatuses: {
@@ -846,7 +846,12 @@ const en = {
       emptyMessages: "Messages list is empty",
       selectChat: "Select a chat",
       confirmReceipt: "Confirm Receipt",
-      confirmReceipted: "Confirm Receipted",
+      confirmReceipted: "Receipt confirmed",
+      confirmFulfillment: "Confirm fulfillment",
+      confirmFulfillmentMessage: "This will start the deal auto-confirmation timer for the buyer.",
+      fulfillmentConfirmed: "Fulfillment confirmed",
+      awaitSellerFulfillment: "Waiting for seller confirmation",
+      dealCompleted: "Deal completed",
       refund: "Refund",
       refundConfirmMessage: "Are you sure you want to refund this deal?",
       report: "Report",
@@ -887,11 +892,11 @@ const en = {
       manualDelivery: "Product delivery by seller",
       contactSeller: "To receive the product, contact the seller in chat",
 
-      pending: "Deal created. Waiting for confirmation from both parties.",
+      pending: "Deal created. Waiting for fulfillment confirmation from the seller.",
       confirmed:
-        "Buyer confirmed the receipt, funds are now available to the seller.",
+        "Seller confirmed fulfillment. The auto-confirmation timer has started.",
       disputed: "Buyer has opened a dispute for this deal.",
-      completed: "Deal successfully completed.",
+      completed: "Deal successfully completed. Funds are now available to the seller.",
       cancelled: "Deal cancelled. Funds have been returned to the balance.",
       refunded: "Funds have been refunded to the buyer.",
       support: "Support",
@@ -1490,7 +1495,7 @@ const en = {
         images: "Product Images (select multiple)",
         count: "Count",
         autoDelivery: "Auto delivery",
-        autoDeliveryHint: "Product will be automatically delivered to the buyer after payment",
+        autoDeliveryHint: "Product will be automatically delivered to the buyer after payment. The deal will be marked as fulfilled automatically.",
         autoDeliveryEnabledHint: "After payment, the buyer will instantly receive the data from the \"Product data\" field",
         selectedImagesCount: "Selected images: {count}",
         creating: "Creating...",

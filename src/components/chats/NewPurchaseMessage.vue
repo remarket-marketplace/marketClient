@@ -16,9 +16,7 @@ import { buildProductKey } from '@/utils/urlKeys';
 const API_HOST = import.meta.env.VITE_API_HOST;
 
 const router = useRouter();
-const isConfirmed = ref(false);
-const isReported = ref(false);
-const isRefunded = ref(false);
+const localDealStatus = ref<string | null>(null);
 
 const showReviewForm = ref(false);
 const reviewStars = ref(0);
@@ -34,8 +32,10 @@ const userStore = useUserStore();
 const isAdmin = computed(() => userStore.user?.role === 'admin')
 
 const showConfirmModal = ref(false);
+const showFulfillmentModal = ref(false);
 const showRefundModal = ref(false);
 const confirmLoading = ref(false);
+const fulfillmentLoading = ref(false);
 const refundLoading = ref(false);
 
 const props = defineProps<{
@@ -46,17 +46,53 @@ const props = defineProps<{
 }>();
 
 const localHasReview = ref(props.has_review ?? false);
-const isDealDisputed = computed(() => props.dealStatus === 'disputed');
+const effectiveDealStatus = computed(() => localDealStatus.value ?? props.dealStatus);
+const isBuyer = computed(() => !props.product.is_owner);
+const isSeller = computed(() => props.product.is_owner);
+const isDealDisputed = computed(() => effectiveDealStatus.value === 'disputed');
+const isDealCompleted = computed(() => effectiveDealStatus.value === 'completed');
+const isDealRefunded = computed(() => (
+  effectiveDealStatus.value === 'refunded'
+  || effectiveDealStatus.value === 'cancelled'
+));
+const isAwaitingSellerFulfillment = computed(() => (
+  isBuyer.value && effectiveDealStatus.value === 'pending'
+));
+const canConfirmFulfillment = computed(() => (
+  isSeller.value && effectiveDealStatus.value === 'pending'
+));
+const canConfirmReceipt = computed(() => (
+  isBuyer.value && effectiveDealStatus.value === 'confirmed'
+));
 const canSendReport = computed(() => (
-  !props.product.is_owner
-  && props.dealStatus === 'pending'
-  && !isConfirmed.value
-  && !isReported.value
-  && !isDealDisputed.value
+  isBuyer.value && effectiveDealStatus.value === 'confirmed'
 ));
 const showReportedBadge = computed(() => (
-  !props.product.is_owner && (isReported.value || isDealDisputed.value)
+  isBuyer.value && isDealDisputed.value
 ));
+const showFulfillmentConfirmedBadge = computed(() => (
+  isSeller.value && effectiveDealStatus.value === 'confirmed'
+));
+const statusBadgeText = computed(() => {
+  if (isDealCompleted.value) {
+    return isBuyer.value
+      ? 'pages.chats.confirmReceipted'
+      : 'pages.chats.dealCompleted';
+  }
+  if (effectiveDealStatus.value === 'cancelled') {
+    return 'pages.chats.cancelled';
+  }
+  if (effectiveDealStatus.value === 'refunded') {
+    return 'pages.chats.refundCompleted';
+  }
+  if (showFulfillmentConfirmedBadge.value) {
+    return 'pages.chats.fulfillmentConfirmed';
+  }
+  if (isAwaitingSellerFulfillment.value) {
+    return 'pages.chats.awaitSellerFulfillment';
+  }
+  return null;
+});
 
 // Вычисляемое свойство для проверки, выбрана ли причина "otherReason"
 const isOtherReasonSelected = computed(() => {
@@ -90,10 +126,20 @@ async function doConfirmDeal() {
   const response = await productService.confirmReceipt(props.dealId);
   confirmLoading.value = false;
   if (response === true) {
-    isConfirmed.value = true;
+    localDealStatus.value = 'completed';
     localHasReview.value = false;
   }
   showConfirmModal.value = false;
+}
+
+async function doConfirmFulfillment() {
+  fulfillmentLoading.value = true;
+  const response = await productService.confirmFulfillment(props.dealId);
+  fulfillmentLoading.value = false;
+  if (response === true) {
+    localDealStatus.value = 'confirmed';
+  }
+  showFulfillmentModal.value = false;
 }
 
 async function doConfirmRefund() {
@@ -103,13 +149,17 @@ async function doConfirmRefund() {
 
   refundLoading.value = false;
   if (response === true) {
-    isRefunded.value = true;
+    localDealStatus.value = 'refunded';
   }
   showRefundModal.value = false;
 }
 
 function openConfirmReceiptModal() {
   showConfirmModal.value = true;
+}
+
+function openConfirmFulfillmentModal() {
+  showFulfillmentModal.value = true;
 }
 
 function openRefundModal() {
@@ -127,7 +177,7 @@ async function handleReport(dealId: string) {
 
   const response = await productService.sendReport(dealId, selectedRefusalId.value, description);
   if (response === true) {
-    isReported.value = true;
+    localDealStatus.value = 'disputed';
     closeRefusalModal();
   }
 }
@@ -138,11 +188,11 @@ function handleViewProduct(product: Product) {
   router.push(`/product/${productKey}`);
 }
 
-async function handleSendReview(productId: string) {
+async function handleSendReview() {
   if (isAdmin.value) return;
   if (reviewStars.value < 1) return;
   showReviewForm.value = false;
-  const response = await reviewService.createReview(props.dealId!, reviewStars.value, reviewText.value);
+  const response = await reviewService.createReview(props.dealId, reviewStars.value, reviewText.value);
   if (response != null) {
     localHasReview.value = true;
     showReviewForm.value = false;
@@ -189,8 +239,7 @@ async function handleSendReview(productId: string) {
       </div>
 
       <div class="flex flex-col gap-3 px-4 pb-4 sm:flex-row sm:items-center border-t border-gray-700 mt-4 pt-4">
-
-        <template v-if="dealStatus == 'pending' && !isConfirmed && !isReported && !product.is_owner">
+        <template v-if="canConfirmReceipt">
           <button @click="openConfirmReceiptModal()"
             class="flex items-center justify-center gap-2 rounded-lg bg-green-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-green-700 border border-green-500 min-w-[160px]">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -200,20 +249,38 @@ async function handleSendReview(productId: string) {
           </button>
         </template>
 
-        <template v-else-if="isConfirmed || dealStatus === 'confirmed'">
+        <template v-else-if="canConfirmFulfillment">
+          <button @click="openConfirmFulfillmentModal()"
+            class="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-blue-700 border border-blue-500 min-w-[200px]">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            {{ $t('pages.chats.confirmFulfillment') }}
+          </button>
+        </template>
+
+        <template v-else-if="statusBadgeText">
           <div
-            class="flex items-center justify-center gap-2 rounded-lg bg-gray-800 px-6 py-3 text-sm font-semibold text-gray-300 border border-gray-600 min-w-[160px]">
-            <svg class="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd"
+            class="flex items-center justify-center gap-2 rounded-lg bg-gray-800 px-6 py-3 text-sm font-semibold text-gray-300 border border-gray-600 min-w-[200px]">
+            <svg class="w-4 h-4" :class="{
+              'text-yellow-400': isAwaitingSellerFulfillment,
+              'text-blue-400': showFulfillmentConfirmedBadge,
+              'text-green-400': isDealCompleted,
+              'text-orange-400': isDealRefunded,
+            }" fill="currentColor" viewBox="0 0 20 20">
+              <path v-if="isAwaitingSellerFulfillment" fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3a1 1 0 00.293.707l2 2a1 1 0 101.414-1.414L11 9.586V7z"
+                clip-rule="evenodd" />
+              <path v-else fill-rule="evenodd"
                 d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                 clip-rule="evenodd" />
             </svg>
-            {{ $t('pages.chats.confirmReceipted') }}
+            {{ $t(statusBadgeText) }}
           </div>
         </template>
 
-        <template v-if="product.is_owner && dealStatus == 'pending'">
-          <template v-if="!isRefunded">
+        <template v-if="isSeller && effectiveDealStatus === 'pending'">
+          <template v-if="!isDealRefunded">
             <button @click="openRefundModal"
               class="flex items-center justify-center gap-2 rounded-lg bg-orange-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-orange-700 border border-orange-500 min-w-[160px]">
               <RefreshCcw class="w-4 h-4" />
@@ -233,7 +300,7 @@ async function handleSendReview(productId: string) {
           </template>
         </template>
 
-        <template v-if="!product.is_owner">
+        <template v-if="isBuyer">
           <div v-if="canSendReport" class="sm:ml-auto flex flex-col gap-2">
             <button
               @click="openRefusalModal()"
@@ -262,7 +329,7 @@ async function handleSendReview(productId: string) {
         </template>
       </div>
 
-      <template v-if="(isConfirmed || dealStatus === 'completed') && !localHasReview && !product.is_owner && !isAdmin">
+      <template v-if="isDealCompleted && !localHasReview && isBuyer && !isAdmin">
         <div class="px-4 pb-4">
           <button v-if="!showReviewForm" @click="showReviewForm = true"
             class="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 border border-blue-500 w-full">
@@ -282,7 +349,7 @@ async function handleSendReview(productId: string) {
             class="w-full max-h-28 rounded-lg bg-gray-800 border border-gray-700 p-3 text-sm text-gray-200 outline-none focus:border-blue-500"
             :placeholder="$t('pages.chats.writeReview')"></textarea>
 
-          <button @click="handleSendReview(product.id)"
+          <button @click="handleSendReview()"
             class="w-full rounded-lg bg-green-600 px-6 py-3 text-sm font-semibold text-white hover:bg-green-700 transition border border-green-500">
             {{ $t('pages.chats.sendReview') }}
           </button>
@@ -375,6 +442,10 @@ async function handleSendReview(productId: string) {
   <ConfirmWindow :isOpen="showConfirmModal" :title="$t('pages.chats.confirmReceipt')"
     :message="$t('pages.chats.confirmReceiptMessage')" :isLoading="confirmLoading" @confirm="doConfirmDeal"
     @cancel="showConfirmModal = false" />
+
+  <ConfirmWindow :isOpen="showFulfillmentModal" :title="$t('pages.chats.confirmFulfillment')"
+    :message="$t('pages.chats.confirmFulfillmentMessage')" :isLoading="fulfillmentLoading" @confirm="doConfirmFulfillment"
+    @cancel="showFulfillmentModal = false" />
 
   <ConfirmWindow :isOpen="showRefundModal" :title="$t('pages.chats.refund')"
     :message="$t('pages.chats.refundConfirmMessage')" :isLoading="refundLoading" @confirm="doConfirmRefund"

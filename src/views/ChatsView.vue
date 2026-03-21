@@ -89,6 +89,16 @@ function normalizeMessagesChronological(messages: ChatMessageUnion[]): ChatMessa
   return [...messages].sort((a, b) => getMessageTimestamp(a) - getMessageTimestamp(b))
 }
 
+function syncPurchaseMessagesDealStatus(
+  updateMessage: Extract<ChatMessageUnion, { message_type: 'update_deal_status_message' }>,
+) {
+  for (const message of chatMessages.value) {
+    if (message.message_type !== 'purchase_message') continue
+    if (message.deal_id !== updateMessage.deal_id) continue
+    message.deal_status = updateMessage.new_status
+  }
+}
+
 type ChatTimelineItem = {
   message: ChatMessageUnion
   index: number
@@ -520,6 +530,9 @@ onMounted(async () => {
       if (selectedChatId.value === message.chat_room_id) {
         if (!chatMessages.value.some(m => m.id === message.id)) {
           const shouldStickToBottom = isNearBottom()
+          if (message.message_type === 'update_deal_status_message') {
+            syncPurchaseMessagesDealStatus(message)
+          }
           chatMessages.value.push(message)
           totalMessagesInChat.value = Math.max(
             totalMessagesInChat.value + 1,
