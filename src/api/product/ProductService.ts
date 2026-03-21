@@ -528,6 +528,17 @@ export const productService = {
     }
   },
 
+  async confirmFulfillment(dealId: string) {
+    try {
+      const response = await httpClient.patch(
+        `/deal/confirm-fulfillment/${dealId}`,
+      );
+      return response.status === 200;
+    } catch {
+      return false;
+    }
+  },
+
   async sendReport(
     dealId: string,
     reportReasonId: string,
