@@ -39,6 +39,8 @@ const ru = {
     profile: "Профиль",
     account: "Аккаунт",
     settings: "Настройки",
+    language: "Язык",
+    currency: "Валюта",
     balance: "Баланс",
     rating: "Рейтинг",
     email: "Email",

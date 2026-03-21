@@ -671,7 +671,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
             <button @click="switchTab('products')"
               class="flex-1 min-w-0 px-2 sm:px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
               :class="activeTab === 'products'
-                ? 'bg-blue-600 text-white shadow-lg'
+                ? 'market-btn-tab-active'
                 : 'text-gray-400 hover:text-white hover:bg-dark-700/50'">
               <div class="flex items-center justify-center gap-1 sm:gap-2 overflow-hidden">
                 <Package class="w-4 h-4 flex-shrink-0 hidden xs:block" />
@@ -685,7 +685,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
             <button @click="switchTab('reviews')"
               class="flex-1 min-w-0 px-2 sm:px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
               :class="activeTab === 'reviews'
-                ? 'bg-blue-600 text-white shadow-lg'
+                ? 'market-btn-tab-active'
                 : 'text-gray-400 hover:text-white hover:bg-dark-700/50'">
               <div class="flex items-center justify-center gap-1 sm:gap-2 overflow-hidden">
                 <MessageSquare class="w-4 h-4 flex-shrink-0 hidden xs:block" />
@@ -699,7 +699,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
             <button v-if="isOwner" @click="switchTab('purchases')"
               class="flex-1 min-w-0 px-2 sm:px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
               :class="activeTab === 'purchases'
-                ? 'bg-blue-600 text-white shadow-lg'
+                ? 'market-btn-tab-active'
                 : 'text-gray-400 hover:text-white hover:bg-dark-700/50'">
               <div class="flex items-center justify-center gap-1 sm:gap-2 overflow-hidden">
                 <ShoppingBag class="w-4 h-4 flex-shrink-0 hidden xs:block" />
@@ -781,7 +781,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
               <div v-if="currentPageProducts < totalPagesProducts" class="flex justify-center mt-6">
                 <button @click="loadMoreProducts" :disabled="isLoadingMoreProducts"
-                  class="px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed">
+                  class="market-btn market-btn-primary rounded-lg px-6 py-3 font-medium">
                   <span v-if="isLoadingMoreProducts" class="flex items-center gap-2">
                     <Loader />
                     {{ t('common.loading') }}
@@ -841,7 +841,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
                 <div v-if="currentPageReviews < totalPagesReviews" class="flex justify-center mt-6">
                   <button @click="loadMoreReviews" :disabled="isLoadingMoreReviews"
-                    class="px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed">
+                    class="market-btn market-btn-primary rounded-lg px-6 py-3 font-medium">
                     <span v-if="isLoadingMoreReviews" class="flex items-center gap-2">
                       <Loader />
                       {{ t('common.loading') }}
@@ -898,7 +898,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                     <button
                       v-if="deal.chat_room_id"
                       @click.stop="goToChat(deal.chat_room_id)"
-                      class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-sm"
+                      class="market-btn market-btn-primary rounded-lg px-3 py-2 text-xs"
                     >
                       <MessageSquare class="w-4 h-4" />
                       <span>{{ t('common.toChat') }}</span>
@@ -922,7 +922,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 <!-- Кнопка загрузки еще -->
                 <div v-if="currentPagePurchases < totalPagesPurchases" class="flex justify-center mt-6">
                   <button @click="loadMorePurchases" :disabled="isLoadingMorePurchases"
-                    class="px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed">
+                    class="market-btn market-btn-primary rounded-lg px-6 py-3 font-medium">
                     <span v-if="isLoadingMorePurchases" class="flex items-center gap-2">
                       <Loader />
                       {{ t('common.loading') }}
@@ -977,8 +977,8 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 </div>
                 <button
                   @click="copyProfileLink"
-                  class="w-full rounded-lg border border-transparent px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 flex items-center justify-center gap-2"
-                  :class="isCopied ? 'bg-green-600 hover:bg-green-700' : 'bg-button-main hover:bg-blue-700'"
+                  class="market-btn w-full rounded-lg border border-transparent px-4 py-2.5 text-sm text-white"
+                  :class="isCopied ? 'market-btn-success' : 'market-btn-primary text-mainText'"
                 >
                   <Check v-if="isCopied" class="w-4 h-4" />
                   <Copy v-else class="w-4 h-4" />
@@ -1014,6 +1014,18 @@ input[type="number"] {
 @media (max-width: 359px) {
   .profile-products-grid {
     grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1299px) {
+  .profile-products-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1300px) and (max-width: 1535px) {
+  .profile-products-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 

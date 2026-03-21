@@ -39,6 +39,8 @@ const en = {
     profile: "Profile",
     account: "Account",
     settings: "Settings",
+    language: "Language",
+    currency: "Currency",
     balance: "Balance",
     rating: "Rating",
     email: "Email",

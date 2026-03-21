@@ -1125,7 +1125,7 @@ async function createProduct() {
           <button
             v-if="currentStep < TOTAL_STEPS"
             type="button"
-            class="rounded-lg border border-transparent bg-button-main px-4 py-3 text-sm font-semibold text-mainText transition-colors duration-200 hover:bg-blue-700"
+            class="market-btn market-btn-primary rounded-lg px-4 py-3 text-sm text-mainText"
             :disabled="sended"
             @click="goToNextStep"
           >
@@ -1136,7 +1136,7 @@ async function createProduct() {
             v-else
             type="button"
             :disabled="sended || !isFormValid"
-            class="rounded-lg border border-transparent bg-button-main px-4 py-3 text-sm font-semibold text-mainText transition-colors duration-200 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="market-btn market-btn-primary rounded-lg px-4 py-3 text-sm text-mainText"
             @click="createProduct"
           >
             <span v-if="sended" class="flex items-center justify-center gap-2">

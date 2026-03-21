@@ -201,10 +201,10 @@ async function submitFeedback() {
           <button
             type="submit"
             :disabled="isSending || !isFormValid"
-            class="w-full rounded-lg px-4 py-3 text-sm font-semibold transition-colors duration-200 disabled:cursor-not-allowed"
+            class="market-btn w-full rounded-lg px-4 py-3 text-sm font-semibold transition-colors duration-200 disabled:cursor-not-allowed"
             :class="isSending || !isFormValid
               ? 'bg-dark-600 text-gray-400 border border-dark-700'
-              : 'bg-button-main text-mainText hover:bg-blue-700'"
+              : 'market-btn-primary text-mainText'"
           >
             <span class="inline-flex items-center justify-center gap-2">
               <SendHorizontal class="w-4 h-4" />
