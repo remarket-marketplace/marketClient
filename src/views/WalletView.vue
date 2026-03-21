@@ -6,6 +6,7 @@ import {
   ArrowUpFromLine,
   Clock,
   CheckCircle,
+  Flame,
   XCircle,
   Plus,
   Minus,
@@ -13,10 +14,11 @@ import {
   CreditCard,
   Banknote,
   History,
+  Landmark,
   Loader2
 } from 'lucide-vue-next'
 import { walletService } from '@/api/wallet/walletService'
-import type { Balance, WalletHistoryItem } from '@/validation/wallet/wallet'
+import type { Balance, WalletHistoryItem, WalletTopUpProvider } from '@/validation/wallet/wallet'
 import BackButton from '@/components/navigation/BackButton.vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { LocationQueryValue } from 'vue-router'
@@ -42,6 +44,8 @@ const totalPages = ref(1)
 const isFetchingTransactions = ref(false)
 const minDepositRub = ref(10)
 const maxDepositRub = ref(100000)
+const defaultDepositProvider: WalletTopUpProvider = 'platega'
+const selectedDepositProvider = ref<WalletTopUpProvider>(defaultDepositProvider)
 
 const depositAmount = ref('')
 const withdrawAmount = ref('')
@@ -80,6 +84,38 @@ const isDepositAmountValid = computed(() => {
     && depositAmountInRub.value <= maxDepositRub.value
   )
 })
+const canSubmitDeposit = computed(() => {
+  return isDepositAmountValid.value && Boolean(selectedDepositProvider.value)
+})
+
+const depositProviderOptions = computed(() => ([
+  {
+    id: 'platega' as WalletTopUpProvider,
+    title: 'Platega',
+    badge: t('pages.wallet.paymentProviderPlategaBadge'),
+    description: t('pages.wallet.paymentProviderPlategaHint'),
+    icon: Landmark,
+    surfaceClass: 'bg-gradient-to-br from-sky-400/22 via-sky-400/8 to-transparent',
+    activeClass: 'border-sky-400/60 bg-sky-500/10 shadow-[0_0_0_1px_rgba(56,189,248,0.22),0_18px_45px_-25px_rgba(56,189,248,0.45)]',
+    activeIconClass: 'border-sky-300/35 bg-sky-400/15 text-sky-50',
+    activeBadgeClass: 'border-sky-300/30 bg-sky-400/15 text-sky-100',
+    activeIndicatorClass: 'border-sky-300/70 bg-sky-300/18',
+    activeCopyClass: 'text-sky-100/88',
+  },
+  {
+    id: 'lava' as WalletTopUpProvider,
+    title: 'Lava',
+    badge: t('pages.wallet.paymentProviderLavaBadge'),
+    description: t('pages.wallet.paymentProviderLavaHint'),
+    icon: Flame,
+    surfaceClass: 'bg-gradient-to-br from-orange-400/22 via-amber-400/8 to-transparent',
+    activeClass: 'border-orange-400/60 bg-orange-500/10 shadow-[0_0_0_1px_rgba(251,146,60,0.22),0_18px_45px_-25px_rgba(251,146,60,0.42)]',
+    activeIconClass: 'border-orange-300/35 bg-orange-400/15 text-orange-50',
+    activeBadgeClass: 'border-orange-300/30 bg-orange-400/15 text-orange-100',
+    activeIndicatorClass: 'border-orange-300/70 bg-orange-300/18',
+    activeCopyClass: 'text-orange-100/88',
+  },
+]))
 
 const availableBalanceInSelectedCurrency = computed(() =>
   convertCurrencyAmount(balance.value, 'RUB', selectedCurrency.value)
@@ -184,7 +220,7 @@ const handleScroll = async (event: Event) => {
 }
 
 const handleDeposit = async () => {
-  if (!isDepositAmountValid.value) return
+  if (!canSubmitDeposit.value) return
 
   const baseAmount = Math.round(depositAmountInRub.value)
   if (
@@ -195,7 +231,8 @@ const handleDeposit = async () => {
 
   isLoading.value = true
   const paymentUrl = await walletService.TopUpUserBalance(
-    baseAmount
+    baseAmount,
+    selectedDepositProvider.value,
   )
 
   if (paymentUrl) {
@@ -612,9 +649,88 @@ const typeLabel = (type: string) => {
               </p>
             </div>
 
+            <div
+              class="space-y-3"
+              role="radiogroup"
+              :aria-label="$t('pages.wallet.paymentProvider')"
+            >
+              <div class="flex items-center justify-between gap-3">
+                <label class="block text-sm font-medium text-gray-300">
+                  {{ $t('pages.wallet.paymentProvider') }}
+                </label>
+                <span class="text-[10px] font-semibold uppercase tracking-[0.24em] text-gray-500">
+                  {{ $t('pages.wallet.paymentProviderEyebrow') }}
+                </span>
+              </div>
+
+              <div class="grid gap-3 sm:grid-cols-2">
+                <button
+                  v-for="option in depositProviderOptions"
+                  :key="option.id"
+                  type="button"
+                  :aria-pressed="selectedDepositProvider === option.id"
+                  class="group relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-200"
+                  :class="selectedDepositProvider === option.id ? option.activeClass : 'border-dark-600 bg-dark-700/40 hover:border-dark-500 hover:bg-dark-700/70'"
+                  @click="selectedDepositProvider = option.id"
+                >
+                  <div
+                    class="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200"
+                    :class="[option.surfaceClass, selectedDepositProvider === option.id ? 'opacity-100' : 'group-hover:opacity-70']"
+                  />
+
+                  <div class="relative flex items-start gap-3">
+                    <div
+                      class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border transition-colors duration-200"
+                      :class="selectedDepositProvider === option.id ? option.activeIconClass : 'border-dark-600 bg-dark-700/75 text-gray-300'"
+                    >
+                      <component :is="option.icon" class="h-5 w-5" />
+                    </div>
+
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                          <div class="text-base font-semibold text-white">
+                            {{ option.title }}
+                          </div>
+                          <p
+                            class="mt-1 text-xs leading-5 transition-colors duration-200"
+                            :class="selectedDepositProvider === option.id ? option.activeCopyClass : 'text-gray-400'"
+                          >
+                            {{ option.description }}
+                          </p>
+                        </div>
+
+                        <div class="flex shrink-0 items-center gap-2">
+                          <span
+                            class="rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]"
+                            :class="selectedDepositProvider === option.id ? option.activeBadgeClass : 'border-dark-500 bg-dark-700/80 text-gray-400'"
+                          >
+                            {{ option.badge }}
+                          </span>
+                          <span
+                            class="flex h-5 w-5 items-center justify-center rounded-full border transition-colors duration-200"
+                            :class="selectedDepositProvider === option.id ? option.activeIndicatorClass : 'border-dark-500 bg-dark-700/80'"
+                          >
+                            <span
+                              class="h-2 w-2 rounded-full transition-opacity duration-200"
+                              :class="selectedDepositProvider === option.id ? 'bg-white opacity-100' : 'bg-transparent opacity-0'"
+                            />
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              <p class="text-xs text-gray-400">
+                {{ $t('pages.wallet.paymentProviderHint') }}
+              </p>
+            </div>
+
             <button
               @click="handleDeposit"
-              :disabled="!isDepositAmountValid || isLoading"
+              :disabled="!canSubmitDeposit || isLoading"
               class="w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 py-3.5 text-white font-semibold hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-blue-500/20"
             >
               <span v-if="isLoading" class="flex items-center justify-center gap-2">

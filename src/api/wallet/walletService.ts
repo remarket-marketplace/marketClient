@@ -2,9 +2,11 @@ import { ZodError } from "zod";
 import { httpClient } from "..";
 import {
   balanceSchema,
+  topUpBalanceRequestSchema,
   topUpBalanceResponse,
   transactionResponse,
   type Balance,
+  type WalletTopUpProvider,
   type WalletHistoryResponse,
 } from "@/validation/wallet/wallet";
 
@@ -20,11 +22,10 @@ export const walletService = {
     }
   },
 
-  async TopUpUserBalance(amount: number) {
+  async TopUpUserBalance(amount: number, provider: WalletTopUpProvider) {
     try {
-      const response = await httpClient.post("/wallet/top-up-balance", {
-        amount,
-      });
+      const payload = topUpBalanceRequestSchema.parse({ amount, provider });
+      const response = await httpClient.post("/wallet/top-up-balance", payload);
       return topUpBalanceResponse.parse(response.data);
     } catch (e) {
       if (e instanceof ZodError) console.error(e.issues);
