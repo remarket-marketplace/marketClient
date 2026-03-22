@@ -9,7 +9,6 @@ import { ref, computed } from 'vue';
 import { Star, X } from 'lucide-vue-next';
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import { RefreshCcw } from 'lucide-vue-next';
-import { useUserStore } from '@/stores/user';
 import { formatCurrencyAmount } from '@/utils/currency';
 import { buildProductKey } from '@/utils/urlKeys';
 
@@ -28,8 +27,6 @@ const selectedRefusalId = ref<string | null>(null);
 const customReasonText = ref('');
 const MAX_CUSTOM_REASON_LENGTH = 300;
 const otherReasonId = ref<string | null>(null);
-const userStore = useUserStore();
-const isAdmin = computed(() => userStore.user?.role === 'admin')
 
 const showConfirmModal = ref(false);
 const showFulfillmentModal = ref(false);
@@ -189,7 +186,6 @@ function handleViewProduct(product: Product) {
 }
 
 async function handleSendReview() {
-  if (isAdmin.value) return;
   if (reviewStars.value < 1) return;
   showReviewForm.value = false;
   const response = await reviewService.createReview(props.dealId, reviewStars.value, reviewText.value);
@@ -329,7 +325,7 @@ async function handleSendReview() {
         </template>
       </div>
 
-      <template v-if="isDealCompleted && !localHasReview && isBuyer && !isAdmin">
+      <template v-if="isDealCompleted && !localHasReview && isBuyer">
         <div class="px-4 pb-4">
           <button v-if="!showReviewForm" @click="showReviewForm = true"
             class="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 border border-blue-500 w-full">
