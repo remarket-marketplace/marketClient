@@ -39,6 +39,7 @@ const isWelcomeRedirecting = ref(false)
 const usernameError = ref('')
 const emailError = ref('')
 const passwordError = ref('')
+const passwordRepeatError = ref('')
 
 function validateUsername() {
   usernameError.value = ''
@@ -157,7 +158,7 @@ async function sendCode() {
     return
   }
 
-  if (!(await passwordsEquals())) {
+  if (!validatePasswordRepeat()) {
     return
   }
 
@@ -199,11 +200,14 @@ function switchPasswordRepeatVisibility() {
   passwordRepeatHidden.value = !passwordRepeatHidden.value
 }
 
-async function passwordsEquals(): Promise<boolean> {
+function validatePasswordRepeat(): boolean {
+  passwordRepeatError.value = ''
+
   if (password.value !== passwordRepeat.value) {
-    errorMessage.value = t('pages.auth.signUp.passwordsMismatch')
+    passwordRepeatError.value = t('pages.auth.signUp.passwordsMismatch')
     return false
   }
+
   return true
 }
 
@@ -214,7 +218,7 @@ async function completeSignUp() {
 
   normalizeCredentials()
 
-  if (!(await passwordsEquals())) {
+  if (!validatePasswordRepeat()) {
     return
   }
 
@@ -274,6 +278,10 @@ function clearEmailError() {
 
 function clearPasswordError() {
   passwordError.value = ''
+}
+
+function clearPasswordRepeatError() {
+  passwordRepeatError.value = ''
 }
 
 const welcomeText = computed(() => {
@@ -353,7 +361,7 @@ function handleWelcomeFinished() {
               $t('pages.auth.signUp.confirmPassword')
               }}</label>
             <TheInput id="passwordRepeat" v-model="passwordRepeat" :type="passwordRepeatHidden ? 'password' : 'text'" placeholder="••••••••" required
-              :minlength="8" autocomplete="new-password">
+              :minlength="8" autocomplete="new-password" @blur="validatePasswordRepeat" @input="clearPasswordRepeatError">
               <template #append>
                 <button type="button" class="text-gray-400 hover:text-gray-300 transition-colors focus:outline-none p-1"
                   @click="switchPasswordRepeatVisibility">
@@ -362,6 +370,7 @@ function handleWelcomeFinished() {
                 </button>
               </template>
             </TheInput>
+            <p v-if="passwordRepeatError" class="text-gray-300 text-sm mt-1">{{ passwordRepeatError }}</p>
           </div>
           <Captcha @verified="(token: string) => captchaToken = token" />
 
