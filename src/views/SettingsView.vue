@@ -1253,7 +1253,7 @@ onUnmounted(() => {
 
             <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-6 space-y-6">
               <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div class="space-y-3">
+                <div class="flex flex-col gap-3 md:min-h-[12.5rem]">
                   <label class="block text-sm font-medium text-gray-300">
                     {{ $t('pages.settingsPage.currentNickname') }}
                   </label>
@@ -1264,20 +1264,23 @@ onUnmounted(() => {
                       class="text-base font-semibold"
                     />
                   </div>
+                  <p class="hidden min-h-[1.25rem] text-xs leading-5 text-gray-400 opacity-0 select-none md:block">
+                    {{ $t('pages.settingsPage.nicknameRequirements') }}
+                  </p>
                 </div>
 
-                <div class="space-y-3">
+                <div class="flex flex-col gap-3 md:min-h-[12.5rem]">
                   <label class="block text-sm font-medium text-gray-300">
                     {{ $t('pages.settingsPage.newNickname') }}
                     <span class="text-red-400 ml-1">*</span>
                   </label>
-                  <TheInput
+                  <input
                     v-model="changingUsername"
                     :placeholder="$t('pages.settingsPage.enterNewNickname')"
                     type="text"
-                    class="w-full"
-                  />
-                  <p class="text-xs text-gray-400">
+                    class="w-full rounded-xl border border-dark-700 bg-dark-700/40 px-4 py-3 text-mainText transition-all duration-200 outline-none placeholder-gray-400"
+                  >
+                  <p class="min-h-[1.25rem] text-xs leading-5 text-gray-400">
                     {{ $t('pages.settingsPage.nicknameRequirements') }}
                   </p>
                 </div>
