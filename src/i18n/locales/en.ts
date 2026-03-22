@@ -1140,6 +1140,7 @@ const en = {
       paymentProviderHint: "The payment link will be created through the selected service.",
       paymentProviderPlategaHint: "Pay via Platega.",
       paymentProviderLavaHint: "Pay via Lava.",
+      paymentProvidersUnavailable: "Top-up services are temporarily unavailable.",
       proceedToPayment: "Proceed to Payment",
       withdrawAmount: "Withdrawal Amount",
       available: "Available",

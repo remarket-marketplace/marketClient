@@ -1,5 +1,6 @@
 import { ZodError } from "zod";
 import { httpClient } from "..";
+import { ErrorHandler, type ApiError } from "../errorHandler";
 import {
   balanceSchema,
   topUpBalanceRequestSchema,
@@ -26,10 +27,16 @@ export const walletService = {
     try {
       const payload = topUpBalanceRequestSchema.parse({ amount, provider });
       const response = await httpClient.post("/wallet/top-up-balance", payload);
-      return topUpBalanceResponse.parse(response.data);
+      return {
+        data: topUpBalanceResponse.parse(response.data),
+        error: null as ApiError | null,
+      };
     } catch (e) {
       if (e instanceof ZodError) console.error(e.issues);
-      return null;
+      return {
+        data: null,
+        error: ErrorHandler.handleApiError(e),
+      };
     }
   },
 

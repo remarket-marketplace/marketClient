@@ -1137,6 +1137,7 @@ const ru = {
       paymentProviderHint: "Платеж будет создан именно через выбранный сервис.",
       paymentProviderPlategaHint: "Оплата через Platega.",
       paymentProviderLavaHint: "Оплата через Lava.",
+      paymentProvidersUnavailable: "Сервисы пополнения временно недоступны.",
       proceedToPayment: "Перейти к оплате",
       withdrawAmount: "Сумма вывода",
       available: "Доступно",
