@@ -41,6 +41,30 @@ const emailError = ref('')
 const passwordError = ref('')
 const passwordRepeatError = ref('')
 
+function getPasswordRequirementError(): string {
+  if (!/[A-Z]/.test(password.value)) {
+    return t('pages.auth.signUp.passwordUppercaseError')
+  }
+
+  if (!/[a-z]/.test(password.value)) {
+    return t('pages.auth.signUp.passwordLowercaseError')
+  }
+
+  if (!/\d/.test(password.value)) {
+    return t('pages.auth.signUp.passwordDigitError')
+  }
+
+  if (!/[^A-Za-z0-9]/.test(password.value)) {
+    return t('pages.auth.signUp.passwordSpecialCharError')
+  }
+
+  if (password.value.length < 8) {
+    return t('pages.auth.signUp.passwordLengthError')
+  }
+
+  return ''
+}
+
 function validateUsername() {
   usernameError.value = ''
   const normalizedUsername = username.value.trim()
@@ -86,34 +110,8 @@ function validateEmail() {
 }
 
 function validatePassword() {
-  passwordError.value = ''
-
-  if (password.value.length < 8) {
-    passwordError.value = t('pages.auth.signUp.passwordLengthError')
-    return false
-  }
-
-  if (!/[A-Z]/.test(password.value)) {
-    passwordError.value = t('pages.auth.signUp.passwordUppercaseError')
-    return false
-  }
-
-  if (!/[a-z]/.test(password.value)) {
-    passwordError.value = t('pages.auth.signUp.passwordLowercaseError')
-    return false
-  }
-
-  if (!/\d/.test(password.value)) {
-    passwordError.value = t('pages.auth.signUp.passwordDigitError')
-    return false
-  }
-
-  if (!/[^A-Za-z0-9]/.test(password.value)) {
-    passwordError.value = t('pages.auth.signUp.passwordSpecialCharError')
-    return false
-  }
-
-  return true
+  passwordError.value = getPasswordRequirementError()
+  return passwordError.value === ''
 }
 
 function validateForm() {
@@ -277,7 +275,12 @@ function clearEmailError() {
 }
 
 function clearPasswordError() {
-  passwordError.value = ''
+  if (!password.value) {
+    passwordError.value = ''
+    return
+  }
+
+  passwordError.value = getPasswordRequirementError()
 }
 
 function clearPasswordRepeatError() {
@@ -328,7 +331,7 @@ function handleWelcomeFinished() {
             <TheInput id="username" v-model="username" type="text"
               :placeholder="$t('pages.auth.signUp.usernamePlaceholder')" required @blur="validateUsername"
               @input="clearUsernameError" :minlength="4" :maxlength="32" autocomplete="username" />
-            <p v-if="usernameError" class="text-gray-300 text-sm mt-1">{{ usernameError }}</p>
+            <p v-if="usernameError" class="mt-1 mb-3 text-xs leading-5 text-text-secondaryDark">{{ usernameError }}</p>
           </div>
 
           <!-- Email -->
@@ -336,7 +339,7 @@ function handleWelcomeFinished() {
             <label for="email" class="mb-1 block text-sm text-text-secondary">{{ $t('common.email') }}</label>
             <TheInput id="email" v-model="email" type="email" :placeholder="$t('common.email')" required
               @blur="validateEmail" @input="clearEmailError" :maxlength="64" autocomplete="email" />
-            <p v-if="emailError" class="text-gray-300 text-sm mt-1">{{ emailError }}</p>
+            <p v-if="emailError" class="mt-1 mb-3 text-xs leading-5 text-text-secondaryDark">{{ emailError }}</p>
           </div>
 
           <!-- Password с иконкой глаза -->
@@ -352,7 +355,7 @@ function handleWelcomeFinished() {
                 </button>
               </template>
             </TheInput>
-            <p v-if="passwordError" class="text-gray-300 text-sm mt-1">{{ passwordError }}</p>
+            <p v-if="passwordError" class="mt-1 mb-3 text-xs leading-5 text-text-secondaryDark">{{ passwordError }}</p>
           </div>
 
           <!-- Confirm Password с иконкой глаза -->
@@ -370,7 +373,7 @@ function handleWelcomeFinished() {
                 </button>
               </template>
             </TheInput>
-            <p v-if="passwordRepeatError" class="text-gray-300 text-sm mt-1">{{ passwordRepeatError }}</p>
+            <p v-if="passwordRepeatError" class="mt-1 mb-3 text-xs leading-5 text-red-400">{{ passwordRepeatError }}</p>
           </div>
           <Captcha @verified="(token: string) => captchaToken = token" />
 
