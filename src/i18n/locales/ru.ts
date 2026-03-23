@@ -221,7 +221,7 @@ const ru = {
       PENDING: "Ожидает",
       CONFIRMED: "Подтвержден",
       CANCELED: "Отменен",
-      CHARGEBACKED: "Чарджбэк",
+      CHARGEBACKED: "Возврат платежа",
     },
     
     refusalReasons: {
@@ -706,7 +706,7 @@ const ru = {
           "Пароль должен содержать хотя бы одну строчную букву",
         passwordDigitError: "Пароль должен содержать хотя бы одну цифру",
         passwordSpecialCharError:
-          "Минимум 1 спецсимвол",
+          "Пароль должен содержать хотя бы один специальный символ (например: !, #, $, %, ^, &, *)",
         passwordsMustEqual: "Пароли должны совпадать",
         success: "Вы успешно зарегистрировались!",
         completeCaptcha: "Пожалуйста пройдите капчу",
@@ -1137,6 +1137,7 @@ const ru = {
       paymentProviderHint: "Платеж будет создан именно через выбранный сервис.",
       paymentProviderPlategaHint: "Оплата через Platega.",
       paymentProviderLavaHint: "Оплата через Lava.",
+      paymentProvidersUnavailable: "Сервисы пополнения временно недоступны.",
       proceedToPayment: "Перейти к оплате",
       withdrawAmount: "Сумма вывода",
       available: "Доступно",
@@ -1263,7 +1264,7 @@ const ru = {
         moderationReasonPlaceholder: "Например: подтверждено после ручной проверки",
         actionConfirm: "Подтвердить",
         actionCancel: "Отменить",
-        actionChargeback: "Чарджбэк",
+        actionChargeback: "Сделать возврат",
         amount: "Сумма",
         createdAt: "Создан",
         confirmedAt: "Подтвержден",
@@ -1406,7 +1407,7 @@ const ru = {
           wallet_top_up_requested: "Запрос на пополнение",
           wallet_top_up_confirmed: "Пополнение подтверждено",
           wallet_top_up_canceled: "Пополнение отменено",
-          wallet_top_up_chargebacked: "Пополнение откачено чарджбэком",
+          wallet_top_up_chargebacked: "Пополнение возвращено",
           wallet_top_up_moderated_by_admin: "Модерация пополнения администратором",
           feedback_submitted: "Отправка обращения",
           profile_description_updated: "Изменение описания профиля",

@@ -963,7 +963,7 @@ onBeforeUnmount(() => {
             <div class="rounded-2xl border border-slate-700/90 bg-gradient-to-br from-[#1b2838] via-[#16202d] to-[#101822] p-3 shadow-[0_16px_40px_rgba(0,0,0,0.38)] lg:p-4">
               <div class="flex flex-col gap-3 lg:flex-row lg:items-start">
                 <div class="flex items-start">
-                  <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-500/40 bg-[#0f141b]/70 text-[#66c0f4] shadow-inner">
+                  <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-500/40 bg-[#0f141b]/70 text-white shadow-inner">
                     <Icon icon="mdi:steam" class="h-7 w-7" />
                   </span>
                 </div>

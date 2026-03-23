@@ -29,6 +29,7 @@ import {
   getCurrencySymbol,
   preferredCurrency,
 } from '@/utils/currency'
+import { getErrorMessage } from '@/utils/errorsMap'
 import { buildSlugKey } from '@/utils/urlKeys'
 
 const { t } = useI18n()
@@ -46,7 +47,9 @@ const isFetchingTransactions = ref(false)
 const minDepositRub = ref(10)
 const maxDepositRub = ref(100000)
 const defaultDepositProvider: WalletTopUpProvider = 'platega'
+const availableDepositProviders = ref<WalletTopUpProvider[]>([defaultDepositProvider])
 const selectedDepositProvider = ref<WalletTopUpProvider>(defaultDepositProvider)
+const depositErrorMessage = ref<string | null>(null)
 
 const depositAmount = ref('')
 const withdrawAmount = ref('')
@@ -86,33 +89,41 @@ const isDepositAmountValid = computed(() => {
   )
 })
 const canSubmitDeposit = computed(() => {
-  return isDepositAmountValid.value && Boolean(selectedDepositProvider.value)
+  return (
+    isDepositAmountValid.value
+    && Boolean(selectedDepositProvider.value)
+    && depositProviderOptions.value.length > 0
+  )
 })
 
-const depositProviderOptions = computed(() => ([
-  {
-    id: 'platega' as WalletTopUpProvider,
-    title: 'Platega',
-    description: t('pages.wallet.paymentProviderPlategaHint'),
-    icon: Landmark,
-    surfaceClass: 'bg-gradient-to-br from-sky-400/22 via-sky-400/8 to-transparent',
-    activeClass: 'border-sky-400/60 bg-sky-500/10',
-    activeIconClass: 'border-sky-300/35 bg-sky-400/15 text-sky-50',
-    activeIndicatorClass: 'border-sky-300/70 bg-sky-300/18',
-    activeCopyClass: 'text-sky-100/88',
-  },
-  {
-    id: 'lava' as WalletTopUpProvider,
-    title: 'Lava',
-    description: t('pages.wallet.paymentProviderLavaHint'),
-    icon: Flame,
-    surfaceClass: 'bg-gradient-to-br from-orange-400/22 via-amber-400/8 to-transparent',
-    activeClass: 'border-orange-400/60 bg-orange-500/10',
-    activeIconClass: 'border-orange-300/35 bg-orange-400/15 text-orange-50',
-    activeIndicatorClass: 'border-orange-300/70 bg-orange-300/18',
-    activeCopyClass: 'text-orange-100/88',
-  },
-]))
+const depositProviderOptions = computed(() => {
+  const options = [
+    {
+      id: 'platega' as WalletTopUpProvider,
+      title: 'Platega',
+      description: t('pages.wallet.paymentProviderPlategaHint'),
+      icon: Landmark,
+      surfaceClass: 'bg-gradient-to-br from-sky-400/22 via-sky-400/8 to-transparent',
+      activeClass: 'border-sky-400/60 bg-sky-500/10',
+      activeIconClass: 'border-sky-300/35 bg-sky-400/15 text-sky-50',
+      activeIndicatorClass: 'border-sky-300/70 bg-sky-300/18',
+      activeCopyClass: 'text-sky-100/88',
+    },
+    {
+      id: 'lava' as WalletTopUpProvider,
+      title: 'Lava',
+      description: t('pages.wallet.paymentProviderLavaHint'),
+      icon: Flame,
+      surfaceClass: 'bg-gradient-to-br from-orange-400/22 via-amber-400/8 to-transparent',
+      activeClass: 'border-orange-400/60 bg-orange-500/10',
+      activeIconClass: 'border-orange-300/35 bg-orange-400/15 text-orange-50',
+      activeIndicatorClass: 'border-orange-300/70 bg-orange-300/18',
+      activeCopyClass: 'text-orange-100/88',
+    },
+  ]
+
+  return options.filter((option) => availableDepositProviders.value.includes(option.id))
+})
 
 const availableBalanceInSelectedCurrency = computed(() =>
   convertCurrencyAmount(balance.value, 'RUB', selectedCurrency.value)
@@ -161,6 +172,25 @@ function clearAutoDepositQuery() {
   router.replace({ query: nextQuery })
 }
 
+function ensureSelectedDepositProvider() {
+  if (depositProviderOptions.value.some((option) => option.id === selectedDepositProvider.value)) {
+    return
+  }
+
+  selectedDepositProvider.value = depositProviderOptions.value[0]?.id ?? defaultDepositProvider
+}
+
+function openDepositModal() {
+  depositErrorMessage.value = null
+  ensureSelectedDepositProvider()
+  showDepositModal.value = true
+}
+
+function closeDepositModal() {
+  depositErrorMessage.value = null
+  showDepositModal.value = false
+}
+
 function applyAutoDepositFromQuery() {
   const shouldOpen = getSingleQueryValue(route.query.open_deposit) === '1'
   if (!shouldOpen) return
@@ -168,7 +198,7 @@ function applyAutoDepositFromQuery() {
   const amountRubRaw = getSingleQueryValue(route.query.amount_rub)
   const amountRub = Number.parseFloat(amountRubRaw ?? '')
 
-  showDepositModal.value = true
+  openDepositModal()
 
   if (Number.isFinite(amountRub) && amountRub > 0) {
     depositAmount.value = resolveDepositAmountFromRub(amountRub)
@@ -185,6 +215,10 @@ onMounted(async () => {
     balance.value = userBalance.balance
     minDepositRub.value = userBalance.top_up_min_amount
     maxDepositRub.value = userBalance.top_up_max_amount
+    availableDepositProviders.value = userBalance.available_top_up_providers.length > 0
+      ? userBalance.available_top_up_providers
+      : [defaultDepositProvider]
+    ensureSelectedDepositProvider()
   }
 
   await loadHistory()
@@ -218,6 +252,7 @@ const handleScroll = async (event: Event) => {
 
 const handleDeposit = async () => {
   if (!canSubmitDeposit.value) return
+  depositErrorMessage.value = null
 
   const baseAmount = Math.round(depositAmountInRub.value)
   if (
@@ -227,17 +262,18 @@ const handleDeposit = async () => {
   ) return
 
   isLoading.value = true
-  const paymentUrl = await walletService.TopUpUserBalance(
+  const result = await walletService.TopUpUserBalance(
     baseAmount,
     selectedDepositProvider.value,
   )
 
-  if (paymentUrl) {
-    window.location.href = paymentUrl.payment_url
+  if (result.data) {
+    window.location.href = result.data.payment_url
+    return
   }
 
+  depositErrorMessage.value = getErrorMessage(result.error, t)
   isLoading.value = false
-  showDepositModal.value = false
 }
 
 const handleWithdraw = () => {
@@ -438,7 +474,7 @@ const typeLabel = (type: string) => {
               <!-- Quick actions -->
               <div class="grid grid-cols-2 gap-3">
                 <button 
-                  @click="showDepositModal = true"
+                  @click="openDepositModal"
                   class="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-dark-600 bg-dark-700/50 hover:bg-dark-700 transition-all duration-200"
                 >
                   <div class="w-10 h-10 rounded-full border border-dark-500 bg-dark-700/70 flex items-center justify-center">
@@ -619,7 +655,7 @@ const typeLabel = (type: string) => {
             </div>
             <button 
               type="button"
-              @click="showDepositModal = false"
+              @click="closeDepositModal"
               class="rounded-full p-1 text-gray-400 transition-colors duration-150 hover:text-gray-300"
               aria-label="Close"
             >
@@ -665,7 +701,10 @@ const typeLabel = (type: string) => {
                 </span>
               </div>
 
-              <div class="grid gap-3">
+              <div
+                v-if="depositProviderOptions.length > 0"
+                class="grid gap-3"
+              >
                 <button
                   v-for="option in depositProviderOptions"
                   :key="option.id"
@@ -714,10 +753,23 @@ const typeLabel = (type: string) => {
                   </div>
                 </button>
               </div>
+              <div
+                v-else
+                class="rounded-2xl border border-rose-500/20 bg-rose-500/8 px-4 py-3 text-sm text-rose-200"
+              >
+                {{ $t('pages.wallet.paymentProvidersUnavailable') }}
+              </div>
 
               <p class="text-xs text-gray-400">
                 {{ $t('pages.wallet.paymentProviderHint') }}
               </p>
+            </div>
+
+            <div
+              v-if="depositErrorMessage"
+              class="rounded-xl border border-rose-500/20 bg-rose-500/8 px-4 py-3 text-sm text-rose-200"
+            >
+              {{ depositErrorMessage }}
             </div>
 
             <button
