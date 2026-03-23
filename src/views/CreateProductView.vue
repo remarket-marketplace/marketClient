@@ -2,6 +2,7 @@
 import { categoryService } from '@/api/category/CategoryService'
 import { productService } from '@/api/product/ProductService'
 import { raikaService } from '@/api/raika/RaikaService'
+import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import CustomSelect from '@/components/CustomSelect.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import FileUploader from '@/components/FileUploader.vue'
@@ -63,6 +64,7 @@ const draftImages = ref<string[]>([])
 const currentStep = ref<StepNumber>(1)
 const showStepIssues = ref(false)
 const stepTransitionName = ref<'wizard-step-forward' | 'wizard-step-back'>('wizard-step-forward')
+const showSubmittedToModerationModal = ref(false)
 
 const selectedCurrency = computed(() => preferredCurrency.value)
 const currencySymbol = computed(() => getCurrencySymbol(selectedCurrency.value))
@@ -594,10 +596,10 @@ async function createProduct() {
     }
 
     const result = await productService.createProduct(productDataObj, images.value)
-    const username = store.user?.username
 
-    if (result && username) {
-      await router.push(`/user/${username}`)
+    if (result) {
+      clearForm()
+      showSubmittedToModerationModal.value = true
     } else {
       errorMessage.value = t('pages.forms.createProduct.errorCreatingProduct')
     }
@@ -620,6 +622,20 @@ async function createProduct() {
   } finally {
     sended.value = false
   }
+}
+
+function closeSubmittedToModerationModal() {
+  showSubmittedToModerationModal.value = false
+}
+
+async function goToProfileAfterCreate() {
+  const username = store.user?.username
+  showSubmittedToModerationModal.value = false
+  if (username) {
+    await router.push(`/user/${username}`)
+    return
+  }
+  await router.push('/')
 }
 </script>
 
@@ -1157,6 +1173,16 @@ async function createProduct() {
         </div>
       </div>
     </div>
+
+    <ConfirmWindow
+      :is-open="showSubmittedToModerationModal"
+      :title="$t('pages.forms.createProduct.submittedToModerationTitle')"
+      :message="$t('pages.forms.createProduct.submittedToModerationMessage')"
+      :confirm-text="$t('pages.forms.createProduct.submittedToModerationPrimaryAction')"
+      :cancel-text="$t('pages.forms.createProduct.submittedToModerationSecondaryAction')"
+      @confirm="goToProfileAfterCreate"
+      @cancel="closeSubmittedToModerationModal"
+    />
   </div>
 </template>
 

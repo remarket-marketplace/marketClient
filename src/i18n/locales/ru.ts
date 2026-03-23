@@ -1473,6 +1473,10 @@ const ru = {
         validationPriceRange: "Цена: от {min} до {max}.",
         validationCountRange: "Количество: от {min} до {max}.",
         validationImagesRange: "Изображения: от {min} до {max}.",
+        submittedToModerationTitle: "Товар отправлен на модерацию",
+        submittedToModerationMessage: "Мы получили ваш товар и отправили его на проверку. После одобрения он появится в каталоге.",
+        submittedToModerationPrimaryAction: "Перейти в профиль",
+        submittedToModerationSecondaryAction: "Создать еще",
         termsNote: "Создавая товар, вы соглашаетесь с нашими ",
         termsLink: "условиями использования"
       },
