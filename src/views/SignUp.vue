@@ -152,7 +152,7 @@ function validatePassword() {
 function validateForm() {
   const isUsernameValid = validateUsername()
   const isEmailValid = validateEmail()
-  const isPasswordValid = validatePassword(false)
+  const isPasswordValid = validatePassword()
 
   return isUsernameValid && isEmailValid && isPasswordValid
 }
@@ -233,12 +233,14 @@ function switchPasswordRepeatVisibility() {
   passwordRepeatHidden.value = !passwordRepeatHidden.value
 }
 
-function validatePasswordRepeat(): boolean {
+function validatePasswordRepeat(showFormError = true): boolean {
   passwordRepeatError.value = ''
 
   if (password.value !== passwordRepeat.value) {
     passwordRepeatError.value = t('pages.auth.signUp.passwordsMismatch')
-    errorMessage.value = t('pages.auth.signUp.passwordsMismatch')
+    if (showFormError) {
+      errorMessage.value = t('pages.auth.signUp.passwordsMismatch')
+    }
     return false
   }
   passwordRepeatError.value = ''
@@ -320,17 +322,11 @@ function clearPasswordError() {
 }
 
 function clearPasswordRepeatError() {
-  passwordRepeatError.value = ''
-}
-
-function validatePasswordRepeat() {
   if (!passwordRepeat.value.length) {
     passwordRepeatError.value = ''
     return
   }
-  passwordRepeatError.value = password.value === passwordRepeat.value
-    ? ''
-    : t('pages.auth.signUp.passwordsMismatch')
+  void validatePasswordRepeat(false)
 }
 
 const welcomeText = computed(() => {
@@ -415,7 +411,7 @@ function handleWelcomeFinished() {
               $t('pages.auth.signUp.confirmPassword')
               }}</label>
             <TheInput id="passwordRepeat" v-model="passwordRepeat" :type="passwordRepeatHidden ? 'password' : 'text'" placeholder="••••••••" required
-              :minlength="8" autocomplete="new-password" @input="validatePasswordRepeat" @blur="validatePasswordRepeat">
+              :minlength="8" autocomplete="new-password" @input="clearPasswordRepeatError" @blur="clearPasswordRepeatError">
               <template #append>
                 <button type="button" class="text-gray-400 hover:text-gray-300 transition-colors focus:outline-none p-1"
                   @click="switchPasswordRepeatVisibility">
