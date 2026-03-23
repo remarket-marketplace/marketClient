@@ -706,7 +706,7 @@ const en = {
           "Password must contain at least one lowercase letter",
         passwordDigitError: "Password must contain at least one digit",
         passwordSpecialCharError:
-          "Password must contain at least one special character (!@#$%^&*)",
+          "Password must contain at least one special character (for example: !, #, $, %, ^, &, *)",
         passwordsMustEqual: "Passwords must be the equal",
         success: "You have successfully registered!",
         completeCaptcha: "Please complete captcha",
