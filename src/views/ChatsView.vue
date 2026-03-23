@@ -41,6 +41,8 @@ const store = useUserStore()
 const user = ref<UserRead | null>(null)
 const newMessage = ref('')
 const floatingDateLabel = ref<string | null>(null)
+const floatingDateOpacity = ref(1)
+const floatingDateOffsetY = ref(0)
 const isFloatingDateVisible = ref(false)
 let floatingDateRafId: number | null = null
 let floatingDateHideTimerId: number | null = null
@@ -55,6 +57,10 @@ const topLoadThresholdPx = 8
 const previousMessageScrollTop = ref(0)
 const hasUserScrolledAwayFromTop = ref(false)
 const bottomAutoScrollThresholdPx = 120
+const floatingDateTopOffsetPx = 8
+const floatingDateMergeStartDistancePx = 56
+const floatingDateMergeEndDistancePx = 8
+const floatingDateMaxOffsetPx = 14
 
 function getLastMessageTimestamp(chat: ChatListItem): number {
   const createdAt = chat.last_message?.created_at
@@ -176,6 +182,61 @@ const chatTimelineItems = computed<ChatTimelineItem[]>(() => {
   })
 })
 
+const floatingDateDisplayLabel = computed(() => {
+  if (!floatingDateLabel.value) return null
+  if (isMobile.value) return floatingDateLabel.value
+  return isFloatingDateVisible.value ? floatingDateLabel.value : null
+})
+
+function resetFloatingDateMergeVisuals() {
+  floatingDateOpacity.value = 1
+  floatingDateOffsetY.value = 0
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value))
+}
+
+function updateFloatingDateMergeVisuals(container: HTMLElement, dateKey: string | null) {
+  resetFloatingDateMergeVisuals()
+  if (!isMobile.value || !dateKey) return
+
+  const containerTop = container.getBoundingClientRect().top
+  const dividerNodes = container.querySelectorAll<HTMLElement>(
+    `[data-chat-date-divider][data-chat-date-key="${dateKey}"]`
+  )
+  if (!dividerNodes.length) return
+
+  let nearestVisibleDivider: HTMLElement | null = null
+  let nearestTop = Number.POSITIVE_INFINITY
+
+  for (const divider of dividerNodes) {
+    const rect = divider.getBoundingClientRect()
+    if (rect.bottom <= containerTop + 1) continue
+    if (rect.top < nearestTop) {
+      nearestVisibleDivider = divider
+      nearestTop = rect.top
+    }
+  }
+
+  if (!nearestVisibleDivider) return
+
+  const dividerTop = nearestVisibleDivider.getBoundingClientRect().top
+  const floatingTop = containerTop + floatingDateTopOffsetPx
+  const distanceToDivider = dividerTop - floatingTop
+  const range = floatingDateMergeStartDistancePx - floatingDateMergeEndDistancePx
+  if (range <= 0) return
+
+  const progress = clamp(
+    (distanceToDivider - floatingDateMergeEndDistancePx) / range,
+    0,
+    1
+  )
+
+  floatingDateOpacity.value = progress
+  floatingDateOffsetY.value = (1 - progress) * floatingDateMaxOffsetPx
+}
+
 function updateFloatingDateLabel() {
   const container = messageContainerRef.value
   if (
@@ -186,17 +247,20 @@ function updateFloatingDateLabel() {
     || chatTimelineItems.value.length === 0
   ) {
     floatingDateLabel.value = null
+    resetFloatingDateMergeVisuals()
     return
   }
 
   const messageNodes = container.querySelectorAll<HTMLElement>('[data-chat-message-index]')
   if (!messageNodes.length) {
     floatingDateLabel.value = null
+    resetFloatingDateMergeVisuals()
     return
   }
 
   const containerTop = container.getBoundingClientRect().top
   let activeIndex: number | null = null
+  let activeNode: HTMLElement | null = null
 
   for (let i = 0; i < messageNodes.length; i++) {
     const node = messageNodes[i]
@@ -206,6 +270,7 @@ function updateFloatingDateLabel() {
       const index = Number(node.dataset.chatMessageIndex)
       if (Number.isFinite(index)) {
         activeIndex = index
+        activeNode = node
       }
       break
     }
@@ -216,11 +281,35 @@ function updateFloatingDateLabel() {
     const lastIndex = Number(lastNode?.dataset.chatMessageIndex)
     if (Number.isFinite(lastIndex)) {
       activeIndex = lastIndex
+      activeNode = lastNode ?? null
     }
   }
 
   const activeItem = activeIndex !== null ? chatTimelineItems.value[activeIndex] : null
-  floatingDateLabel.value = activeItem?.dateLabel ?? null
+  if (!activeItem?.dateLabel) {
+    floatingDateLabel.value = null
+    resetFloatingDateMergeVisuals()
+    return
+  }
+
+  // Avoid duplicating the floating label when inline date divider is already visible at the top.
+  if (!isMobile.value && activeNode && activeItem.showDateDivider) {
+    const activeNodeTop = activeNode.getBoundingClientRect().top
+    const isDividerVisibleNearTop = activeNodeTop <= containerTop + 44
+    if (isDividerVisibleNearTop) {
+      floatingDateLabel.value = null
+      resetFloatingDateMergeVisuals()
+      return
+    }
+  }
+
+  updateFloatingDateMergeVisuals(container, activeItem.dateKey)
+  if (isMobile.value && floatingDateOpacity.value <= 0.02) {
+    floatingDateLabel.value = null
+    return
+  }
+
+  floatingDateLabel.value = activeItem.dateLabel
 }
 
 function scheduleFloatingDateLabelUpdate() {
@@ -432,6 +521,7 @@ watch(selectedChatId, () => {
   isMessageLimitLockedByServer.value = false
   sendErrorMessage.value = null
   floatingDateLabel.value = null
+  resetFloatingDateMergeVisuals()
   isFloatingDateVisible.value = false
   if (floatingDateHideTimerId !== null) {
     clearTimeout(floatingDateHideTimerId)
@@ -876,7 +966,11 @@ async function sendMessage(payload: { files: File[] }) {
             </div>
 
             <div class="relative flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden">
-              <FloatingDateHeader :label="isFloatingDateVisible ? floatingDateLabel : null" />
+              <FloatingDateHeader
+                :label="floatingDateDisplayLabel"
+                :opacity="floatingDateOpacity"
+                :offset-y="floatingDateOffsetY"
+              />
               <div ref="messageContainerRef" class="no-scrollbar flex flex-1 min-h-0 min-w-0 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain pb-2"
                 @scroll="handleScroll"
                 @wheel.passive="cancelChatPinning"
@@ -895,7 +989,12 @@ async function sendMessage(payload: { files: File[] }) {
                     <div v-if="chatTimelineItems.length > 0" class="flex min-w-0 flex-1 flex-col justify-start">
                       <div class="flex min-w-0 flex-col pt-2 pb-18">
                         <template v-for="item in chatTimelineItems" :key="item.message.id">
-                          <div v-if="item.showDateDivider && item.dateLabel" class="flex justify-center py-2">
+                          <div
+                            v-if="item.showDateDivider && item.dateLabel"
+                            class="flex justify-center py-2"
+                            data-chat-date-divider
+                            :data-chat-date-key="item.dateKey ?? ''"
+                          >
                             <span class="rounded-full border border-dark-600/70 bg-dark-900/70 px-3 py-1 text-xs font-medium text-mainText/90">
                               {{ item.dateLabel }}
                             </span>
