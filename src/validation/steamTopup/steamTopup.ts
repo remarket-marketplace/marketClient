@@ -85,8 +85,17 @@ export const steamTopUpPayOrderSchema = z.object({
 }).strip()
 
 export const steamTopUpPayOrderInputSchema = z.object({
-  payment_method: z.enum(['balance', 'card', 'sbp', 'lava']).default('balance'),
+  payment_method: z.literal('lava').default('lava'),
   promo_code: z.string().trim().max(64).optional(),
+}).strip()
+
+export const steamTopUpCreatePaymentSchema = z.object({
+  account: z.string(),
+  charged_amount_rub: z.number(),
+  payment_url: z.string().url(),
+  payment_status: z.string(),
+  provider: z.string(),
+  provider_tx_id: z.string(),
 }).strip()
 
 const steamTopUpAccountSchema = z
@@ -118,9 +127,16 @@ export const steamTopUpCreateOrderSchema = z.object({
   }
 })
 
+export const steamTopUpCreatePaymentInputSchema = z.object({
+  account: steamTopUpAccountSchema,
+  amount_rub: z.number().positive(),
+}).strip()
+
 export type SteamTopUpService = z.infer<typeof steamTopUpServiceSchema>
 export type SteamTopUpServicesResponse = z.infer<typeof steamTopUpServicesSchema>
 export type SteamTopUpOrder = z.infer<typeof steamTopUpOrderSchema>
 export type SteamTopUpPayOrderResponse = z.infer<typeof steamTopUpPayOrderSchema>
 export type SteamTopUpPayOrderPayload = z.infer<typeof steamTopUpPayOrderInputSchema>
 export type SteamTopUpCreateOrderPayload = z.infer<typeof steamTopUpCreateOrderSchema>
+export type SteamTopUpCreatePaymentResponse = z.infer<typeof steamTopUpCreatePaymentSchema>
+export type SteamTopUpCreatePaymentPayload = z.infer<typeof steamTopUpCreatePaymentInputSchema>

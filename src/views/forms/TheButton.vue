@@ -12,7 +12,7 @@ defineProps<{
     <button
         type="submit"
         :disabled="sended"
-        class="w-full rounded-lg bg-button-main py-2 px-2 text-mainText font-semibold transition-colors duration-200 hover:bg-blue-700"
+        class="market-btn market-btn-primary w-full rounded-lg px-2 py-2 text-mainText"
         >
         {{ buttonText }}
     </button>

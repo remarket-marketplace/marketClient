@@ -89,6 +89,17 @@ type ChatTimelineItem = {
 
 const msPerDay = 24 * 60 * 60 * 1000
 
+function getMessageTimestamp(message: ChatMessageUnion): number {
+    const createdAt = message.created_at
+    if (!createdAt) return 0
+    const timestamp = new Date(createdAt).getTime()
+    return Number.isFinite(timestamp) ? timestamp : 0
+}
+
+function normalizeMessagesChronological(messages: ChatMessageUnion[]): ChatMessageUnion[] {
+    return [...messages].sort((a, b) => getMessageTimestamp(a) - getMessageTimestamp(b))
+}
+
 function toLocalDayStart(date: Date): Date {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate())
 }
@@ -438,7 +449,7 @@ async function loadMoreMessages() {
     )
 
     if (response.messages.length) {
-        chatMessages.value.unshift(...response.messages)
+        chatMessages.value.unshift(...normalizeMessagesChronological(response.messages))
         currentPage.value++
         totalPages.value = response.totalPages
         hasMoreMessages.value = currentPage.value < totalPages.value
@@ -492,7 +503,7 @@ async function loadChatMessages(chatId: string) {
         }
 
         const response = await chatsService.getChatMessages(chatId, 1, perPage.value)
-        chatMessages.value = response.messages
+        chatMessages.value = normalizeMessagesChronological(response.messages)
         totalPages.value = response.totalPages
         hasMoreMessages.value = 1 < totalPages.value
         scheduleFloatingDateLabelUpdate()

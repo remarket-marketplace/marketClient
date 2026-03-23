@@ -42,6 +42,7 @@ export const DealStatusMessageSchema = BaseMessageSchema.extend({
   message_type: z.literal('update_deal_status_message'),
   product: ProductSchema,
   new_status: z.string(),
+  deal_id: z.uuid(),
 })
 
 export const ReviewMessageSchema = BaseMessageSchema.extend({

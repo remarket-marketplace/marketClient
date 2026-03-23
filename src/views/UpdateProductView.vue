@@ -669,7 +669,7 @@ async function updateProduct() {
       <button
         type="button"
         :disabled="sended || !isFormValid"
-        class="w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 py-3.5 text-white font-semibold hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-blue-500/20"
+        class="market-btn market-btn-primary w-full rounded-xl py-3.5"
         @click="updateProduct"
       >
         <span v-if="sended" class="flex items-center justify-center gap-2">
