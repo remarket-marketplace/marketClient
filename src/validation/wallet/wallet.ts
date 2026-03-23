@@ -1,9 +1,17 @@
 import z from "zod";
 
+export const walletTopUpProviderSchema = z.enum(["platega", "lava"]);
+
 export const balanceSchema = z.object({
   balance: z.number(),
   top_up_min_amount: z.number().int().positive(),
   top_up_max_amount: z.number().int().positive(),
+  available_top_up_providers: z.array(walletTopUpProviderSchema).default(["platega"]),
+});
+
+export const topUpBalanceRequestSchema = z.object({
+  amount: z.number().int().positive(),
+  provider: walletTopUpProviderSchema.default("platega"),
 });
 
 export const topUpBalanceResponse = z.object({
@@ -21,6 +29,8 @@ export const transactionResponse = z.object({
 });
 
 export type Balance = z.infer<typeof balanceSchema>;
+export type WalletTopUpProvider = z.infer<typeof walletTopUpProviderSchema>;
+export type TopUpBalanceRequest = z.infer<typeof topUpBalanceRequestSchema>;
 export type TopUpUserBalance = z.infer<typeof topUpBalanceResponse>;
 export type Transaction = z.infer<typeof transactionResponse>
 

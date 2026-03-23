@@ -132,6 +132,10 @@ function getMessageTimestamp(message: ChatMessageUnion): number {
     return Number.isFinite(timestamp) ? timestamp : 0
 }
 
+function normalizeMessagesChronological(messages: ChatMessageUnion[]): ChatMessageUnion[] {
+    return [...messages].sort((a, b) => getMessageTimestamp(a) - getMessageTimestamp(b))
+}
+
 type ChatTimelineItem = {
     message: ChatMessageUnion
     index: number
@@ -614,7 +618,7 @@ async function loadMoreMessages() {
     )
 
     if (response.messages.length) {
-        chatMessages.value.unshift(...response.messages)
+        chatMessages.value.unshift(...normalizeMessagesChronological(response.messages))
         messagesCurrentPage.value++
         messagesTotalPages.value = response.totalPages
         hasMoreMessages.value = messagesCurrentPage.value < messagesTotalPages.value
@@ -656,7 +660,7 @@ async function loadChatMessages(chatId: string) {
         updateUrlChatId(chatId)
 
         const response = await chatsService.getChatMessages(chatId, 1, messagesPerPage.value)
-        chatMessages.value = response.messages
+        chatMessages.value = normalizeMessagesChronological(response.messages)
         messagesTotalPages.value = response.totalPages
         hasMoreMessages.value = 1 < messagesTotalPages.value
         scheduleFloatingDateLabelUpdate()

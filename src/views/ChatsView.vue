@@ -85,6 +85,20 @@ function getMessageTimestamp(message: ChatMessageUnion): number {
   return Number.isFinite(timestamp) ? timestamp : 0
 }
 
+function normalizeMessagesChronological(messages: ChatMessageUnion[]): ChatMessageUnion[] {
+  return [...messages].sort((a, b) => getMessageTimestamp(a) - getMessageTimestamp(b))
+}
+
+function syncPurchaseMessagesDealStatus(
+  updateMessage: Extract<ChatMessageUnion, { message_type: 'update_deal_status_message' }>,
+) {
+  for (const message of chatMessages.value) {
+    if (message.message_type !== 'purchase_message') continue
+    if (message.deal_id !== updateMessage.deal_id) continue
+    message.deal_status = updateMessage.new_status
+  }
+}
+
 type ChatTimelineItem = {
   message: ChatMessageUnion
   index: number
@@ -516,6 +530,9 @@ onMounted(async () => {
       if (selectedChatId.value === message.chat_room_id) {
         if (!chatMessages.value.some(m => m.id === message.id)) {
           const shouldStickToBottom = isNearBottom()
+          if (message.message_type === 'update_deal_status_message') {
+            syncPurchaseMessagesDealStatus(message)
+          }
           chatMessages.value.push(message)
           totalMessagesInChat.value = Math.max(
             totalMessagesInChat.value + 1,
@@ -635,7 +652,7 @@ async function loadMoreMessages() {
   totalMessagesInChat.value = response.total
 
   if (response.messages.length) {
-    chatMessages.value.unshift(...response.messages)
+    chatMessages.value.unshift(...normalizeMessagesChronological(response.messages))
     currentPage.value++
     totalPages.value = response.totalPages
     hasMoreMessages.value = currentPage.value < totalPages.value
@@ -679,7 +696,7 @@ async function loadChatMessages(chatId: string) {
     updateUrlChatId(chatId)
 
     const response = await chatsService.getChatMessages(chatId, 1, perPage.value)
-    chatMessages.value = response.messages
+    chatMessages.value = normalizeMessagesChronological(response.messages)
     totalMessagesInChat.value = response.total
     totalPages.value = response.totalPages
     hasMoreMessages.value = 1 < totalPages.value
@@ -784,13 +801,12 @@ async function sendMessage(payload: { files: File[] }) {
 
     <div v-else class="w-full flex flex-1 overflow-hidden">
       <div v-if="!isMobile || (isMobile && mobileMode === 'chats')"
-        class="h-full lg:max-w-sm flex flex-col md:pr-5 transition-all duration-300 min-h-0" :class="[
+        class="md:h-full lg:max-w-sm flex flex-col md:pr-5 transition-all duration-300 min-h-0" :class="[
           isMobile && mobileMode === 'chats'
-            ? 'fixed inset-0 z-10 w-full bg-background'
+            ? 'fixed inset-x-0 top-0 bottom-14 z-10 w-full bg-background'
             : 'w-3/12',
         ]">
         <div class="h-full flex flex-col border-dark-600 lg:border-1 md:rounded-3xl" :class="{
-          'pb-20': isMobile && mobileMode === 'chats',
           'pt-16': isMobile && mobileMode === 'chats',
         }">
           <p class="my-4 text-2xl px-4 text-mainText font-semibold">

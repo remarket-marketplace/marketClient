@@ -180,7 +180,7 @@ function startSelling() {
           <div class="mt-6 flex justify-center">
             <button
               type="button"
-              class="inline-flex min-w-[240px] sm:min-w-[320px] items-center justify-center gap-2 rounded-xl bg-button-main text-mainText px-10 py-4 text-base sm:text-lg font-semibold hover:bg-blue-700 transition-colors"
+              class="market-btn market-btn-primary min-w-[240px] rounded-xl px-10 py-4 text-base text-mainText sm:min-w-[320px] sm:text-lg"
               @click="startSelling"
             >
               {{ $t('pages.becomeSeller.startSelling') }}

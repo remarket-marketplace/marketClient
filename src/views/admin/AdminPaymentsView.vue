@@ -9,7 +9,12 @@ import {
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { Loader2, SlidersHorizontal, WalletCards } from 'lucide-vue-next'
-import { adminService, type AdminPayment, type PaymentStatus } from '@/api/admin/AdminService'
+import {
+  adminService,
+  type AdminPayment,
+  type PaymentModerationStatus,
+  type PaymentStatus,
+} from '@/api/admin/AdminService'
 import BackButton from '@/components/navigation/BackButton.vue'
 import SearchField from '@/components/SearchField.vue'
 import CustomSelect from '@/components/CustomSelect.vue'
@@ -39,7 +44,7 @@ const dateTo = ref('')
 
 const moderationModalOpen = ref(false)
 const paymentToModerate = ref<AdminPayment | null>(null)
-const moderationTargetStatus = ref<PaymentStatus | null>(null)
+const moderationTargetStatus = ref<PaymentModerationStatus | null>(null)
 const moderationReason = ref('')
 
 let filterDebounce: ReturnType<typeof setTimeout> | null = null
@@ -54,10 +59,10 @@ const statusOptions = computed(() => [
   { value: 'CHARGEBACKED', label: t('common.paymentStatuses.CHARGEBACKED') },
 ])
 
-const allowedTransitions: Record<PaymentStatus, PaymentStatus[]> = {
-  PENDING: ['CONFIRMED', 'CANCELED', 'CHARGEBACKED'],
-  CANCELED: ['CONFIRMED', 'CHARGEBACKED'],
-  CONFIRMED: ['CANCELED', 'CHARGEBACKED'],
+const allowedTransitions: Record<PaymentStatus, PaymentModerationStatus[]> = {
+  PENDING: ['CONFIRMED', 'CANCELED'],
+  CANCELED: ['CONFIRMED'],
+  CONFIRMED: ['CANCELED'],
   CHARGEBACKED: [],
 }
 
@@ -106,7 +111,7 @@ function getStatusBadgeClass(status: PaymentStatus): string {
   return map[status]
 }
 
-function canSetStatus(payment: AdminPayment, targetStatus: PaymentStatus): boolean {
+function canSetStatus(payment: AdminPayment, targetStatus: PaymentModerationStatus): boolean {
   return allowedTransitions[payment.status].includes(targetStatus)
 }
 
@@ -114,7 +119,7 @@ function openUserProfile(username: string) {
   router.push(`/user/${username}`)
 }
 
-function openModerationModal(payment: AdminPayment, status: PaymentStatus) {
+function openModerationModal(payment: AdminPayment, status: PaymentModerationStatus) {
   paymentToModerate.value = payment
   moderationTargetStatus.value = status
   moderationReason.value = ''
@@ -365,14 +370,6 @@ watch(watchedFilters, () => {
               {{ $t('pages.admin.paymentsPage.actionCancel') }}
             </button>
 
-            <button
-              v-if="canSetStatus(payment, 'CHARGEBACKED')"
-              type="button"
-              class="admin-btn admin-btn-accent admin-btn-sm text-xs"
-              @click="openModerationModal(payment, 'CHARGEBACKED')"
-            >
-              {{ $t('pages.admin.paymentsPage.actionChargeback') }}
-            </button>
           </div>
         </article>
 
