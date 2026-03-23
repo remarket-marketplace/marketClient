@@ -41,6 +41,30 @@ const emailError = ref('')
 const passwordError = ref('')
 const passwordRepeatError = ref('')
 
+function getPasswordRequirementError(): string {
+  if (!/[A-Z]/.test(password.value)) {
+    return t('pages.auth.signUp.passwordUppercaseError')
+  }
+
+  if (!/[a-z]/.test(password.value)) {
+    return t('pages.auth.signUp.passwordLowercaseError')
+  }
+
+  if (!/\d/.test(password.value)) {
+    return t('pages.auth.signUp.passwordDigitError')
+  }
+
+  if (!/[^A-Za-z0-9]/.test(password.value)) {
+    return t('pages.auth.signUp.passwordSpecialCharError')
+  }
+
+  if (password.value.length < 8) {
+    return t('pages.auth.signUp.passwordLengthError')
+  }
+
+  return ''
+}
+
 const passwordHints = computed(() => {
   const value = password.value
   return [
@@ -121,34 +145,8 @@ function validateEmail() {
 }
 
 function validatePassword() {
-  passwordError.value = ''
-
-  if (password.value.length < 8) {
-    passwordError.value = t('pages.auth.signUp.passwordLengthError')
-    return false
-  }
-
-  if (!/[A-Z]/.test(password.value)) {
-    passwordError.value = t('pages.auth.signUp.passwordUppercaseError')
-    return false
-  }
-
-  if (!/[a-z]/.test(password.value)) {
-    passwordError.value = t('pages.auth.signUp.passwordLowercaseError')
-    return false
-  }
-
-  if (!/\d/.test(password.value)) {
-    passwordError.value = t('pages.auth.signUp.passwordDigitError')
-    return false
-  }
-
-  if (!/[^A-Za-z0-9]/.test(password.value)) {
-    passwordError.value = t('pages.auth.signUp.passwordSpecialCharError')
-    return false
-  }
-
-  return true
+  passwordError.value = getPasswordRequirementError()
+  return passwordError.value === ''
 }
 
 function validateForm() {
@@ -193,7 +191,7 @@ async function sendCode() {
     return
   }
 
-  if (!(await passwordsEquals())) {
+  if (!validatePasswordRepeat()) {
     return
   }
 
@@ -235,7 +233,9 @@ function switchPasswordRepeatVisibility() {
   passwordRepeatHidden.value = !passwordRepeatHidden.value
 }
 
-async function passwordsEquals(): Promise<boolean> {
+function validatePasswordRepeat(): boolean {
+  passwordRepeatError.value = ''
+
   if (password.value !== passwordRepeat.value) {
     passwordRepeatError.value = t('pages.auth.signUp.passwordsMismatch')
     errorMessage.value = t('pages.auth.signUp.passwordsMismatch')
@@ -252,7 +252,7 @@ async function completeSignUp() {
 
   normalizeCredentials()
 
-  if (!(await passwordsEquals())) {
+  if (!validatePasswordRepeat()) {
     return
   }
 
@@ -311,7 +311,16 @@ function clearEmailError() {
 }
 
 function clearPasswordError() {
-  passwordError.value = ''
+  if (!password.value) {
+    passwordError.value = ''
+    return
+  }
+
+  passwordError.value = getPasswordRequirementError()
+}
+
+function clearPasswordRepeatError() {
+  passwordRepeatError.value = ''
 }
 
 function validatePasswordRepeat() {

@@ -697,7 +697,7 @@ const ru = {
           "Длина имени пользователя должна быть от 4 до 32 символов",
         usernameCharsError:
           "Никнейм должен содержать только английские буквы, цифры и символ '_'",
-        invalidEmail: "Введите корректный email",
+        invalidEmail: "Такой почты не существует",
         emailLengthError: "Email должен быть не длиннее 64 символов",
         passwordLengthError: "Пароль должен быть не менее 8 символов",
         passwordUppercaseError:
