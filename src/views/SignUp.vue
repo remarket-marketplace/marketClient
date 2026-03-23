@@ -152,7 +152,7 @@ function validatePassword() {
 function validateForm() {
   const isUsernameValid = validateUsername()
   const isEmailValid = validateEmail()
-  const isPasswordValid = validatePassword()
+  const isPasswordValid = validatePassword(false)
 
   return isUsernameValid && isEmailValid && isPasswordValid
 }
@@ -375,7 +375,7 @@ function handleWelcomeFinished() {
           <div>
             <label for="username" class="mb-1 block text-sm text-text-secondary">{{ $t('common.username') }}</label>
             <TheInput id="username" v-model="username" type="text"
-              :placeholder="$t('pages.auth.signUp.usernamePlaceholder')" required @blur="validateUsername"
+              placeholder="" required @blur="validateUsername"
               @input="clearUsernameError" :minlength="4" :maxlength="32" autocomplete="username" />
             <p v-if="usernameError" class="text-gray-400 text-xs leading-4 mt-1">{{ usernameError }}</p>
           </div>
@@ -383,7 +383,7 @@ function handleWelcomeFinished() {
           <!-- Email -->
           <div>
             <label for="email" class="mb-1 block text-sm text-text-secondary">{{ $t('common.email') }}</label>
-            <TheInput id="email" v-model="email" type="email" :placeholder="$t('common.email')" required
+            <TheInput id="email" v-model="email" type="email" placeholder="" required
               @blur="validateEmail" @input="clearEmailError" :maxlength="64" autocomplete="email" />
             <p v-if="emailError" class="text-gray-400 text-xs leading-4 mt-1">{{ emailError }}</p>
           </div>
