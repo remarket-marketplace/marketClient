@@ -105,7 +105,7 @@ onBeforeUnmount(() => {
 <template>
   <div
     v-if="_props.isOpen"
-    class="fixed inset-0 z-[100] flex items-center justify-center p-4 transition-opacity duration-200"
+    class="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto p-4 transition-opacity duration-200 sm:p-6"
     :class="{ 'opacity-100': _props.isOpen, 'opacity-0': !_props.isOpen }"
   >
     <!-- Backdrop -->
@@ -116,10 +116,10 @@ onBeforeUnmount(() => {
     
     <!-- Modal -->
     <div
-      class="relative w-full max-w-md bg-dark-800 rounded-xl shadow-2xl overflow-visible border border-dark-700"
+      class="confirm-window relative my-auto flex w-full max-w-md flex-col overflow-hidden rounded-xl border border-dark-700 bg-dark-800 shadow-2xl"
     >
       <!-- Header -->
-      <div class="px-6 py-5 border-b border-dark-700">
+      <div class="shrink-0 border-b border-dark-700 px-6 py-5">
         <div class="flex items-center justify-between">
           <h3 class="text-lg font-semibold text-white">
             {{ title }}
@@ -135,7 +135,7 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Message -->
-      <div class="px-6 py-5 space-y-4">
+      <div class="confirm-window__body min-h-0 flex-1 overflow-y-auto px-6 py-5 space-y-4">
         <p class="text-gray-300 leading-relaxed">
           {{ message }}
         </p>
@@ -143,7 +143,7 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Actions -->
-      <div class="px-6 py-4 bg-dark-900/50 flex justify-end gap-3">
+      <div class="shrink-0 bg-dark-900/50 px-6 py-4 flex justify-end gap-3">
         <button
           class="px-5 py-2.5 text-gray-400 font-medium rounded-lg hover:bg-dark-700 hover:text-gray-300 transition-colors duration-150 text-sm"
           @click="handleCancel"
@@ -228,6 +228,21 @@ onBeforeUnmount(() => {
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+.confirm-window {
+  max-height: min(calc(100dvh - 2rem), 42rem);
+}
+
+@media (max-width: 640px) {
+  .confirm-window {
+    max-height: calc(100dvh - 2rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+
+  .confirm-window__body {
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
   }
 }
 </style>
