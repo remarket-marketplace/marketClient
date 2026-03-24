@@ -61,6 +61,16 @@ const previousMessageScrollTop = ref(0)
 const hasUserScrolledAwayFromTop = ref(false)
 const bottomAutoScrollThresholdPx = 120
 
+const routeChatId = computed(() => {
+  if (typeof route.query.chatId === 'string' && route.query.chatId.length > 0) {
+    return route.query.chatId
+  }
+  if (typeof route.params.chatId === 'string' && route.params.chatId.length > 0) {
+    return route.params.chatId
+  }
+  return null
+})
+
 function getLastMessageTimestamp(chat: ChatListItem): number {
   const createdAt = chat.last_message?.created_at
   if (!createdAt) return 0
@@ -765,9 +775,8 @@ watch(
 )
 
 watch(
-  () => route.query.chatId,
-  async (chatIdQuery) => {
-    const chatId = typeof chatIdQuery === 'string' ? chatIdQuery : null
+  routeChatId,
+  async (chatId) => {
     if (!chatId) return
     if (selectedChatId.value === chatId) return
     if (isPageLoading.value) return
@@ -839,11 +848,11 @@ onMounted(async () => {
 
     await loadChats()
 
-    const chatIdFromQuery = route.query.chatId as string | undefined
-    if (chatIdFromQuery) {
-      const exists = chats.value.some(c => c.id === chatIdFromQuery)
+    const initialRouteChatId = routeChatId.value
+    if (initialRouteChatId) {
+      const exists = chats.value.some(c => c.id === initialRouteChatId)
       if (exists) {
-        await loadChatMessages(chatIdFromQuery, { settleToBottomAfterRouteOpen: true })
+        await loadChatMessages(initialRouteChatId, { settleToBottomAfterRouteOpen: true })
       }
       return
     }
