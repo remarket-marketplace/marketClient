@@ -11,6 +11,7 @@ import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import { RefreshCcw } from 'lucide-vue-next';
 import { formatCurrencyAmount } from '@/utils/currency';
 import { buildProductKey } from '@/utils/urlKeys';
+import DealStatusTag from '@/components/DealStatusTag.vue';
 
 const API_HOST = import.meta.env.VITE_API_HOST;
 
@@ -70,6 +71,7 @@ const showReportedBadge = computed(() => (
 const showFulfillmentConfirmedBadge = computed(() => (
   isSeller.value && effectiveDealStatus.value === 'confirmed'
 ));
+const currentDealStatus = computed(() => effectiveDealStatus.value ?? 'pending');
 const statusBadgeText = computed(() => {
   if (isDealCompleted.value) {
     return isBuyer.value
@@ -89,6 +91,29 @@ const statusBadgeText = computed(() => {
     return 'pages.chats.awaitSellerFulfillment';
   }
   return null;
+});
+
+const deliverySummary = computed(() => {
+  if (props.product.auto_delivery) {
+    return props.product.product_data_string || null;
+  }
+
+  return null;
+});
+
+const sellerActionTitle = computed(() => {
+  if (!isSeller.value || effectiveDealStatus.value !== 'pending') return null;
+  return 'pages.chats.sellerPendingInstructionTitle';
+});
+
+const sellerActionText = computed(() => {
+  if (!isSeller.value || effectiveDealStatus.value !== 'pending') return null;
+  return 'pages.chats.sellerPendingInstructionText';
+});
+
+const buyerActionText = computed(() => {
+  if (!isBuyer.value || effectiveDealStatus.value !== 'pending') return null;
+  return 'pages.chats.contactSeller';
 });
 
 // Вычисляемое свойство для проверки, выбрана ли причина "otherReason"
@@ -198,46 +223,87 @@ async function handleSendReview() {
 
 <template>
   <div class="my-2 w-full min-w-0">
-    <div class="w-full min-w-0 overflow-hidden rounded-xl bg-gray-800/20 shadow-lg">
-      <div class="flex flex-col gap-4 p-4 sm:flex-row sm:items-start">
-        <div class="flex-shrink-0 sm:w-1/3 min-w-0 cursor-pointer" @click="handleViewProduct(product)">
-          <div class="relative aspect-square rounded-lg overflow-hidden bg-gray-700 border border-gray-600">
-            <img :src="`${API_HOST}${product.images?.[0]?.image_url}`" :alt="product.title"
-              class="h-full w-full object-cover" loading="lazy" />
+    <div class="mx-auto w-full max-w-2xl min-w-0 overflow-hidden rounded-2xl border border-dark-700 bg-dark-800/55 p-4">
+      <div class="flex items-start gap-3">
+        <button
+          type="button"
+          class="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl border border-dark-600 bg-dark-700"
+          @click="handleViewProduct(product)"
+        >
+          <img
+            :src="`${API_HOST}${product.images?.[0]?.image_url}`"
+            :alt="product.title"
+            class="h-full w-full object-cover"
+            loading="lazy"
+          />
+        </button>
+
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="min-w-0 flex-1">
+              <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-300/90">
+                {{ $t('pages.chats.newPurchase') }}
+              </p>
+              <button
+                type="button"
+                class="mt-1 block min-w-0 text-left text-sm font-semibold text-white transition hover:text-blue-200"
+                @click="handleViewProduct(product)"
+              >
+                <span class="line-clamp-2">{{ product.title }}</span>
+              </button>
+            </div>
+
+            <p class="text-sm font-semibold text-emerald-300">
+              {{ formatCurrencyAmount(product.price) }}
+            </p>
           </div>
-        </div>
 
-        <div class="flex-1 text-mainText space-y-3 min-w-0">
-          <h3 class="cursor-pointer text-lg font-bold text-white transition-colors duration-200 line-clamp-2"
-            @click="handleViewProduct(product)">
-            {{ product.title }}
-          </h3>
+          <div class="mt-2 flex flex-wrap items-center gap-2">
+            <DealStatusTag :deal-status="currentDealStatus" />
+            <span v-if="statusBadgeText" class="text-xs text-gray-300">
+              {{ $t(statusBadgeText) }}
+            </span>
+          </div>
 
-          <p class="text-xl text-green-400 font-bold">{{ formatCurrencyAmount(product.price) }}</p>
-
-          <div v-if="product.auto_delivery" class="space-y-2">
-            <p class="text-sm font-semibold text-gray-300 uppercase tracking-wide border-b border-gray-700 pb-2">
+          <div
+            v-if="deliverySummary"
+            class="mt-3 rounded-xl border border-dark-700/80 bg-dark-700/45 px-3 py-2.5"
+          >
+            <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-400">
               {{ $t('pages.chats.productData') }}
             </p>
-            <p class="text-gray-400 text-sm leading-relaxed line-clamp-3 break-words [overflow-wrap:anywhere]">
-              {{ product.product_data_string }}
+            <p class="mt-1 text-sm leading-relaxed text-gray-200 line-clamp-3 break-words [overflow-wrap:anywhere]">
+              {{ deliverySummary }}
             </p>
           </div>
-          <div v-else class="space-y-2">
-            <p class="text-sm font-semibold text-yellow-400 uppercase tracking-wide border-b border-gray-700 pb-2">
-              {{ $t('pages.chats.manualDelivery') }}
+
+          <div
+            v-else-if="sellerActionTitle && sellerActionText"
+            class="mt-3 rounded-xl border border-blue-500/20 bg-blue-500/10 px-3 py-2.5"
+          >
+            <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-blue-300/90">
+              {{ $t(sellerActionTitle) }}
             </p>
-            <p class="text-gray-400 text-sm leading-relaxed">
-              {{ $t('pages.chats.contactSeller') }}
+            <p class="mt-1 text-sm leading-relaxed text-gray-200">
+              {{ $t(sellerActionText) }}
+            </p>
+          </div>
+
+          <div
+            v-else-if="buyerActionText"
+            class="mt-3 rounded-xl border border-dark-700/80 bg-dark-700/45 px-3 py-2.5"
+          >
+            <p class="text-sm leading-relaxed text-gray-300">
+              {{ $t(buyerActionText) }}
             </p>
           </div>
         </div>
       </div>
 
-      <div class="flex flex-col gap-3 px-4 pb-4 sm:flex-row sm:items-center border-t border-gray-700 mt-4 pt-4">
+      <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-dark-700/80 pt-3">
         <template v-if="canConfirmReceipt">
           <button @click="openConfirmReceiptModal()"
-            class="flex items-center justify-center gap-2 rounded-lg bg-green-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-green-700 border border-green-500 min-w-[160px]">
+            class="flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-green-700 border border-green-500">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
@@ -247,7 +313,7 @@ async function handleSendReview() {
 
         <template v-else-if="canConfirmFulfillment">
           <button @click="openConfirmFulfillmentModal()"
-            class="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-blue-700 border border-blue-500 min-w-[200px]">
+            class="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-blue-700 border border-blue-500">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
@@ -257,7 +323,7 @@ async function handleSendReview() {
 
         <template v-else-if="statusBadgeText">
           <div
-            class="flex items-center justify-center gap-2 rounded-lg bg-gray-800 px-6 py-3 text-sm font-semibold text-gray-300 border border-gray-600 min-w-[200px]">
+            class="flex items-center justify-center gap-2 rounded-lg border border-dark-600 bg-dark-700/70 px-4 py-2.5 text-sm font-semibold text-gray-200">
             <svg class="w-4 h-4" :class="{
               'text-yellow-400': isAwaitingSellerFulfillment,
               'text-blue-400': showFulfillmentConfirmedBadge,
@@ -278,14 +344,14 @@ async function handleSendReview() {
         <template v-if="isSeller && effectiveDealStatus === 'pending'">
           <template v-if="!isDealRefunded">
             <button @click="openRefundModal"
-              class="flex items-center justify-center gap-2 rounded-lg bg-orange-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-orange-700 border border-orange-500 min-w-[160px]">
+              class="flex items-center justify-center gap-2 rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-orange-700 border border-orange-500">
               <RefreshCcw class="w-4 h-4" />
               {{ $t('pages.chats.refund') }}
             </button>
           </template>
           <template v-else>
             <div
-              class="flex items-center justify-center gap-2 rounded-lg bg-gray-800 px-6 py-3 text-sm font-semibold text-gray-300 border border-gray-600 min-w-[160px]">
+              class="flex items-center justify-center gap-2 rounded-lg border border-dark-600 bg-dark-700/70 px-4 py-2.5 text-sm font-semibold text-gray-200">
               <svg class="w-4 h-4 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd"
                   d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -300,7 +366,7 @@ async function handleSendReview() {
           <div v-if="canSendReport" class="sm:ml-auto flex flex-col gap-2">
             <button
               @click="openRefusalModal()"
-              class="flex items-center justify-center gap-2 rounded-lg bg-red-600 px-6 py-3 text-sm font-semibold text-white hover:bg-red-700 border border-red-500 min-w-[160px]"
+              class="flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 border border-red-500"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -312,7 +378,7 @@ async function handleSendReview() {
 
           <div v-else-if="showReportedBadge" class="sm:ml-auto flex flex-col gap-2">
             <div
-              class="flex items-center justify-center gap-2 rounded-lg bg-gray-800 px-6 py-3 text-sm font-semibold text-gray-300 border border-gray-600 min-w-[160px]"
+              class="flex items-center justify-center gap-2 rounded-lg border border-dark-600 bg-dark-700/70 px-4 py-2.5 text-sm font-semibold text-gray-200"
             >
               <svg class="w-4 h-4 text-red-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd"
@@ -326,23 +392,23 @@ async function handleSendReview() {
       </div>
 
       <template v-if="isDealCompleted && !localHasReview && isBuyer">
-        <div class="px-4 pb-4">
+        <div class="mt-3">
           <button v-if="!showReviewForm" @click="showReviewForm = true"
-            class="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 border border-blue-500 w-full">
+            class="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 border border-blue-500">
             <Star class="w-4 h-4" /> {{ $t('pages.chats.leaveReview') }}
           </button>
         </div>
       </template>
 
       <template v-if="showReviewForm">
-        <div class="w-full bg-gray-800/50 border border-gray-700 p-4 rounded-xl mt-3 space-y-4">
+        <div class="mt-3 w-full rounded-xl border border-dark-700 bg-dark-700/45 p-4 space-y-4">
           <div class="flex gap-1 justify-center">
             <Star v-for="n in 5" :key="n" @click="reviewStars = n" class="cursor-pointer"
               :class="reviewStars >= n ? 'text-blue-600 w-6 h-6' : 'text-gray-600 w-6 h-6'" />
           </div>
 
           <textarea v-model="reviewText" rows="4"
-            class="w-full max-h-28 rounded-lg bg-gray-800 border border-gray-700 p-3 text-sm text-gray-200 outline-none focus:border-blue-500"
+            class="w-full max-h-28 rounded-lg bg-dark-800 border border-dark-600 p-3 text-sm text-gray-200 outline-none focus:border-blue-500"
             :placeholder="$t('pages.chats.writeReview')"></textarea>
 
           <button @click="handleSendReview()"

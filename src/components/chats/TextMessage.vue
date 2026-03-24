@@ -108,7 +108,7 @@ const shouldRenderAdminMessage = computed(() => {
 				<div class="min-w-0 flex-1">
 					<p class="text-blue-200 font-medium text-xs mb-1">{{ $t('common.admin') }}</p>
           <p v-if="senderLabel || forceShowSender" class="text-xs text-gray-400 mb-1">{{ senderLabel || $t('common.admin') }}</p>
-					<p class="text-gray-100 break-words [overflow-wrap:anywhere]">{{ adminContent }}</p>
+					<p class="whitespace-pre-wrap text-gray-100 break-words [overflow-wrap:anywhere]">{{ adminContent }}</p>
           <div v-if="hasReason" class="mt-2 space-y-2">
             <p class="font-semibold text-gray-50">{{ $t('common.reason') }}</p>
             <div class="rounded-lg border border-dark-600 bg-dark-900/70 px-3 py-2 text-gray-100">
@@ -153,7 +153,7 @@ const shouldRenderAdminMessage = computed(() => {
         {{ senderLabel || $t('common.user') }}
       </span>
     </div>
-		<p class="break-words [overflow-wrap:anywhere]">{{ regularContent }}</p>
+		<p class="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{{ regularContent }}</p>
     <div v-if="hasReason" class="mt-2 space-y-2">
       <p class="font-semibold text-gray-50">{{ $t('common.reason') }}</p>
       <div class="rounded-lg border border-dark-700 bg-dark-900/60 px-3 py-2 text-gray-100">

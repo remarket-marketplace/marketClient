@@ -3,6 +3,7 @@ import { chatsService } from '@/api/chats/chatsService'
 import ChatItem from '@/components/chats/ChatItem.vue'
 import ChatMessage from '@/components/chats/ChatMessage.vue'
 import FloatingDateHeader from '@/components/chats/FloatingDateHeader.vue'
+import PendingChatMessage from '@/components/chats/PendingChatMessage.vue'
 import SendMessageBar from '@/components/chats/SendMessageBar.vue'
 import Loader from '@/components/Loader.vue'
 import { useUserStore } from '@/stores/user'
@@ -10,6 +11,7 @@ import { useChatStore } from '@/stores/chat'
 import type { ChatListItem } from '@/validation/chat/ChatList'
 import type { ChatMessageUnion } from '@/validation/chat/chatMessage'
 import type { MessagesReadPayload } from '@/validation/chat/chatMessage'
+import type { LocalPendingChatMessage } from '@/validation/chat/localPendingMessage'
 import type { UserRead } from '@/validation/user/userRead'
 import { nextTick, onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -26,6 +28,7 @@ const router = useRouter()
 const chatStore = useChatStore()
 const chats = ref<ChatListItem[]>([])
 const chatMessages = ref<ChatMessageUnion[]>([])
+const localPendingMessages = ref<LocalPendingChatMessage[]>([])
 const selectedChatId = ref<string | null>(null)
 const messageContainerRef = ref<HTMLElement | null>(null)
 const bottomPin = createBottomPinController(() => messageContainerRef.value)
@@ -44,6 +47,8 @@ const floatingDateLabel = ref<string | null>(null)
 const isFloatingDateVisible = ref(false)
 let floatingDateRafId: number | null = null
 let floatingDateHideTimerId: number | null = null
+let deferredBottomPinTimeoutIds: number[] = []
+let localPendingMessageSequence = 0
 
 const currentPage = ref(1)
 const totalPages = ref(0)
@@ -78,7 +83,15 @@ function shouldApplyLastMessage(
   return incomingMessage.id === currentMessage.id
 }
 
-function getMessageTimestamp(message: ChatMessageUnion): number {
+type ChatTimelineMessage = ChatMessageUnion | LocalPendingChatMessage
+type PriceOfferChatMessage = Extract<ChatMessageUnion, { message_type: 'price_offer_message' }>
+type EchoComparableServerMessage = Extract<ChatMessageUnion, { message_type: 'text_message' | 'image_message' }>
+
+function isLocalPendingMessage(message: ChatTimelineMessage): message is LocalPendingChatMessage {
+  return 'status' in message
+}
+
+function getMessageTimestamp(message: { created_at: string }): number {
   const createdAt = message.created_at
   if (!createdAt) return 0
   const timestamp = new Date(createdAt).getTime()
@@ -89,22 +102,213 @@ function normalizeMessagesChronological(messages: ChatMessageUnion[]): ChatMessa
   return [...messages].sort((a, b) => getMessageTimestamp(a) - getMessageTimestamp(b))
 }
 
-function syncPurchaseMessagesDealStatus(
-  updateMessage: Extract<ChatMessageUnion, { message_type: 'update_deal_status_message' }>,
+function isEchoComparableServerMessage(message: ChatMessageUnion): message is EchoComparableServerMessage {
+  return message.message_type === 'text_message' || message.message_type === 'image_message'
+}
+
+function mergePriceOfferTimelineMessage(
+  firstMessage: PriceOfferChatMessage,
+  latestMessage: PriceOfferChatMessage,
+): PriceOfferChatMessage {
+  return {
+    ...firstMessage,
+    ...latestMessage,
+    id: firstMessage.id,
+    created_at: firstMessage.created_at,
+    offer_message: latestMessage.offer_message ?? firstMessage.offer_message,
+  }
+}
+
+function normalizeTimelineServerMessages(messages: ChatMessageUnion[]): ChatMessageUnion[] {
+  const normalizedMessages: ChatMessageUnion[] = []
+  const priceOfferIndexById = new Map<string, number>()
+
+  for (const message of messages) {
+    if (message.message_type !== 'price_offer_message') {
+      normalizedMessages.push(message)
+      continue
+    }
+
+    const existingIndex = priceOfferIndexById.get(message.offer_id)
+    if (existingIndex === undefined) {
+      priceOfferIndexById.set(message.offer_id, normalizedMessages.length)
+      normalizedMessages.push(message)
+      continue
+    }
+
+    const existingMessage = normalizedMessages[existingIndex]
+    if (!existingMessage || existingMessage.message_type !== 'price_offer_message') {
+      priceOfferIndexById.set(message.offer_id, normalizedMessages.length)
+      normalizedMessages.push(message)
+      continue
+    }
+
+    normalizedMessages[existingIndex] = mergePriceOfferTimelineMessage(existingMessage, message)
+  }
+
+  return normalizedMessages
+}
+
+function createLocalPendingMessageId(kind: 'text' | 'image'): string {
+  localPendingMessageSequence += 1
+  return `local-${kind}-${Date.now()}-${localPendingMessageSequence}`
+}
+
+function createLocalPendingCreatedAt(timestampMs: number): string {
+  const date = new Date(timestampMs)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+
+  // Keep optimistic messages in the same local-time format the UI already receives from the backend.
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
+}
+
+function createLocalTextPendingMessage(chatId: string, senderId: string, text: string): LocalPendingChatMessage {
+  const createdAtMs = Date.now()
+  return {
+    id: createLocalPendingMessageId('text'),
+    chat_room_id: chatId,
+    created_at: createLocalPendingCreatedAt(createdAtMs),
+    client_created_at_ms: createdAtMs,
+    message_type: 'text_message',
+    sender_id: senderId,
+    text,
+    status: 'sending',
+    error_code: null,
+    echo_timeout_id: null,
+  }
+}
+
+function createLocalImagePendingMessage(
+  chatId: string,
+  senderId: string,
+  files: File[],
+): LocalPendingChatMessage {
+  const createdAtMs = Date.now()
+  return {
+    id: createLocalPendingMessageId('image'),
+    chat_room_id: chatId,
+    created_at: createLocalPendingCreatedAt(createdAtMs),
+    client_created_at_ms: createdAtMs,
+    message_type: 'image_message',
+    sender_id: senderId,
+    text: '',
+    files: [...files],
+    preview_urls: files.map((file) => URL.createObjectURL(file)),
+    status: 'sending',
+    error_code: null,
+    echo_timeout_id: null,
+  }
+}
+
+function clearLocalPendingEchoTimeout(message: LocalPendingChatMessage) {
+  if (message.echo_timeout_id !== null) {
+    clearTimeout(message.echo_timeout_id)
+    message.echo_timeout_id = null
+  }
+}
+
+function cleanupLocalPendingMessage(message: LocalPendingChatMessage) {
+  clearLocalPendingEchoTimeout(message)
+  if (message.message_type === 'image_message') {
+    message.preview_urls.forEach((url) => URL.revokeObjectURL(url))
+  }
+}
+
+function removeLocalPendingMessage(messageId: string) {
+  const index = localPendingMessages.value.findIndex((message) => message.id === messageId)
+  if (index === -1) return
+
+  const [message] = localPendingMessages.value.splice(index, 1)
+  if (message) {
+    cleanupLocalPendingMessage(message)
+  }
+}
+
+function updateLocalPendingMessage(
+  messageId: string,
+  updater: (message: LocalPendingChatMessage) => void,
 ) {
-  for (const message of chatMessages.value) {
-    if (message.message_type !== 'purchase_message') continue
-    if (message.deal_id !== updateMessage.deal_id) continue
-    message.deal_status = updateMessage.new_status
+  const message = localPendingMessages.value.find((item) => item.id === messageId)
+  if (!message) return
+  updater(message)
+}
+
+function markLocalPendingMessageFailed(messageId: string, errorCode?: string) {
+  updateLocalPendingMessage(messageId, (message) => {
+    clearLocalPendingEchoTimeout(message)
+    message.status = 'failed'
+    message.error_code = errorCode || 'SERVER_ERROR'
+  })
+}
+
+function scheduleLocalPendingMessageEchoFallback(messageId: string) {
+  updateLocalPendingMessage(messageId, (message) => {
+    clearLocalPendingEchoTimeout(message)
+    message.echo_timeout_id = window.setTimeout(() => {
+      removeLocalPendingMessage(messageId)
+    }, 3000)
+  })
+}
+
+function getImageMessageCount(
+  message: Extract<ChatMessageUnion, { message_type: 'image_message' }>,
+): number {
+  const images = message.data?.images
+  return Array.isArray(images) ? images.length : 0
+}
+
+function isMatchingServerEcho(
+  pendingMessage: LocalPendingChatMessage,
+  serverMessage: EchoComparableServerMessage,
+): boolean {
+  if (pendingMessage.chat_room_id !== serverMessage.chat_room_id) return false
+  if (pendingMessage.sender_id !== serverMessage.sender_id) return false
+  if (pendingMessage.message_type !== serverMessage.message_type) return false
+
+  const pendingAgeMs = Date.now() - pendingMessage.client_created_at_ms
+  if (pendingAgeMs < -1_000 || pendingAgeMs > 300_000) return false
+
+  if (pendingMessage.message_type === 'text_message' && serverMessage.message_type === 'text_message') {
+    return pendingMessage.text.trim() === serverMessage.text.trim()
+  }
+
+  if (pendingMessage.message_type === 'image_message' && serverMessage.message_type === 'image_message') {
+    return pendingMessage.files.length === getImageMessageCount(serverMessage)
+  }
+
+  return false
+}
+
+function resolveLocalPendingMessageEcho(serverMessage: ChatMessageUnion) {
+  if (!user.value) return
+  if (!isEchoComparableServerMessage(serverMessage)) return
+  if (serverMessage.sender_id !== user.value.id) return
+
+  const candidate = [...localPendingMessages.value]
+    .filter((message) => message.status === 'sending')
+    .filter((message) => isMatchingServerEcho(message, serverMessage))
+    .sort((a, b) => (
+      Math.abs(getMessageTimestamp(a) - getMessageTimestamp(serverMessage))
+      - Math.abs(getMessageTimestamp(b) - getMessageTimestamp(serverMessage))
+    ))[0]
+
+  if (candidate) {
+    removeLocalPendingMessage(candidate.id)
   }
 }
 
 type ChatTimelineItem = {
-  message: ChatMessageUnion
+  message: ChatTimelineMessage
   index: number
   dateKey: string | null
   dateLabel: string | null
   showDateDivider: boolean
+  isLocal: boolean
 }
 
 const msPerDay = 24 * 60 * 60 * 1000
@@ -120,7 +324,7 @@ function toDateKey(date: Date): string {
   return `${year}-${month}-${day}`
 }
 
-function parseMessageDateKey(message: ChatMessageUnion): string | null {
+function parseMessageDateKey(message: ChatTimelineMessage): string | null {
   const parsed = new Date(message.created_at)
   if (Number.isNaN(parsed.getTime())) return null
 
@@ -171,10 +375,33 @@ function capitalizeDateLabel(label: string): string {
     .join(' ')
 }
 
+function formatPendingMessageDate(dateInput: string | Date): string {
+  if (!dateInput) return ''
+
+  const date = typeof dateInput === 'string'
+    ? new Date(dateInput)
+    : dateInput
+
+  const localeCode = locale.value.startsWith('ru') ? 'ru-RU' : 'en-US'
+  return date.toLocaleString(localeCode, {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+const selectedChatLocalPendingMessages = computed<LocalPendingChatMessage[]>(() => {
+  if (!selectedChatId.value) return []
+  return localPendingMessages.value.filter((message) => message.chat_room_id === selectedChatId.value)
+})
+
+const timelineMessages = computed<ChatTimelineMessage[]>(() => (
+  [...normalizeTimelineServerMessages(chatMessages.value), ...selectedChatLocalPendingMessages.value]
+))
+
 const chatTimelineItems = computed<ChatTimelineItem[]>(() => {
   let previousDateKey: string | null = null
 
-  return chatMessages.value.map((message, index) => {
+  return timelineMessages.value.map((message, index) => {
     const dateKey = parseMessageDateKey(message)
     const dateLabel = dateKey ? formatDateLabelByKey(dateKey) : null
     const showDateDivider = Boolean(dateLabel && dateKey !== previousDateKey)
@@ -186,6 +413,7 @@ const chatTimelineItems = computed<ChatTimelineItem[]>(() => {
       dateKey,
       dateLabel,
       showDateDivider,
+      isLocal: isLocalPendingMessage(message),
     }
   })
 })
@@ -312,6 +540,35 @@ const textMessagesInChat = computed<TextMessage[]>(() =>
   )
 )
 
+const dealStatusOverrides = computed<Record<string, string>>(() => {
+  const statuses: Record<string, string> = {}
+
+  for (const message of chatMessages.value) {
+    if (message.message_type === 'purchase_message') {
+      statuses[message.deal_id] = statuses[message.deal_id] ?? message.deal_status
+      continue
+    }
+
+    if (message.message_type === 'update_deal_status_message') {
+      statuses[message.deal_id] = message.new_status
+    }
+  }
+
+  return statuses
+})
+
+const reviewedDealIds = computed<string[]>(() => {
+  const ids = new Set<string>()
+
+  for (const message of chatMessages.value) {
+    if (message.message_type === 'review_message') {
+      ids.add(message.review.deal_id)
+    }
+  }
+
+  return Array.from(ids)
+})
+
 const hasDealSignals = computed(() => {
   const lastMessageType = currentChat.value?.last_message?.message_type
   if (lastMessageType === 'purchase_message' || lastMessageType === 'update_deal_status_message') {
@@ -422,6 +679,37 @@ function backToChats() {
   }
 }
 
+function clearDeferredBottomPinTimers() {
+  for (const timeoutId of deferredBottomPinTimeoutIds) {
+    clearTimeout(timeoutId)
+  }
+  deferredBottomPinTimeoutIds = []
+}
+
+function syncScrollStateFromContainer() {
+  const container = messageContainerRef.value
+  if (!container) return
+  previousMessageScrollTop.value = container.scrollTop
+  hasUserScrolledAwayFromTop.value = container.scrollTop > topLoadThresholdPx
+}
+
+function scheduleDeferredBottomPin(chatId: string) {
+  clearDeferredBottomPinTimers()
+
+  const delays = [120, 260, 420, 680, 960]
+  for (const delay of delays) {
+    const timeoutId = window.setTimeout(async () => {
+      if (selectedChatId.value !== chatId) return
+      await nextTick()
+      bottomPin.scrollNow()
+      syncScrollStateFromContainer()
+      scheduleFloatingDateLabelUpdate()
+    }, delay)
+
+    deferredBottomPinTimeoutIds.push(timeoutId)
+  }
+}
+
 let unsubscribeNewMessage: (() => void) | null = null
 let unsubscribeChatUpdated: (() => void) | null = null
 let unsubscribeMessagesRead: (() => void) | null = null
@@ -447,6 +735,7 @@ watch(selectedChatId, () => {
   sendErrorMessage.value = null
   floatingDateLabel.value = null
   isFloatingDateVisible.value = false
+  clearDeferredBottomPinTimers()
   if (floatingDateHideTimerId !== null) {
     clearTimeout(floatingDateHideTimerId)
     floatingDateHideTimerId = null
@@ -489,7 +778,7 @@ watch(
     }
 
     if (chats.value.some(chat => chat.id === chatId)) {
-      await loadChatMessages(chatId)
+      await loadChatMessages(chatId, { settleToBottomAfterRouteOpen: true })
     }
   }
 )
@@ -527,12 +816,10 @@ onMounted(async () => {
     })
 
     unsubscribeNewMessage = chatsService.onNewMessage(message => {
+      resolveLocalPendingMessageEcho(message)
       if (selectedChatId.value === message.chat_room_id) {
         if (!chatMessages.value.some(m => m.id === message.id)) {
           const shouldStickToBottom = isNearBottom()
-          if (message.message_type === 'update_deal_status_message') {
-            syncPurchaseMessagesDealStatus(message)
-          }
           chatMessages.value.push(message)
           totalMessagesInChat.value = Math.max(
             totalMessagesInChat.value + 1,
@@ -556,7 +843,7 @@ onMounted(async () => {
     if (chatIdFromQuery) {
       const exists = chats.value.some(c => c.id === chatIdFromQuery)
       if (exists) {
-        await loadChatMessages(chatIdFromQuery)
+        await loadChatMessages(chatIdFromQuery, { settleToBottomAfterRouteOpen: true })
       }
       return
     }
@@ -579,6 +866,9 @@ onUnmounted(() => {
   unsubscribeNewMessage?.()
   unsubscribeChatUpdated?.()
   unsubscribeMessagesRead?.()
+  localPendingMessages.value.forEach(cleanupLocalPendingMessage)
+  localPendingMessages.value = []
+  clearDeferredBottomPinTimers()
   bottomPin.stop()
   if (floatingDateRafId !== null) {
     cancelAnimationFrame(floatingDateRafId)
@@ -669,7 +959,10 @@ async function loadMoreMessages() {
   isLoadingMoreMessages.value = false
 }
 
-async function loadChatMessages(chatId: string) {
+async function loadChatMessages(
+  chatId: string,
+  options: { settleToBottomAfterRouteOpen?: boolean } = {},
+) {
   if (selectedChatId.value === chatId) {
     if (isMobile.value) {
       mobileMode.value = 'chat'
@@ -677,6 +970,7 @@ async function loadChatMessages(chatId: string) {
     return
   }
 
+  clearDeferredBottomPinTimers()
   isChatLoading.value = true
   isChatPinning.value = false
   let shouldScrollToBottom = false
@@ -723,6 +1017,9 @@ async function loadChatMessages(chatId: string) {
           hasUserScrolledAwayFromTop.value = container.scrollTop > topLoadThresholdPx
         }
         scheduleFloatingDateLabelUpdate()
+        if (options.settleToBottomAfterRouteOpen) {
+          scheduleDeferredBottomPin(chatId)
+        }
       } finally {
         isChatPinning.value = false
       }
@@ -730,60 +1027,127 @@ async function loadChatMessages(chatId: string) {
   }
 }
 
+function applySendLockState(errorCode?: string) {
+  if (errorCode === 'MESSAGE_LIMIT_WAIT_FOR_SELLER_REPLY') {
+    isMessageLimitLockedByServer.value = true
+    sendErrorMessage.value = null
+  }
+}
+
+function markLocalSendFailed(messageId: string, errorCode?: string) {
+  applySendLockState(errorCode)
+  markLocalPendingMessageFailed(messageId, errorCode)
+}
+
+async function sendLocalTextMessage(message: LocalPendingChatMessage): Promise<{ success: boolean; errorCode?: string }> {
+  if (message.message_type !== 'text_message') {
+    return { success: false, errorCode: 'SERVER_ERROR' }
+  }
+
+  const result = await chatsService.sendMessage(message.text, message.chat_room_id)
+  if (!result.success) {
+    markLocalSendFailed(message.id, result.errorCode)
+    return { success: false, errorCode: result.errorCode }
+  }
+
+  if (result.message) {
+    const shouldStickToBottom = isNearBottom()
+    removeLocalPendingMessage(message.id)
+
+    if (!chatMessages.value.some((item) => item.id === result.message?.id)) {
+      chatMessages.value.push(result.message)
+      totalMessagesInChat.value = Math.max(
+        totalMessagesInChat.value + 1,
+        chatMessages.value.length,
+      )
+    }
+
+    nextTick(() => {
+      if (shouldStickToBottom) {
+        void bottomPin.pinFor(320)
+      }
+    })
+
+    chatStore.resetUnread(message.chat_room_id)
+    void chatsService.markChatRead(message.chat_room_id)
+    return { success: true }
+  }
+
+  scheduleLocalPendingMessageEchoFallback(message.id)
+  return { success: true }
+}
+
+async function sendLocalImageMessage(message: LocalPendingChatMessage): Promise<{ success: boolean; errorCode?: string }> {
+  if (message.message_type !== 'image_message') {
+    return { success: false, errorCode: 'SERVER_ERROR' }
+  }
+
+  const result = await chatsService.sendImages(message.chat_room_id, message.files)
+  if (!result.success) {
+    markLocalSendFailed(message.id, result.errorCode)
+    return { success: false, errorCode: result.errorCode }
+  }
+
+  scheduleLocalPendingMessageEchoFallback(message.id)
+  return { success: true }
+}
+
+async function retryLocalPendingMessage(messageId: string) {
+  const message = localPendingMessages.value.find((item) => item.id === messageId)
+  if (!message) return
+
+  message.status = 'sending'
+  message.error_code = null
+  clearLocalPendingEchoTimeout(message)
+  sendErrorMessage.value = null
+
+  if (message.message_type === 'text_message') {
+    await sendLocalTextMessage(message)
+    return
+  }
+
+  await sendLocalImageMessage(message)
+}
+
 async function sendMessage(payload: { files: File[] }) {
-  if (!selectedChatId.value || isSendLocked.value) return
+  if (!selectedChatId.value || isSendLocked.value || !user.value) return
 
   const text = newMessage.value.trim()
   const files = payload.files ?? []
   if (!text && files.length === 0) return
 
-  let hasSentAnyMessage = false
+  const chatId = selectedChatId.value
+  const senderId = user.value.id
+  const pendingTextMessage = text ? createLocalTextPendingMessage(chatId, senderId, text) : null
+  const pendingImageMessage = files.length > 0
+    ? createLocalImagePendingMessage(chatId, senderId, files)
+    : null
 
-  if (text) {
-    const result = await chatsService.sendMessage(
-      text,
-      selectedChatId.value
-    )
-    if (!result.success) {
-      if (result.errorCode === 'MESSAGE_LIMIT_WAIT_FOR_SELLER_REPLY') {
-        isMessageLimitLockedByServer.value = true
-        sendErrorMessage.value = null
-        return
-      }
-
-      sendErrorMessage.value = result.errorCode
-        ? t(`errors.${result.errorCode}`)
-        : t('errors.SERVER_ERROR')
-      return
-    }
-
-    hasSentAnyMessage = true
-    newMessage.value = ''
+  if (pendingTextMessage) {
+    localPendingMessages.value.push(pendingTextMessage)
+  }
+  if (pendingImageMessage) {
+    localPendingMessages.value.push(pendingImageMessage)
   }
 
-  if (files.length > 0) {
-    const imagesResult = await chatsService.sendImages(selectedChatId.value, files)
-    if (!imagesResult.success) {
-      if (imagesResult.errorCode === 'MESSAGE_LIMIT_WAIT_FOR_SELLER_REPLY') {
-        isMessageLimitLockedByServer.value = true
-        sendErrorMessage.value = null
-        return
-      }
+  newMessage.value = ''
+  sendErrorMessage.value = null
+  nextTick(() => {
+    void bottomPin.pinFor(320)
+  })
 
-      sendErrorMessage.value = imagesResult.errorCode
-        ? t(`errors.${imagesResult.errorCode}`)
-        : t('errors.SERVER_ERROR')
+  if (pendingTextMessage) {
+    const textResult = await sendLocalTextMessage(pendingTextMessage)
+    if (!textResult.success) {
+      if (pendingImageMessage) {
+        markLocalSendFailed(pendingImageMessage.id, textResult.errorCode)
+      }
       return
     }
-
-    hasSentAnyMessage = true
   }
 
-  if (hasSentAnyMessage) {
-    sendErrorMessage.value = null
-    nextTick(() => {
-      void bottomPin.pinFor(320)
-    })
+  if (pendingImageMessage) {
+    await sendLocalImageMessage(pendingImageMessage)
   }
 }
 </script>
@@ -922,11 +1286,20 @@ async function sendMessage(payload: { files: File[] }) {
                             :data-chat-message-index="item.index"
                             :data-chat-date-key="item.dateKey ?? ''"
                           >
+                            <PendingChatMessage
+                              v-if="item.isLocal"
+                              :message="item.message as LocalPendingChatMessage"
+                              :format-date="formatPendingMessageDate"
+                              @retry="retryLocalPendingMessage"
+                            />
                             <ChatMessage
-                              :message="item.message"
+                              v-else
+                              :message="item.message as ChatMessageUnion"
                               :user="user"
                               :showAdminBadge="shouldShowAdminBadge"
                               :chat-participant-ids="chatParticipantIds"
+                              :deal-status-overrides="dealStatusOverrides"
+                              :reviewed-deal-ids="reviewedDealIds"
                             />
                           </div>
                         </template>

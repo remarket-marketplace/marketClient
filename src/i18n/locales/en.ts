@@ -891,6 +891,8 @@ const en = {
       refundCompleted: "Refund completed",
       manualDelivery: "Product delivery by seller",
       contactSeller: "To receive the product, contact the seller in chat",
+      sellerPendingInstructionTitle: "What to do",
+      sellerPendingInstructionText: "Send the product data or item to the buyer in chat. After delivery, click \"Confirm fulfillment\".",
 
       pending: "Deal created. Waiting for fulfillment confirmation from the seller.",
       confirmed:
@@ -910,6 +912,8 @@ const en = {
       offeredPrice: "Offered price",
       acceptOffer: "Accept",
       rejectOffer: "Reject",
+      retrySend: "Retry",
+      messageSendFailed: "Not sent",
       priceOfferStatuses: {
         pending: "Pending",
         accepted: "Accepted",

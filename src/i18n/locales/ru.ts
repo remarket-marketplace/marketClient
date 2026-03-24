@@ -890,6 +890,8 @@ const ru = {
       refundCompleted: "Возврат выполнен",
       manualDelivery: "Выдача товара продавцом",
       contactSeller: "Для получения товара свяжитесь с продавцом в чате",
+      sellerPendingInstructionTitle: "Что нужно сделать",
+      sellerPendingInstructionText: "Отправьте покупателю данные или товар в чате. После выдачи нажмите «Подтвердить выполнение».",
       pending: "Сделка создана. Ожидается подтверждение выполнения от продавца.",
       confirmed: "Продавец подтвердил выполнение сделки.",
       disputed: "Покупатель объявил спор по сделке.",
@@ -907,6 +909,8 @@ const ru = {
       offeredPrice: "Предложенная цена",
       acceptOffer: "Принять",
       rejectOffer: "Отклонить",
+      retrySend: "Повторить",
+      messageSendFailed: "Не отправлено",
       priceOfferStatuses: {
         pending: "Ожидает ответа",
         accepted: "Принято",
