@@ -54,6 +54,39 @@ const changingPasswordCurrentPassword = ref('')
 const changingPasswordNewPassword = ref('')
 const passwordIsChanged = ref(false)
 const passwordErrorMessage = ref<string | null>(null)
+const passwordValidationHints = computed(() => {
+  const value = changingPasswordNewPassword.value
+  return [
+    {
+      key: 'length',
+      label: t('pages.auth.signUp.passwordLengthError'),
+      isMet: value.length >= 8,
+    },
+    {
+      key: 'uppercase',
+      label: t('pages.auth.signUp.passwordUppercaseError'),
+      isMet: /[A-Z]/.test(value),
+    },
+    {
+      key: 'lowercase',
+      label: t('pages.auth.signUp.passwordLowercaseError'),
+      isMet: /[a-z]/.test(value),
+    },
+    {
+      key: 'digit',
+      label: t('pages.auth.signUp.passwordDigitError'),
+      isMet: /\d/.test(value),
+    },
+    {
+      key: 'special',
+      label: t('pages.auth.signUp.passwordSpecialCharError'),
+      isMet: /[^A-Za-z0-9]/.test(value),
+    },
+  ]
+})
+const activePasswordValidationHint = computed(
+  () => passwordValidationHints.value.find((hint) => !hint.isMet) ?? null,
+)
 
 const changingUsername = ref('')
 const isChangingUsername = ref(false)
@@ -908,6 +941,12 @@ async function changePassword() {
     return
   }
 
+  if (activePasswordValidationHint.value) {
+    passwordErrorMessage.value = activePasswordValidationHint.value.label
+    isLoading.value = false
+    return
+  }
+
   try {
     isSendedChangePassword.value = true
     const response = await settingsService.changePassword(
@@ -1192,9 +1231,12 @@ onUnmounted(() => {
                     class="w-full"
                   />
                 </div>
-                <p class="text-xs text-gray-400 mt-2">
-                  {{ $t('pages.settingsPage.passwordRequirements') }}
-                </p>
+                <div v-if="changingPasswordNewPassword.length > 0 && activePasswordValidationHint" class="mt-2">
+                  <p class="flex items-center gap-2 text-xs leading-4 text-gray-400">
+                    <span class="inline-flex w-3 justify-center font-semibold">•</span>
+                    <span>{{ activePasswordValidationHint.label }}</span>
+                  </p>
+                </div>
               </div>
 
               <div class="space-y-3">
@@ -1218,31 +1260,6 @@ onUnmounted(() => {
               </button>
             </div>
 
-            <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-6 space-y-4">
-              <h3 class="text-lg font-semibold text-white">{{ $t('pages.settingsPage.passwordStrength') }}</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="space-y-2">
-                  <div class="flex items-center gap-2">
-                    <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                    <span class="text-sm text-gray-300">{{ $t('pages.settingsPage.strengthTip1') }}</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                    <span class="text-sm text-gray-300">{{ $t('pages.settingsPage.strengthTip2') }}</span>
-                  </div>
-                </div>
-                <div class="space-y-2">
-                  <div class="flex items-center gap-2">
-                    <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                    <span class="text-sm text-gray-300">{{ $t('pages.settingsPage.strengthTip3') }}</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                    <span class="text-sm text-gray-300">{{ $t('pages.settingsPage.strengthTip4') }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
 
           <div v-else-if="activeSection === 'nickname'" class="space-y-6">
