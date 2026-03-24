@@ -102,6 +102,14 @@ const similarProductsLoadingSkeletonCount = computed(() => (
 ))
 
 const productOfferBasePrice = computed(() => Number(product.value?.price ?? 0))
+const maxOfferedPrice = computed(() => {
+  const basePrice = productOfferBasePrice.value
+  if (!Number.isFinite(basePrice) || basePrice <= 0) {
+    return null
+  }
+
+  return Math.max(0.01, Number((basePrice - 0.01).toFixed(2)))
+})
 const offerDiscountPercent = computed(() => calculateDiscountPercent(
   productOfferBasePrice.value,
   Number(offeredPrice.value),
@@ -348,6 +356,20 @@ function closeOfferConfirm() {
   offerError.value = null
 }
 
+function normalizeOfferedPrice() {
+  const currentValue = Number(offeredPrice.value)
+  if (!Number.isFinite(currentValue)) {
+    return
+  }
+
+  const maxPrice = maxOfferedPrice.value
+  if (maxPrice === null) {
+    return
+  }
+
+  offeredPrice.value = Number(Math.min(Math.max(currentValue, 0.01), maxPrice).toFixed(2))
+}
+
 function getOfferPriceForDiscount(discountPercent: number): number | null {
   if (!product.value) return null
 
@@ -393,6 +415,7 @@ function handleOfferMessageInput() {
 async function handleOfferConfirm() {
   if (!product.value || user.value === null) return
 
+  normalizeOfferedPrice()
   const priceNumber = Number(offeredPrice.value)
   if (!Number.isFinite(priceNumber) || priceNumber <= 0 || priceNumber >= Number(product.value.price)) {
     offerError.value = t('errors.INVALID_PRICE_OFFER')
@@ -997,8 +1020,11 @@ onUnmounted(() => {
                 v-model.number="offeredPrice"
                 type="number"
                 min="0.01"
+                :max="maxOfferedPrice ?? undefined"
                 step="0.01"
-                class="w-full rounded-lg border border-dark-700 bg-dark-700/60 px-3 py-2 pr-20 text-sm text-white outline-none focus:border-emerald-500"
+                class="price-offer-input w-full rounded-lg border border-dark-700 bg-dark-700/60 px-3 py-2 pr-20 text-sm text-white outline-none focus:border-emerald-500"
+                @input="normalizeOfferedPrice"
+                @blur="normalizeOfferedPrice"
               />
               <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 whitespace-nowrap text-xs text-gray-300">
                 {{ offerCurrencySymbol }} {{ offerCurrencyCode }}
@@ -1156,5 +1182,16 @@ onUnmounted(() => {
 /* Button hover animations */
 button {
   transition: all 0.2s ease-in-out;
+}
+
+.price-offer-input::-webkit-outer-spin-button,
+.price-offer-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.price-offer-input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 </style>
