@@ -5,7 +5,7 @@ import { chatsService } from '@/api/chats/chatsService';
 import { useRouter } from 'vue-router';
 import type { Product } from '@/validation/product/product';
 import type { RefusalReasonsList } from '@/validation/deal/deal';
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onBeforeUnmount } from 'vue';
 import { Star, X } from 'lucide-vue-next';
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import { RefreshCcw } from 'lucide-vue-next';
@@ -20,6 +20,7 @@ const localDealStatus = ref<string | null>(null);
 const showReviewForm = ref(false);
 const reviewStars = ref(0);
 const reviewText = ref('');
+const reviewSubmitting = ref(false);
 
 const showRefusalModal = ref(false);
 const refusalReasons = ref<RefusalReasonsList>([]);
@@ -186,14 +187,38 @@ function handleViewProduct(product: Product) {
 }
 
 async function handleSendReview() {
-  if (reviewStars.value < 1) return;
-  showReviewForm.value = false;
+  if (reviewStars.value < 1 || reviewSubmitting.value) return;
+  reviewSubmitting.value = true;
   const response = await reviewService.createReview(props.dealId, reviewStars.value, reviewText.value);
+  reviewSubmitting.value = false;
   if (response != null) {
     localHasReview.value = true;
     showReviewForm.value = false;
+    reviewStars.value = 0;
+    reviewText.value = '';
   }
 }
+
+function openReviewModal() {
+  reviewStars.value = 0;
+  reviewText.value = '';
+  showReviewForm.value = true;
+}
+
+function closeReviewModal() {
+  if (reviewSubmitting.value) return;
+  showReviewForm.value = false;
+}
+
+watch(showReviewForm, (isOpen) => {
+  if (typeof document === 'undefined') return;
+  document.body.style.overflow = isOpen ? 'hidden' : '';
+})
+
+onBeforeUnmount(() => {
+  if (typeof document === 'undefined') return;
+  document.body.style.overflow = '';
+})
 </script>
 
 <template>
@@ -326,13 +351,20 @@ async function handleSendReview() {
       </div>
 
       <template v-if="isDealCompleted && !localHasReview && isBuyer">
+<<<<<<< Updated upstream
         <div class="px-4 pb-4">
           <button v-if="!showReviewForm" @click="showReviewForm = true"
             class="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 border border-blue-500 w-full">
+=======
+        <div class="mt-3">
+          <button @click="openReviewModal"
+            class="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 border border-blue-500">
+>>>>>>> Stashed changes
             <Star class="w-4 h-4" /> {{ $t('pages.chats.leaveReview') }}
           </button>
         </div>
       </template>
+<<<<<<< Updated upstream
 
       <template v-if="showReviewForm">
         <div class="w-full bg-gray-800/50 border border-gray-700 p-4 rounded-xl mt-3 space-y-4">
@@ -351,8 +383,79 @@ async function handleSendReview() {
           </button>
         </div>
       </template>
+=======
+>>>>>>> Stashed changes
     </div>
   </div>
+
+  <transition name="fade">
+    <div v-if="showReviewForm" class="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <div class="absolute inset-0 bg-black/65 backdrop-blur-sm" @click="closeReviewModal"></div>
+
+      <div class="relative w-full max-w-md overflow-hidden rounded-2xl border border-dark-700 bg-dark-800/95 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-dark-700/80 px-5 py-4">
+          <div>
+            <h3 class="text-lg font-semibold text-white">{{ $t('pages.chats.leaveReview') }}</h3>
+            <p class="mt-1 text-sm text-gray-400">{{ $t('pages.chats.writeReview') }}</p>
+          </div>
+          <button
+            type="button"
+            class="rounded-lg p-1 text-gray-400 transition hover:bg-dark-700/70 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="reviewSubmitting"
+            @click="closeReviewModal"
+          >
+            <X class="h-5 w-5" />
+          </button>
+        </div>
+
+        <div class="space-y-5 px-5 py-5">
+          <div class="flex justify-center gap-2">
+            <button
+              v-for="n in 5"
+              :key="n"
+              type="button"
+              class="rounded-full p-1 transition-transform hover:scale-105 disabled:cursor-not-allowed"
+              :disabled="reviewSubmitting"
+              @click="reviewStars = n"
+            >
+              <Star
+                class="h-8 w-8"
+                :class="reviewStars >= n ? 'fill-blue-500 text-blue-500' : 'text-gray-600'"
+              />
+            </button>
+          </div>
+
+          <textarea
+            v-model="reviewText"
+            rows="5"
+            maxlength="1000"
+            class="w-full resize-none rounded-2xl border border-dark-600 bg-dark-700/55 p-3 text-sm text-gray-100 outline-none transition placeholder:text-gray-500 focus:border-blue-500/60 focus:bg-dark-700/75"
+            :placeholder="$t('pages.chats.writeReview')"
+            :disabled="reviewSubmitting"
+          ></textarea>
+
+          <div class="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              class="rounded-lg px-4 py-2.5 text-sm font-medium text-gray-300 transition hover:bg-dark-700/70 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+              :disabled="reviewSubmitting"
+              @click="closeReviewModal"
+            >
+              {{ $t('common.cancel') }}
+            </button>
+            <button
+              type="button"
+              class="rounded-lg border border-green-500 bg-green-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:border-dark-600 disabled:bg-dark-700 disabled:text-gray-500"
+              :disabled="reviewStars < 1 || reviewSubmitting"
+              @click="handleSendReview()"
+            >
+              {{ $t('pages.chats.sendReview') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </transition>
 
   <transition name="fade">
     <div v-if="showRefusalModal" class="fixed inset-0 flex items-center justify-center z-50 px-4">
