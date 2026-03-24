@@ -49,7 +49,7 @@ const imagePreviewUrls = computed(() => (
         v-else
         class="min-w-0 rounded-xl rounded-br-none bg-blue-600 px-4 py-2 break-words [overflow-wrap:anywhere]"
       >
-        <p class="break-words [overflow-wrap:anywhere]">{{ message.text }}</p>
+        <p class="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{{ message.text }}</p>
         <div class="mt-1 flex items-center justify-end gap-2 text-xs text-gray-300">
           <span>{{ formatDate(message.created_at) }}</span>
         </div>

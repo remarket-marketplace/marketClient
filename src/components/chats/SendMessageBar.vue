@@ -108,6 +108,7 @@ onBeforeUnmount(() => {
 watch(
   () => props.newMessage,
   () => resizeMessageInput(),
+  { flush: 'post' },
 )
 </script>
 
