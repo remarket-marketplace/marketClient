@@ -1,260 +1,281 @@
 <script setup lang="ts">
-import { productService } from '@/api/product/ProductService';
-import { reviewService } from '@/api/review/ReviewService';
-import { chatsService } from '@/api/chats/chatsService';
-import { useRouter } from 'vue-router';
-import type { Product } from '@/validation/product/product';
-import type { RefusalReasonsList } from '@/validation/deal/deal';
-import { ref, computed, watch, onBeforeUnmount } from 'vue';
-import { Star, X } from 'lucide-vue-next';
+import { productService } from '@/api/product/ProductService'
+import { reviewService } from '@/api/review/ReviewService'
+import { chatsService } from '@/api/chats/chatsService'
+import { useRouter } from 'vue-router'
+import type { Product } from '@/validation/product/product'
+import type { RefusalReasonsList } from '@/validation/deal/deal'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { RefreshCcw, Star, X } from 'lucide-vue-next'
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
-import { RefreshCcw } from 'lucide-vue-next';
-import { formatCurrencyAmount } from '@/utils/currency';
-import { buildProductKey } from '@/utils/urlKeys';
-import DealStatusTag from '@/components/DealStatusTag.vue';
+import { formatCurrencyAmount } from '@/utils/currency'
+import { buildProductKey } from '@/utils/urlKeys'
+import DealStatusTag from '@/components/DealStatusTag.vue'
 
-const API_HOST = import.meta.env.VITE_API_HOST;
-
-const router = useRouter();
-const localDealStatus = ref<string | null>(null);
-
-const showReviewForm = ref(false);
-const reviewStars = ref(0);
-const reviewText = ref('');
-const reviewSubmitting = ref(false);
-
-const showRefusalModal = ref(false);
-const refusalReasons = ref<RefusalReasonsList>([]);
-const selectedRefusalId = ref<string | null>(null);
-const customReasonText = ref('');
-const MAX_CUSTOM_REASON_LENGTH = 300;
-const otherReasonId = ref<string | null>(null);
-
-const showConfirmModal = ref(false);
-const showFulfillmentModal = ref(false);
-const showRefundModal = ref(false);
-const confirmLoading = ref(false);
-const fulfillmentLoading = ref(false);
-const refundLoading = ref(false);
+const API_HOST = import.meta.env.VITE_API_HOST
 
 const props = defineProps<{
-  product: Product,
-  dealStatus: string | null,
-  dealId: string,
-  has_review: boolean | null,
-}>();
+  product: Product
+  dealStatus: string | null
+  dealId: string
+  has_review: boolean | null
+}>()
 
-const localHasReview = ref(props.has_review ?? false);
-const effectiveDealStatus = computed(() => localDealStatus.value ?? props.dealStatus);
-const isBuyer = computed(() => !props.product.is_owner);
-const isSeller = computed(() => props.product.is_owner);
-const isDealDisputed = computed(() => effectiveDealStatus.value === 'disputed');
-const isDealCompleted = computed(() => effectiveDealStatus.value === 'completed');
+const router = useRouter()
+
+const localDealStatus = ref<string | null>(null)
+const localHasReview = ref(props.has_review ?? false)
+
+const showReviewModal = ref(false)
+const reviewStars = ref(0)
+const reviewText = ref('')
+const reviewSubmitting = ref(false)
+
+const showRefusalModal = ref(false)
+const refusalReasons = ref<RefusalReasonsList>([])
+const selectedRefusalId = ref<string | null>(null)
+const customReasonText = ref('')
+const MAX_CUSTOM_REASON_LENGTH = 300
+const otherReasonId = ref<string | null>(null)
+
+const showConfirmModal = ref(false)
+const showFulfillmentModal = ref(false)
+const showRefundModal = ref(false)
+const confirmLoading = ref(false)
+const fulfillmentLoading = ref(false)
+const refundLoading = ref(false)
+
+const effectiveDealStatus = computed(() => localDealStatus.value ?? props.dealStatus)
+const isBuyer = computed(() => !props.product.is_owner)
+const isSeller = computed(() => props.product.is_owner)
+const isDealDisputed = computed(() => effectiveDealStatus.value === 'disputed')
+const isDealCompleted = computed(() => effectiveDealStatus.value === 'completed')
 const isDealRefunded = computed(() => (
-  effectiveDealStatus.value === 'refunded'
-  || effectiveDealStatus.value === 'cancelled'
-));
+  effectiveDealStatus.value === 'refunded' || effectiveDealStatus.value === 'cancelled'
+))
 const isAwaitingSellerFulfillment = computed(() => (
   isBuyer.value && effectiveDealStatus.value === 'pending'
-));
+))
 const canConfirmFulfillment = computed(() => (
   isSeller.value && effectiveDealStatus.value === 'pending'
-));
+))
 const canConfirmReceipt = computed(() => (
   isBuyer.value && effectiveDealStatus.value === 'confirmed'
-));
+))
 const canSendReport = computed(() => (
   isBuyer.value && effectiveDealStatus.value === 'confirmed'
-));
+))
 const showReportedBadge = computed(() => (
   isBuyer.value && isDealDisputed.value
-));
+))
 const showFulfillmentConfirmedBadge = computed(() => (
   isSeller.value && effectiveDealStatus.value === 'confirmed'
-));
-const currentDealStatus = computed(() => effectiveDealStatus.value ?? 'pending');
+))
+const currentDealStatus = computed(() => effectiveDealStatus.value ?? 'pending')
+
 const statusBadgeText = computed(() => {
   if (isDealCompleted.value) {
-    return isBuyer.value
-      ? 'pages.chats.confirmReceipted'
-      : 'pages.chats.dealCompleted';
+    return isBuyer.value ? 'pages.chats.confirmReceipted' : 'pages.chats.dealCompleted'
   }
   if (effectiveDealStatus.value === 'cancelled') {
-    return 'pages.chats.cancelled';
+    return 'pages.chats.cancelled'
   }
   if (effectiveDealStatus.value === 'refunded') {
-    return 'pages.chats.refundCompleted';
+    return 'pages.chats.refundCompleted'
   }
   if (showFulfillmentConfirmedBadge.value) {
-    return 'pages.chats.fulfillmentConfirmed';
+    return 'pages.chats.fulfillmentConfirmed'
   }
   if (isAwaitingSellerFulfillment.value) {
-    return 'pages.chats.awaitSellerFulfillment';
+    return 'pages.chats.awaitSellerFulfillment'
   }
-  return null;
-});
+  return null
+})
 
-const deliverySummary = computed(() => {
-  if (props.product.auto_delivery) {
-    return props.product.product_data_string || null;
-  }
-
-  return null;
-});
+const deliverySummary = computed(() => (
+  props.product.auto_delivery ? props.product.product_data_string || null : null
+))
 
 const sellerActionTitle = computed(() => {
-  if (!isSeller.value || effectiveDealStatus.value !== 'pending') return null;
-  return 'pages.chats.sellerPendingInstructionTitle';
-});
+  if (!isSeller.value || effectiveDealStatus.value !== 'pending') return null
+  return 'pages.chats.sellerPendingInstructionTitle'
+})
 
 const sellerActionText = computed(() => {
-  if (!isSeller.value || effectiveDealStatus.value !== 'pending') return null;
-  return 'pages.chats.sellerPendingInstructionText';
-});
+  if (!isSeller.value || effectiveDealStatus.value !== 'pending') return null
+  return 'pages.chats.sellerPendingInstructionText'
+})
 
 const buyerActionText = computed(() => {
-  if (!isBuyer.value || effectiveDealStatus.value !== 'pending') return null;
-  return 'pages.chats.contactSeller';
-});
+  if (!isBuyer.value || effectiveDealStatus.value !== 'pending') return null
+  return 'pages.chats.contactSeller'
+})
 
-const isOtherReasonSelected = computed(() => {
-  if (!selectedRefusalId.value || !otherReasonId.value) return false;
-  return selectedRefusalId.value === otherReasonId.value;
-});
+const isOtherReasonSelected = computed(() => (
+  Boolean(selectedRefusalId.value && otherReasonId.value && selectedRefusalId.value === otherReasonId.value)
+))
 
 async function openRefusalModal() {
   if (refusalReasons.value.length === 0) {
-    const reasons = await chatsService.getRefusalReasons();
-    refusalReasons.value = reasons;
-
-    const otherReason = reasons.find(reason => reason.title === 'otherReason');
+    const reasons = await chatsService.getRefusalReasons()
+    refusalReasons.value = reasons
+    const otherReason = reasons.find((reason) => reason.title === 'otherReason')
     if (otherReason) {
-      otherReasonId.value = otherReason.id;
+      otherReasonId.value = otherReason.id
     }
   }
-  showRefusalModal.value = true;
-  customReasonText.value = '';
+
+  customReasonText.value = ''
+  showRefusalModal.value = true
 }
 
 function closeRefusalModal() {
-  showRefusalModal.value = false;
-  selectedRefusalId.value = null;
-  customReasonText.value = '';
-}
-
-async function doConfirmDeal() {
-  confirmLoading.value = true;
-  const response = await productService.confirmReceipt(props.dealId);
-  confirmLoading.value = false;
-  if (response === true) {
-    localDealStatus.value = 'completed';
-    localHasReview.value = false;
-  }
-  showConfirmModal.value = false;
-}
-
-async function doConfirmFulfillment() {
-  fulfillmentLoading.value = true;
-  const response = await productService.confirmFulfillment(props.dealId);
-  fulfillmentLoading.value = false;
-  if (response === true) {
-    localDealStatus.value = 'confirmed';
-  }
-  showFulfillmentModal.value = false;
-}
-
-async function doConfirmRefund() {
-  refundLoading.value = true;
-
-  const response = await productService.RefundDeal(props.dealId);
-
-  refundLoading.value = false;
-  if (response === true) {
-    localDealStatus.value = 'refunded';
-  }
-  showRefundModal.value = false;
-}
-
-function openConfirmReceiptModal() {
-  showConfirmModal.value = true;
-}
-
-function openConfirmFulfillmentModal() {
-  showFulfillmentModal.value = true;
-}
-
-function openRefundModal() {
-  showRefundModal.value = true;
-}
-
-async function handleReport(dealId: string) {
-  if (!selectedRefusalId.value) return;
-
-  let description = null;
-  if (isOtherReasonSelected.value && customReasonText.value.trim()) {
-    description = customReasonText.value.trim();
-  }
-
-  const response = await productService.sendReport(dealId, selectedRefusalId.value, description);
-  if (response === true) {
-    localDealStatus.value = 'disputed';
-    closeRefusalModal();
-  }
+  showRefusalModal.value = false
+  selectedRefusalId.value = null
+  customReasonText.value = ''
 }
 
 function handleViewProduct(product: Product) {
-  const productKey = buildProductKey(product);
-  if (!productKey) return;
-  router.push(`/product/${productKey}`);
+  const productKey = buildProductKey(product)
+  if (!productKey) return
+  router.push(`/product/${productKey}`)
 }
 
-async function handleSendReview() {
-  if (reviewStars.value < 1 || reviewSubmitting.value) return;
-  reviewSubmitting.value = true;
-  const response = await reviewService.createReview(props.dealId, reviewStars.value, reviewText.value);
-  reviewSubmitting.value = false;
-  if (response != null) {
-    localHasReview.value = true;
-    showReviewForm.value = false;
-    reviewStars.value = 0;
-    reviewText.value = '';
+function openConfirmReceiptModal() {
+  showConfirmModal.value = true
+}
+
+function openConfirmFulfillmentModal() {
+  showFulfillmentModal.value = true
+}
+
+function openRefundModal() {
+  showRefundModal.value = true
+}
+
+async function doConfirmDeal() {
+  confirmLoading.value = true
+  const response = await productService.confirmReceipt(props.dealId)
+  confirmLoading.value = false
+
+  if (response === true) {
+    localDealStatus.value = 'completed'
+    localHasReview.value = false
+  }
+
+  showConfirmModal.value = false
+}
+
+async function doConfirmFulfillment() {
+  fulfillmentLoading.value = true
+  const response = await productService.confirmFulfillment(props.dealId)
+  fulfillmentLoading.value = false
+
+  if (response === true) {
+    localDealStatus.value = 'confirmed'
+  }
+
+  showFulfillmentModal.value = false
+}
+
+async function doConfirmRefund() {
+  refundLoading.value = true
+  const response = await productService.RefundDeal(props.dealId)
+  refundLoading.value = false
+
+  if (response === true) {
+    localDealStatus.value = 'refunded'
+  }
+
+  showRefundModal.value = false
+}
+
+async function handleReport(dealId: string) {
+  if (!selectedRefusalId.value) return
+
+  const description = isOtherReasonSelected.value && customReasonText.value.trim()
+    ? customReasonText.value.trim()
+    : null
+
+  const response = await productService.sendReport(dealId, selectedRefusalId.value, description)
+  if (response === true) {
+    localDealStatus.value = 'disputed'
+    closeRefusalModal()
   }
 }
 
 function openReviewModal() {
-  reviewStars.value = 0;
-  reviewText.value = '';
-  showReviewForm.value = true;
+  reviewStars.value = 0
+  reviewText.value = ''
+  showReviewModal.value = true
 }
 
 function closeReviewModal() {
-  if (reviewSubmitting.value) return;
-  showReviewForm.value = false;
+  if (reviewSubmitting.value) return
+  showReviewModal.value = false
 }
 
-watch(showReviewForm, (isOpen) => {
-  if (typeof document === 'undefined') return;
-  document.body.style.overflow = isOpen ? 'hidden' : '';
+async function handleSendReview() {
+  if (reviewStars.value < 1 || reviewSubmitting.value) return
+
+  reviewSubmitting.value = true
+  const response = await reviewService.createReview(props.dealId, reviewStars.value, reviewText.value)
+  reviewSubmitting.value = false
+
+  if (response != null) {
+    localHasReview.value = true
+    showReviewModal.value = false
+    reviewStars.value = 0
+    reviewText.value = ''
+  }
+}
+
+watch(showReviewModal, (isOpen) => {
+  if (typeof document === 'undefined') return
+  document.body.style.overflow = isOpen ? 'hidden' : ''
 })
 
 onBeforeUnmount(() => {
-  if (typeof document === 'undefined') return;
-  document.body.style.overflow = '';
+  if (typeof document === 'undefined') return
+  document.body.style.overflow = ''
 })
 </script>
 
 <template>
   <div class="my-2 w-full min-w-0">
-    <div class="w-full min-w-0 overflow-hidden rounded-xl bg-gray-800/20 shadow-lg">
-      <div class="flex flex-col gap-4 p-4 sm:flex-row sm:items-start">
-        <div class="min-w-0 flex-shrink-0 cursor-pointer sm:w-1/3" @click="handleViewProduct(product)">
-          <div class="relative aspect-square overflow-hidden rounded-lg border border-gray-600 bg-gray-700">
-            <img
-              :src="`${API_HOST}${product.images?.[0]?.image_url}`"
-              :alt="product.title"
-              class="h-full w-full object-cover"
-              loading="lazy"
-            />
+    <div class="mx-auto w-full max-w-2xl min-w-0 overflow-hidden rounded-2xl border border-dark-700 bg-dark-800/55 p-4">
+      <div class="flex items-start gap-3">
+        <button
+          type="button"
+          class="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl border border-dark-600 bg-dark-700"
+          @click="handleViewProduct(product)"
+        >
+          <img
+            :src="`${API_HOST}${product.images?.[0]?.image_url}`"
+            :alt="product.title"
+            class="h-full w-full object-cover"
+            loading="lazy"
+          />
+        </button>
+
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="min-w-0 flex-1">
+              <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-300/90">
+                {{ $t('pages.chats.newPurchase') }}
+              </p>
+              <button
+                type="button"
+                class="mt-1 block min-w-0 text-left text-sm font-semibold text-white transition hover:text-blue-200"
+                @click="handleViewProduct(product)"
+              >
+                <span class="line-clamp-2">{{ product.title }}</span>
+              </button>
+            </div>
+
+            <p class="text-sm font-semibold text-emerald-300">
+              {{ formatCurrencyAmount(product.price) }}
+            </p>
           </div>
 
           <div class="mt-2 flex flex-wrap items-center gap-2">
@@ -264,38 +285,48 @@ onBeforeUnmount(() => {
             </span>
           </div>
 
-        <div class="flex-1 text-mainText space-y-3 min-w-0">
-          <h3 class="cursor-pointer text-lg font-bold text-white transition-colors duration-200 line-clamp-2"
-            @click="handleViewProduct(product)">
-            {{ product.title }}
-          </h3>
-
-          <p class="text-xl text-green-400 font-bold">{{ formatCurrencyAmount(product.price) }}</p>
-
-          <div v-if="product.auto_delivery" class="space-y-2">
-            <p class="text-sm font-semibold text-gray-300 uppercase tracking-wide border-b border-gray-700 pb-2">
+          <div
+            v-if="deliverySummary"
+            class="mt-3 rounded-xl border border-dark-700/80 bg-dark-700/45 px-3 py-2.5"
+          >
+            <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-400">
               {{ $t('pages.chats.productData') }}
             </p>
-            <p class="text-gray-400 text-sm leading-relaxed line-clamp-3 break-words [overflow-wrap:anywhere]">
-              {{ product.product_data_string }}
+            <p class="mt-1 line-clamp-3 break-words text-sm leading-relaxed text-gray-200 [overflow-wrap:anywhere]">
+              {{ deliverySummary }}
             </p>
           </div>
-          <div v-else class="space-y-2">
-            <p class="text-sm font-semibold text-yellow-400 uppercase tracking-wide border-b border-gray-700 pb-2">
-              {{ $t('pages.chats.manualDelivery') }}
+
+          <div
+            v-else-if="sellerActionTitle && sellerActionText"
+            class="mt-3 rounded-xl border border-blue-500/20 bg-blue-500/10 px-3 py-2.5"
+          >
+            <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-blue-300/90">
+              {{ $t(sellerActionTitle) }}
             </p>
-            <p class="text-gray-400 text-sm leading-relaxed">
-              {{ $t('pages.chats.contactSeller') }}
+            <p class="mt-1 text-sm leading-relaxed text-gray-200">
+              {{ $t(sellerActionText) }}
+            </p>
+          </div>
+
+          <div
+            v-else-if="buyerActionText"
+            class="mt-3 rounded-xl border border-dark-700/80 bg-dark-700/45 px-3 py-2.5"
+          >
+            <p class="text-sm leading-relaxed text-gray-300">
+              {{ $t(buyerActionText) }}
             </p>
           </div>
         </div>
       </div>
 
-      <div class="flex flex-col gap-3 px-4 pb-4 sm:flex-row sm:items-center border-t border-gray-700 mt-4 pt-4">
+      <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-dark-700/80 pt-3">
         <template v-if="canConfirmReceipt">
-          <button @click="openConfirmReceiptModal()"
-            class="flex items-center justify-center gap-2 rounded-lg bg-green-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-green-700 border border-green-500 min-w-[160px]">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button
+            class="flex items-center justify-center gap-2 rounded-lg border border-green-500 bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-green-700"
+            @click="openConfirmReceiptModal()"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
             {{ $t('pages.chats.confirmReceipt') }}
@@ -303,9 +334,11 @@ onBeforeUnmount(() => {
         </template>
 
         <template v-else-if="canConfirmFulfillment">
-          <button @click="openConfirmFulfillmentModal()"
-            class="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-blue-700 border border-blue-500 min-w-[200px]">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button
+            class="flex items-center justify-center gap-2 rounded-lg border border-blue-500 bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-blue-700"
+            @click="openConfirmFulfillmentModal()"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
             {{ $t('pages.chats.confirmFulfillment') }}
@@ -313,15 +346,21 @@ onBeforeUnmount(() => {
         </template>
 
         <template v-else-if="statusBadgeText">
-          <div
-            class="flex items-center justify-center gap-2 rounded-lg bg-gray-800 px-6 py-3 text-sm font-semibold text-gray-300 border border-gray-600 min-w-[200px]">
-            <svg class="w-4 h-4" :class="{
-              'text-yellow-400': isAwaitingSellerFulfillment,
-              'text-blue-400': showFulfillmentConfirmedBadge,
-              'text-green-400': isDealCompleted,
-              'text-orange-400': isDealRefunded,
-            }" fill="currentColor" viewBox="0 0 20 20">
-              <path v-if="isAwaitingSellerFulfillment" fill-rule="evenodd"
+          <div class="flex items-center justify-center gap-2 rounded-lg border border-dark-600 bg-dark-700/70 px-4 py-2.5 text-sm font-semibold text-gray-200">
+            <svg
+              class="h-4 w-4"
+              :class="{
+                'text-yellow-400': isAwaitingSellerFulfillment,
+                'text-blue-400': showFulfillmentConfirmedBadge,
+                'text-green-400': isDealCompleted,
+                'text-orange-400': isDealRefunded,
+              }"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                v-if="isAwaitingSellerFulfillment"
+                fill-rule="evenodd"
                 d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3a1 1 0 00.293.707l2 2a1 1 0 101.414-1.414L11 9.586V7z"
                 clip-rule="evenodd"
               />
@@ -338,17 +377,19 @@ onBeforeUnmount(() => {
 
         <template v-if="isSeller && effectiveDealStatus === 'pending'">
           <template v-if="!isDealRefunded">
-            <button @click="openRefundModal"
-              class="flex items-center justify-center gap-2 rounded-lg bg-orange-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-orange-700 border border-orange-500 min-w-[160px]">
-              <RefreshCcw class="w-4 h-4" />
+            <button
+              class="flex items-center justify-center gap-2 rounded-lg border border-orange-500 bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-orange-700"
+              @click="openRefundModal"
+            >
+              <RefreshCcw class="h-4 w-4" />
               {{ $t('pages.chats.refund') }}
             </button>
           </template>
           <template v-else>
-            <div
-              class="flex items-center justify-center gap-2 rounded-lg bg-gray-800 px-6 py-3 text-sm font-semibold text-gray-300 border border-gray-600 min-w-[160px]">
-              <svg class="w-4 h-4 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd"
+            <div class="flex items-center justify-center gap-2 rounded-lg border border-dark-600 bg-dark-700/70 px-4 py-2.5 text-sm font-semibold text-gray-200">
+              <svg class="h-4 w-4 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fill-rule="evenodd"
                   d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                   clip-rule="evenodd"
                 />
@@ -361,9 +402,8 @@ onBeforeUnmount(() => {
         <template v-if="isBuyer">
           <div v-if="canSendReport" class="sm:ml-auto flex flex-col gap-2">
             <button
-              class="min-w-[160px] flex items-center justify-center gap-2 rounded-lg border border-red-500 bg-red-600 px-6 py-3 text-sm font-semibold text-white hover:bg-red-700"
+              class="flex items-center justify-center gap-2 rounded-lg border border-red-500 bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700"
               @click="openRefusalModal()"
-              class="flex items-center justify-center gap-2 rounded-lg bg-red-600 px-6 py-3 text-sm font-semibold text-white hover:bg-red-700 border border-red-500 min-w-[160px]"
             >
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -378,11 +418,10 @@ onBeforeUnmount(() => {
           </div>
 
           <div v-else-if="showReportedBadge" class="sm:ml-auto flex flex-col gap-2">
-            <div
-              class="flex items-center justify-center gap-2 rounded-lg bg-gray-800 px-6 py-3 text-sm font-semibold text-gray-300 border border-gray-600 min-w-[160px]"
-            >
-              <svg class="w-4 h-4 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd"
+            <div class="flex items-center justify-center gap-2 rounded-lg border border-dark-600 bg-dark-700/70 px-4 py-2.5 text-sm font-semibold text-gray-200">
+              <svg class="h-4 w-4 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fill-rule="evenodd"
                   d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
                   clip-rule="evenodd"
                 />
@@ -394,28 +433,13 @@ onBeforeUnmount(() => {
       </div>
 
       <template v-if="isDealCompleted && !localHasReview && isBuyer">
-        <div class="px-4 pb-4">
-          <button v-if="!showReviewForm" @click="showReviewForm = true"
-            class="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 border border-blue-500 w-full">
-            <Star class="w-4 h-4" /> {{ $t('pages.chats.leaveReview') }}
-          </button>
-        </div>
-      </template>
-
-      <template v-if="showReviewForm">
-        <div class="w-full bg-gray-800/50 border border-gray-700 p-4 rounded-xl mt-3 space-y-4">
-          <div class="flex gap-1 justify-center">
-            <Star v-for="n in 5" :key="n" @click="reviewStars = n" class="cursor-pointer"
-              :class="reviewStars >= n ? 'text-blue-600 w-6 h-6' : 'text-gray-600 w-6 h-6'" />
-          </div>
-
-          <textarea v-model="reviewText" rows="4"
-            class="w-full max-h-28 rounded-lg bg-gray-800 border border-gray-700 p-3 text-sm text-gray-200 outline-none focus:border-blue-500"
-            :placeholder="$t('pages.chats.writeReview')"></textarea>
-
-          <button @click="handleSendReview()"
-            class="w-full rounded-lg bg-green-600 px-6 py-3 text-sm font-semibold text-white hover:bg-green-700 transition border border-green-500">
-            {{ $t('pages.chats.sendReview') }}
+        <div class="mt-3">
+          <button
+            class="flex items-center justify-center gap-2 rounded-lg border border-blue-500 bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+            @click="openReviewModal"
+          >
+            <Star class="h-4 w-4" />
+            {{ $t('pages.chats.leaveReview') }}
           </button>
         </div>
       </template>
@@ -423,7 +447,7 @@ onBeforeUnmount(() => {
   </div>
 
   <transition name="fade">
-    <div v-if="showReviewForm" class="fixed inset-0 z-50 flex items-center justify-center px-4">
+    <div v-if="showReviewModal" class="fixed inset-0 z-50 flex items-center justify-center px-4">
       <div class="absolute inset-0 bg-black/65 backdrop-blur-sm" @click="closeReviewModal"></div>
 
       <div class="relative w-full max-w-md overflow-hidden rounded-2xl border border-dark-700 bg-dark-800/95 shadow-2xl">
