@@ -92,7 +92,6 @@ const statusBadgeText = computed(() => {
   return null;
 });
 
-// Вычисляемое свойство для проверки, выбрана ли причина "otherReason"
 const isOtherReasonSelected = computed(() => {
   if (!selectedRefusalId.value || !otherReasonId.value) return false;
   return selectedRefusalId.value === otherReasonId.value;
@@ -103,7 +102,6 @@ async function openRefusalModal() {
     const reasons = await chatsService.getRefusalReasons();
     refusalReasons.value = reasons;
 
-    // Находим id причины с title "otherReason"
     const otherReason = reasons.find(reason => reason.title === 'otherReason');
     if (otherReason) {
       otherReasonId.value = otherReason.id;
@@ -168,7 +166,6 @@ async function handleReport(dealId: string) {
   if (!selectedRefusalId.value) return;
 
   let description = null;
-  // Если выбрана причина "otherReason" и есть текст, отправляем его
   if (isOtherReasonSelected.value && customReasonText.value.trim()) {
     description = customReasonText.value.trim();
   }
@@ -225,45 +222,53 @@ onBeforeUnmount(() => {
   <div class="my-2 w-full min-w-0">
     <div class="w-full min-w-0 overflow-hidden rounded-xl bg-gray-800/20 shadow-lg">
       <div class="flex flex-col gap-4 p-4 sm:flex-row sm:items-start">
-        <div class="flex-shrink-0 sm:w-1/3 min-w-0 cursor-pointer" @click="handleViewProduct(product)">
-          <div class="relative aspect-square rounded-lg overflow-hidden bg-gray-700 border border-gray-600">
-            <img :src="`${API_HOST}${product.images?.[0]?.image_url}`" :alt="product.title"
-              class="h-full w-full object-cover" loading="lazy" />
+        <div class="min-w-0 flex-shrink-0 cursor-pointer sm:w-1/3" @click="handleViewProduct(product)">
+          <div class="relative aspect-square overflow-hidden rounded-lg border border-gray-600 bg-gray-700">
+            <img
+              :src="`${API_HOST}${product.images?.[0]?.image_url}`"
+              :alt="product.title"
+              class="h-full w-full object-cover"
+              loading="lazy"
+            />
           </div>
         </div>
 
-        <div class="flex-1 text-mainText space-y-3 min-w-0">
-          <h3 class="cursor-pointer text-lg font-bold text-white transition-colors duration-200 line-clamp-2"
-            @click="handleViewProduct(product)">
+        <div class="min-w-0 flex-1 space-y-3 text-mainText">
+          <h3
+            class="line-clamp-2 cursor-pointer text-lg font-bold text-white transition-colors duration-200"
+            @click="handleViewProduct(product)"
+          >
             {{ product.title }}
           </h3>
 
-          <p class="text-xl text-green-400 font-bold">{{ formatCurrencyAmount(product.price) }}</p>
+          <p class="text-xl font-bold text-green-400">{{ formatCurrencyAmount(product.price) }}</p>
 
           <div v-if="product.auto_delivery" class="space-y-2">
-            <p class="text-sm font-semibold text-gray-300 uppercase tracking-wide border-b border-gray-700 pb-2">
+            <p class="border-b border-gray-700 pb-2 text-sm font-semibold uppercase tracking-wide text-gray-300">
               {{ $t('pages.chats.productData') }}
             </p>
-            <p class="text-gray-400 text-sm leading-relaxed line-clamp-3 break-words [overflow-wrap:anywhere]">
+            <p class="line-clamp-3 break-words text-sm leading-relaxed text-gray-400 [overflow-wrap:anywhere]">
               {{ product.product_data_string }}
             </p>
           </div>
           <div v-else class="space-y-2">
-            <p class="text-sm font-semibold text-yellow-400 uppercase tracking-wide border-b border-gray-700 pb-2">
+            <p class="border-b border-gray-700 pb-2 text-sm font-semibold uppercase tracking-wide text-yellow-400">
               {{ $t('pages.chats.manualDelivery') }}
             </p>
-            <p class="text-gray-400 text-sm leading-relaxed">
+            <p class="text-sm leading-relaxed text-gray-400">
               {{ $t('pages.chats.contactSeller') }}
             </p>
           </div>
         </div>
       </div>
 
-      <div class="flex flex-col gap-3 px-4 pb-4 sm:flex-row sm:items-center border-t border-gray-700 mt-4 pt-4">
+      <div class="mt-4 flex flex-col gap-3 border-t border-gray-700 px-4 pb-4 pt-4 sm:flex-row sm:items-center">
         <template v-if="canConfirmReceipt">
-          <button @click="openConfirmReceiptModal()"
-            class="flex items-center justify-center gap-2 rounded-lg bg-green-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-green-700 border border-green-500 min-w-[160px]">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button
+            class="min-w-[160px] flex items-center justify-center gap-2 rounded-lg border border-green-500 bg-green-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-green-700"
+            @click="openConfirmReceiptModal()"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
             {{ $t('pages.chats.confirmReceipt') }}
@@ -271,9 +276,11 @@ onBeforeUnmount(() => {
         </template>
 
         <template v-else-if="canConfirmFulfillment">
-          <button @click="openConfirmFulfillmentModal()"
-            class="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-blue-700 border border-blue-500 min-w-[200px]">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button
+            class="min-w-[200px] flex items-center justify-center gap-2 rounded-lg border border-blue-500 bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-blue-700"
+            @click="openConfirmFulfillmentModal()"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
             {{ $t('pages.chats.confirmFulfillment') }}
@@ -281,20 +288,30 @@ onBeforeUnmount(() => {
         </template>
 
         <template v-else-if="statusBadgeText">
-          <div
-            class="flex items-center justify-center gap-2 rounded-lg bg-gray-800 px-6 py-3 text-sm font-semibold text-gray-300 border border-gray-600 min-w-[200px]">
-            <svg class="w-4 h-4" :class="{
-              'text-yellow-400': isAwaitingSellerFulfillment,
-              'text-blue-400': showFulfillmentConfirmedBadge,
-              'text-green-400': isDealCompleted,
-              'text-orange-400': isDealRefunded,
-            }" fill="currentColor" viewBox="0 0 20 20">
-              <path v-if="isAwaitingSellerFulfillment" fill-rule="evenodd"
+          <div class="min-w-[200px] flex items-center justify-center gap-2 rounded-lg border border-gray-600 bg-gray-800 px-6 py-3 text-sm font-semibold text-gray-300">
+            <svg
+              class="h-4 w-4"
+              :class="{
+                'text-yellow-400': isAwaitingSellerFulfillment,
+                'text-blue-400': showFulfillmentConfirmedBadge,
+                'text-green-400': isDealCompleted,
+                'text-orange-400': isDealRefunded,
+              }"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                v-if="isAwaitingSellerFulfillment"
+                fill-rule="evenodd"
                 d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3a1 1 0 00.293.707l2 2a1 1 0 101.414-1.414L11 9.586V7z"
-                clip-rule="evenodd" />
-              <path v-else fill-rule="evenodd"
+                clip-rule="evenodd"
+              />
+              <path
+                v-else
+                fill-rule="evenodd"
                 d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                clip-rule="evenodd" />
+                clip-rule="evenodd"
+              />
             </svg>
             {{ $t(statusBadgeText) }}
           </div>
@@ -302,19 +319,22 @@ onBeforeUnmount(() => {
 
         <template v-if="isSeller && effectiveDealStatus === 'pending'">
           <template v-if="!isDealRefunded">
-            <button @click="openRefundModal"
-              class="flex items-center justify-center gap-2 rounded-lg bg-orange-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-orange-700 border border-orange-500 min-w-[160px]">
-              <RefreshCcw class="w-4 h-4" />
+            <button
+              class="min-w-[160px] flex items-center justify-center gap-2 rounded-lg border border-orange-500 bg-orange-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-orange-700"
+              @click="openRefundModal"
+            >
+              <RefreshCcw class="h-4 w-4" />
               {{ $t('pages.chats.refund') }}
             </button>
           </template>
           <template v-else>
-            <div
-              class="flex items-center justify-center gap-2 rounded-lg bg-gray-800 px-6 py-3 text-sm font-semibold text-gray-300 border border-gray-600 min-w-[160px]">
-              <svg class="w-4 h-4 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd"
+            <div class="min-w-[160px] flex items-center justify-center gap-2 rounded-lg border border-gray-600 bg-gray-800 px-6 py-3 text-sm font-semibold text-gray-300">
+              <svg class="h-4 w-4 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fill-rule="evenodd"
                   d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                  clip-rule="evenodd" />
+                  clip-rule="evenodd"
+                />
               </svg>
               {{ $t('pages.chats.refundCompleted') }}
             </div>
@@ -324,25 +344,29 @@ onBeforeUnmount(() => {
         <template v-if="isBuyer">
           <div v-if="canSendReport" class="sm:ml-auto flex flex-col gap-2">
             <button
+              class="min-w-[160px] flex items-center justify-center gap-2 rounded-lg border border-red-500 bg-red-600 px-6 py-3 text-sm font-semibold text-white hover:bg-red-700"
               @click="openRefusalModal()"
-              class="flex items-center justify-center gap-2 rounded-lg bg-red-600 px-6 py-3 text-sm font-semibold text-white hover:bg-red-700 border border-red-500 min-w-[160px]"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+                />
               </svg>
               {{ $t('pages.chats.report') }}
             </button>
           </div>
 
           <div v-else-if="showReportedBadge" class="sm:ml-auto flex flex-col gap-2">
-            <div
-              class="flex items-center justify-center gap-2 rounded-lg bg-gray-800 px-6 py-3 text-sm font-semibold text-gray-300 border border-gray-600 min-w-[160px]"
-            >
-              <svg class="w-4 h-4 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd"
+            <div class="min-w-[160px] flex items-center justify-center gap-2 rounded-lg border border-gray-600 bg-gray-800 px-6 py-3 text-sm font-semibold text-gray-300">
+              <svg class="h-4 w-4 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fill-rule="evenodd"
                   d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                  clip-rule="evenodd" />
+                  clip-rule="evenodd"
+                />
               </svg>
               {{ $t('pages.chats.reported') }}
             </div>
@@ -351,40 +375,16 @@ onBeforeUnmount(() => {
       </div>
 
       <template v-if="isDealCompleted && !localHasReview && isBuyer">
-<<<<<<< Updated upstream
         <div class="px-4 pb-4">
-          <button v-if="!showReviewForm" @click="showReviewForm = true"
-            class="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 border border-blue-500 w-full">
-=======
-        <div class="mt-3">
-          <button @click="openReviewModal"
-            class="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 border border-blue-500">
->>>>>>> Stashed changes
-            <Star class="w-4 h-4" /> {{ $t('pages.chats.leaveReview') }}
+          <button
+            class="w-full flex items-center justify-center gap-2 rounded-lg border border-blue-500 bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700"
+            @click="openReviewModal"
+          >
+            <Star class="h-4 w-4" />
+            {{ $t('pages.chats.leaveReview') }}
           </button>
         </div>
       </template>
-<<<<<<< Updated upstream
-
-      <template v-if="showReviewForm">
-        <div class="w-full bg-gray-800/50 border border-gray-700 p-4 rounded-xl mt-3 space-y-4">
-          <div class="flex gap-1 justify-center">
-            <Star v-for="n in 5" :key="n" @click="reviewStars = n" class="cursor-pointer"
-              :class="reviewStars >= n ? 'text-blue-600 w-6 h-6' : 'text-gray-600 w-6 h-6'" />
-          </div>
-
-          <textarea v-model="reviewText" rows="4"
-            class="w-full max-h-28 rounded-lg bg-gray-800 border border-gray-700 p-3 text-sm text-gray-200 outline-none focus:border-blue-500"
-            :placeholder="$t('pages.chats.writeReview')"></textarea>
-
-          <button @click="handleSendReview()"
-            class="w-full rounded-lg bg-green-600 px-6 py-3 text-sm font-semibold text-white hover:bg-green-700 transition border border-green-500">
-            {{ $t('pages.chats.sendReview') }}
-          </button>
-        </div>
-      </template>
-=======
->>>>>>> Stashed changes
     </div>
   </div>
 
@@ -458,57 +458,65 @@ onBeforeUnmount(() => {
   </transition>
 
   <transition name="fade">
-    <div v-if="showRefusalModal" class="fixed inset-0 flex items-center justify-center z-50 px-4">
+    <div v-if="showRefusalModal" class="fixed inset-0 z-50 flex items-center justify-center px-4">
       <div class="absolute inset-0 bg-black/50" @click="closeRefusalModal"></div>
 
-      <!-- modal window -->
-      <div class="relative bg-dark-800 rounded-2xl w-full max-w-md shadow-2xl border border-gray-800">
-        <!-- title -->
-        <div class="flex items-center justify-between p-6 pb-4 border-b border-gray-700/50">
+      <div class="relative w-full max-w-md rounded-2xl border border-gray-800 bg-dark-800 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-gray-700/50 p-6 pb-4">
           <h3 class="text-xl font-semibold text-white">
             {{ $t('pages.chats.selectReason') }}
           </h3>
-          <button @click="closeRefusalModal"
-            class="text-gray-400 hover:text-gray-300 transition-colors p-1 hover:bg-gray-700/30 rounded-lg">
-            <X class="w-5 h-5" />
+          <button
+            class="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-700/30 hover:text-gray-300"
+            @click="closeRefusalModal"
+          >
+            <X class="h-5 w-5" />
           </button>
         </div>
 
-        <!-- reasons list -->
         <div class="p-4">
-          <div class="space-y-2 max-h-80 overflow-y-auto pr-1">
-            <button v-for="reason in refusalReasons" :key="reason.id" @click="selectedRefusalId = reason.id" :class="[
-              'w-full text-left rounded-2xl border px-4 py-3.5 transition-colors duration-200',
-              selectedRefusalId === reason.id
+          <div class="max-h-80 space-y-2 overflow-y-auto pr-1">
+            <button
+              v-for="reason in refusalReasons"
+              :key="reason.id"
+              class="w-full rounded-2xl border px-4 py-3.5 text-left transition-colors duration-200"
+              :class="selectedRefusalId === reason.id
                 ? 'border-blue-500/45 bg-dark-700/75 text-white'
-                : 'border-dark-600 bg-dark-700/40 text-gray-300 hover:border-dark-500 hover:bg-dark-700/55 hover:text-white'
-            ]">
+                : 'border-dark-600 bg-dark-700/40 text-gray-300 hover:border-dark-500 hover:bg-dark-700/55 hover:text-white'"
+              @click="selectedRefusalId = reason.id"
+            >
               <div class="flex items-center">
-                <div class="flex-shrink-0 mr-3">
-                  <div :class="[
-                    'h-5 w-5 rounded-full border flex items-center justify-center transition-colors duration-200',
-                    selectedRefusalId === reason.id
+                <div class="mr-3 flex-shrink-0">
+                  <div
+                    class="flex h-5 w-5 items-center justify-center rounded-full border transition-colors duration-200"
+                    :class="selectedRefusalId === reason.id
                       ? 'border-blue-400 bg-blue-500/15 ring-1 ring-blue-500/30'
-                      : 'border-gray-500 bg-dark-900/90'
-                  ]">
-                    <div v-if="selectedRefusalId === reason.id" class="h-2.5 w-2.5 rounded-full bg-blue-400"></div>
+                      : 'border-gray-500 bg-dark-900/90'"
+                  >
+                    <div
+                      v-if="selectedRefusalId === reason.id"
+                      class="h-2.5 w-2.5 rounded-full bg-blue-400"
+                    ></div>
                   </div>
                 </div>
 
-                <span class="text-sm leading-relaxed font-medium">
+                <span class="text-sm font-medium leading-relaxed">
                   {{ $t(`common.refusalReasons.${reason.title}`) }}
                 </span>
               </div>
             </button>
           </div>
 
-          <!-- Custom reason textarea (only shown when "otherReason" is selected) -->
           <div v-if="isOtherReasonSelected" class="mt-4">
-            <textarea v-model="customReasonText" :maxlength="MAX_CUSTOM_REASON_LENGTH" rows="4"
+            <textarea
+              v-model="customReasonText"
+              :maxlength="MAX_CUSTOM_REASON_LENGTH"
+              rows="4"
               class="w-full rounded-2xl border border-dark-500 bg-dark-700/55 p-3 text-sm text-gray-100 outline-none transition-colors placeholder:text-gray-500 focus:border-blue-500/60 focus:bg-dark-700/75"
-              :placeholder="$t('pages.chats.enterCustomReason')"></textarea>
-            <div class="flex justify-between items-center mt-2 text-xs text-gray-400">
-              <span class="text-red-400" v-if="customReasonText.length >= MAX_CUSTOM_REASON_LENGTH">
+              :placeholder="$t('pages.chats.enterCustomReason')"
+            ></textarea>
+            <div class="mt-2 flex items-center justify-between text-xs text-gray-400">
+              <span v-if="customReasonText.length >= MAX_CUSTOM_REASON_LENGTH" class="text-red-400">
                 {{ $t('pages.chats.maxCharactersReached') }}
               </span>
               <span class="ml-auto">
@@ -518,19 +526,21 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- action buttons -->
-        <div class="flex justify-end gap-3 p-6 pt-4 border-t border-gray-700/50">
-          <button @click="closeRefusalModal"
-            class="px-5 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700/50 transition-colors font-medium">
+        <div class="flex justify-end gap-3 border-t border-gray-700/50 p-6 pt-4">
+          <button
+            class="rounded-lg px-5 py-2.5 font-medium text-gray-300 transition-colors hover:bg-gray-700/50 hover:text-white"
+            @click="closeRefusalModal"
+          >
             {{ $t('common.cancel') }}
           </button>
-          <button @click="handleReport(dealId)"
-            :disabled="!selectedRefusalId || (isOtherReasonSelected && !customReasonText.trim())" :class="[
-              'px-5 py-2.5 rounded-lg font-medium transition-colors',
-              !selectedRefusalId || (isOtherReasonSelected && !customReasonText.trim())
-                ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
-            ]">
+          <button
+            class="rounded-lg px-5 py-2.5 font-medium transition-colors"
+            :class="!selectedRefusalId || (isOtherReasonSelected && !customReasonText.trim())
+              ? 'cursor-not-allowed bg-gray-700 text-gray-500'
+              : 'bg-blue-600 text-white hover:bg-blue-700'"
+            :disabled="!selectedRefusalId || (isOtherReasonSelected && !customReasonText.trim())"
+            @click="handleReport(dealId)"
+          >
             {{ $t('pages.chats.sendReport') }}
           </button>
         </div>
@@ -538,17 +548,32 @@ onBeforeUnmount(() => {
     </div>
   </transition>
 
-  <ConfirmWindow :isOpen="showConfirmModal" :title="$t('pages.chats.confirmReceipt')"
-    :message="$t('pages.chats.confirmReceiptMessage')" :isLoading="confirmLoading" @confirm="doConfirmDeal"
-    @cancel="showConfirmModal = false" />
+  <ConfirmWindow
+    :isOpen="showConfirmModal"
+    :title="$t('pages.chats.confirmReceipt')"
+    :message="$t('pages.chats.confirmReceiptMessage')"
+    :isLoading="confirmLoading"
+    @confirm="doConfirmDeal"
+    @cancel="showConfirmModal = false"
+  />
 
-  <ConfirmWindow :isOpen="showFulfillmentModal" :title="$t('pages.chats.confirmFulfillment')"
-    :message="$t('pages.chats.confirmFulfillmentMessage')" :isLoading="fulfillmentLoading" @confirm="doConfirmFulfillment"
-    @cancel="showFulfillmentModal = false" />
+  <ConfirmWindow
+    :isOpen="showFulfillmentModal"
+    :title="$t('pages.chats.confirmFulfillment')"
+    :message="$t('pages.chats.confirmFulfillmentMessage')"
+    :isLoading="fulfillmentLoading"
+    @confirm="doConfirmFulfillment"
+    @cancel="showFulfillmentModal = false"
+  />
 
-  <ConfirmWindow :isOpen="showRefundModal" :title="$t('pages.chats.refund')"
-    :message="$t('pages.chats.refundConfirmMessage')" :isLoading="refundLoading" @confirm="doConfirmRefund"
-    @cancel="showRefundModal = false" />
+  <ConfirmWindow
+    :isOpen="showRefundModal"
+    :title="$t('pages.chats.refund')"
+    :message="$t('pages.chats.refundConfirmMessage')"
+    :isLoading="refundLoading"
+    @confirm="doConfirmRefund"
+    @cancel="showRefundModal = false"
+  />
 </template>
 
 <style scoped>
