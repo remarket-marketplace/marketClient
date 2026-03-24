@@ -37,6 +37,8 @@ const props = defineProps<{
   senderLabels?: Record<string, string>
   senderRoles?: Record<string, 'buyer' | 'seller' | 'admin'>
   forceShowSender?: boolean
+  dealStatusOverrides?: Record<string, string>
+  reviewedDealIds?: string[]
 }>()
 
 const textMessage = computed(() => isTextMessage(props.message) ? props.message : null)
@@ -52,12 +54,16 @@ const dealId = computed<string | null>(() => {
 })
 
 const dealStatus = computed<string | null>(() => {
-  if (isProductMessage(props.message)) return props.message.deal_status
+  if (isProductMessage(props.message)) {
+    return props.dealStatusOverrides?.[props.message.deal_id] ?? props.message.deal_status
+  }
   return null
 })
 
 const hasReview = computed<boolean | null>(() => {
-  if (isProductMessage(props.message)) return props.message.has_review
+  if (isProductMessage(props.message)) {
+    return props.message.has_review || props.reviewedDealIds?.includes(props.message.deal_id) || false
+  }
   return null
 })
 

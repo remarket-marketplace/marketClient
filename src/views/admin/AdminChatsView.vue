@@ -53,6 +53,7 @@ const floatingDateLabel = ref<string | null>(null)
 const isFloatingDateVisible = ref(false)
 let floatingDateRafId: number | null = null
 let floatingDateHideTimerId: number | null = null
+let deferredBottomPinTimeoutIds: number[] = []
 
 const messagesCurrentPage = ref(1)
 const messagesTotalPages = ref(0)
@@ -125,6 +126,8 @@ const currentChat = computed(() =>
     chats.value.find(chat => chat.id === selectedChatId.value) || null
 )
 
+type PriceOfferChatMessage = Extract<ChatMessageUnion, { message_type: 'price_offer_message' }>
+
 function getMessageTimestamp(message: ChatMessageUnion): number {
     const createdAt = message.created_at
     if (!createdAt) return 0
@@ -134,6 +137,49 @@ function getMessageTimestamp(message: ChatMessageUnion): number {
 
 function normalizeMessagesChronological(messages: ChatMessageUnion[]): ChatMessageUnion[] {
     return [...messages].sort((a, b) => getMessageTimestamp(a) - getMessageTimestamp(b))
+}
+
+function mergePriceOfferTimelineMessage(
+    firstMessage: PriceOfferChatMessage,
+    latestMessage: PriceOfferChatMessage,
+): PriceOfferChatMessage {
+    return {
+        ...firstMessage,
+        ...latestMessage,
+        id: firstMessage.id,
+        created_at: firstMessage.created_at,
+        offer_message: latestMessage.offer_message ?? firstMessage.offer_message,
+    }
+}
+
+function normalizeTimelineServerMessages(messages: ChatMessageUnion[]): ChatMessageUnion[] {
+    const normalizedMessages: ChatMessageUnion[] = []
+    const priceOfferIndexById = new Map<string, number>()
+
+    for (const message of messages) {
+        if (message.message_type !== 'price_offer_message') {
+            normalizedMessages.push(message)
+            continue
+        }
+
+        const existingIndex = priceOfferIndexById.get(message.offer_id)
+        if (existingIndex === undefined) {
+            priceOfferIndexById.set(message.offer_id, normalizedMessages.length)
+            normalizedMessages.push(message)
+            continue
+        }
+
+        const existingMessage = normalizedMessages[existingIndex]
+        if (!existingMessage || existingMessage.message_type !== 'price_offer_message') {
+            priceOfferIndexById.set(message.offer_id, normalizedMessages.length)
+            normalizedMessages.push(message)
+            continue
+        }
+
+        normalizedMessages[existingIndex] = mergePriceOfferTimelineMessage(existingMessage, message)
+    }
+
+    return normalizedMessages
 }
 
 type ChatTimelineItem = {
@@ -207,10 +253,43 @@ function capitalizeDateLabel(label: string): string {
         .join(' ')
 }
 
+const normalizedTimelineMessages = computed<ChatMessageUnion[]>(() => (
+    normalizeTimelineServerMessages(chatMessages.value)
+))
+
+const dealStatusOverrides = computed<Record<string, string>>(() => {
+    const statuses: Record<string, string> = {}
+
+    for (const message of chatMessages.value) {
+        if (message.message_type === 'purchase_message') {
+            statuses[message.deal_id] = statuses[message.deal_id] ?? message.deal_status
+            continue
+        }
+
+        if (message.message_type === 'update_deal_status_message') {
+            statuses[message.deal_id] = message.new_status
+        }
+    }
+
+    return statuses
+})
+
+const reviewedDealIds = computed<string[]>(() => {
+    const ids = new Set<string>()
+
+    for (const message of chatMessages.value) {
+        if (message.message_type === 'review_message') {
+            ids.add(message.review.deal_id)
+        }
+    }
+
+    return Array.from(ids)
+})
+
 const chatTimelineItems = computed<ChatTimelineItem[]>(() => {
     let previousDateKey: string | null = null
 
-    return chatMessages.value.map((message, index) => {
+    return normalizedTimelineMessages.value.map((message, index) => {
         const dateKey = parseMessageDateKey(message)
         const dateLabel = dateKey ? formatDateLabelByKey(dateKey) : null
         const showDateDivider = Boolean(dateLabel && dateKey !== previousDateKey)
@@ -350,6 +429,37 @@ function backToChats() {
     }
 }
 
+function clearDeferredBottomPinTimers() {
+    for (const timeoutId of deferredBottomPinTimeoutIds) {
+        clearTimeout(timeoutId)
+    }
+    deferredBottomPinTimeoutIds = []
+}
+
+function syncScrollStateFromContainer() {
+    const container = messageContainerRef.value
+    if (!container) return
+    previousMessageScrollTop.value = container.scrollTop
+    hasUserScrolledAwayFromTop.value = container.scrollTop > topLoadThresholdPx
+}
+
+function scheduleDeferredBottomPin(chatId: string) {
+    clearDeferredBottomPinTimers()
+
+    const delays = [120, 260, 420, 680, 960]
+    for (const delay of delays) {
+        const timeoutId = window.setTimeout(async () => {
+            if (selectedChatId.value !== chatId) return
+            await nextTick()
+            bottomPin.scrollNow()
+            syncScrollStateFromContainer()
+            scheduleFloatingDateLabelUpdate()
+        }, delay)
+
+        deferredBottomPinTimeoutIds.push(timeoutId)
+    }
+}
+
 function goToAdminHome() {
     router.push('/admin')
 }
@@ -430,7 +540,7 @@ onMounted(async () => {
         if (chatIdFromQuery) {
             const exists = await ensureChatLoaded(chatIdFromQuery)
             if (exists) {
-                await loadChatMessages(chatIdFromQuery)
+                await loadChatMessages(chatIdFromQuery, { settleToBottomAfterRouteOpen: true })
             } else if (isMobile.value) {
                 mobileMode.value = 'chats'
                 updateUrlChatId(null)
@@ -446,6 +556,7 @@ onMounted(async () => {
 onUnmounted(() => {
     unsubscribeNewMessage?.()
     unsubscribeChatUpdated?.()
+    clearDeferredBottomPinTimers()
     bottomPin.stop()
     if (floatingDateRafId !== null) {
         cancelAnimationFrame(floatingDateRafId)
@@ -465,11 +576,27 @@ watch([searchQuery, sortBy, presenceFilter, unreadFilter], () => {
 watch(selectedChatId, () => {
     floatingDateLabel.value = null
     isFloatingDateVisible.value = false
+    clearDeferredBottomPinTimers()
     if (floatingDateHideTimerId !== null) {
         clearTimeout(floatingDateHideTimerId)
         floatingDateHideTimerId = null
     }
 })
+
+watch(
+    () => route.query.chatId,
+    async (chatIdQuery) => {
+        const chatId = typeof chatIdQuery === 'string' ? chatIdQuery : null
+        if (!chatId) return
+        if (selectedChatId.value === chatId) return
+        if (isLoading.value) return
+
+        const exists = await ensureChatLoaded(chatId)
+        if (!exists) return
+
+        await loadChatMessages(chatId, { settleToBottomAfterRouteOpen: true })
+    }
+)
 
 watch(
     () => [
@@ -635,7 +762,10 @@ async function loadMoreMessages() {
     isLoadingMoreMessages.value = false
 }
 
-async function loadChatMessages(chatId: string) {
+async function loadChatMessages(
+    chatId: string,
+    options: { settleToBottomAfterRouteOpen?: boolean } = {},
+) {
     if (selectedChatId.value === chatId) {
         if (isMobile.value) {
             mobileMode.value = 'chat'
@@ -643,6 +773,7 @@ async function loadChatMessages(chatId: string) {
         return
     }
 
+    clearDeferredBottomPinTimers()
     isLoading.value = true
     isChatLoading.value = true
     isChatPinning.value = false
@@ -689,6 +820,9 @@ async function loadChatMessages(chatId: string) {
                     hasUserScrolledAwayFromTop.value = container.scrollTop > topLoadThresholdPx
                 }
                 scheduleFloatingDateLabelUpdate()
+                if (options.settleToBottomAfterRouteOpen) {
+                    scheduleDeferredBottomPin(chatId)
+                }
             } finally {
                 isChatPinning.value = false
             }
@@ -712,6 +846,10 @@ async function sendMessage(payload: { files: File[] }) {
             { isAdminPanelMessage: true },
         )
         if (!textResult.success) return
+
+        if (textResult.message && !chatMessages.value.some(m => m.id === textResult.message?.id)) {
+            chatMessages.value.push(textResult.message)
+        }
 
         newMessage.value = ''
         hasSentAnyMessage = true
@@ -905,6 +1043,8 @@ async function sendMessage(payload: { files: File[] }) {
                                                             :message="item.message"
                                                             :user="user"
                                                             :showAdminBadge="false"
+                                                            :deal-status-overrides="dealStatusOverrides"
+                                                            :reviewed-deal-ids="reviewedDealIds"
                                                         />
                                                     </div>
                                                 </template>

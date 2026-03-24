@@ -290,7 +290,7 @@ export const chatsService = {
     message: string,
     chatId: string,
     options?: { isAdminPanelMessage?: boolean },
-  ): Promise<{ success: boolean; errorCode?: string }> {
+  ): Promise<{ success: boolean; errorCode?: string; message?: ChatMessageUnion }> {
     if (!this.isConnected()) {
       await new Promise((r) => setTimeout(r, 500));
 
@@ -301,7 +301,7 @@ export const chatsService = {
     }
 
     try {
-      const ack = await new Promise<{ success?: boolean; error_code?: string }>(
+      const ack = await new Promise<{ success?: boolean; error_code?: string; message?: unknown }>(
         (resolve) => {
           socket!.emit(
             "send_message",
@@ -316,9 +316,20 @@ export const chatsService = {
           );
         }
       );
+
+      let parsedMessage: ChatMessageUnion | undefined
+      if (ack.message) {
+        try {
+          parsedMessage = ChatMessageUnionSchema.parse(ack.message)
+        } catch (error) {
+          console.error("Error validating send_message ack payload:", error)
+        }
+      }
+
       return {
         success: ack.success === true,
         errorCode: ack.error_code,
+        message: parsedMessage,
       };
     } catch (e) {
       console.error("Error sending message:", e);

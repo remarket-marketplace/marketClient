@@ -147,7 +147,7 @@ watch(
     <div class="flex flex-none items-end gap-2">
       <button
         type="button"
-        class="h-12 w-12 flex-none rounded-2xl border border-dark-600 bg-dark-700 text-gray-300 transition hover:bg-dark-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+        class="h-12 w-12 flex-none rounded-full border border-white/10 bg-background/80 text-gray-300 shadow-[0_14px_34px_-22px_rgba(0,0,0,0.9)] backdrop-blur-xl transition hover:border-white/15 hover:bg-background/90 hover:text-white supports-[backdrop-filter]:bg-background/55 supports-[backdrop-filter]:hover:bg-background/65 disabled:cursor-not-allowed disabled:opacity-60"
         :disabled="isDisabled || selectedFiles.length >= MAX_IMAGES_PER_MESSAGE"
         @click="openImagesPicker"
       >
@@ -164,10 +164,10 @@ watch(
       >
 
       <div
-        class="flex flex-1 items-end rounded-2xl border px-3 py-2 transition"
+        class="flex flex-1 items-end rounded-[26px] border px-3 py-2 shadow-[0_18px_44px_-28px_rgba(0,0,0,0.95)] backdrop-blur-xl transition"
         :class="isDisabled
-          ? 'border-amber-400/40 bg-amber-500/10 opacity-60'
-          : 'border-dark-600 bg-dark-700 focus-within:border-blue-400/60'"
+          ? 'border-amber-400/30 bg-amber-500/10 opacity-60'
+          : 'border-white/10 bg-background/80 focus-within:border-white/15 focus-within:bg-background/90 supports-[backdrop-filter]:bg-background/55 supports-[backdrop-filter]:focus-within:bg-background/65'"
       >
         <textarea
           ref="messageInputRef"
