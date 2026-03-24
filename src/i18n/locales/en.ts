@@ -222,7 +222,7 @@ const en = {
       PENDING: "Pending",
       CONFIRMED: "Confirmed",
       CANCELED: "Canceled",
-      CHARGEBACKED: "Chargebacked",
+      CHARGEBACKED: "Payment reversed",
     },
 
     refusalReasons: {
@@ -706,7 +706,7 @@ const en = {
           "Password must contain at least one lowercase letter",
         passwordDigitError: "Password must contain at least one digit",
         passwordSpecialCharError:
-          "Password must contain at least one special character (!@#$%^&*)",
+          "Password must contain at least one special character (for example: !, #, $, %, ^, &, *)",
         passwordsMustEqual: "Passwords must be the equal",
         success: "You have successfully registered!",
         completeCaptcha: "Please complete captcha",
@@ -891,6 +891,8 @@ const en = {
       refundCompleted: "Refund completed",
       manualDelivery: "Product delivery by seller",
       contactSeller: "To receive the product, contact the seller in chat",
+      sellerPendingInstructionTitle: "What to do",
+      sellerPendingInstructionText: "Send the product data or item to the buyer in chat. After delivery, click \"Confirm fulfillment\".",
 
       pending: "Deal created. Waiting for fulfillment confirmation from the seller.",
       confirmed:
@@ -910,6 +912,8 @@ const en = {
       offeredPrice: "Offered price",
       acceptOffer: "Accept",
       rejectOffer: "Reject",
+      retrySend: "Retry",
+      messageSendFailed: "Not sent",
       priceOfferStatuses: {
         pending: "Pending",
         accepted: "Accepted",
@@ -1267,7 +1271,7 @@ const en = {
         moderationReasonPlaceholder: "Example: confirmed after manual verification",
         actionConfirm: "Confirm",
         actionCancel: "Cancel",
-        actionChargeback: "Chargeback",
+        actionChargeback: "Reverse payment",
         amount: "Amount",
         createdAt: "Created",
         confirmedAt: "Confirmed",
@@ -1410,7 +1414,7 @@ const en = {
           wallet_top_up_requested: "Top-up requested",
           wallet_top_up_confirmed: "Top-up confirmed",
           wallet_top_up_canceled: "Top-up canceled",
-          wallet_top_up_chargebacked: "Top-up chargebacked",
+          wallet_top_up_chargebacked: "Top-up reversed",
           wallet_top_up_moderated_by_admin: "Top-up moderated by admin",
           feedback_submitted: "Feedback submitted",
           profile_description_updated: "Profile description updated",

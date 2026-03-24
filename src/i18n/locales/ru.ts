@@ -221,7 +221,7 @@ const ru = {
       PENDING: "Ожидает",
       CONFIRMED: "Подтвержден",
       CANCELED: "Отменен",
-      CHARGEBACKED: "Чарджбэк",
+      CHARGEBACKED: "Возврат платежа",
     },
     
     refusalReasons: {
@@ -697,7 +697,7 @@ const ru = {
           "Длина имени пользователя должна быть от 4 до 32 символов",
         usernameCharsError:
           "Никнейм должен содержать только английские буквы, цифры и символ '_'",
-        invalidEmail: "Введите корректный email",
+        invalidEmail: "Такой почты не существует",
         emailLengthError: "Email должен быть не длиннее 64 символов",
         passwordLengthError: "Пароль должен быть не менее 8 символов",
         passwordUppercaseError:
@@ -706,7 +706,7 @@ const ru = {
           "Пароль должен содержать хотя бы одну строчную букву",
         passwordDigitError: "Пароль должен содержать хотя бы одну цифру",
         passwordSpecialCharError:
-          "Пароль должен содержать хотя бы один специальный символ (!@#$%^&*)",
+          "Пароль должен содержать хотя бы один специальный символ (например: !, #, $, %, ^, &, *)",
         passwordsMustEqual: "Пароли должны совпадать",
         success: "Вы успешно зарегистрировались!",
         completeCaptcha: "Пожалуйста пройдите капчу",
@@ -890,6 +890,8 @@ const ru = {
       refundCompleted: "Возврат выполнен",
       manualDelivery: "Выдача товара продавцом",
       contactSeller: "Для получения товара свяжитесь с продавцом в чате",
+      sellerPendingInstructionTitle: "Что нужно сделать",
+      sellerPendingInstructionText: "Отправьте покупателю данные или товар в чате. После выдачи нажмите «Подтвердить выполнение».",
       pending: "Сделка создана. Ожидается подтверждение выполнения от продавца.",
       confirmed: "Продавец подтвердил выполнение сделки.",
       disputed: "Покупатель объявил спор по сделке.",
@@ -907,6 +909,8 @@ const ru = {
       offeredPrice: "Предложенная цена",
       acceptOffer: "Принять",
       rejectOffer: "Отклонить",
+      retrySend: "Повторить",
+      messageSendFailed: "Не отправлено",
       priceOfferStatuses: {
         pending: "Ожидает ответа",
         accepted: "Принято",
@@ -1264,7 +1268,7 @@ const ru = {
         moderationReasonPlaceholder: "Например: подтверждено после ручной проверки",
         actionConfirm: "Подтвердить",
         actionCancel: "Отменить",
-        actionChargeback: "Чарджбэк",
+        actionChargeback: "Сделать возврат",
         amount: "Сумма",
         createdAt: "Создан",
         confirmedAt: "Подтвержден",
@@ -1407,7 +1411,7 @@ const ru = {
           wallet_top_up_requested: "Запрос на пополнение",
           wallet_top_up_confirmed: "Пополнение подтверждено",
           wallet_top_up_canceled: "Пополнение отменено",
-          wallet_top_up_chargebacked: "Пополнение откачено чарджбэком",
+          wallet_top_up_chargebacked: "Пополнение возвращено",
           wallet_top_up_moderated_by_admin: "Модерация пополнения администратором",
           feedback_submitted: "Отправка обращения",
           profile_description_updated: "Изменение описания профиля",

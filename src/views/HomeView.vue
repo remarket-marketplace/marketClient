@@ -71,8 +71,6 @@ const isLoadingMoreSubCategories = ref(false)
 const isSearchPagination = ref(false)
 const minPriceFilter = ref('')
 const maxPriceFilter = ref('')
-const createdFromFilter = ref('')
-const createdToFilter = ref('')
 const isFiltersOpen = ref(false)
 type ProductCardViewMode = 'grid' | 'list'
 const PRODUCT_CARD_VIEW_MODE_STORAGE_KEY = 'home_product_card_view_mode'
@@ -714,22 +712,9 @@ function parseFilterNumber(value: string | number | null | undefined): number | 
   return Number.isNaN(parsed) ? undefined : parsed
 }
 
-function parseDateFilter(value: string | null | undefined): string | undefined {
-  if (!value) return undefined
-  const normalized = value.trim()
-  if (!normalized) return undefined
-
-  const parsedDate = new Date(`${normalized}T00:00:00`)
-  if (Number.isNaN(parsedDate.getTime())) return undefined
-
-  return normalized
-}
-
 function getProductFiltersParams(): ProductsFilterParams {
   const minPriceRaw = parsePriceFilterInRub(minPriceFilter.value)
   const maxPriceRaw = parsePriceFilterInRub(maxPriceFilter.value)
-  const createdFromRaw = parseDateFilter(createdFromFilter.value)
-  const createdToRaw = parseDateFilter(createdToFilter.value)
 
   const minPrice =
     minPriceRaw !== undefined && maxPriceRaw !== undefined && minPriceRaw > maxPriceRaw
@@ -740,36 +725,19 @@ function getProductFiltersParams(): ProductsFilterParams {
       ? minPriceRaw
       : maxPriceRaw
 
-  const createdFrom =
-    createdFromRaw && createdToRaw && createdFromRaw > createdToRaw
-      ? createdToRaw
-      : createdFromRaw
-  const createdTo =
-    createdFromRaw && createdToRaw && createdFromRaw > createdToRaw
-      ? createdFromRaw
-      : createdToRaw
-
   return {
     minPrice,
     maxPrice,
-    createdFrom,
-    createdTo,
   }
 }
 
 function clearProductFilters() {
   clearPriceFilters()
-  clearDateFilters()
 }
 
 function clearPriceFilters() {
   minPriceFilter.value = ''
   maxPriceFilter.value = ''
-}
-
-function clearDateFilters() {
-  createdFromFilter.value = ''
-  createdToFilter.value = ''
 }
 
 async function applyProductFilters() {
@@ -963,7 +931,7 @@ onBeforeUnmount(() => {
             <div class="rounded-2xl border border-slate-700/90 bg-gradient-to-br from-[#1b2838] via-[#16202d] to-[#101822] p-3 shadow-[0_16px_40px_rgba(0,0,0,0.38)] lg:p-4">
               <div class="flex flex-col gap-3 lg:flex-row lg:items-start">
                 <div class="flex items-start">
-                  <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-500/40 bg-[#0f141b]/70 text-[#66c0f4] shadow-inner">
+                  <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-500/40 bg-[#0f141b]/70 text-white shadow-inner">
                     <Icon icon="mdi:steam" class="h-7 w-7" />
                   </span>
                 </div>
@@ -1147,29 +1115,6 @@ onBeforeUnmount(() => {
                 </label>
               </div>
 
-              <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-                <label class="rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2.5 transition focus-within:border-blue-400/40 focus-within:bg-dark-700/55">
-                  <span class="block text-xs text-gray-400">{{ t('pages.index.dateFrom') }}</span>
-                  <input
-                    v-model="createdFromFilter"
-                    type="date"
-                    class="mt-1.5 w-full bg-transparent text-sm text-white outline-none placeholder-gray-500"
-                    :max="createdToFilter || undefined"
-                    @input="debouncedApplyProductFilters"
-                  />
-                </label>
-
-                <label class="rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2.5 transition focus-within:border-blue-400/40 focus-within:bg-dark-700/55">
-                  <span class="block text-xs text-gray-400">{{ t('pages.index.dateTo') }}</span>
-                  <input
-                    v-model="createdToFilter"
-                    type="date"
-                    class="mt-1.5 w-full bg-transparent text-sm text-white outline-none placeholder-gray-500"
-                    :min="createdFromFilter || undefined"
-                    @input="debouncedApplyProductFilters"
-                  />
-                </label>
-              </div>
             </div>
           </transition>
         </div>

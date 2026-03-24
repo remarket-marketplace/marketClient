@@ -191,7 +191,7 @@ function handleModalImageError() {
         </button>
       </div>
     </div>
-    <p v-else>{{ imageMessage.text }}</p>
+    <p v-else class="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{{ imageMessage.text }}</p>
 
     <div class="mt-1 flex w-full items-center justify-end gap-2 text-xs text-gray-300">
       <span>{{ formatDate(imageMessage.created_at) }}</span>
