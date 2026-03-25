@@ -796,7 +796,7 @@ const ru = {
         successRateCaption: "По закрытым сделкам",
         noClosedDeals: "Пока нет закрытых сделок",
         completedDealsLabel: "Сделок",
-        completedDealsCaption: "Успешно завершено",
+        completedDealsCaption: "Всего у продавца",
         memberSinceLabel: "На платформе",
         memberSinceCaption: "Дата регистрации",
         footer: "Успешность считается только по закрытым сделкам.",

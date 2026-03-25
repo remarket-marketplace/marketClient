@@ -797,7 +797,7 @@ const en = {
         successRateCaption: "From closed deals",
         noClosedDeals: "No closed deals yet",
         completedDealsLabel: "Deals",
-        completedDealsCaption: "Successfully completed",
+        completedDealsCaption: "Total for seller",
         memberSinceLabel: "On platform",
         memberSinceCaption: "Registration date",
         footer: "Success rate is based only on closed deals.",

@@ -20,6 +20,7 @@ export const SellerSchema = z.object({
 }).strip()
 
 export const SellerTrustSchema = z.object({
+  total_deals_count: z.number(),
   completed_deals_count: z.number(),
   successful_deals_percent: z.number().nullable(),
 }).strip()
