@@ -307,10 +307,9 @@ function openShareModal() {
   showShareModal.value = true
   showMenu.value = false
   isCopied.value = false
-  setTimeout(() => document.addEventListener('click', handleClickOutside), 0)
 }
 
-function closeShareModal() { showShareModal.value = false; document.removeEventListener('click', handleClickOutside) }
+function closeShareModal() { showShareModal.value = false }
 
 async function openDirectChat(event?: MouseEvent) {
   event?.preventDefault()
@@ -391,6 +390,7 @@ function restoreProductCardViewModeFromStorage(): void {
 }
 
 onMounted(async () => {
+  document.addEventListener('click', handleClickOutside)
   restoreProductCardViewModeFromStorage()
   const profileLoaded = await loadProfileData()
   if (profileLoaded) {
@@ -462,9 +462,9 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                   </button>
 
                   <div v-if="showMenu"
-                    class="absolute right-0 z-10 mt-2 w-48 border border-dark-600 rounded-xl bg-dark-800/80 backdrop-blur-sm shadow-2xl">
+                    class="absolute right-0 z-10 mt-2 w-48 overflow-hidden rounded-xl border border-dark-600 bg-dark-800/80 backdrop-blur-sm shadow-2xl">
                     <button @click="goToSettings"
-                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-gray-300 hover:bg-dark-700/50 transition-colors">
+                      class="w-full rounded-t-xl flex items-center gap-3 px-4 py-3 text-left text-sm text-gray-300 hover:bg-dark-700/50 transition-colors">
                       <Settings class="w-4 h-4" />
                       <span>{{ t('pages.profile.settings') }}</span>
                     </button>
@@ -478,10 +478,9 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                       <Share2 class="w-4 h-4" />
                       <span>{{ t('pages.profile.share') }}</span>
                     </button>
-                    <div class="h-px bg-dark-600 my-2"></div>
                     <hr class="border-dark-200">
                     <button @click="logout"
-                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-red-400 hover:bg-dark-700/50 transition-colors">
+                      class="w-full rounded-b-xl flex items-center gap-3 px-4 py-3 text-left text-sm text-red-400 hover:bg-dark-700/50 transition-colors">
                       <LogOut class="w-4 h-4" />
                       <span>{{ t('pages.profile.logout') }}</span>
                     </button>
@@ -902,9 +901,9 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
       <!-- Share Modal -->
       <Teleport to="body">
         <div v-if="showShareModal"
-          class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
+          class="app-modal-overlay z-50 bg-black/90 backdrop-blur-sm">
           <div ref="shareModalRef"
-            class="relative w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto border border-dark-600 rounded-2xl bg-dark-800/95 backdrop-blur-sm p-4 sm:p-6 space-y-6"
+            class="app-modal-panel relative w-full max-w-md overflow-y-auto rounded-2xl border border-dark-600 bg-dark-800/95 p-4 backdrop-blur-sm sm:p-6 space-y-6"
             @click.stop>
             <div class="flex items-center justify-between">
               <h3 class="text-xl font-bold text-white">{{ t('pages.profile.shareProfile') }}</h3>

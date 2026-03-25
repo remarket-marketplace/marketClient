@@ -447,10 +447,10 @@ onBeforeUnmount(() => {
   </div>
 
   <transition name="fade">
-    <div v-if="showReviewModal" class="fixed inset-0 z-50 flex items-center justify-center px-4">
+    <div v-if="showReviewModal" class="app-modal-overlay z-50">
       <div class="absolute inset-0 bg-black/65 backdrop-blur-sm" @click="closeReviewModal"></div>
 
-      <div class="relative w-full max-w-md overflow-hidden rounded-2xl border border-dark-700 bg-dark-800/95 shadow-2xl">
+      <div class="app-modal-panel relative flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-dark-700 bg-dark-800/95 shadow-2xl">
         <div class="flex items-center justify-between border-b border-dark-700/80 px-5 py-4">
           <div>
             <h3 class="text-lg font-semibold text-white">{{ $t('pages.chats.leaveReview') }}</h3>
@@ -466,7 +466,7 @@ onBeforeUnmount(() => {
           </button>
         </div>
 
-        <div class="space-y-5 px-5 py-5">
+        <div class="app-modal-scroll space-y-5 px-5 py-5">
           <div class="flex justify-center gap-2">
             <button
               v-for="n in 5"
@@ -516,10 +516,10 @@ onBeforeUnmount(() => {
   </transition>
 
   <transition name="fade">
-    <div v-if="showRefusalModal" class="fixed inset-0 z-50 flex items-center justify-center px-4">
+    <div v-if="showRefusalModal" class="app-modal-overlay z-50">
       <div class="absolute inset-0 bg-black/50" @click="closeRefusalModal"></div>
 
-      <div class="relative w-full max-w-md rounded-2xl border border-gray-800 bg-dark-800 shadow-2xl">
+      <div class="app-modal-panel relative flex w-full max-w-md flex-col rounded-2xl border border-gray-800 bg-dark-800 shadow-2xl">
         <div class="flex items-center justify-between border-b border-gray-700/50 p-6 pb-4">
           <h3 class="text-xl font-semibold text-white">
             {{ $t('pages.chats.selectReason') }}
@@ -532,7 +532,7 @@ onBeforeUnmount(() => {
           </button>
         </div>
 
-        <div class="p-4">
+        <div class="app-modal-scroll p-4">
           <div class="max-h-80 space-y-2 overflow-y-auto pr-1">
             <button
               v-for="reason in refusalReasons"

@@ -981,7 +981,6 @@ const en = {
       changePasswordHint: "Change your password to secure your account",
       twoFactorTitle: "Two-factor authentication",
       twoFactorHint: "Extra login protection with a code from email.",
-      twoFactorEmailHint: "A verification code will be sent to your email on each sign in.",
       twoFactorEnabled: "Enabled",
       twoFactorDisabled: "Disabled",
       twoFactorSaved: "Two-factor settings updated",

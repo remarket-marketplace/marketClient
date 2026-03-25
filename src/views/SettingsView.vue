@@ -1159,30 +1159,41 @@ onUnmounted(() => {
             </div>
 
             <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-6 space-y-4">
-              <div class="flex items-start justify-between gap-3">
+              <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div class="min-w-0">
-                  <div class="flex items-center gap-2 text-white font-semibold">
+                  <div class="flex flex-wrap items-center gap-2 text-white font-semibold">
                     <Mail class="w-4 h-4 text-blue-300" />
                     <span>{{ $t('pages.settingsPage.twoFactorTitle') }}</span>
                   </div>
                   <p class="mt-1 text-xs text-gray-300">{{ $t('pages.settingsPage.twoFactorHint') }}</p>
                 </div>
-                <Checkbox
-                  size="md"
-                  :model-value="twoFactorEnabled"
-                  :disabled="isTwoFactorLoading || isTwoFactorSaving || !twoFactorData"
-                  @update:model-value="toggleTwoFactorSettings"
-                />
-              </div>
-
-              <div class="rounded-lg border border-dark-700 bg-dark-700/35 px-3 py-2 text-xs text-gray-300">
-                <span
-                  class="font-semibold"
-                  :class="twoFactorEnabled ? 'text-emerald-300' : 'text-amber-200'"
+                <div
+                  class="grid w-full grid-cols-2 rounded-xl border border-dark-700 bg-dark-700/50 p-1 sm:w-auto sm:min-w-[220px]"
+                  :class="isTwoFactorLoading || isTwoFactorSaving || !twoFactorData ? 'opacity-60' : ''"
                 >
-                  {{ twoFactorEnabled ? $t('pages.settingsPage.twoFactorEnabled') : $t('pages.settingsPage.twoFactorDisabled') }}
-                </span>
-                <span class="ml-1">{{ $t('pages.settingsPage.twoFactorEmailHint') }}</span>
+                  <button
+                    type="button"
+                    :disabled="isTwoFactorLoading || isTwoFactorSaving || !twoFactorData || twoFactorEnabled"
+                    class="rounded-lg px-4 py-2 text-sm font-semibold transition"
+                    :class="twoFactorEnabled
+                      ? 'bg-blue-600 text-white shadow-[0_8px_24px_rgba(37,99,235,0.28)]'
+                      : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
+                    @click="!twoFactorEnabled && toggleTwoFactorSettings()"
+                  >
+                    {{ $t('pages.settingsPage.twoFactorEnabled') }}
+                  </button>
+                  <button
+                    type="button"
+                    :disabled="isTwoFactorLoading || isTwoFactorSaving || !twoFactorData || !twoFactorEnabled"
+                    class="rounded-lg px-4 py-2 text-sm font-semibold transition"
+                    :class="!twoFactorEnabled
+                      ? 'border border-rose-400/20 bg-rose-500/12 text-rose-100 shadow-[0_8px_24px_rgba(244,63,94,0.14)]'
+                      : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
+                    @click="twoFactorEnabled && toggleTwoFactorSettings()"
+                  >
+                    {{ $t('pages.settingsPage.twoFactorDisabled') }}
+                  </button>
+                </div>
               </div>
 
               <div v-if="isTwoFactorLoading || isTwoFactorSaving" class="flex items-center gap-2 text-sm text-gray-300">
@@ -1342,7 +1353,7 @@ onUnmounted(() => {
             </div>
 
             <div v-else class="rounded-xl border border-dark-700 bg-dark-600/40 p-6 space-y-5">
-              <div class="rounded-xl border border-dark-700 bg-dark-700/30 p-4 flex items-center justify-between gap-3">
+              <div class="rounded-xl border border-dark-700 bg-dark-700/30 p-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div class="min-w-0">
                   <div class="flex items-center gap-2 text-white font-semibold">
                     <Mail class="w-4 h-4 text-blue-300" />
@@ -1350,19 +1361,40 @@ onUnmounted(() => {
                   </div>
                   <p class="mt-1 text-xs text-gray-300">{{ $t('pages.settingsPage.notificationsEmailHint') }}</p>
                 </div>
-                <Checkbox
-                  size="md"
-                  :model-value="emailNotificationsEnabled"
-                  :disabled="isNotificationsSaving"
-                  @update:model-value="toggleEmailNotifications"
-                />
+                <div
+                  class="grid w-full grid-cols-2 rounded-xl border border-dark-700 bg-dark-700/50 p-1 sm:w-auto sm:min-w-[220px]"
+                  :class="isNotificationsSaving ? 'opacity-60' : ''"
+                >
+                  <button
+                    type="button"
+                    :disabled="isNotificationsSaving || emailNotificationsEnabled"
+                    class="rounded-lg px-4 py-2 text-sm font-semibold transition"
+                    :class="emailNotificationsEnabled
+                      ? 'bg-blue-600 text-white shadow-[0_8px_24px_rgba(37,99,235,0.28)]'
+                      : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
+                    @click="!emailNotificationsEnabled && toggleEmailNotifications()"
+                  >
+                    {{ $t('pages.settingsPage.twoFactorEnabled') }}
+                  </button>
+                  <button
+                    type="button"
+                    :disabled="isNotificationsSaving || !emailNotificationsEnabled"
+                    class="rounded-lg px-4 py-2 text-sm font-semibold transition"
+                    :class="!emailNotificationsEnabled
+                      ? 'border border-rose-400/20 bg-rose-500/12 text-rose-100 shadow-[0_8px_24px_rgba(244,63,94,0.14)]'
+                      : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
+                    @click="emailNotificationsEnabled && toggleEmailNotifications()"
+                  >
+                    {{ $t('pages.settingsPage.twoFactorDisabled') }}
+                  </button>
+                </div>
               </div>
 
               <div
                 v-if="telegramIntegrationEnabled"
                 class="rounded-xl border border-dark-700 bg-dark-700/30 p-4 space-y-3"
               >
-                <div class="flex items-center justify-between gap-3">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div class="min-w-0">
                     <div class="flex items-center gap-2 text-white font-semibold">
                       <Send class="w-4 h-4 text-emerald-300" />
@@ -1370,12 +1402,33 @@ onUnmounted(() => {
                     </div>
                     <p class="mt-1 text-xs text-gray-300">{{ $t('pages.settingsPage.notificationsTelegramHint') }}</p>
                   </div>
-                  <Checkbox
-                    size="md"
-                    :model-value="telegramNotificationsEnabled"
-                    :disabled="isNotificationsSaving || !telegramConnected"
-                    @update:model-value="toggleTelegramNotifications"
-                  />
+                  <div
+                    class="grid w-full grid-cols-2 rounded-xl border border-dark-700 bg-dark-700/50 p-1 sm:w-auto sm:min-w-[220px]"
+                    :class="isNotificationsSaving || !telegramConnected ? 'opacity-60' : ''"
+                  >
+                    <button
+                      type="button"
+                      :disabled="isNotificationsSaving || !telegramConnected || telegramNotificationsEnabled"
+                      class="rounded-lg px-4 py-2 text-sm font-semibold transition"
+                      :class="telegramNotificationsEnabled
+                        ? 'bg-blue-600 text-white shadow-[0_8px_24px_rgba(37,99,235,0.28)]'
+                        : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
+                      @click="!telegramNotificationsEnabled && toggleTelegramNotifications()"
+                    >
+                      {{ $t('pages.settingsPage.twoFactorEnabled') }}
+                    </button>
+                    <button
+                    type="button"
+                    :disabled="isNotificationsSaving || !telegramConnected || !telegramNotificationsEnabled"
+                    class="rounded-lg px-4 py-2 text-sm font-semibold transition"
+                    :class="!telegramNotificationsEnabled
+                      ? 'border border-rose-400/20 bg-rose-500/12 text-rose-100 shadow-[0_8px_24px_rgba(244,63,94,0.14)]'
+                      : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
+                    @click="telegramNotificationsEnabled && toggleTelegramNotifications()"
+                  >
+                      {{ $t('pages.settingsPage.twoFactorDisabled') }}
+                    </button>
+                  </div>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2 text-xs">

@@ -978,7 +978,6 @@ const ru = {
       changePasswordHint: "Измените пароль для защиты аккаунта",
       twoFactorTitle: "Двухфакторная аутентификация",
       twoFactorHint: "Дополнительная защита входа через код из письма.",
-      twoFactorEmailHint: "Код подтверждения будет приходить на вашу почту при каждом входе.",
       twoFactorEnabled: "Включена",
       twoFactorDisabled: "Отключена",
       twoFactorSaved: "Настройки двухфакторной защиты обновлены",

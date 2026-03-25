@@ -643,9 +643,9 @@ const typeLabel = (type: string) => {
     <Teleport to="body">
       <div 
         v-if="showDepositModal" 
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+        class="app-modal-overlay z-50 bg-black/90 backdrop-blur-sm"
       >
-        <div class="relative w-full max-w-md border border-dark-600 rounded-2xl bg-dark-800/95 backdrop-blur-sm p-6 space-y-6">
+        <div class="app-modal-panel relative w-full max-w-md overflow-y-auto rounded-2xl border border-dark-600 bg-dark-800/95 p-6 backdrop-blur-sm space-y-6">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full border border-dark-500 bg-dark-700/70 flex items-center justify-center">
@@ -794,9 +794,9 @@ const typeLabel = (type: string) => {
     <Teleport to="body">
       <div 
         v-if="showWithdrawModal" 
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+        class="app-modal-overlay z-50 bg-black/90 backdrop-blur-sm"
       >
-        <div class="relative w-full max-w-md border border-dark-600 rounded-2xl bg-dark-800/95 backdrop-blur-sm p-6 space-y-6">
+        <div class="app-modal-panel relative w-full max-w-md overflow-y-auto rounded-2xl border border-dark-600 bg-dark-800/95 p-6 backdrop-blur-sm space-y-6">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full border border-emerald-500/35 bg-emerald-500/10 flex items-center justify-center">
