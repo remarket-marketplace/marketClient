@@ -800,24 +800,24 @@ onUnmounted(() => {
 
               <div v-if="product.status === 'active'" class="flex w-full items-center justify-end gap-3">
                 <div class="flex min-w-0 flex-1 flex-nowrap items-stretch gap-2">
-                  <button :disabled="user === null" @click="user !== null && openOfferConfirm()" class="h-12 flex-1 whitespace-nowrap rounded-lg px-4 text-sm font-semibold transition
+                  <button :disabled="user === null" @click="user !== null && openOfferConfirm()" class="inline-flex h-12 flex-1 items-center justify-center whitespace-nowrap rounded-lg px-4 text-sm font-semibold leading-none transition
           bg-emerald-600 text-white hover:bg-emerald-700
           disabled:bg-emerald-600/40
           disabled:text-white/60
           disabled:cursor-not-allowed
           disabled:hover:bg-emerald-600/40">
-                    <span class="inline-flex items-center justify-center gap-2">
+                    <span class="inline-flex items-center justify-center gap-2 leading-none">
                       <Percent class="h-4 w-4" />
                       {{ $t('pages.product.offerPrice') }}
                     </span>
                   </button>
-                  <button :disabled="user === null" @click="user !== null && openBuyConfirm()" class="h-12 flex-1 whitespace-nowrap rounded-lg px-4 text-sm font-semibold transition
+                  <button :disabled="user === null" @click="user !== null && openBuyConfirm()" class="inline-flex h-12 flex-1 items-center justify-center whitespace-nowrap rounded-lg px-4 text-sm font-semibold leading-none transition
           bg-blue-600 text-white hover:bg-blue-700
           disabled:bg-blue-600/40
           disabled:text-white/60
           disabled:cursor-not-allowed
           disabled:hover:bg-blue-600/40">
-                    <span class="inline-flex items-center justify-center gap-2">
+                    <span class="inline-flex items-center justify-center gap-2 leading-none">
                       <ShoppingBag class="h-4 w-4" />
                       {{ $t('pages.product.buy') }}
                     </span>
