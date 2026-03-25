@@ -39,7 +39,6 @@ const profileBackgroundFiles = ref<File[]>([]);
 const balance = ref('');
 const rating = ref('');
 const isBanned = ref(false);
-const isActive = ref(true);
 const role = ref<'user' | 'admin' | 'partner'>('user');
 const hasFrozenBalance = ref(false);
 const nicknameStyleId = ref('default');
@@ -103,7 +102,6 @@ async function loadUser() {
       balance.value = userData.balance.toString();
       rating.value = userData.rating.toString();
       isBanned.value = userData.is_banned;
-      isActive.value = userData.is_active;
       role.value = userData.role;
       hasFrozenBalance.value = userData.has_frozen_balance;
       nicknameStyleId.value = userData.nickname_style_id || 'default';
@@ -199,7 +197,6 @@ async function saveUser() {
       balance: balanceValue,
       rating: ratingValue,
       is_banned: isBanned.value,
-      is_active: isActive.value,
       role: role.value,
       has_frozen_balance: hasFrozenBalance.value,
       nickname_style_id: normalizedNicknameStyleId,
@@ -225,7 +222,6 @@ async function saveUser() {
     balance.value = updateResponse.balance.toString();
     rating.value = updateResponse.rating.toString();
     isBanned.value = updateResponse.is_banned;
-    isActive.value = updateResponse.is_active;
     role.value = updateResponse.role;
     hasFrozenBalance.value = updateResponse.has_frozen_balance;
     nicknameStyleId.value = updateResponse.nickname_style_id || 'default';
@@ -318,18 +314,6 @@ function cancelProfileBackgroundDelete() {
 
 onMounted(() => {
   loadUser();
-});
-
-watch(isBanned, (value) => {
-  if (value) {
-    isActive.value = false;
-  }
-});
-
-watch(isActive, (value) => {
-  if (value && isBanned.value) {
-    isBanned.value = false;
-  }
 });
 
 watch(profileBackgroundUnlocked, (value) => {
@@ -514,10 +498,17 @@ watch(profileBackgroundUnlocked, (value) => {
                       <Checkbox v-model="isBanned" />
                       <span class="text-sm text-mainText">{{ $t('common.banned') }}</span>
                     </label>
-                    <label class="flex items-center gap-2 py-1">
-                      <Checkbox v-model="isActive" />
-                      <span class="text-sm text-mainText">{{ $t('common.isActive') }}</span>
-                    </label>
+                    <div class="flex items-center gap-2 py-1">
+                      <span class="text-sm text-text-secondary">{{ $t('common.status') }}:</span>
+                      <span
+                        class="inline-flex rounded-full border px-2 py-1 text-xs font-medium"
+                        :class="user?.is_active
+                          ? 'border-green-500/30 bg-green-500/15 text-green-400'
+                          : 'border-gray-500/30 bg-gray-500/15 text-gray-400'"
+                      >
+                        {{ user?.is_active ? $t('common.online') : $t('common.offline') }}
+                      </span>
+                    </div>
                     <label class="flex items-center gap-2 py-1">
                       <Checkbox v-model="hasFrozenBalance" />
                       <span class="text-sm text-mainText">{{ $t('pages.admin.editUser.frozenBalance') }}</span>
