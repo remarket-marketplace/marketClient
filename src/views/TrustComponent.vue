@@ -52,8 +52,8 @@ const successfulDealsCaption = computed(() => (
     : t('pages.product.sellerTrust.noClosedDeals')
 ))
 
-const completedDealsValue = computed(() => Intl.NumberFormat(locale.value).format(
-  props.product.seller_trust?.completed_deals_count ?? 0,
+const totalDealsValue = computed(() => Intl.NumberFormat(locale.value).format(
+  props.product.seller_trust?.total_deals_count ?? 0,
 ))
 </script>
 
@@ -137,7 +137,7 @@ const completedDealsValue = computed(() => Intl.NumberFormat(locale.value).forma
             {{ $t('pages.product.sellerTrust.completedDealsLabel') }}
           </div>
           <p class="mt-1.5 text-lg font-semibold text-white">
-            {{ completedDealsValue }}
+            {{ totalDealsValue }}
           </p>
           <p class="mt-0.5 text-[11px] leading-relaxed text-gray-500">
             {{ $t('pages.product.sellerTrust.completedDealsCaption') }}
