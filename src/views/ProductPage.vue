@@ -756,7 +756,7 @@ onUnmounted(() => {
         <TrustComponent :product="product" />
 
         <!-- Action buttons -->
-        <div class="pt-6 border-t border-gray-800">
+        <div class="pt-6 border-t border-black">
           <div v-if="!product.is_sold" class="flex flex-col gap-3 sm:flex-row justify-end">
             <div class="w-full flex gap-6 pr-4 items-center justify-end" v-if="product.is_owner">
               <button
