@@ -77,10 +77,10 @@ const filteredUsers = computed(() => {
     const matchesStatus =
       statusFilter.value === 'all'
         ? true
-        : statusFilter.value === 'active'
+        : statusFilter.value === 'online'
           ? user.is_active && !user.is_banned
-          : statusFilter.value === 'inactive'
-            ? !user.is_active
+          : statusFilter.value === 'offline'
+            ? !user.is_active && !user.is_banned
             : user.is_banned
 
     const matchesRole =
@@ -162,10 +162,10 @@ function getStatusBadge(user: UserRead) {
   if (user.is_banned) {
     return { text: 'common.banned', class: 'bg-red-500/20 text-red-400 border-red-500/30' };
   }
-  if (!user.is_active) {
-    return { text: 'pages.admin.usersPage.notActive', class: 'bg-gray-500/20 text-gray-400 border-gray-500/30' };
+  if (user.is_active) {
+    return { text: 'common.online', class: 'bg-green-500/20 text-green-400 border-green-500/30' };
   }
-  return { text: 'common.productStatuses.active', class: 'bg-green-500/20 text-green-400 border-green-500/30' };
+  return { text: 'common.offline', class: 'bg-gray-500/20 text-gray-400 border-gray-500/30' };
 }
 
 function getRoleBadge(user: UserRead) {
@@ -363,8 +363,8 @@ watch(sortedUsers, () => {
         v-model="statusFilter"
         :options="[
           { value: 'all', label: t('common.all') },
-          { value: 'active', label: t('common.filters.active') },
-          { value: 'inactive', label: t('common.filters.inactive') },
+          { value: 'online', label: t('common.online') },
+          { value: 'offline', label: t('common.offline') },
           { value: 'banned', label: t('common.filters.banned') },
         ]"
         :placeholder="$t('common.filters.status')"
