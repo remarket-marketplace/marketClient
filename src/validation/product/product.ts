@@ -19,6 +19,11 @@ export const SellerSchema = z.object({
   created_at: z.string(),
 }).strip()
 
+export const SellerTrustSchema = z.object({
+  completed_deals_count: z.number(),
+  successful_deals_percent: z.number().nullable(),
+}).strip()
+
 export const ProductSchema = z.object({
   id: UUIDSchema,
   slug: z.string(),
@@ -41,9 +46,11 @@ export const ProductSchema = z.object({
   product_data_string: z.string().nullable().optional(),
   likes: z.number().nullable().optional(),
   is_liked: z.boolean().nullable().optional(),
+  seller_trust: SellerTrustSchema.nullable().optional(),
 }).strip()
 
 export type Product = z.infer<typeof ProductSchema>
 export type ProductImage = z.infer<typeof ProductImageSchema>
 export type ProductEdit = z.infer<typeof ProductSchema>
+export type SellerTrust = z.infer<typeof SellerTrustSchema>
 export { CategorySchema }

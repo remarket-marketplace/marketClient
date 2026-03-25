@@ -12,13 +12,10 @@ import { onMounted, ref, onUnmounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { ChevronLeft, ChevronRight, X, Heart, Trash2, Percent, ShoppingBag, LayoutGrid, Rows3 } from 'lucide-vue-next'
-import UserRating from '@/components/UserRating.vue'
 import TrustComponent from './TrustComponent.vue'
 import { useUserStore } from '@/stores/user'
 import BackButton from '@/components/navigation/BackButton.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
-import UserAvatar from '@/components/UserAvatar.vue'
-import StyledUsername from '@/components/StyledUsername.vue'
 import { formatCurrencyAmount, getCurrencySymbol, resolvePreferredCurrency } from '@/utils/currency'
 import { storeToRefs } from 'pinia'
 import { buildCategoryKey, buildProductKey } from '@/utils/urlKeys'
@@ -756,29 +753,7 @@ onUnmounted(() => {
           </p>
         </div>
 
-        <!-- Seller -->
-        <div
-          class="flex items-center gap-4 p-4 rounded-xl bg-dark-600 cursor-pointer transition-all duration-200 hover:bg-dark-600/80 group"
-          @click="router.push(`/user/${product.seller.username}`)">
-          <UserAvatar
-            :avatar-url="product.seller.avatar_url"
-            :alt="product.seller.username"
-            class="w-12 h-12 rounded-full border border-dark-500 object-cover"
-          />
-          <div class="flex-1 flex flex-col gap-1">
-            <StyledUsername
-              :username="product.seller.username"
-              :style-id="product.seller.nickname_style_id"
-              class="text-base font-semibold"
-            />
-            <div class="flex">
-              <UserRating :rating="product.seller.rating" />
-            </div>
-          </div>
-          <div class="text-gray-400 text-xl transition-transform duration-200 group-hover:translate-x-1">
-            →
-          </div>
-        </div>
+        <TrustComponent :product="product" />
 
         <!-- Action buttons -->
         <div class="pt-6 border-t border-gray-800">
@@ -843,9 +818,7 @@ onUnmounted(() => {
           </div>
 
         </div>
-
-        <TrustComponent v-if="!product.is_owner" />
-        <div v-else class="w-full flex justify-end gap-2 text-gray-400">
+        <div v-if="product.is_owner" class="w-full flex justify-end gap-2 text-gray-400">
           <Heart />
           <span>{{ product.likes }}</span>
         </div>

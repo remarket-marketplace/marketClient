@@ -784,6 +784,23 @@ const ru = {
       raikaName: "raika",
       moderationRejectedTitle: "Товар не прошел модерацию",
       moderationRejectReasonLabel: "Причина отклонения",
+      sellerTrust: {
+        eyebrow: "Проверка продавца",
+        title: "Надежность продавца",
+        subtitle: "Ключевые показатели профиля и закрытых сделок помогут быстрее оценить продавца перед покупкой.",
+        profileCta: "Открыть профиль",
+        ratingLabel: "Рейтинг продавца",
+        ratingCaption: "По отзывам покупателей",
+        noRating: "Пока без отзывов",
+        successRateLabel: "Успешные сделки",
+        successRateCaption: "Процент по закрытым сделкам",
+        noClosedDeals: "Пока нет закрытых сделок",
+        completedDealsLabel: "Завершено сделок",
+        completedDealsCaption: "Успешно завершено на платформе",
+        memberSinceLabel: "На платформе с",
+        memberSinceCaption: "Дата регистрации аккаунта",
+        footer: "Процент успешных сделок считается только по закрытым сделкам: завершенным, отмененным и возвращенным.",
+      },
       deleteConfirm: {
         title: "Подтверждение удаления товара",
         message:
