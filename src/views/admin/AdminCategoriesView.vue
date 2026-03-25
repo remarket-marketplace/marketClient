@@ -451,10 +451,10 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
 
     <div
       v-if="showAddCategoryModal"
-      class="fixed inset-0 z-50 bg-black/50 p-4 flex items-start sm:items-center justify-center overflow-y-auto overscroll-contain"
+      class="app-modal-overlay z-50 bg-black/50"
       @click.self="showAddCategoryModal = false"
     >
-      <div class="bg-dark-600 border border-dark-700 rounded-xl p-6 w-full max-w-sm sm:max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto">
+      <div class="app-modal-panel w-full max-w-sm overflow-y-auto rounded-xl border border-dark-700 bg-dark-600 p-6 sm:max-w-md">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-xl font-bold text-mainText">{{ t('pages.admin.categoriesPage.addCategory') }}</h3>
           <button @click="showAddCategoryModal = false" class="text-gray-400 hover:text-white transition-colors">
@@ -492,10 +492,10 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
 
     <div
       v-if="showAddSubcategoryModal"
-      class="fixed inset-0 z-50 bg-black/50 p-4 flex items-start sm:items-center justify-center overflow-y-auto overscroll-contain"
+      class="app-modal-overlay z-50 bg-black/50"
       @click.self="showAddSubcategoryModal = false"
     >
-      <div class="bg-dark-600 border border-dark-700 rounded-xl p-6 w-full max-w-sm sm:max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto">
+      <div class="app-modal-panel w-full max-w-sm overflow-y-auto rounded-xl border border-dark-700 bg-dark-600 p-6 sm:max-w-md">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-xl font-bold text-mainText">{{ t('pages.admin.categoriesPage.addSubcategory') }}</h3>
           <button @click="showAddSubcategoryModal = false" class="text-gray-400 hover:text-white transition-colors">

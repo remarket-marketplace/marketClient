@@ -105,7 +105,7 @@ onBeforeUnmount(() => {
 <template>
   <div
     v-if="_props.isOpen"
-    class="confirm-window-overlay fixed inset-0 z-[100] transition-opacity duration-200"
+    class="confirm-window-overlay app-modal-overlay z-[100] transition-opacity duration-200"
     :class="{ 'opacity-100': _props.isOpen, 'opacity-0': !_props.isOpen }"
   >
     <!-- Backdrop -->
@@ -114,10 +114,9 @@ onBeforeUnmount(() => {
       @click="handleCancel"
     />
 
-    <div class="confirm-window-shell absolute inset-0 flex justify-center overflow-y-auto p-4 sm:items-center sm:p-6">
-      <!-- Modal -->
+    <div class="confirm-window-shell relative z-10 flex w-full justify-center">
       <div
-        class="confirm-window relative my-auto flex w-full max-w-md flex-col overflow-hidden rounded-xl border border-dark-700 bg-dark-800 shadow-2xl"
+        class="confirm-window app-modal-panel relative flex w-full max-w-md flex-col overflow-hidden rounded-xl border border-dark-700 bg-dark-800 shadow-2xl"
       >
         <!-- Header -->
         <div class="shrink-0 border-b border-dark-700 px-6 py-5">
@@ -136,7 +135,7 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Message -->
-        <div class="confirm-window__body min-h-0 flex-1 overflow-y-auto px-6 py-5 space-y-4">
+        <div class="confirm-window__body app-modal-scroll flex-1 px-6 py-5 space-y-4">
           <p class="text-gray-300 leading-relaxed">
             {{ message }}
           </p>
@@ -234,29 +233,6 @@ onBeforeUnmount(() => {
 }
 
 .confirm-window {
-  max-height: min(100%, 42rem);
-}
-
-@media (max-width: 640px) {
-  .confirm-window-overlay {
-    --mobile-header-offset: 3.5rem;
-    --mobile-footer-offset: calc(3.5rem + env(safe-area-inset-bottom));
-  }
-
-  .confirm-window-shell {
-    top: calc(var(--mobile-header-offset) + env(safe-area-inset-top));
-    bottom: var(--mobile-footer-offset);
-    inset-inline: 0;
-    padding: 0.75rem;
-  }
-
-  .confirm-window {
-    min-height: 100%;
-    max-height: 100%;
-  }
-
-  .confirm-window__body {
-    -webkit-overflow-scrolling: touch;
-  }
+  max-height: min(42rem, 100%);
 }
 </style>

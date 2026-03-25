@@ -87,6 +87,11 @@ html {
   scroll-behavior: auto;
 }
 
+:root {
+  --app-mobile-header-height: 3.5rem;
+  --app-mobile-footer-height: 3.5rem;
+}
+
 /* For WebKit browsers */
 * {
   -webkit-overflow-scrolling: touch;
@@ -145,6 +150,32 @@ body {
   .market-btn-tab-active:hover {
     background-color: var(--color-button-hover);
     color: var(--white-solid);
+  }
+
+  .app-modal-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 1rem;
+    padding-top: calc(var(--app-mobile-header-height) + env(safe-area-inset-top) + 0.75rem);
+    padding-bottom: calc(var(--app-mobile-footer-height) + env(safe-area-inset-bottom) + 0.75rem);
+  }
+
+  .app-modal-panel {
+    width: 100%;
+    max-height: calc(
+      100dvh - var(--app-mobile-header-height) - var(--app-mobile-footer-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 1.5rem
+    );
+  }
+
+  .app-modal-scroll {
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .admin-btn {
@@ -283,5 +314,17 @@ body {
     background-color: var(--admin-btn-tab-active-bg);
     border-color: var(--admin-btn-tab-active-border);
     color: var(--admin-btn-text-strong);
+  }
+}
+
+@media (min-width: 640px) {
+  @layer components {
+    .app-modal-overlay {
+      padding: 1.5rem;
+    }
+
+    .app-modal-panel {
+      max-height: calc(100dvh - 3rem);
+    }
   }
 }
