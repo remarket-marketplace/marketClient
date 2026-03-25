@@ -1755,12 +1755,7 @@ onUnmounted(() => {
                   <div class="flex justify-end">
                     <button
                       type="button"
-                      class="rounded-lg px-3 py-1.5 text-xs font-semibold transition border"
-                      :class="customStyleCatalogItem?.is_active
-                        ? 'cursor-default border-blue-500/35 bg-blue-600/20 text-blue-200'
-                        : customStyleCatalogItem?.is_owned
-                          ? 'border-emerald-500/35 bg-emerald-600/15 text-emerald-200 hover:bg-emerald-600/25'
-                          : 'border-amber-500/35 bg-amber-600/15 text-amber-100 hover:bg-amber-600/25'"
+                      class="rounded-lg px-5 py-3.5 text-xs font-semibold transition bg-blue-600"
                       :disabled="!stylesCatalog || !!styleActionLoadingId || customStyleCatalogItem?.is_active"
                       @click="requestCustomStyleAction"
                     >
