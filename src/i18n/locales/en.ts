@@ -450,6 +450,8 @@ const en = {
       filtersTitle: "Filters",
       priceFrom: "Price from",
       priceTo: "Price to",
+      onlineSellersOnly: "Online sellers",
+      autoDeliveryOnly: "Auto delivery",
       dateFrom: "Added from",
       dateTo: "Added to",
       viewSwitcherLabel: "Card view mode",
