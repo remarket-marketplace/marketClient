@@ -785,6 +785,23 @@ const en = {
       raikaName: "raika",
       moderationRejectedTitle: "Product did not pass moderation",
       moderationRejectReasonLabel: "Rejection reason",
+      sellerTrust: {
+        eyebrow: "Seller trust",
+        title: "Seller trust snapshot",
+        subtitle: "Key profile and closed-deal signals help you evaluate the seller before you buy.",
+        profileCta: "Open profile",
+        ratingLabel: "Rating",
+        ratingCaption: "Buyer reviews",
+        noRating: "No reviews yet",
+        successRateLabel: "Success",
+        successRateCaption: "From closed deals",
+        noClosedDeals: "No closed deals yet",
+        completedDealsLabel: "Deals",
+        completedDealsCaption: "Successfully completed",
+        memberSinceLabel: "On platform",
+        memberSinceCaption: "Registration date",
+        footer: "Success rate is based only on closed deals.",
+      },
       deleteConfirm: {
         title: "Confirm Product Deletion",
         message:
