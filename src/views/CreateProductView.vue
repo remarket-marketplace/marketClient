@@ -8,7 +8,7 @@ import FileUploader from '@/components/FileUploader.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import type { Category } from '@/validation/category/category'
-import { onMounted, ref, watch, computed } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   Percent,
@@ -29,13 +29,19 @@ import {
   preferredCurrency,
   setUsdRubRate,
 } from '@/utils/currency'
+import {
+  clearCreateProductDraft,
+  loadCreateProductDraft,
+  saveCreateProductDraft,
+  type CreateProductDraftPayload,
+} from '@/utils/createProductDraftStorage'
 import { getErrorMessage } from '@/utils/errorsMap'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const NORMALIZED_API_HOST = String(API_HOST || '').replace(/\/$/, '')
 const RAIKA_BOT_URL = 'https://raika.gg'
 const RAIKA_LOGO_URL = `${NORMALIZED_API_HOST}/assets/raika-logo.png`
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const store = useUserStore()
@@ -102,8 +108,14 @@ const PRODUCT_LIMITS = {
   images: { min: 1, max: 10 },
 }
 const DEFAULT_PRICE_RANGE_RUB = { min: 10, max: 1000000 }
+const CREATE_PRODUCT_DRAFT_AUTOSAVE_DELAY_MS = 450
 const minPriceRub = ref(DEFAULT_PRICE_RANGE_RUB.min)
 const maxPriceRub = ref(DEFAULT_PRICE_RANGE_RUB.max)
+const isRestoringSavedDraft = ref(false)
+const isDraftPersistenceReady = ref(false)
+const restoredDraftNoticeVisible = ref(false)
+const lastDraftSavedAt = ref<string | null>(null)
+let draftAutosaveTimer: ReturnType<typeof window.setTimeout> | null = null
 
 function getMultipartTransportLength(value: string): number {
   // Multipart form payload normalizes LF to CRLF, so backend sees this length.
@@ -466,6 +478,128 @@ const draftId = computed(() => {
   return ''
 })
 
+const createProductDraftStorageKey = computed(() => {
+  const ownerKey = store.user?.id ?? 'guest'
+  return draftId.value
+    ? `${ownerKey}:raika:${draftId.value}`
+    : `${ownerKey}:default`
+})
+
+const formattedDraftSavedAt = computed(() => {
+  if (!lastDraftSavedAt.value) return ''
+
+  const parsedDate = new Date(lastDraftSavedAt.value)
+  if (Number.isNaN(parsedDate.getTime())) return ''
+
+  return parsedDate.toLocaleString(locale.value, {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+})
+
+async function loadSubcategoriesForCategory(categoryId: string): Promise<void> {
+  if (!categoryId) {
+    subcategories.value = []
+    return
+  }
+
+  try {
+    const subcategoriesData = await categoryService.getSubcategories(categoryId)
+    subcategories.value = subcategoriesData.categories
+  } catch (err) {
+    console.error('Error loading subcategories:', err)
+    errorMessage.value = t('pages.forms.createProduct.errorLoadingSubcategories')
+  }
+}
+
+function buildCreateProductDraftPayload(): CreateProductDraftPayload {
+  return {
+    selectedCategoryId: selectedCategoryId.value,
+    selectedSubcategoryId: selectedSubcategoryId.value,
+    title: title.value,
+    description: description.value,
+    price: typeof price.value === 'number' ? String(price.value) : String(price.value ?? ''),
+    productData: productData.value,
+    count: count.value,
+    autoDelivery: autoDelivery.value,
+    draftImages: [...draftImages.value],
+    images: [...images.value],
+    currentStep: currentStep.value,
+    isRaikaDraftApplied: isRaikaDraftApplied.value,
+  }
+}
+
+async function persistCreateProductDraft(): Promise<void> {
+  if (!isDraftPersistenceReady.value || isRestoringSavedDraft.value) {
+    return
+  }
+
+  try {
+    if (!hasAnyFormData.value) {
+      await clearCreateProductDraft(createProductDraftStorageKey.value)
+      lastDraftSavedAt.value = null
+      return
+    }
+
+    const savedDraft = await saveCreateProductDraft(
+      createProductDraftStorageKey.value,
+      buildCreateProductDraftPayload(),
+    )
+    lastDraftSavedAt.value = savedDraft?.updatedAt ?? lastDraftSavedAt.value
+  } catch (err) {
+    console.error('Error saving create product draft:', err)
+  }
+}
+
+function scheduleCreateProductDraftSave(): void {
+  if (!isDraftPersistenceReady.value || isRestoringSavedDraft.value) {
+    return
+  }
+
+  if (draftAutosaveTimer) {
+    window.clearTimeout(draftAutosaveTimer)
+  }
+
+  draftAutosaveTimer = window.setTimeout(() => {
+    draftAutosaveTimer = null
+    void persistCreateProductDraft()
+  }, CREATE_PRODUCT_DRAFT_AUTOSAVE_DELAY_MS)
+}
+
+async function restoreSavedCreateProductDraft(): Promise<void> {
+  try {
+    isRestoringSavedDraft.value = true
+    const savedDraft = await loadCreateProductDraft(createProductDraftStorageKey.value)
+    if (!savedDraft) {
+      return
+    }
+
+    selectedCategoryId.value = savedDraft.selectedCategoryId
+    selectedSubcategoryId.value = ''
+    await loadSubcategoriesForCategory(savedDraft.selectedCategoryId)
+    selectedSubcategoryId.value = savedDraft.selectedSubcategoryId
+    title.value = savedDraft.title
+    description.value = savedDraft.description
+    price.value = savedDraft.price
+    productData.value = savedDraft.productData
+    images.value = savedDraft.images
+    count.value = savedDraft.count
+    autoDelivery.value = savedDraft.autoDelivery
+    draftImages.value = savedDraft.draftImages.slice(0, PRODUCT_LIMITS.images.max)
+    currentStep.value = savedDraft.currentStep
+    isRaikaDraftApplied.value = savedDraft.isRaikaDraftApplied
+    showStepIssues.value = false
+    lastDraftSavedAt.value = savedDraft.updatedAt || null
+    restoredDraftNoticeVisible.value = true
+  } catch (err) {
+    console.error('Error restoring create product draft:', err)
+  } finally {
+    isRestoringSavedDraft.value = false
+  }
+}
+
 onMounted(async () => {
   try {
     const currencyConfig = await productService.getCurrencyConfig()
@@ -513,23 +647,18 @@ onMounted(async () => {
   } finally {
     isLoadingDraft.value = false
   }
+
+  await restoreSavedCreateProductDraft()
+  isDraftPersistenceReady.value = true
 })
 
 watch(selectedCategoryId, async (newCategory) => {
-  selectedSubcategoryId.value = ''
-
-  if (!newCategory) {
-    subcategories.value = []
+  if (isRestoringSavedDraft.value) {
     return
   }
 
-  try {
-    const subcategoriesData = await categoryService.getSubcategories(newCategory)
-    subcategories.value = subcategoriesData.categories
-  } catch (err) {
-    console.error('Error loading subcategories:', err)
-    errorMessage.value = t('pages.forms.createProduct.errorLoadingSubcategories')
-  }
+  selectedSubcategoryId.value = ''
+  await loadSubcategoriesForCategory(newCategory)
 })
 
 watch(selectedCurrency, (nextCurrency, prevCurrency) => {
@@ -542,6 +671,41 @@ watch(selectedCurrency, (nextCurrency, prevCurrency) => {
   price.value = nextCurrency === 'USD'
     ? converted.toFixed(2)
     : Math.round(converted).toString()
+})
+
+watch(
+  [
+    selectedCategoryId,
+    selectedSubcategoryId,
+    title,
+    description,
+    price,
+    productData,
+    images,
+    count,
+    autoDelivery,
+    draftImages,
+    currentStep,
+    isRaikaDraftApplied,
+  ],
+  () => {
+    if (!isDraftPersistenceReady.value || isRestoringSavedDraft.value) {
+      return
+    }
+
+    restoredDraftNoticeVisible.value = false
+    scheduleCreateProductDraftSave()
+  },
+  { deep: true },
+)
+
+onBeforeUnmount(() => {
+  if (draftAutosaveTimer) {
+    window.clearTimeout(draftAutosaveTimer)
+    draftAutosaveTimer = null
+  }
+
+  void persistCreateProductDraft()
 })
 
 function removeDraftImage(index: number) {
@@ -564,6 +728,9 @@ function clearForm() {
   isRaikaDraftApplied.value = false
   currentStep.value = 1
   showStepIssues.value = false
+  lastDraftSavedAt.value = null
+  restoredDraftNoticeVisible.value = false
+  void clearCreateProductDraft(createProductDraftStorageKey.value)
 }
 
 async function createProduct() {
@@ -597,6 +764,9 @@ async function createProduct() {
     const username = store.user?.username
 
     if (result && username) {
+      await clearCreateProductDraft(createProductDraftStorageKey.value)
+      lastDraftSavedAt.value = null
+      restoredDraftNoticeVisible.value = false
       await router.push(`/user/${username}`)
     } else {
       errorMessage.value = t('pages.forms.createProduct.errorCreatingProduct')
@@ -657,7 +827,16 @@ async function createProduct() {
           </p>
         </div>
 
-        <div class="flex justify-end">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div class="space-y-1">
+            <p class="text-xs text-gray-400">
+              {{ $t('pages.forms.createProduct.draftAutosaveHint') }}
+            </p>
+            <p v-if="formattedDraftSavedAt" class="text-xs text-blue-300">
+              {{ $t('pages.forms.createProduct.draftSavedAt', { time: formattedDraftSavedAt }) }}
+            </p>
+          </div>
+
           <button
             type="button"
             :disabled="sended || !hasAnyFormData"
@@ -668,6 +847,13 @@ async function createProduct() {
             <RotateCcw class="w-3.5 h-3.5" />
             {{ $t('pages.forms.createProduct.clearForm') }}
           </button>
+        </div>
+
+        <div
+          v-if="restoredDraftNoticeVisible"
+          class="rounded-xl border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-100"
+        >
+          {{ $t('pages.forms.createProduct.draftRestoredNotice') }}
         </div>
 
         <div class="rounded-xl border border-dark-700 bg-dark-600/30 p-3 lg:p-4">
