@@ -40,6 +40,8 @@ export interface ProductsFilterParams {
   maxPrice?: number;
   createdFrom?: string;
   createdTo?: string;
+  onlineSellersOnly?: boolean;
+  autoDeliveryOnly?: boolean;
 }
 
 export interface ProductCurrencyConfig {
@@ -56,12 +58,14 @@ export interface ProductCurrencyConfig {
 function buildProductsFilterParams(filters?: ProductsFilterParams) {
   if (!filters) return {};
 
-  const params: Record<string, string | number> = {};
+  const params: Record<string, string | number | boolean> = {};
 
   if (filters.minPrice !== undefined) params.min_price = filters.minPrice;
   if (filters.maxPrice !== undefined) params.max_price = filters.maxPrice;
   if (filters.createdFrom) params.created_from = filters.createdFrom;
   if (filters.createdTo) params.created_to = filters.createdTo;
+  if (filters.onlineSellersOnly === true) params.online_sellers_only = true;
+  if (filters.autoDeliveryOnly === true) params.auto_delivery_only = true;
 
   return params;
 }

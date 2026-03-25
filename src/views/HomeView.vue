@@ -71,6 +71,8 @@ const isLoadingMoreSubCategories = ref(false)
 const isSearchPagination = ref(false)
 const minPriceFilter = ref('')
 const maxPriceFilter = ref('')
+const onlineSellersOnly = ref(false)
+const autoDeliveryOnly = ref(false)
 const isFiltersOpen = ref(false)
 type ProductCardViewMode = 'grid' | 'list'
 const PRODUCT_CARD_VIEW_MODE_STORAGE_KEY = 'home_product_card_view_mode'
@@ -282,6 +284,17 @@ const pricePresets = computed<PricePreset[]>(() => {
     { id: '10000-plus-rub', label: `≥ ${formatPrice(10000)}`, minRub: 10000 },
   ]
 })
+
+const hasPriceFilter = computed(() =>
+  parsePriceFilterInRub(minPriceFilter.value) !== undefined
+  || parsePriceFilterInRub(maxPriceFilter.value) !== undefined,
+)
+
+const activeProductFiltersCount = computed(() =>
+  Number(hasPriceFilter.value)
+  + Number(onlineSellersOnly.value)
+  + Number(autoDeliveryOnly.value),
+)
 
 function isPricePresetActive(preset: PricePreset): boolean {
   const min = parsePriceFilterInRub(minPriceFilter.value)
@@ -728,16 +741,35 @@ function getProductFiltersParams(): ProductsFilterParams {
   return {
     minPrice,
     maxPrice,
+    onlineSellersOnly: onlineSellersOnly.value,
+    autoDeliveryOnly: autoDeliveryOnly.value,
   }
 }
 
 function clearProductFilters() {
   clearPriceFilters()
+  onlineSellersOnly.value = false
+  autoDeliveryOnly.value = false
 }
 
 function clearPriceFilters() {
   minPriceFilter.value = ''
   maxPriceFilter.value = ''
+}
+
+async function resetProductFilters() {
+  clearProductFilters()
+  await applyProductFilters()
+}
+
+async function toggleOnlineSellersOnlyFilter() {
+  onlineSellersOnly.value = !onlineSellersOnly.value
+  await applyProductFilters()
+}
+
+async function toggleAutoDeliveryOnlyFilter() {
+  autoDeliveryOnly.value = !autoDeliveryOnly.value
+  await applyProductFilters()
 }
 
 async function applyProductFilters() {
@@ -1022,6 +1054,12 @@ onBeforeUnmount(() => {
             >
               <SlidersHorizontal class="h-4 w-4" />
               <span>{{ t('pages.index.filtersTitle') }}</span>
+              <span
+                v-if="activeProductFiltersCount > 0"
+                class="inline-flex min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[11px] text-white"
+              >
+                {{ activeProductFiltersCount }}
+              </span>
             </button>
 
             <div
@@ -1066,18 +1104,55 @@ onBeforeUnmount(() => {
             leave-to-class="opacity-0 -translate-y-1"
           >
             <div v-if="isFiltersOpen" class="mt-3 w-full rounded-2xl border border-dark-700 bg-dark-600/25 p-4 md:p-5">
-              <div class="flex flex-wrap gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    v-for="preset in pricePresets"
+                    :key="preset.id"
+                    type="button"
+                    class="rounded-full border px-3 py-1.5 text-xs font-semibold transition"
+                    :class="isPricePresetActive(preset)
+                      ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
+                      : 'border-dark-600 bg-dark-700/30 text-gray-300 hover:bg-dark-700/50 hover:text-white'"
+                    @click="onPricePresetClick(preset)"
+                  >
+                    {{ preset.label }}
+                  </button>
+                </div>
+
                 <button
-                  v-for="preset in pricePresets"
-                  :key="preset.id"
+                  v-if="activeProductFiltersCount > 0"
                   type="button"
-                  class="rounded-full border px-3 py-1.5 text-xs font-semibold transition"
-                  :class="isPricePresetActive(preset)
+                  class="text-xs font-semibold text-gray-400 transition hover:text-white"
+                  @click="resetProductFilters"
+                >
+                  {{ t('pages.index.resetFilters') }}
+                </button>
+              </div>
+
+              <div class="mt-4 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  class="rounded-full border px-3 py-2 text-xs font-semibold transition"
+                  :class="onlineSellersOnly
                     ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
                     : 'border-dark-600 bg-dark-700/30 text-gray-300 hover:bg-dark-700/50 hover:text-white'"
-                  @click="onPricePresetClick(preset)"
+                  :aria-pressed="onlineSellersOnly"
+                  @click="toggleOnlineSellersOnlyFilter"
                 >
-                  {{ preset.label }}
+                  {{ t('pages.index.onlineSellersOnly') }}
+                </button>
+
+                <button
+                  type="button"
+                  class="rounded-full border px-3 py-2 text-xs font-semibold transition"
+                  :class="autoDeliveryOnly
+                    ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
+                    : 'border-dark-600 bg-dark-700/30 text-gray-300 hover:bg-dark-700/50 hover:text-white'"
+                  :aria-pressed="autoDeliveryOnly"
+                  @click="toggleAutoDeliveryOnlyFilter"
+                >
+                  {{ t('pages.index.autoDeliveryOnly') }}
                 </button>
               </div>
 

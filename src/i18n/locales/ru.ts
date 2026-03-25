@@ -450,6 +450,8 @@ const ru = {
       filtersTitle: "Фильтры",
       priceFrom: "Цена от",
       priceTo: "Цена до",
+      onlineSellersOnly: "Продавцы онлайн",
+      autoDeliveryOnly: "Автодоставка",
       dateFrom: "Добавлено с",
       dateTo: "Добавлено до",
       viewSwitcherLabel: "Вид карточек",
