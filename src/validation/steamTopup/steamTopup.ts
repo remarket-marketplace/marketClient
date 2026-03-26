@@ -86,7 +86,6 @@ export const steamTopUpPayOrderSchema = z.object({
 
 export const steamTopUpPayOrderInputSchema = z.object({
   payment_method: z.literal('lava').default('lava'),
-  promo_code: z.string().trim().max(64).optional(),
 }).strip()
 
 export const steamTopUpCreatePaymentSchema = z.object({

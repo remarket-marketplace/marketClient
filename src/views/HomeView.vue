@@ -110,7 +110,6 @@ const steamServer = ref('')
 const steamQuantity = ref('')
 const steamDenominationId = ref<number | null>(null)
 const steamAmountMode = ref<SteamAmountMode>('denomination')
-const steamPromoCode = ref('')
 const steamOrder = ref<SteamTopUpOrder | null>(null)
 const steamError = ref('')
 const steamSuccess = ref('')
@@ -345,10 +344,8 @@ function setDefaultSteamService(service: SteamTopUpService | null): void {
 }
 
 function buildSteamPayOrderPayload(): SteamTopUpPayOrderPayload {
-  const promoCode = steamPromoCode.value.trim().toUpperCase()
   return {
     payment_method: 'lava',
-    promo_code: promoCode || undefined,
   }
 }
 

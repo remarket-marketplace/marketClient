@@ -20,19 +20,19 @@ import {
   type AdminPayment as AdminPaymentModel,
 } from "@/validation/payment/adminPayment";
 import {
-  adminSteamTopupPromoSchema,
-  adminSteamTopupPromosListSchema,
-  createAdminSteamTopupPromoSchema,
-  updateAdminSteamTopupPromoSchema,
-  type AdminSteamTopupPromo as AdminSteamTopupPromoModel,
-  type CreateAdminSteamTopupPromoPayload as CreateAdminSteamTopupPromoPayloadModel,
-  type UpdateAdminSteamTopupPromoPayload as UpdateAdminSteamTopupPromoPayloadModel,
-} from "@/validation/steamTopup/adminSteamTopupPromo";
+  adminPromoCodeSchema,
+  adminPromoCodesListSchema,
+  createAdminPromoCodeSchema,
+  updateAdminPromoCodeSchema,
+  type AdminPromoCode as AdminPromoCodeModel,
+  type CreateAdminPromoCodePayload as CreateAdminPromoCodePayloadModel,
+  type UpdateAdminPromoCodePayload as UpdateAdminPromoCodePayloadModel,
+} from "@/validation/promoCode/adminPromoCode";
 
 export type AdminPayment = AdminPaymentModel
-export type AdminSteamTopupPromo = AdminSteamTopupPromoModel
-export type CreateAdminSteamTopupPromoPayload = CreateAdminSteamTopupPromoPayloadModel
-export type UpdateAdminSteamTopupPromoPayload = UpdateAdminSteamTopupPromoPayloadModel
+export type AdminPromoCode = AdminPromoCodeModel
+export type CreateAdminPromoCodePayload = CreateAdminPromoCodePayloadModel
+export type UpdateAdminPromoCodePayload = UpdateAdminPromoCodePayloadModel
 
 export type DashboardStatusBreakdown = { status: string; count: number }
 export type DashboardSeriesPoint = { date: string; value: number }
@@ -116,9 +116,10 @@ export type AdminPaymentsFilters = {
   date_to?: string
 }
 
-export type AdminSteamTopupPromosFilters = {
+export type AdminPromoCodesFilters = {
   search?: string
   is_active?: "all" | "active" | "inactive"
+  applies_to?: "all" | "wallet_topup" | "marketplace_purchase"
 }
 
 export const adminService = {
@@ -773,35 +774,30 @@ export const adminService = {
     }
   },
 
-  async getSteamTopupPromos(
+  async getPromoCodes(
     page = 1,
     perPage = 20,
-    filters: AdminSteamTopupPromosFilters = {},
+    filters: AdminPromoCodesFilters = {},
   ): Promise<{
-    promos: AdminSteamTopupPromo[]
+    promos: AdminPromoCode[]
     currentPage: number
     totalPages: number
     total: number
   }> {
     try {
-      const params: Record<string, string | number | boolean> = {
-        page,
-        per_page: perPage,
-      }
-
+      const params: Record<string, string | number | boolean> = { page, per_page: perPage }
       const normalizedSearch = filters.search?.trim()
-      if (normalizedSearch) {
-        params.search = normalizedSearch
+      if (normalizedSearch) params.search = normalizedSearch
+
+      if (filters.is_active === "active") params.is_active = true
+      if (filters.is_active === "inactive") params.is_active = false
+
+      if (filters.applies_to && filters.applies_to !== "all") {
+        params.applies_to = filters.applies_to
       }
 
-      if (filters.is_active === "active") {
-        params.is_active = true
-      } else if (filters.is_active === "inactive") {
-        params.is_active = false
-      }
-
-      const response = await httpClient.get("/admin/steam-topup/promocodes", { params })
-      const parsed = adminSteamTopupPromosListSchema.parse(response.data)
+      const response = await httpClient.get("/admin/promo-codes", { params })
+      const parsed = adminPromoCodesListSchema.parse(response.data)
       return {
         promos: parsed.promos,
         currentPage: page,
@@ -810,57 +806,54 @@ export const adminService = {
       }
     } catch (e) {
       if (e instanceof ZodError) {
-        console.error("Steam top-up promos validation error:", e.issues)
+        console.error("Promo codes validation error:", e.issues)
       } else {
-        console.error("Error fetching steam top-up promos:", e)
+        console.error("Error fetching promo codes:", e)
       }
-      return {
-        promos: [],
-        currentPage: 1,
-        totalPages: 1,
-        total: 0,
-      }
+      return { promos: [], currentPage: 1, totalPages: 1, total: 0 }
     }
   },
 
-  async createSteamTopupPromo(
-    payload: CreateAdminSteamTopupPromoPayload,
-  ): Promise<AdminSteamTopupPromo | null> {
-    const normalizedPayload = createAdminSteamTopupPromoSchema.parse(payload)
+  async createPromoCode(payload: CreateAdminPromoCodePayload): Promise<AdminPromoCode> {
     try {
-      const response = await httpClient.post(
-        "/admin/steam-topup/promocodes",
-        normalizedPayload,
-      )
-      return adminSteamTopupPromoSchema.parse(response.data)
+      const normalizedPayload = createAdminPromoCodeSchema.parse(payload)
+      const response = await httpClient.post("/admin/promo-codes", normalizedPayload)
+      return adminPromoCodeSchema.parse(response.data)
     } catch (e) {
       if (e instanceof ZodError) {
-        console.error("Steam top-up promo create validation error:", e.issues)
+        console.error("Promo code create validation error:", e.issues)
       } else {
-        console.error("Error creating steam top-up promo:", e)
+        console.error("Error creating promo code:", e)
       }
-      return null
+      throw e
     }
   },
 
-  async updateSteamTopupPromo(
+  async updatePromoCode(
     promoId: string,
-    payload: UpdateAdminSteamTopupPromoPayload,
-  ): Promise<AdminSteamTopupPromo | null> {
-    const normalizedPayload = updateAdminSteamTopupPromoSchema.parse(payload)
+    payload: UpdateAdminPromoCodePayload,
+  ): Promise<AdminPromoCode | null> {
     try {
-      const response = await httpClient.patch(
-        `/admin/steam-topup/promocodes/${promoId}`,
-        normalizedPayload,
-      )
-      return adminSteamTopupPromoSchema.parse(response.data)
+      const normalizedPayload = updateAdminPromoCodeSchema.parse(payload)
+      const response = await httpClient.patch(`/admin/promo-codes/${promoId}`, normalizedPayload)
+      return adminPromoCodeSchema.parse(response.data)
     } catch (e) {
       if (e instanceof ZodError) {
-        console.error("Steam top-up promo update validation error:", e.issues)
+        console.error("Promo code update validation error:", e.issues)
       } else {
-        console.error("Error updating steam top-up promo:", e)
+        console.error("Error updating promo code:", e)
       }
       return null
+    }
+  },
+
+  async deactivatePromoCode(promoId: string): Promise<boolean> {
+    try {
+      await httpClient.delete(`/admin/promo-codes/${promoId}`)
+      return true
+    } catch (e) {
+      console.error("Error deactivating promo code:", e)
+      return false
     }
   },
 
