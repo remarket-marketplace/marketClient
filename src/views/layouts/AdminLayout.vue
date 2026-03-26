@@ -98,10 +98,10 @@ const navItems = computed<NavItem[]>(() => [
     to: '/admin/payments',
   },
   {
-    id: 'steam-topups',
-    title: t('navigation.admin.steamTopups'),
+    id: 'promo-codes',
+    title: 'Промокоды',
     icon: TicketPercent,
-    to: '/admin/steam-topups',
+    to: '/admin/promo-codes',
   },
   {
     id: 'categories',
@@ -141,7 +141,7 @@ const navGroups = computed<NavGroup[]>(() => {
     {
       id: 'management',
       title: t('navigation.admin.sections.management'),
-      items: pickNavItems(items, ['users', 'products', 'deals', 'payments', 'steam-topups', 'categories']),
+      items: pickNavItems(items, ['users', 'products', 'deals', 'payments', 'promo-codes', 'categories']),
     },
     {
       id: 'communication',
