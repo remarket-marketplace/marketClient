@@ -94,6 +94,7 @@ const productCardViewMode = ref<ProductCardViewMode>('grid')
 
 // Пагинация для товаров
 const products = ref<Product[]>([])
+const totalProducts = ref(0)
 const currentPageProducts = ref(1)
 const totalPagesProducts = ref(1)
 const perPage = ref(20)
@@ -102,6 +103,7 @@ const isLoadingMoreProducts = ref(false)
 
 // Пагинация для отзывов
 const reviews = ref<ReviewSchema[]>([])
+const totalReviews = ref(0)
 const currentPageReviews = ref(1)
 const totalPagesReviews = ref(1)
 const isLoadingReviews = ref(false)
@@ -172,6 +174,7 @@ async function loadUserProducts(page = 1, append = false) {
     }
 
     currentPageProducts.value = page
+    totalProducts.value = res.total
     totalPagesProducts.value = res.totalPages
   } catch (error) {
     console.error('Failed to load user products:', error)
@@ -202,6 +205,7 @@ async function loadReviews(page = 1, append = false) {
     }
 
     currentPageReviews.value = page
+    totalReviews.value = res.total
     totalPagesReviews.value = res.totalPages
   } catch (error) {
     console.error('Failed to load reviews:', error)
@@ -552,12 +556,12 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
               <div class="grid grid-cols-3 gap-3">
                 <button type="button" @click="openProductsTab" :title="t('common.products')"
                   class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600 min-h-[76px] space-y-1">
-                  <div class="text-lg font-bold text-white">{{ products.length }}</div>
+                  <div class="text-lg font-bold text-white">{{ totalProducts }}</div>
                   <div class="text-xs text-gray-400">{{ t('common.products') }}</div>
                 </button>
                 <button type="button" @click="openReviewsTab" :title="t('pages.profile.reviews')"
                   class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600 min-h-[76px] space-y-1">
-                  <div class="text-lg font-bold text-white">{{ reviews.length }}</div>
+                  <div class="text-lg font-bold text-white">{{ totalReviews }}</div>
                   <div class="text-xs text-gray-400">{{ t('pages.profile.reviews') }}</div>
                 </button>
                 <div class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600 min-h-[76px] space-y-1">
