@@ -88,6 +88,7 @@ const moderationRejectReasonLabel = computed(() => {
 const offerCurrencyCode = computed(() => resolvePreferredCurrency())
 const offerCurrencySymbol = computed(() => getCurrencySymbol(offerCurrencyCode.value))
 const OFFER_DISCOUNT_PRESETS = [5, 10, 15] as const
+const MAX_OFFER_DISCOUNT_PERCENT = 30
 const SIMILAR_PRODUCTS_LIMIT = 8
 type ProductCardViewMode = 'grid' | 'list'
 const PRODUCT_CARD_VIEW_MODE_STORAGE_KEY = 'home_product_card_view_mode'
@@ -106,6 +107,28 @@ const maxOfferedPrice = computed(() => {
   }
 
   return Math.max(0.01, Number((basePrice - 0.01).toFixed(2)))
+})
+const minOfferedPrice = computed(() => {
+  const basePrice = productOfferBasePrice.value
+  if (!Number.isFinite(basePrice) || basePrice <= 0) {
+    return null
+  }
+
+  const rawMinPrice = basePrice * (1 - MAX_OFFER_DISCOUNT_PERCENT / 100)
+  const roundedUpMinPrice = Math.ceil(rawMinPrice * 100) / 100
+  const maxPrice = maxOfferedPrice.value
+  if (maxPrice === null) {
+    return null
+  }
+
+  return Math.min(Math.max(0.01, roundedUpMinPrice), maxPrice)
+})
+const minOfferedPriceLabel = computed(() => {
+  if (minOfferedPrice.value === null) return ''
+  return formatCurrencyAmount(
+    minOfferedPrice.value,
+    { minimumFractionDigits: 2, maximumFractionDigits: 2 },
+  )
 })
 const offerDiscountPercent = computed(() => calculateDiscountPercent(
   productOfferBasePrice.value,
@@ -340,8 +363,9 @@ function openBuyConfirm() {
 function openOfferConfirm() {
   if (!product.value) return
   const productPrice = Number(product.value.price)
-  offeredPrice.value = calculateOfferedPriceByPercent(productPrice, OFFER_DISCOUNT_PRESETS[0])
-    ?? Math.max(0.01, Math.round((productPrice - 0.01) * 100) / 100)
+  const fallbackPrice = maxOfferedPrice.value ?? Math.max(0.01, Math.round((productPrice - 0.01) * 100) / 100)
+  offeredPrice.value = calculateOfferedPriceByPercent(productPrice, OFFER_DISCOUNT_PRESETS[0]) ?? fallbackPrice
+  normalizeOfferedPrice()
   offerMessage.value = ''
   selectedOfferMessageTemplateKey.value = null
   offerError.value = null
@@ -359,12 +383,13 @@ function normalizeOfferedPrice() {
     return
   }
 
+  const minPrice = minOfferedPrice.value
   const maxPrice = maxOfferedPrice.value
-  if (maxPrice === null) {
+  if (minPrice === null || maxPrice === null) {
     return
   }
 
-  offeredPrice.value = Number(Math.min(Math.max(currentValue, 0.01), maxPrice).toFixed(2))
+  offeredPrice.value = Number(Math.min(Math.max(currentValue, minPrice), maxPrice).toFixed(2))
 }
 
 function getOfferPriceForDiscount(discountPercent: number): number | null {
@@ -373,10 +398,13 @@ function getOfferPriceForDiscount(discountPercent: number): number | null {
   const currentPrice = Number(product.value.price)
   if (!Number.isFinite(currentPrice) || currentPrice <= 0) return null
 
+  const minPrice = minOfferedPrice.value
+  if (minPrice === null) return null
+
   const discounted = currentPrice * (1 - discountPercent / 100)
   const rounded = Number(discounted.toFixed(2))
   const maxAllowed = Number((currentPrice - 0.01).toFixed(2))
-  return Math.max(0.01, Math.min(rounded, maxAllowed))
+  return Math.max(minPrice, Math.min(rounded, maxAllowed))
 }
 
 function applyOfferDiscount(discountPercent: number) {
@@ -413,9 +441,22 @@ async function handleOfferConfirm() {
   if (!product.value || user.value === null) return
 
   normalizeOfferedPrice()
+  const minPrice = minOfferedPrice.value
+  const maxPrice = maxOfferedPrice.value
   const priceNumber = Number(offeredPrice.value)
-  if (!Number.isFinite(priceNumber) || priceNumber <= 0 || priceNumber >= Number(product.value.price)) {
-    offerError.value = t('errors.INVALID_PRICE_OFFER')
+  if (
+    !Number.isFinite(priceNumber)
+    || minPrice === null
+    || maxPrice === null
+    || priceNumber < minPrice
+    || priceNumber > maxPrice
+  ) {
+    offerError.value = minPrice === null
+      ? t('errors.INVALID_PRICE_OFFER')
+      : t('pages.product.offerPriceConfirm.minPriceError', {
+          percent: MAX_OFFER_DISCOUNT_PERCENT,
+          minPrice: minOfferedPriceLabel.value,
+        })
     return
   }
 
@@ -992,7 +1033,7 @@ onUnmounted(() => {
               <input
                 v-model.number="offeredPrice"
                 type="number"
-                min="0.01"
+                :min="minOfferedPrice ?? 0.01"
                 :max="maxOfferedPrice ?? undefined"
                 step="0.01"
                 class="price-offer-input w-full rounded-lg border border-dark-700 bg-dark-700/60 px-3 py-2 pr-20 text-sm text-white outline-none focus:border-emerald-500"
@@ -1003,6 +1044,9 @@ onUnmounted(() => {
                 {{ offerCurrencySymbol }} {{ offerCurrencyCode }}
               </span>
             </div>
+            <p class="mt-1 text-[11px] text-gray-400">
+              {{ $t('pages.product.offerPriceConfirm.minPriceHint', { percent: MAX_OFFER_DISCOUNT_PERCENT, minPrice: minOfferedPriceLabel }) }}
+            </p>
           </div>
           <div
             v-if="offerDiscountPercent !== null"
