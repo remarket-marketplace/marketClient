@@ -39,6 +39,7 @@ export type DashboardSeriesPoint = { date: string; value: number }
 export type DashboardCategory = {
   category_id: string
   category_name: string
+  parent_category_name?: string | null
   total_sales: number
   total_deals: number
 }

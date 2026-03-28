@@ -157,10 +157,21 @@ const topCategories = computed(() => {
   return rows.map((row) => ({
     category_id: String((row as any)?.category_id ?? ''),
     category_name: toSafeString((row as any)?.category_name, t('common.notSpecified')),
+    parent_category_name: typeof (row as any)?.parent_category_name === 'string'
+      ? (row as any).parent_category_name.trim()
+      : '',
     total_sales: Math.max(0, toSafeNumber((row as any)?.total_sales, 0)),
     total_deals: Math.max(0, Math.round(toSafeNumber((row as any)?.total_deals, 0))),
   }))
 })
+
+const formatCategoryPath = (categoryName: string, parentCategoryName?: string) => {
+  const safeCategoryName = toSafeString(categoryName, t('common.notSpecified'))
+  const safeParentCategoryName = toSafeString(parentCategoryName, '')
+  return safeParentCategoryName
+    ? `${safeParentCategoryName}/${safeCategoryName}`
+    : safeCategoryName
+}
 
 const avgCheck = computed(() => {
   if (!dashboardData.value || !dashboardData.value.count_of_deals) return 0
@@ -372,7 +383,7 @@ const topCategoriesOptions = computed<ApexOptions>(() => {
       style: { colors: [legendText] },
     },
     xaxis: {
-      categories: topCategories.value.map(c => String(c.category_name || t('common.notSpecified'))),
+      categories: topCategories.value.map(c => formatCategoryPath(c.category_name, c.parent_category_name)),
       labels: { style: { colors: axisText } },
     },
     colors: [seriesColor],
@@ -380,6 +391,14 @@ const topCategoriesOptions = computed<ApexOptions>(() => {
     tooltip: {
       theme: 'dark',
       style: { fontSize: '12px', fontFamily: 'Outfit, sans-serif' },
+      x: {
+        formatter: (_value: string, opts: any) => {
+          const index = Number(opts?.dataPointIndex ?? -1)
+          const category = topCategories.value[index]
+          if (!category) return t('common.notSpecified')
+          return formatCategoryPath(category.category_name, category.parent_category_name)
+        },
+      },
       y: { formatter: (val: number) => formatCurrency(val) },
     },
   }
