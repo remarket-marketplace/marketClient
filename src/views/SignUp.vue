@@ -100,6 +100,46 @@ const activePasswordHint = computed(() =>
   passwordHints.value.find((hint) => !hint.isMet) ?? null,
 )
 
+const isUsernameValidForSubmit = computed(() => {
+  const normalizedUsername = username.value.trim()
+  return (
+    normalizedUsername.length >= 4
+    && normalizedUsername.length <= 32
+    && /^[A-Za-z0-9_]+$/.test(normalizedUsername)
+  )
+})
+
+const isEmailValidForSubmit = computed(() => {
+  const normalizedEmail = email.value.trim()
+  if (!normalizedEmail || normalizedEmail.length > 64) {
+    return false
+  }
+
+  const atIndex = normalizedEmail.indexOf('@')
+  const localPart = atIndex >= 0 ? normalizedEmail.slice(0, atIndex) : ''
+  if (localPart.length > 64) {
+    return false
+  }
+
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)
+})
+
+const isPasswordValidForSubmit = computed(() => password.value.length > 0 && getPasswordRequirementError() === '')
+
+const isPasswordRepeatValidForSubmit = computed(() =>
+  passwordRepeat.value.length > 0 && password.value === passwordRepeat.value,
+)
+
+const canRequestVerificationCode = computed(() =>
+  !sended.value
+  && !showCodeInput.value
+  && Boolean(captchaToken.value)
+  && isUsernameValidForSubmit.value
+  && isEmailValidForSubmit.value
+  && isPasswordValidForSubmit.value
+  && isPasswordRepeatValidForSubmit.value,
+)
+
 function validateUsername() {
   usernameError.value = ''
   const normalizedUsername = username.value.trim()
@@ -373,7 +413,7 @@ function handleWelcomeFinished() {
             <TheInput id="username" v-model="username" type="text"
               placeholder="" required @blur="validateUsername"
               @input="clearUsernameError" :minlength="4" :maxlength="32" autocomplete="username" />
-            <p v-if="usernameError" class="text-gray-400 text-xs leading-4 mt-1">{{ usernameError }}</p>
+            <p v-if="usernameError" class="mt-1 text-xs leading-4 text-red-300">{{ usernameError }}</p>
           </div>
 
           <!-- Email -->
@@ -381,7 +421,7 @@ function handleWelcomeFinished() {
             <label for="email" class="mb-1 block text-sm text-text-secondary">{{ $t('common.email') }}</label>
             <TheInput id="email" v-model="email" type="email" placeholder="" required
               @blur="validateEmail" @input="clearEmailError" :maxlength="64" autocomplete="email" />
-            <p v-if="emailError" class="text-gray-400 text-xs leading-4 mt-1">{{ emailError }}</p>
+            <p v-if="emailError" class="mt-1 text-xs leading-4 text-red-300">{{ emailError }}</p>
           </div>
 
           <!-- Password с иконкой глаза -->
@@ -398,7 +438,7 @@ function handleWelcomeFinished() {
               </template>
             </TheInput>
             <div v-if="password.length > 0 && activePasswordHint" class="mt-2">
-              <p class="flex items-center gap-2 text-xs leading-4 text-gray-400">
+              <p class="flex items-center gap-2 text-xs leading-4 text-red-300">
                 <span class="inline-flex w-3 justify-center font-semibold">•</span>
                 <span>{{ activePasswordHint.label }}</span>
               </p>
@@ -436,7 +476,7 @@ function handleWelcomeFinished() {
           </p>
 
           <TheButton :button-text="sended ? $t('common.sending') : $t('pages.auth.signUp.getCode')"
-            :sended="sended" class="w-full" />
+            :sended="sended" :disabled="!canRequestVerificationCode" class="w-full" />
 
           <ErrorBanner :message="errorMessage" />
         </form>
