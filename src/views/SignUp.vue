@@ -100,6 +100,46 @@ const activePasswordHint = computed(() =>
   passwordHints.value.find((hint) => !hint.isMet) ?? null,
 )
 
+const isUsernameValidForSubmit = computed(() => {
+  const normalizedUsername = username.value.trim()
+  return (
+    normalizedUsername.length >= 4
+    && normalizedUsername.length <= 32
+    && /^[A-Za-z0-9_]+$/.test(normalizedUsername)
+  )
+})
+
+const isEmailValidForSubmit = computed(() => {
+  const normalizedEmail = email.value.trim()
+  if (!normalizedEmail || normalizedEmail.length > 64) {
+    return false
+  }
+
+  const atIndex = normalizedEmail.indexOf('@')
+  const localPart = atIndex >= 0 ? normalizedEmail.slice(0, atIndex) : ''
+  if (localPart.length > 64) {
+    return false
+  }
+
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)
+})
+
+const isPasswordValidForSubmit = computed(() => password.value.length > 0 && getPasswordRequirementError() === '')
+
+const isPasswordRepeatValidForSubmit = computed(() =>
+  passwordRepeat.value.length > 0 && password.value === passwordRepeat.value,
+)
+
+const canRequestVerificationCode = computed(() =>
+  !sended.value
+  && !showCodeInput.value
+  && Boolean(captchaToken.value)
+  && isUsernameValidForSubmit.value
+  && isEmailValidForSubmit.value
+  && isPasswordValidForSubmit.value
+  && isPasswordRepeatValidForSubmit.value,
+)
+
 function validateUsername() {
   usernameError.value = ''
   const normalizedUsername = username.value.trim()
@@ -436,7 +476,7 @@ function handleWelcomeFinished() {
           </p>
 
           <TheButton :button-text="sended ? $t('common.sending') : $t('pages.auth.signUp.getCode')"
-            :sended="sended" class="w-full" />
+            :sended="sended" :disabled="!canRequestVerificationCode" class="w-full" />
 
           <ErrorBanner :message="errorMessage" />
         </form>
