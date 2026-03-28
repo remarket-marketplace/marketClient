@@ -3,7 +3,7 @@ import { authService } from '@/api/auth/AuthService'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import TheInput from '@/components/TheInput.vue'
 import { Eye, EyeOff } from 'lucide-vue-next'
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import TheButton from './forms/TheButton.vue'
@@ -40,6 +40,24 @@ const usernameError = ref('')
 const emailError = ref('')
 const passwordError = ref('')
 const passwordRepeatError = ref('')
+
+function normalizePasswordToLatin(value: string): string {
+  return value.replace(/[^\x21-\x7E]/g, '')
+}
+
+watch(password, (value) => {
+  const normalized = normalizePasswordToLatin(value)
+  if (normalized !== value) {
+    password.value = normalized
+  }
+})
+
+watch(passwordRepeat, (value) => {
+  const normalized = normalizePasswordToLatin(value)
+  if (normalized !== value) {
+    passwordRepeat.value = normalized
+  }
+})
 
 function getPasswordRequirementError(): string {
   if (!/[A-Z]/.test(password.value)) {
