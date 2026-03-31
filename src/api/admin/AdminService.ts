@@ -20,6 +20,11 @@ import {
   type AdminPayment as AdminPaymentModel,
 } from "@/validation/payment/adminPayment";
 import {
+  adminWithdrawalOrderSchema,
+  adminWithdrawalOrdersListSchema,
+  type AdminWithdrawalOrder as AdminWithdrawalOrderModel,
+} from "@/validation/wallet/adminWithdrawal";
+import {
   adminPromoCodeSchema,
   adminPromoCodesListSchema,
   createAdminPromoCodeSchema,
@@ -30,6 +35,7 @@ import {
 } from "@/validation/promoCode/adminPromoCode";
 
 export type AdminPayment = AdminPaymentModel
+export type AdminWithdrawalOrder = AdminWithdrawalOrderModel
 export type AdminPromoCode = AdminPromoCodeModel
 export type CreateAdminPromoCodePayload = CreateAdminPromoCodePayloadModel
 export type UpdateAdminPromoCodePayload = UpdateAdminPromoCodePayloadModel
@@ -107,6 +113,7 @@ export type AdminUpdateUserPayload = {
 
 export type PaymentStatus = "PENDING" | "CONFIRMED" | "CANCELED" | "CHARGEBACKED"
 export type PaymentModerationStatus = "CONFIRMED" | "CANCELED"
+export type WithdrawalOrderStatus = "pending" | "confirmed" | "canceled"
 
 export type AdminPaymentsFilters = {
   status?: PaymentStatus | "all"
@@ -120,6 +127,12 @@ export type AdminPromoCodesFilters = {
   search?: string
   is_active?: "all" | "active" | "inactive"
   applies_to?: "all" | "wallet_topup" | "marketplace_purchase"
+}
+
+export type AdminWithdrawalOrdersFilters = {
+  status?: WithdrawalOrderStatus | "all"
+  user_query?: string
+  sort?: "newest" | "oldest" | "user_asc" | "user_desc" | "amount_desc" | "amount_asc" | "status_asc" | "status_desc"
 }
 
 export const adminService = {
@@ -769,6 +782,74 @@ export const adminService = {
         console.error("Admin payment status validation error:", e.issues)
       } else {
         console.error("Error updating admin payment status:", e)
+      }
+      return null
+    }
+  },
+
+  async getAdminWithdrawalOrders(
+    page = 1,
+    perPage = 20,
+    filters: AdminWithdrawalOrdersFilters = {},
+  ): Promise<{
+    orders: AdminWithdrawalOrder[]
+    currentPage: number
+    totalPages: number
+    total: number
+  }> {
+    try {
+      const params: Record<string, string | number> = {
+        page,
+        per_page: perPage,
+      }
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value === undefined || value === null) return
+        const normalized = String(value).trim()
+        if (!normalized || normalized === "all") return
+        params[key] = normalized
+      })
+
+      const response = await httpClient.get("/admin/withdrawal-orders", { params })
+      const parsed = adminWithdrawalOrdersListSchema.parse(response.data)
+      return {
+        orders: parsed.orders,
+        currentPage: page,
+        totalPages: parsed.total_pages,
+        total: parsed.total,
+      }
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error("Admin withdrawal orders validation error:", e.issues)
+      } else {
+        console.error("Error fetching admin withdrawal orders:", e)
+      }
+      return {
+        orders: [],
+        currentPage: 1,
+        totalPages: 1,
+        total: 0,
+      }
+    }
+  },
+
+  async updateAdminWithdrawalOrderStatus(
+    orderId: string,
+    status: "confirmed" | "canceled",
+    reason?: string | null,
+  ): Promise<AdminWithdrawalOrder | null> {
+    try {
+      const response = await httpClient.patch("/admin/withdrawal-orders/status", {
+        order_id: orderId,
+        status,
+        reason: reason?.trim() ? reason.trim() : null,
+      })
+      return adminWithdrawalOrderSchema.parse(response.data)
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error("Admin withdrawal status validation error:", e.issues)
+      } else {
+        console.error("Error updating admin withdrawal status:", e)
       }
       return null
     }

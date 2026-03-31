@@ -412,6 +412,7 @@ const en = {
       products: "Products",
       deals: "Deals",
       payments: "Payments",
+      withdrawals: "Withdrawals",
       steamTopups: "Steam top-ups",
       categories: "Categories",
       chats: "Chats",
@@ -1175,9 +1176,13 @@ const en = {
       paymentProvidersUnavailable: "Top-up services are temporarily unavailable.",
       proceedToPayment: "Proceed to Payment",
       withdrawAmount: "Withdrawal Amount",
+      withdrawCard: "Card Number",
+      withdrawCardPlaceholder: "0000 0000 0000 0000",
+      withdrawCardHint: "The request will appear in transaction history and wait for admin review.",
       available: "Available",
       useAll: "All",
-      confirmWithdrawal: "Confirm Withdrawal"
+      confirmWithdrawal: "Confirm Withdrawal",
+      withdrawSuccess: "Withdrawal order has been created and added to transaction history."
     },
 
     admin: {
@@ -1309,6 +1314,27 @@ const en = {
         provider: "Provider",
         transactionId: "Transaction ID",
         history: "Top-up history",
+      },
+
+      withdrawalsPage: {
+        title: "Withdrawal Orders",
+        subtitle: "Withdrawal requests with manual moderation and live user balance.",
+        searchPlaceholder: "Filter by username or user ID",
+        statusFilter: "Order status",
+        empty: "No withdrawal orders found",
+        amount: "Withdrawal amount",
+        balance: "Current balance",
+        createdAt: "Created",
+        statusPending: "Processing",
+        statusConfirmed: "Confirmed",
+        statusCanceled: "Canceled",
+        actionConfirm: "Confirm",
+        actionCancel: "Cancel",
+        moderationTitle: "Withdrawal moderation",
+        moderationMessage: "Confirm the status change for this withdrawal order.",
+        moderationReasonPlaceholder: "Comment for moderation history",
+        sortUserAsc: "User: A-Z",
+        sortUserDesc: "User: Z-A",
       },
 
       steamTopupsPage: {

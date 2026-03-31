@@ -5,6 +5,7 @@ import {
   Package,
   ShoppingCart,
   CreditCard,
+  ArrowUpFromLine,
   TicketPercent,
   Folder,
   MessageCircle,
@@ -98,6 +99,12 @@ const navItems = computed<NavItem[]>(() => [
     to: '/admin/payments',
   },
   {
+    id: 'withdrawals',
+    title: t('navigation.admin.withdrawals'),
+    icon: ArrowUpFromLine,
+    to: '/admin/withdrawals',
+  },
+  {
     id: 'promo-codes',
     title: 'Промокоды',
     icon: TicketPercent,
@@ -141,7 +148,7 @@ const navGroups = computed<NavGroup[]>(() => {
     {
       id: 'management',
       title: t('navigation.admin.sections.management'),
-      items: pickNavItems(items, ['users', 'products', 'deals', 'payments', 'promo-codes', 'categories']),
+      items: pickNavItems(items, ['users', 'products', 'deals', 'payments', 'withdrawals', 'promo-codes', 'categories']),
     },
     {
       id: 'communication',
