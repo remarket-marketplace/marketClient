@@ -139,9 +139,6 @@ function handleImageTouchEnd(event: TouchEvent) {
       <div v-if="showStatusTag" class="pointer-events-none absolute right-2 top-2 z-10">
         <ProductStatusTag :product-status="product.status" />
       </div>
-      <div v-if="product.auto_delivery" class="pointer-events-none absolute left-2 top-2 z-10">
-        <AutoDeliveryTag />
-      </div>
     </div>
 
     <div class="px-3 pb-3 flex flex-1 flex-col">
@@ -173,6 +170,10 @@ function handleImageTouchEnd(event: TouchEvent) {
           <!-- Rating -->
           <div class="inline-flex flex-shrink-0 items-center self-center">
             <UserRating :rating="product.seller.rating" />
+          </div>
+
+          <div v-if="product.auto_delivery" class="ml-auto inline-flex flex-shrink-0 items-center self-center">
+            <AutoDeliveryTag />
           </div>
         </div>
 
