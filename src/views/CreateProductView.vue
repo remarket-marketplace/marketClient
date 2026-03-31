@@ -18,7 +18,6 @@ import {
   X,
   RotateCcw,
   Check,
-  ArrowRight,
   ShieldCheck,
 } from 'lucide-vue-next'
 import BackButton from '@/components/navigation/BackButton.vue'
@@ -38,6 +37,7 @@ import {
   type CreateProductDraftPayload,
 } from '@/utils/createProductDraftStorage'
 import { getErrorMessage } from '@/utils/errorsMap'
+import { buildProductKey } from '@/utils/urlKeys'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const NORMALIZED_API_HOST = String(API_HOST || '').replace(/\/$/, '')
@@ -117,6 +117,7 @@ const minPriceRub = ref(DEFAULT_PRICE_RANGE_RUB.min)
 const maxPriceRub = ref(DEFAULT_PRICE_RANGE_RUB.max)
 const isRestoringSavedDraft = ref(false)
 const isDraftPersistenceReady = ref(false)
+const isDraftPersistenceDisabled = ref(false)
 const restoredDraftNoticeVisible = ref(false)
 const lastDraftSavedAt = ref<string | null>(null)
 let draftAutosaveTimer: ReturnType<typeof window.setTimeout> | null = null
@@ -537,6 +538,7 @@ async function persistCreateProductDraft(): Promise<void> {
   if (
     !isStandardCreateFlow.value
     || !isDraftPersistenceReady.value
+    || isDraftPersistenceDisabled.value
     || isRestoringSavedDraft.value
   ) {
     return
@@ -563,6 +565,7 @@ function scheduleCreateProductDraftSave(): void {
   if (
     !isStandardCreateFlow.value
     || !isDraftPersistenceReady.value
+    || isDraftPersistenceDisabled.value
     || isRestoringSavedDraft.value
   ) {
     return
@@ -702,6 +705,7 @@ watch(
     if (
       !isStandardCreateFlow.value
       || !isDraftPersistenceReady.value
+      || isDraftPersistenceDisabled.value
       || isRestoringSavedDraft.value
     ) {
       return
@@ -758,8 +762,10 @@ function closeCreatedProductModal() {
 
 async function goToCreatedProduct() {
   if (!createdProduct.value) return
+  const productKey = buildProductKey(createdProduct.value)
+  if (!productKey) return
   closeCreatedProductModal()
-  await router.push(`/product/${createdProduct.value.slug || createdProduct.value.id}`)
+  await router.push(`/product/${productKey}`)
 }
 
 async function goToProfileAfterCreate() {
@@ -801,6 +807,11 @@ async function createProduct() {
 
     if (result && username) {
       if (isStandardCreateFlow.value) {
+        isDraftPersistenceDisabled.value = true
+        if (draftAutosaveTimer) {
+          window.clearTimeout(draftAutosaveTimer)
+          draftAutosaveTimer = null
+        }
         await clearCreateProductDraft(createProductDraftStorageKey.value)
         lastDraftSavedAt.value = null
         restoredDraftNoticeVisible.value = false
@@ -1395,16 +1406,13 @@ async function createProduct() {
       <div class="relative z-10 flex min-h-full items-center justify-center px-4 py-8">
         <div class="w-full max-w-xl overflow-hidden rounded-[28px] border border-white/10 bg-[#111317]/95 shadow-[0_32px_120px_rgba(0,0,0,0.55)]">
           <div class="relative overflow-hidden px-6 py-6 sm:px-8 sm:py-8">
-            <div class="absolute inset-x-0 top-0 h-32 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.18),transparent_72%)]"></div>
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.14),transparent_42%),radial-gradient(circle_at_18%_14%,rgba(16,185,129,0.12),transparent_22%),linear-gradient(180deg,rgba(19,28,44,0.88)_0%,rgba(17,19,23,0.18)_38%,rgba(17,19,23,0)_62%)]"></div>
             <div class="relative">
               <div class="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-400/25 bg-emerald-500/12 text-emerald-300 shadow-[0_18px_40px_rgba(16,185,129,0.12)]">
                 <ShieldCheck class="h-7 w-7" />
               </div>
 
               <div class="space-y-3">
-                <p class="text-[11px] font-semibold uppercase tracking-[0.38em] text-emerald-300/80">
-                  {{ $t('pages.forms.createProduct.successEyebrow') }}
-                </p>
                 <h3 class="max-w-lg text-2xl font-semibold tracking-tight text-white sm:text-[2rem]">
                   {{ $t('pages.forms.createProduct.successTitle') }}
                 </h3>
@@ -1425,11 +1433,10 @@ async function createProduct() {
               <div class="mt-7 flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
-                  class="group inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3.5 text-sm font-semibold text-black transition-transform duration-200 hover:-translate-y-0.5"
+                  class="inline-flex flex-1 items-center justify-center rounded-2xl bg-white px-5 py-3.5 text-sm font-semibold text-black transition-colors duration-200 hover:bg-white/90"
                   @click="goToCreatedProduct"
                 >
                   {{ $t('pages.forms.createProduct.goToProduct') }}
-                  <ArrowRight class="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                 </button>
                 <button
                   type="button"

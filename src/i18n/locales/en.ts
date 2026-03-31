@@ -1603,7 +1603,6 @@ const en = {
         draftAutosaveHint: "Draft is saved automatically on this device.",
         draftSavedAt: "Last saved: {time}",
         draftRestoredNotice: "Your draft was restored so you can continue publishing the product.",
-        successEyebrow: "Submission received",
         successTitle: "Product sent for moderation",
         successMessage: "After moderation, the product will appear in the catalog. Until then, you can open the product card or go to your profile to review your listings.",
         successHintLabel: "What happens next",
