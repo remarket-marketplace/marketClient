@@ -353,7 +353,7 @@ export const productService = {
         },
         timeout: UPLOAD_REQUEST_TIMEOUT_MS,
       });
-      return response.status >= 200 && response.status < 300;
+      return ProductSchema.parse(response.data);
     } catch (error) {
       console.error("Ошибка создания товара:", error);
       throw error;
