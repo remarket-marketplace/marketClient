@@ -109,6 +109,7 @@ const en = {
     reason: "Reason",
     toChat: "To chat",
     sold: "Sold",
+    autoDelivery: "Auto-delivery",
 
     product: "Product",
     remarket: "Remarket - secure transactions market",

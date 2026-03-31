@@ -110,6 +110,7 @@ const ru = {
     reason: "Причина",
     toChat: "Перейти в чат",
     sold: "Продано",
+    autoDelivery: "Автовыдача",
     
     product: "Продукт",
     remarket: "Remarket - маркет безопасных сделок",

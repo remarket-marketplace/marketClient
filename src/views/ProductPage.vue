@@ -6,6 +6,7 @@ import Loader from '@/components/Loader.vue'
 import MainProductCard from '@/components/mainProductCard.vue'
 import HomeProductListCard from '@/components/HomeProductListCard.vue'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
+import AutoDeliveryTag from '@/components/AutoDeliveryTag.vue'
 import type { Product, ProductImage } from '@/validation/product/product'
 import type { Category } from '@/validation/category/category'
 import { onMounted, ref, onUnmounted, computed, watch } from 'vue'
@@ -662,6 +663,7 @@ onUnmounted(() => {
               <span class="text-2xl lg:text-3xl font-bold text-green-400">
                 {{ formatCurrencyAmount(product.price) }}
               </span>
+              <AutoDeliveryTag v-if="product.auto_delivery" />
               <ProductStatusTag v-if="product.is_owner || user?.role === 'admin'" :product-status="product.status" />
             </div>
           </div>
