@@ -18,6 +18,8 @@ import {
   X,
   RotateCcw,
   Check,
+  ArrowRight,
+  ShieldCheck,
 } from 'lucide-vue-next'
 import BackButton from '@/components/navigation/BackButton.vue'
 import Checkbox from '@/components/Checkbox.vue'
@@ -61,6 +63,8 @@ const images = ref<File[]>([])
 const count = ref<number | ''>(1)
 const sended = ref(false)
 const errorMessage = ref('')
+const createdProduct = ref<{ id: string; slug: string } | null>(null)
+const showCreatedProductModal = ref(false)
 const commissionInterest = ref<number | null>(null)
 const autoDelivery = ref<boolean>(true)
 const isLoadingDraft = ref(false)
@@ -748,6 +752,23 @@ function clearForm() {
   }
 }
 
+function closeCreatedProductModal() {
+  showCreatedProductModal.value = false
+}
+
+async function goToCreatedProduct() {
+  if (!createdProduct.value) return
+  closeCreatedProductModal()
+  await router.push(`/product/${createdProduct.value.slug || createdProduct.value.id}`)
+}
+
+async function goToProfileAfterCreate() {
+  const username = store.user?.username
+  if (!username) return
+  closeCreatedProductModal()
+  await router.push(`/user/${username}`)
+}
+
 async function createProduct() {
   errorMessage.value = ''
 
@@ -784,8 +805,11 @@ async function createProduct() {
         lastDraftSavedAt.value = null
         restoredDraftNoticeVisible.value = false
       }
-
-      await router.push(`/user/${username}`)
+      createdProduct.value = {
+        id: result.id,
+        slug: result.slug,
+      }
+      showCreatedProductModal.value = true
     } else {
       errorMessage.value = t('pages.forms.createProduct.errorCreatingProduct')
     }
@@ -1359,6 +1383,64 @@ async function createProduct() {
               {{ $t('common.create') }}
             </span>
           </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="showCreatedProductModal"
+      class="app-modal-overlay z-[120]"
+    >
+      <div class="absolute inset-0 bg-black/70 backdrop-blur-md" @click="goToProfileAfterCreate"></div>
+      <div class="relative z-10 flex min-h-full items-center justify-center px-4 py-8">
+        <div class="w-full max-w-xl overflow-hidden rounded-[28px] border border-white/10 bg-[#111317]/95 shadow-[0_32px_120px_rgba(0,0,0,0.55)]">
+          <div class="relative overflow-hidden px-6 py-6 sm:px-8 sm:py-8">
+            <div class="absolute inset-x-0 top-0 h-32 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.18),transparent_72%)]"></div>
+            <div class="relative">
+              <div class="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-400/25 bg-emerald-500/12 text-emerald-300 shadow-[0_18px_40px_rgba(16,185,129,0.12)]">
+                <ShieldCheck class="h-7 w-7" />
+              </div>
+
+              <div class="space-y-3">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.38em] text-emerald-300/80">
+                  {{ $t('pages.forms.createProduct.successEyebrow') }}
+                </p>
+                <h3 class="max-w-lg text-2xl font-semibold tracking-tight text-white sm:text-[2rem]">
+                  {{ $t('pages.forms.createProduct.successTitle') }}
+                </h3>
+                <p class="max-w-lg text-sm leading-6 text-gray-300 sm:text-[15px]">
+                  {{ $t('pages.forms.createProduct.successMessage') }}
+                </p>
+              </div>
+
+              <div class="mt-6 rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                <p class="text-xs uppercase tracking-[0.26em] text-gray-500">
+                  {{ $t('pages.forms.createProduct.successHintLabel') }}
+                </p>
+                <p class="mt-2 text-sm leading-6 text-gray-300">
+                  {{ $t('pages.forms.createProduct.successHint') }}
+                </p>
+              </div>
+
+              <div class="mt-7 flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  class="group inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3.5 text-sm font-semibold text-black transition-transform duration-200 hover:-translate-y-0.5"
+                  @click="goToCreatedProduct"
+                >
+                  {{ $t('pages.forms.createProduct.goToProduct') }}
+                  <ArrowRight class="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex flex-1 items-center justify-center rounded-2xl border border-white/12 bg-white/[0.04] px-5 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:border-white/20 hover:bg-white/[0.07]"
+                  @click="goToProfileAfterCreate"
+                >
+                  {{ $t('pages.forms.createProduct.goToProfile') }}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
