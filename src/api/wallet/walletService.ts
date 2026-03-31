@@ -3,10 +3,13 @@ import { httpClient } from "..";
 import { ErrorHandler, type ApiError } from "../errorHandler";
 import {
   balanceSchema,
+  createWithdrawalOrderRequestSchema,
+  createWithdrawalOrderResponseSchema,
   topUpBalanceRequestSchema,
   topUpBalanceResponse,
   transactionResponse,
   type Balance,
+  type CreateWithdrawalOrderResponse,
   type WalletTopUpProvider,
   type WalletHistoryResponse,
 } from "@/validation/wallet/wallet";
@@ -71,6 +74,29 @@ export const walletService = {
     } catch (e) {
       if (e instanceof ZodError) console.error(e);
       return null;
+    }
+  },
+
+  async createWithdrawalOrder(
+    amount: number,
+    cardNumber: string,
+  ): Promise<{ data: CreateWithdrawalOrderResponse | null; error: ApiError | null }> {
+    try {
+      const payload = createWithdrawalOrderRequestSchema.parse({
+        amount,
+        card_number: cardNumber,
+      });
+      const response = await httpClient.post("/wallet/withdraw-orders", payload);
+      return {
+        data: createWithdrawalOrderResponseSchema.parse(response.data),
+        error: null,
+      };
+    } catch (e) {
+      if (e instanceof ZodError) console.error(e.issues);
+      return {
+        data: null,
+        error: ErrorHandler.handleApiError(e),
+      };
     }
   },
 };

@@ -412,6 +412,7 @@ const ru = {
       products: "Товары",
       deals: "Сделки",
       payments: "Платежи",
+      withdrawals: "Выводы",
       steamTopups: "Steam пополнения",
       categories: "Категории",
       chats: "Чаты",
@@ -1172,9 +1173,13 @@ const ru = {
       paymentProvidersUnavailable: "Сервисы пополнения временно недоступны.",
       proceedToPayment: "Перейти к оплате",
       withdrawAmount: "Сумма вывода",
+      withdrawCard: "Номер карты",
+      withdrawCardPlaceholder: "0000 0000 0000 0000",
+      withdrawCardHint: "Заявка появится в истории операций и будет обработана администратором.",
       available: "Доступно",
       useAll: "Всё",
-      confirmWithdrawal: "Подтвердить вывод"
+      confirmWithdrawal: "Подтвердить вывод",
+      withdrawSuccess: "Ордер на вывод создан и добавлен в историю операций."
     },
 
     admin: {
@@ -1306,6 +1311,27 @@ const ru = {
         provider: "Провайдер",
         transactionId: "Transaction ID",
         history: "История пополнений",
+      },
+
+      withdrawalsPage: {
+        title: "Ордеры на вывод",
+        subtitle: "Заявки на вывод средств с ручной модерацией и текущим балансом пользователя.",
+        searchPlaceholder: "Фильтр по нику или ID пользователя",
+        statusFilter: "Статус ордера",
+        empty: "Ордеры на вывод не найдены",
+        amount: "Сумма вывода",
+        balance: "Текущий баланс",
+        createdAt: "Создан",
+        statusPending: "В обработке",
+        statusConfirmed: "Подтвержден",
+        statusCanceled: "Отменен",
+        actionConfirm: "Подтвердить",
+        actionCancel: "Отменить",
+        moderationTitle: "Модерация вывода",
+        moderationMessage: "Подтвердите изменение статуса ордера на вывод.",
+        moderationReasonPlaceholder: "Комментарий для истории модерации",
+        sortUserAsc: "Пользователь: А–Я",
+        sortUserDesc: "Пользователь: Я–А",
       },
 
       steamTopupsPage: {
