@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Product } from '@/validation/product/product'
 import { useI18n } from 'vue-i18n'
+import AutoDeliveryTag from '@/components/AutoDeliveryTag.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
 import UserRating from '@/components/UserRating.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
@@ -45,6 +46,9 @@ function goToSeller() {
       />
       <div v-else class="flex h-full w-full items-center justify-center text-xs text-gray-300 sm:text-sm">
         {{ t('common.noImage') }}
+      </div>
+      <div v-if="product.auto_delivery" class="pointer-events-none absolute left-2 top-2 z-10">
+        <AutoDeliveryTag />
       </div>
     </div>
 

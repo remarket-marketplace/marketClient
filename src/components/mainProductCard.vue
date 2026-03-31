@@ -5,6 +5,7 @@ import type { Product } from '@/validation/product/product'
 import { useI18n } from 'vue-i18n'
 import UserRating from './UserRating.vue'
 import ProductStatusTag from './ProductStatusTag.vue'
+import AutoDeliveryTag from './AutoDeliveryTag.vue'
 import StyledUsername from './StyledUsername.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
 import { buildProductKey } from '@/utils/urlKeys'
@@ -49,6 +50,9 @@ const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
       </div>
       <div v-if="showStatusTag" class="pointer-events-none absolute right-2 top-2 z-10">
         <ProductStatusTag :product-status="product.status" />
+      </div>
+      <div v-if="product.auto_delivery" class="pointer-events-none absolute left-2 top-2 z-10">
+        <AutoDeliveryTag />
       </div>
     </div>
 
