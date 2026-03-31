@@ -131,9 +131,6 @@ function handleImageTouchEnd(event: TouchEvent) {
       <div v-else class="flex h-full w-full items-center justify-center text-xs text-gray-300 sm:text-sm">
         {{ t('common.noImage') }}
       </div>
-      <div v-if="product.auto_delivery" class="pointer-events-none absolute left-2 top-2 z-10">
-        <AutoDeliveryTag />
-      </div>
     </div>
 
     <div class="flex min-w-0 flex-1 flex-col py-2 pr-3 sm:py-3 sm:pr-4">
@@ -171,6 +168,10 @@ function handleImageTouchEnd(event: TouchEvent) {
 
         <div class="inline-flex flex-shrink-0 items-center self-center">
           <UserRating :rating="product.seller.rating" />
+        </div>
+
+        <div v-if="product.auto_delivery" class="ml-auto inline-flex flex-shrink-0 items-center self-center">
+          <AutoDeliveryTag />
         </div>
       </div>
     </div>
