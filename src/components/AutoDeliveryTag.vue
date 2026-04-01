@@ -35,18 +35,15 @@ onBeforeUnmount(() => {
 
 <template>
   <span
-    class="group relative inline-flex h-5 w-5 items-center justify-center rounded-[7px] border border-blue-500/70 bg-blue-950/70 text-blue-100"
+    class="group relative inline-flex h-5 w-5 items-center justify-center rounded-[7px] border border-blue-400/65 bg-blue-500 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.28)]"
     role="button"
     tabindex="0"
     @touchstart="handleTouchStart"
     @click="handleClick"
   >
-    <svg viewBox="0 0 16 16" class="h-3.5 w-3.5 text-current" fill="none" aria-hidden="true">
+    <svg viewBox="0 0 16 16" class="h-3.5 w-3.5 text-current" fill="currentColor" aria-hidden="true">
       <path
-        d="M9.9 1.2H5.6c-.3 0-.5.2-.6.4L3 7.1c-.1.4.1.8.6.8h2.7L5 14.2c-.1.4.4.7.8.4l7-8.2c.3-.3 0-.9-.4-.9H9.3l1.2-3.4c.1-.4-.1-.9-.6-.9z"
-        stroke="currentColor"
-        stroke-width="1.45"
-        stroke-linejoin="round"
+        d="M8.9 1.2c.16-.35-.17-.73-.52-.6L3.6 2.3a.55.55 0 0 0-.36.52v3.73c0 .31.24.56.54.56h2.55l-1.18 6.2c-.08.4.38.67.67.4l7.04-6.66a.56.56 0 0 0-.37-.97H9.8l1.1-4.88z"
       />
     </svg>
     <span
