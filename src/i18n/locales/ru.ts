@@ -1086,6 +1086,8 @@ const ru = {
       noStyles: "Стили не найдены",
       notificationsSectionTitle: "Уведомления",
       notificationsSectionHint: "Управляйте каналами уведомлений и подключите Telegram-бота.",
+      notificationsMasterTitle: "Все уведомления",
+      notificationsMasterHint: "Быстрое включение или отключение всех уведомлений.",
       notificationsEmailTitle: "Email уведомления",
       notificationsEmailHint: "Отправка уведомлений на почту о событиях аккаунта и сделках.",
       notificationsTelegramTitle: "Telegram уведомления",

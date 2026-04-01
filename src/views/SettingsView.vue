@@ -189,6 +189,9 @@ const emailNotificationsEnabled = computed(
 const telegramNotificationsEnabled = computed(
   () => notificationsData.value?.telegram_notifications_enabled ?? false,
 )
+const anyNotificationsEnabled = computed(
+  () => emailNotificationsEnabled.value || telegramNotificationsEnabled.value,
+)
 const telegramIntegrationEnabled = computed(
   () => notificationsData.value?.telegram_integration_enabled !== false,
 )
@@ -571,6 +574,24 @@ async function toggleTelegramNotifications() {
   await updateNotificationSettings({
     telegram_notifications_enabled: !notificationsData.value.telegram_notifications_enabled,
   })
+}
+
+async function setAllNotificationsEnabled(enabled: boolean) {
+  if (!notificationsData.value) return
+  if (anyNotificationsEnabled.value === enabled) return
+
+  const payload: {
+    email_notifications_enabled?: boolean
+    telegram_notifications_enabled?: boolean
+  } = {
+    email_notifications_enabled: enabled,
+  }
+
+  if (telegramIntegrationEnabled.value) {
+    payload.telegram_notifications_enabled = enabled
+  }
+
+  await updateNotificationSettings(payload)
 }
 
 async function connectTelegram() {
@@ -1360,6 +1381,43 @@ onUnmounted(() => {
             </div>
 
             <div v-else class="rounded-xl border border-dark-700 bg-dark-600/40 p-6 space-y-5">
+              <div class="rounded-xl border border-dark-700 bg-dark-700/30 p-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 text-white font-semibold">
+                    <Bell class="w-4 h-4 text-amber-300" />
+                    <span>{{ $t('pages.settingsPage.notificationsMasterTitle') }}</span>
+                  </div>
+                  <p class="mt-1 text-xs text-gray-300">{{ $t('pages.settingsPage.notificationsMasterHint') }}</p>
+                </div>
+                <div
+                  class="grid w-full grid-cols-2 rounded-xl border border-dark-700 bg-dark-700/50 p-1 sm:w-auto sm:min-w-[220px]"
+                  :class="isNotificationsSaving ? 'opacity-60' : ''"
+                >
+                  <button
+                    type="button"
+                    :disabled="isNotificationsSaving || anyNotificationsEnabled"
+                    class="rounded-lg px-4 py-2 text-sm font-semibold transition"
+                    :class="anyNotificationsEnabled
+                      ? 'bg-blue-600 text-white shadow-[0_8px_24px_rgba(37,99,235,0.28)]'
+                      : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
+                    @click="!anyNotificationsEnabled && setAllNotificationsEnabled(true)"
+                  >
+                    {{ $t('pages.settingsPage.twoFactorEnabled') }}
+                  </button>
+                  <button
+                    type="button"
+                    :disabled="isNotificationsSaving || !anyNotificationsEnabled"
+                    class="rounded-lg px-4 py-2 text-sm font-semibold transition"
+                    :class="!anyNotificationsEnabled
+                      ? 'border border-rose-400/20 bg-rose-500/12 text-rose-100 shadow-[0_8px_24px_rgba(244,63,94,0.14)]'
+                      : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
+                    @click="anyNotificationsEnabled && setAllNotificationsEnabled(false)"
+                  >
+                    {{ $t('pages.settingsPage.twoFactorDisabled') }}
+                  </button>
+                </div>
+              </div>
+
               <div class="rounded-xl border border-dark-700 bg-dark-700/30 p-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div class="min-w-0">
                   <div class="flex items-center gap-2 text-white font-semibold">
