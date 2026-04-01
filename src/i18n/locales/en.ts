@@ -1100,6 +1100,8 @@ const en = {
       noStyles: "No styles found",
       notificationsSectionTitle: "Notifications",
       notificationsSectionHint: "Manage notification channels and connect Telegram bot.",
+      notificationsMasterTitle: "All notifications",
+      notificationsMasterHint: "Quickly enable or disable all notifications.",
       notificationsEmailTitle: "Email notifications",
       notificationsEmailHint: "Account and deal notifications sent to your email.",
       notificationsTelegramTitle: "Telegram notifications",
