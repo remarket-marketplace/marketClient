@@ -37,6 +37,7 @@ export const ProfileDataSchema = UserReadSchema
 export type ProfileData = UserRead
 
 export const PublicProfileDataSchema = z.object({
+  id: z.string(),
   username: z.string().min(4).max(32),
   nickname_style_id: nicknameStyleIdSchema,
   avatar_url: z.string().or(z.literal('')),
@@ -52,6 +53,7 @@ export const PublicProfileDataSchema = z.object({
   ban_reason_text: z.string().nullable().optional(),
   rating: z.number().int().nonnegative(),
   created_at: z.string().pipe(z.coerce.date()),
+  is_subscribed: z.boolean().optional().transform((value) => value ?? false),
 })
 
 export type PublicProfileData = z.infer<typeof PublicProfileDataSchema>

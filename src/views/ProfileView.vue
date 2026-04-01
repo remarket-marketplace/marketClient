@@ -15,7 +15,7 @@ import { useI18n } from 'vue-i18n'
 import type { Product } from '@/validation/product/product'
 import type { PublicProfileData, UserRead } from '@/validation/user/userRead'
 import type { ReviewSchema } from '@/validation/review/review'
-import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart, Edit, Calendar, Package, ShoppingBag, MessageSquare, Loader2, LayoutGrid, Rows3 } from 'lucide-vue-next'
+import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart, Edit, Calendar, Package, ShoppingBag, MessageSquare, Loader2, LayoutGrid, Rows3, UserPlus, UserCheck } from 'lucide-vue-next'
 import QrcodeVue from 'qrcode.vue'
 import type { Deal } from '@/validation/deal/deal'
 import UserRating from '@/components/UserRating.vue'
@@ -48,8 +48,14 @@ const showShareModal = ref(false)
 const isCopied = ref(false)
 const isOpeningDirectChat = ref(false)
 const directChatError = ref<string | null>(null)
+const isSubscriptionLoading = ref(false)
 
 const isOwner = computed(() => currentUser.value?.username === username.value)
+const isSubscribedToSeller = computed(() => {
+  if (!currentProfileData.value || isOwner.value) return false
+  if (!('is_subscribed' in currentProfileData.value)) return false
+  return Boolean(currentProfileData.value.is_subscribed)
+})
 const isProfileBanned = computed(() => !isOwner.value && Boolean(currentProfileData.value?.is_banned))
 const profileBanReason = computed(() => {
   const profile = currentProfileData.value
@@ -347,6 +353,24 @@ async function copyProfileLink() {
   setTimeout(() => isCopied.value = false, 2000)
 }
 
+async function toggleSellerSubscription() {
+  if (isOwner.value || isSubscriptionLoading.value || !currentProfileData.value) return
+
+  isSubscriptionLoading.value = true
+  try {
+    const result = isSubscribedToSeller.value
+      ? await profileService.unsubscribeFromSeller(username.value)
+      : await profileService.subscribeToSeller(username.value)
+
+    if (result === null) return
+    if ('is_subscribed' in currentProfileData.value) {
+      currentProfileData.value.is_subscribed = result
+    }
+  } finally {
+    isSubscriptionLoading.value = false
+  }
+}
+
 function switchTab(tab: 'products' | 'reviews' | 'purchases') {
   activeTab.value = tab
   if (tab === 'products' && products.value.length === 0) {
@@ -491,11 +515,27 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                   </div>
                 </div>
 
-                <button v-else @click="openShareModal"
-                  class="w-8 h-8 flex items-center justify-center rounded-lg border border-dark-600 bg-dark-700/50 hover:bg-dark-700 transition-colors"
-                  :title="t('pages.profile.share')">
-                  <Share2 class="w-4 h-4 text-gray-300" />
-                </button>
+                <div v-else class="flex items-center gap-2">
+                  <button @click="toggleSellerSubscription"
+                    :disabled="isSubscriptionLoading"
+                    class="h-8 px-3 flex items-center justify-center gap-1.5 rounded-lg border transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    :class="isSubscribedToSeller
+                      ? 'border-blue-500/60 bg-blue-500/20 text-blue-100 hover:bg-blue-500/30'
+                      : 'border-dark-600 bg-dark-700/50 text-gray-200 hover:bg-dark-700'"
+                    :title="isSubscribedToSeller ? t('pages.profile.unsubscribe') : t('pages.profile.subscribe')">
+                    <Loader2 v-if="isSubscriptionLoading" class="w-3.5 h-3.5 animate-spin" />
+                    <UserCheck v-else-if="isSubscribedToSeller" class="w-3.5 h-3.5" />
+                    <UserPlus v-else class="w-3.5 h-3.5" />
+                    <span class="text-xs font-medium">
+                      {{ isSubscribedToSeller ? t('pages.profile.unsubscribe') : t('pages.profile.subscribe') }}
+                    </span>
+                  </button>
+                  <button @click="openShareModal"
+                    class="w-8 h-8 flex items-center justify-center rounded-lg border border-dark-600 bg-dark-700/50 hover:bg-dark-700 transition-colors"
+                    :title="t('pages.profile.share')">
+                    <Share2 class="w-4 h-4 text-gray-300" />
+                  </button>
+                </div>
               </div>
 
               <!-- Avatar -->

@@ -101,4 +101,24 @@ export const profileService = {
     );
     return UserReadSchema.parse(response.data);
   },
+
+  async subscribeToSeller(username: string): Promise<boolean | null> {
+    try {
+      const response = await httpClient.post(`/users/${username}/subscribe`);
+      return Boolean(response.data?.is_subscribed);
+    } catch (error) {
+      console.error("Ошибка подписки на продавца:", error);
+      return null;
+    }
+  },
+
+  async unsubscribeFromSeller(username: string): Promise<boolean | null> {
+    try {
+      const response = await httpClient.delete(`/users/${username}/subscribe`);
+      return Boolean(response.data?.is_subscribed);
+    } catch (error) {
+      console.error("Ошибка отписки от продавца:", error);
+      return null;
+    }
+  },
 };
