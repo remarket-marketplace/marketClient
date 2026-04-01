@@ -18,7 +18,6 @@ import { formatCurrencyAmount, resolvePreferredCurrency } from '@/utils/currency
 import { useRoute, useRouter } from 'vue-router'
 import {
   buildCustomNicknameStyleId,
-  CUSTOM_NICKNAME_STYLE_FONT_WEIGHTS,
   CUSTOM_NICKNAME_STYLE_PRICE_RUB,
   isCustomNicknameStyleId,
   resolveNicknameStyleId,
@@ -140,6 +139,14 @@ const customGlowG = ref(114)
 const customGlowB = ref(182)
 const customFontWeight = ref<CustomNicknameStyleFontWeight>(700)
 const customGlowEnabled = ref(true)
+const customFontWeightOptions: Array<{
+  value: CustomNicknameStyleFontWeight
+  labelKey: 'pages.settingsPage.customFontWeightThin' | 'pages.settingsPage.customFontWeightMedium' | 'pages.settingsPage.customFontWeightBold'
+}> = [
+  { value: 500, labelKey: 'pages.settingsPage.customFontWeightThin' },
+  { value: 700, labelKey: 'pages.settingsPage.customFontWeightMedium' },
+  { value: 900, labelKey: 'pages.settingsPage.customFontWeightBold' },
+]
 
 const currentUsername = computed(() => user.value?.username ?? 'username')
 const currentStyleId = computed(
@@ -1779,18 +1786,20 @@ onUnmounted(() => {
                       <div class="text-[11px] uppercase tracking-wide text-gray-400">
                         {{ $t('pages.settingsPage.customFontWeight') }}
                       </div>
-                      <select
-                        v-model.number="customFontWeight"
-                        class="mt-2 w-full rounded-md border border-dark-500 bg-dark-700 px-2 py-1.5 text-xs text-gray-100 outline-none focus:border-blue-500/60"
-                      >
-                        <option
-                          v-for="weight in CUSTOM_NICKNAME_STYLE_FONT_WEIGHTS"
-                          :key="weight"
-                          :value="weight"
+                      <div class="mt-2 grid w-full grid-cols-3 rounded-xl border border-dark-700 bg-dark-700/50 p-1">
+                        <button
+                          v-for="option in customFontWeightOptions"
+                          :key="option.value"
+                          type="button"
+                          class="rounded-lg px-3 py-2 text-xs font-semibold transition"
+                          :class="customFontWeight === option.value
+                            ? 'bg-blue-600 text-white shadow-[0_8px_24px_rgba(37,99,235,0.28)]'
+                            : 'text-gray-300 hover:bg-dark-600/80 hover:text-white'"
+                          @click="customFontWeight = option.value"
                         >
-                          {{ weight }}
-                        </option>
-                      </select>
+                          {{ $t(option.labelKey) }}
+                        </button>
+                      </div>
                     </label>
 
                     <label class="rounded-lg border border-dark-600 bg-dark-800/60 px-3 py-2 text-xs text-gray-200">
