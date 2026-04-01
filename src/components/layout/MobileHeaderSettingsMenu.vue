@@ -79,7 +79,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="rootRef" class="relative md:hidden">
+  <div ref="rootRef" class="relative">
     <button
       type="button"
       class="relative flex h-8 w-8 items-center justify-center rounded-md border border-dark-700 bg-dark-600 text-mainText transition hover:border-dark-500 focus:outline-none"
@@ -100,7 +100,7 @@ onUnmounted(() => {
     >
       <div
         v-if="isOpen"
-        class="fixed left-2 right-2 top-16 z-50 overflow-hidden rounded-2xl border border-dark-700 bg-dark-900/98 p-4 shadow-2xl backdrop-blur"
+        class="fixed left-2 right-2 top-16 z-50 overflow-hidden rounded-2xl border border-dark-700 bg-dark-900/98 p-4 shadow-2xl backdrop-blur md:absolute md:left-auto md:right-0 md:top-10 md:w-[320px]"
       >
         <div class="space-y-4">
           <div>
