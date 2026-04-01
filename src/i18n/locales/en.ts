@@ -744,6 +744,8 @@ const en = {
           title: "Verification code",
           hint: "We sent a 6-digit code to your email. Enter it to complete sign in.",
           confirm: "Confirm sign in",
+          resend: "Resend",
+          resendIn: "Resend in {seconds}s",
           invalidCode: "Enter a valid 6-digit code",
           useAnotherAccount: "Use another account",
         },
@@ -774,6 +776,8 @@ const en = {
       title: "Reset password",
       ResetLetterSuccessSended:
         "An email with a password recovery link has been successfully sent to the specified email address",
+      resend: "Resend",
+      resendIn: "Resend in {seconds}s",
       enterNewPassword: "Enter new password",
       resetPasswordTokenIsExpired: "Token is expired, please try again",
       passwordHasReset: "Password successfully changed!",
