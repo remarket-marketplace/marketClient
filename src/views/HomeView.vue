@@ -89,6 +89,38 @@ const categorySearchResults = computed(() => {
     .filter((category) => category.name.toLowerCase().includes(normalizedSearchQuery.value))
     .slice(0, 8)
 })
+type SteamPromoChipVariant = 'minimal' | 'neon' | 'glass'
+const STEAM_PROMO_CHIP_VARIANT: SteamPromoChipVariant = 'glass'
+
+const steamPromoChipWrapperClass = computed(() => {
+  if (STEAM_PROMO_CHIP_VARIANT === 'neon') {
+    return 'border-blue-400/40 bg-[#111c2e] shadow-[0_0_0_1px_rgba(96,165,250,0.15),0_10px_28px_rgba(30,64,175,0.35)] hover:border-blue-300/70 hover:bg-[#162640]'
+  }
+  if (STEAM_PROMO_CHIP_VARIANT === 'glass') {
+    return 'border-white/15 bg-white/5 backdrop-blur-md shadow-[0_8px_26px_rgba(0,0,0,0.28)] hover:border-blue-200/40 hover:bg-white/10'
+  }
+  return 'border-slate-700/80 bg-[#0f1823]/85 shadow-[0_8px_24px_rgba(0,0,0,0.28)] hover:border-blue-400/45 hover:bg-[#132030]'
+})
+
+const steamPromoIconClass = computed(() => {
+  if (STEAM_PROMO_CHIP_VARIANT === 'neon') {
+    return 'border-blue-300/35 bg-[#0b1220] text-white'
+  }
+  if (STEAM_PROMO_CHIP_VARIANT === 'glass') {
+    return 'border-white/20 bg-black/20 text-white'
+  }
+  return 'border-slate-500/40 bg-[#0b1118] text-white'
+})
+
+const steamPromoBadgeClass = computed(() => {
+  if (STEAM_PROMO_CHIP_VARIANT === 'neon') {
+    return 'border-blue-300/50 bg-blue-500/20 text-blue-100'
+  }
+  if (STEAM_PROMO_CHIP_VARIANT === 'glass') {
+    return 'border-white/20 bg-white/10 text-blue-100'
+  }
+  return 'border-blue-400/35 bg-blue-500/10 text-blue-300'
+})
 
 function setProductCardViewMode(mode: ProductCardViewMode): void {
   if (productCardViewMode.value === mode) return
@@ -325,6 +357,10 @@ function goToCategoryPage(category: Category) {
   const categoryKey = buildCategoryKey(category)
   if (!categoryKey) return
   router.push({ path: `/category/${categoryKey}` })
+}
+
+function goToSteamTopUpPage() {
+  router.push({ path: '/steam-topup' })
 }
 
 function resolveCategoryImageUrl(imageUrl: string | null): string {
@@ -936,73 +972,28 @@ onBeforeUnmount(() => {
           </button>
         </div>
 
-        <div
+        <button
           v-if="user && HOME_STEAM_TOPUP_ENABLED"
-          class="mt-4 w-full rounded-2xl bg-dark-700/45 p-4 lg:max-w-2xl"
+          type="button"
+          class="mt-4 self-start inline-flex items-center gap-2 rounded-xl border p-2 pr-3 text-left transition"
+          :class="steamPromoChipWrapperClass"
+          @click="goToSteamTopUpPage"
         >
-          <div class="flex flex-col gap-1">
-            <div class="flex items-center gap-2">
-              <h2 class="text-base font-semibold text-white">{{ t('pages.index.steamTopUp.title') }}</h2>
-              <span class="inline-flex h-5 min-w-8 items-center justify-center rounded-md border border-blue-400/35 bg-blue-500/10 px-1.5 text-[11px] font-semibold leading-none text-blue-300">
-                5%
-              </span>
-            </div>
+          <div class="flex items-center gap-2">
+            <span
+              class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border shadow-inner"
+              :class="steamPromoIconClass"
+            >
+              <Icon icon="mdi:steam" class="h-6 w-6" />
+            </span>
+            <span
+              class="inline-flex h-6 min-w-9 items-center justify-center rounded-md border px-2 text-xs font-semibold leading-none"
+              :class="steamPromoBadgeClass"
+            >
+              5%
+            </span>
           </div>
-
-          <p v-if="steamError" class="mt-3 rounded-lg border border-red-500/35 bg-red-500/10 px-3 py-2 text-sm text-red-200">
-            {{ steamError }}
-          </p>
-          <p v-if="steamSuccess" class="mt-3 rounded-lg border border-green-500/35 bg-green-500/10 px-3 py-2 text-sm text-green-200">
-            {{ steamSuccess }}
-          </p>
-
-          <div class="mt-3">
-            <div class="rounded-2xl border border-slate-700/90 bg-gradient-to-br from-[#1b2838] via-[#16202d] to-[#101822] p-3 shadow-[0_16px_40px_rgba(0,0,0,0.38)] lg:p-4">
-              <div class="flex flex-col gap-3 lg:flex-row lg:items-start">
-                <div class="flex items-start">
-                  <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-500/40 bg-[#0f141b]/70 text-white shadow-inner">
-                    <Icon icon="mdi:steam" class="h-7 w-7" />
-                  </span>
-                </div>
-
-                <label class="block flex-[1.35]">
-                  <input
-                    v-model.trim="steamAccount"
-                    type="text"
-                    autocomplete="off"
-                    class="h-11 w-full rounded-xl border border-slate-600/75 bg-[#0f141b]/80 px-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-[#66c0f4]/50"
-                    :placeholder="t('pages.index.steamTopUp.account')"
-                  />
-                </label>
-
-                <label class="block lg:w-36">
-                  <input
-                    v-model.trim="steamQuantity"
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    inputmode="decimal"
-                    :disabled="steamAmountInputDisabled"
-                    class="steam-topup-amount-input h-11 w-full rounded-xl border border-slate-600/75 bg-[#0f141b]/80 px-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-[#66c0f4]/50 disabled:cursor-not-allowed disabled:opacity-75"
-                    :placeholder="t('pages.index.steamTopUp.quantity')"
-                  />
-                  <p v-if="steamAmountInputDisabled" class="mt-1 text-[11px] text-slate-400">
-                    {{ t('pages.index.steamTopUp.amountLockedHint') }}
-                  </p>
-                </label>
-
-                <button
-                  type="button"
-                  class="h-11 rounded-xl border border-slate-500/60 bg-[#1a2431] px-4 text-sm font-semibold text-slate-100 transition-colors duration-300 hover:border-blue-500 hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-55 lg:min-w-[160px]"
-                  :disabled="!steamCanCreateOrder || steamCheckoutSubmitting"
-                  @click="submitSteamTopUpPayment"
-                >
-                  {{ steamCheckoutSubmitting ? t('pages.index.steamTopUp.payingOrder') : t('pages.index.steamTopUp.payNow') }}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        </button>
 
         <div class="mt-10 w-full sm:mt-16">
           <Title :text="t('common.categories')" />
