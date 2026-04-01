@@ -1107,6 +1107,9 @@ const ru = {
       customStyleBuilderHint: "Создайте уникальный стиль ника с помощью цветов и эффектов",
       customStyleBuilderTitle: "Конструктор кастомного стиля",
       customFontWeight: "Толщина шрифта",
+      customFontWeightThin: "Тонкий",
+      customFontWeightMedium: "Средний",
+      customFontWeightBold: "Жирный",
       customGlowEnabled: "Включить свечение",
       nicknameStyleCatalog: {
         default: {
