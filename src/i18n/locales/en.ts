@@ -138,6 +138,8 @@ const en = {
     seller: "Seller",
     buyer: "Buyer",
     buy: "Buy",
+    previous: "Previous",
+    next: "Next",
 
     trust: {
       guaranteeTitle: "Safe deal\n guarantee",
