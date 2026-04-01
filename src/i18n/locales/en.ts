@@ -805,7 +805,7 @@ const en = {
         ratingLabel: "Rating",
         ratingCaption: "Buyer reviews",
         noRating: "No reviews yet",
-        successRateLabel: "Success",
+        successRateLabel: "Deal success rate",
         successRateCaption: "From closed deals",
         noClosedDeals: "No closed deals yet",
         completedDealsLabel: "Deals",

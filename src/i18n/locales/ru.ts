@@ -804,7 +804,7 @@ const ru = {
         ratingLabel: "Рейтинг",
         ratingCaption: "Отзывы покупателей",
         noRating: "Пока без отзывов",
-        successRateLabel: "Успешность",
+        successRateLabel: "Процент успешных сделок",
         successRateCaption: "По закрытым сделкам",
         noClosedDeals: "Пока нет закрытых сделок",
         completedDealsLabel: "Сделок",

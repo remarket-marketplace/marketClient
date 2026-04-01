@@ -33,24 +33,12 @@ const ratingValue = computed(() => (
     : '—'
 ))
 
-const ratingCaption = computed(() => (
-  props.product.seller.rating > 0
-    ? t('pages.product.sellerTrust.ratingCaption')
-    : t('pages.product.sellerTrust.noRating')
-))
-
 const successfulDealsValue = computed(() => {
   const successfulDealsPercent = props.product.seller_trust?.successful_deals_percent
   return typeof successfulDealsPercent === 'number'
     ? `${successfulDealsPercent}%`
     : '—'
 })
-
-const successfulDealsCaption = computed(() => (
-  typeof props.product.seller_trust?.successful_deals_percent === 'number'
-    ? t('pages.product.sellerTrust.successRateCaption')
-    : t('pages.product.sellerTrust.noClosedDeals')
-))
 
 const totalDealsValue = computed(() => Intl.NumberFormat(locale.value).format(
   props.product.seller_trust?.total_deals_count ?? 0,
@@ -106,61 +94,74 @@ const totalDealsValue = computed(() => Intl.NumberFormat(locale.value).format(
 
       <div class="grid grid-cols-2 gap-2 xl:grid-cols-4">
         <div class="rounded-xl border border-white/5 bg-black/10 px-3 py-2.5">
-          <div class="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-gray-500">
-            <Star class="h-3.5 w-3.5 text-amber-400/80" />
+          <div class="metric-head flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-gray-500">
+            <span class="metric-icon-slot">
+              <Star class="metric-icon text-amber-400/80" />
+            </span>
             {{ $t('pages.product.sellerTrust.ratingLabel') }}
           </div>
           <p class="mt-1.5 text-lg font-semibold text-white">
             {{ ratingValue }}
           </p>
-          <p class="mt-0.5 text-[11px] leading-relaxed text-gray-500">
-            {{ ratingCaption }}
-          </p>
         </div>
 
         <div class="rounded-xl border border-white/5 bg-black/10 px-3 py-2.5">
-          <div class="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-gray-500">
-            <BadgeCheck class="h-3.5 w-3.5 text-emerald-400/80" />
+          <div class="metric-head flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-gray-500">
+            <span class="metric-icon-slot">
+              <BadgeCheck class="metric-icon text-emerald-400/80" />
+            </span>
             {{ $t('pages.product.sellerTrust.successRateLabel') }}
           </div>
           <p class="mt-1.5 text-lg font-semibold text-white">
             {{ successfulDealsValue }}
           </p>
-          <p class="mt-0.5 text-[11px] leading-relaxed text-gray-500">
-            {{ successfulDealsCaption }}
-          </p>
         </div>
 
         <div class="rounded-xl border border-white/5 bg-black/10 px-3 py-2.5">
-          <div class="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-gray-500">
-            <ShoppingBag class="h-3.5 w-3.5 text-blue-400/80" />
+          <div class="metric-head flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-gray-500">
+            <span class="metric-icon-slot">
+              <ShoppingBag class="metric-icon text-blue-400/80" />
+            </span>
             {{ $t('pages.product.sellerTrust.completedDealsLabel') }}
           </div>
           <p class="mt-1.5 text-lg font-semibold text-white">
             {{ totalDealsValue }}
           </p>
-          <p class="mt-0.5 text-[11px] leading-relaxed text-gray-500">
-            {{ $t('pages.product.sellerTrust.completedDealsCaption') }}
-          </p>
         </div>
 
         <div class="rounded-xl border border-white/5 bg-black/10 px-3 py-2.5">
-          <div class="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-gray-500">
-            <CalendarDays class="h-3.5 w-3.5 text-gray-400" />
+          <div class="metric-head flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-gray-500">
+            <span class="metric-icon-slot">
+              <CalendarDays class="metric-icon text-gray-400" />
+            </span>
             {{ $t('pages.product.sellerTrust.memberSinceLabel') }}
           </div>
           <p class="mt-1.5 whitespace-nowrap text-sm font-semibold text-white sm:text-base">
             {{ formattedRegistrationDate }}
           </p>
-          <p class="mt-0.5 text-[11px] leading-relaxed text-gray-500">
-            {{ $t('pages.product.sellerTrust.memberSinceCaption') }}
-          </p>
         </div>
       </div>
-
-      <p class="text-[11px] leading-relaxed text-gray-500">
-        {{ $t('pages.product.sellerTrust.footer') }}
-      </p>
     </div>
   </article>
 </template>
+
+<style scoped>
+.metric-head {
+  min-height: 1rem;
+}
+
+.metric-icon-slot {
+  display: inline-flex;
+  height: 0.875rem;
+  width: 0.875rem;
+  flex: 0 0 0.875rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.metric-icon {
+  height: 0.875rem;
+  width: 0.875rem;
+  flex-shrink: 0;
+}
+</style>
