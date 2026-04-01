@@ -190,6 +190,12 @@ const routes = [
       meta: { requiredAuthorized: true },
     },
     {
+      path: "/steam-topup",
+      name: "steam topup",
+      component: () => import("@/views/SteamTopUpView.vue"),
+      meta: { requiredAuthorized: true },
+    },
+    {
       path: "/settings",
       name: "settings",
       component: () => import("@/views/SettingsView.vue"),
