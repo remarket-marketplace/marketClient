@@ -1002,6 +1002,8 @@ const en = {
       unsubscribe: "Unsubscribe",
       scanQR: "Scan QR",
       favorites: "Favorites",
+      subscriptions: "Subscriptions",
+      noSubscriptions: "No subscriptions yet",
       bannedStatus: "User is banned",
       banReasonTitle: "Ban reason",
       banReasonMissing: "Reason not specified",

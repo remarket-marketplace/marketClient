@@ -999,6 +999,8 @@ const ru = {
       unsubscribe: "Отписаться",
       scanQR: "Сканировать QR код",
       favorites: "Избранное",
+      subscriptions: "Подписки",
+      noSubscriptions: "Нет подписок",
       bannedStatus: "Пользователь заблокирован",
       banReasonTitle: "Причина блокировки",
       banReasonMissing: "Причина не указана",
