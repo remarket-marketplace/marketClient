@@ -104,6 +104,8 @@ const ru = {
     close: "Закрыть",
     items: "Штук",
     buy: "Купить",
+    previous: "Назад",
+    next: "Вперед",
     isActive: "Активно",
     quantity: "Количество",
     remaining: "Осталось",
