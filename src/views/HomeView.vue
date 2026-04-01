@@ -908,8 +908,10 @@ onBeforeUnmount(() => {
       class="relative z-20 flex min-h-screen w-full flex-col items-center px-1 pb-6 sm:px-2 lg:px-2"
       :class="user ? 'pt-20' : 'pt-6'"
     >
-        <SearchField v-model="searchQuery" :placeholder="$t('pages.index.searchPlaceholder')"
-          @search-change="debouncedSearch" class="w-full lg:max-w-2xl" />
+        <SearchField
+          v-model="searchQuery"
+          :placeholder="$t('pages.index.searchPlaceholder')"
+          @search-change="debouncedSearch" class="home-search-glass w-full lg:max-w-2xl" />
 
         <div
           v-if="categorySearchResults.length"
@@ -1316,5 +1318,33 @@ onBeforeUnmount(() => {
   background-repeat: no-repeat;
   background-position: right 0.9rem center;
   background-size: 0.85rem 0.85rem;
+}
+
+.home-search-glass :deep(input) {
+  border: 1px solid rgba(71, 85, 105, 0.48);
+  padding-left: 0.75rem !important;
+  background: linear-gradient(
+    135deg,
+    rgba(30, 41, 59, 0.42) 0%,
+    rgba(15, 23, 42, 0.36) 100%
+  );
+  backdrop-filter: blur(10px) saturate(115%);
+  -webkit-backdrop-filter: blur(10px) saturate(115%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 10px 30px rgba(2, 6, 23, 0.28);
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.home-search-glass :deep(input:focus) {
+  border-color: rgba(96, 165, 250, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 12px 30px rgba(2, 6, 23, 0.34);
+}
+
+.home-search-glass :deep(svg) {
+  display: none;
+  color: rgba(148, 163, 184, 0.85);
 }
 </style>
