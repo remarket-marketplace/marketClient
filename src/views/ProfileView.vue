@@ -14,8 +14,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import type { Product } from '@/validation/product/product'
 import type { PublicProfileData, UserRead } from '@/validation/user/userRead'
+import type { SubscriptionSeller } from '@/validation/user/subscriptions'
 import type { ReviewSchema } from '@/validation/review/review'
-import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart, Edit, Calendar, Package, ShoppingBag, MessageSquare, Loader2, LayoutGrid, Rows3, UserPlus, UserCheck } from 'lucide-vue-next'
+import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart, Edit, Calendar, Package, ShoppingBag, MessageSquare, Loader2, LayoutGrid, Rows3, UserPlus, UserCheck, Users } from 'lucide-vue-next'
 import QrcodeVue from 'qrcode.vue'
 import type { Deal } from '@/validation/deal/deal'
 import UserRating from '@/components/UserRating.vue'
@@ -92,7 +93,7 @@ const profileBackgroundLayerStyle = computed(() => {
     backgroundRepeat: 'no-repeat',
   }
 })
-const activeTab = ref<'products' | 'reviews' | 'purchases'>('products')
+const activeTab = ref<'products' | 'reviews' | 'purchases' | 'subscriptions'>('products')
 const tabsRef = ref<HTMLElement | null>(null)
 type ProductCardViewMode = 'grid' | 'list'
 const PRODUCT_CARD_VIEW_MODE_STORAGE_KEY = 'home_product_card_view_mode'
@@ -121,6 +122,8 @@ const currentPagePurchases = ref(1)
 const totalPagesPurchases = ref(1)
 const isLoadingPurchases = ref(false)
 const isLoadingMorePurchases = ref(false)
+const subscriptions = ref<SubscriptionSeller[]>([])
+const isLoadingSubscriptions = ref(false)
 
 function formatFullDate(dateStr: string): string {
   return new Date(dateStr).toLocaleString(useI18n().locale.value, { year: 'numeric', month: 'long', day: 'numeric' })
@@ -248,6 +251,19 @@ async function loadPurchases(page = 1, append = false) {
   }
 }
 
+async function loadSubscriptions() {
+  if (!isOwner.value) return
+  isLoadingSubscriptions.value = true
+  try {
+    const res = await profileService.getMySubscriptions()
+    subscriptions.value = res.subscriptions
+  } catch (error) {
+    console.error('Failed to load subscriptions:', error)
+  } finally {
+    isLoadingSubscriptions.value = false
+  }
+}
+
 async function loadMoreProducts() {
   if (currentPageProducts.value >= totalPagesProducts.value) return
   await loadUserProducts(currentPageProducts.value + 1, true)
@@ -371,7 +387,7 @@ async function toggleSellerSubscription() {
   }
 }
 
-function switchTab(tab: 'products' | 'reviews' | 'purchases') {
+function switchTab(tab: 'products' | 'reviews' | 'purchases' | 'subscriptions') {
   activeTab.value = tab
   if (tab === 'products' && products.value.length === 0) {
     loadUserProducts()
@@ -381,6 +397,9 @@ function switchTab(tab: 'products' | 'reviews' | 'purchases') {
   }
   if (tab === 'purchases' && purchases.value.length === 0) {
     loadPurchases()
+  }
+  if (tab === 'subscriptions' && subscriptions.value.length === 0) {
+    loadSubscriptions()
   }
 }
 
@@ -737,6 +756,20 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                   </span>
                 </div>
               </button>
+
+              <button v-if="isOwner" @click="switchTab('subscriptions')"
+                class="flex-1 min-w-0 px-2 sm:px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
+                :class="activeTab === 'subscriptions'
+                  ? 'market-btn-tab-active'
+                  : 'text-gray-400 hover:text-white hover:bg-dark-700/50'">
+                <div class="flex items-center justify-center gap-1 sm:gap-2 overflow-hidden">
+                  <Users class="w-4 h-4 flex-shrink-0 hidden xs:block" />
+                  <span class="truncate">
+                    <span class="hidden sm:inline">{{ t('pages.profile.subscriptions') }}</span>
+                    <span class="sm:hidden">{{ t('pages.profile.subscriptions') }}</span>
+                  </span>
+                </div>
+              </button>
             </div>
 
             <!-- Content -->
@@ -935,6 +968,39 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                       </span>
                     </button>
                   </div>
+                </div>
+              </div>
+
+              <div v-if="activeTab === 'subscriptions'">
+                <div v-if="isLoadingSubscriptions" class="w-full flex items-center justify-center py-12">
+                  <Loader />
+                </div>
+
+                <div v-else-if="subscriptions.length === 0" class="text-center py-12">
+                  <div
+                    class="w-16 h-16 mx-auto mb-4 rounded-full bg-dark-700/50 border border-dark-600 flex items-center justify-center">
+                    <Users class="w-8 h-8 text-gray-500" />
+                  </div>
+                  <h3 class="text-lg font-semibold text-gray-300 mb-2">{{ t('pages.profile.noSubscriptions') }}</h3>
+                </div>
+
+                <div v-else class="space-y-3">
+                  <button v-for="seller in subscriptions" :key="seller.id" type="button"
+                    class="w-full border border-dark-700 rounded-xl bg-dark-600/40 p-4 flex items-center justify-between hover:border-blue-500/30 transition-all duration-200"
+                    @click="goToProfile(seller.username)">
+                    <div class="flex items-center gap-3 min-w-0">
+                      <UserAvatar :avatar-url="seller.avatar_url" :alt="seller.username"
+                        class="w-10 h-10 rounded-full object-cover border border-dark-600 flex-shrink-0" />
+                      <div class="min-w-0 text-left">
+                        <StyledUsername :username="seller.username" :style-id="seller.nickname_style_id"
+                          class="text-sm font-medium text-gray-200 truncate" />
+                        <div class="text-xs mt-1" :class="seller.is_active ? 'text-emerald-400' : 'text-gray-400'">
+                          {{ seller.is_active ? t('common.online') : t('common.offline') }}
+                        </div>
+                      </div>
+                    </div>
+                    <Users class="w-4 h-4 text-gray-500 flex-shrink-0" />
+                  </button>
                 </div>
               </div>
             </div>

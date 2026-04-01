@@ -10,6 +10,10 @@ import {
 import { ZodError } from "zod";
 import { httpClient } from "..";
 import { SimpleDealsListSchema } from "@/validation/deal/deal";
+import {
+  UserSubscriptionsListSchema,
+  type UserSubscriptionsList,
+} from "@/validation/user/subscriptions";
 
 export const profileService = {
   async getUserProfileData(
@@ -119,6 +123,19 @@ export const profileService = {
     } catch (error) {
       console.error("Ошибка отписки от продавца:", error);
       return null;
+    }
+  },
+
+  async getMySubscriptions(): Promise<UserSubscriptionsList> {
+    try {
+      const response = await httpClient.get("/users/subscriptions");
+      return UserSubscriptionsListSchema.parse(response.data);
+    } catch (error) {
+      console.error("Ошибка загрузки подписок:", error);
+      return {
+        subscriptions: [],
+        total: 0,
+      };
     }
   },
 };
