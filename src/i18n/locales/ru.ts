@@ -990,7 +990,7 @@ const ru = {
       profileLink: "Ссылка на профиль",
       share: "Поделиться",
       subscribe: "Подписаться",
-      unsubscribe: "Подписка",
+      unsubscribe: "Отписаться",
       scanQR: "Сканировать QR код",
       favorites: "Избранное",
       bannedStatus: "Пользователь заблокирован",

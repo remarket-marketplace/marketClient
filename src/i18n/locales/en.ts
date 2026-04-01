@@ -993,7 +993,7 @@ const en = {
       profileLink: "Profile link",
       share: "Share",
       subscribe: "Subscribe",
-      unsubscribe: "Subscribed",
+      unsubscribe: "Unsubscribe",
       scanQR: "Scan QR",
       favorites: "Favorites",
       bannedStatus: "User is banned",
