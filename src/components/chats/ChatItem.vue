@@ -201,7 +201,7 @@ onMounted(() => {
             >
                 <div 
                     v-if="isUserOnline"
-                    class="w-full h-full bg-green-500 rounded-full animate-ping opacity-75"
+                    class="w-full h-full bg-green-500 rounded-full opacity-75"
                 ></div>
             </div>
         </div>
@@ -303,7 +303,4 @@ onMounted(() => {
     }
 }
 
-.animate-ping {
-    animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
-}
 </style>

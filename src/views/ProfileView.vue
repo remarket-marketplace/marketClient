@@ -531,7 +531,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                       <div class="absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 border-dark-800"
                         :class="currentProfileData.is_active ? 'bg-green-500' : 'bg-gray-500'">
                         <div v-if="currentProfileData.is_active"
-                          class="w-full h-full rounded-full bg-green-500 animate-ping opacity-75" />
+                          class="w-full h-full rounded-full bg-green-500 opacity-75" />
                       </div>
                     </div>
 
