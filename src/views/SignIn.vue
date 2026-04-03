@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { Eye, EyeOff } from 'lucide-vue-next'
@@ -28,6 +28,9 @@ const authStage = ref<'credentials' | 'twoFactor'>('credentials')
 const twoFactorToken = ref('')
 const codeDigits = ref<string[]>(['', '', '', '', '', ''])
 const codeInputs = ref<(HTMLInputElement | null)[]>([])
+const resendSecondsLeft = ref(0)
+const isResendingTwoFactorCode = ref(false)
+let resendTimer: ReturnType<typeof window.setInterval> | null = null
 
 const { t } = useI18n()
 const router = useRouter()
@@ -66,10 +69,32 @@ function refreshCaptcha() {
   captchaRenderKey.value += 1
 }
 
+function clearResendTimer() {
+  if (!resendTimer) return
+  window.clearInterval(resendTimer)
+  resendTimer = null
+}
+
+function startResendCooldown(seconds = 30) {
+  clearResendTimer()
+  resendSecondsLeft.value = seconds
+  resendTimer = window.setInterval(() => {
+    if (resendSecondsLeft.value <= 1) {
+      clearResendTimer()
+      resendSecondsLeft.value = 0
+      return
+    }
+    resendSecondsLeft.value -= 1
+  }, 1000)
+}
+
 function resetTwoFactorState() {
   authStage.value = 'credentials'
   twoFactorToken.value = ''
   codeDigits.value = ['', '', '', '', '', '']
+  clearResendTimer()
+  resendSecondsLeft.value = 0
+  isResendingTwoFactorCode.value = false
   errorMessage.value = ''
 }
 
@@ -107,6 +132,7 @@ async function signIn() {
       twoFactorToken.value = result.two_factor_token
       codeDigits.value = ['', '', '', '', '', '']
       authStage.value = 'twoFactor'
+      startResendCooldown()
       await nextTick()
       codeInputs.value[0]?.focus()
       return
@@ -144,6 +170,50 @@ async function signIn() {
     refreshCaptcha()
   } finally {
     sended.value = false
+  }
+}
+
+async function resendTwoFactorCode() {
+  if (
+    sended.value
+    || isResendingTwoFactorCode.value
+    || authStage.value !== 'twoFactor'
+    || resendSecondsLeft.value > 0
+  ) {
+    return
+  }
+
+  if (!email.value.trim() || !password.value.trim() || !captchaToken.value) {
+    errorMessage.value = t('errors.SERVER_ERROR')
+    resetTwoFactorState()
+    return
+  }
+
+  isResendingTwoFactorCode.value = true
+  errorMessage.value = ''
+  try {
+    const result = await authService.signIn(email.value, password.value, captchaToken.value)
+    if (!result.two_factor_required || !result.two_factor_token) {
+      errorMessage.value = t('errors.SERVER_ERROR')
+      resetTwoFactorState()
+      return
+    }
+
+    twoFactorToken.value = result.two_factor_token
+    codeDigits.value = ['', '', '', '', '', '']
+    startResendCooldown()
+    await nextTick()
+    codeInputs.value[0]?.focus()
+  } catch (e: any) {
+    const detail = e?.response?.data?.detail
+    const errorCode = detail?.error_code
+    if (errorCode) {
+      errorMessage.value = getErrorMessage(detail, t)
+    } else {
+      errorMessage.value = t('errors.SERVER_ERROR')
+    }
+  } finally {
+    isResendingTwoFactorCode.value = false
   }
 }
 
@@ -222,6 +292,10 @@ function handleCodePaste(event: ClipboardEvent) {
 function switchPasswordVisibility() {
   passwordHidden.value = !passwordHidden.value
 }
+
+onUnmounted(() => {
+  clearResendTimer()
+})
 </script>
 
 <template>
@@ -318,6 +392,19 @@ function switchPasswordVisibility() {
           </div>
 
           <ErrorBanner :message="errorMessage" />
+
+          <button
+            type="button"
+            class="w-full text-center text-sm text-text-link hover:underline disabled:cursor-not-allowed disabled:opacity-60 disabled:no-underline"
+            :disabled="sended || isResendingTwoFactorCode || resendSecondsLeft > 0"
+            @click="resendTwoFactorCode"
+          >
+            {{
+              resendSecondsLeft > 0
+                ? $t('pages.auth.signIn.twoFactor.resendIn', { seconds: resendSecondsLeft })
+                : $t('pages.auth.signIn.twoFactor.resend')
+            }}
+          </button>
 
           <TheButton
             @click="confirmTwoFactorSignIn"

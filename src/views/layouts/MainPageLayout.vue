@@ -14,8 +14,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useChatStore } from '@/stores/chat'
 import { storeToRefs } from 'pinia'
-import SelectLanguage from '@/components/SelectLanguage.vue'
-import SelectCurrency from '@/components/SelectCurrency.vue'
 import MainPageFooter from '@/components/layout/MainPageFooter.vue'
 import { formatCompactCurrencyAmount, formatCurrencyAmount } from '@/utils/currency'
 import NotificationsMenu from '@/components/layout/NotificationsMenu.vue'
@@ -279,9 +277,6 @@ const mobileNavGridStyle = computed(() => ({
                         </button>
                     </nav>
 
-                    <div class="hidden md:block md:order-2">
-                        <SelectLanguage />
-                    </div>
                     <button
                         v-if="user"
                         type="button"
@@ -292,9 +287,6 @@ const mobileNavGridStyle = computed(() => ({
                         <Wallet class="h-3.5 w-3.5 text-blue-400" />
                         <span class="block max-w-[64px] truncate font-medium">{{ walletBalanceCompactLabel }}</span>
                     </button>
-                    <div class="hidden md:block md:order-1">
-                        <SelectCurrency />
-                    </div>
                     <MobileHeaderSettingsMenu />
                     <NotificationsMenu v-if="user?.username" />
                 </div>

@@ -6,6 +6,7 @@ import Loader from '@/components/Loader.vue'
 import MainProductCard from '@/components/mainProductCard.vue'
 import HomeProductListCard from '@/components/HomeProductListCard.vue'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
+import AutoDeliveryTag from '@/components/AutoDeliveryTag.vue'
 import type { Product, ProductImage } from '@/validation/product/product'
 import type { Category } from '@/validation/category/category'
 import { onMounted, ref, onUnmounted, computed, watch } from 'vue'
@@ -616,6 +617,35 @@ onUnmounted(() => {
       <div class="w-full min-w-0 space-y-4">
         <div v-if="selectedImage" class="flex justify-center rounded-2xl border border-dark-700 bg-dark-700/40 overflow-hidden">
           <div class="relative w-full aspect-[4/3] sm:aspect-[5/4] lg:aspect-[4/3] max-h-[640px] flex items-center justify-center">
+            <template v-if="product.images && product.images.length > 1">
+              <button
+                type="button"
+                class="absolute inset-y-0 left-0 z-20 w-12 md:w-16 bg-transparent"
+                :aria-label="t('common.previous')"
+                @click="prevImage"
+              />
+              <button
+                type="button"
+                class="absolute inset-y-0 right-0 z-20 w-12 md:w-16 bg-transparent"
+                :aria-label="t('common.next')"
+                @click="nextImage"
+              />
+              <button
+                type="button"
+                class="pointer-events-none absolute left-3 top-1/2 z-30 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-black/45 text-white/90"
+                :aria-label="t('common.previous')"
+              >
+                <ChevronLeft class="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                class="pointer-events-none absolute right-3 top-1/2 z-30 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-black/45 text-white/90"
+                :aria-label="t('common.next')"
+              >
+                <ChevronRight class="h-5 w-5" />
+              </button>
+            </template>
+
             <img :src="`${API_HOST}${selectedImage.image_url}`" :alt="product.title"
               class="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-55 select-none pointer-events-none"
               loading="lazy" aria-hidden="true" />
@@ -662,6 +692,7 @@ onUnmounted(() => {
               <span class="text-2xl lg:text-3xl font-bold text-green-400">
                 {{ formatCurrencyAmount(product.price) }}
               </span>
+              <AutoDeliveryTag v-if="product.auto_delivery" />
               <ProductStatusTag v-if="product.is_owner || user?.role === 'admin'" :product-status="product.status" />
             </div>
           </div>
@@ -919,6 +950,21 @@ onUnmounted(() => {
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 cursor-pointer"
         @click="openImageModal = false">
         <div class="relative w-full h-full flex items-center justify-center max-w-7xl mx-auto" @click.stop>
+          <template v-if="product.images && product.images.length > 1">
+            <button
+              type="button"
+              class="absolute inset-y-0 left-0 z-20 w-14 md:w-20 bg-transparent"
+              :aria-label="t('common.previous')"
+              @click="prevImage"
+            />
+            <button
+              type="button"
+              class="absolute inset-y-0 right-0 z-20 w-14 md:w-20 bg-transparent"
+              :aria-label="t('common.next')"
+              @click="nextImage"
+            />
+          </template>
+
           <img :src="`${API_HOST}${selectedImage.image_url}`" class="max-w-full max-h-full object-contain rounded-lg"
             :alt="`Modal image: ${product.title}`" loading="lazy" />
 
@@ -930,14 +976,12 @@ onUnmounted(() => {
 
           <button v-if="product.images && product.images.length > 1"
             class="absolute left-4 text-white hover:text-gray-300 transition-all duration-200 bg-black/50 rounded-full p-3 hover:bg-black/70 disabled:opacity-30 disabled:cursor-not-allowed"
-            :disabled="product.images.findIndex(img => img.image_url === selectedImage?.image_url) === 0"
             @click="prevImage">
             <ChevronLeft class="w-6 h-6" />
           </button>
 
           <button v-if="product.images && product.images.length > 1"
             class="absolute right-4 text-white hover:text-gray-300 transition-all duration-200 bg-black/50 rounded-full p-3 hover:bg-black/70 disabled:opacity-30 disabled:cursor-not-allowed"
-            :disabled="product.images.findIndex(img => img.image_url === selectedImage?.image_url) === product.images.length - 1"
             @click="nextImage">
             <ChevronRight class="w-6 h-6" />
           </button>

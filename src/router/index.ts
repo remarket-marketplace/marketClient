@@ -118,6 +118,12 @@ const routes = [
       meta: { requiredAdmin: true },
     },
     {
+      path: "/admin/withdrawals",
+      name: "admin withdrawals",
+      component: () => import("@/views/admin/AdminWithdrawalsView.vue"),
+      meta: { requiredAdmin: true },
+    },
+    {
       path: "/admin/promo-codes",
       name: "admin promo codes",
       component: () => import("@/views/admin/AdminPromoCodesView.vue"),
@@ -181,6 +187,12 @@ const routes = [
       path: "/wallet",
       name: "wallet",
       component: () => import("@/views/WalletView.vue"),
+      meta: { requiredAuthorized: true },
+    },
+    {
+      path: "/steam-topup",
+      name: "steam topup",
+      component: () => import("@/views/SteamTopUpView.vue"),
       meta: { requiredAuthorized: true },
     },
     {

@@ -32,10 +32,12 @@ import {
 } from '@/utils/currency'
 import { getErrorMessage } from '@/utils/errorsMap'
 import { buildSlugKey } from '@/utils/urlKeys'
+import { useUserStore } from '@/stores/user'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
 const balance = ref(0)
 const isLoading = ref(false)
@@ -55,6 +57,9 @@ const depositErrorMessage = ref<string | null>(null)
 
 const depositAmount = ref('')
 const withdrawAmount = ref('')
+const withdrawCardNumber = ref('')
+const withdrawErrorMessage = ref<string | null>(null)
+const withdrawSuccessMessage = ref<string | null>(null)
 const selectedCurrency = computed(() => preferredCurrency.value)
 const currencySymbol = computed(() => getCurrencySymbol(selectedCurrency.value))
 const currencyFractionDigits = computed(() => (selectedCurrency.value === 'USD' ? 2 : 0))
@@ -70,6 +75,7 @@ const depositAmountInRub = computed(() => {
 const withdrawAmountInRub = computed(() => {
   return convertCurrencyAmount(parsedWithdrawAmount.value, selectedCurrency.value, 'RUB')
 })
+const withdrawCardDigits = computed(() => withdrawCardNumber.value.replace(/\D/g, ''))
 
 const depositInputMin = computed(() => {
   const converted = convertCurrencyAmount(minDepositRub.value, 'RUB', selectedCurrency.value)
@@ -146,6 +152,8 @@ const isWithdrawAmountValid = computed(() => {
     && withdrawAmountInRub.value <= balance.value
   )
 })
+const isWithdrawCardValid = computed(() => withdrawCardDigits.value.length >= 12 && withdrawCardDigits.value.length <= 19)
+const canSubmitWithdrawal = computed(() => isWithdrawAmountValid.value && isWithdrawCardValid.value)
 
 // New states for modals
 const showDepositModal = ref(false)
@@ -191,6 +199,16 @@ function openDepositModal() {
 function closeDepositModal() {
   depositErrorMessage.value = null
   showDepositModal.value = false
+}
+
+function openWithdrawModal() {
+  withdrawErrorMessage.value = null
+  withdrawSuccessMessage.value = null
+  showWithdrawModal.value = true
+}
+
+function closeWithdrawModal() {
+  showWithdrawModal.value = false
 }
 
 function applyAutoDepositFromQuery() {
@@ -245,6 +263,13 @@ const loadHistory = async () => {
   isFetchingTransactions.value = false
 }
 
+const resetHistory = async () => {
+  historyItems.value = []
+  page.value = 1
+  totalPages.value = 1
+  await loadHistory()
+}
+
 const handleScroll = async (event: Event) => {
   const target = event.target as HTMLElement
   if (target.scrollTop + target.clientHeight >= target.scrollHeight - 50) {
@@ -278,19 +303,34 @@ const handleDeposit = async () => {
   isLoading.value = false
 }
 
-const handleWithdraw = () => {
-  if (!isWithdrawAmountValid.value) return
+const handleWithdraw = async () => {
+  if (!canSubmitWithdrawal.value) return
 
-  const amount = withdrawAmountInRub.value
-
+  withdrawErrorMessage.value = null
+  withdrawSuccessMessage.value = null
   isLoading.value = true
 
-  setTimeout(() => {
-    balance.value -= amount
+  const result = await walletService.createWithdrawalOrder(
+    Number(withdrawAmountInRub.value.toFixed(2)),
+    withdrawCardDigits.value,
+  )
+
+  if (result.data) {
+    balance.value = result.data.current_balance
+    userStore.updateUserProfile({ balance: result.data.current_balance })
     withdrawAmount.value = ''
+    withdrawCardNumber.value = ''
+    withdrawSuccessMessage.value = t('pages.wallet.withdrawSuccess')
+    await resetHistory()
     isLoading.value = false
-    showWithdrawModal.value = false
-  }, 1000)
+    setTimeout(() => {
+      closeWithdrawModal()
+    }, 900)
+    return
+  }
+
+  withdrawErrorMessage.value = getErrorMessage(result.error, t)
+  isLoading.value = false
 }
 
 const formatCurrency = (amount: number) => {
@@ -578,6 +618,11 @@ const availableBalanceForInput = () => {
     : Math.round(converted).toString()
 }
 
+const formatCardNumberInput = () => {
+  const digits = withdrawCardDigits.value.slice(0, 19)
+  withdrawCardNumber.value = digits.replace(/(\d{4})(?=\d)/g, '$1 ').trim()
+}
+
 const typeLabel = (type: string) => {
   const map: Record<string, string> = {
     top_up: t('pages.walletTypes.top_up'),
@@ -647,7 +692,7 @@ const typeLabel = (type: string) => {
                 </button>
 
                 <button 
-                  @click="showWithdrawModal = true"
+                  @click="openWithdrawModal"
                   class="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-dark-600 bg-dark-700/50 hover:bg-dark-700 transition-all duration-200"
                 >
                   <div class="w-10 h-10 rounded-full border border-dark-500 bg-dark-700/70 flex items-center justify-center">
@@ -761,8 +806,8 @@ const typeLabel = (type: string) => {
                             </div>
                           </div>
 
+                        <template v-if="tx.title">
                           <div
-                            v-if="tx.title"
                             class="max-w-2xl text-sm font-medium leading-5 text-gray-200/92"
                           >
                             <router-link
@@ -770,7 +815,6 @@ const typeLabel = (type: string) => {
                               :to="`/product/${buildSlugKey(tx.title, tx.product_id, 'product')}`"
                               class="transition-colors duration-200 hover:text-blue-200"
                               style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"
-                              @click.stop
                             >
                               {{ tx.title }}
                             </router-link>
@@ -781,6 +825,15 @@ const typeLabel = (type: string) => {
                               {{ tx.title }}
                             </span>
                           </div>
+
+                          <div
+                            v-if="tx.note"
+                            class="max-w-2xl text-sm leading-5 text-gray-400/90"
+                            style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;"
+                          >
+                            {{ tx.note }}
+                          </div>
+                        </template>
 
                           <div v-else class="text-sm text-gray-500">
                             {{ typeLabel(tx.type) }}
@@ -1016,7 +1069,7 @@ const typeLabel = (type: string) => {
             </div>
             <button 
               type="button"
-              @click="showWithdrawModal = false"
+              @click="closeWithdrawModal"
               class="rounded-full p-1 text-gray-400 transition-colors duration-150 hover:text-gray-300"
               aria-label="Close"
             >
@@ -1025,6 +1078,25 @@ const typeLabel = (type: string) => {
           </div>
           
           <div class="space-y-4">
+            <div class="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+              <div class="text-[11px] uppercase tracking-[0.24em] text-gray-500">
+                {{ $t('pages.wallet.withdrawCard') }}
+              </div>
+              <input
+                v-model="withdrawCardNumber"
+                type="text"
+                inputmode="numeric"
+                autocomplete="cc-number"
+                maxlength="23"
+                :placeholder="$t('pages.wallet.withdrawCardPlaceholder')"
+                class="mt-3 w-full border-none bg-transparent p-0 text-lg font-semibold tracking-[0.18em] text-white outline-none placeholder:text-gray-600"
+                @input="formatCardNumberInput"
+              />
+              <p class="mt-2 text-xs text-gray-400">
+                {{ $t('pages.wallet.withdrawCardHint') }}
+              </p>
+            </div>
+
             <div class="space-y-2">
               <label class="block text-sm font-medium text-gray-300">
                 {{ $t('pages.wallet.withdrawAmount') }}
@@ -1056,9 +1128,23 @@ const typeLabel = (type: string) => {
               </div>
             </div>
 
+            <div
+              v-if="withdrawErrorMessage"
+              class="rounded-xl border border-rose-500/20 bg-rose-500/8 px-4 py-3 text-sm text-rose-200"
+            >
+              {{ withdrawErrorMessage }}
+            </div>
+
+            <div
+              v-if="withdrawSuccessMessage"
+              class="rounded-xl border border-emerald-500/20 bg-emerald-500/8 px-4 py-3 text-sm text-emerald-200"
+            >
+              {{ withdrawSuccessMessage }}
+            </div>
+
             <button
               @click="handleWithdraw"
-              :disabled="!isWithdrawAmountValid || isLoading"
+              :disabled="!canSubmitWithdrawal || isLoading"
               class="market-btn market-btn-success w-full rounded-xl py-3.5"
             >
               <span v-if="isLoading" class="flex items-center justify-center gap-2">
