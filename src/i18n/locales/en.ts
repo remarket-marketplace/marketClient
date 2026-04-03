@@ -457,6 +457,189 @@ const en = {
     serverError: {
       title: "Something went wrong, try again later",
     },
+    privacyPolicyPage: {
+      title: "Privacy policy",
+      sections: [
+        {
+          title: "1. General provisions",
+          paragraphs: [
+            "1.1. This Privacy Policy governs how information provided by the user while using the service is processed and protected.",
+            "1.2. By using the service, the user confirms acceptance of this Policy. If the user does not agree with the terms, they must stop using the service."
+          ]
+        },
+        {
+          title: "2. Information collection",
+          paragraphs: [
+            "2.1. The service may collect the following types of data:",
+            "2.2. The service does not require passport data, identity documents, photos, or other personal information beyond what is minimally necessary for operation."
+          ],
+          list: [
+            "account identifiers such as login, ID, nickname, and similar details;",
+            "technical information such as IP address, browser data, device details, and operating system;",
+            "history of interactions with the service."
+          ]
+        },
+        {
+          title: "3. Use of information",
+          paragraphs: [
+            "3.1. The service uses collected information exclusively for the following purposes:"
+          ],
+          list: [
+            "ensuring feature availability and service functionality;",
+            "communicating with the user, including notifications and support;",
+            "analyzing and improving the service."
+          ]
+        },
+        {
+          title: "4. Sharing information with third parties",
+          paragraphs: [
+            "4.1. The administration does not share collected data with third parties, except in the following cases:"
+          ],
+          list: [
+            "when required by law;",
+            "when necessary to fulfill obligations to the user, for example while working with payment systems;",
+            "when the user has explicitly given consent."
+          ]
+        },
+        {
+          title: "5. Data storage and protection",
+          paragraphs: [
+            "5.1. Data is stored for the period required to achieve the purposes of processing.",
+            "5.2. The administration takes reasonable measures to protect data, but does not guarantee absolute security of information transmitted via the internet."
+          ]
+        },
+        {
+          title: "6. Disclaimer of liability",
+          paragraphs: [
+            "6.1. The user understands and agrees that transmitting information over the internet always involves risks.",
+            "6.2. The administration is not liable for loss, theft, or disclosure of data if it occurs due to third parties or the user's own actions."
+          ]
+        },
+        {
+          title: "7. Policy changes",
+          paragraphs: [
+            "7.1. The administration may change this Policy without prior notice.",
+            "7.2. Continued use of the service after changes are made means the user accepts the updated version of the Policy."
+          ]
+        }
+      ]
+    },
+    termsOfServicePage: {
+      title: "Terms of service",
+      supportLead: "10.1. For all questions, the user may contact support:",
+      feedbackLead: "via the",
+      feedbackLink: "feedback page",
+      emailLead: "by email:",
+      sections: [
+        {
+          title: "1. General provisions",
+          paragraphs: [
+            "1.1. These Terms of Service govern the use of the online service provided by the administration.",
+            "1.2. By using the service, including launching the bot, registering, paying for services, or receiving access to materials, the user confirms they have reviewed these Terms and accept them in full.",
+            "1.3. If the user does not agree with the Terms, they must stop using the service."
+          ]
+        },
+        {
+          title: "2. Nature of services and digital goods",
+          paragraphs: [
+            "2.1. The service provides intangible digital goods and services, including informational materials, educational programs, consultations, digital products, and service-related offerings.",
+            "2.2. Materials provided through the service may include:",
+            "2.3. The user understands and agrees that the value of digital goods and services lies in systematization, analysis, presentation, support, and updates, rather than exclusivity of individual information fragments.",
+            "2.4. The service does not claim or guarantee uniqueness, exclusivity, or unavailability of individual material elements outside the service."
+          ],
+          list: [
+            "information from open sources;",
+            "original materials created by the administration and/or third parties;",
+            "analytical reviews, curated selections, recommendations, and structured data."
+          ]
+        },
+        {
+          title: "3. Disclaimer of warranties and liability",
+          paragraphs: [
+            "3.1. The service is provided on an “as is” basis.",
+            "3.2. The administration does not guarantee:",
+            "3.3. The administration is not liable for:",
+            "3.4. All decisions regarding the use of materials, recommendations, and services are made independently by the user at their own risk."
+          ],
+          list: [
+            "that the service will meet the user's expectations;",
+            "achievement of any financial, commercial, professional, or other results;",
+            "uninterrupted or error-free operation of the service;",
+            "any direct or indirect losses, including lost profits;",
+            "consequences of the user's application of received materials;",
+            "actions or omissions of third parties;",
+            "temporary technical failures or access restrictions."
+          ]
+        },
+        {
+          title: "4. Lawful use",
+          paragraphs: [
+            "4.1. The service is not intended to encourage, organize, or facilitate unlawful activity.",
+            "4.2. The user agrees to use the service only within applicable law and third-party rules.",
+            "4.3. Responsibility for the legality of using the service's materials and services rests entirely with the user."
+          ]
+        },
+        {
+          title: "5. Intellectual property",
+          paragraphs: [
+            "5.1. All materials published in the service are protected by intellectual property law.",
+            "5.2. The user may not copy, distribute, resell, transfer to third parties, or otherwise use service materials without permission from the rights holder.",
+            "5.3. Violation of intellectual property rights may result in restriction of access to the service without compensation."
+          ]
+        },
+        {
+          title: "6. Access restriction",
+          paragraphs: [
+            "6.1. The administration may suspend or restrict user access to the service in the following cases:",
+            "6.2. Restricting access does not release the user from obligations that arose earlier.",
+            "6.3. The administration reserves the right to refuse service to users whose actions may create increased risks for the service, payment providers, or third parties."
+          ],
+          list: [
+            "violation of these Terms;",
+            "detected abuse;",
+            "requirements of law or payment providers."
+          ]
+        },
+        {
+          title: "7. Payments and refunds",
+          paragraphs: [
+            "7.1. Payment for services and digital goods is made under the conditions specified in the service before payment.",
+            "7.2. Due to the intangible nature of digital goods and services, refunds are not issued after access is granted, except in the cases listed below.",
+            "7.3. A refund is possible only if:",
+            "7.4. To request a refund review, the user must contact support within 48 hours from the moment of payment.",
+            "7.5. Refund requests are reviewed within up to 48 hours from the moment of contact.",
+            "7.6. If approved, the refund is processed within 72 hours.",
+            "7.7. The user confirms they will not initiate a chargeback through payment systems without first contacting the service support team."
+          ],
+          list: [
+            "the service was not provided due to a technical fault of the platform;",
+            "access to the digital product was not actually granted."
+          ]
+        },
+        {
+          title: "8. Confidentiality",
+          paragraphs: [
+            "8.1. The administration may collect minimally necessary technical data to ensure operation of the service.",
+            "8.2. The administration takes reasonable steps to protect data, but does not guarantee absolute security of transmitted information."
+          ]
+        },
+        {
+          title: "9. Changes to the Terms",
+          paragraphs: [
+            "9.1. The administration may amend these Terms.",
+            "9.2. The current version of the Terms is published in the service.",
+            "9.3. Continued use of the service means the user accepts the updated Terms."
+          ]
+        },
+        {
+          title: "10. Contact information",
+          paragraphs: []
+        },
+        {
+          accent: "By using the service, the user confirms that they have reviewed these Terms and accept them in full."
+        }
+      ]
+    },
 
     index: {
       searchPlaceholder: "Search products...",
