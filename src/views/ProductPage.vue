@@ -970,8 +970,8 @@ onUnmounted(() => {
             :alt="`Modal image: ${product.title}`" loading="lazy" />
 
           <button
-            class="absolute top-4 right-4 text-white hover:text-gray-300 transition-all duration-200 bg-black/50 rounded-full p-2 hover:bg-black/70"
-            @click="openImageModal = false">
+            class="absolute top-4 right-4 z-30 text-white hover:text-gray-300 transition-all duration-200 bg-black/50 rounded-full p-2 hover:bg-black/70"
+            @click.stop="openImageModal = false">
             <X class="w-6 h-6" />
           </button>
 
