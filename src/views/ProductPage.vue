@@ -787,7 +787,7 @@ onUnmounted(() => {
         <TrustComponent :product="product" />
 
         <!-- Action buttons -->
-        <div class="pt-6 border-t border-black">
+        <div class="pt-6 border-t border-dark-700">
           <div v-if="!product.is_sold" class="flex flex-col gap-3 sm:flex-row justify-end">
             <div class="w-full flex gap-6 pr-4 items-center justify-end" v-if="product.is_owner">
               <button
@@ -870,7 +870,10 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div class="mt-6 w-full flex flex-col gap-4">
+    <div
+      v-if="isSimilarProductsLoading || similarProducts.length"
+      class="mt-6 w-full flex flex-col gap-4"
+    >
       <p class="text-xl sm:text-2xl font-bold">{{ $t('pages.product.similarProducts') }}</p>
       <div class="flex justify-end">
         <div
@@ -941,7 +944,6 @@ onUnmounted(() => {
         />
       </div>
 
-      <p v-else class="text-sm text-gray-400">{{ $t('pages.product.noSimilarProducts') }}</p>
     </div>
 
     <!-- Image modal -->

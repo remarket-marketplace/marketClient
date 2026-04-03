@@ -492,10 +492,19 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
             <div v-else class="rounded-xl border border-dark-700 bg-dark-600/40 p-6 space-y-6">
               <!-- Profile header -->
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                  <StyledUsername :username="currentProfileData.username"
-                    :style-id="currentProfileData.nickname_style_id" class="max-w-[220px] text-xl font-bold" />
+              <div class="flex items-start justify-between">
+                <div class="min-w-0 space-y-2">
+                  <div class="flex items-center gap-3">
+                    <StyledUsername
+                      :username="currentProfileData.username"
+                      :style-id="currentProfileData.nickname_style_id"
+                      class="max-w-[220px] text-xl font-bold"
+                    />
+                  </div>
+                  <UserRating
+                    :rating="currentProfileData.rating"
+                    variant="detail"
+                  />
                 </div>
 
                 <div v-if="isOwner" class="relative" ref="menuContainerRef">
@@ -549,7 +558,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                       {{ isSubscribedToSeller ? t('pages.profile.unsubscribe') : t('pages.profile.subscribe') }}
                     </span>
                   </button>
-                  <button @click="openShareModal"
+                  <button @click.stop="openShareModal"
                     class="w-8 h-8 flex items-center justify-center rounded-lg border border-dark-600 bg-dark-700/50 hover:bg-dark-700 transition-colors"
                     :title="t('pages.profile.share')">
                     <Share2 class="w-4 h-4 text-gray-300" />
@@ -612,7 +621,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
               </div>
 
               <!-- Stats -->
-              <div class="grid grid-cols-3 gap-3">
+              <div class="grid grid-cols-2 gap-3">
                 <button type="button" @click="openProductsTab" :title="t('common.products')"
                   class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600 min-h-[76px] space-y-1">
                   <div class="text-lg font-bold text-white">{{ totalProducts }}</div>
@@ -623,10 +632,6 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                   <div class="text-lg font-bold text-white">{{ totalReviews }}</div>
                   <div class="text-xs text-gray-400">{{ t('pages.profile.reviews') }}</div>
                 </button>
-                <div class="text-center p-3 rounded-lg bg-dark-700/50 border border-dark-600 min-h-[76px] space-y-1">
-                  <div class="text-lg font-bold text-white">{{ currentProfileData.rating }}</div>
-                  <div class="text-xs text-gray-400">{{ t('common.rating') }}</div>
-                </div>
               </div>
 
               <!-- Description -->
