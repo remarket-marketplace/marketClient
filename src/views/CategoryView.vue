@@ -71,6 +71,14 @@ const breadcrumbItems = computed(() => {
   return items
 })
 
+const activeCategory = computed(() =>
+  selectedCategoryPath.value[selectedCategoryPath.value.length - 1] ?? category.value
+)
+
+const shouldShowSubcategoriesBlock = computed(() =>
+  Boolean(activeCategory.value && activeCategory.value.parent_id === null)
+)
+
 function resolveCategoryImageUrl(imageUrl: string | null): string {
   if (!imageUrl) {
     return ''
@@ -394,7 +402,7 @@ onBeforeUnmount(() => {
         </template>
       </div>
 
-      <div v-if="subcategories[0]?.parent_id === null">
+      <div v-if="shouldShowSubcategoriesBlock">
         <Title :text="t('common.subcategories')" />
         <div v-if="isCategoryLoading || isSubcategoriesLoading" class="mt-4 flex gap-2">
           <div v-for="n in 4" :key="n" class="h-10 w-28 animate-pulse rounded-lg bg-dark-600"></div>
