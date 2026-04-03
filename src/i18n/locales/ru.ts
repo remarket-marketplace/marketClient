@@ -502,6 +502,7 @@ const ru = {
         paymentMethodUnavailable: "Этот способ оплаты пока недоступен.",
         promoCode: "Промокод",
         promoCodePlaceholder: "Введите промокод (необязательно)",
+        loginRequired: "Для пополнения Steam нужно авторизоваться.",
         payNow: "Пополнить",
         checkoutTitle: "Подтверждение оплаты",
         checkoutSubtitle: "Выберите валюту и способ пополнения.",
