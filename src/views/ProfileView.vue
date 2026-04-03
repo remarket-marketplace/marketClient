@@ -25,6 +25,7 @@ import BackButton from '@/components/navigation/BackButton.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
+import { isSafeImageFile, SAFE_IMAGE_INPUT_ACCEPT } from '@/utils/imageUpload'
 import { buildProductKey } from '@/utils/urlKeys'
 
 const { t } = useI18n()
@@ -373,7 +374,7 @@ function triggerFileInput() { if (isOwner.value && fileInputRef.value) fileInput
 
 async function handleAvatarUpload(event: Event) {
   const file = (event.target as HTMLInputElement)?.files?.[0]
-  if (!file || !isOwner.value || !file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) return
+  if (!file || !isOwner.value || !isSafeImageFile(file) || file.size > 5 * 1024 * 1024) return
   isUploading.value = true
   try {
     const avatarUrl = await profileService.uploadAvatar(file)
@@ -700,11 +701,11 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                       </div>
                     </div>
 
-                    <input ref="fileInputRef" type="file" accept="image/*" class="hidden"
+                    <input ref="fileInputRef" type="file" :accept="SAFE_IMAGE_INPUT_ACCEPT" class="hidden"
                       @change="handleAvatarUpload" />
                   </div>
                 </div>
-                <input ref="fileInputRef" type="file" accept="image/*" class="hidden" @change="handleAvatarUpload" />
+                <input ref="fileInputRef" type="file" :accept="SAFE_IMAGE_INPUT_ACCEPT" class="hidden" @change="handleAvatarUpload" />
               </div>
 
               <div v-if="currentProfileData.is_banned"

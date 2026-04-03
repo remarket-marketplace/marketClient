@@ -2,6 +2,7 @@
 import { ref, watch, computed } from 'vue'
 import { Upload, Trash2, Image, X } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
+import { isProductImageFile, PRODUCT_IMAGE_INPUT_ACCEPT } from '@/utils/imageUpload'
 
 const props = defineProps<{
   modelValue: File[]
@@ -49,7 +50,7 @@ watch(
 
 // Добавление новых файлов
 function addFiles(files: File[]) {
-  const validFiles = files.filter((f) => f.type.startsWith('image/'))
+  const validFiles = files.filter((f) => isProductImageFile(f))
 
   if (!validFiles.length) {
     errorMessage.value = t('components.fileUploader.errorOnlyImages')
@@ -216,7 +217,7 @@ function clearAll() {
         <input
           ref="fileInput"
           type="file"
-          accept="image/*"
+          :accept="PRODUCT_IMAGE_INPUT_ACCEPT"
           :multiple="!isSingleFileMode"
           class="hidden"
           @change="handleChange"

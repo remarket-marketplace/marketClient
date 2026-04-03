@@ -2,6 +2,7 @@
 import { useImages } from '@/composables/useImages';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { ImagePlus, X } from 'lucide-vue-next';
+import { isSafeImageFile, SAFE_IMAGE_INPUT_ACCEPT } from '@/utils/imageUpload';
 
 const { images } = useImages()
 const MAX_IMAGES_PER_MESSAGE = 5
@@ -82,7 +83,7 @@ const handleImagesSelected = (event: Event) => {
   if (isDisabled.value) return
 
   const input = event.target as HTMLInputElement
-  const uploaded = Array.from(input.files || [])
+  const uploaded = Array.from(input.files || []).filter((file) => isSafeImageFile(file))
   if (uploaded.length === 0) return
 
   const freeSlots = MAX_IMAGES_PER_MESSAGE - selectedFiles.value.length
@@ -158,7 +159,7 @@ watch(
       <input
         ref="fileInputRef"
         type="file"
-        accept="image/*"
+        :accept="SAFE_IMAGE_INPUT_ACCEPT"
         multiple
         class="hidden"
         @change="handleImagesSelected"

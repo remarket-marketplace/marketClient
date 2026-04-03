@@ -3,15 +3,10 @@ import { ZodError } from "zod";
 import { httpClient } from "..";
 import { ProductSchema, type Product } from "@/validation/product/product";
 import { ErrorHandler, type ApiError } from "../errorHandler";
+import { PRODUCT_IMAGE_MIME_TYPES } from "@/utils/imageUpload";
 
 const UPLOAD_REQUEST_TIMEOUT_MS = 120000;
-const DIRECT_UPLOAD_SUPPORTED_CONTENT_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/svg+xml",
-  "image/svg",
-]);
+const DIRECT_UPLOAD_SUPPORTED_CONTENT_TYPES = PRODUCT_IMAGE_MIME_TYPES;
 
 interface ProductDirectUploadRequestFile {
   filename: string;

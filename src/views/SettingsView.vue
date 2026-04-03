@@ -10,6 +10,7 @@ import { useI18n } from 'vue-i18n'
 import SuccessMessage from '@/components/SuccessMessage.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
+import { isSafeImageFile, SAFE_IMAGE_INPUT_ACCEPT } from '@/utils/imageUpload'
 import { AtSign, Bell, Key, Loader2, Lock, Mail, Palette, Send, Shield, ImagePlus, Link2Off } from 'lucide-vue-next'
 import BackButton from '@/components/navigation/BackButton.vue'
 import { useUserStore } from '@/stores/user'
@@ -852,7 +853,7 @@ async function handleProfileBackgroundUpload(event: Event) {
   if (
     !file
     || !profileBackgroundUnlocked.value
-    || !file.type.startsWith('image/')
+    || !isSafeImageFile(file)
     || file.size > 10 * 1024 * 1024
   ) {
     return
@@ -1673,7 +1674,7 @@ onUnmounted(() => {
                 <input
                   ref="profileBackgroundFileInputRef"
                   type="file"
-                  accept="image/*"
+                  :accept="SAFE_IMAGE_INPUT_ACCEPT"
                   class="hidden"
                   @change="handleProfileBackgroundUpload"
                 />
