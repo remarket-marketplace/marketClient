@@ -590,7 +590,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                       <div class="absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 border-dark-800"
                         :class="currentProfileData.is_active ? 'bg-green-500' : 'bg-gray-500'">
                         <div v-if="currentProfileData.is_active"
-                          class="w-full h-full rounded-full bg-green-500 animate-ping opacity-75" />
+                          class="w-full h-full rounded-full bg-green-500 opacity-75" />
                       </div>
                     </div>
 
@@ -664,7 +664,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
               <!-- Balance (for owner) -->
               <div v-if="isOwner && 'balance' in currentProfileData"
-                class="relative overflow-hidden rounded-xl border border-blue-800/35 bg-[linear-gradient(120deg,rgba(30,58,138,0.28)_0%,rgba(15,23,42,0.72)_55%,rgba(8,145,178,0.22)_100%)] p-4">
+                class="relative overflow-hidden rounded-xl border-[0.5px] border-white/30 p-4">
                 <div class="flex items-center justify-between gap-3">
                   <div class="space-y-1.5">
                     <div class="text-xs font-medium uppercase tracking-[0.08em] text-blue-200/80">{{ t('common.balance')
@@ -674,7 +674,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                     </div>
                   </div>
                   <button @click="goToWallet"
-                    class="h-10 w-10 flex items-center justify-center rounded-lg border border-blue-400/30 bg-blue-500/20 hover:bg-blue-500/30 transition-colors">
+                    class="h-10 w-10 flex items-center justify-center rounded-lg border border-blue-400/30 bg-blue-600 hover:bg-blue-700 transition-colors">
                     <Wallet class="w-5 h-5 text-blue-100" />
                   </button>
                 </div>
@@ -696,7 +696,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
               <button v-else-if="currentUser && !isProfileBanned" type="button" :disabled="isOpeningDirectChat"
                 @pointerdown.stop.prevent="openDirectChat" @click.stop.prevent="openDirectChat"
-                class="relative z-20 w-full flex items-center justify-center gap-2 rounded-lg border border-emerald-700/50 bg-emerald-700/20 px-4 py-3 text-sm text-emerald-100 hover:bg-emerald-700/35 transition-all duration-200 touch-manipulation disabled:cursor-not-allowed disabled:opacity-70">
+                class="relative z-20 w-full flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm border border-blue-400/40 bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200 touch-manipulation disabled:cursor-not-allowed disabled:opacity-70">
                 <Loader2 v-if="isOpeningDirectChat" class="w-4 h-4 animate-spin" />
                 <MessageSquare v-else class="w-4 h-4" />
                 <span>{{ isOpeningDirectChat ? $t('common.loading') : $t('pages.profile.writeMessage') }}</span>
@@ -921,7 +921,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                       <!-- Продавец и покупатель - теперь в отдельной строке на мобильных -->
                       <div class="flex flex-col xs:flex-row gap-2">
                         <div @click="goToProfile(deal.seller.username)"
-                          class="text-xs px-2 py-1.5 rounded-lg bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 transition-colors cursor-pointer truncate text-center"
+                          class="text-xs px-2 py-1.5 rounded-lg bg-blue-600 text-blue-300 hover:bg-blue-700 transition-colors cursor-pointer truncate text-center"
                           :title="`${t('common.seller')}: ${deal.seller.username}`">
                           <span class="hidden sm:inline">{{ t('common.seller') }}: </span>
                           <span class="truncate">{{ deal.seller.username }}</span>

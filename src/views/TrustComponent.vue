@@ -64,7 +64,7 @@ const totalDealsValue = computed(() => Intl.NumberFormat(locale.value).format(
             >
               <div
                 v-if="product.seller.is_active"
-                class="h-full w-full rounded-full bg-green-500 animate-ping opacity-75"
+                class="h-full w-full rounded-full bg-green-500 opacity-75"
               />
             </div>
           </div>

@@ -394,7 +394,7 @@ onBeforeUnmount(() => {
         </template>
       </div>
 
-      <div>
+      <div v-if="subcategories[0]?.parent_id === null">
         <Title :text="t('common.subcategories')" />
         <div v-if="isCategoryLoading || isSubcategoriesLoading" class="mt-4 flex gap-2">
           <div v-for="n in 4" :key="n" class="h-10 w-28 animate-pulse rounded-lg bg-dark-600"></div>
@@ -419,7 +419,10 @@ onBeforeUnmount(() => {
         <div v-else class="mt-4 text-sm text-gray-400">{{ t('pages.category.noSubcategories') }}</div>
       </div>
 
-      <div class="mt-10">
+      <div v-if="products.length === 0" class="mt-4 text-sm text-gray-400 flex justify-center items-center">
+        {{ t('pages.category.noProducts') }}
+      </div>
+      <div class="mt-10" v-else>
         <Title :text="t('common.products')" />
         <div class="mt-4 flex justify-end">
           <div

@@ -1357,7 +1357,7 @@ onUnmounted(() => {
 
               <button
                 type="button"
-                class="market-btn market-btn-success w-full rounded-xl py-3.5"
+                class="market-btn market-btn-primary w-full rounded-xl py-3.5"
                 :disabled="!canChangeUsername"
                 @click="requestUsernameChangeConfirmation"
               >
@@ -1538,7 +1538,7 @@ onUnmounted(() => {
                     :href="pendingTelegramConnectUrl"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="inline-flex items-center gap-2 rounded-lg border border-blue-500/40 bg-blue-500/10 px-3 py-2 text-sm font-semibold text-blue-200 hover:bg-blue-500/20 transition"
+                    class="inline-flex items-center gap-2 rounded-lg border border-blue-500/40 bg-blue-600 px-3 py-2 text-sm font-semibold text-blue-200 hover:bg-blue-700 transition"
                   >
                     <Send class="w-4 h-4" />
                     <span>{{ $t('pages.settingsPage.notificationsTelegramOpenLink') }}</span>

@@ -182,7 +182,7 @@ watch(
           maxlength="500"
         />
         <button
-          class="ml-2 flex h-8 w-8 flex-none items-center justify-center self-end rounded-full border border-blue-400/40 bg-blue-600 text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:border-amber-400/40 disabled:bg-dark-500 disabled:opacity-60 disabled:hover:bg-dark-500"
+          class="ml-2 flex h-8 w-8 flex-none items-center justify-center self-end rounded-full border border-blue-400/40 bg-blue-600 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:border-amber-400/40 disabled:bg-dark-500 disabled:opacity-60 disabled:hover:bg-dark-500"
           :disabled="isDisabled || !hasDraftToSend"
           @click="handleSendMessage"
         >
