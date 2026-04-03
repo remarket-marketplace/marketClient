@@ -182,6 +182,7 @@ const priceValid = computed(() => (
 ))
 const countValid = computed(() => (
   Number.isFinite(countValue.value)
+  && Number.isInteger(countValue.value)
   && countValue.value >= PRODUCT_LIMITS.count.min
   && countValue.value <= PRODUCT_LIMITS.count.max
 ))
@@ -1253,6 +1254,8 @@ async function createProduct() {
                         type="number"
                         :min="PRODUCT_LIMITS.count.min"
                         :max="PRODUCT_LIMITS.count.max"
+                        step="1"
+                        inputmode="numeric"
                         class="h-12 w-full rounded-lg border border-dark-700 bg-dark-600 px-4 pr-20 text-base font-semibold text-white outline-none"
                       />
                       <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">

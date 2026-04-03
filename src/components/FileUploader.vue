@@ -230,7 +230,7 @@ function clearAll() {
           :class="[
             isDragging 
               ? 'border-blue-500 bg-blue-500/10' 
-              : 'border-dark-700 hover:border-blue-500 hover:bg-blue-700',
+              : 'border-dark-700 hover:border-blue-500 hover:bg-blue-500/5',
             isSingleFileMode ? 'min-h-32' : ''
           ]"
           :title="$t('components.fileUploader.upload')"

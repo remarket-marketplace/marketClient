@@ -12,6 +12,7 @@ import { storeToRefs } from 'pinia'
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import type { LocationQueryValue } from 'vue-router'
 import type { Product } from '@/validation/product/product'
 import type { PublicProfileData, UserRead } from '@/validation/user/userRead'
 import type { SubscriptionSeller } from '@/validation/user/subscriptions'
@@ -79,7 +80,48 @@ const profileBanReason = computed(() => {
 
   return t('pages.profile.banReasonMissing')
 })
-const profileUrl = computed(() => `${window.location.origin}/user/${username.value}`)
+type ProfileTab = 'products' | 'reviews' | 'purchases' | 'subscriptions'
+
+const DEFAULT_PROFILE_TAB: ProfileTab = 'products'
+
+function isProfileTab(value: string): value is ProfileTab {
+  return ['products', 'reviews', 'purchases', 'subscriptions'].includes(value)
+}
+
+function isTabAllowed(tab: ProfileTab): boolean {
+  if (tab === 'purchases' || tab === 'subscriptions') {
+    return isOwner.value
+  }
+
+  return true
+}
+
+function getRequestedTab(value: LocationQueryValue | LocationQueryValue[] | undefined): string | undefined {
+  if (Array.isArray(value)) return value[0] ?? undefined
+  return typeof value === 'string' ? value : undefined
+}
+
+function resolveProfileTab(value: LocationQueryValue | LocationQueryValue[] | undefined): ProfileTab {
+  const requestedTab = getRequestedTab(value)
+
+  if (!requestedTab || !isProfileTab(requestedTab)) {
+    return DEFAULT_PROFILE_TAB
+  }
+
+  return isTabAllowed(requestedTab) ? requestedTab : DEFAULT_PROFILE_TAB
+}
+
+const profileUrl = computed(() => {
+  if (typeof window === 'undefined') return ''
+
+  const resolved = router.resolve({
+    name: 'profile',
+    params: { username: username.value },
+    query: activeTab.value === DEFAULT_PROFILE_TAB ? {} : { tab: activeTab.value },
+  })
+
+  return `${window.location.origin}${resolved.fullPath}`
+})
 const profileBackgroundImageUrl = computed(() => resolveProfileMediaUrl(currentProfileData.value?.profile_background_url))
 const profileBackgroundLayerStyle = computed(() => {
   if (!profileBackgroundImageUrl.value) {
@@ -93,7 +135,7 @@ const profileBackgroundLayerStyle = computed(() => {
     backgroundRepeat: 'no-repeat',
   }
 })
-const activeTab = ref<'products' | 'reviews' | 'purchases' | 'subscriptions'>('products')
+const activeTab = ref<ProfileTab>(DEFAULT_PROFILE_TAB)
 const tabsRef = ref<HTMLElement | null>(null)
 type ProductCardViewMode = 'grid' | 'list'
 const PRODUCT_CARD_VIEW_MODE_STORAGE_KEY = 'home_product_card_view_mode'
@@ -264,6 +306,24 @@ async function loadSubscriptions() {
   }
 }
 
+function ensureTabDataLoaded(tab: ProfileTab): void {
+  if (tab === 'products' && products.value.length === 0) {
+    void loadUserProducts()
+  }
+
+  if (tab === 'reviews' && reviews.value.length === 0) {
+    void loadReviews()
+  }
+
+  if (tab === 'purchases' && purchases.value.length === 0) {
+    void loadPurchases()
+  }
+
+  if (tab === 'subscriptions' && subscriptions.value.length === 0) {
+    void loadSubscriptions()
+  }
+}
+
 async function loadMoreProducts() {
   if (currentPageProducts.value >= totalPagesProducts.value) return
   await loadUserProducts(currentPageProducts.value + 1, true)
@@ -387,24 +447,52 @@ async function toggleSellerSubscription() {
   }
 }
 
-function switchTab(tab: 'products' | 'reviews' | 'purchases' | 'subscriptions') {
+async function syncRouteTab(tab: ProfileTab, replace = false): Promise<void> {
+  const currentTab = getRequestedTab(route.query.tab)
+  const nextTab = tab === DEFAULT_PROFILE_TAB ? undefined : tab
+
+  if (currentTab === nextTab) return
+
+  const nextQuery = { ...route.query }
+  if (nextTab) {
+    nextQuery.tab = nextTab
+  } else {
+    delete nextQuery.tab
+  }
+
+  await router[replace ? 'replace' : 'push']({
+    name: 'profile',
+    params: { ...route.params, username: username.value },
+    query: nextQuery,
+  })
+}
+
+async function switchTab(tab: ProfileTab) {
+  if (!isTabAllowed(tab)) {
+    tab = DEFAULT_PROFILE_TAB
+  }
+
   activeTab.value = tab
-  if (tab === 'products' && products.value.length === 0) {
-    loadUserProducts()
-  }
-  if (tab === 'reviews' && reviews.value.length === 0) {
-    loadReviews()
-  }
-  if (tab === 'purchases' && purchases.value.length === 0) {
-    loadPurchases()
-  }
-  if (tab === 'subscriptions' && subscriptions.value.length === 0) {
-    loadSubscriptions()
+  ensureTabDataLoaded(tab)
+  await syncRouteTab(tab)
+}
+
+async function applyTabFromRoute(replaceInvalidQuery = false): Promise<void> {
+  const tab = resolveProfileTab(route.query.tab)
+  activeTab.value = tab
+  ensureTabDataLoaded(tab)
+
+  if (replaceInvalidQuery) {
+    const requestedTab = getRequestedTab(route.query.tab)
+    const canonicalTab = tab === DEFAULT_PROFILE_TAB ? undefined : tab
+    if (requestedTab !== canonicalTab) {
+      await syncRouteTab(tab, true)
+    }
   }
 }
 
 async function openReviewsTab() {
-  switchTab('reviews')
+  await switchTab('reviews')
   await nextTick()
   if (!window.matchMedia('(min-width: 1024px)').matches) {
     tabsRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -412,7 +500,7 @@ async function openReviewsTab() {
 }
 
 async function openProductsTab() {
-  switchTab('products')
+  await switchTab('products')
   await nextTick()
   if (!window.matchMedia('(min-width: 1024px)').matches) {
     tabsRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -442,12 +530,21 @@ onMounted(async () => {
   const profileLoaded = await loadProfileData()
   if (profileLoaded) {
     await Promise.all([loadUserProducts(), loadReviews()])
+    await applyTabFromRoute(true)
   }
 })
 
 watch(productCardViewMode, (mode) => {
   if (typeof window === 'undefined') return
   window.localStorage.setItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY, mode)
+})
+
+watch(() => route.query.tab, async () => {
+  await applyTabFromRoute(true)
+})
+
+watch(isOwner, async () => {
+  await applyTabFromRoute(true)
 })
 
 onUnmounted(() => document.removeEventListener('click', handleClickOutside))
