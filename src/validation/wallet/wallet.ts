@@ -48,7 +48,14 @@ export const walletHistoryItem = z.object({
   status: z.string(),
   created_at: z.string(),
   title: z.string().nullable(),
+  note: z.string().nullable().optional(),
   product_id: z.string().uuid().nullable(),
+  gross_amount: z.number().nullable().optional(),
+  payment_provider: z.string().nullable().optional(),
+  payment_method: z.string().nullable().optional(),
+  provider_tx_id: z.string().nullable().optional(),
+  confirmed_at: z.string().nullable().optional(),
+  reference_id: z.string().nullable().optional(),
 })
 export type WalletHistoryItem = z.infer<typeof walletHistoryItem>
 

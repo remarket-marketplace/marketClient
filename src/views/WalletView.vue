@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
+  ChevronDown,
   Clock,
   CheckCircle,
   Flame,
@@ -40,6 +41,7 @@ const balance = ref(0)
 const isLoading = ref(false)
 
 const historyItems = ref<WalletHistoryItem[]>([])
+const expandedTransactionId = ref<string | null>(null)
 const page = ref(1)
 const perPage = 10
 const totalPages = ref(1)
@@ -309,6 +311,16 @@ const formatDate = (dateString: string) => {
   })
 }
 
+const formatDateTime = (dateString: string) => {
+  return new Date(dateString).toLocaleString('ru-RU', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 const getStatusIcon = (status: string) => {
   switch (status.toLowerCase()) {
     case 'completed':
@@ -399,6 +411,157 @@ const getTypeBadgeClass = (type: string) => {
 const formatSigned = (amount: number) => {
   const sign = amount >= 0 ? '+' : ''
   return `${sign}${formatCurrency(amount)}`
+}
+
+const toggleHistoryItem = (id: string) => {
+  expandedTransactionId.value = expandedTransactionId.value === id ? null : id
+}
+
+const isHistoryItemExpanded = (id: string) => expandedTransactionId.value === id
+
+const formatProviderName = (provider: string | null | undefined) => {
+  const map: Record<string, string> = {
+    platega: 'Platega',
+    lava: 'Lava',
+  }
+  if (!provider) return null
+  return map[provider.toLowerCase()] ?? provider
+}
+
+const formatPaymentMethod = (paymentMethod: string | null | undefined) => {
+  const map: Record<string, string> = {
+    sbp: t('pages.wallet.historyDetails.paymentMethodSbp'),
+    bank_card: t('pages.wallet.historyDetails.paymentMethodBankCard'),
+    card_acquiring: t('pages.wallet.historyDetails.paymentMethodCardAcquiring'),
+    international_card: t('pages.wallet.historyDetails.paymentMethodInternationalCard'),
+    crypto: t('pages.wallet.historyDetails.paymentMethodCrypto'),
+  }
+
+  if (!paymentMethod) return null
+  return map[paymentMethod.toLowerCase()] ?? paymentMethod
+}
+
+const getTransactionRole = (item: WalletHistoryItem) => {
+  if (item.type === 'purchase') return t('pages.wallet.historyDetails.buyerRole')
+  if (item.type === 'sale') return t('pages.wallet.historyDetails.sellerRole')
+  return null
+}
+
+const getTransactionStatusNote = (item: WalletHistoryItem) => {
+  const normalizedStatus = item.status.toLowerCase()
+
+  if (item.type === 'top_up') {
+    if (normalizedStatus === 'confirmed' || normalizedStatus === 'completed') {
+      return t('pages.wallet.historyDetails.notes.topUpConfirmed')
+    }
+    if (normalizedStatus === 'pending') {
+      return t('pages.wallet.historyDetails.notes.topUpPending')
+    }
+    return t('pages.wallet.historyDetails.notes.topUpCanceled')
+  }
+
+  if (item.type === 'withdrawal') {
+    if (normalizedStatus === 'confirmed' || normalizedStatus === 'completed') {
+      return t('pages.wallet.historyDetails.notes.withdrawalConfirmed')
+    }
+    if (normalizedStatus === 'pending') {
+      return t('pages.wallet.historyDetails.notes.withdrawalPending')
+    }
+    return t('pages.wallet.historyDetails.notes.withdrawalCanceled')
+  }
+
+  if (item.type === 'purchase') {
+    if (normalizedStatus === 'pending') {
+      return t('pages.wallet.historyDetails.notes.purchasePending')
+    }
+    if (normalizedStatus === 'refunded' || normalizedStatus === 'cancelled' || normalizedStatus === 'canceled') {
+      return t('pages.wallet.historyDetails.notes.purchaseRefunded')
+    }
+    return t('pages.wallet.historyDetails.notes.purchaseCompleted')
+  }
+
+  if (item.type === 'sale') {
+    if (normalizedStatus === 'completed') {
+      return t('pages.wallet.historyDetails.notes.saleCompleted')
+    }
+    if (normalizedStatus === 'pending' || normalizedStatus === 'confirmed') {
+      return t('pages.wallet.historyDetails.notes.salePending')
+    }
+    return t('pages.wallet.historyDetails.notes.saleCanceled')
+  }
+
+  if (item.type === 'refund') {
+    return t('pages.wallet.historyDetails.notes.refundProcessed')
+  }
+
+  return t('pages.wallet.historyDetails.notes.adjustmentApplied')
+}
+
+const getTransactionDetails = (item: WalletHistoryItem) => {
+  const details: Array<{ label: string; value: string }> = [
+    {
+      label: t('pages.wallet.historyDetails.operationType'),
+      value: typeLabel(item.type),
+    },
+    {
+      label: t('pages.wallet.historyDetails.statusNote'),
+      value: getTransactionStatusNote(item),
+    },
+  ]
+
+  const role = getTransactionRole(item)
+  if (role) {
+    details.push({
+      label: t('pages.wallet.historyDetails.role'),
+      value: role,
+    })
+  }
+
+  if (typeof item.gross_amount === 'number') {
+    details.push({
+      label: t('pages.wallet.historyDetails.dealAmount'),
+      value: formatCurrency(item.gross_amount),
+    })
+  }
+
+  const providerName = formatProviderName(item.payment_provider)
+  if (providerName) {
+    details.push({
+      label: t('pages.wallet.historyDetails.provider'),
+      value: providerName,
+    })
+  }
+
+  const paymentMethod = formatPaymentMethod(item.payment_method)
+  if (paymentMethod) {
+    details.push({
+      label: t('pages.wallet.historyDetails.paymentMethod'),
+      value: paymentMethod,
+    })
+  }
+
+  if (item.provider_tx_id) {
+    details.push({
+      label: t('pages.wallet.historyDetails.providerTransactionId'),
+      value: item.provider_tx_id,
+    })
+  }
+
+  if (item.confirmed_at) {
+    details.push({
+      label: t('pages.wallet.historyDetails.confirmedAt'),
+      value: formatDateTime(item.confirmed_at),
+    })
+  }
+
+  if (item.note) {
+    details.push({
+      label: t('pages.wallet.historyDetails.note'),
+      value: item.note,
+    })
+  }
+
+  return details
 }
 
 const minimumDepositText = computed(() => formatCurrencyAmount(minDepositRub.value, {
@@ -558,72 +721,119 @@ const typeLabel = (type: string) => {
               <div
                 v-for="tx in historyItems"
                 :key="tx.id"
-                class="group rounded-2xl border border-dark-700 bg-dark-600/40 p-4 transition-all duration-200 hover:border-blue-500/20 hover:bg-dark-600/60 sm:p-5"
+                :class="[
+                  'group rounded-2xl border p-4 transition-all duration-300 sm:p-5',
+                  isHistoryItemExpanded(tx.id)
+                    ? 'wallet-history-item-active border-blue-400/35 bg-dark-500/70 shadow-[0_20px_60px_rgba(15,23,42,0.28)]'
+                    : 'border-dark-700 bg-dark-600/40 hover:border-blue-500/20 hover:bg-dark-600/60',
+                ]"
               >
-                <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div class="min-w-0 flex-1">
-                    <div class="flex items-start gap-3 sm:gap-4">
-                      <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-dark-600 bg-dark-700/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:h-12 sm:w-12">
-                        <component
-                          :is="getTypeIcon(tx)"
-                          :class="`h-5 w-5 ${getTypeColor(tx)}`"
-                        />
+                <div
+                  class="cursor-pointer"
+                  role="button"
+                  tabindex="0"
+                  :aria-expanded="isHistoryItemExpanded(tx.id)"
+                  @click="toggleHistoryItem(tx.id)"
+                  @keydown.enter.prevent="toggleHistoryItem(tx.id)"
+                  @keydown.space.prevent="toggleHistoryItem(tx.id)"
+                >
+                  <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-start gap-3 sm:gap-4">
+                        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-dark-600 bg-dark-700/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:h-12 sm:w-12">
+                          <component
+                            :is="getTypeIcon(tx)"
+                            :class="`h-5 w-5 ${getTypeColor(tx)}`"
+                          />
+                        </div>
+
+                        <div class="min-w-0 flex-1 space-y-2">
+                          <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <div class="text-xl font-semibold tracking-tight text-white sm:text-[1.65rem]">
+                              {{ formatSigned(tx.amount) }}
+                            </div>
+                            <div class="inline-flex items-center gap-1.5 rounded-full border border-dark-600/80 bg-dark-800/80 px-2.5 py-1 text-xs font-medium text-gray-300">
+                              <component
+                                :is="getStatusIcon(tx.status)"
+                                :class="`h-3.5 w-3.5 ${getStatusColor(tx.status)}`"
+                              />
+                              <span>{{ formatDate(tx.created_at) }}</span>
+                            </div>
+                          </div>
+
+                          <div
+                            v-if="tx.title"
+                            class="max-w-2xl text-sm font-medium leading-5 text-gray-200/92"
+                          >
+                            <router-link
+                              v-if="tx.product_id"
+                              :to="`/product/${buildSlugKey(tx.title, tx.product_id, 'product')}`"
+                              class="transition-colors duration-200 hover:text-blue-200"
+                              style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"
+                              @click.stop
+                            >
+                              {{ tx.title }}
+                            </router-link>
+                            <span
+                              v-else
+                              style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"
+                            >
+                              {{ tx.title }}
+                            </span>
+                          </div>
+
+                          <div v-else class="text-sm text-gray-500">
+                            {{ typeLabel(tx.type) }}
+                          </div>
+                        </div>
                       </div>
+                    </div>
 
-                      <div class="min-w-0 flex-1 space-y-2">
-                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-                          <div class="text-xl font-semibold tracking-tight text-white sm:text-[1.65rem]">
-                            {{ formatSigned(tx.amount) }}
-                          </div>
-                          <div class="inline-flex items-center gap-1.5 rounded-full border border-dark-600/80 bg-dark-800/80 px-2.5 py-1 text-xs font-medium text-gray-300">
-                            <component
-                              :is="getStatusIcon(tx.status)"
-                              :class="`h-3.5 w-3.5 ${getStatusColor(tx.status)}`"
-                            />
-                            <span>{{ formatDate(tx.created_at) }}</span>
-                          </div>
+                    <div class="flex flex-wrap items-center gap-2 lg:max-w-[18rem] lg:justify-end">
+                      <span
+                        :class="['inline-flex min-h-9 items-center rounded-full border px-3 py-1.5 text-sm font-semibold tracking-tight', getStatusBadgeClass(tx.status)]"
+                      >
+                        {{ getStatusText(tx.status, tx.type) }}
+                      </span>
+                      <span
+                        :class="['inline-flex min-h-9 items-center rounded-full border px-3 py-1.5 text-sm font-medium', getTypeBadgeClass(tx.type)]"
+                      >
+                        {{ typeLabel(tx.type) }}
+                      </span>
+                      <span class="inline-flex min-h-9 items-center gap-2 rounded-full border border-dark-600/80 bg-dark-800/80 px-3 py-1.5 text-sm font-medium text-gray-300">
+                        {{ isHistoryItemExpanded(tx.id) ? $t('pages.wallet.historyDetails.hide') : $t('pages.wallet.historyDetails.show') }}
+                        <ChevronDown
+                          :class="[
+                            'h-4 w-4 transition-transform duration-200',
+                            isHistoryItemExpanded(tx.id) ? 'rotate-180 text-blue-200' : 'text-gray-400',
+                          ]"
+                        />
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <Transition name="wallet-history-details">
+                  <div
+                    v-if="isHistoryItemExpanded(tx.id)"
+                    class="mt-4 border-t border-white/8 pt-4"
+                  >
+                    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                      <div
+                        v-for="detail in getTransactionDetails(tx)"
+                        :key="`${detail.label}-${detail.value}`"
+                        class="rounded-2xl border border-dark-600/80 bg-dark-800/70 px-4 py-3"
+                      >
+                        <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
+                          {{ detail.label }}
                         </div>
-
-                        <div
-                          v-if="tx.title"
-                          class="max-w-2xl text-sm font-medium leading-5 text-gray-200/92"
-                        >
-                          <router-link
-                            v-if="tx.product_id"
-                            :to="`/product/${buildSlugKey(tx.title, tx.product_id, 'product')}`"
-                            class="transition-colors duration-200 hover:text-blue-200"
-                            style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"
-                          >
-                            {{ tx.title }}
-                          </router-link>
-                          <span
-                            v-else
-                            style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"
-                          >
-                            {{ tx.title }}
-                          </span>
-                        </div>
-
-                        <div v-else class="text-sm text-gray-500">
-                          {{ typeLabel(tx.type) }}
+                        <div class="mt-2 break-all text-sm leading-6 text-gray-100">
+                          {{ detail.value }}
                         </div>
                       </div>
                     </div>
                   </div>
-
-                  <div class="flex flex-wrap items-center gap-2 lg:max-w-[16rem] lg:justify-end">
-                    <span
-                      :class="['inline-flex min-h-9 items-center rounded-full border px-3 py-1.5 text-sm font-semibold tracking-tight', getStatusBadgeClass(tx.status)]"
-                    >
-                      {{ getStatusText(tx.status, tx.type) }}
-                    </span>
-                    <span
-                      :class="['inline-flex min-h-9 items-center rounded-full border px-3 py-1.5 text-sm font-medium', getTypeBadgeClass(tx.type)]"
-                    >
-                      {{ typeLabel(tx.type) }}
-                    </span>
-                  </div>
-                </div>
+                </Transition>
               </div>
             </div>
 
@@ -900,6 +1110,21 @@ input[type="number"] {
 
 .overflow-y-auto::-webkit-scrollbar-thumb:hover {
   background-color: var(--overlay-white-30);
+}
+
+.wallet-history-item-active {
+  transform: translateY(-4px);
+}
+
+.wallet-history-details-enter-active,
+.wallet-history-details-leave-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.wallet-history-details-enter-from,
+.wallet-history-details-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
 /* Ensure proper scrolling on mobile */

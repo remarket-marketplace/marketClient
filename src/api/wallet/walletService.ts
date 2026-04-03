@@ -6,6 +6,7 @@ import {
   topUpBalanceRequestSchema,
   topUpBalanceResponse,
   transactionResponse,
+  walletHistoryResponse,
   type Balance,
   type WalletTopUpProvider,
   type WalletHistoryResponse,
@@ -67,9 +68,9 @@ export const walletService = {
       const response = await httpClient.get("/wallet/history", {
         params: { page, per_page: perPage },
       });
-      return response.data as WalletHistoryResponse;
+      return walletHistoryResponse.parse(response.data);
     } catch (e) {
-      if (e instanceof ZodError) console.error(e);
+      if (e instanceof ZodError) console.error(e.issues);
       return null;
     }
   },
