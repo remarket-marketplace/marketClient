@@ -975,9 +975,9 @@ onBeforeUnmount(() => {
         </div>
 
         <button
-          v-if="user && HOME_STEAM_TOPUP_ENABLED"
+          v-if="HOME_STEAM_TOPUP_ENABLED"
           type="button"
-          class="mt-4 self-start inline-flex items-center gap-2 rounded-xl border p-2 pr-3 text-left transition"
+          class="mt-4 inline-flex w-full items-center justify-between gap-3 rounded-xl border p-3 text-left transition sm:w-auto sm:self-start sm:justify-start sm:gap-2 sm:p-2 sm:pr-3"
           :class="steamPromoChipWrapperClass"
           @click="goToSteamTopUpPage"
         >
@@ -994,6 +994,10 @@ onBeforeUnmount(() => {
             >
               5%
             </span>
+          </div>
+          <div class="min-w-0 flex-1 text-right sm:hidden">
+            <div class="text-sm font-semibold text-white">{{ t('pages.index.steamTopUp.title') }}</div>
+            <div class="truncate text-xs text-gray-400">{{ t('pages.index.steamTopUp.subtitle') }}</div>
           </div>
         </button>
 

@@ -502,6 +502,7 @@ const en = {
         paymentMethodUnavailable: "This payment method is not available yet.",
         promoCode: "Promo code",
         promoCodePlaceholder: "Enter promo code (optional)",
+        loginRequired: "You need to sign in to top up Steam.",
         payNow: "Pay now",
         checkoutTitle: "Payment confirmation",
         checkoutSubtitle: "Select currency and top-up method.",
