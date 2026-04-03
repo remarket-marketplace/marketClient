@@ -238,6 +238,12 @@
   --settings-toggle-active-shadow: 0 8px 24px rgb(var(--palette-blue-600) / 0.28); /* Active settings segmented toggle shadow. */
   --settings-toggle-danger-shadow: 0 8px 24px rgb(var(--palette-rose-500) / 0.14); /* Disabled/off settings segmented toggle shadow. */
 
+  /* User rating tones */
+  --rating-tone-excellent-star: rgb(var(--palette-white) / 0.92); /* Neutral white accent for excellent ratings. */
+  --rating-tone-good-star: rgb(var(--palette-white) / 0.86); /* Neutral white accent for good ratings. */
+  --rating-tone-fair-star: rgb(var(--palette-slate-300) / 0.7); /* Muted slate accent for average ratings. */
+  --rating-tone-low-star: rgb(var(--palette-rose-200) / 0.58); /* Dusty rose accent for low ratings. */
+
   /* Admin filters and segmented controls */
   --admin-filter-panel-bg: linear-gradient(180deg, rgb(var(--palette-gray-900) / 0.9), rgb(10 14 24 / 0.92)); /* Admin filter dropdown/panel background. */
   --admin-filter-panel-shadow: 0 24px 80px rgb(var(--palette-black) / 0.28); /* Admin filter dropdown/panel shadow. */

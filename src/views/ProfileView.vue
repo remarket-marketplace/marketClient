@@ -879,7 +879,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                         }}</span>
                     </div>
 
-                    <p class="text-sm text-gray-300 leading-relaxed">{{ review.body }}</p>
+                    <p v-if="review.body?.trim()" class="text-sm leading-relaxed text-gray-300">{{ review.body }}</p>
                   </div>
 
                   <div v-if="currentPageReviews < totalPagesReviews" class="flex justify-center mt-6">

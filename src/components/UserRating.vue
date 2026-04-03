@@ -20,24 +20,41 @@ const formattedReviewCount = computed(() => {
   if (typeof props.reviewCount !== 'number') return null
   return props.reviewCount.toLocaleString('ru-RU')
 })
+
+const ratingTone = computed(() => {
+  if (props.rating >= 4.7) {
+    return 'var(--rating-tone-excellent-star)'
+  }
+
+  if (props.rating >= 4) {
+    return 'var(--rating-tone-good-star)'
+  }
+
+  if (props.rating >= 3) {
+    return 'var(--rating-tone-fair-star)'
+  }
+
+  return 'var(--rating-tone-low-star)'
+})
 </script>
 
 <template>
   <div
     :class="props.variant === 'detail'
-      ? 'inline-flex min-w-0 items-center gap-2.5 text-sm leading-none text-stone-200/88'
-      : 'inline-flex h-7 w-max items-center gap-1 rounded-full border border-white/8 bg-white/[0.035] pl-1.75 pr-1.75 text-[11px] font-medium leading-none text-stone-100/88 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'"
+      ? 'inline-flex min-w-0 items-center gap-2.5 text-sm leading-none'
+      : 'inline-flex h-7 w-max items-center gap-1 text-xs'"
     :title="`Rating: ${formattedRating}`"
   >
     <span
       :class="props.variant === 'detail'
-        ? 'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-amber-200/12 bg-amber-200/[0.06]'
+        ? 'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/10'
         : 'flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full'"
+      :style="{ color: ratingTone }"
     >
       <Star
         :class="props.variant === 'detail'
-          ? 'h-3.5 w-3.5 text-amber-200/82'
-          : 'h-3 w-3 text-white'"
+          ? 'h-3.5 w-3.5'
+          : 'h-3 w-3'"
         class="fill-current"
       />
     </span>
