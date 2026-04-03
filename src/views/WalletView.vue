@@ -799,7 +799,7 @@ const typeLabel = (type: string) => {
                 :class="[
                   'group rounded-2xl border p-4 transition-all duration-300 sm:p-5',
                   isHistoryItemExpanded(tx.id)
-                    ? 'wallet-history-item-active border-blue-400/35 bg-dark-500/70 shadow-[0_20px_60px_rgba(15,23,42,0.28)]'
+                    ? 'wallet-history-item-active border-blue-400/35 bg-dark-500/70'
                     : 'border-dark-700 bg-dark-600/40 hover:border-blue-500/20 hover:bg-dark-600/60',
                 ]"
               >
@@ -815,7 +815,7 @@ const typeLabel = (type: string) => {
                   <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div class="min-w-0 flex-1">
                       <div class="flex items-start gap-3 sm:gap-4">
-                        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-dark-600 bg-dark-700/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:h-12 sm:w-12">
+                        <div class="wallet-history-item-icon flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-dark-600 bg-dark-700/80 sm:h-12 sm:w-12">
                           <component
                             :is="getTypeIcon(tx)"
                             :class="`h-5 w-5 ${getTypeColor(tx)}`"
@@ -1237,6 +1237,11 @@ input[type="number"] {
 
 .wallet-history-item-active {
   transform: translateY(-4px);
+  box-shadow: var(--wallet-history-active-shadow);
+}
+
+.wallet-history-item-icon {
+  box-shadow: var(--wallet-icon-inset);
 }
 
 .wallet-history-details-enter-active,

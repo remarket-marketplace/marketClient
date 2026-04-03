@@ -143,7 +143,7 @@ function formatChatListDateLabel(rawDate: string): string {
 
     const weekStart = startOfWeekMonday(now)
     if (messageDayStart >= weekStart && messageDayStart <= todayStart) {
-        return WEEKDAY_SHORT_RU[date.getDay()]
+        return WEEKDAY_SHORT_RU[date.getDay()] ?? ''
     }
 
     return new Intl.DateTimeFormat('ru-RU', {

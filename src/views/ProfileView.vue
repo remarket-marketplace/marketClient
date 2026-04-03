@@ -87,7 +87,7 @@ const profileBackgroundLayerStyle = computed(() => {
   }
 
   return {
-    backgroundImage: `linear-gradient(180deg, rgba(8, 12, 19, 0.82) 0%, rgba(8, 12, 19, 0.94) 100%), url(${profileBackgroundImageUrl.value})`,
+    backgroundImage: `var(--profile-background-overlay), url(${profileBackgroundImageUrl.value})`,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
@@ -548,7 +548,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                     :disabled="isSubscriptionLoading"
                     class="h-8 px-3 flex items-center justify-center gap-1.5 rounded-lg border transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                     :class="isSubscribedToSeller
-                      ? 'border-blue-500/60 bg-blue-500/20 text-blue-100 hover:bg-blue-500/30'
+                      ? 'border-blue-500/60 market-primary-surface market-primary-hover text-blue-100'
                       : 'border-dark-600 bg-dark-700/50 text-gray-200 hover:bg-dark-700'"
                     :title="isSubscribedToSeller ? t('pages.profile.unsubscribe') : t('pages.profile.subscribe')">
                     <Loader2 v-if="isSubscriptionLoading" class="w-3.5 h-3.5 animate-spin" />
@@ -660,7 +660,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                     </button>
                     <button @click="updateProfileDescription(newDescription)"
                       :disabled="!newDescription.trim() || newDescription === currentProfileData.description"
-                      class="px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                      class="market-primary-surface market-primary-hover rounded-lg px-3 py-1.5 text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50">
                       {{ t('common.save') }}
                     </button>
                   </div>
@@ -679,7 +679,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                     </div>
                   </div>
                   <button @click="goToWallet"
-                    class="h-10 w-10 flex items-center justify-center rounded-lg border border-blue-400/30 bg-blue-600 hover:bg-blue-700 transition-colors">
+                    class="market-primary-surface market-primary-hover flex h-10 w-10 items-center justify-center rounded-lg border border-blue-400/30 transition-colors">
                     <Wallet class="w-5 h-5 text-blue-100" />
                   </button>
                 </div>
@@ -701,7 +701,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
               <button v-else-if="currentUser && !isProfileBanned" type="button" :disabled="isOpeningDirectChat"
                 @pointerdown.stop.prevent="openDirectChat" @click.stop.prevent="openDirectChat"
-                class="relative z-20 w-full flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm border border-blue-400/40 bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200 touch-manipulation disabled:cursor-not-allowed disabled:opacity-70">
+                class="market-primary-surface market-primary-hover relative z-20 flex w-full items-center justify-center gap-2 rounded-lg border border-blue-400/40 px-4 py-3 text-sm text-white transition-all duration-200 touch-manipulation disabled:cursor-not-allowed disabled:opacity-70">
                 <Loader2 v-if="isOpeningDirectChat" class="w-4 h-4 animate-spin" />
                 <MessageSquare v-else class="w-4 h-4" />
                 <span>{{ isOpeningDirectChat ? $t('common.loading') : $t('pages.profile.writeMessage') }}</span>
@@ -926,7 +926,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                       <!-- Продавец и покупатель - теперь в отдельной строке на мобильных -->
                       <div class="flex flex-col xs:flex-row gap-2">
                         <div @click="goToProfile(deal.seller.username)"
-                          class="text-xs px-2 py-1.5 rounded-lg bg-blue-600 text-blue-300 hover:bg-blue-700 transition-colors cursor-pointer truncate text-center"
+                          class="market-primary-surface market-primary-hover cursor-pointer truncate rounded-lg px-2 py-1.5 text-center text-xs text-blue-300 transition-colors"
                           :title="`${t('common.seller')}: ${deal.seller.username}`">
                           <span class="hidden sm:inline">{{ t('common.seller') }}: </span>
                           <span class="truncate">{{ deal.seller.username }}</span>

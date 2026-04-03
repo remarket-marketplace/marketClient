@@ -335,7 +335,7 @@ onBeforeUnmount(() => {
 
         <template v-else-if="canConfirmFulfillment">
           <button
-            class="flex items-center justify-center gap-2 rounded-lg border border-blue-500 bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-blue-700"
+            class="market-primary-surface market-primary-hover flex items-center justify-center gap-2 rounded-lg border border-blue-500 px-4 py-2.5 text-sm font-semibold text-white transition-all"
             @click="openConfirmFulfillmentModal()"
           >
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -435,7 +435,7 @@ onBeforeUnmount(() => {
       <template v-if="isDealCompleted && !localHasReview && isBuyer">
         <div class="mt-3">
           <button
-            class="flex items-center justify-center gap-2 rounded-lg border border-blue-500 bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+            class="market-primary-surface market-primary-hover flex items-center justify-center gap-2 rounded-lg border border-blue-500 px-4 py-2.5 text-sm font-semibold text-white"
             @click="openReviewModal"
           >
             <Star class="h-4 w-4" />
@@ -595,7 +595,7 @@ onBeforeUnmount(() => {
             class="rounded-lg px-5 py-2.5 font-medium transition-colors"
             :class="!selectedRefusalId || (isOtherReasonSelected && !customReasonText.trim())
               ? 'cursor-not-allowed bg-gray-700 text-gray-500'
-              : 'bg-blue-600 text-white hover:bg-blue-700'"
+              : 'market-primary-surface market-primary-hover text-white'"
             :disabled="!selectedRefusalId || (isOtherReasonSelected && !customReasonText.trim())"
             @click="handleReport(dealId)"
           >

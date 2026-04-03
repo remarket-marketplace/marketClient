@@ -65,7 +65,7 @@ const goHome = () => {
       <div class="flex flex-col sm:flex-row gap-4 justify-center w-full max-w-sm animate-fade-in-up animation-delay-400">
         <button
           @click="$router.back()"
-          class="not-access-primary-btn group relative px-8 py-3 bg-blue-600 text-white font-semibold rounded-xl overflow-hidden transition-all hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] duration-300 flex items-center justify-center gap-3"
+          class="not-access-primary-btn market-primary-surface market-primary-hover group relative flex items-center justify-center gap-3 overflow-hidden rounded-xl px-8 py-3 font-semibold text-white transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
         >
           <ArrowLeft class="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-1" />
           {{ t('pages.notFound.back') }}

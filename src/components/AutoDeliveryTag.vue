@@ -50,16 +50,27 @@ onBeforeUnmount(() => {
       />
     </svg>
     <span
-      class="pointer-events-none absolute right-0 top-6 z-20 hidden w-max max-w-[150px] whitespace-normal rounded-md border border-blue-400/35 bg-[#0a1528]/85 px-2 py-1 text-center text-[10px] font-medium leading-tight text-blue-100 opacity-0 shadow-[0_8px_20px_rgba(2,8,23,0.55)] backdrop-blur-sm transition-opacity duration-150 group-hover:opacity-100 sm:block"
+      class="auto-delivery-tooltip pointer-events-none absolute right-0 top-6 z-20 hidden w-max max-w-[150px] whitespace-normal rounded-md border border-blue-400/35 px-2 py-1 text-center text-[10px] font-medium leading-tight text-blue-100 opacity-0 backdrop-blur-sm transition-opacity duration-150 group-hover:opacity-100 sm:block"
     >
       Мгновенная выдача после покупки
     </span>
 
     <span
       v-if="isTouchTooltipVisible"
-      class="pointer-events-none fixed bottom-20 left-1/2 z-[70] w-[min(220px,calc(100vw-1rem))] -translate-x-1/2 rounded-md border border-blue-400/35 bg-[#0a1528]/90 px-2.5 py-1.5 text-center text-[11px] font-medium leading-tight text-blue-100 shadow-[0_10px_24px_rgba(2,8,23,0.6)] backdrop-blur-sm sm:hidden"
+      class="auto-delivery-tooltip auto-delivery-tooltip-mobile pointer-events-none fixed bottom-20 left-1/2 z-[70] w-[min(220px,calc(100vw-1rem))] -translate-x-1/2 rounded-md border border-blue-400/35 px-2.5 py-1.5 text-center text-[11px] font-medium leading-tight text-blue-100 backdrop-blur-sm sm:hidden"
     >
       Мгновенная выдача после покупки
     </span>
   </span>
 </template>
+
+<style scoped>
+.auto-delivery-tooltip {
+  background: var(--auto-delivery-tooltip-bg);
+  box-shadow: var(--auto-delivery-tooltip-shadow);
+}
+
+.auto-delivery-tooltip-mobile {
+  box-shadow: var(--auto-delivery-tooltip-shadow-mobile);
+}
+</style>

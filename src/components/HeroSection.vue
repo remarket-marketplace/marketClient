@@ -49,7 +49,7 @@ const { user } = storeToRefs(store)
       <div class="flex flex-col sm:flex-row gap-5 animate-fade-in-up animation-delay-300 w-full sm:w-auto px-6">
         <button 
           @click="scrollToCatalog"
-          class="hero-primary-btn group relative px-10 py-4 bg-blue-600 text-white font-bold rounded-xl overflow-hidden transition-colors duration-300 hover:bg-blue-700"
+          class="hero-primary-btn market-primary-surface market-primary-hover group relative overflow-hidden rounded-xl px-10 py-4 font-bold text-white transition-colors duration-300"
         >
           <span class="relative flex items-center justify-center text-lg">
             {{ t('hero.exploreCatalog') }}

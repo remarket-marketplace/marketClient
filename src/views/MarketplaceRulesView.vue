@@ -174,19 +174,19 @@ import BackButton from '@/components/navigation/BackButton.vue'
 }
 
 .legal-link {
-  color: #9ec5ff;
+  color: var(--legal-link);
   text-decoration: underline;
-  text-decoration-color: rgba(158, 197, 255, 0.45);
+  text-decoration-color: var(--legal-link-underline);
   transition: color 0.2s ease, text-decoration-color 0.2s ease;
 }
 
 .legal-link:hover {
-  color: #d4e6ff;
-  text-decoration-color: rgba(212, 230, 255, 0.9);
+  color: var(--legal-link-hover);
+  text-decoration-color: var(--legal-link-hover-underline);
 }
 
 .legal-accent {
-  border-left: 2px solid rgba(91, 160, 255, 0.7);
+  border-left: 2px solid var(--legal-accent-border);
   padding-left: 0.85rem;
 }
 

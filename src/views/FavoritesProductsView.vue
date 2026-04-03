@@ -182,7 +182,7 @@ watch(productCardViewMode, (mode) => {
         </p>
         <router-link 
           to="/"
-          class="inline-flex items-center gap-2 px-6 py-3 mt-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+          class="market-primary-surface market-primary-hover mt-4 inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-medium text-white transition-colors"
         >
           {{ $t('pages.favoriteProducts.browseProducts') }}
         </router-link>

@@ -230,7 +230,7 @@ watch(
 
     <div
       v-if="isFiltersVisible"
-      class="grid gap-2 rounded-[1.5rem] border border-white/8 bg-[linear-gradient(180deg,rgba(17,24,39,0.9),rgba(10,14,24,0.92))] p-3 shadow-[0_24px_80px_rgba(0,0,0,0.28)]"
+      class="admin-withdrawals-filter-panel grid gap-2 rounded-[1.5rem] border border-white/8 p-3"
     >
       <SearchField
         v-model="searchQuery"
@@ -395,3 +395,10 @@ watch(
     </template>
   </ConfirmWindow>
 </template>
+
+<style scoped>
+.admin-withdrawals-filter-panel {
+  background: var(--admin-filter-panel-bg);
+  box-shadow: var(--admin-filter-panel-shadow);
+}
+</style>
