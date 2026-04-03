@@ -54,6 +54,18 @@ textarea {
   touch-action: pan-y; /* Только вертикальный скролл, без зума */
 }
 
+/* Hide default number input spinners across the app */
+input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 /* Отключение увеличения при фокусе на мобильных */
 @media screen and (max-width: 768px) {
   input:focus,

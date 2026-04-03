@@ -72,6 +72,7 @@ export const walletHistoryItem = z.object({
   provider_tx_id: z.string().nullable().optional(),
   confirmed_at: z.string().nullable().optional(),
   reference_id: z.string().nullable().optional(),
+  purpose: z.string().nullable().optional(),
 })
 export type WalletHistoryItem = z.infer<typeof walletHistoryItem>
 

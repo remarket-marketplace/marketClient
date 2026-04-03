@@ -17,7 +17,8 @@ import {
   Banknote,
   History,
   Landmark,
-  Loader2
+  Loader2,
+  Gamepad2,
 } from 'lucide-vue-next'
 import { walletService } from '@/api/wallet/walletService'
 import type { Balance, WalletHistoryItem, WalletTopUpProvider } from '@/validation/wallet/wallet'
@@ -428,21 +429,32 @@ const getStatusText = (status: string, type: string) => {
 }
 
 const getTypeIcon = (item: WalletHistoryItem) => {
+  if (item.type === 'steam_top_up') {
+    return Gamepad2
+  }
   return (item.amount ?? 0) >= 0 ? Plus : Minus
 }
 
 const getTypeColor = (item: WalletHistoryItem) => {
+  if (item.type === 'steam_top_up') {
+    return 'text-sky-300'
+  }
   return (item.amount ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
 }
 
 const getTypeBadgeClass = (type: string) => {
   const accentMap: Record<string, string> = {
     top_up: 'text-blue-100/80',
+    steam_top_up: 'text-sky-100',
     purchase: 'text-gray-300',
     sale: 'text-violet-200',
     refund: 'text-sky-200',
     withdrawal: 'text-orange-200',
     adjustment: 'text-gray-200',
+  }
+
+  if (type === 'steam_top_up') {
+    return 'border-sky-400/20 bg-sky-400/10 text-sky-100'
   }
 
   return `border-dark-600/80 bg-dark-800/85 ${accentMap[type] ?? 'text-gray-300'}`
@@ -498,6 +510,16 @@ const getTransactionStatusNote = (item: WalletHistoryItem) => {
       return t('pages.wallet.historyDetails.notes.topUpPending')
     }
     return t('pages.wallet.historyDetails.notes.topUpCanceled')
+  }
+
+  if (item.type === 'steam_top_up') {
+    if (normalizedStatus === 'confirmed' || normalizedStatus === 'completed') {
+      return t('pages.wallet.historyDetails.notes.steamTopUpConfirmed')
+    }
+    if (normalizedStatus === 'pending') {
+      return t('pages.wallet.historyDetails.notes.steamTopUpPending')
+    }
+    return t('pages.wallet.historyDetails.notes.steamTopUpCanceled')
   }
 
   if (item.type === 'withdrawal') {
@@ -594,6 +616,13 @@ const getTransactionDetails = (item: WalletHistoryItem) => {
     })
   }
 
+  if (item.type === 'steam_top_up') {
+    details.push({
+      label: t('pages.wallet.historyDetails.destination'),
+      value: t('pages.wallet.historyDetails.steamWalletDestination'),
+    })
+  }
+
   if (item.note) {
     details.push({
       label: t('pages.wallet.historyDetails.note'),
@@ -626,6 +655,7 @@ const formatCardNumberInput = () => {
 const typeLabel = (type: string) => {
   const map: Record<string, string> = {
     top_up: t('pages.walletTypes.top_up'),
+    steam_top_up: t('pages.walletTypes.steam_top_up'),
     purchase: t('pages.walletTypes.purchase'),
     sale: t('pages.walletTypes.sale'),
     refund: t('pages.walletTypes.refund'),
@@ -803,6 +833,13 @@ const typeLabel = (type: string) => {
                                 :class="`h-3.5 w-3.5 ${getStatusColor(tx.status)}`"
                               />
                               <span>{{ formatDate(tx.created_at) }}</span>
+                            </div>
+                            <div
+                              v-if="tx.type === 'steam_top_up'"
+                              class="inline-flex items-center gap-1.5 rounded-full border border-sky-400/20 bg-sky-400/10 px-2.5 py-1 text-xs font-medium text-sky-100"
+                            >
+                              <Gamepad2 class="h-3.5 w-3.5" />
+                              <span>{{ $t('pages.wallet.historyDetails.steamBadge') }}</span>
                             </div>
                           </div>
 
