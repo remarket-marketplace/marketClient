@@ -92,35 +92,9 @@ const categorySearchResults = computed(() => {
 type SteamPromoChipVariant = 'minimal' | 'neon' | 'glass'
 const STEAM_PROMO_CHIP_VARIANT: SteamPromoChipVariant = 'glass'
 
-const steamPromoChipWrapperClass = computed(() => {
-  if (STEAM_PROMO_CHIP_VARIANT === 'neon') {
-    return 'border-blue-400/40 bg-[#111c2e] shadow-[0_0_0_1px_rgba(96,165,250,0.15),0_10px_28px_rgba(30,64,175,0.35)] hover:border-blue-300/70 hover:bg-[#162640]'
-  }
-  if (STEAM_PROMO_CHIP_VARIANT === 'glass') {
-    return 'border-white/15 bg-white/5 backdrop-blur-md shadow-[0_8px_26px_rgba(0,0,0,0.28)] hover:border-blue-200/40 hover:bg-white/10'
-  }
-  return 'border-slate-700/80 bg-[#0f1823]/85 shadow-[0_8px_24px_rgba(0,0,0,0.28)] hover:border-blue-400/45 hover:bg-[#132030]'
-})
-
-const steamPromoIconClass = computed(() => {
-  if (STEAM_PROMO_CHIP_VARIANT === 'neon') {
-    return 'border-blue-300/35 bg-[#0b1220] text-white'
-  }
-  if (STEAM_PROMO_CHIP_VARIANT === 'glass') {
-    return 'border-white/20 bg-black/20 text-white'
-  }
-  return 'border-slate-500/40 bg-[#0b1118] text-white'
-})
-
-const steamPromoBadgeClass = computed(() => {
-  if (STEAM_PROMO_CHIP_VARIANT === 'neon') {
-    return 'border-blue-300/50 bg-blue-500/20 text-blue-100'
-  }
-  if (STEAM_PROMO_CHIP_VARIANT === 'glass') {
-    return 'border-white/20 bg-white/10 text-blue-100'
-  }
-  return 'border-blue-400/35 bg-blue-500/10 text-blue-300'
-})
+const steamPromoChipWrapperClass = computed(() => `steam-promo-chip--${STEAM_PROMO_CHIP_VARIANT}`)
+const steamPromoIconClass = computed(() => `steam-promo-chip__icon--${STEAM_PROMO_CHIP_VARIANT}`)
+const steamPromoBadgeClass = computed(() => `steam-promo-chip__badge--${STEAM_PROMO_CHIP_VARIANT}`)
 
 function setProductCardViewMode(mode: ProductCardViewMode): void {
   if (productCardViewMode.value === mode) return
@@ -977,19 +951,19 @@ onBeforeUnmount(() => {
         <button
           v-if="HOME_STEAM_TOPUP_ENABLED"
           type="button"
-          class="mt-4 inline-flex w-full items-center justify-between gap-3 rounded-xl border p-3 text-left transition sm:w-auto sm:self-start sm:justify-start sm:gap-2 sm:p-2 sm:pr-3"
+          class="steam-promo-chip mt-4 inline-flex w-full items-center justify-between gap-3 rounded-xl border p-3 text-left sm:w-auto sm:self-start sm:justify-start sm:gap-2 sm:p-2 sm:pr-3"
           :class="steamPromoChipWrapperClass"
           @click="goToSteamTopUpPage"
         >
           <div class="flex items-center gap-2">
             <span
-              class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border shadow-inner"
+              class="steam-promo-chip__icon inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border shadow-inner"
               :class="steamPromoIconClass"
             >
               <Icon icon="mdi:steam" class="h-6 w-6" />
             </span>
             <span
-              class="inline-flex h-6 min-w-9 items-center justify-center rounded-md border px-2 text-xs font-semibold leading-none"
+              class="steam-promo-chip__badge inline-flex h-6 min-w-9 items-center justify-center rounded-md border px-2 text-xs font-semibold leading-none"
               :class="steamPromoBadgeClass"
             >
               5%
@@ -1292,16 +1266,86 @@ onBeforeUnmount(() => {
   margin: 0;
 }
 
+.steam-promo-chip {
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.steam-promo-chip--neon {
+  border-color: rgb(var(--palette-blue-400) / 0.4);
+  background: var(--steam-promo-chip-neon-bg);
+  box-shadow: var(--steam-promo-chip-neon-ring), var(--steam-promo-chip-neon-shadow);
+}
+
+.steam-promo-chip--neon:hover {
+  border-color: rgb(var(--palette-blue-300) / 0.7);
+  background: var(--steam-promo-chip-neon-hover-bg);
+}
+
+.steam-promo-chip--glass {
+  border-color: var(--overlay-white-15);
+  background: var(--overlay-white-05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--steam-promo-chip-glass-shadow);
+}
+
+.steam-promo-chip--glass:hover {
+  border-color: rgb(var(--palette-blue-200) / 0.4);
+  background: rgb(var(--palette-white) / 0.1);
+}
+
+.steam-promo-chip--minimal {
+  border-color: rgb(var(--palette-slate-700) / 0.8);
+  background: var(--steam-promo-chip-minimal-bg);
+  box-shadow: var(--steam-promo-chip-minimal-shadow);
+}
+
+.steam-promo-chip--minimal:hover {
+  border-color: rgb(var(--palette-blue-400) / 0.45);
+  background: var(--steam-promo-chip-minimal-hover-bg);
+}
+
+.steam-promo-chip__icon--neon {
+  border-color: rgb(var(--palette-blue-300) / 0.35);
+  background: var(--steam-promo-chip-neon-icon-bg);
+  color: var(--white-solid);
+}
+
+.steam-promo-chip__icon--glass {
+  border-color: rgb(var(--palette-white) / 0.2);
+  background: rgb(var(--palette-black) / 0.2);
+  color: var(--white-solid);
+}
+
+.steam-promo-chip__icon--minimal {
+  border-color: rgb(var(--palette-slate-500) / 0.4);
+  background: var(--steam-promo-chip-minimal-icon-bg);
+  color: var(--white-solid);
+}
+
+.steam-promo-chip__badge--neon {
+  border-color: rgb(var(--palette-blue-300) / 0.5);
+  background: rgb(var(--palette-blue-500) / 0.2);
+  color: rgb(var(--palette-blue-100));
+}
+
+.steam-promo-chip__badge--glass {
+  border-color: rgb(var(--palette-white) / 0.2);
+  background: rgb(var(--palette-white) / 0.1);
+  color: rgb(var(--palette-blue-100));
+}
+
+.steam-promo-chip__badge--minimal {
+  border-color: rgb(var(--palette-blue-400) / 0.35);
+  background: rgb(var(--palette-blue-500) / 0.1);
+  color: rgb(var(--palette-blue-300));
+}
+
 .steam-checkout-modal {
-  background: linear-gradient(
-    165deg,
-    rgba(39, 42, 48, 0.82) 0%,
-    rgba(31, 34, 39, 0.8) 52%,
-    rgba(24, 27, 31, 0.82) 100%
-  );
+  background: var(--steam-checkout-modal-bg);
   backdrop-filter: blur(18px) saturate(115%);
   -webkit-backdrop-filter: blur(18px) saturate(115%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-shadow: var(--steam-checkout-modal-inset);
 }
 
 .steam-checkout-select {
@@ -1316,30 +1360,22 @@ onBeforeUnmount(() => {
 }
 
 .home-search-glass :deep(input) {
-  border: 1px solid rgba(71, 85, 105, 0.48);
+  border: 1px solid var(--home-search-glass-border);
   padding-left: 0.75rem !important;
-  background: linear-gradient(
-    135deg,
-    rgba(30, 41, 59, 0.42) 0%,
-    rgba(15, 23, 42, 0.36) 100%
-  );
+  background: var(--home-search-glass-bg);
   backdrop-filter: blur(10px) saturate(115%);
   -webkit-backdrop-filter: blur(10px) saturate(115%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    0 10px 30px rgba(2, 6, 23, 0.28);
+  box-shadow: var(--home-search-glass-shadow);
   transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .home-search-glass :deep(input:focus) {
-  border-color: rgba(96, 165, 250, 0.55);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 12px 30px rgba(2, 6, 23, 0.34);
+  border-color: var(--home-search-glass-focus-border);
+  box-shadow: var(--home-search-glass-focus-shadow);
 }
 
 .home-search-glass :deep(svg) {
   display: none;
-  color: rgba(148, 163, 184, 0.85);
+  color: var(--home-search-glass-icon);
 }
 </style>

@@ -1204,7 +1204,7 @@ onUnmounted(() => {
                     :disabled="isTwoFactorLoading || isTwoFactorSaving || !twoFactorData || twoFactorEnabled"
                     class="rounded-lg px-4 py-2 text-sm font-semibold transition"
                     :class="twoFactorEnabled
-                      ? 'bg-blue-600 text-white shadow-[0_8px_24px_rgba(37,99,235,0.28)]'
+                      ? 'settings-toggle-option-active'
                       : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
                     @click="!twoFactorEnabled && toggleTwoFactorSettings()"
                   >
@@ -1215,7 +1215,7 @@ onUnmounted(() => {
                     :disabled="isTwoFactorLoading || isTwoFactorSaving || !twoFactorData || !twoFactorEnabled"
                     class="rounded-lg px-4 py-2 text-sm font-semibold transition"
                     :class="!twoFactorEnabled
-                      ? 'border border-rose-400/20 bg-rose-500/12 text-rose-100 shadow-[0_8px_24px_rgba(244,63,94,0.14)]'
+                      ? 'settings-toggle-option-danger'
                       : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
                     @click="twoFactorEnabled && toggleTwoFactorSettings()"
                   >
@@ -1398,7 +1398,7 @@ onUnmounted(() => {
                     :disabled="isNotificationsSaving || anyNotificationsEnabled"
                     class="rounded-lg px-4 py-2 text-sm font-semibold transition"
                     :class="anyNotificationsEnabled
-                      ? 'bg-blue-600 text-white shadow-[0_8px_24px_rgba(37,99,235,0.28)]'
+                      ? 'settings-toggle-option-active'
                       : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
                     @click="!anyNotificationsEnabled && setAllNotificationsEnabled(true)"
                   >
@@ -1409,7 +1409,7 @@ onUnmounted(() => {
                     :disabled="isNotificationsSaving || !anyNotificationsEnabled"
                     class="rounded-lg px-4 py-2 text-sm font-semibold transition"
                     :class="!anyNotificationsEnabled
-                      ? 'border border-rose-400/20 bg-rose-500/12 text-rose-100 shadow-[0_8px_24px_rgba(244,63,94,0.14)]'
+                      ? 'settings-toggle-option-danger'
                       : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
                     @click="anyNotificationsEnabled && setAllNotificationsEnabled(false)"
                   >
@@ -1435,7 +1435,7 @@ onUnmounted(() => {
                     :disabled="isNotificationsSaving || emailNotificationsEnabled"
                     class="rounded-lg px-4 py-2 text-sm font-semibold transition"
                     :class="emailNotificationsEnabled
-                      ? 'bg-blue-600 text-white shadow-[0_8px_24px_rgba(37,99,235,0.28)]'
+                      ? 'settings-toggle-option-active'
                       : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
                     @click="!emailNotificationsEnabled && toggleEmailNotifications()"
                   >
@@ -1446,7 +1446,7 @@ onUnmounted(() => {
                     :disabled="isNotificationsSaving || !emailNotificationsEnabled"
                     class="rounded-lg px-4 py-2 text-sm font-semibold transition"
                     :class="!emailNotificationsEnabled
-                      ? 'border border-rose-400/20 bg-rose-500/12 text-rose-100 shadow-[0_8px_24px_rgba(244,63,94,0.14)]'
+                      ? 'settings-toggle-option-danger'
                       : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
                     @click="emailNotificationsEnabled && toggleEmailNotifications()"
                   >
@@ -1476,7 +1476,7 @@ onUnmounted(() => {
                       :disabled="isNotificationsSaving || !telegramConnected || telegramNotificationsEnabled"
                       class="rounded-lg px-4 py-2 text-sm font-semibold transition"
                       :class="telegramNotificationsEnabled
-                        ? 'bg-blue-600 text-white shadow-[0_8px_24px_rgba(37,99,235,0.28)]'
+                        ? 'settings-toggle-option-active'
                         : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
                       @click="!telegramNotificationsEnabled && toggleTelegramNotifications()"
                     >
@@ -1487,7 +1487,7 @@ onUnmounted(() => {
                     :disabled="isNotificationsSaving || !telegramConnected || !telegramNotificationsEnabled"
                     class="rounded-lg px-4 py-2 text-sm font-semibold transition"
                     :class="!telegramNotificationsEnabled
-                      ? 'border border-rose-400/20 bg-rose-500/12 text-rose-100 shadow-[0_8px_24px_rgba(244,63,94,0.14)]'
+                      ? 'settings-toggle-option-danger'
                       : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
                     @click="telegramNotificationsEnabled && toggleTelegramNotifications()"
                   >
@@ -1513,7 +1513,7 @@ onUnmounted(() => {
                   <button
                     v-if="!telegramConnected"
                     type="button"
-                    class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    class="market-primary-surface market-primary-hover inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
                     :disabled="isTelegramConnectLoading"
                     @click="connectTelegram"
                   >
@@ -1538,7 +1538,7 @@ onUnmounted(() => {
                     :href="pendingTelegramConnectUrl"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="inline-flex items-center gap-2 rounded-lg border border-blue-500/40 bg-blue-600 px-3 py-2 text-sm font-semibold text-blue-200 hover:bg-blue-700 transition"
+                    class="market-primary-surface market-primary-hover inline-flex items-center gap-2 rounded-lg border border-blue-500/40 px-3 py-2 text-sm font-semibold text-blue-200 transition"
                   >
                     <Send class="w-4 h-4" />
                     <span>{{ $t('pages.settingsPage.notificationsTelegramOpenLink') }}</span>
@@ -1601,7 +1601,7 @@ onUnmounted(() => {
                     v-if="profileBackgroundPreviewUrl"
                     class="absolute inset-0 bg-cover bg-center bg-no-repeat"
                     :style="{
-                      backgroundImage: `linear-gradient(180deg, rgba(8, 12, 19, 0.45) 0%, rgba(8, 12, 19, 0.75) 100%), url(${profileBackgroundPreviewUrl})`,
+                      backgroundImage: `var(--profile-background-preview-overlay), url(${profileBackgroundPreviewUrl})`,
                     }"
                   />
                   <div class="relative z-10 flex h-full w-full items-center justify-center text-xs text-gray-200">
@@ -1851,7 +1851,7 @@ onUnmounted(() => {
                           type="button"
                           class="rounded-lg px-3 py-2 text-xs font-semibold transition"
                           :class="customFontWeight === option.value
-                            ? 'bg-blue-600 text-white shadow-[0_8px_24px_rgba(37,99,235,0.28)]'
+                            ? 'settings-toggle-option-active'
                             : 'text-gray-300 hover:bg-dark-600/80 hover:text-white'"
                           @click="customFontWeight = option.value"
                         >
@@ -2012,6 +2012,19 @@ onUnmounted(() => {
   .lg\:overflow-y-auto::-webkit-scrollbar-thumb:hover {
     background-color: var(--overlay-white-30);
   }
+}
+
+.settings-toggle-option-active {
+  background: rgb(var(--palette-blue-600));
+  color: var(--white-solid);
+  box-shadow: var(--settings-toggle-active-shadow);
+}
+
+.settings-toggle-option-danger {
+  border: 1px solid rgb(var(--palette-rose-400) / 0.2);
+  background: rgb(var(--palette-rose-500) / 0.12);
+  color: rgb(var(--palette-rose-100));
+  box-shadow: var(--settings-toggle-danger-shadow);
 }
 
 @media (max-width: 1023px) {

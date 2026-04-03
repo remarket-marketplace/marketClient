@@ -792,7 +792,7 @@ onUnmounted(() => {
             <div class="w-full flex gap-6 pr-4 items-center justify-end" v-if="product.is_owner">
               <button
                 type="button"
-                class="rounded-lg flex-1 lg:flex-none bg-blue-600 px-4 py-4 text-sm text-white font-semibold transition hover:bg-blue-700 sm:px-6"
+                class="market-primary-surface market-primary-hover rounded-lg flex-1 px-4 py-4 text-sm font-semibold text-white transition lg:flex-none sm:px-6"
                 @click.stop="editProduct">
                 {{ $t('common.edit') }}
               </button>
@@ -817,8 +817,7 @@ onUnmounted(() => {
                       {{ $t('pages.product.offerPrice') }}
                     </span>
                   </button>
-                  <button :disabled="user === null" @click="user !== null && openBuyConfirm()" class="inline-flex h-12 flex-1 items-center justify-center whitespace-nowrap rounded-lg px-4 text-sm font-semibold leading-none transition
-          bg-blue-600 text-white hover:bg-blue-700
+                  <button :disabled="user === null" @click="user !== null && openBuyConfirm()" class="market-primary-surface market-primary-hover inline-flex h-12 flex-1 items-center justify-center whitespace-nowrap rounded-lg px-4 text-sm font-semibold leading-none text-white transition
           disabled:bg-blue-600/40
           disabled:text-white/60
           disabled:cursor-not-allowed

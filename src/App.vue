@@ -217,7 +217,7 @@ const layout = computed(() => {
   height: 100%;
   width: 28%;
   border-radius: 9999px;
-  background: rgb(37 99 235);
+  background: var(--route-progress-bar);
   animation: route-progress-slide 1.05s ease-in-out infinite;
 }
 

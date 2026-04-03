@@ -179,7 +179,7 @@ function handleImageTouchEnd(event: TouchEvent) {
 
         <!-- Buy button -->
         <button
-          class="group relative w-full flex-shrink-0 cursor-pointer overflow-hidden whitespace-nowrap rounded-lg bg-blue-600 px-2 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700 sm:px-3 sm:py-2 sm:text-sm"
+          class="market-primary-surface market-primary-hover group relative w-full flex-shrink-0 cursor-pointer overflow-hidden whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-semibold text-white transition sm:px-3 sm:py-2 sm:text-sm"
           @click="onClick">
           <span class="block text-center tabular-nums transition-all duration-200 group-hover:-translate-y-full group-hover:opacity-0">
             {{ formattedPrice }}

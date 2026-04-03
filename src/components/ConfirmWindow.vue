@@ -152,7 +152,7 @@ onBeforeUnmount(() => {
             {{ _props.cancelText ?? t('common.cancel') }}
           </button>
           <button
-            class="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-150 text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            class="market-primary-surface market-primary-hover flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-white transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50"
             :disabled="_props.isLoading"
             @click="handleConfirm"
           >

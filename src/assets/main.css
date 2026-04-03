@@ -138,11 +138,14 @@ body {
     pointer-events: none;
   }
 
-  .market-btn-primary {
+  .market-btn-primary,
+  .market-primary-surface {
     background-color: var(--color-button-primary);
   }
 
-  .market-btn-primary:hover {
+  .market-btn-primary:hover,
+  .market-primary-surface:hover,
+  .market-primary-hover:hover {
     background-color: var(--color-button-hover);
   }
 
@@ -326,6 +329,54 @@ body {
     background-color: var(--admin-btn-tab-active-bg);
     border-color: var(--admin-btn-tab-active-border);
     color: var(--admin-btn-text-strong);
+  }
+
+  .nickname-preview-glow-cyan {
+    box-shadow: 0 0 20px rgb(var(--palette-cyan-400) / 0.18);
+  }
+
+  .nickname-preview-glow-amber {
+    box-shadow: 0 0 20px rgb(var(--palette-amber-400) / 0.16);
+  }
+
+  .nickname-preview-glow-fuchsia {
+    box-shadow: 0 0 22px rgb(var(--palette-fuchsia-500) / 0.18);
+  }
+
+  .nickname-preview-glow-orange {
+    box-shadow: 0 0 20px rgb(var(--palette-orange-400) / 0.18);
+  }
+
+  .nickname-preview-glow-sky {
+    box-shadow: 0 0 20px rgb(var(--palette-sky-300) / 0.16);
+  }
+
+  .nickname-preview-glow-emerald {
+    box-shadow: 0 0 20px rgb(var(--palette-emerald-400) / 0.16);
+  }
+
+  .nickname-preview-glow-red {
+    box-shadow: 0 0 20px rgb(var(--palette-red-400) / 0.18);
+  }
+
+  .nickname-preview-glow-indigo {
+    box-shadow: 0 0 24px rgb(var(--palette-indigo-400) / 0.18);
+  }
+
+  .nickname-preview-glow-pink {
+    box-shadow: 0 0 20px rgb(var(--palette-pink-400) / 0.16);
+  }
+
+  .nickname-preview-glow-violet {
+    box-shadow: 0 0 24px rgb(var(--palette-violet-500) / 0.2);
+  }
+
+  .nickname-preview-glow-blue {
+    box-shadow: 0 0 20px rgb(var(--palette-blue-400) / 0.16);
+  }
+
+  .nickname-preview-glow-green {
+    box-shadow: 0 0 22px rgb(var(--palette-green-500) / 0.2);
   }
 }
 

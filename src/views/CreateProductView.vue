@@ -1403,10 +1403,11 @@ async function createProduct() {
     >
       <div class="absolute inset-0 bg-black/75 backdrop-blur-sm" @click="goToProfileAfterCreate"></div>
       <div class="relative z-10 flex min-h-full items-center justify-center px-4 py-8">
-        <div class="w-full max-w-lg rounded-[28px] border border-white/10 bg-[#111317]/96 shadow-[0_28px_80px_rgba(0,0,0,0.5)]">
-          <div class="px-6 py-7 sm:px-8 sm:py-8">
-            <div class="space-y-6">
-              <div class="inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-blue-400/18 bg-blue-500/10 text-blue-200">
+        <div class="product-created-modal w-full max-w-lg overflow-hidden rounded-[28px] border border-white/10">
+          <div class="relative overflow-hidden px-6 py-7 sm:px-8 sm:py-8">
+            <div class="product-created-modal__hero absolute inset-0"></div>
+            <div class="relative space-y-6">
+              <div class="product-created-modal__icon inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-blue-400/18 bg-blue-500/10 text-blue-200">
                 <ShieldCheck class="h-7 w-7" />
               </div>
 
@@ -1422,7 +1423,7 @@ async function createProduct() {
                 </p>
               </div>
 
-              <div class="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+              <div class="product-created-modal__summary rounded-2xl border border-white/8 p-4">
                 <p class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
                   {{ $t('pages.forms.createProduct.successHintLabel') }}
                 </p>
@@ -1434,15 +1435,15 @@ async function createProduct() {
               <div class="flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
-                  class="inline-flex flex-1 items-center justify-center rounded-2xl bg-blue-600 px-5 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-blue-700"
+                  class="market-primary-surface market-primary-hover inline-flex flex-1 items-center justify-center rounded-2xl px-5 py-3.5 text-sm font-semibold text-white transition-colors duration-200"
                   @click="goToCreatedProduct"
                 >
                   {{ $t('pages.forms.createProduct.goToProduct') }}
                 </button>
                 <button
                   type="button"
-                  class="inline-flex flex-1 items-center justify-center rounded-2xl border border-white/12 bg-white/[0.04] px-5 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:border-white/20 hover:bg-white/[0.07]"
-                  @click="goToProfileAfterCreate"
+                    class="inline-flex flex-1 items-center justify-center rounded-2xl border border-white/12 bg-white/[0.04] px-5 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:border-white/20 hover:bg-white/[0.07]"
+                    @click="goToProfileAfterCreate"
                 >
                   {{ $t('pages.forms.createProduct.goToProfile') }}
                 </button>
@@ -1484,5 +1485,22 @@ input[type="number"] {
 .wizard-step-back-enter-from {
   opacity: 0;
   transform: translateX(-16px);
+}
+
+.product-created-modal {
+  background: var(--modal-surface-strong);
+  box-shadow: var(--modal-surface-strong-shadow);
+}
+
+.product-created-modal__hero {
+  background: var(--product-created-hero-bg);
+}
+
+.product-created-modal__icon {
+  box-shadow: var(--product-created-badge-shadow);
+}
+
+.product-created-modal__summary {
+  background: var(--overlay-white-03);
 }
 </style>

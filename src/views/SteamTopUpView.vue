@@ -112,8 +112,8 @@ watch(selectedCurrency, (nextCurrency, prevCurrency) => {
 </script>
 
 <template>
-  <section class="-mt-14 relative min-h-[calc(100dvh-3.5rem)] overflow-hidden pt-14">
-    <div class="pointer-events-none absolute inset-x-0 -top-24 h-[44vh] bg-[radial-gradient(circle_at_top,rgba(37,99,235,0.16),transparent_62%)] opacity-80 blur-2xl" />
+  <section class="steam-topup-page -mt-14 relative min-h-[calc(100dvh-3.5rem)] overflow-hidden pt-14">
+    <div class="steam-topup-page__glow pointer-events-none absolute inset-x-0 -top-24 h-[44vh] opacity-80 blur-2xl" />
 
     <div class="relative mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-5xl flex-col px-4 pb-14 pt-6 sm:px-6 lg:px-8">
       <div class="mb-10 flex items-center justify-between">
@@ -162,6 +162,7 @@ watch(selectedCurrency, (nextCurrency, prevCurrency) => {
                   {{ t('pages.index.steamTopUp.account') }}
                 </span>
                 <TheInput
+                  class="steam-topup-field"
                   v-model.trim="steamAccount"
                   type="text"
                   autocomplete="off"
@@ -174,6 +175,7 @@ watch(selectedCurrency, (nextCurrency, prevCurrency) => {
                   {{ t('pages.index.steamTopUp.quantity') }}
                 </span>
                 <TheInput
+                  class="steam-topup-field steam-topup-amount-input"
                   v-model.trim="steamQuantity"
                   type="number"
                   min="0.01"
@@ -192,6 +194,7 @@ watch(selectedCurrency, (nextCurrency, prevCurrency) => {
                   {{ t('pages.index.steamTopUp.promoCode') }}
                 </span>
                 <TheInput
+                  class="steam-topup-field"
                   v-model.trim="steamPromoCode"
                   type="text"
                   autocomplete="off"
@@ -217,7 +220,7 @@ watch(selectedCurrency, (nextCurrency, prevCurrency) => {
               <div class="flex justify-end pt-1">
                 <button
                   type="button"
-                  class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 text-sm font-semibold text-white transition-colors duration-200 hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-600/45 disabled:text-white/75 sm:w-auto sm:min-w-[220px]"
+                  class="market-primary-surface market-primary-hover inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg px-6 text-sm font-semibold text-white transition-colors duration-200 disabled:cursor-not-allowed disabled:bg-blue-600/45 disabled:text-white/75 sm:w-auto sm:min-w-[220px]"
                   :disabled="!steamCanCreateOrder || steamCheckoutSubmitting"
                   @click="submitSteamTopUpPayment"
                 >
@@ -234,3 +237,33 @@ watch(selectedCurrency, (nextCurrency, prevCurrency) => {
     </div>
   </section>
 </template>
+
+<style scoped>
+.steam-topup-page__glow {
+  background: var(--page-hero-radial-blue-strong);
+}
+
+.steam-topup-field :deep(input) {
+  background: var(--steam-topup-field-bg);
+  border-color: var(--steam-topup-field-border);
+}
+
+.steam-topup-field :deep(input:focus) {
+  border-color: var(--steam-topup-field-focus);
+}
+
+.steam-topup-field :deep(input::placeholder) {
+  color: rgb(var(--palette-slate-500));
+}
+
+.steam-topup-amount-input :deep(input[type='number']) {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.steam-topup-amount-input :deep(input[type='number']::-webkit-outer-spin-button),
+.steam-topup-amount-input :deep(input[type='number']::-webkit-inner-spin-button) {
+  -webkit-appearance: none;
+  margin: 0;
+}
+</style>

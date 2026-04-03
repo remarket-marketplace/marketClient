@@ -351,7 +351,7 @@ onBeforeUnmount(() => {
             <BackButton />
           </div>
           <div class="mt-auto pb-6 sm:pb-7">
-            <h1 class="max-w-4xl text-3xl font-semibold leading-tight text-white drop-shadow-[0_3px_14px_rgba(0,0,0,0.65)] sm:text-5xl lg:text-6xl">
+            <h1 class="category-hero-title max-w-4xl text-3xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
               {{ category.name }}
             </h1>
           </div>
@@ -533,7 +533,7 @@ onBeforeUnmount(() => {
   height: 92px;
   background: linear-gradient(
     to bottom,
-    rgba(10, 14, 22, 0) 0%,
+    transparent 0%,
     var(--background-color) 90%
   );
 }
@@ -553,9 +553,11 @@ onBeforeUnmount(() => {
 }
 
 .category-hero-fallback {
-  background:
-    radial-gradient(120% 120% at 10% 0%, rgba(56, 189, 248, 0.25) 0%, rgba(10, 14, 22, 0.4) 45%, rgba(6, 9, 14, 0.85) 100%),
-    linear-gradient(130deg, rgba(59, 130, 246, 0.2) 0%, rgba(10, 14, 22, 0.9) 62%);
+  background: var(--category-hero-fallback-bg);
+}
+
+.category-hero-title {
+  filter: drop-shadow(var(--category-hero-title-shadow));
 }
 
 .products-grid {

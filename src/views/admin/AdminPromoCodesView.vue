@@ -694,8 +694,8 @@ input[type='number'] {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   padding: 4px;
   border-radius: 14px;
-  border: 1px solid rgba(71, 85, 105, 0.55);
-  background: linear-gradient(120deg, rgba(17, 24, 39, 0.95), rgba(31, 41, 55, 0.9));
+  border: 1px solid var(--segmented-toggle-border);
+  background: var(--segmented-toggle-bg);
   overflow: hidden;
 }
 
@@ -718,7 +718,7 @@ input[type='number'] {
   z-index: 1;
   border: none;
   background: transparent;
-  color: rgba(226, 232, 240, 0.74);
+  color: var(--segmented-toggle-label);
   font-size: 13px;
   font-weight: 600;
   padding: 9px 10px;
@@ -726,16 +726,16 @@ input[type='number'] {
 }
 
 .segmented-toggle__button--active {
-  color: #fff;
+  color: var(--segmented-toggle-label-active);
 }
 
 .segmented-toggle-blue .segmented-toggle__thumb {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(29, 78, 216, 0.95));
-  box-shadow: 0 8px 26px rgba(59, 130, 246, 0.4);
+  background: var(--segmented-toggle-blue-bg);
+  box-shadow: var(--segmented-toggle-blue-shadow);
 }
 
 .segmented-toggle-emerald .segmented-toggle__thumb {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(5, 150, 105, 0.95));
-  box-shadow: 0 8px 26px rgba(16, 185, 129, 0.38);
+  background: var(--segmented-toggle-emerald-bg);
+  box-shadow: var(--segmented-toggle-emerald-shadow);
 }
 </style>
