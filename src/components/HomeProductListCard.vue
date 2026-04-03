@@ -22,6 +22,7 @@ const emit = defineEmits<{
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
+const shouldShowSellerRating = computed(() => props.product.seller.rating > 0)
 const activeImageIndex = ref(0)
 const touchStartX = ref(0)
 const touchStartY = ref(0)
@@ -166,7 +167,7 @@ function handleImageTouchEnd(event: TouchEvent) {
           title="Online"
         />
 
-        <div class="inline-flex flex-shrink-0 items-center self-center">
+        <div v-if="shouldShowSellerRating" class="inline-flex flex-shrink-0 items-center self-center">
           <UserRating :rating="product.seller.rating" />
         </div>
 

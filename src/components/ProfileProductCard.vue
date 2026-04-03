@@ -23,6 +23,7 @@ const emit = defineEmits<{
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
+const shouldShowSellerRating = computed(() => props.product.seller.rating > 0)
 
 function onClick() {
   emit('click', buildProductKey(props.product))
@@ -76,7 +77,7 @@ function goToSeller() {
             />
           </button>
           <span v-if="product.seller.is_active" class="h-2 w-2 flex-shrink-0 self-center rounded-full bg-green-500" />
-          <div class="inline-flex flex-shrink-0 items-center self-center">
+          <div v-if="shouldShowSellerRating" class="inline-flex flex-shrink-0 items-center self-center">
             <UserRating :rating="product.seller.rating" />
           </div>
         </div>

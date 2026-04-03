@@ -881,11 +881,6 @@ const typeLabel = (type: string) => {
 
                     <div class="flex flex-wrap items-center gap-2 lg:max-w-[18rem] lg:justify-end">
                       <span
-                        :class="['inline-flex min-h-9 items-center rounded-full border px-3 py-1.5 text-sm font-semibold tracking-tight', getStatusBadgeClass(tx.status)]"
-                      >
-                        {{ getStatusText(tx.status, tx.type) }}
-                      </span>
-                      <span
                         :class="['inline-flex min-h-9 items-center rounded-full border px-3 py-1.5 text-sm font-medium', getTypeBadgeClass(tx.type)]"
                       >
                         {{ typeLabel(tx.type) }}
@@ -1099,8 +1094,8 @@ const typeLabel = (type: string) => {
         <div class="app-modal-panel relative w-full max-w-md overflow-y-auto rounded-2xl border border-dark-600 bg-dark-800/95 p-6 backdrop-blur-sm space-y-6">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full border border-emerald-500/35 bg-emerald-500/10 flex items-center justify-center">
-                <ArrowUpFromLine class="w-5 h-5 text-emerald-300" />
+              <div class="flex h-10 w-10 items-center justify-center rounded-full border border-dark-600 bg-dark-700/75">
+                <ArrowUpFromLine class="w-5 h-5 text-gray-300" />
               </div>
               <h3 class="text-xl font-bold text-white">{{ $t('pages.wallet.withdraw') }}</h3>
             </div>
@@ -1182,7 +1177,7 @@ const typeLabel = (type: string) => {
             <button
               @click="handleWithdraw"
               :disabled="!canSubmitWithdrawal || isLoading"
-              class="market-btn market-btn-success w-full rounded-xl py-3.5"
+              class="market-btn market-btn-primary w-full rounded-xl py-3.5"
             >
               <span v-if="isLoading" class="flex items-center justify-center gap-2">
                 <Loader2 class="w-4 h-4 animate-spin text-white" />

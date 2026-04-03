@@ -96,7 +96,7 @@ watch(isOpen, async (opened) => {
       @click="toggle"
     >
       <span class="min-w-0 flex-1 flex items-center gap-2 text-left">
-        <template v-if="modelValue !== null && modelValue !== '' && selectedOption">
+        <template v-if="selectedOption">
           <img
             v-if="selectedOption.imageUrl"
             :src="selectedOption.imageUrl"

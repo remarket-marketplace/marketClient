@@ -25,6 +25,7 @@ const emit = defineEmits<{
 }>()
 
 const API_HOST = import.meta.env.VITE_API_HOST
+const shouldShowSellerRating = computed(() => props.product.seller.rating > 0)
 const activeImageIndex = ref(0)
 const touchStartX = ref(0)
 const touchStartY = ref(0)
@@ -168,7 +169,7 @@ function handleImageTouchEnd(event: TouchEvent) {
           <span v-if="product.seller.is_active" class="w-2 h-2 rounded-full bg-green-500 flex-shrink-0 self-center" title="Online" />
 
           <!-- Rating -->
-          <div class="inline-flex flex-shrink-0 items-center self-center">
+          <div v-if="shouldShowSellerRating" class="inline-flex flex-shrink-0 items-center self-center">
             <UserRating :rating="product.seller.rating" />
           </div>
 

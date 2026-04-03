@@ -645,7 +645,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                   </button>
                 </div>
 
-                <div v-if="!isEditingDescription" class="text-sm text-gray-300 leading-relaxed">
+                <div v-if="!isEditingDescription" class="break-words text-sm leading-relaxed text-gray-300 [overflow-wrap:anywhere]">
                   <p>{{ currentProfileData.description || t('pages.profile.descriptionMissing') }}</p>
                 </div>
 
