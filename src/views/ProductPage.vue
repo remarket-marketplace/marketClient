@@ -542,6 +542,10 @@ function prevImage() {
   }
 }
 
+function closeImageModal() {
+  openImageModal.value = false
+}
+
 async function likeProduct() {
   if (product.value) {
     const result = await productService.addProductLike(product.value.id)
@@ -574,7 +578,7 @@ function handleKeydown(event: KeyboardEvent) {
       break
     case 'Escape':
       event.preventDefault()
-      openImageModal.value = false
+      closeImageModal()
       break
   }
 }
@@ -949,7 +953,7 @@ onUnmounted(() => {
     <Teleport to="body">
       <div v-if="openImageModal && selectedImage"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 cursor-pointer"
-        @click="openImageModal = false">
+        @click.self="closeImageModal">
         <div class="relative w-full h-full flex items-center justify-center max-w-7xl mx-auto" @click.stop>
           <template v-if="product.images && product.images.length > 1">
             <button
@@ -970,18 +974,21 @@ onUnmounted(() => {
             :alt="`Modal image: ${product.title}`" loading="lazy" />
 
           <button
+            type="button"
             class="absolute top-4 right-4 z-30 text-white hover:text-gray-300 transition-all duration-200 bg-black/50 rounded-full p-2 hover:bg-black/70"
-            @click.stop="openImageModal = false">
+            @click.prevent.stop="closeImageModal">
             <X class="w-6 h-6" />
           </button>
 
           <button v-if="product.images && product.images.length > 1"
+            type="button"
             class="absolute left-4 text-white hover:text-gray-300 transition-all duration-200 bg-black/50 rounded-full p-3 hover:bg-black/70 disabled:opacity-30 disabled:cursor-not-allowed"
             @click="prevImage">
             <ChevronLeft class="w-6 h-6" />
           </button>
 
           <button v-if="product.images && product.images.length > 1"
+            type="button"
             class="absolute right-4 text-white hover:text-gray-300 transition-all duration-200 bg-black/50 rounded-full p-3 hover:bg-black/70 disabled:opacity-30 disabled:cursor-not-allowed"
             @click="nextImage">
             <ChevronRight class="w-6 h-6" />
