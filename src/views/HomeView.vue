@@ -224,6 +224,14 @@ function filterVisibleCategories(categories: Category[]): Category[] {
   return categories.filter(isVisibleCategory)
 }
 
+function sortCategoriesByActiveProductsCount(categories: Category[]): Category[] {
+  return [...categories].sort((a, b) => {
+    const countDiff = (b.active_products_count ?? 0) - (a.active_products_count ?? 0)
+    if (countDiff !== 0) return countDiff
+    return a.name.localeCompare(b.name)
+  })
+}
+
 function isVisibleProduct(product: Product): boolean {
   return (
     product.status === 'active'
@@ -715,9 +723,11 @@ async function loadMoreProducts() {
 async function loadMainCategories(page = 1, append = false) {
   if (!append) isCategoriesLoading.value = true
   const res = await categoryService.getAllCategories(page, categoriesPerPage.value)
-  const visibleMainCategories = filterVisibleCategories(res.categories).filter((category) => !category.parent_id)
+  const visibleMainCategories = sortCategoriesByActiveProductsCount(
+    filterVisibleCategories(res.categories).filter((category) => !category.parent_id),
+  )
   mainCategories.value = append
-    ? [...mainCategories.value, ...visibleMainCategories]
+    ? sortCategoriesByActiveProductsCount([...mainCategories.value, ...visibleMainCategories])
     : visibleMainCategories
   categoryPage.value = res.currentPage
   categoryTotalPages.value = res.totalPages
