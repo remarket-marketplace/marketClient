@@ -554,6 +554,17 @@ export const adminService = {
     }
   },
 
+  async deleteCategory(categoryId: string) {
+    try {
+      const response = await httpClient.delete("/admin/category", {
+        data: { category_id: categoryId },
+      });
+      return response.status === 200;
+    } catch (e) {
+      return false;
+    }
+  },
+
   async getDealById(dealId: string): Promise<Deal | false> {
     //
     // get deal by id
