@@ -13,6 +13,7 @@ export const CategorySchema = z.object({
   image_url: z.string().nullable(),
   banner_url: z.string().nullable().optional(),
   parent_id: z.string().nullable(),
+  active_products_count: z.number().int().nonnegative().default(0),
 })
 
 export type Category = z.infer<typeof CategorySchema>
