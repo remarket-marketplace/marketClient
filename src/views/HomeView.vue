@@ -1004,6 +1004,33 @@ onBeforeUnmount(() => {
       class="relative z-20 flex min-h-screen w-full flex-col items-center px-1 pb-6 sm:px-2 lg:px-2"
       :class="user ? 'pt-20' : 'pt-6'"
     >
+        <button
+          v-if="HOME_STEAM_TOPUP_ENABLED"
+          type="button"
+          class="steam-promo-chip mb-3 inline-flex w-auto self-start items-center justify-start gap-2 rounded-xl border p-2 pr-3 text-left"
+          :class="steamPromoChipWrapperClass"
+          @click="goToSteamTopUpPage"
+        >
+          <div class="flex items-center gap-2">
+            <span
+              class="steam-promo-chip__icon inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border shadow-inner"
+              :class="steamPromoIconClass"
+            >
+              <Icon icon="mdi:steam" class="h-6 w-6" />
+            </span>
+            <span
+              class="steam-promo-chip__badge inline-flex h-6 min-w-9 items-center justify-center rounded-md border px-2 text-xs font-semibold leading-none"
+              :class="steamPromoBadgeClass"
+            >
+              5%
+            </span>
+          </div>
+          <div class="min-w-0 flex-1 text-right sm:hidden">
+            <div class="text-sm font-semibold text-white">{{ t('pages.index.steamTopUp.title') }}</div>
+            <div class="truncate text-xs text-gray-400">{{ t('pages.index.steamTopUp.subtitle') }}</div>
+          </div>
+        </button>
+
         <div
           ref="searchDropdownRef"
           class="w-full lg:max-w-2xl"
@@ -1049,33 +1076,6 @@ onBeforeUnmount(() => {
             <span class="truncate text-sm leading-5">{{ category.name }}</span>
           </button>
         </div>
-
-        <button
-          v-if="HOME_STEAM_TOPUP_ENABLED"
-          type="button"
-          class="steam-promo-chip mt-4 inline-flex w-full items-center justify-between gap-3 rounded-xl border p-3 text-left sm:w-auto sm:self-start sm:justify-start sm:gap-2 sm:p-2 sm:pr-3"
-          :class="steamPromoChipWrapperClass"
-          @click="goToSteamTopUpPage"
-        >
-          <div class="flex items-center gap-2">
-            <span
-              class="steam-promo-chip__icon inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border shadow-inner"
-              :class="steamPromoIconClass"
-            >
-              <Icon icon="mdi:steam" class="h-6 w-6" />
-            </span>
-            <span
-              class="steam-promo-chip__badge inline-flex h-6 min-w-9 items-center justify-center rounded-md border px-2 text-xs font-semibold leading-none"
-              :class="steamPromoBadgeClass"
-            >
-              5%
-            </span>
-          </div>
-          <div class="min-w-0 flex-1 text-right sm:hidden">
-            <div class="text-sm font-semibold text-white">{{ t('pages.index.steamTopUp.title') }}</div>
-            <div class="truncate text-xs text-gray-400">{{ t('pages.index.steamTopUp.subtitle') }}</div>
-          </div>
-        </button>
 
         <div class="mt-10 w-full sm:mt-16">
           <Title :text="t('common.categories')" />
