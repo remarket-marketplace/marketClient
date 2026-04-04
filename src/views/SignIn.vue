@@ -96,6 +96,7 @@ function resetTwoFactorState() {
   resendSecondsLeft.value = 0
   isResendingTwoFactorCode.value = false
   errorMessage.value = ''
+  refreshCaptcha()
 }
 
 function showWelcome() {
@@ -132,6 +133,7 @@ async function signIn() {
       twoFactorToken.value = result.two_factor_token
       codeDigits.value = ['', '', '', '', '', '']
       authStage.value = 'twoFactor'
+      refreshCaptcha()
       startResendCooldown()
       await nextTick()
       codeInputs.value[0]?.focus()
@@ -184,8 +186,7 @@ async function resendTwoFactorCode() {
   }
 
   if (!email.value.trim() || !password.value.trim() || !captchaToken.value) {
-    errorMessage.value = t('errors.SERVER_ERROR')
-    resetTwoFactorState()
+    errorMessage.value = t('pages.auth.signIn.completeCaptcha')
     return
   }
 
@@ -201,6 +202,7 @@ async function resendTwoFactorCode() {
 
     twoFactorToken.value = result.two_factor_token
     codeDigits.value = ['', '', '', '', '', '']
+    refreshCaptcha()
     startResendCooldown()
     await nextTick()
     codeInputs.value[0]?.focus()
@@ -212,6 +214,7 @@ async function resendTwoFactorCode() {
     } else {
       errorMessage.value = t('errors.SERVER_ERROR')
     }
+    refreshCaptcha()
   } finally {
     isResendingTwoFactorCode.value = false
   }
@@ -393,10 +396,14 @@ onUnmounted(() => {
 
           <ErrorBanner :message="errorMessage" />
 
+          <div>
+            <Captcha :key="captchaRenderKey" @verified="(token: string) => captchaToken = token" />
+          </div>
+
           <button
             type="button"
             class="w-full text-center text-sm text-text-link hover:underline disabled:cursor-not-allowed disabled:opacity-60 disabled:no-underline"
-            :disabled="sended || isResendingTwoFactorCode || resendSecondsLeft > 0"
+            :disabled="sended || isResendingTwoFactorCode || resendSecondsLeft > 0 || !captchaToken"
             @click="resendTwoFactorCode"
           >
             {{

@@ -20,6 +20,7 @@ const successMessage = ref('')
 
 const isSending = ref(false)
 const captchaToken = ref('')
+const captchaRenderKey = ref(0)
 const resendSecondsLeft = ref(0)
 let resendTimer: ReturnType<typeof window.setInterval> | null = null
 
@@ -47,8 +48,17 @@ function startResendCooldown(seconds = 30) {
     }, 1000)
 }
 
+function refreshCaptcha() {
+    captchaToken.value = ''
+    captchaRenderKey.value += 1
+}
+
 async function sendLetter() {
     if (isSending.value || resendSecondsLeft.value > 0) return
+    if (!captchaToken.value) {
+        errorMessage.value = t('pages.auth.signIn.completeCaptcha')
+        return
+    }
     try {
         isSending.value = true
         errorMessage.value = ''
@@ -59,6 +69,7 @@ async function sendLetter() {
         const detail = error?.response?.data?.detail
         errorMessage.value = getErrorMessage(detail, t)
     } finally {
+        refreshCaptcha()
         isSending.value = false
     }
 }
@@ -89,18 +100,18 @@ onUnmounted(() => {
                     </p>
 
                     <div>
-                        <Captcha @verified="(token: string) => captchaToken = token" />
+                        <Captcha :key="captchaRenderKey" @verified="(token: string) => captchaToken = token" />
                     </div>
 
                     <TheButton @click="sendLetter" :button-text="isSending ? $t('common.sending') :
                             $t('pages.passwordRecovery.changePassword')
-                        " :sended="isSending" :disabled="!emailValid || isSending || resendSecondsLeft > 0" class="w-full" />
+                        " :sended="isSending" :disabled="!emailValid || !captchaToken || isSending || resendSecondsLeft > 0" class="w-full" />
 
                     <button
                         v-if="successMessage"
                         type="button"
                         class="w-full text-center text-sm text-text-link hover:underline disabled:cursor-not-allowed disabled:opacity-60 disabled:no-underline"
-                        :disabled="isSending || resendSecondsLeft > 0"
+                        :disabled="isSending || resendSecondsLeft > 0 || !captchaToken"
                         @click="sendLetter"
                     >
                         {{

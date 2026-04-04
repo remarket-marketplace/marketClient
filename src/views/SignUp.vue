@@ -21,6 +21,7 @@ const passwordRepeat = ref('')
 const username = ref('')
 
 const captchaToken = ref('')
+const captchaRenderKey = ref(0)
 
 
 // Состояния отправки форм
@@ -40,6 +41,11 @@ const usernameError = ref('')
 const emailError = ref('')
 const passwordError = ref('')
 const passwordRepeatError = ref('')
+
+function refreshCaptcha() {
+  captchaToken.value = ''
+  captchaRenderKey.value += 1
+}
 
 function normalizePasswordToLatin(value: string): string {
   return value.replace(/[^\x21-\x7E]/g, '')
@@ -263,6 +269,7 @@ async function sendCode() {
   } catch (error) {
     errorMessage.value = resolveRequestError(error)
   } finally {
+    refreshCaptcha()
     sended.value = false
   }
 }
@@ -480,7 +487,7 @@ function handleWelcomeFinished() {
             </TheInput>
             <p v-if="passwordRepeatError" class="text-red-300 text-sm mt-1">{{ passwordRepeatError }}</p>
           </div>
-          <Captcha @verified="(token: string) => captchaToken = token" />
+          <Captcha :key="captchaRenderKey" @verified="(token: string) => captchaToken = token" />
 
           <p class="text-xs text-gray-400 leading-relaxed">
             {{ $t('pages.auth.signUp.legalPrefix') }}
