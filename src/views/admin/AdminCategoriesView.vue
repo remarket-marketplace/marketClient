@@ -221,6 +221,42 @@ function resetNewSubcategoryForm() {
   newSubcategory.value = { name: '', description: '', image: [], banner: [] }
 }
 
+function syncSelectedCategoryWithVisibleList() {
+  const visibleCategories = sortedCategories.value
+
+  if (visibleCategories.length === 0) {
+    if (selectedCategory.value) {
+      selectedCategory.value = null
+      subcategories.value = []
+    }
+    return
+  }
+
+  if (!selectedCategory.value) {
+    if (normalizedCategoryQuery.value) {
+      selectCategory(visibleCategories[0] as Category)
+    }
+    return
+  }
+
+  const selectedStillVisible = visibleCategories.some(
+    (category) => category.id === selectedCategory.value?.id,
+  )
+
+  if (!selectedStillVisible) {
+    selectCategory(visibleCategories[0] as Category)
+    return
+  }
+
+  const refreshedSelectedCategory = categories.value.find(
+    (category) => category.id === selectedCategory.value?.id,
+  )
+
+  if (refreshedSelectedCategory && refreshedSelectedCategory !== selectedCategory.value) {
+    selectedCategory.value = refreshedSelectedCategory
+  }
+}
+
 async function loadMoreCategories() {
   if (categoryPage.value >= categoryTotalPages.value) return
   await loadCategories(categoryPage.value + 1, true)
@@ -337,6 +373,10 @@ onUnmounted(() => {
 
 watch([categorySearch, categorySort], () => {
   if (categoriesContainerRef.value) categoriesContainerRef.value.scrollTop = 0
+})
+
+watch([sortedCategories, normalizedCategoryQuery], () => {
+  syncSelectedCategoryWithVisibleList()
 })
 
 watch([subcategorySearch, subcategorySort], () => {
