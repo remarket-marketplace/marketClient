@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { categoryService } from '@/api/category/CategoryService'
+import { adminService } from '@/api/admin/AdminService'
 import {
   CATEGORY_NAME_MAX_LENGTH,
   CATEGORY_DESCRIPTION_MAX_LENGTH,
@@ -14,7 +15,8 @@ import {
   ArrowLeft,
   Loader2,
   X,
-  EditIcon
+  EditIcon,
+  Trash2,
 } from 'lucide-vue-next'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -40,6 +42,7 @@ const categorySearch = ref('')
 const categorySort = ref('name_asc')
 const subcategorySearch = ref('')
 const subcategorySort = ref('name_asc')
+const deletingCategoryIds = ref<Set<string>>(new Set())
 
 const newCategory = ref({
   name: '',
@@ -160,6 +163,53 @@ async function createSubcategory() {
     }
   } catch (error) {
     console.error('Ошибка создания подкатегории:', error)
+  }
+}
+
+function setDeletingCategory(categoryId: string, value: boolean) {
+  const next = new Set(deletingCategoryIds.value)
+  if (value) {
+    next.add(categoryId)
+  } else {
+    next.delete(categoryId)
+  }
+  deletingCategoryIds.value = next
+}
+
+function isDeletingCategory(categoryId: string): boolean {
+  return deletingCategoryIds.value.has(categoryId)
+}
+
+async function deleteCategory(category: Category, isSubcategory = false) {
+  const confirmMessage = isSubcategory
+    ? t('pages.admin.categoriesPage.confirmDeleteSubcategory', { name: category.name })
+    : t('pages.admin.categoriesPage.confirmDeleteCategory', { name: category.name })
+
+  if (!window.confirm(confirmMessage)) return
+  if (isDeletingCategory(category.id)) return
+
+  setDeletingCategory(category.id, true)
+  try {
+    const success = await adminService.deleteCategory(category.id)
+    if (!success) {
+      window.alert(t('pages.admin.categoriesPage.deleteFailed'))
+      return
+    }
+
+    if (isSubcategory) {
+      if (selectedCategory.value) {
+        await loadSubcategories(selectedCategory.value.id)
+      }
+      return
+    }
+
+    if (selectedCategory.value?.id === category.id) {
+      selectedCategory.value = null
+      subcategories.value = []
+    }
+    await loadCategories()
+  } finally {
+    setDeletingCategory(category.id, false)
   }
 }
 
@@ -357,8 +407,21 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
               </div>
               <p class="text-text-secondary text-sm truncate">{{ category.description || t('pages.admin.categoriesPage.noDescription') }}</p>
             </div>
-            <div @click="router.push(`/admin/categories/edit/${category.id}`)">
-              <EditIcon />
+            <div class="flex items-center gap-2">
+              <button
+                class="cursor-pointer text-gray-300 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                :disabled="isDeletingCategory(category.id)"
+                @click.stop="router.push(`/admin/categories/edit/${category.id}`)"
+              >
+                <EditIcon class="h-4 w-4" />
+              </button>
+              <button
+                class="cursor-pointer text-red-400 transition-colors hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40"
+                :disabled="isDeletingCategory(category.id)"
+                @click.stop="deleteCategory(category)"
+              >
+                <Trash2 class="h-4 w-4" />
+              </button>
             </div>
           </div>
 
@@ -421,8 +484,21 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
               </div>
               <p class="text-text-secondary text-sm">{{ subcategory.description || t('pages.admin.categoriesPage.noDescription') }}</p>
             </div>
-            <div class="cursor-pointer" @click="router.push(`/admin/categories/edit/${subcategory.id}`)">
-              <EditIcon />
+            <div class="flex items-center gap-2">
+              <button
+                class="cursor-pointer text-gray-300 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                :disabled="isDeletingCategory(subcategory.id)"
+                @click.stop="router.push(`/admin/categories/edit/${subcategory.id}`)"
+              >
+                <EditIcon class="h-4 w-4" />
+              </button>
+              <button
+                class="cursor-pointer text-red-400 transition-colors hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40"
+                :disabled="isDeletingCategory(subcategory.id)"
+                @click.stop="deleteCategory(subcategory, true)"
+              >
+                <Trash2 class="h-4 w-4" />
+              </button>
             </div>
           </div>
 
