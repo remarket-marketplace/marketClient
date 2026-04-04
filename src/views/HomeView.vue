@@ -25,7 +25,6 @@ import { isValidSteamTopUpAccount, normalizeSteamTopUpAccount } from '@/validati
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ChevronRight, Folder, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
-import { Icon } from '@iconify/vue'
 import axios from 'axios'
 import {
   convertCurrencyAmount,
@@ -98,13 +97,6 @@ const areCategoriesExpanded = ref(false)
 const shouldShowCategoryExpandButton = computed(() => (
   mainCategories.value.length > 8 || categoryTotalPages.value > 1
 ))
-type SteamPromoChipVariant = 'minimal' | 'neon' | 'glass'
-const STEAM_PROMO_CHIP_VARIANT: SteamPromoChipVariant = 'glass'
-
-const steamPromoChipWrapperClass = computed(() => `steam-promo-chip--${STEAM_PROMO_CHIP_VARIANT}`)
-const steamPromoIconClass = computed(() => `steam-promo-chip__icon--${STEAM_PROMO_CHIP_VARIANT}`)
-const steamPromoBadgeClass = computed(() => `steam-promo-chip__badge--${STEAM_PROMO_CHIP_VARIANT}`)
-
 function setProductCardViewMode(mode: ProductCardViewMode): void {
   if (productCardViewMode.value === mode) return
   productCardViewMode.value = mode
@@ -397,10 +389,6 @@ function onSearchDropdownKeydown(event: KeyboardEvent) {
     event.preventDefault()
     goToCategoryPage(category)
   }
-}
-
-function goToSteamTopUpPage() {
-  router.push({ path: '/steam-topup' })
 }
 
 function resolveCategoryImageUrl(imageUrl: string | null): string {
@@ -1004,45 +992,20 @@ onBeforeUnmount(() => {
       class="relative z-20 flex min-h-screen w-full flex-col items-center px-1 pb-6 sm:px-2 lg:px-2"
       :class="user ? 'pt-20' : 'pt-6'"
     >
-        <button
-          v-if="HOME_STEAM_TOPUP_ENABLED"
-          type="button"
-          class="steam-promo-chip mb-3 inline-flex w-auto self-start items-center justify-start gap-2 rounded-xl border p-2 pr-3 text-left"
-          :class="steamPromoChipWrapperClass"
-          @click="goToSteamTopUpPage"
-        >
-          <div class="flex items-center gap-2">
-            <span
-              class="steam-promo-chip__icon inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border shadow-inner"
-              :class="steamPromoIconClass"
-            >
-              <Icon icon="mdi:steam" class="h-6 w-6" />
-            </span>
-            <span
-              class="steam-promo-chip__badge inline-flex h-6 min-w-9 items-center justify-center rounded-md border px-2 text-xs font-semibold leading-none"
-              :class="steamPromoBadgeClass"
-            >
-              5%
-            </span>
+        <div class="w-full lg:max-w-2xl">
+          <div
+            ref="searchDropdownRef"
+            class="w-full"
+            @focusin="openSearchDropdown"
+            @keydown="onSearchDropdownKeydown"
+          >
+            <SearchField
+              v-model="searchQuery"
+              :placeholder="$t('pages.index.searchPlaceholder')"
+              @search-change="debouncedSearch"
+              class="home-search-glass w-full"
+            />
           </div>
-          <div class="min-w-0 flex-1 text-right sm:hidden">
-            <div class="text-sm font-semibold text-white">{{ t('pages.index.steamTopUp.title') }}</div>
-            <div class="truncate text-xs text-gray-400">{{ t('pages.index.steamTopUp.subtitle') }}</div>
-          </div>
-        </button>
-
-        <div
-          ref="searchDropdownRef"
-          class="w-full lg:max-w-2xl"
-          @focusin="openSearchDropdown"
-          @keydown="onSearchDropdownKeydown"
-        >
-          <SearchField
-            v-model="searchQuery"
-            :placeholder="$t('pages.index.searchPlaceholder')"
-            @search-change="debouncedSearch"
-            class="home-search-glass w-full"
-          />
         </div>
 
         <div
@@ -1424,81 +1387,6 @@ onBeforeUnmount(() => {
 .steam-topup-amount-input[type='number']::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
-}
-
-.steam-promo-chip {
-  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.steam-promo-chip--neon {
-  border-color: rgb(var(--palette-blue-400) / 0.4);
-  background: var(--steam-promo-chip-neon-bg);
-  box-shadow: var(--steam-promo-chip-neon-ring), var(--steam-promo-chip-neon-shadow);
-}
-
-.steam-promo-chip--neon:hover {
-  border-color: rgb(var(--palette-blue-300) / 0.7);
-  background: var(--steam-promo-chip-neon-hover-bg);
-}
-
-.steam-promo-chip--glass {
-  border-color: var(--overlay-white-15);
-  background: var(--overlay-white-05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: var(--steam-promo-chip-glass-shadow);
-}
-
-.steam-promo-chip--glass:hover {
-  border-color: rgb(var(--palette-blue-200) / 0.4);
-  background: rgb(var(--palette-white) / 0.1);
-}
-
-.steam-promo-chip--minimal {
-  border-color: rgb(var(--palette-slate-700) / 0.8);
-  background: var(--steam-promo-chip-minimal-bg);
-  box-shadow: var(--steam-promo-chip-minimal-shadow);
-}
-
-.steam-promo-chip--minimal:hover {
-  border-color: rgb(var(--palette-blue-400) / 0.45);
-  background: var(--steam-promo-chip-minimal-hover-bg);
-}
-
-.steam-promo-chip__icon--neon {
-  border-color: rgb(var(--palette-blue-300) / 0.35);
-  background: var(--steam-promo-chip-neon-icon-bg);
-  color: var(--white-solid);
-}
-
-.steam-promo-chip__icon--glass {
-  border-color: rgb(var(--palette-white) / 0.2);
-  background: rgb(var(--palette-black) / 0.2);
-  color: var(--white-solid);
-}
-
-.steam-promo-chip__icon--minimal {
-  border-color: rgb(var(--palette-slate-500) / 0.4);
-  background: var(--steam-promo-chip-minimal-icon-bg);
-  color: var(--white-solid);
-}
-
-.steam-promo-chip__badge--neon {
-  border-color: rgb(var(--palette-blue-300) / 0.5);
-  background: rgb(var(--palette-blue-500) / 0.2);
-  color: rgb(var(--palette-blue-100));
-}
-
-.steam-promo-chip__badge--glass {
-  border-color: rgb(var(--palette-white) / 0.2);
-  background: rgb(var(--palette-white) / 0.1);
-  color: rgb(var(--palette-blue-100));
-}
-
-.steam-promo-chip__badge--minimal {
-  border-color: rgb(var(--palette-blue-400) / 0.35);
-  background: rgb(var(--palette-blue-500) / 0.1);
-  color: rgb(var(--palette-blue-300));
 }
 
 .steam-checkout-modal {

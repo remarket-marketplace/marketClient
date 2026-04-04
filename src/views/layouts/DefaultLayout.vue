@@ -11,6 +11,7 @@ import {
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import { Icon } from '@iconify/vue'
 import { useUserStore } from '@/stores/user'
 import { useChatStore } from '@/stores/chat'
 import { storeToRefs } from 'pinia'
@@ -36,6 +37,7 @@ const chatStore = useChatStore()
 const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
+const HOME_STEAM_TOPUP_ENABLED = import.meta.env.VITE_STEAM_TOPUP_ENABLED !== 'false'
 
 const isDesktop = ref(true)
 const { user } = storeToRefs(store)
@@ -189,6 +191,10 @@ function goToWallet() {
   router.push('/wallet')
 }
 
+function goToSteamTopUp() {
+  router.push('/steam-topup')
+}
+
 const mobileNavGridStyle = computed(() => ({
   gridTemplateColumns: `repeat(${Math.max(1, navItems.value.length)}, minmax(0, 1fr))`,
 }))
@@ -211,6 +217,21 @@ const mobileNavGridStyle = computed(() => ({
 
           <div class="flex items-center gap-2 md:gap-3">
             <nav class="hidden items-center gap-6 md:flex">
+              <button
+                v-if="HOME_STEAM_TOPUP_ENABLED"
+                type="button"
+                class="inline-flex h-10 items-center gap-2 rounded-xl border border-white/15 bg-dark-700/70 px-2.5 text-gray-100 transition hover:border-white/30 hover:bg-dark-700"
+                :title="t('pages.index.steamTopUp.title')"
+                @click="goToSteamTopUp"
+              >
+                <span class="inline-flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/20">
+                  <Icon icon="mdi:steam" class="h-5 w-5" />
+                </span>
+                <span class="inline-flex h-6 items-center justify-center rounded-md bg-white/10 px-2 text-xs font-semibold leading-none">
+                  Пополнение стим
+                </span>
+              </button>
+
               <router-link v-for="item in primaryNavItems" :key="item.id" :to="item.to"
                 class="flex items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"
                 :class="{
