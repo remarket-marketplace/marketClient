@@ -5,6 +5,7 @@ import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import Loader from '@/components/Loader.vue'
 import MainProductCard from '@/components/mainProductCard.vue'
 import HomeProductListCard from '@/components/HomeProductListCard.vue'
+import FortniteAccountSnapshot from '@/components/FortniteAccountSnapshot.vue'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
 import AutoDeliveryTag from '@/components/AutoDeliveryTag.vue'
 import type { Product, ProductImage } from '@/validation/product/product'
@@ -26,6 +27,7 @@ import {
   encodePriceOfferTemplateMessage,
   type PriceOfferMessageTemplateKey,
 } from '@/utils/priceOfferMessageTemplate'
+import { hasFortniteAccountDetails } from '@/utils/fortniteAccount'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const NORMALIZED_API_HOST = String(API_HOST || '').replace(/\/$/, '')
@@ -149,6 +151,10 @@ const displayedSubcategory = computed(() => {
 
   return currentCategory
 })
+
+const shouldShowFortniteAccountDetails = computed(() => (
+  hasFortniteAccountDetails(product.value?.fortnite_account_details)
+))
 
 function setProductCardViewMode(mode: ProductCardViewMode): void {
   if (productCardViewMode.value === mode) return
@@ -675,13 +681,6 @@ onUnmounted(() => {
           {{ $t('pages.product.noImages') }}
         </div>
 
-        <!-- Description -->
-        <div class="py-4 space-y-4 hidden lg:block">
-          <h1 class="text-xl font-bold text-white">{{ $t('pages.product.description') }}</h1>
-          <p class="text-gray-300 leading-relaxed whitespace-pre-line text-sm lg:text-base">
-            {{ product.description || $t('pages.product.descriptionMissing') }}
-          </p>
-        </div>
       </div>
 
       <!-- Product details -->
@@ -700,14 +699,6 @@ onUnmounted(() => {
               <ProductStatusTag v-if="product.is_owner || user?.role === 'admin'" :product-status="product.status" />
             </div>
           </div>
-        </div>
-
-        <!-- Description -->
-        <div class="space-y-4 lg:hidden">
-          <h1 class="text-xl font-bold text-white">{{ $t('pages.product.description') }}</h1>
-          <p class="text-gray-300 leading-relaxed whitespace-pre-line text-sm lg:text-base">
-            {{ product.description || $t('pages.product.descriptionMissing') }}
-          </p>
         </div>
 
         <!-- Meta info -->
@@ -856,6 +847,30 @@ onUnmounted(() => {
           <Heart />
           <span>{{ product.likes }}</span>
         </div>
+      </div>
+    </div>
+
+    <div
+      class="w-full gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] lg:items-start lg:gap-8"
+    >
+      <div
+        v-if="shouldShowFortniteAccountDetails"
+        class="order-1 space-y-4 rounded-2xl border border-dark-700 bg-dark-700/20 p-4 lg:order-2"
+      >
+        <h2 class="text-lg font-semibold text-white">
+          {{ $t('pages.product.fortniteAccountDetails') }}
+        </h2>
+        <FortniteAccountSnapshot
+          :details="product.fortnite_account_details"
+          variant="full"
+        />
+      </div>
+
+      <div class="order-2 space-y-4 py-4 lg:order-1 lg:py-0">
+        <h1 class="text-xl font-bold text-white">{{ $t('pages.product.description') }}</h1>
+        <p class="text-gray-300 leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere] text-sm lg:text-base">
+          {{ product.description || $t('pages.product.descriptionMissing') }}
+        </p>
       </div>
     </div>
 

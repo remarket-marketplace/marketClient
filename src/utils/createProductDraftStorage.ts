@@ -1,3 +1,5 @@
+import type { FortniteAccountFormState } from '@/utils/fortniteAccount'
+
 export type CreateProductDraftStep = 1 | 2 | 3 | 4
 
 export interface CreateProductDraftPayload {
@@ -7,6 +9,7 @@ export interface CreateProductDraftPayload {
   description: string
   price: string
   productData: string
+  fortniteAccountDetails: FortniteAccountFormState
   count: number | ''
   autoDelivery: boolean
   images: File[]
@@ -50,6 +53,31 @@ function parseDraftMeta(rawValue: string | null): CreateProductDraftMeta | null 
       description: typeof parsed.description === 'string' ? parsed.description : '',
       price: typeof parsed.price === 'string' ? parsed.price : '',
       productData: typeof parsed.productData === 'string' ? parsed.productData : '',
+      fortniteAccountDetails: typeof parsed.fortniteAccountDetails === 'object' && parsed.fortniteAccountDetails !== null
+        ? parsed.fortniteAccountDetails as FortniteAccountFormState
+        : {
+            can_change_email: '',
+            last_email_change: '',
+            first_email: '',
+            registration_date: '',
+            email_confirmed: '',
+            parental_control: '',
+            display_name: '',
+            country: '',
+            two_factor_enabled: '',
+            last_login: '',
+            last_display_name_change: '',
+            last_match_date: '',
+            skins_count: '',
+            backpacks_count: '',
+            pickaxes_count: '',
+            emotes_count: '',
+            gliders_count: '',
+            wraps_count: '',
+            banners_count: '',
+            sprays_count: '',
+            exclusives_count: '',
+          },
       count: typeof parsed.count === 'number' || parsed.count === '' ? parsed.count : 1,
       autoDelivery: parsed.autoDelivery !== false,
       currentStep: isDraftStep(parsed.currentStep) ? parsed.currentStep : 1,
@@ -162,6 +190,7 @@ export async function loadCreateProductDraft(
     description: meta.description,
     price: meta.price,
     productData: meta.productData,
+    fortniteAccountDetails: meta.fortniteAccountDetails,
     count: meta.count,
     autoDelivery: meta.autoDelivery,
     images,
@@ -185,6 +214,7 @@ export async function saveCreateProductDraft(
     description: payload.description,
     price: payload.price,
     productData: payload.productData,
+    fortniteAccountDetails: payload.fortniteAccountDetails,
     count: payload.count,
     autoDelivery: payload.autoDelivery,
     currentStep: payload.currentStep,
