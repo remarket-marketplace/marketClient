@@ -1561,6 +1561,8 @@ const en = {
         categories: "Categories",
         addCategory: "Add Category",
         addSubcategory: "Add Subcategory",
+        deleteCategoryTitle: "Delete category?",
+        deleteSubcategoryTitle: "Delete subcategory?",
         confirmDeleteCategory: "Delete category \"{name}\"? This action cannot be undone.",
         confirmDeleteSubcategory: "Delete subcategory \"{name}\"? This action cannot be undone.",
         deleteFailed: "Failed to delete category. Please try again.",
