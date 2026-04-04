@@ -64,16 +64,16 @@ const deleteDialogText = computed(() => {
 })
 
 const newCategory = ref({
-  name: '',
+  nameRu: '',
+  nameEn: '',
   description: '',
   image: [] as File[],
   banner: [] as File[]
 })
 const newSubcategory = ref({
-  name: '',
+  nameRu: '',
+  nameEn: '',
   description: '',
-  image: [] as File[],
-  banner: [] as File[]
 })
 
 const categoryPage = ref(1)
@@ -142,12 +142,14 @@ function selectCategory(category: Category) {
 }
 
 async function createCategory() {
-  const normalizedName = newCategory.value.name.trim()
+  const normalizedNameRu = newCategory.value.nameRu.trim()
+  const normalizedNameEn = newCategory.value.nameEn.trim()
   const normalizedDescription = newCategory.value.description.trim()
-  if (!normalizedName || !newCategory.value.image.length) return
+  if (!normalizedNameRu || !normalizedNameEn || !newCategory.value.image.length) return
   try {
     const success = await categoryService.AddCategory(
-      normalizedName,
+      normalizedNameRu,
+      normalizedNameEn,
       normalizedDescription,
       newCategory.value.image[0] as File,
       undefined,
@@ -164,16 +166,17 @@ async function createCategory() {
 }
 
 async function createSubcategory() {
-  const normalizedName = newSubcategory.value.name.trim()
+  const normalizedNameRu = newSubcategory.value.nameRu.trim()
+  const normalizedNameEn = newSubcategory.value.nameEn.trim()
   const normalizedDescription = newSubcategory.value.description.trim()
-  if (!normalizedName || !selectedCategory.value || !newSubcategory.value.image.length) return
+  if (!normalizedNameRu || !normalizedNameEn || !selectedCategory.value) return
   try {
     const success = await categoryService.AddCategory(
-      normalizedName,
+      normalizedNameRu,
+      normalizedNameEn,
       normalizedDescription,
-      newSubcategory.value.image[0] as File,
+      null,
       selectedCategory.value.id,
-      newSubcategory.value.banner[0] ?? null,
     )
     if (success) {
       showAddSubcategoryModal.value = false
@@ -246,11 +249,11 @@ async function confirmDeleteCategory() {
 }
 
 function resetNewCategoryForm() {
-  newCategory.value = { name: '', description: '', image: [], banner: [] }
+  newCategory.value = { nameRu: '', nameEn: '', description: '', image: [], banner: [] }
 }
 
 function resetNewSubcategoryForm() {
-  newSubcategory.value = { name: '', description: '', image: [], banner: [] }
+  newSubcategory.value = { nameRu: '', nameEn: '', description: '' }
 }
 
 function syncSelectedCategoryWithVisibleList() {
@@ -306,7 +309,7 @@ const normalizedSubcategoryQuery = computed(() => subcategorySearch.value.trim()
 const filteredCategories = computed(() => {
   return categories.value.filter(category => {
     return normalizedCategoryQuery.value
-      ? [category.name, category.description ?? '', category.slug]
+      ? [category.name, category.name_ru, category.name_en, category.description ?? '', category.slug]
           .join(' ')
           .toLowerCase()
           .includes(normalizedCategoryQuery.value)
@@ -317,7 +320,7 @@ const filteredCategories = computed(() => {
 const filteredSubcategories = computed(() => {
   return subcategories.value.filter(category => {
     return normalizedSubcategoryQuery.value
-      ? [category.name, category.description ?? '', category.slug]
+      ? [category.name, category.name_ru, category.name_en, category.description ?? '', category.slug]
           .join(' ')
           .toLowerCase()
           .includes(normalizedSubcategoryQuery.value)
@@ -543,12 +546,6 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
           <div ref="subcategoriesContainerRef" class="space-y-3 overflow-y-auto flex-1 min-h-0">
           <div v-for="subcategory in sortedSubcategories" :key="subcategory.id"
             class="flex items-center gap-3 p-3 rounded-lg border border-dark-700 bg-dark-700/50">
-            <div class="flex-shrink-0 relative">
-              <img v-if="subcategory.image_url" :src="`${API_HOST}${subcategory.image_url}`" class="w-8 h-8 rounded object-cover" :alt="subcategory.name" />
-              <div v-else class="w-8 h-8 rounded bg-dark-600 flex items-center justify-center">
-                <Folder class="w-4 h-4 text-gray-400" />
-              </div>
-            </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2">
                 <h3 class="text-mainText font-medium">{{ subcategory.name }}</h3>
@@ -611,8 +608,12 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
         </div>
         <div class="space-y-4">
           <div>
-            <label class="block text-sm text-gray-300 mb-2">{{ t('common.name') }} *</label>
-            <input v-model="newCategory.name" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите название" />
+            <label class="block text-sm text-gray-300 mb-2">{{ t('common.nameRu') }} *</label>
+            <input v-model="newCategory.nameRu" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" :placeholder="t('pages.admin.categoriesPage.nameRuPlaceholder')" />
+          </div>
+          <div>
+            <label class="block text-sm text-gray-300 mb-2">{{ t('common.nameEn') }} *</label>
+            <input v-model="newCategory.nameEn" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" :placeholder="t('pages.admin.categoriesPage.nameEnPlaceholder')" />
           </div>
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.description') }}</label>
@@ -631,7 +632,7 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
           <button class="admin-btn admin-btn-muted flex-1 order-2 sm:order-1" @click="showAddCategoryModal = false">
             {{ t('common.cancel') }}
           </button>
-          <button class="admin-btn admin-btn-primary flex-1 order-1 sm:order-2" @click="createCategory" :disabled="!newCategory.name.trim() || !newCategory.image.length">
+          <button class="admin-btn admin-btn-primary flex-1 order-1 sm:order-2" @click="createCategory" :disabled="!newCategory.nameRu.trim() || !newCategory.nameEn.trim() || !newCategory.image.length">
             {{ t('common.create') }}
           </button>
         </div>
@@ -652,27 +653,23 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
         </div>
         <div class="space-y-4">
           <div>
-            <label class="block text-sm text-gray-300 mb-2">{{ t('common.name') }} *</label>
-            <input v-model="newSubcategory.name" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите название" />
+            <label class="block text-sm text-gray-300 mb-2">{{ t('common.nameRu') }} *</label>
+            <input v-model="newSubcategory.nameRu" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" :placeholder="t('pages.admin.categoriesPage.nameRuPlaceholder')" />
+          </div>
+          <div>
+            <label class="block text-sm text-gray-300 mb-2">{{ t('common.nameEn') }} *</label>
+            <input v-model="newSubcategory.nameEn" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" :placeholder="t('pages.admin.categoriesPage.nameEnPlaceholder')" />
           </div>
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.description') }}</label>
             <textarea v-model="newSubcategory.description" rows="3" :maxlength="CATEGORY_DESCRIPTION_MAX_LENGTH" class="w-full max-h-28 bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите описание" />
-          </div>
-          <div>
-            <label class="block text-sm text-gray-300 mb-2">{{ t('common.image') }} *</label>
-            <FileUploader v-model="newSubcategory.image" :maxFiles="1" />
-          </div>
-          <div>
-            <label class="block text-sm text-gray-300 mb-2">{{ t('common.banner') }}</label>
-            <FileUploader v-model="newSubcategory.banner" :maxFiles="1" />
           </div>
         </div>
         <div class="flex flex-col sm:flex-row gap-3 mt-6">
           <button class="admin-btn admin-btn-muted flex-1 order-2 sm:order-1" @click="showAddSubcategoryModal = false">
             {{ t('common.cancel') }}
           </button>
-          <button class="admin-btn admin-btn-success flex-1 order-1 sm:order-2" @click="createSubcategory" :disabled="!newSubcategory.name.trim() || !newSubcategory.image.length">
+          <button class="admin-btn admin-btn-success flex-1 order-1 sm:order-2" @click="createSubcategory" :disabled="!newSubcategory.nameRu.trim() || !newSubcategory.nameEn.trim()">
             {{ t('common.create') }}
           </button>
         </div>

@@ -33,7 +33,8 @@ const isSaving = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 
-const name = ref('')
+const nameRu = ref('')
+const nameEn = ref('')
 const description = ref('')
 const isActive = ref<boolean>(false)
 
@@ -41,6 +42,7 @@ const existingImage = ref<string | null>(null)
 const newImage = ref<File[]>([])
 const existingBanner = ref<string | null>(null)
 const newBanner = ref<File[]>([])
+const isSubcategory = computed(() => Boolean(category.value?.parent_id))
 
 const hasImage = computed(() => {
   return !!existingImage.value || newImage.value.length > 0
@@ -66,7 +68,8 @@ async function loadCategory() {
     if (!data) return
 
     category.value = data
-    name.value = data.name
+    nameRu.value = data.name_ru
+    nameEn.value = data.name_en
     description.value = data.description ?? ''
     existingImage.value = data.image_url
     existingBanner.value = data.banner_url ?? null
@@ -91,22 +94,24 @@ async function saveCategory() {
   try {
     isSaving.value = true
     errorMessage.value = ''
-    const normalizedName = name.value.trim()
+    const normalizedNameRu = nameRu.value.trim()
+    const normalizedNameEn = nameEn.value.trim()
     const normalizedDescription = description.value.trim()
 
-    if (!normalizedName) {
+    if (!normalizedNameRu || !normalizedNameEn) {
       errorMessage.value = t('pages.admin.editCategory.nameRequired')
       return
     }
 
-    if (!hasImage.value) {
+    if (!isSubcategory.value && !hasImage.value) {
       errorMessage.value = t('pages.admin.editCategory.imageRequired')
       return
     }
 
     const success = await adminService.updateCategoryData(
       categoryId,
-      normalizedName,
+      normalizedNameRu,
+      normalizedNameEn,
       normalizedDescription,
       isActive.value,
       newImage.value[0] ?? null,
@@ -157,9 +162,16 @@ onMounted(loadCategory)
 
         <div>
           <label class="mb-1 block text-sm text-text-secondary">
-            {{ $t('common.name') }}
+            {{ $t('common.nameRu') }}
           </label>
-          <TheInput v-model="name" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" required />
+          <TheInput v-model="nameRu" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" required />
+        </div>
+
+        <div>
+          <label class="mb-1 block text-sm text-text-secondary">
+            {{ $t('common.nameEn') }}
+          </label>
+          <TheInput v-model="nameEn" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" required />
         </div>
 
         <div>
@@ -170,7 +182,7 @@ onMounted(loadCategory)
             class="w-full max-h-28 px-3 py-2 border border-dark-700 rounded-lg bg-dark-600 text-mainText resize-none" />
         </div>
 
-        <div>
+        <div v-if="!isSubcategory">
           <label class="mb-2 block text-sm text-text-secondary">
             {{ $t('common.image') }}
           </label>
@@ -195,7 +207,7 @@ onMounted(loadCategory)
           </p>
         </div>
 
-        <div>
+        <div v-if="!isSubcategory">
           <label class="mb-2 block text-sm text-text-secondary">
             {{ $t('common.banner') }}
           </label>
@@ -235,7 +247,7 @@ onMounted(loadCategory)
             {{ $t('common.cancel') }}
           </button>
 
-          <button type="submit" :disabled="isSaving || !hasImage"
+          <button type="submit" :disabled="isSaving || (!isSubcategory && !hasImage)"
             class="admin-btn admin-btn-primary flex-1">
             <Loader2 v-if="isSaving" class="h-4 w-4 animate-spin" />
             {{ isSaving ? $t('common.loading') : $t('common.save') }}

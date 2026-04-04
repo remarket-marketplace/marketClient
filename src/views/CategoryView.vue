@@ -630,15 +630,9 @@ onBeforeUnmount(() => {
             v-for="subcategory in subcategories"
             :key="subcategory.id"
             type="button"
-            class="inline-flex items-center gap-2 rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2 text-sm text-white transition hover:bg-dark-700/50"
+            class="inline-flex rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2 text-sm text-white transition hover:bg-dark-700/50"
             @click="onSubcategoryClick(subcategory)"
           >
-            <img
-              v-if="subcategory.image_url"
-              :src="resolveCategoryImageUrl(subcategory.image_url)"
-              :alt="subcategory.name"
-              class="h-5 w-5 rounded object-cover border border-dark-600/80"
-            />
             <span>{{ subcategory.name }}</span>
           </button>
         </div>
