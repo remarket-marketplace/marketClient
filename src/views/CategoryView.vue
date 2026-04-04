@@ -49,6 +49,14 @@ const loadingSkeletonCount = computed(() => (
     ? perPage.value
     : Math.min(perPage.value, 12)
 ))
+
+function sortCategoriesByActiveProductsCount(categories: Category[]): Category[] {
+  return [...categories].sort((a, b) => {
+    const countDiff = (b.active_products_count ?? 0) - (a.active_products_count ?? 0)
+    if (countDiff !== 0) return countDiff
+    return a.name.localeCompare(b.name)
+  })
+}
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 const fortniteFilters = reactive(createEmptyFortniteAccountFilters())
@@ -226,7 +234,7 @@ async function loadSubcategoriesForActiveCategory() {
   isSubcategoriesLoading.value = true
   try {
     const response = await categoryService.getSubcategories(getActiveCategoryFilterKey(), 1, 100)
-    subcategories.value = response.categories
+    subcategories.value = sortCategoriesByActiveProductsCount(response.categories)
   } finally {
     isSubcategoriesLoading.value = false
   }
