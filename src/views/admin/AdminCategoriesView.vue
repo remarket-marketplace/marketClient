@@ -43,6 +43,25 @@ const categorySort = ref('name_asc')
 const subcategorySearch = ref('')
 const subcategorySort = ref('name_asc')
 const deletingCategoryIds = ref<Set<string>>(new Set())
+const confirmDeleteModalOpen = ref(false)
+const pendingDeleteCategory = ref<Category | null>(null)
+const pendingDeleteIsSubcategory = ref(false)
+const deleteErrorModalOpen = ref(false)
+const deleteErrorMessage = ref('')
+
+const deleteDialogTitle = computed(() => (
+  pendingDeleteIsSubcategory.value
+    ? t('pages.admin.categoriesPage.deleteSubcategoryTitle')
+    : t('pages.admin.categoriesPage.deleteCategoryTitle')
+))
+
+const deleteDialogText = computed(() => {
+  const name = pendingDeleteCategory.value?.name ?? ''
+  if (pendingDeleteIsSubcategory.value) {
+    return t('pages.admin.categoriesPage.confirmDeleteSubcategory', { name })
+  }
+  return t('pages.admin.categoriesPage.confirmDeleteCategory', { name })
+})
 
 const newCategory = ref({
   name: '',
@@ -180,19 +199,31 @@ function isDeletingCategory(categoryId: string): boolean {
   return deletingCategoryIds.value.has(categoryId)
 }
 
-async function deleteCategory(category: Category, isSubcategory = false) {
-  const confirmMessage = isSubcategory
-    ? t('pages.admin.categoriesPage.confirmDeleteSubcategory', { name: category.name })
-    : t('pages.admin.categoriesPage.confirmDeleteCategory', { name: category.name })
+function requestDeleteCategory(category: Category, isSubcategory = false) {
+  if (isDeletingCategory(category.id)) return
+  pendingDeleteCategory.value = category
+  pendingDeleteIsSubcategory.value = isSubcategory
+  confirmDeleteModalOpen.value = true
+}
 
-  if (!window.confirm(confirmMessage)) return
+function closeDeleteConfirmModal() {
+  confirmDeleteModalOpen.value = false
+  pendingDeleteCategory.value = null
+  pendingDeleteIsSubcategory.value = false
+}
+
+async function confirmDeleteCategory() {
+  const category = pendingDeleteCategory.value
+  const isSubcategory = pendingDeleteIsSubcategory.value
+  if (!category) return
   if (isDeletingCategory(category.id)) return
 
   setDeletingCategory(category.id, true)
   try {
     const success = await adminService.deleteCategory(category.id)
     if (!success) {
-      window.alert(t('pages.admin.categoriesPage.deleteFailed'))
+      deleteErrorMessage.value = t('pages.admin.categoriesPage.deleteFailed')
+      deleteErrorModalOpen.value = true
       return
     }
 
@@ -209,6 +240,7 @@ async function deleteCategory(category: Category, isSubcategory = false) {
     }
     await loadCategories()
   } finally {
+    closeDeleteConfirmModal()
     setDeletingCategory(category.id, false)
   }
 }
@@ -219,6 +251,42 @@ function resetNewCategoryForm() {
 
 function resetNewSubcategoryForm() {
   newSubcategory.value = { name: '', description: '', image: [], banner: [] }
+}
+
+function syncSelectedCategoryWithVisibleList() {
+  const visibleCategories = sortedCategories.value
+
+  if (visibleCategories.length === 0) {
+    if (selectedCategory.value) {
+      selectedCategory.value = null
+      subcategories.value = []
+    }
+    return
+  }
+
+  if (!selectedCategory.value) {
+    if (normalizedCategoryQuery.value) {
+      selectCategory(visibleCategories[0] as Category)
+    }
+    return
+  }
+
+  const selectedStillVisible = visibleCategories.some(
+    (category) => category.id === selectedCategory.value?.id,
+  )
+
+  if (!selectedStillVisible) {
+    selectCategory(visibleCategories[0] as Category)
+    return
+  }
+
+  const refreshedSelectedCategory = categories.value.find(
+    (category) => category.id === selectedCategory.value?.id,
+  )
+
+  if (refreshedSelectedCategory && refreshedSelectedCategory !== selectedCategory.value) {
+    selectedCategory.value = refreshedSelectedCategory
+  }
 }
 
 async function loadMoreCategories() {
@@ -339,6 +407,10 @@ watch([categorySearch, categorySort], () => {
   if (categoriesContainerRef.value) categoriesContainerRef.value.scrollTop = 0
 })
 
+watch([sortedCategories, normalizedCategoryQuery], () => {
+  syncSelectedCategoryWithVisibleList()
+})
+
 watch([subcategorySearch, subcategorySort], () => {
   if (subcategoriesContainerRef.value) subcategoriesContainerRef.value.scrollTop = 0
 })
@@ -418,7 +490,7 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
               <button
                 class="cursor-pointer text-red-400 transition-colors hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40"
                 :disabled="isDeletingCategory(category.id)"
-                @click.stop="deleteCategory(category)"
+                @click.stop="requestDeleteCategory(category)"
               >
                 <Trash2 class="h-4 w-4" />
               </button>
@@ -495,7 +567,7 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
               <button
                 class="cursor-pointer text-red-400 transition-colors hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40"
                 :disabled="isDeletingCategory(subcategory.id)"
-                @click.stop="deleteCategory(subcategory, true)"
+                @click.stop="requestDeleteCategory(subcategory, true)"
               >
                 <Trash2 class="h-4 w-4" />
               </button>
@@ -602,6 +674,74 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
           </button>
           <button class="admin-btn admin-btn-success flex-1 order-1 sm:order-2" @click="createSubcategory" :disabled="!newSubcategory.name.trim() || !newSubcategory.image.length">
             {{ t('common.create') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="confirmDeleteModalOpen"
+      class="app-modal-overlay z-50 bg-black/60"
+      @click.self="closeDeleteConfirmModal"
+    >
+      <div class="app-modal-panel w-full max-w-sm rounded-2xl border border-dark-700 bg-dark-600 p-0 shadow-2xl sm:max-w-md">
+        <div class="border-b border-dark-700/80 px-5 py-4">
+          <div class="flex items-start gap-3">
+            <div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-500/15 text-red-300">
+              <Trash2 class="h-4 w-4" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <h3 class="text-lg font-semibold text-mainText">{{ deleteDialogTitle }}</h3>
+              <p class="mt-1 text-sm text-text-secondary">{{ deleteDialogText }}</p>
+            </div>
+            <button
+              class="rounded-md p-1 text-gray-400 transition-colors hover:text-white"
+              @click="closeDeleteConfirmModal"
+              :disabled="pendingDeleteCategory ? isDeletingCategory(pendingDeleteCategory.id) : false"
+            >
+              <X class="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-2 px-5 py-4">
+          <button
+            class="admin-btn admin-btn-muted"
+            @click="closeDeleteConfirmModal"
+            :disabled="pendingDeleteCategory ? isDeletingCategory(pendingDeleteCategory.id) : false"
+          >
+            {{ t('common.cancel') }}
+          </button>
+          <button
+            class="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-60"
+            @click="confirmDeleteCategory"
+            :disabled="pendingDeleteCategory ? isDeletingCategory(pendingDeleteCategory.id) : false"
+          >
+            <Loader2
+              v-if="pendingDeleteCategory && isDeletingCategory(pendingDeleteCategory.id)"
+              class="h-4 w-4 animate-spin"
+            />
+            <span>{{ t('common.delete') }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="deleteErrorModalOpen"
+      class="app-modal-overlay z-50 bg-black/50"
+      @click.self="deleteErrorModalOpen = false"
+    >
+      <div class="app-modal-panel w-full max-w-sm overflow-y-auto rounded-xl border border-dark-700 bg-dark-600 p-6 sm:max-w-md">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xl font-bold text-mainText">{{ t('common.error') }}</h3>
+          <button @click="deleteErrorModalOpen = false" class="text-gray-400 hover:text-white transition-colors">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+        <p class="text-text-secondary">{{ deleteErrorMessage }}</p>
+        <div class="mt-6 flex justify-end">
+          <button class="admin-btn admin-btn-primary" @click="deleteErrorModalOpen = false">
+            {{ t('common.close') }}
           </button>
         </div>
       </div>

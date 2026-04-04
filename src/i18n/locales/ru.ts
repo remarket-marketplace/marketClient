@@ -1558,6 +1558,8 @@ const ru = {
         categories: "Категории",
         addCategory: "Добавить категорию",
         addSubcategory: "Добавить подкатегорию",
+        deleteCategoryTitle: "Удалить категорию?",
+        deleteSubcategoryTitle: "Удалить подкатегорию?",
         confirmDeleteCategory: "Удалить категорию «{name}»? Это действие необратимо.",
         confirmDeleteSubcategory: "Удалить подкатегорию «{name}»? Это действие необратимо.",
         deleteFailed: "Не удалось удалить категорию. Попробуйте снова.",
