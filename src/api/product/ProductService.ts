@@ -37,6 +37,40 @@ export interface ProductsFilterParams {
   createdTo?: string;
   onlineSellersOnly?: boolean;
   autoDeliveryOnly?: boolean;
+  fortniteCountry?: string;
+  fortniteCanChangeEmail?: boolean;
+  fortniteFirstEmail?: boolean;
+  fortniteEmailConfirmed?: boolean;
+  fortniteParentalControl?: boolean;
+  fortniteTwoFactorEnabled?: boolean;
+  fortniteRegistrationDateFrom?: string;
+  fortniteRegistrationDateTo?: string;
+  fortniteLastEmailChangeFrom?: string;
+  fortniteLastEmailChangeTo?: string;
+  fortniteLastLoginFrom?: string;
+  fortniteLastLoginTo?: string;
+  fortniteLastDisplayNameChangeFrom?: string;
+  fortniteLastDisplayNameChangeTo?: string;
+  fortniteLastMatchDateFrom?: string;
+  fortniteLastMatchDateTo?: string;
+  fortniteSkinsCountMin?: number;
+  fortniteSkinsCountMax?: number;
+  fortniteBackpacksCountMin?: number;
+  fortniteBackpacksCountMax?: number;
+  fortnitePickaxesCountMin?: number;
+  fortnitePickaxesCountMax?: number;
+  fortniteEmotesCountMin?: number;
+  fortniteEmotesCountMax?: number;
+  fortniteGlidersCountMin?: number;
+  fortniteGlidersCountMax?: number;
+  fortniteWrapsCountMin?: number;
+  fortniteWrapsCountMax?: number;
+  fortniteBannersCountMin?: number;
+  fortniteBannersCountMax?: number;
+  fortniteSpraysCountMin?: number;
+  fortniteSpraysCountMax?: number;
+  fortniteExclusivesCountMin?: number;
+  fortniteExclusivesCountMax?: number;
 }
 
 export interface ProductCurrencyConfig {
@@ -61,6 +95,40 @@ function buildProductsFilterParams(filters?: ProductsFilterParams) {
   if (filters.createdTo) params.created_to = filters.createdTo;
   if (filters.onlineSellersOnly === true) params.online_sellers_only = true;
   if (filters.autoDeliveryOnly === true) params.auto_delivery_only = true;
+  if (filters.fortniteCountry) params.fortnite_country = filters.fortniteCountry;
+  if (filters.fortniteCanChangeEmail !== undefined) params.fortnite_can_change_email = filters.fortniteCanChangeEmail;
+  if (filters.fortniteFirstEmail !== undefined) params.fortnite_first_email = filters.fortniteFirstEmail;
+  if (filters.fortniteEmailConfirmed !== undefined) params.fortnite_email_confirmed = filters.fortniteEmailConfirmed;
+  if (filters.fortniteParentalControl !== undefined) params.fortnite_parental_control = filters.fortniteParentalControl;
+  if (filters.fortniteTwoFactorEnabled !== undefined) params.fortnite_two_factor_enabled = filters.fortniteTwoFactorEnabled;
+  if (filters.fortniteRegistrationDateFrom) params.fortnite_registration_date_from = filters.fortniteRegistrationDateFrom;
+  if (filters.fortniteRegistrationDateTo) params.fortnite_registration_date_to = filters.fortniteRegistrationDateTo;
+  if (filters.fortniteLastEmailChangeFrom) params.fortnite_last_email_change_from = filters.fortniteLastEmailChangeFrom;
+  if (filters.fortniteLastEmailChangeTo) params.fortnite_last_email_change_to = filters.fortniteLastEmailChangeTo;
+  if (filters.fortniteLastLoginFrom) params.fortnite_last_login_from = filters.fortniteLastLoginFrom;
+  if (filters.fortniteLastLoginTo) params.fortnite_last_login_to = filters.fortniteLastLoginTo;
+  if (filters.fortniteLastDisplayNameChangeFrom) params.fortnite_last_display_name_change_from = filters.fortniteLastDisplayNameChangeFrom;
+  if (filters.fortniteLastDisplayNameChangeTo) params.fortnite_last_display_name_change_to = filters.fortniteLastDisplayNameChangeTo;
+  if (filters.fortniteLastMatchDateFrom) params.fortnite_last_match_date_from = filters.fortniteLastMatchDateFrom;
+  if (filters.fortniteLastMatchDateTo) params.fortnite_last_match_date_to = filters.fortniteLastMatchDateTo;
+  if (filters.fortniteSkinsCountMin !== undefined) params.fortnite_skins_count_min = filters.fortniteSkinsCountMin;
+  if (filters.fortniteSkinsCountMax !== undefined) params.fortnite_skins_count_max = filters.fortniteSkinsCountMax;
+  if (filters.fortniteBackpacksCountMin !== undefined) params.fortnite_backpacks_count_min = filters.fortniteBackpacksCountMin;
+  if (filters.fortniteBackpacksCountMax !== undefined) params.fortnite_backpacks_count_max = filters.fortniteBackpacksCountMax;
+  if (filters.fortnitePickaxesCountMin !== undefined) params.fortnite_pickaxes_count_min = filters.fortnitePickaxesCountMin;
+  if (filters.fortnitePickaxesCountMax !== undefined) params.fortnite_pickaxes_count_max = filters.fortnitePickaxesCountMax;
+  if (filters.fortniteEmotesCountMin !== undefined) params.fortnite_emotes_count_min = filters.fortniteEmotesCountMin;
+  if (filters.fortniteEmotesCountMax !== undefined) params.fortnite_emotes_count_max = filters.fortniteEmotesCountMax;
+  if (filters.fortniteGlidersCountMin !== undefined) params.fortnite_gliders_count_min = filters.fortniteGlidersCountMin;
+  if (filters.fortniteGlidersCountMax !== undefined) params.fortnite_gliders_count_max = filters.fortniteGlidersCountMax;
+  if (filters.fortniteWrapsCountMin !== undefined) params.fortnite_wraps_count_min = filters.fortniteWrapsCountMin;
+  if (filters.fortniteWrapsCountMax !== undefined) params.fortnite_wraps_count_max = filters.fortniteWrapsCountMax;
+  if (filters.fortniteBannersCountMin !== undefined) params.fortnite_banners_count_min = filters.fortniteBannersCountMin;
+  if (filters.fortniteBannersCountMax !== undefined) params.fortnite_banners_count_max = filters.fortniteBannersCountMax;
+  if (filters.fortniteSpraysCountMin !== undefined) params.fortnite_sprays_count_min = filters.fortniteSpraysCountMin;
+  if (filters.fortniteSpraysCountMax !== undefined) params.fortnite_sprays_count_max = filters.fortniteSpraysCountMax;
+  if (filters.fortniteExclusivesCountMin !== undefined) params.fortnite_exclusives_count_min = filters.fortniteExclusivesCountMin;
+  if (filters.fortniteExclusivesCountMax !== undefined) params.fortnite_exclusives_count_max = filters.fortniteExclusivesCountMax;
 
   return params;
 }
@@ -329,6 +397,12 @@ export const productService = {
       ) {
         formData.append("product_data", productData.product_data.trim());
       }
+      if (productData.fortnite_account_details) {
+        formData.append(
+          "fortnite_account_details",
+          JSON.stringify(productData.fortnite_account_details),
+        );
+      }
       formData.append("category_id", productData.category_id);
       formData.append("count", productData.count);
       formData.append("auto_delivery", productData.auto_delivery);
@@ -377,6 +451,12 @@ export const productService = {
       formData.append("price_currency", productData.price_currency || "RUB");
       if (productData.auto_delivery && productData.product_data)
         formData.append("product_data", productData.product_data);
+      if (productData.fortnite_account_details) {
+        formData.append(
+          "fortnite_account_details",
+          JSON.stringify(productData.fortnite_account_details),
+        );
+      }
       if (productData.category_id)
         formData.append("category_id", productData.category_id);
       formData.append("auto_delivery", String(Boolean(productData.auto_delivery)));

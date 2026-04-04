@@ -5,6 +5,7 @@ import { raikaService } from '@/api/raika/RaikaService'
 import CustomSelect from '@/components/CustomSelect.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import FileUploader from '@/components/FileUploader.vue'
+import FortniteAccountFields from '@/components/FortniteAccountFields.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import type { Category } from '@/validation/category/category'
@@ -36,6 +37,14 @@ import {
   type CreateProductDraftPayload,
 } from '@/utils/createProductDraftStorage'
 import { getErrorMessage } from '@/utils/errorsMap'
+import {
+  buildFortniteAccountPayload,
+  createEmptyFortniteAccountForm,
+  fortniteAccountDetailsToForm,
+  isAccountsSubcategory,
+  isFortniteAccountsCategory,
+  isFortniteRootCategory,
+} from '@/utils/fortniteAccount'
 import { buildProductKey } from '@/utils/urlKeys'
 
 const API_HOST = import.meta.env.VITE_API_HOST
@@ -58,6 +67,7 @@ const title = ref('')
 const description = ref('')
 const price = ref<string | number>('')
 const productData = ref('')
+const fortniteAccountForm = ref(createEmptyFortniteAccountForm())
 const images = ref<File[]>([])
 const count = ref<number | ''>(1)
 const sended = ref(false)
@@ -102,6 +112,17 @@ const subcategoryOptions = computed(() => (
     imageUrl: toCategoryOptionImageUrl(subcategory.image_url),
   }))
 ))
+const selectedCategory = computed(() => (
+  categories.value.find(category => category.id === selectedCategoryId.value) ?? null
+))
+const selectedSubcategory = computed(() => (
+  subcategories.value.find(subcategory => subcategory.id === selectedSubcategoryId.value) ?? null
+))
+const shouldShowFortniteAccountForm = computed(() => isFortniteAccountsCategory({
+  parentCategory: selectedCategory.value,
+  subcategory: selectedSubcategory.value,
+}))
+const fortniteAccountPayload = computed(() => buildFortniteAccountPayload(fortniteAccountForm.value))
 
 const PRODUCT_LIMITS = {
   title: { min: 10, max: 50 },
@@ -157,6 +178,9 @@ const productDataLengthValid = computed(() => (
 const productDataValidForForm = computed(() => (
   !autoDelivery.value || productDataLengthValid.value
 ))
+const fortniteAccountDataValid = computed(() => (
+  !shouldShowFortniteAccountForm.value || Boolean(fortniteAccountPayload.value)
+))
 
 const priceInputMin = computed(() => {
   if (selectedCurrency.value === 'RUB') return minPriceRub.value
@@ -198,6 +222,7 @@ const step2Valid = computed(() => (
   titleLengthValid.value
   && descriptionLengthValid.value
   && productDataValidForForm.value
+  && fortniteAccountDataValid.value
 ))
 const step3Valid = computed(() => imagesCountValid.value)
 const step4Valid = computed(() => priceValid.value && countValid.value)
@@ -353,6 +378,9 @@ const stepIssues = computed<Record<StepNumber, string[]>>(() => ({
         }),
       ]
       : []),
+    ...(shouldShowFortniteAccountForm.value && !fortniteAccountDataValid.value
+      ? [t('pages.forms.createProduct.validationFortniteAccountDetailsRequired')]
+      : []),
   ],
   3: [
     ...(!imagesCountValid.value
@@ -406,6 +434,7 @@ const hasAnyFormData = computed(() => (
   || normalizedTitle.value.length > 0
   || normalizedDescription.value.length > 0
   || normalizedProductData.value.length > 0
+  || Boolean(fortniteAccountPayload.value)
   || String(price.value).trim().length > 0
   || count.value !== 1
   || images.value.length > 0
@@ -519,6 +548,20 @@ async function loadSubcategoriesForCategory(categoryId: string): Promise<void> {
   }
 }
 
+async function applyFortniteAccountsCategorySelection(): Promise<void> {
+  const fortniteCategory = categories.value.find(category => isFortniteRootCategory(category))
+  if (!fortniteCategory) {
+    return
+  }
+
+  selectedCategoryId.value = fortniteCategory.id
+  await loadSubcategoriesForCategory(fortniteCategory.id)
+  const accountsSubcategory = subcategories.value.find(subcategory => isAccountsSubcategory(subcategory))
+  if (accountsSubcategory) {
+    selectedSubcategoryId.value = accountsSubcategory.id
+  }
+}
+
 function buildCreateProductDraftPayload(): CreateProductDraftPayload {
   return {
     selectedCategoryId: selectedCategoryId.value,
@@ -527,6 +570,7 @@ function buildCreateProductDraftPayload(): CreateProductDraftPayload {
     description: description.value,
     price: typeof price.value === 'number' ? String(price.value) : String(price.value ?? ''),
     productData: productData.value,
+    fortniteAccountDetails: { ...fortniteAccountForm.value },
     count: count.value,
     autoDelivery: autoDelivery.value,
     images: [...images.value],
@@ -601,6 +645,9 @@ async function restoreSavedCreateProductDraft(): Promise<void> {
     description.value = savedDraft.description
     price.value = savedDraft.price
     productData.value = savedDraft.productData
+    fortniteAccountForm.value = savedDraft.fortniteAccountDetails
+      ? { ...savedDraft.fortniteAccountDetails }
+      : createEmptyFortniteAccountForm()
     images.value = savedDraft.images
     count.value = savedDraft.count
     autoDelivery.value = savedDraft.autoDelivery
@@ -649,6 +696,8 @@ onMounted(async () => {
       if (draft) {
         description.value = draft.description
         draftImages.value = draft.images.slice(0, PRODUCT_LIMITS.images.max)
+        fortniteAccountForm.value = fortniteAccountDetailsToForm(draft.fortnite_account_details)
+        await applyFortniteAccountsCategorySelection()
         isRaikaDraftApplied.value = true
       } else {
         errorMessage.value = t('pages.forms.createProduct.draftNotFound')
@@ -696,6 +745,7 @@ watch(
     description,
     price,
     productData,
+    fortniteAccountForm,
     images,
     count,
     autoDelivery,
@@ -740,6 +790,7 @@ function clearForm() {
   description.value = ''
   price.value = ''
   productData.value = ''
+  fortniteAccountForm.value = createEmptyFortniteAccountForm()
   images.value = []
   draftImages.value = []
   count.value = 1
@@ -796,6 +847,7 @@ async function createProduct() {
       price: Number(price.value),
       price_currency: selectedCurrency.value,
       product_data: autoDelivery.value ? normalizedProductData.value : undefined,
+      fortnite_account_details: shouldShowFortniteAccountForm.value ? fortniteAccountPayload.value : undefined,
       category_id: selectedSubcategoryId.value,
       count: countValue.value,
       auto_delivery: autoDelivery.value,
@@ -1056,6 +1108,29 @@ async function createProduct() {
                       {{ normalizedDescriptionLength }}/{{ PRODUCT_LIMITS.description.max }}
                     </p>
                   </div>
+                </div>
+
+                <div
+                  v-if="shouldShowFortniteAccountForm"
+                  class="rounded-xl border border-dark-700 bg-dark-600/40 p-5 space-y-4"
+                >
+                  <div class="space-y-1">
+                    <h4 class="text-sm font-semibold text-white">
+                      {{ $t('pages.forms.createProduct.fortniteAccountDetailsTitle') }}
+                    </h4>
+                    <p class="text-xs text-gray-400 leading-relaxed">
+                      {{ $t('pages.forms.createProduct.fortniteAccountDetailsHint') }}
+                    </p>
+                  </div>
+
+                  <FortniteAccountFields v-model="fortniteAccountForm" />
+
+                  <p
+                    class="text-xs"
+                    :class="fortniteAccountDataValid ? 'text-gray-400' : 'text-red-400'"
+                  >
+                    {{ $t('pages.forms.createProduct.validationFortniteAccountDetailsRequired') }}
+                  </p>
                 </div>
 
                 <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-5 space-y-3">
