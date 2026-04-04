@@ -6,10 +6,8 @@ import { useI18n } from 'vue-i18n'
 import ProductStatusTag from './ProductStatusTag.vue'
 import UserRating from './UserRating.vue'
 import StyledUsername from './StyledUsername.vue'
-import FortniteAccountSnapshot from './FortniteAccountSnapshot.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
 import { buildProductKey } from '@/utils/urlKeys'
-import { hasFortniteAccountDetails } from '@/utils/fortniteAccount'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -26,7 +24,6 @@ const emit = defineEmits<{
 const API_HOST = import.meta.env.VITE_API_HOST
 const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
 const shouldShowSellerRating = computed(() => props.product.seller.rating > 0)
-const shouldShowFortniteSnapshot = computed(() => hasFortniteAccountDetails(props.product.fortnite_account_details))
 
 function onClick() {
   emit('click', buildProductKey(props.product))
@@ -60,14 +57,7 @@ function goToSeller() {
         {{ product.title }}
       </h3>
 
-      <div v-if="shouldShowFortniteSnapshot" class="mb-2 min-w-0 w-full">
-        <FortniteAccountSnapshot
-          :details="product.fortnite_account_details"
-          variant="compact"
-        />
-      </div>
-
-      <p v-else class="profile-product-description mb-2 min-w-0 w-full line-clamp-2 min-h-[2rem] text-xs text-gray-400">
+      <p class="profile-product-description mb-2 min-w-0 w-full line-clamp-2 min-h-[2rem] text-xs text-gray-400">
         {{ product.description || t('common.noDescription') }}
       </p>
 

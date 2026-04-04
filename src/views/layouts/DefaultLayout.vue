@@ -210,28 +210,44 @@ const mobileNavGridStyle = computed(() => ({
     >
       <div class="mx-auto w-full 2xl:w-1/2">
         <div class="mx-auto h-14 w-full flex items-center justify-between gap-3 px-2 lg:px-4">
-          <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-lg text-mainText font-semibold sm:text-xl"
-            @click="router.push('/')">
-            remarket
+          <div class="flex flex-shrink-0 items-center gap-2 md:gap-3">
+            <div class="flex cursor-pointer items-center gap-2 text-lg text-mainText font-semibold sm:text-xl"
+              @click="router.push('/')">
+              remarket
+            </div>
+            <button
+              v-if="HOME_STEAM_TOPUP_ENABLED"
+              type="button"
+              class="inline-flex h-9 min-w-[7.6rem] items-center gap-1.5 rounded-full border border-gray-700 bg-transparent pl-2 pr-2.5 text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white md:hidden"
+              :title="t('pages.index.steamTopUp.title')"
+              @click="goToSteamTopUp"
+            >
+              <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-gray-700 text-gray-300">
+                <Icon icon="mdi:steam" class="h-3.5 w-3.5" />
+              </span>
+              <span class="min-w-0 flex-1 text-left text-[10px] font-medium leading-[1.05]">
+                <span class="block truncate">Пополнение</span>
+                <span class="block truncate">Steam</span>
+              </span>
+            </button>
+            <button
+              v-if="HOME_STEAM_TOPUP_ENABLED"
+              type="button"
+              class="hidden h-9 items-center gap-2 rounded-full border border-gray-700 bg-transparent px-3 text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white md:inline-flex"
+              :title="t('pages.index.steamTopUp.title')"
+              @click="goToSteamTopUp"
+            >
+              <span class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-700 text-gray-300 transition-colors duration-200">
+                <Icon icon="mdi:steam" class="h-4 w-4" />
+              </span>
+              <span class="text-sm font-medium leading-none">
+                {{ t('pages.index.steamTopUp.title') }}
+              </span>
+            </button>
           </div>
 
           <div class="flex items-center gap-2 md:gap-3">
             <nav class="hidden items-center gap-6 md:flex">
-              <button
-                v-if="HOME_STEAM_TOPUP_ENABLED"
-                type="button"
-                class="inline-flex h-10 items-center gap-2 rounded-xl border border-white/15 bg-dark-700/70 px-2.5 text-gray-100 transition hover:border-white/30 hover:bg-dark-700"
-                :title="t('pages.index.steamTopUp.title')"
-                @click="goToSteamTopUp"
-              >
-                <span class="inline-flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/20">
-                  <Icon icon="mdi:steam" class="h-5 w-5" />
-                </span>
-                <span class="inline-flex h-6 items-center justify-center rounded-md bg-white/10 px-2 text-xs font-semibold leading-none">
-                  Пополнение стим
-                </span>
-              </button>
-
               <router-link v-for="item in primaryNavItems" :key="item.id" :to="item.to"
                 class="flex items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"
                 :class="{

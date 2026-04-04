@@ -6,10 +6,8 @@ import { useI18n } from 'vue-i18n'
 import AutoDeliveryTag from '@/components/AutoDeliveryTag.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
 import UserRating from '@/components/UserRating.vue'
-import FortniteAccountSnapshot from '@/components/FortniteAccountSnapshot.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
 import { buildProductKey } from '@/utils/urlKeys'
-import { hasFortniteAccountDetails } from '@/utils/fortniteAccount'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -25,7 +23,6 @@ const emit = defineEmits<{
 const API_HOST = import.meta.env.VITE_API_HOST
 const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
 const shouldShowSellerRating = computed(() => props.product.seller.rating > 0)
-const shouldShowFortniteSnapshot = computed(() => hasFortniteAccountDetails(props.product.fortnite_account_details))
 const activeImageIndex = ref(0)
 const touchStartX = ref(0)
 const touchStartY = ref(0)
@@ -147,14 +144,7 @@ function handleImageTouchEnd(event: TouchEvent) {
         </div>
       </div>
 
-      <div v-if="shouldShowFortniteSnapshot" class="mt-2 min-w-0">
-        <FortniteAccountSnapshot
-          :details="product.fortnite_account_details"
-          variant="compact"
-        />
-      </div>
-
-      <p v-else class="home-list-description mt-1 min-w-0 text-xs text-gray-400 sm:text-sm">
+      <p class="home-list-description mt-1 min-w-0 text-xs text-gray-400 sm:text-sm">
         {{ product.description || t('common.noDescription') }}
       </p>
 
