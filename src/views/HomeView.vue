@@ -24,7 +24,7 @@ import type {
 import { isValidSteamTopUpAccount, normalizeSteamTopUpAccount } from '@/validation/steamTopup/steamTopup'
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Folder, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
+import { ChevronRight, Folder, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
 import { Icon } from '@iconify/vue'
 import axios from 'axios'
 import {
@@ -68,6 +68,7 @@ const isCategoriesLoading = ref(true)
 const isSubCategoriesLoading = ref(false)
 const isLoadingMoreCategories = ref(false)
 const isLoadingMoreSubCategories = ref(false)
+const isExpandingCategories = ref(false)
 const isSearchPagination = ref(false)
 const minPriceFilter = ref('')
 const maxPriceFilter = ref('')
@@ -89,6 +90,10 @@ const categorySearchResults = computed(() => {
     .filter((category) => category.name.toLowerCase().includes(normalizedSearchQuery.value))
     .slice(0, 8)
 })
+const areCategoriesExpanded = ref(false)
+const shouldShowCategoryExpandButton = computed(() => (
+  mainCategories.value.length > 8 || categoryTotalPages.value > 1
+))
 type SteamPromoChipVariant = 'minimal' | 'neon' | 'glass'
 const STEAM_PROMO_CHIP_VARIANT: SteamPromoChipVariant = 'glass'
 
@@ -683,6 +688,25 @@ async function loadMoreMainCategories() {
   isLoadingMoreCategories.value = false
 }
 
+async function expandAllMainCategories() {
+  if (isExpandingCategories.value) return
+  isExpandingCategories.value = true
+  try {
+    while (categoryPage.value < categoryTotalPages.value) {
+      await loadMainCategories(categoryPage.value + 1, true)
+    }
+  } finally {
+    isExpandingCategories.value = false
+  }
+}
+
+async function toggleCategoriesExpanded() {
+  areCategoriesExpanded.value = !areCategoriesExpanded.value
+  if (areCategoriesExpanded.value) {
+    await expandAllMainCategories()
+  }
+}
+
 function onMainCategoryClick(category: Category) {
   goToCategoryPage(category)
 }
@@ -821,24 +845,6 @@ function toggleFiltersVisibility() {
   isFiltersOpen.value = !isFiltersOpen.value
 }
 
-const categoriesScroll = ref<HTMLDivElement | null>(null)
-const categoriesLoadMoreTrigger = ref<HTMLElement | null>(null)
-let categoriesObserver: IntersectionObserver | null = null
-
-const handleCategoriesWheel = (e: WheelEvent) => {
-  const el = e.currentTarget as HTMLElement
-  if (!el) return
-  const canScrollX = el.scrollWidth > el.clientWidth
-  if (!canScrollX) return
-
-  const isHorizontalIntent = Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey
-  if (!isHorizontalIntent) return
-
-  e.preventDefault()
-  const delta = e.shiftKey && e.deltaX === 0 ? e.deltaY : (e.deltaX || e.deltaY)
-  el.scrollLeft += delta
-}
-
 watch(selectedSteamServiceId, () => {
   steamOrder.value = null
   steamChargedAmountRub.value = null
@@ -888,15 +894,12 @@ onMounted(async () => {
   ])
   observer = new IntersectionObserver((entries) => { if (entries[0]!.isIntersecting) loadMoreProducts() }, { rootMargin: '300px' })
   if (loadMoreTrigger.value) observer.observe(loadMoreTrigger.value)
-  categoriesObserver = new IntersectionObserver((entries) => { if (entries[0]!.isIntersecting && categoryPage.value < categoryTotalPages.value) loadMoreMainCategories() }, { root: categoriesScroll.value, threshold: 0.1 })
-  if (categoriesLoadMoreTrigger.value) categoriesObserver.observe(categoriesLoadMoreTrigger.value)
 })
 
 onBeforeUnmount(() => {
   if (searchTimeout) clearTimeout(searchTimeout)
   if (filterTimeout) clearTimeout(filterTimeout)
   observer?.disconnect()
-  categoriesObserver?.disconnect()
 })
 
 </script>
@@ -982,25 +985,83 @@ onBeforeUnmount(() => {
             <div v-for="n in 5" :key="n" class="h-16 w-16 bg-dark-600 animate-pulse rounded-lg sm:h-20 sm:w-20" />
           </div>
 
-          <div
-            v-else
-            ref="categoriesScroll"
-            @wheel="handleCategoriesWheel"
-            class="overflow-x-auto overflow-y-hidden w-full relative"
-          >
-            <div class="flex min-w-max gap-2 py-1.5 sm:gap-3 sm:py-2">
+          <div v-else class="w-full">
+            <div class="relative">
               <div
+                v-if="!areCategoriesExpanded"
+                class="w-full overflow-hidden"
+              >
+                <div class="flex min-w-max gap-2 py-1.5 sm:gap-3 sm:py-2">
+                  <button
+                    v-for="cat in mainCategories"
+                    :key="cat.id"
+                    type="button"
+                    @click="onMainCategoryClick(cat)"
+                    class="flex-shrink-0 cursor-pointer flex flex-col items-center p-1.5 rounded-lg transition sm:p-2"
+                  >
+                    <div class="h-12 w-12 flex items-center justify-center bg-dark-700 rounded-lg overflow-hidden border border-white/5 shadow-inner sm:h-16 sm:w-16">
+                      <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="w-full h-full object-cover" />
+                      <Folder v-else class="h-6 w-6 text-gray-400 sm:h-8 sm:w-8" />
+                    </div>
+                    <span class="mt-1.5 w-12 truncate text-center text-xs font-medium leading-tight sm:mt-2 sm:w-16 sm:text-sm">{{ cat.name }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <button
+                v-if="shouldShowCategoryExpandButton && !areCategoriesExpanded"
+                type="button"
+                class="market-primary-surface market-primary-hover absolute right-1 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-blue-400/25 text-white shadow-[0_10px_24px_rgba(0,0,0,0.32)] ring-4 ring-dark-800/55 transition disabled:cursor-default disabled:opacity-60 sm:h-12 sm:w-12"
+                :aria-expanded="areCategoriesExpanded"
+                :aria-label="areCategoriesExpanded ? t('pages.index.collapseCategories') : t('pages.index.expandCategories')"
+                :title="areCategoriesExpanded ? t('pages.index.collapseCategories') : t('pages.index.expandCategories')"
+                :disabled="isExpandingCategories"
+                @click="toggleCategoriesExpanded"
+              >
+                <ChevronRight
+                  class="h-5 w-5 transition-transform duration-200 sm:h-6 sm:w-6"
+                  :class="areCategoriesExpanded ? 'rotate-90' : ''"
+                />
+              </button>
+            </div>
+
+            <div
+              v-if="areCategoriesExpanded"
+              class="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-6 xl:grid-cols-8"
+            >
+              <button
                 v-for="cat in mainCategories"
                 :key="cat.id"
+                type="button"
                 @click="onMainCategoryClick(cat)"
-                class="flex-shrink-0 cursor-pointer flex flex-col items-center p-1.5 rounded-lg transition sm:p-2"
+                class="cursor-pointer flex min-w-0 flex-col items-center rounded-lg p-2 transition hover:bg-dark-700/25"
               >
                 <div class="h-12 w-12 flex items-center justify-center bg-dark-700 rounded-lg overflow-hidden border border-white/5 shadow-inner sm:h-16 sm:w-16">
                   <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="w-full h-full object-cover" />
                   <Folder v-else class="h-6 w-6 text-gray-400 sm:h-8 sm:w-8" />
                 </div>
-                <span class="mt-1.5 w-12 truncate text-center text-xs font-medium leading-tight sm:mt-2 sm:w-16 sm:text-sm">{{ cat.name }}</span>
-              </div>
+                <span class="mt-1.5 w-full break-words text-center text-xs font-medium leading-tight sm:mt-2 sm:text-sm">
+                  {{ cat.name }}
+                </span>
+              </button>
+
+              <button
+                v-if="shouldShowCategoryExpandButton"
+                type="button"
+                class="flex min-w-0 flex-col items-center rounded-lg p-2 text-white transition disabled:cursor-default disabled:opacity-60"
+                :aria-expanded="areCategoriesExpanded"
+                :aria-label="t('pages.index.collapseCategories')"
+                :title="t('pages.index.collapseCategories')"
+                :disabled="isExpandingCategories"
+                @click="toggleCategoriesExpanded"
+              >
+                <div class="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 sm:h-16 sm:w-16">
+                  <ChevronRight class="h-5 w-5 rotate-270 sm:h-6 sm:w-6" />
+                </div>
+                <span class="mt-1.5 w-full break-words text-center text-xs font-medium leading-tight sm:mt-2 sm:text-sm">
+                  {{ t('pages.index.collapseCategoriesShort') }}
+                </span>
+              </button>
             </div>
           </div>
         </div>
