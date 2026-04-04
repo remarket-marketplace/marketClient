@@ -60,6 +60,9 @@ const subCategoryTotalPages = ref(1)
 const categoriesPerPage = ref(30)
 const searchQuery = ref('')
 const searchableCategories = ref<Category[]>([])
+const isSearchDropdownOpen = ref(false)
+const searchDropdownHighlightedIndex = ref(-1)
+const searchDropdownRef = ref<HTMLElement | null>(null)
 const isServerPagination = ref(true)
 const isCategoryPagination = ref(false)
 const isLoadingMore = ref(false)
@@ -90,6 +93,7 @@ const categorySearchResults = computed(() => {
     .filter((category) => category.name.toLowerCase().includes(normalizedSearchQuery.value))
     .slice(0, 8)
 })
+const hasCategorySearchResults = computed(() => categorySearchResults.value.length > 0)
 const areCategoriesExpanded = ref(false)
 const shouldShowCategoryExpandButton = computed(() => (
   mainCategories.value.length > 8 || categoryTotalPages.value > 1
@@ -326,6 +330,7 @@ async function onPricePresetClick(preset: PricePreset) {
 
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
+let onDocumentClickForSearchDropdown: ((event: MouseEvent) => void) | null = null
 
 function goToProduct(productKey: string) {
   if (!productKey) return
@@ -333,9 +338,65 @@ function goToProduct(productKey: string) {
 }
 
 function goToCategoryPage(category: Category) {
+  isSearchDropdownOpen.value = false
+  searchDropdownHighlightedIndex.value = -1
   const categoryKey = buildCategoryKey(category)
   if (!categoryKey) return
   router.push({ path: `/category/${categoryKey}` })
+}
+
+function openSearchDropdown() {
+  if (!normalizedSearchQuery.value || !hasCategorySearchResults.value) return
+  isSearchDropdownOpen.value = true
+  if (searchDropdownHighlightedIndex.value < 0) {
+    searchDropdownHighlightedIndex.value = 0
+  }
+}
+
+function closeSearchDropdown() {
+  isSearchDropdownOpen.value = false
+  searchDropdownHighlightedIndex.value = -1
+}
+
+function moveSearchDropdownHighlight(direction: 1 | -1) {
+  const total = categorySearchResults.value.length
+  if (!total) {
+    searchDropdownHighlightedIndex.value = -1
+    return
+  }
+  if (!isSearchDropdownOpen.value) {
+    openSearchDropdown()
+    return
+  }
+  const current = searchDropdownHighlightedIndex.value < 0 ? 0 : searchDropdownHighlightedIndex.value
+  searchDropdownHighlightedIndex.value = (current + direction + total) % total
+}
+
+function onSearchDropdownKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    closeSearchDropdown()
+    return
+  }
+
+  if (event.key === 'ArrowDown') {
+    event.preventDefault()
+    moveSearchDropdownHighlight(1)
+    return
+  }
+
+  if (event.key === 'ArrowUp') {
+    event.preventDefault()
+    moveSearchDropdownHighlight(-1)
+    return
+  }
+
+  if (event.key === 'Enter' && isSearchDropdownOpen.value) {
+    if (searchDropdownHighlightedIndex.value < 0) return
+    const category = categorySearchResults.value[searchDropdownHighlightedIndex.value]
+    if (!category) return
+    event.preventDefault()
+    goToCategoryPage(category)
+  }
 }
 
 function goToSteamTopUpPage() {
@@ -885,6 +946,17 @@ watch(productCardViewMode, (mode) => {
   window.localStorage.setItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY, mode)
 })
 
+watch([normalizedSearchQuery, hasCategorySearchResults], ([query, hasResults]) => {
+  if (!query || !hasResults) {
+    closeSearchDropdown()
+    return
+  }
+  isSearchDropdownOpen.value = true
+  if (searchDropdownHighlightedIndex.value < 0) {
+    searchDropdownHighlightedIndex.value = 0
+  }
+})
+
 onMounted(async () => {
   restoreProductCardViewModeFromStorage()
   await Promise.all([
@@ -894,12 +966,23 @@ onMounted(async () => {
   ])
   observer = new IntersectionObserver((entries) => { if (entries[0]!.isIntersecting) loadMoreProducts() }, { rootMargin: '300px' })
   if (loadMoreTrigger.value) observer.observe(loadMoreTrigger.value)
+  onDocumentClickForSearchDropdown = (event: MouseEvent) => {
+    const target = event.target as Node | null
+    if (!target) return
+    if (searchDropdownRef.value?.contains(target)) return
+    closeSearchDropdown()
+  }
+  document.addEventListener('click', onDocumentClickForSearchDropdown)
 })
 
 onBeforeUnmount(() => {
   if (searchTimeout) clearTimeout(searchTimeout)
   if (filterTimeout) clearTimeout(filterTimeout)
   observer?.disconnect()
+  if (onDocumentClickForSearchDropdown) {
+    document.removeEventListener('click', onDocumentClickForSearchDropdown)
+    onDocumentClickForSearchDropdown = null
+  }
 })
 
 </script>
@@ -921,32 +1004,48 @@ onBeforeUnmount(() => {
       class="relative z-20 flex min-h-screen w-full flex-col items-center px-1 pb-6 sm:px-2 lg:px-2"
       :class="user ? 'pt-20' : 'pt-6'"
     >
-        <SearchField
-          v-model="searchQuery"
-          :placeholder="$t('pages.index.searchPlaceholder')"
-          @search-change="debouncedSearch" class="home-search-glass w-full lg:max-w-2xl" />
+        <div
+          ref="searchDropdownRef"
+          class="w-full lg:max-w-2xl"
+          @focusin="openSearchDropdown"
+          @keydown="onSearchDropdownKeydown"
+        >
+          <SearchField
+            v-model="searchQuery"
+            :placeholder="$t('pages.index.searchPlaceholder')"
+            @search-change="debouncedSearch"
+            class="home-search-glass w-full"
+          />
+        </div>
 
         <div
-          v-if="categorySearchResults.length"
-          class="mt-2 w-full rounded-xl border border-dark-700 bg-dark-700/70 p-2 lg:max-w-2xl"
+          v-if="hasCategorySearchResults && isSearchDropdownOpen"
+          class="mt-2 w-full rounded-2xl border border-white/10 bg-[rgba(20,20,30,0.66)] p-2 shadow-[0_16px_38px_rgba(0,0,0,0.4)] backdrop-blur-xl lg:max-w-2xl"
         >
-          <p class="px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
+          <p class="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-400/85">
             {{ t('pages.index.categoriesFound') }}
           </p>
           <button
-            v-for="category in categorySearchResults"
+            v-for="(category, index) in categorySearchResults"
             :key="`search-category-${category.id}`"
             type="button"
-            class="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-white transition hover:bg-dark-600"
+            class="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm text-white transition duration-200"
+            :class="{
+              'bg-emerald-400/15': searchDropdownHighlightedIndex === index,
+              'hover:bg-white/8': searchDropdownHighlightedIndex !== index,
+            }"
+            @mouseenter="searchDropdownHighlightedIndex = index"
             @click="goToCategoryPage(category)"
           >
-            <img
-              v-if="category.image_url"
-              :src="resolveCategoryImageUrl(category.image_url)"
-              :alt="category.name"
-              class="h-6 w-6 rounded object-cover border border-dark-600/80 shrink-0"
-            />
-            <Folder v-else class="h-5 w-5 text-gray-400 shrink-0" />
+            <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-dark-800/80">
+              <img
+                v-if="category.image_url"
+                :src="resolveCategoryImageUrl(category.image_url)"
+                :alt="category.name"
+                class="h-5 w-5 rounded object-cover"
+              />
+              <Folder v-else class="h-4 w-4 text-gray-400" />
+            </span>
             <span class="truncate text-sm leading-5">{{ category.name }}</span>
           </button>
         </div>
