@@ -1075,7 +1075,7 @@ onBeforeUnmount(() => {
                       <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="w-full h-full object-cover" />
                       <Folder v-else class="h-6 w-6 text-gray-400 sm:h-8 sm:w-8" />
                     </div>
-                    <span class="mt-1.5 w-12 truncate text-center text-xs font-medium leading-tight sm:mt-2 sm:w-16 sm:text-sm">{{ cat.name }}</span>
+                    <span class="home-category-label mt-1.5 sm:mt-2">{{ cat.name }}</span>
                   </button>
                 </div>
               </div>
@@ -1099,20 +1099,20 @@ onBeforeUnmount(() => {
 
             <div
               v-if="areCategoriesExpanded"
-              class="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-6 xl:grid-cols-8"
+              class="mt-2 grid sm:grid-cols-6 grid-cols-6 md:grid-cols-8 lg:grid-cols-12 xl:grid-cols-15 gap-1"
             >
               <button
                 v-for="cat in mainCategories"
                 :key="cat.id"
                 type="button"
                 @click="onMainCategoryClick(cat)"
-                class="cursor-pointer flex min-w-0 flex-col items-center rounded-lg p-2 transition hover:bg-dark-700/25"
+                class="cursor-pointer flex min-w-0 flex-col items-center rounded-lg p-1 transition hover:bg-dark-700/25 sm:p-1.5"
               >
                 <div class="h-12 w-12 flex items-center justify-center bg-dark-700 rounded-lg overflow-hidden border border-white/5 shadow-inner sm:h-16 sm:w-16">
                   <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="w-full h-full object-cover" />
                   <Folder v-else class="h-6 w-6 text-gray-400 sm:h-8 sm:w-8" />
                 </div>
-                <span class="mt-1.5 w-full break-words text-center text-xs font-medium leading-tight sm:mt-2 sm:text-sm">
+                <span class="home-category-label mt-1.5 sm:mt-2">
                   {{ cat.name }}
                 </span>
               </button>
@@ -1120,7 +1120,7 @@ onBeforeUnmount(() => {
               <button
                 v-if="shouldShowCategoryExpandButton"
                 type="button"
-                class="flex min-w-0 flex-col items-center rounded-lg p-2 text-white transition disabled:cursor-default disabled:opacity-60"
+                class="flex min-w-0 flex-col items-center rounded-lg p-1 text-white transition disabled:cursor-default disabled:opacity-60 sm:p-1.5"
                 :aria-expanded="areCategoriesExpanded"
                 :aria-label="t('pages.index.collapseCategories')"
                 :title="t('pages.index.collapseCategories')"
@@ -1435,5 +1435,25 @@ onBeforeUnmount(() => {
 .home-search-glass :deep(svg) {
   display: none;
   color: var(--home-search-glass-icon);
+}
+
+.home-category-label {
+  display: block;
+  width: 3rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: center;
+  font-size: 0.6875rem;
+  line-height: 1.15;
+  font-weight: 500;
+  -webkit-mask-image: linear-gradient(to right, #000 0%, #000 78%, transparent 100%);
+  mask-image: linear-gradient(to right, #000 0%, #000 78%, transparent 100%);
+}
+
+@media (min-width: 640px) {
+  .home-category-label {
+    width: 4rem;
+    font-size: 0.75rem;
+  }
 }
 </style>
