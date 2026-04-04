@@ -1031,7 +1031,7 @@ onBeforeUnmount(() => {
             type="button"
             class="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm text-white transition duration-200"
             :class="{
-              'bg-emerald-400/15': searchDropdownHighlightedIndex === index,
+              'bg-blue-400/15': searchDropdownHighlightedIndex === index,
               'hover:bg-white/8': searchDropdownHighlightedIndex !== index,
             }"
             @mouseenter="searchDropdownHighlightedIndex = index"
