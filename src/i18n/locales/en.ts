@@ -1642,8 +1642,8 @@ const en = {
       },
 
       steamTopupsPage: {
-        title: "Steam top-ups",
-        subtitle: "Create and moderate promo codes for Steam top-ups.",
+        title: "Promo codes",
+        subtitle: "Create and moderate promo codes for payment scenarios.",
         createTitle: "Create promo code",
         codePlaceholder: "Promo code",
         discountPlaceholder: "Discount, %",

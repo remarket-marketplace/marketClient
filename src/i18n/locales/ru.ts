@@ -1639,8 +1639,8 @@ const ru = {
       },
 
       steamTopupsPage: {
-        title: "Steam пополнения",
-        subtitle: "Создание и модерация промокодов для пополнения Steam.",
+        title: "Промокоды",
+        subtitle: "Создание и модерация промокодов для платежных сценариев.",
         createTitle: "Создать промокод",
         codePlaceholder: "Код промокода",
         discountPlaceholder: "Скидка, %",

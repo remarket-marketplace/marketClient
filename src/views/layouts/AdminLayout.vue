@@ -106,7 +106,7 @@ const navItems = computed<NavItem[]>(() => [
   },
   {
     id: 'promo-codes',
-    title: 'Промокоды',
+    title: t('pages.admin.steamTopupsPage.title'),
     icon: TicketPercent,
     to: '/admin/promo-codes',
   },

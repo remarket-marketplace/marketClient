@@ -437,8 +437,8 @@ onMounted(async () => {
     <div class="flex items-center gap-2">
       <BackButton />
       <div>
-        <h1 class="text-xl sm:text-2xl font-bold text-mainText">Промокоды</h1>
-        <p class="text-xs sm:text-sm text-gray-400">Универсальные промокоды для платежных сценариев</p>
+        <h1 class="text-xl sm:text-2xl font-bold text-mainText">{{ t('pages.admin.steamTopupsPage.title') }}</h1>
+        <p class="text-xs sm:text-sm text-gray-400">{{ t('pages.admin.steamTopupsPage.subtitle') }}</p>
       </div>
     </div>
 

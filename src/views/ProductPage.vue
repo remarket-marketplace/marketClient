@@ -691,10 +691,15 @@ onUnmounted(() => {
             <h1 class="text-2xl lg:text-3xl font-bold text-white leading-tight break-words">
               {{ product.title }}
             </h1>
-            <div class="flex items-center gap-4">
-              <span class="text-2xl lg:text-3xl font-bold text-green-400">
-                {{ formatCurrencyAmount(product.price) }}
-              </span>
+            <div class="flex flex-wrap items-center gap-3">
+              <div class="inline-flex flex-col">
+                <span class="product-price-label text-[11px] font-semibold uppercase tracking-[0.12em]">
+                  {{ $t('common.price') }}
+                </span>
+                <span class="product-price-value text-2xl font-bold lg:text-3xl">
+                  {{ formatCurrencyAmount(product.price) }}
+                </span>
+              </div>
               <AutoDeliveryTag v-if="product.auto_delivery" />
               <ProductStatusTag v-if="product.is_owner || user?.role === 'admin'" :product-status="product.status" />
             </div>
@@ -825,9 +830,19 @@ onUnmounted(() => {
                 </div>
 
                 <div class="shrink-0">
-                  <Heart v-if="product.is_liked" @click="removeProductLike" class="w-8 h-8 text-red-500 cursor-pointer"
-                    :style="{ fill: 'currentColor' }" />
-                  <Heart v-else @click="likeProduct" class="cursor-pointer w-8 h-8" />
+                  <Heart
+                    v-if="product.is_liked"
+                    @click="user !== null && removeProductLike()"
+                    class="h-8 w-8"
+                    :class="user === null ? 'cursor-default text-gray-500' : 'cursor-pointer text-red-500'"
+                    :style="user !== null ? { fill: 'currentColor' } : undefined"
+                  />
+                  <Heart
+                    v-else
+                    @click="user !== null && likeProduct()"
+                    class="h-8 w-8"
+                    :class="user === null ? 'cursor-default text-gray-500' : 'cursor-pointer text-white'"
+                  />
                 </div>
               </div>
             </div>
@@ -1201,6 +1216,14 @@ onUnmounted(() => {
 .product-image-overlay {
   background-image: radial-gradient(circle at top, var(--overlay-white-12), transparent 45%),
     linear-gradient(to bottom, var(--product-image-overlay-top), var(--product-image-overlay-bottom));
+}
+
+.product-price-label {
+  color: var(--product-price-label);
+}
+
+.product-price-value {
+  color: var(--product-price-value);
 }
 
 .similar-products-grid {

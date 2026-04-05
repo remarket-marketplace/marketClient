@@ -178,6 +178,8 @@
   --product-image-overlay-top: rgb(2 6 23 / 0.08); /* Top gradient tint on product hero image. */
   --product-image-overlay-bottom: rgb(2 6 23 / 0.5); /* Bottom gradient tint on product hero image. */
   --product-card-image-placeholder-bg: rgb(var(--palette-dark-800)); /* Product card image placeholder before image paint. */
+  --product-price-label: rgb(var(--palette-gray-400)); /* Product page price caption. */
+  --product-price-value: rgb(var(--palette-white)); /* Product page main price value. */
 
   /* Shared elevation and text motion tokens */
   --route-progress-bar: var(--primary-color); /* Route progress indicator at top of app. */
