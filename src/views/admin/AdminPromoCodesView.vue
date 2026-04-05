@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Loader2 } from 'lucide-vue-next'
 import BackButton from '@/components/navigation/BackButton.vue'
@@ -25,7 +25,7 @@ const perPage = 20
 
 const searchQuery = ref('')
 const statusFilter = ref<'all' | 'active' | 'inactive'>('all')
-const appliesToFilter = ref<'all' | 'wallet_topup' | 'marketplace_purchase'>('all')
+const appliesToFilter = ref<'all' | 'wallet_topup' | 'marketplace_purchase' | 'steam_topup'>('all')
 
 const code = ref('')
 const discountType = ref<'percent' | 'fixed'>('percent')
@@ -34,7 +34,7 @@ const maxDiscountAmount = ref('')
 const minOrderAmount = ref('')
 const totalUsageLimit = ref('')
 const perUserUsageLimit = ref('1')
-const appliesTo = ref<'wallet_topup' | 'marketplace_purchase'>('wallet_topup')
+const appliesTo = ref<'wallet_topup' | 'marketplace_purchase' | 'steam_topup'>('wallet_topup')
 const isActive = ref(true)
 const hasLifetime = ref(false)
 const lifetimeValue = ref('1')
@@ -42,6 +42,13 @@ const lifetimeUnit = ref<LifetimeUnit>('days')
 
 const errorMessage = ref('')
 const successMessage = ref('')
+const submitAttempted = ref(false)
+const basicSectionRef = ref<HTMLElement | null>(null)
+const lifetimeSectionRef = ref<HTMLElement | null>(null)
+const codeInputRef = ref<HTMLInputElement | null>(null)
+const discountInputRef = ref<HTMLInputElement | null>(null)
+const lifetimeInputRef = ref<HTMLInputElement | null>(null)
+const invalidSectionKey = ref<'basic' | 'lifetime' | null>(null)
 
 const statusOptions = [
   { value: 'all', label: 'Все статусы' },
@@ -58,6 +65,7 @@ const appliesToOptions = [
   { value: 'all', label: 'Все сценарии' },
   { value: 'wallet_topup', label: 'Кошелек' },
   { value: 'marketplace_purchase', label: 'Покупка товара' },
+  { value: 'steam_topup', label: 'Steam пополнение' },
 ]
 
 const createAppliesToOptions = computed(() => appliesToOptions.filter(item => item.value !== 'all'))
@@ -112,6 +120,7 @@ function toNonNegativeFloat(value: unknown): number | null {
 function formatScenario(value: string): string {
   if (value === 'wallet_topup') return 'Кошелек'
   if (value === 'marketplace_purchase') return 'Покупка товара'
+  if (value === 'steam_topup') return 'Steam пополнение'
   return value
 }
 
@@ -216,6 +225,16 @@ const activationSummary = computed(() => {
   return 'Промокод создастся выключенным. Его можно включить позже в списке.'
 })
 
+const normalizedCode = computed(() => code.value.trim())
+const normalizedDiscountValue = computed(() => toPositiveFloat(discountValue.value))
+const normalizedLifetimeValue = computed(() => toPositiveInt(lifetimeValue.value))
+
+const requiredErrors = computed(() => ({
+  code: submitAttempted.value && !normalizedCode.value,
+  discountValue: submitAttempted.value && !normalizedDiscountValue.value,
+  lifetimeValue: submitAttempted.value && hasLifetime.value && !normalizedLifetimeValue.value,
+}))
+
 function getApiErrorDetail(error: unknown): unknown {
   if (!error || typeof error !== 'object') return error
   const response = (error as { response?: { data?: { detail?: unknown } } }).response
@@ -304,11 +323,50 @@ function buildPayload(): CreateAdminPromoCodePayload | null {
   }
 }
 
+function focusAndScroll(target: HTMLElement | null, input?: HTMLInputElement | null) {
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+  if (input) {
+    window.setTimeout(() => input.focus(), 220)
+  }
+}
+
+function scrollToFirstInvalidField() {
+  if (requiredErrors.value.code) {
+    invalidSectionKey.value = 'basic'
+    focusAndScroll(basicSectionRef.value, codeInputRef.value)
+    return
+  }
+  if (requiredErrors.value.discountValue) {
+    invalidSectionKey.value = 'basic'
+    focusAndScroll(basicSectionRef.value, discountInputRef.value)
+    return
+  }
+  if (requiredErrors.value.lifetimeValue) {
+    invalidSectionKey.value = 'lifetime'
+    focusAndScroll(lifetimeSectionRef.value, lifetimeInputRef.value)
+    return
+  }
+  invalidSectionKey.value = null
+}
+
+watch(invalidSectionKey, (nextValue) => {
+  if (!nextValue) return
+  window.setTimeout(() => {
+    if (invalidSectionKey.value === nextValue) invalidSectionKey.value = null
+  }, 420)
+})
+
 async function createPromo() {
   if (isSubmitting.value) return
+  submitAttempted.value = true
   const payload = buildPayload()
   if (!payload) {
     errorMessage.value = 'Проверьте обязательные поля: код, скидка и лимиты'
+    void nextTick(() => {
+      scrollToFirstInvalidField()
+    })
     return
   }
 
@@ -327,6 +385,7 @@ async function createPromo() {
     hasLifetime.value = false
     lifetimeValue.value = '1'
     lifetimeUnit.value = 'days'
+    submitAttempted.value = false
     await loadPromos()
   } catch (e) {
     console.error('Create promo submit error:', e)
@@ -372,102 +431,129 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div class="rounded-xl border border-dark-700 bg-dark-700/30 p-4 sm:p-5 space-y-4">
-      <h2 class="text-base font-semibold text-mainText">Создать промокод</h2>
+    <div class="promo-create-panel rounded-xl border border-dark-700 bg-dark-700/30 p-4 sm:p-5 space-y-4">
+      <div class="flex flex-col gap-1">
+        <h2 class="text-base font-semibold text-mainText">Создать промокод</h2>
+        <p class="text-xs text-gray-400">Поля, отмеченные <span class="text-red-300">*</span>, обязательны.</p>
+      </div>
 
-      <div class="rounded-lg border border-dark-700/80 bg-dark-600/40 p-3 space-y-3">
-        <h3 class="text-sm font-semibold text-mainText">1. Основное</h3>
+      <div
+        ref="basicSectionRef"
+        class="promo-section rounded-lg border border-dark-700/80 bg-dark-600/40 p-4 space-y-4"
+        :class="{ 'promo-section--invalid': invalidSectionKey === 'basic' }"
+      >
+        <div class="promo-section__head">
+          <h3 class="promo-section__title">1. Основное</h3>
+        </div>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <div class="space-y-1.5">
-            <label class="text-xs font-medium text-gray-300">Код промокода</label>
+          <div class="field space-y-1.5">
+            <label class="field__label text-xs font-medium text-gray-300">
+              Код промокода <span class="field__required">*</span>
+            </label>
             <input
+              ref="codeInputRef"
               v-model.trim="code"
-              class="h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
+              class="form-control h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
+              :class="{ 'form-control--error': requiredErrors.code }"
               placeholder="Например, CODE2026"
             />
-            <p class="text-xs text-gray-500">Уникальный код без пробелов по краям.</p>
+            <p v-if="requiredErrors.code" class="field__error">Введите код промокода.</p>
+            <p class="field__hint text-xs text-gray-500">Уникальный код без пробелов по краям.</p>
           </div>
 
-          <div class="space-y-1.5">
-            <label class="text-xs font-medium text-gray-300">Сценарий</label>
+          <div class="field space-y-1.5">
+            <label class="field__label text-xs font-medium text-gray-300">
+              Сценарий <span class="field__required">*</span>
+            </label>
             <CustomSelect v-model="appliesTo" :options="createAppliesToOptions" />
-            <p class="text-xs text-gray-500">Где можно применить промокод.</p>
+            <p class="field__hint text-xs text-gray-500">Где можно применить промокод.</p>
           </div>
 
-          <div class="space-y-1.5">
-            <label class="text-xs font-medium text-gray-300">Тип скидки</label>
+          <div class="field space-y-1.5">
+            <label class="field__label text-xs font-medium text-gray-300">
+              Тип скидки <span class="field__required">*</span>
+            </label>
             <CustomSelect v-model="discountType" :options="discountTypeOptions" />
-            <p class="text-xs text-gray-500">Процент от суммы или фиксированная сумма.</p>
+            <p class="field__hint text-xs text-gray-500">Процент от суммы или фиксированная сумма.</p>
           </div>
 
-          <div class="space-y-1.5">
-            <label class="text-xs font-medium text-gray-300">Скидка</label>
+          <div class="field space-y-1.5">
+            <label class="field__label text-xs font-medium text-gray-300">
+              Скидка <span class="field__required">*</span>
+            </label>
             <input
+              ref="discountInputRef"
               v-model.trim="discountValue"
               type="number"
               step="0.01"
               min="0.01"
-              class="h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
+              class="form-control h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
+              :class="{ 'form-control--error': requiredErrors.discountValue }"
               placeholder="Введите значение"
             />
-            <p class="text-xs text-gray-500">Число больше 0.</p>
+            <p v-if="requiredErrors.discountValue" class="field__error">Укажите значение скидки больше 0.</p>
+            <p class="field__hint text-xs text-gray-500">Число больше 0.</p>
           </div>
         </div>
       </div>
 
-      <div class="rounded-lg border border-dark-700/80 bg-dark-600/40 p-3 space-y-3">
-        <h3 class="text-sm font-semibold text-mainText">2. Ограничения</h3>
+      <div class="promo-section rounded-lg border border-dark-700/80 bg-dark-600/40 p-4 space-y-4">
+        <div class="promo-section__head">
+          <h3 class="promo-section__title">2. Ограничения</h3>
+        </div>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <div class="space-y-1.5">
-            <label class="text-xs font-medium text-gray-300">Минимальная сумма заказа</label>
+          <div class="field space-y-1.5">
+            <label class="field__label text-xs font-medium text-gray-300">Минимальная сумма заказа</label>
             <input
               v-model.trim="minOrderAmount"
               type="number"
               step="0.01"
               min="0"
-              class="h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
+              class="form-control h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
               placeholder="Например, 500"
             />
-            <p class="text-xs text-gray-500">От какой суммы код будет работать.</p>
+            <p class="field__hint text-xs text-gray-500">От какой суммы код будет работать.</p>
           </div>
 
-          <div class="space-y-1.5">
-            <label class="text-xs font-medium text-gray-300">Всего использований</label>
+          <div class="field space-y-1.5">
+            <label class="field__label text-xs font-medium text-gray-300">Всего использований</label>
             <input
               v-model.trim="totalUsageLimit"
               type="number"
               step="1"
               min="1"
-              class="h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
+              class="form-control h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
               placeholder="Оставьте пустым без лимита"
             />
-            <p class="text-xs text-gray-500">Общий лимит для всех пользователей.</p>
+            <p class="field__hint text-xs text-gray-500">Общий лимит для всех пользователей.</p>
           </div>
 
-          <div class="space-y-1.5">
-            <label class="text-xs font-medium text-gray-300">На 1 пользователя</label>
+          <div class="field space-y-1.5">
+            <label class="field__label text-xs font-medium text-gray-300">
+              На 1 пользователя <span class="field__required">*</span>
+            </label>
             <input
               v-model.trim="perUserUsageLimit"
               type="number"
               step="1"
               min="1"
-              class="h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
+              class="form-control h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
               placeholder="Минимум 1"
             />
-            <p class="text-xs text-gray-500">Сколько раз один человек может применить код.</p>
+            <p class="field__hint text-xs text-gray-500">Сколько раз один человек может применить код.</p>
           </div>
 
-          <div v-if="showMaxDiscount" class="space-y-1.5">
-            <label class="text-xs font-medium text-gray-300">Максимальная скидка</label>
+          <div v-if="showMaxDiscount" class="field space-y-1.5">
+            <label class="field__label text-xs font-medium text-gray-300">Максимальная скидка</label>
             <input
               v-model.trim="maxDiscountAmount"
               type="number"
               step="0.01"
               min="0.01"
-              class="h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
+              class="form-control h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
               placeholder="Например, 300"
             />
-            <p class="text-xs text-gray-500">Потолок скидки при процентном типе.</p>
+            <p class="field__hint text-xs text-gray-500">Потолок скидки при процентном типе.</p>
           </div>
         </div>
         <p v-if="!showMaxDiscount" class="text-xs text-gray-500">
@@ -475,9 +561,13 @@ onMounted(async () => {
         </p>
       </div>
 
-      <div class="rounded-lg border border-dark-700/80 bg-dark-600/40 p-3 space-y-3">
+      <div
+        ref="lifetimeSectionRef"
+        class="promo-section rounded-lg border border-dark-700/80 bg-dark-600/40 p-4 space-y-4"
+        :class="{ 'promo-section--invalid': invalidSectionKey === 'lifetime' }"
+      >
         <div class="flex items-center justify-between gap-2">
-          <h3 class="text-sm font-semibold text-mainText">3. Срок действия</h3>
+          <h3 class="promo-section__title">3. Срок действия</h3>
           <span
             class="rounded-full border px-2 py-0.5 text-[11px]"
             :class="hasLifetime ? 'border-blue-500/40 bg-blue-500/10 text-blue-200' : 'border-dark-700 bg-dark-700/60 text-gray-400'"
@@ -518,23 +608,28 @@ onMounted(async () => {
 
         <div v-if="hasLifetime" class="space-y-3">
           <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <div class="space-y-1.5">
-              <label class="text-xs font-medium text-gray-300">Срок жизни</label>
+            <div class="field space-y-1.5">
+              <label class="field__label text-xs font-medium text-gray-300">
+                Срок жизни <span class="field__required">*</span>
+              </label>
               <input
+                ref="lifetimeInputRef"
                 v-model.trim="lifetimeValue"
                 type="number"
                 step="1"
                 min="1"
-                class="h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
+                class="form-control h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
+                :class="{ 'form-control--error': requiredErrors.lifetimeValue }"
                 placeholder="Например, 1"
               />
-              <p class="text-xs text-gray-500">Целое число больше 0.</p>
+              <p v-if="requiredErrors.lifetimeValue" class="field__error">Укажите срок больше 0.</p>
+              <p class="field__hint text-xs text-gray-500">Целое число больше 0.</p>
             </div>
 
-            <div class="space-y-1.5">
-              <label class="text-xs font-medium text-gray-300">Единица срока</label>
+            <div class="field space-y-1.5">
+              <label class="field__label text-xs font-medium text-gray-300">Единица срока</label>
               <CustomSelect v-model="lifetimeUnit" :options="lifetimeUnitOptions" />
-              <p class="text-xs text-gray-500">Минуты, часы или дни.</p>
+              <p class="field__hint text-xs text-gray-500">Минуты, часы или дни.</p>
             </div>
           </div>
 
@@ -570,9 +665,9 @@ onMounted(async () => {
         </p>
       </div>
 
-      <div class="rounded-lg border border-dark-700/80 bg-dark-600/40 p-3 space-y-3">
+      <div class="promo-section rounded-lg border border-dark-700/80 bg-dark-600/40 p-4 space-y-4">
         <div class="flex items-center justify-between gap-2">
-          <h3 class="text-sm font-semibold text-mainText">4. Статус и создание</h3>
+          <h3 class="promo-section__title">4. Статус и создание</h3>
           <span
             class="rounded-full border px-2 py-0.5 text-[11px]"
             :class="isActive ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200' : 'border-dark-700 bg-dark-700/60 text-gray-400'"
@@ -611,17 +706,17 @@ onMounted(async () => {
           </div>
         </div>
 
-        <div class="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_240px]">
-          <div class="rounded-lg border border-blue-500/35 bg-blue-500/10 px-3 py-2">
-            <p class="text-[11px] uppercase tracking-wide text-blue-200/90">Предпросмотр</p>
+        <div class="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_260px]">
+          <div class="preview-card rounded-lg border border-blue-500/35 bg-blue-500/10 px-3 py-3">
+            <p class="preview-card__label text-[11px] uppercase tracking-wide text-blue-200/90">Предпросмотр</p>
             <p class="text-sm text-mainText">{{ promoPreview }}</p>
           </div>
 
-          <div class="rounded-lg border border-dark-700 bg-dark-700/35 p-3 space-y-2">
+          <div class="action-card rounded-lg border border-dark-700 bg-dark-700/35 p-3 space-y-2">
             <p class="text-xs text-gray-400">Действие</p>
             <button
               type="button"
-              class="admin-btn admin-btn-primary admin-btn-sm w-full justify-center"
+              class="admin-btn admin-btn-primary admin-btn-sm w-full justify-center action-card__button"
               :disabled="isSubmitting"
               @click="createPromo"
             >
@@ -645,8 +740,12 @@ onMounted(async () => {
       </div>
     </div>
 
-    <p v-if="errorMessage" class="rounded-lg border border-red-500/35 bg-red-500/10 px-3 py-2 text-sm text-red-300">{{ errorMessage }}</p>
-    <p v-else-if="successMessage" class="rounded-lg border border-emerald-500/35 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">{{ successMessage }}</p>
+    <Transition name="fade-slide">
+      <p v-if="errorMessage" class="state-banner state-banner--error rounded-lg border border-red-500/35 bg-red-500/10 px-3 py-2 text-sm text-red-300">{{ errorMessage }}</p>
+    </Transition>
+    <Transition name="fade-slide">
+      <p v-if="!errorMessage && successMessage" class="state-banner state-banner--success rounded-lg border border-emerald-500/35 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">{{ successMessage }}</p>
+    </Transition>
 
     <div class="space-y-3">
       <div v-if="isLoading" class="flex h-32 items-center justify-center">
@@ -684,6 +783,174 @@ input[type='number']::-webkit-inner-spin-button {
 input[type='number'] {
   -moz-appearance: textfield;
   appearance: textfield;
+}
+
+.promo-create-panel {
+  background-image: linear-gradient(180deg, rgb(19 23 32 / 0.44), rgb(17 20 29 / 0.2));
+}
+
+.promo-section {
+  position: relative;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.02);
+}
+
+.promo-section::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.015);
+}
+
+.promo-section--invalid {
+  animation: subtleShake 320ms ease;
+  border-color: rgb(248 113 113 / 0.75);
+  box-shadow: 0 0 0 1px rgb(248 113 113 / 0.22);
+}
+
+.promo-section__head {
+  display: flex;
+  align-items: center;
+  min-height: 18px;
+}
+
+.promo-section__title {
+  font-size: 14px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: rgb(241 245 249);
+}
+
+.field__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  letter-spacing: 0.01em;
+}
+
+.field__required {
+  color: rgb(252 165 165);
+  font-weight: 700;
+}
+
+.field__hint {
+  line-height: 1.35;
+  color: rgb(148 163 184 / 0.78);
+}
+
+.field__error {
+  color: rgb(252 165 165);
+  font-size: 12px;
+  animation: fadeSlideIn 180ms ease-out;
+}
+
+.form-control {
+  height: 42px;
+  line-height: 1.2;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.form-control:hover {
+  border-color: rgb(100 116 139 / 0.85);
+}
+
+.form-control:focus-visible {
+  outline: none;
+  border-color: rgb(59 130 246 / 0.95);
+  box-shadow: 0 0 0 3px rgb(37 99 235 / 0.24);
+  background-color: rgb(30 41 59 / 0.28);
+}
+
+.form-control--error {
+  border-color: rgb(248 113 113 / 0.78);
+  box-shadow: 0 0 0 1px rgb(248 113 113 / 0.2);
+}
+
+.preview-card {
+  position: relative;
+  padding-left: 44px;
+  border-color: rgb(59 130 246 / 0.38);
+  background-image: linear-gradient(140deg, rgb(37 99 235 / 0.2), rgb(30 64 175 / 0.08));
+}
+
+.preview-card::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: rgb(96 165 250 / 0.3);
+  box-shadow: inset 0 0 0 1px rgb(147 197 253 / 0.7);
+}
+
+.preview-card__label {
+  margin-bottom: 6px;
+}
+
+.action-card {
+  background-image: linear-gradient(180deg, rgb(31 41 55 / 0.4), rgb(17 24 39 / 0.36));
+}
+
+.action-card__button {
+  min-height: 38px;
+  font-weight: 600;
+}
+
+.state-banner {
+  animation: fadeSlideIn 220ms ease-out;
+}
+
+.state-banner--error {
+  box-shadow: 0 8px 20px rgb(127 29 29 / 0.18);
+}
+
+.state-banner--success {
+  box-shadow: 0 8px 20px rgb(6 78 59 / 0.18);
+}
+
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes subtleShake {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+  75% {
+    transform: translateX(-2px);
+  }
+  100% {
+    transform: translateX(0);
+  }
 }
 
 .segmented-toggle {
@@ -737,5 +1004,19 @@ input[type='number'] {
 .segmented-toggle-emerald .segmented-toggle__thumb {
   background: var(--segmented-toggle-emerald-bg);
   box-shadow: var(--segmented-toggle-emerald-shadow);
+}
+
+@media (min-width: 1280px) {
+  .promo-create-panel {
+    padding: 24px;
+  }
+
+  .promo-section {
+    padding: 20px;
+  }
+
+  .promo-section__title {
+    font-size: 15px;
+  }
 }
 </style>
