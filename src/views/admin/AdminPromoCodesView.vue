@@ -234,6 +234,11 @@ const requiredErrors = computed(() => ({
   discountValue: submitAttempted.value && !normalizedDiscountValue.value,
   lifetimeValue: submitAttempted.value && hasLifetime.value && !normalizedLifetimeValue.value,
 }))
+const activeFiltersCount = computed(() => (
+  Number(Boolean(searchQuery.value.trim()))
+  + Number(statusFilter.value !== 'all')
+  + Number(appliesToFilter.value !== 'all')
+))
 
 function getApiErrorDetail(error: unknown): unknown {
   if (!error || typeof error !== 'object') return error
@@ -280,7 +285,7 @@ async function loadPromos() {
     const response = await adminService.getPromoCodes(currentPage.value, perPage, {
       search: searchQuery.value || undefined,
       is_active: statusFilter.value,
-      applies_to: appliesToFilter.value,
+      applies_to: appliesToFilter.value as 'all' | 'wallet_topup' | 'marketplace_purchase',
     })
     promos.value = response.promos
     total.value = response.total
@@ -290,6 +295,12 @@ async function loadPromos() {
   } finally {
     isLoading.value = false
   }
+}
+
+function resetPromoFilters() {
+  searchQuery.value = ''
+  statusFilter.value = 'all'
+  appliesToFilter.value = 'all'
 }
 
 function buildPayload(): CreateAdminPromoCodePayload | null {
@@ -317,7 +328,7 @@ function buildPayload(): CreateAdminPromoCodePayload | null {
     total_usage_limit: parsedTotalUsage,
     per_user_usage_limit: parsedPerUser,
     is_active: isActive.value,
-    applies_to: appliesTo.value,
+    applies_to: appliesTo.value as 'wallet_topup' | 'marketplace_purchase',
     starts_at: lifetime?.starts_at,
     ends_at: lifetime?.ends_at,
   }
@@ -728,15 +739,40 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div class="rounded-xl border border-dark-700 bg-dark-700/30 p-4 sm:p-5 space-y-3">
-      <div>
-        <h2 class="text-sm font-semibold text-mainText">Список промокодов</h2>
-        <p class="text-xs text-gray-400">Поиск и фильтры</p>
+    <div class="promo-list-panel rounded-xl border border-dark-700 bg-dark-700/30 p-4 sm:p-5 space-y-4">
+      <div class="promo-list-panel__head">
+        <div>
+          <h2 class="text-sm font-semibold text-mainText">Список промокодов</h2>
+          <p class="text-xs text-gray-400">Поиск и фильтры</p>
+        </div>
+        <button
+          type="button"
+          class="promo-list-panel__reset text-xs"
+          :disabled="activeFiltersCount === 0"
+          @click="resetPromoFilters"
+        >
+          Сбросить
+        </button>
       </div>
-      <SearchField v-model="searchQuery" placeholder="Поиск по коду" />
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <CustomSelect v-model="statusFilter" :options="statusOptions" />
-        <CustomSelect v-model="appliesToFilter" :options="appliesToOptions" />
+      <div class="rounded-lg border border-dark-700 bg-dark-700/35 p-3 space-y-3">
+        <div class="field space-y-1.5">
+          <label class="field__label text-xs font-medium text-gray-300">Поиск по коду</label>
+          <SearchField v-model="searchQuery" placeholder="Например, SPRING2026" />
+          <p class="field__hint text-xs text-gray-500">Поиск срабатывает по части кода.</p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="field space-y-1.5">
+            <label class="field__label text-xs font-medium text-gray-300">Статус</label>
+            <CustomSelect v-model="statusFilter" :options="statusOptions" />
+          </div>
+          <div class="field space-y-1.5">
+            <label class="field__label text-xs font-medium text-gray-300">Сценарий</label>
+            <CustomSelect v-model="appliesToFilter" :options="appliesToOptions" />
+          </div>
+        </div>
+      </div>
+      <div class="promo-filter-meta text-xs text-gray-400">
+        Активных фильтров: <span class="text-mainText">{{ activeFiltersCount }}</span>
       </div>
     </div>
 
@@ -901,6 +937,42 @@ input[type='number'] {
   font-weight: 600;
 }
 
+.promo-list-panel {
+  background-image: linear-gradient(180deg, rgb(19 23 32 / 0.42), rgb(17 20 29 / 0.2));
+}
+
+.promo-list-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.promo-list-panel__reset {
+  height: 30px;
+  border-radius: 9px;
+  border: 1px solid rgb(71 85 105 / 0.56);
+  background: rgb(15 23 42 / 0.5);
+  color: rgb(203 213 225 / 0.92);
+  padding: 0 10px;
+  transition: border-color 140ms ease, color 140ms ease, background-color 140ms ease, opacity 140ms ease;
+}
+
+.promo-list-panel__reset:hover:not(:disabled) {
+  border-color: rgb(96 165 250 / 0.5);
+  color: rgb(241 245 249);
+  background: rgb(30 41 59 / 0.6);
+}
+
+.promo-list-panel__reset:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.promo-filter-meta {
+  letter-spacing: 0.01em;
+}
+
 .state-banner {
   animation: fadeSlideIn 220ms ease-out;
 }
@@ -1017,6 +1089,10 @@ input[type='number'] {
 
   .promo-section__title {
     font-size: 15px;
+  }
+
+  .promo-list-panel {
+    padding: 20px;
   }
 }
 </style>
