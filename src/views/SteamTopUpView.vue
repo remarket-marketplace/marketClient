@@ -92,6 +92,7 @@ async function submitSteamTopUpPayment() {
     const response = await steamTopupService.createPayment({
       account: steamNormalizedAccount.value,
       amount_rub: amountRub,
+      promo_code: steamPromoCode.value.trim() || undefined,
     })
     window.location.href = response.payment_url
   } catch (error) {
