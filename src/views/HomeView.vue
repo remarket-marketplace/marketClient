@@ -1037,12 +1037,12 @@ onBeforeUnmount(() => {
             @mouseenter="searchDropdownHighlightedIndex = index"
             @click="goToCategoryPage(category)"
           >
-            <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-dark-800/80">
+            <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-dark-800/80">
               <img
                 v-if="category.image_url"
                 :src="resolveCategoryImageUrl(category.image_url)"
                 :alt="category.name"
-                class="h-5 w-5 rounded object-cover"
+                class="h-6 w-6 rounded-md object-cover"
               />
               <Folder v-else class="h-4 w-4 text-gray-400" />
             </span>
