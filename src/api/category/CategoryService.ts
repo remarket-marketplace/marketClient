@@ -112,22 +112,27 @@ export const categoryService = {
   },
 
   async AddCategory(
-    name: string,
+    nameRu: string,
+    nameEn: string,
     description: string,
-    file: File,
+    file: File | null,
     parentId?: string,
     bannerFile?: File | null,
   ) {
     try {
-      const normalizedName = name.trim();
+      const normalizedNameRu = nameRu.trim();
+      const normalizedNameEn = nameEn.trim();
       const normalizedDescription = description.trim();
 
       const formData = new FormData();
-      formData.append("name", normalizedName);
+      formData.append("name_ru", normalizedNameRu);
+      formData.append("name_en", normalizedNameEn);
       if (normalizedDescription) {
         formData.append("description", normalizedDescription);
       }
-      formData.append("uploaded_image", file);
+      if (file) {
+        formData.append("uploaded_image", file);
+      }
       if (bannerFile) {
         formData.append("uploaded_banner", bannerFile);
       }
