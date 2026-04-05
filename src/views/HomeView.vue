@@ -1099,14 +1099,14 @@ onBeforeUnmount(() => {
 
             <div
               v-if="areCategoriesExpanded"
-              class="mt-2 grid sm:grid-cols-6 grid-cols-6 md:grid-cols-8 lg:grid-cols-12 xl:grid-cols-15 gap-1"
+              class="mt-2 flex flex-wrap items-start justify-start gap-1 sm:gap-2"
             >
               <button
                 v-for="cat in mainCategories"
                 :key="cat.id"
                 type="button"
                 @click="onMainCategoryClick(cat)"
-                class="cursor-pointer flex min-w-0 flex-col items-center rounded-lg p-1 transition hover:bg-dark-700/25 sm:p-1.5"
+                class="home-expanded-category-card cursor-pointer flex shrink-0 flex-col items-center rounded-lg p-1 transition hover:bg-dark-700/25 sm:p-1.5"
               >
                 <div class="h-12 w-12 flex items-center justify-center bg-dark-700 rounded-lg overflow-hidden border border-white/5 shadow-inner sm:h-16 sm:w-16">
                   <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="w-full h-full object-cover" />
@@ -1120,7 +1120,7 @@ onBeforeUnmount(() => {
               <button
                 v-if="shouldShowCategoryExpandButton"
                 type="button"
-                class="flex min-w-0 flex-col items-center rounded-lg p-1 text-white transition disabled:cursor-default disabled:opacity-60 sm:p-1.5"
+                class="home-expanded-category-card flex shrink-0 flex-col items-center rounded-lg p-1 text-white transition disabled:cursor-default disabled:opacity-60 sm:p-1.5"
                 :aria-expanded="areCategoriesExpanded"
                 :aria-label="t('pages.index.collapseCategories')"
                 :title="t('pages.index.collapseCategories')"
@@ -1130,7 +1130,7 @@ onBeforeUnmount(() => {
                 <div class="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 sm:h-16 sm:w-16">
                   <ChevronRight class="h-5 w-5 rotate-270 sm:h-6 sm:w-6" />
                 </div>
-                <span class="mt-1.5 w-full break-words text-center text-xs font-medium leading-tight sm:mt-2 sm:text-sm">
+                <span class="home-category-label mt-1.5 sm:mt-2">
                   {{ t('pages.index.collapseCategoriesShort') }}
                 </span>
               </button>
@@ -1450,10 +1450,18 @@ onBeforeUnmount(() => {
   mask-image: linear-gradient(to right, #000 0%, #000 78%, transparent 100%);
 }
 
+.home-expanded-category-card {
+  width: 3.5rem;
+}
+
 @media (min-width: 640px) {
   .home-category-label {
     width: 4rem;
     font-size: 0.75rem;
+  }
+
+  .home-expanded-category-card {
+    width: 4.5rem;
   }
 }
 </style>
