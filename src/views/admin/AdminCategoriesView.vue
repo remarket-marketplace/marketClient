@@ -43,18 +43,37 @@ const categorySort = ref('name_asc')
 const subcategorySearch = ref('')
 const subcategorySort = ref('name_asc')
 const deletingCategoryIds = ref<Set<string>>(new Set())
+const confirmDeleteModalOpen = ref(false)
+const pendingDeleteCategory = ref<Category | null>(null)
+const pendingDeleteIsSubcategory = ref(false)
+const deleteErrorModalOpen = ref(false)
+const deleteErrorMessage = ref('')
+
+const deleteDialogTitle = computed(() => (
+  pendingDeleteIsSubcategory.value
+    ? t('pages.admin.categoriesPage.deleteSubcategoryTitle')
+    : t('pages.admin.categoriesPage.deleteCategoryTitle')
+))
+
+const deleteDialogText = computed(() => {
+  const name = pendingDeleteCategory.value?.name ?? ''
+  if (pendingDeleteIsSubcategory.value) {
+    return t('pages.admin.categoriesPage.confirmDeleteSubcategory', { name })
+  }
+  return t('pages.admin.categoriesPage.confirmDeleteCategory', { name })
+})
 
 const newCategory = ref({
-  name: '',
+  nameRu: '',
+  nameEn: '',
   description: '',
   image: [] as File[],
   banner: [] as File[]
 })
 const newSubcategory = ref({
-  name: '',
+  nameRu: '',
+  nameEn: '',
   description: '',
-  image: [] as File[],
-  banner: [] as File[]
 })
 
 const categoryPage = ref(1)
@@ -123,12 +142,14 @@ function selectCategory(category: Category) {
 }
 
 async function createCategory() {
-  const normalizedName = newCategory.value.name.trim()
+  const normalizedNameRu = newCategory.value.nameRu.trim()
+  const normalizedNameEn = newCategory.value.nameEn.trim()
   const normalizedDescription = newCategory.value.description.trim()
-  if (!normalizedName || !newCategory.value.image.length) return
+  if (!normalizedNameRu || !normalizedNameEn || !newCategory.value.image.length) return
   try {
     const success = await categoryService.AddCategory(
-      normalizedName,
+      normalizedNameRu,
+      normalizedNameEn,
       normalizedDescription,
       newCategory.value.image[0] as File,
       undefined,
@@ -145,16 +166,17 @@ async function createCategory() {
 }
 
 async function createSubcategory() {
-  const normalizedName = newSubcategory.value.name.trim()
+  const normalizedNameRu = newSubcategory.value.nameRu.trim()
+  const normalizedNameEn = newSubcategory.value.nameEn.trim()
   const normalizedDescription = newSubcategory.value.description.trim()
-  if (!normalizedName || !selectedCategory.value || !newSubcategory.value.image.length) return
+  if (!normalizedNameRu || !normalizedNameEn || !selectedCategory.value) return
   try {
     const success = await categoryService.AddCategory(
-      normalizedName,
+      normalizedNameRu,
+      normalizedNameEn,
       normalizedDescription,
-      newSubcategory.value.image[0] as File,
+      null,
       selectedCategory.value.id,
-      newSubcategory.value.banner[0] ?? null,
     )
     if (success) {
       showAddSubcategoryModal.value = false
@@ -180,19 +202,31 @@ function isDeletingCategory(categoryId: string): boolean {
   return deletingCategoryIds.value.has(categoryId)
 }
 
-async function deleteCategory(category: Category, isSubcategory = false) {
-  const confirmMessage = isSubcategory
-    ? t('pages.admin.categoriesPage.confirmDeleteSubcategory', { name: category.name })
-    : t('pages.admin.categoriesPage.confirmDeleteCategory', { name: category.name })
+function requestDeleteCategory(category: Category, isSubcategory = false) {
+  if (isDeletingCategory(category.id)) return
+  pendingDeleteCategory.value = category
+  pendingDeleteIsSubcategory.value = isSubcategory
+  confirmDeleteModalOpen.value = true
+}
 
-  if (!window.confirm(confirmMessage)) return
+function closeDeleteConfirmModal() {
+  confirmDeleteModalOpen.value = false
+  pendingDeleteCategory.value = null
+  pendingDeleteIsSubcategory.value = false
+}
+
+async function confirmDeleteCategory() {
+  const category = pendingDeleteCategory.value
+  const isSubcategory = pendingDeleteIsSubcategory.value
+  if (!category) return
   if (isDeletingCategory(category.id)) return
 
   setDeletingCategory(category.id, true)
   try {
     const success = await adminService.deleteCategory(category.id)
     if (!success) {
-      window.alert(t('pages.admin.categoriesPage.deleteFailed'))
+      deleteErrorMessage.value = t('pages.admin.categoriesPage.deleteFailed')
+      deleteErrorModalOpen.value = true
       return
     }
 
@@ -209,16 +243,53 @@ async function deleteCategory(category: Category, isSubcategory = false) {
     }
     await loadCategories()
   } finally {
+    closeDeleteConfirmModal()
     setDeletingCategory(category.id, false)
   }
 }
 
 function resetNewCategoryForm() {
-  newCategory.value = { name: '', description: '', image: [], banner: [] }
+  newCategory.value = { nameRu: '', nameEn: '', description: '', image: [], banner: [] }
 }
 
 function resetNewSubcategoryForm() {
-  newSubcategory.value = { name: '', description: '', image: [], banner: [] }
+  newSubcategory.value = { nameRu: '', nameEn: '', description: '' }
+}
+
+function syncSelectedCategoryWithVisibleList() {
+  const visibleCategories = sortedCategories.value
+
+  if (visibleCategories.length === 0) {
+    if (selectedCategory.value) {
+      selectedCategory.value = null
+      subcategories.value = []
+    }
+    return
+  }
+
+  if (!selectedCategory.value) {
+    if (normalizedCategoryQuery.value) {
+      selectCategory(visibleCategories[0] as Category)
+    }
+    return
+  }
+
+  const selectedStillVisible = visibleCategories.some(
+    (category) => category.id === selectedCategory.value?.id,
+  )
+
+  if (!selectedStillVisible) {
+    selectCategory(visibleCategories[0] as Category)
+    return
+  }
+
+  const refreshedSelectedCategory = categories.value.find(
+    (category) => category.id === selectedCategory.value?.id,
+  )
+
+  if (refreshedSelectedCategory && refreshedSelectedCategory !== selectedCategory.value) {
+    selectedCategory.value = refreshedSelectedCategory
+  }
 }
 
 async function loadMoreCategories() {
@@ -238,7 +309,7 @@ const normalizedSubcategoryQuery = computed(() => subcategorySearch.value.trim()
 const filteredCategories = computed(() => {
   return categories.value.filter(category => {
     return normalizedCategoryQuery.value
-      ? [category.name, category.description ?? '', category.slug]
+      ? [category.name, category.name_ru, category.name_en, category.description ?? '', category.slug]
           .join(' ')
           .toLowerCase()
           .includes(normalizedCategoryQuery.value)
@@ -249,7 +320,7 @@ const filteredCategories = computed(() => {
 const filteredSubcategories = computed(() => {
   return subcategories.value.filter(category => {
     return normalizedSubcategoryQuery.value
-      ? [category.name, category.description ?? '', category.slug]
+      ? [category.name, category.name_ru, category.name_en, category.description ?? '', category.slug]
           .join(' ')
           .toLowerCase()
           .includes(normalizedSubcategoryQuery.value)
@@ -339,6 +410,10 @@ watch([categorySearch, categorySort], () => {
   if (categoriesContainerRef.value) categoriesContainerRef.value.scrollTop = 0
 })
 
+watch([sortedCategories, normalizedCategoryQuery], () => {
+  syncSelectedCategoryWithVisibleList()
+})
+
 watch([subcategorySearch, subcategorySort], () => {
   if (subcategoriesContainerRef.value) subcategoriesContainerRef.value.scrollTop = 0
 })
@@ -418,7 +493,7 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
               <button
                 class="cursor-pointer text-red-400 transition-colors hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40"
                 :disabled="isDeletingCategory(category.id)"
-                @click.stop="deleteCategory(category)"
+                @click.stop="requestDeleteCategory(category)"
               >
                 <Trash2 class="h-4 w-4" />
               </button>
@@ -471,12 +546,6 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
           <div ref="subcategoriesContainerRef" class="space-y-3 overflow-y-auto flex-1 min-h-0">
           <div v-for="subcategory in sortedSubcategories" :key="subcategory.id"
             class="flex items-center gap-3 p-3 rounded-lg border border-dark-700 bg-dark-700/50">
-            <div class="flex-shrink-0 relative">
-              <img v-if="subcategory.image_url" :src="`${API_HOST}${subcategory.image_url}`" class="w-8 h-8 rounded object-cover" :alt="subcategory.name" />
-              <div v-else class="w-8 h-8 rounded bg-dark-600 flex items-center justify-center">
-                <Folder class="w-4 h-4 text-gray-400" />
-              </div>
-            </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2">
                 <h3 class="text-mainText font-medium">{{ subcategory.name }}</h3>
@@ -495,7 +564,7 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
               <button
                 class="cursor-pointer text-red-400 transition-colors hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40"
                 :disabled="isDeletingCategory(subcategory.id)"
-                @click.stop="deleteCategory(subcategory, true)"
+                @click.stop="requestDeleteCategory(subcategory, true)"
               >
                 <Trash2 class="h-4 w-4" />
               </button>
@@ -539,8 +608,12 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
         </div>
         <div class="space-y-4">
           <div>
-            <label class="block text-sm text-gray-300 mb-2">{{ t('common.name') }} *</label>
-            <input v-model="newCategory.name" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите название" />
+            <label class="block text-sm text-gray-300 mb-2">{{ t('common.nameRu') }} *</label>
+            <input v-model="newCategory.nameRu" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" :placeholder="t('pages.admin.categoriesPage.nameRuPlaceholder')" />
+          </div>
+          <div>
+            <label class="block text-sm text-gray-300 mb-2">{{ t('common.nameEn') }} *</label>
+            <input v-model="newCategory.nameEn" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" :placeholder="t('pages.admin.categoriesPage.nameEnPlaceholder')" />
           </div>
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.description') }}</label>
@@ -559,7 +632,7 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
           <button class="admin-btn admin-btn-muted flex-1 order-2 sm:order-1" @click="showAddCategoryModal = false">
             {{ t('common.cancel') }}
           </button>
-          <button class="admin-btn admin-btn-primary flex-1 order-1 sm:order-2" @click="createCategory" :disabled="!newCategory.name.trim() || !newCategory.image.length">
+          <button class="admin-btn admin-btn-primary flex-1 order-1 sm:order-2" @click="createCategory" :disabled="!newCategory.nameRu.trim() || !newCategory.nameEn.trim() || !newCategory.image.length">
             {{ t('common.create') }}
           </button>
         </div>
@@ -580,28 +653,92 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
         </div>
         <div class="space-y-4">
           <div>
-            <label class="block text-sm text-gray-300 mb-2">{{ t('common.name') }} *</label>
-            <input v-model="newSubcategory.name" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите название" />
+            <label class="block text-sm text-gray-300 mb-2">{{ t('common.nameRu') }} *</label>
+            <input v-model="newSubcategory.nameRu" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" :placeholder="t('pages.admin.categoriesPage.nameRuPlaceholder')" />
+          </div>
+          <div>
+            <label class="block text-sm text-gray-300 mb-2">{{ t('common.nameEn') }} *</label>
+            <input v-model="newSubcategory.nameEn" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" :placeholder="t('pages.admin.categoriesPage.nameEnPlaceholder')" />
           </div>
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.description') }}</label>
             <textarea v-model="newSubcategory.description" rows="3" :maxlength="CATEGORY_DESCRIPTION_MAX_LENGTH" class="w-full max-h-28 bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите описание" />
-          </div>
-          <div>
-            <label class="block text-sm text-gray-300 mb-2">{{ t('common.image') }} *</label>
-            <FileUploader v-model="newSubcategory.image" :maxFiles="1" />
-          </div>
-          <div>
-            <label class="block text-sm text-gray-300 mb-2">{{ t('common.banner') }}</label>
-            <FileUploader v-model="newSubcategory.banner" :maxFiles="1" />
           </div>
         </div>
         <div class="flex flex-col sm:flex-row gap-3 mt-6">
           <button class="admin-btn admin-btn-muted flex-1 order-2 sm:order-1" @click="showAddSubcategoryModal = false">
             {{ t('common.cancel') }}
           </button>
-          <button class="admin-btn admin-btn-success flex-1 order-1 sm:order-2" @click="createSubcategory" :disabled="!newSubcategory.name.trim() || !newSubcategory.image.length">
+          <button class="admin-btn admin-btn-success flex-1 order-1 sm:order-2" @click="createSubcategory" :disabled="!newSubcategory.nameRu.trim() || !newSubcategory.nameEn.trim()">
             {{ t('common.create') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="confirmDeleteModalOpen"
+      class="app-modal-overlay z-50 bg-black/60"
+      @click.self="closeDeleteConfirmModal"
+    >
+      <div class="app-modal-panel w-full max-w-sm rounded-2xl border border-dark-700 bg-dark-600 p-0 shadow-2xl sm:max-w-md">
+        <div class="border-b border-dark-700/80 px-5 py-4">
+          <div class="flex items-start gap-3">
+            <div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-500/15 text-red-300">
+              <Trash2 class="h-4 w-4" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <h3 class="text-lg font-semibold text-mainText">{{ deleteDialogTitle }}</h3>
+              <p class="mt-1 text-sm text-text-secondary">{{ deleteDialogText }}</p>
+            </div>
+            <button
+              class="rounded-md p-1 text-gray-400 transition-colors hover:text-white"
+              @click="closeDeleteConfirmModal"
+              :disabled="pendingDeleteCategory ? isDeletingCategory(pendingDeleteCategory.id) : false"
+            >
+              <X class="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-2 px-5 py-4">
+          <button
+            class="admin-btn admin-btn-muted"
+            @click="closeDeleteConfirmModal"
+            :disabled="pendingDeleteCategory ? isDeletingCategory(pendingDeleteCategory.id) : false"
+          >
+            {{ t('common.cancel') }}
+          </button>
+          <button
+            class="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-60"
+            @click="confirmDeleteCategory"
+            :disabled="pendingDeleteCategory ? isDeletingCategory(pendingDeleteCategory.id) : false"
+          >
+            <Loader2
+              v-if="pendingDeleteCategory && isDeletingCategory(pendingDeleteCategory.id)"
+              class="h-4 w-4 animate-spin"
+            />
+            <span>{{ t('common.delete') }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="deleteErrorModalOpen"
+      class="app-modal-overlay z-50 bg-black/50"
+      @click.self="deleteErrorModalOpen = false"
+    >
+      <div class="app-modal-panel w-full max-w-sm overflow-y-auto rounded-xl border border-dark-700 bg-dark-600 p-6 sm:max-w-md">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xl font-bold text-mainText">{{ t('common.error') }}</h3>
+          <button @click="deleteErrorModalOpen = false" class="text-gray-400 hover:text-white transition-colors">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+        <p class="text-text-secondary">{{ deleteErrorMessage }}</p>
+        <div class="mt-6 flex justify-end">
+          <button class="admin-btn admin-btn-primary" @click="deleteErrorModalOpen = false">
+            {{ t('common.close') }}
           </button>
         </div>
       </div>

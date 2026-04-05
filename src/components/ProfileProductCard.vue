@@ -6,10 +6,8 @@ import { useI18n } from 'vue-i18n'
 import ProductStatusTag from './ProductStatusTag.vue'
 import UserRating from './UserRating.vue'
 import StyledUsername from './StyledUsername.vue'
-import FortniteAccountSnapshot from './FortniteAccountSnapshot.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
 import { buildProductKey } from '@/utils/urlKeys'
-import { hasFortniteAccountDetails } from '@/utils/fortniteAccount'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -26,7 +24,6 @@ const emit = defineEmits<{
 const API_HOST = import.meta.env.VITE_API_HOST
 const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
 const shouldShowSellerRating = computed(() => props.product.seller.rating > 0)
-const shouldShowFortniteSnapshot = computed(() => hasFortniteAccountDetails(props.product.fortnite_account_details))
 
 function onClick() {
   emit('click', buildProductKey(props.product))
@@ -43,7 +40,7 @@ function goToSeller() {
     class="profile-product-card flex h-full cursor-pointer flex-col rounded-2xl border border-dark-700 bg-dark-900 transition duration-200 hover:border-dark-500 hover:shadow-xl"
     @click="onClick"
   >
-    <div class="profile-product-media relative m-1 mb-2 aspect-square w-auto overflow-hidden rounded-xl border-[0.5px] border-dark-600/70 bg-gray-700">
+    <div class="profile-product-media profile-product-image-surface relative m-1 mb-2 aspect-square w-auto overflow-hidden rounded-xl border-[0.5px] border-dark-600/70">
       <img
         v-if="product.images.length"
         :src="`${API_HOST}${product.images[0]?.image_url}`"
@@ -60,14 +57,7 @@ function goToSeller() {
         {{ product.title }}
       </h3>
 
-      <div v-if="shouldShowFortniteSnapshot" class="mb-2 min-w-0 w-full">
-        <FortniteAccountSnapshot
-          :details="product.fortnite_account_details"
-          variant="compact"
-        />
-      </div>
-
-      <p v-else class="profile-product-description mb-2 min-w-0 w-full line-clamp-2 min-h-[2rem] text-xs text-gray-400">
+      <p class="profile-product-description mb-2 min-w-0 w-full line-clamp-2 min-h-[2rem] text-xs text-gray-400">
         {{ product.description || t('common.noDescription') }}
       </p>
 
@@ -139,6 +129,10 @@ function goToSeller() {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.profile-product-image-surface {
+  background: var(--product-card-image-placeholder-bg);
 }
 
 @media (max-width: 359px), (min-width: 1536px) and (max-width: 1799px) {

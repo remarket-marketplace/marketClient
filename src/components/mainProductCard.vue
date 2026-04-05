@@ -7,10 +7,8 @@ import UserRating from './UserRating.vue'
 import ProductStatusTag from './ProductStatusTag.vue'
 import AutoDeliveryTag from './AutoDeliveryTag.vue'
 import StyledUsername from './StyledUsername.vue'
-import FortniteAccountSnapshot from './FortniteAccountSnapshot.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
 import { buildProductKey } from '@/utils/urlKeys'
-import { hasFortniteAccountDetails } from '@/utils/fortniteAccount'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -28,7 +26,6 @@ const emit = defineEmits<{
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const shouldShowSellerRating = computed(() => props.product.seller.rating > 0)
-const shouldShowFortniteSnapshot = computed(() => hasFortniteAccountDetails(props.product.fortnite_account_details))
 const activeImageIndex = ref(0)
 const touchStartX = ref(0)
 const touchStartY = ref(0)
@@ -111,7 +108,7 @@ function handleImageTouchEnd(event: TouchEvent) {
     @click="onClick">
     <!-- Image -->
     <div
-      class="group relative m-1 mb-2 aspect-square w-auto overflow-hidden rounded-xl bg-gray-700 flex-shrink-0 border-[0.5px] border-dark-600/70"
+      class="product-card-image-surface group relative m-1 mb-2 aspect-square w-auto overflow-hidden rounded-xl flex-shrink-0 border-[0.5px] border-dark-600/70"
       @pointermove="handleImagePointerMove"
       @pointerleave="resetActiveImage"
       @touchstart="handleImageTouchStart"
@@ -150,13 +147,6 @@ function handleImageTouchEnd(event: TouchEvent) {
       <h3 class="product-title text-sm md:text-base font-semibold text-mainText leading-[1.125rem] md:leading-5 mb-2 h-[2.25rem] md:h-[2.5rem] flex-shrink-0">
         {{ product.title }}
       </h3>
-
-      <div v-if="shouldShowFortniteSnapshot" class="mb-2">
-        <FortniteAccountSnapshot
-          :details="product.fortnite_account_details"
-          variant="compact"
-        />
-      </div>
 
       <hr class="border-dark-700 opacity-80 mb-2 flex-shrink-0" />
 
@@ -230,5 +220,9 @@ function handleImageTouchEnd(event: TouchEvent) {
   .touch-dots {
     opacity: 1;
   }
+}
+
+.product-card-image-surface {
+  background: var(--product-card-image-placeholder-bg);
 }
 </style>

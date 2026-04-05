@@ -11,6 +11,7 @@ import {
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import { Icon } from '@iconify/vue'
 import { useUserStore } from '@/stores/user'
 import { useChatStore } from '@/stores/chat'
 import { storeToRefs } from 'pinia'
@@ -36,6 +37,7 @@ const chatStore = useChatStore()
 const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
+const HOME_STEAM_TOPUP_ENABLED = import.meta.env.VITE_STEAM_TOPUP_ENABLED !== 'false'
 
 const isDesktop = ref(true)
 const { user } = storeToRefs(store)
@@ -189,6 +191,10 @@ function goToWallet() {
   router.push('/wallet')
 }
 
+function goToSteamTopUp() {
+  router.push('/steam-topup')
+}
+
 const mobileNavGridStyle = computed(() => ({
   gridTemplateColumns: `repeat(${Math.max(1, navItems.value.length)}, minmax(0, 1fr))`,
 }))
@@ -204,9 +210,40 @@ const mobileNavGridStyle = computed(() => ({
     >
       <div class="mx-auto w-full 2xl:w-1/2">
         <div class="mx-auto h-14 w-full flex items-center justify-between gap-3 px-2 lg:px-4">
-          <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-lg text-mainText font-semibold sm:text-xl"
-            @click="router.push('/')">
-            remarket
+          <div class="flex flex-shrink-0 items-center gap-2 md:gap-3">
+            <div class="flex cursor-pointer items-center gap-2 text-lg text-mainText font-semibold sm:text-xl"
+              @click="router.push('/')">
+              remarket
+            </div>
+            <button
+              v-if="HOME_STEAM_TOPUP_ENABLED"
+              type="button"
+              class="inline-flex h-9 min-w-[7.6rem] items-center gap-1.5 rounded-full border border-gray-700 bg-transparent pl-2 pr-2.5 text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white md:hidden"
+              :title="t('pages.index.steamTopUp.title')"
+              @click="goToSteamTopUp"
+            >
+              <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-gray-700 text-gray-300">
+                <Icon icon="mdi:steam" class="h-3.5 w-3.5" />
+              </span>
+              <span class="min-w-0 flex-1 text-left text-[10px] font-medium leading-[1.05]">
+                <span class="block truncate">Пополнение</span>
+                <span class="block truncate">Steam</span>
+              </span>
+            </button>
+            <button
+              v-if="HOME_STEAM_TOPUP_ENABLED"
+              type="button"
+              class="hidden h-9 items-center gap-2 rounded-full border border-gray-700 bg-transparent px-3 text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white md:inline-flex"
+              :title="t('pages.index.steamTopUp.title')"
+              @click="goToSteamTopUp"
+            >
+              <span class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-700 text-gray-300 transition-colors duration-200">
+                <Icon icon="mdi:steam" class="h-4 w-4" />
+              </span>
+              <span class="text-sm font-medium leading-none">
+                {{ t('pages.index.steamTopUp.title') }}
+              </span>
+            </button>
           </div>
 
           <div class="flex items-center gap-2 md:gap-3">

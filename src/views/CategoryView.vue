@@ -49,6 +49,14 @@ const loadingSkeletonCount = computed(() => (
     ? perPage.value
     : Math.min(perPage.value, 12)
 ))
+
+function sortCategoriesByActiveProductsCount(categories: Category[]): Category[] {
+  return [...categories].sort((a, b) => {
+    const countDiff = (b.active_products_count ?? 0) - (a.active_products_count ?? 0)
+    if (countDiff !== 0) return countDiff
+    return a.name.localeCompare(b.name)
+  })
+}
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 const fortniteFilters = reactive(createEmptyFortniteAccountFilters())
@@ -226,7 +234,7 @@ async function loadSubcategoriesForActiveCategory() {
   isSubcategoriesLoading.value = true
   try {
     const response = await categoryService.getSubcategories(getActiveCategoryFilterKey(), 1, 100)
-    subcategories.value = response.categories
+    subcategories.value = sortCategoriesByActiveProductsCount(response.categories)
   } finally {
     isSubcategoriesLoading.value = false
   }
@@ -622,15 +630,9 @@ onBeforeUnmount(() => {
             v-for="subcategory in subcategories"
             :key="subcategory.id"
             type="button"
-            class="inline-flex items-center gap-2 rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2 text-sm text-white transition hover:bg-dark-700/50"
+            class="inline-flex rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2 text-sm text-white transition hover:bg-dark-700/50"
             @click="onSubcategoryClick(subcategory)"
           >
-            <img
-              v-if="subcategory.image_url"
-              :src="resolveCategoryImageUrl(subcategory.image_url)"
-              :alt="subcategory.name"
-              class="h-5 w-5 rounded object-cover border border-dark-600/80"
-            />
             <span>{{ subcategory.name }}</span>
           </button>
         </div>

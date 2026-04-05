@@ -523,7 +523,8 @@ export const adminService = {
 
   async updateCategoryData (
     categoryId: string,
-    name: string,
+    nameRu: string,
+    nameEn: string,
     description: string,
     isActive: boolean,
     newImage: File | null,
@@ -533,11 +534,13 @@ export const adminService = {
     // update category data
     //
     try {
-      const normalizedName = name.trim()
+      const normalizedNameRu = nameRu.trim()
+      const normalizedNameEn = nameEn.trim()
       const normalizedDescription = description.trim()
       const formData = new FormData()
 
-      formData.append('name', normalizedName)
+      formData.append('name_ru', normalizedNameRu)
+      formData.append('name_en', normalizedNameEn)
       formData.append('description', normalizedDescription)
       formData.append('is_active', isActive ? '1' : '0')
       if (newImage) {
