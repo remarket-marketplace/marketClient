@@ -40,7 +40,7 @@ function goToSeller() {
     class="profile-product-card flex h-full cursor-pointer flex-col rounded-2xl border border-dark-700 bg-dark-900 transition duration-200 hover:border-dark-500 hover:shadow-xl"
     @click="onClick"
   >
-    <div class="profile-product-media relative m-1 mb-2 aspect-square w-auto overflow-hidden rounded-xl border-[0.5px] border-dark-600/70 bg-gray-700">
+    <div class="profile-product-media profile-product-image-surface relative m-1 mb-2 aspect-square w-auto overflow-hidden rounded-xl border-[0.5px] border-dark-600/70">
       <img
         v-if="product.images.length"
         :src="`${API_HOST}${product.images[0]?.image_url}`"
@@ -129,6 +129,10 @@ function goToSeller() {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.profile-product-image-surface {
+  background: var(--product-card-image-placeholder-bg);
 }
 
 @media (max-width: 359px), (min-width: 1536px) and (max-width: 1799px) {

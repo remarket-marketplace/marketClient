@@ -103,7 +103,7 @@ function handleImageTouchEnd(event: TouchEvent) {
     @click="onClick"
   >
     <div
-      class="group relative m-2 aspect-square w-24 shrink-0 overflow-hidden rounded-xl border border-dark-600/70 bg-gray-700 sm:w-28 md:w-32"
+      class="product-card-image-surface group relative m-2 aspect-square w-24 shrink-0 overflow-hidden rounded-xl border border-dark-600/70 sm:w-28 md:w-32"
       @pointermove="handleImagePointerMove"
       @pointerleave="resetActiveImage"
       @touchstart="handleImageTouchStart"
@@ -214,5 +214,9 @@ function handleImageTouchEnd(event: TouchEvent) {
   .touch-dots {
     opacity: 1;
   }
+}
+
+.product-card-image-surface {
+  background: var(--product-card-image-placeholder-bg);
 }
 </style>
