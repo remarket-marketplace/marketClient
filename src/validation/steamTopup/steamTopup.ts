@@ -1,5 +1,15 @@
 import { z } from 'zod'
 
+export const STEAM_TOPUP_ACCOUNT_PATTERN = /^[a-z0-9]{3,15}$/
+
+export function normalizeSteamTopUpAccount(account: string): string {
+  return account.trim().toLowerCase()
+}
+
+export function isValidSteamTopUpAccount(account: string): boolean {
+  return STEAM_TOPUP_ACCOUNT_PATTERN.test(normalizeSteamTopUpAccount(account))
+}
+
 const steamTopUpParamSchema = z.object({
   param_key: z.string(),
   param_type: z.string(),
@@ -64,11 +74,43 @@ export const steamTopUpPayOrderSchema = z.object({
   order: steamTopUpOrderSchema,
   charged_amount_rub: z.number(),
   user_balance_after_rub: z.number(),
+  discount_amount_rub: z.number().optional(),
+  applied_promo_code: z.string().nullable().optional(),
+  promo_discount_percent: z.number().nullable().optional(),
+  payment_method: z.string().optional(),
+  payment_url: z.string().url().nullable().optional(),
+  payment_status: z.string().nullable().optional(),
+  provider: z.string().nullable().optional(),
+  provider_tx_id: z.string().nullable().optional(),
 }).strip()
+
+export const steamTopUpPayOrderInputSchema = z.object({
+  payment_method: z.literal('lava').default('lava'),
+  promo_code: z.string().trim().min(3).max(64).optional(),
+}).strip()
+
+export const steamTopUpCreatePaymentSchema = z.object({
+  account: z.string(),
+  charged_amount_rub: z.number(),
+  payment_url: z.string().url(),
+  payment_status: z.string(),
+  provider: z.string(),
+  provider_tx_id: z.string(),
+}).strip()
+
+const steamTopUpAccountSchema = z
+  .string()
+  .trim()
+  .min(3)
+  .max(15)
+  .transform((value) => value.toLowerCase())
+  .refine((value) => STEAM_TOPUP_ACCOUNT_PATTERN.test(value), {
+    message: 'Steam login must contain only latin letters and digits',
+  })
 
 export const steamTopUpCreateOrderSchema = z.object({
   service_id: z.number().int().positive(),
-  account: z.string().trim().min(2).max(128),
+  account: steamTopUpAccountSchema,
   quantity: z.number().positive().optional(),
   denomination_id: z.number().int().positive().optional(),
   region: z.string().trim().min(1).max(64).optional(),
@@ -85,8 +127,17 @@ export const steamTopUpCreateOrderSchema = z.object({
   }
 })
 
+export const steamTopUpCreatePaymentInputSchema = z.object({
+  account: steamTopUpAccountSchema,
+  amount_rub: z.number().positive(),
+  promo_code: z.string().trim().min(3).max(64).optional(),
+}).strip()
+
 export type SteamTopUpService = z.infer<typeof steamTopUpServiceSchema>
 export type SteamTopUpServicesResponse = z.infer<typeof steamTopUpServicesSchema>
 export type SteamTopUpOrder = z.infer<typeof steamTopUpOrderSchema>
 export type SteamTopUpPayOrderResponse = z.infer<typeof steamTopUpPayOrderSchema>
+export type SteamTopUpPayOrderPayload = z.infer<typeof steamTopUpPayOrderInputSchema>
 export type SteamTopUpCreateOrderPayload = z.infer<typeof steamTopUpCreateOrderSchema>
+export type SteamTopUpCreatePaymentResponse = z.infer<typeof steamTopUpCreatePaymentSchema>
+export type SteamTopUpCreatePaymentPayload = z.infer<typeof steamTopUpCreatePaymentInputSchema>

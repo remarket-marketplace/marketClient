@@ -2,17 +2,19 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from './stores/user'
+import { useNavigationStore } from './stores/navigation'
 import { useChatStore } from './stores/chat'
 import { useNotificationStore } from './stores/notification'
 import { chatsService } from './api/chats/chatsService'
 import DefaultLayout from './views/layouts/DefaultLayout.vue'
 import AdminLayout from './views/layouts/AdminLayout.vue'
-import Loader from './components/Loader.vue'
 import { storeToRefs } from 'pinia'
 import { authService } from './api/auth/AuthService'
 import MainPageLayout from './views/layouts/MainPageLayout.vue'
+import AppRouteSkeleton from './components/layout/AppRouteSkeleton.vue'
 
 const store = useUserStore()
+const navigationStore = useNavigationStore()
 const chatStore = useChatStore()
 const notificationStore = useNotificationStore()
 const route = useRoute()
@@ -29,6 +31,8 @@ const resolvedOnlinePingIntervalMs = Number.isFinite(onlinePingIntervalMs)
   : 4000
 
 const { user } = storeToRefs(store)
+const { routePending } = storeToRefs(navigationStore)
+const showRouteProgress = computed(() => isUserLoaded.value && routePending.value)
 
 function pingOnlineSafely() {
   if (!user.value) return
@@ -149,7 +153,11 @@ watch(
 )
 
 onMounted(async () => {
-  await store.fetchUser()
+  try {
+    await store.ensureUserLoaded()
+  } catch (error) {
+    console.error('Failed to resolve current user on app bootstrap', error)
+  }
   window.addEventListener('focus', handleWindowFocus)
   window.addEventListener('online', handleWindowOnline)
   document.addEventListener('visibilitychange', handleVisibilityChange)
@@ -179,8 +187,14 @@ const layout = computed(() => {
 
 <template>
   <div class="w-full h-full relative">
-    <div v-if="!isUserLoaded" class="w-screen h-screen flex items-center justify-center relative z-10">
-      <Loader />
+    <Transition name="route-progress">
+      <div v-if="showRouteProgress" class="pointer-events-none fixed inset-x-0 top-0 z-[140] h-1 overflow-hidden">
+        <div class="route-progress-bar"></div>
+      </div>
+    </Transition>
+
+    <div v-if="!isUserLoaded" class="w-screen h-screen relative z-10">
+      <AppRouteSkeleton />
     </div>
 
     <component v-else :is="layout" class="relative z-10">
@@ -190,12 +204,44 @@ const layout = computed(() => {
             <component :is="Component" :key="route.path" />
           </template>
           <template #fallback>
-            <div class="flex h-full items-center justify-center">
-              <Loader />
-            </div>
+            <AppRouteSkeleton />
           </template>
         </Suspense>
       </RouterView>
     </component>
   </div>
 </template>
+
+<style scoped>
+.route-progress-bar {
+  height: 100%;
+  width: 28%;
+  border-radius: 9999px;
+  background: var(--route-progress-bar);
+  animation: route-progress-slide 1.05s ease-in-out infinite;
+}
+
+.route-progress-enter-active,
+.route-progress-leave-active {
+  transition: opacity 0.18s ease;
+}
+
+.route-progress-enter-from,
+.route-progress-leave-to {
+  opacity: 0;
+}
+
+@keyframes route-progress-slide {
+  0% {
+    transform: translateX(-120%) scaleX(0.8);
+  }
+
+  55% {
+    transform: translateX(180%) scaleX(1.15);
+  }
+
+  100% {
+    transform: translateX(430%) scaleX(0.85);
+  }
+}
+</style>

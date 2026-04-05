@@ -5,10 +5,11 @@ import { raikaService } from '@/api/raika/RaikaService'
 import CustomSelect from '@/components/CustomSelect.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import FileUploader from '@/components/FileUploader.vue'
+import FortniteAccountFields from '@/components/FortniteAccountFields.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import type { Category } from '@/validation/category/category'
-import { onMounted, ref, watch, computed } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   Percent,
@@ -17,7 +18,7 @@ import {
   AlertCircle,
   X,
   RotateCcw,
-  Check,
+  ShieldCheck,
 } from 'lucide-vue-next'
 import BackButton from '@/components/navigation/BackButton.vue'
 import Checkbox from '@/components/Checkbox.vue'
@@ -29,13 +30,28 @@ import {
   preferredCurrency,
   setUsdRubRate,
 } from '@/utils/currency'
+import {
+  clearCreateProductDraft,
+  loadCreateProductDraft,
+  saveCreateProductDraft,
+  type CreateProductDraftPayload,
+} from '@/utils/createProductDraftStorage'
 import { getErrorMessage } from '@/utils/errorsMap'
+import {
+  buildFortniteAccountPayload,
+  createEmptyFortniteAccountForm,
+  fortniteAccountDetailsToForm,
+  isAccountsSubcategory,
+  isFortniteAccountsCategory,
+  isFortniteRootCategory,
+} from '@/utils/fortniteAccount'
+import { buildProductKey } from '@/utils/urlKeys'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const NORMALIZED_API_HOST = String(API_HOST || '').replace(/\/$/, '')
 const RAIKA_BOT_URL = 'https://raika.gg'
 const RAIKA_LOGO_URL = `${NORMALIZED_API_HOST}/assets/raika-logo.png`
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const store = useUserStore()
@@ -51,10 +67,13 @@ const title = ref('')
 const description = ref('')
 const price = ref<string | number>('')
 const productData = ref('')
+const fortniteAccountForm = ref(createEmptyFortniteAccountForm())
 const images = ref<File[]>([])
 const count = ref<number | ''>(1)
 const sended = ref(false)
 const errorMessage = ref('')
+const createdProduct = ref<{ id: string; slug: string } | null>(null)
+const showCreatedProductModal = ref(false)
 const commissionInterest = ref<number | null>(null)
 const autoDelivery = ref<boolean>(true)
 const isLoadingDraft = ref(false)
@@ -93,6 +112,17 @@ const subcategoryOptions = computed(() => (
     imageUrl: toCategoryOptionImageUrl(subcategory.image_url),
   }))
 ))
+const selectedCategory = computed(() => (
+  categories.value.find(category => category.id === selectedCategoryId.value) ?? null
+))
+const selectedSubcategory = computed(() => (
+  subcategories.value.find(subcategory => subcategory.id === selectedSubcategoryId.value) ?? null
+))
+const shouldShowFortniteAccountForm = computed(() => isFortniteAccountsCategory({
+  parentCategory: selectedCategory.value,
+  subcategory: selectedSubcategory.value,
+}))
+const fortniteAccountPayload = computed(() => buildFortniteAccountPayload(fortniteAccountForm.value))
 
 const PRODUCT_LIMITS = {
   title: { min: 10, max: 50 },
@@ -102,8 +132,15 @@ const PRODUCT_LIMITS = {
   images: { min: 1, max: 10 },
 }
 const DEFAULT_PRICE_RANGE_RUB = { min: 10, max: 1000000 }
+const CREATE_PRODUCT_DRAFT_AUTOSAVE_DELAY_MS = 450
 const minPriceRub = ref(DEFAULT_PRICE_RANGE_RUB.min)
 const maxPriceRub = ref(DEFAULT_PRICE_RANGE_RUB.max)
+const isRestoringSavedDraft = ref(false)
+const isDraftPersistenceReady = ref(false)
+const isDraftPersistenceDisabled = ref(false)
+const restoredDraftNoticeVisible = ref(false)
+const lastDraftSavedAt = ref<string | null>(null)
+let draftAutosaveTimer: ReturnType<typeof window.setTimeout> | null = null
 
 function getMultipartTransportLength(value: string): number {
   // Multipart form payload normalizes LF to CRLF, so backend sees this length.
@@ -141,6 +178,9 @@ const productDataLengthValid = computed(() => (
 const productDataValidForForm = computed(() => (
   !autoDelivery.value || productDataLengthValid.value
 ))
+const fortniteAccountDataValid = computed(() => (
+  !shouldShowFortniteAccountForm.value || Boolean(fortniteAccountPayload.value)
+))
 
 const priceInputMin = computed(() => {
   if (selectedCurrency.value === 'RUB') return minPriceRub.value
@@ -166,6 +206,7 @@ const priceValid = computed(() => (
 ))
 const countValid = computed(() => (
   Number.isFinite(countValue.value)
+  && Number.isInteger(countValue.value)
   && countValue.value >= PRODUCT_LIMITS.count.min
   && countValue.value <= PRODUCT_LIMITS.count.max
 ))
@@ -181,6 +222,7 @@ const step2Valid = computed(() => (
   titleLengthValid.value
   && descriptionLengthValid.value
   && productDataValidForForm.value
+  && fortniteAccountDataValid.value
 ))
 const step3Valid = computed(() => imagesCountValid.value)
 const step4Valid = computed(() => priceValid.value && countValid.value)
@@ -336,6 +378,9 @@ const stepIssues = computed<Record<StepNumber, string[]>>(() => ({
         }),
       ]
       : []),
+    ...(shouldShowFortniteAccountForm.value && !fortniteAccountDataValid.value
+      ? [t('pages.forms.createProduct.validationFortniteAccountDetailsRequired')]
+      : []),
   ],
   3: [
     ...(!imagesCountValid.value
@@ -389,6 +434,7 @@ const hasAnyFormData = computed(() => (
   || normalizedTitle.value.length > 0
   || normalizedDescription.value.length > 0
   || normalizedProductData.value.length > 0
+  || Boolean(fortniteAccountPayload.value)
   || String(price.value).trim().length > 0
   || count.value !== 1
   || images.value.length > 0
@@ -466,6 +512,156 @@ const draftId = computed(() => {
   return ''
 })
 
+const isStandardCreateFlow = computed(() => !draftId.value)
+
+const createProductDraftStorageKey = computed(() => {
+  const ownerKey = store.user?.id ?? 'guest'
+  return `${ownerKey}:default`
+})
+
+const formattedDraftSavedAt = computed(() => {
+  if (!lastDraftSavedAt.value) return ''
+
+  const parsedDate = new Date(lastDraftSavedAt.value)
+  if (Number.isNaN(parsedDate.getTime())) return ''
+
+  return parsedDate.toLocaleString(locale.value, {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+})
+
+async function loadSubcategoriesForCategory(categoryId: string): Promise<void> {
+  if (!categoryId) {
+    subcategories.value = []
+    return
+  }
+
+  try {
+    const subcategoriesData = await categoryService.getSubcategories(categoryId)
+    subcategories.value = subcategoriesData.categories
+  } catch (err) {
+    console.error('Error loading subcategories:', err)
+    errorMessage.value = t('pages.forms.createProduct.errorLoadingSubcategories')
+  }
+}
+
+async function applyFortniteAccountsCategorySelection(): Promise<void> {
+  const fortniteCategory = categories.value.find(category => isFortniteRootCategory(category))
+  if (!fortniteCategory) {
+    return
+  }
+
+  selectedCategoryId.value = fortniteCategory.id
+  await loadSubcategoriesForCategory(fortniteCategory.id)
+  const accountsSubcategory = subcategories.value.find(subcategory => isAccountsSubcategory(subcategory))
+  if (accountsSubcategory) {
+    selectedSubcategoryId.value = accountsSubcategory.id
+  }
+}
+
+function buildCreateProductDraftPayload(): CreateProductDraftPayload {
+  return {
+    selectedCategoryId: selectedCategoryId.value,
+    selectedSubcategoryId: selectedSubcategoryId.value,
+    title: title.value,
+    description: description.value,
+    price: typeof price.value === 'number' ? String(price.value) : String(price.value ?? ''),
+    productData: productData.value,
+    fortniteAccountDetails: { ...fortniteAccountForm.value },
+    count: count.value,
+    autoDelivery: autoDelivery.value,
+    images: [...images.value],
+    currentStep: currentStep.value,
+  }
+}
+
+async function persistCreateProductDraft(): Promise<void> {
+  if (
+    !isStandardCreateFlow.value
+    || !isDraftPersistenceReady.value
+    || isDraftPersistenceDisabled.value
+    || isRestoringSavedDraft.value
+  ) {
+    return
+  }
+
+  try {
+    if (!hasAnyFormData.value) {
+      await clearCreateProductDraft(createProductDraftStorageKey.value)
+      lastDraftSavedAt.value = null
+      return
+    }
+
+    const savedDraft = await saveCreateProductDraft(
+      createProductDraftStorageKey.value,
+      buildCreateProductDraftPayload(),
+    )
+    lastDraftSavedAt.value = savedDraft?.updatedAt ?? lastDraftSavedAt.value
+  } catch (err) {
+    console.error('Error saving create product draft:', err)
+  }
+}
+
+function scheduleCreateProductDraftSave(): void {
+  if (
+    !isStandardCreateFlow.value
+    || !isDraftPersistenceReady.value
+    || isDraftPersistenceDisabled.value
+    || isRestoringSavedDraft.value
+  ) {
+    return
+  }
+
+  if (draftAutosaveTimer) {
+    window.clearTimeout(draftAutosaveTimer)
+  }
+
+  draftAutosaveTimer = window.setTimeout(() => {
+    draftAutosaveTimer = null
+    void persistCreateProductDraft()
+  }, CREATE_PRODUCT_DRAFT_AUTOSAVE_DELAY_MS)
+}
+
+async function restoreSavedCreateProductDraft(): Promise<void> {
+  if (!isStandardCreateFlow.value) {
+    return
+  }
+
+  try {
+    isRestoringSavedDraft.value = true
+    const savedDraft = await loadCreateProductDraft(createProductDraftStorageKey.value)
+    if (!savedDraft) {
+      return
+    }
+
+    selectedCategoryId.value = savedDraft.selectedCategoryId
+    selectedSubcategoryId.value = ''
+    await loadSubcategoriesForCategory(savedDraft.selectedCategoryId)
+    selectedSubcategoryId.value = savedDraft.selectedSubcategoryId
+    title.value = savedDraft.title
+    description.value = savedDraft.description
+    price.value = savedDraft.price
+    productData.value = savedDraft.productData
+    fortniteAccountForm.value = savedDraft.fortniteAccountDetails
+      ? { ...savedDraft.fortniteAccountDetails }
+      : createEmptyFortniteAccountForm()
+    images.value = savedDraft.images
+    count.value = savedDraft.count
+    autoDelivery.value = savedDraft.autoDelivery
+    currentStep.value = savedDraft.currentStep
+    showStepIssues.value = false
+    lastDraftSavedAt.value = savedDraft.updatedAt || null
+    restoredDraftNoticeVisible.value = true
+  } catch (err) {
+    console.error('Error restoring create product draft:', err)
+  } finally {
+    isRestoringSavedDraft.value = false
+  }
+}
+
 onMounted(async () => {
   try {
     const currencyConfig = await productService.getCurrencyConfig()
@@ -493,43 +689,40 @@ onMounted(async () => {
     errorMessage.value = t('common.error')
   }
 
-  if (!draftId.value) {
+  if (draftId.value) {
+    try {
+      isLoadingDraft.value = true
+      const draft = await raikaService.getDraft(draftId.value)
+      if (draft) {
+        description.value = draft.description
+        draftImages.value = draft.images.slice(0, PRODUCT_LIMITS.images.max)
+        fortniteAccountForm.value = fortniteAccountDetailsToForm(draft.fortnite_account_details)
+        await applyFortniteAccountsCategorySelection()
+        isRaikaDraftApplied.value = true
+      } else {
+        errorMessage.value = t('pages.forms.createProduct.draftNotFound')
+      }
+    } catch (err) {
+      console.error('Error loading raika draft:', err)
+      errorMessage.value = t('pages.forms.createProduct.errorLoadingDraft')
+    } finally {
+      isLoadingDraft.value = false
+    }
+
     return
   }
 
-  try {
-    isLoadingDraft.value = true
-    const draft = await raikaService.getDraft(draftId.value)
-    if (draft) {
-      description.value = draft.description
-      draftImages.value = draft.images.slice(0, PRODUCT_LIMITS.images.max)
-      isRaikaDraftApplied.value = true
-    } else {
-      errorMessage.value = t('pages.forms.createProduct.draftNotFound')
-    }
-  } catch (err) {
-    console.error('Error loading raika draft:', err)
-    errorMessage.value = t('pages.forms.createProduct.errorLoadingDraft')
-  } finally {
-    isLoadingDraft.value = false
-  }
+  await restoreSavedCreateProductDraft()
+  isDraftPersistenceReady.value = true
 })
 
 watch(selectedCategoryId, async (newCategory) => {
-  selectedSubcategoryId.value = ''
-
-  if (!newCategory) {
-    subcategories.value = []
+  if (isRestoringSavedDraft.value) {
     return
   }
 
-  try {
-    const subcategoriesData = await categoryService.getSubcategories(newCategory)
-    subcategories.value = subcategoriesData.categories
-  } catch (err) {
-    console.error('Error loading subcategories:', err)
-    errorMessage.value = t('pages.forms.createProduct.errorLoadingSubcategories')
-  }
+  selectedSubcategoryId.value = ''
+  await loadSubcategoriesForCategory(newCategory)
 })
 
 watch(selectedCurrency, (nextCurrency, prevCurrency) => {
@@ -544,6 +737,47 @@ watch(selectedCurrency, (nextCurrency, prevCurrency) => {
     : Math.round(converted).toString()
 })
 
+watch(
+  [
+    selectedCategoryId,
+    selectedSubcategoryId,
+    title,
+    description,
+    price,
+    productData,
+    fortniteAccountForm,
+    images,
+    count,
+    autoDelivery,
+    currentStep,
+  ],
+  () => {
+    if (
+      !isStandardCreateFlow.value
+      || !isDraftPersistenceReady.value
+      || isDraftPersistenceDisabled.value
+      || isRestoringSavedDraft.value
+    ) {
+      return
+    }
+
+    restoredDraftNoticeVisible.value = false
+    scheduleCreateProductDraftSave()
+  },
+  { deep: true },
+)
+
+onBeforeUnmount(() => {
+  if (draftAutosaveTimer) {
+    window.clearTimeout(draftAutosaveTimer)
+    draftAutosaveTimer = null
+  }
+
+  if (isStandardCreateFlow.value) {
+    void persistCreateProductDraft()
+  }
+})
+
 function removeDraftImage(index: number) {
   draftImages.value.splice(index, 1)
 }
@@ -556,6 +790,7 @@ function clearForm() {
   description.value = ''
   price.value = ''
   productData.value = ''
+  fortniteAccountForm.value = createEmptyFortniteAccountForm()
   images.value = []
   draftImages.value = []
   count.value = 1
@@ -564,6 +799,31 @@ function clearForm() {
   isRaikaDraftApplied.value = false
   currentStep.value = 1
   showStepIssues.value = false
+
+  if (isStandardCreateFlow.value) {
+    lastDraftSavedAt.value = null
+    restoredDraftNoticeVisible.value = false
+    void clearCreateProductDraft(createProductDraftStorageKey.value)
+  }
+}
+
+function closeCreatedProductModal() {
+  showCreatedProductModal.value = false
+}
+
+async function goToCreatedProduct() {
+  if (!createdProduct.value) return
+  const productKey = buildProductKey(createdProduct.value)
+  if (!productKey) return
+  closeCreatedProductModal()
+  await router.push(`/product/${productKey}`)
+}
+
+async function goToProfileAfterCreate() {
+  const username = store.user?.username
+  if (!username) return
+  closeCreatedProductModal()
+  await router.push(`/user/${username}`)
 }
 
 async function createProduct() {
@@ -587,6 +847,7 @@ async function createProduct() {
       price: Number(price.value),
       price_currency: selectedCurrency.value,
       product_data: autoDelivery.value ? normalizedProductData.value : undefined,
+      fortnite_account_details: shouldShowFortniteAccountForm.value ? fortniteAccountPayload.value : undefined,
       category_id: selectedSubcategoryId.value,
       count: countValue.value,
       auto_delivery: autoDelivery.value,
@@ -597,7 +858,21 @@ async function createProduct() {
     const username = store.user?.username
 
     if (result && username) {
-      await router.push(`/user/${username}`)
+      if (isStandardCreateFlow.value) {
+        isDraftPersistenceDisabled.value = true
+        if (draftAutosaveTimer) {
+          window.clearTimeout(draftAutosaveTimer)
+          draftAutosaveTimer = null
+        }
+        await clearCreateProductDraft(createProductDraftStorageKey.value)
+        lastDraftSavedAt.value = null
+        restoredDraftNoticeVisible.value = false
+      }
+      createdProduct.value = {
+        id: result.id,
+        slug: result.slug,
+      }
+      showCreatedProductModal.value = true
     } else {
       errorMessage.value = t('pages.forms.createProduct.errorCreatingProduct')
     }
@@ -657,17 +932,34 @@ async function createProduct() {
           </p>
         </div>
 
-        <div class="flex justify-end">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div v-if="isStandardCreateFlow" class="space-y-1">
+            <p class="text-xs text-gray-400">
+              {{ $t('pages.forms.createProduct.draftAutosaveHint') }}
+            </p>
+            <p v-if="formattedDraftSavedAt" class="text-xs text-blue-300">
+              {{ $t('pages.forms.createProduct.draftSavedAt', { time: formattedDraftSavedAt }) }}
+            </p>
+          </div>
+
           <button
             type="button"
             :disabled="sended || !hasAnyFormData"
             class="inline-flex items-center gap-1.5 rounded-md border border-dark-600 bg-dark-700/40 px-3 py-1.5 text-xs font-medium text-gray-300 transition-colors hover:border-dark-500 hover:bg-dark-700/70 hover:text-white disabled:opacity-45 disabled:cursor-not-allowed"
+            :class="!isStandardCreateFlow ? 'sm:ml-auto' : ''"
             :title="$t('pages.forms.createProduct.clearFormHint')"
             @click="clearForm"
           >
             <RotateCcw class="w-3.5 h-3.5" />
             {{ $t('pages.forms.createProduct.clearForm') }}
           </button>
+        </div>
+
+        <div
+          v-if="isStandardCreateFlow && restoredDraftNoticeVisible"
+          class="rounded-xl border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-100"
+        >
+          {{ $t('pages.forms.createProduct.draftRestoredNotice') }}
         </div>
 
         <div class="rounded-xl border border-dark-700 bg-dark-600/30 p-3 lg:p-4">
@@ -816,6 +1108,29 @@ async function createProduct() {
                       {{ normalizedDescriptionLength }}/{{ PRODUCT_LIMITS.description.max }}
                     </p>
                   </div>
+                </div>
+
+                <div
+                  v-if="shouldShowFortniteAccountForm"
+                  class="rounded-xl border border-dark-700 bg-dark-600/40 p-5 space-y-4"
+                >
+                  <div class="space-y-1">
+                    <h4 class="text-sm font-semibold text-white">
+                      {{ $t('pages.forms.createProduct.fortniteAccountDetailsTitle') }}
+                    </h4>
+                    <p class="text-xs text-gray-400 leading-relaxed">
+                      {{ $t('pages.forms.createProduct.fortniteAccountDetailsHint') }}
+                    </p>
+                  </div>
+
+                  <FortniteAccountFields v-model="fortniteAccountForm" />
+
+                  <p
+                    class="text-xs"
+                    :class="fortniteAccountDataValid ? 'text-gray-400' : 'text-red-400'"
+                  >
+                    {{ $t('pages.forms.createProduct.validationFortniteAccountDetailsRequired') }}
+                  </p>
                 </div>
 
                 <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-5 space-y-3">
@@ -1014,6 +1329,8 @@ async function createProduct() {
                         type="number"
                         :min="PRODUCT_LIMITS.count.min"
                         :max="PRODUCT_LIMITS.count.max"
+                        step="1"
+                        inputmode="numeric"
                         class="h-12 w-full rounded-lg border border-dark-700 bg-dark-600 px-4 pr-20 text-base font-semibold text-white outline-none"
                       />
                       <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
@@ -1125,7 +1442,7 @@ async function createProduct() {
           <button
             v-if="currentStep < TOTAL_STEPS"
             type="button"
-            class="rounded-lg border border-transparent bg-button-main px-4 py-3 text-sm font-semibold text-mainText transition-colors duration-200 hover:bg-blue-700"
+            class="market-btn market-btn-primary rounded-lg px-4 py-3 text-sm text-mainText"
             :disabled="sended"
             @click="goToNextStep"
           >
@@ -1136,7 +1453,7 @@ async function createProduct() {
             v-else
             type="button"
             :disabled="sended || !isFormValid"
-            class="rounded-lg border border-transparent bg-button-main px-4 py-3 text-sm font-semibold text-mainText transition-colors duration-200 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="market-btn market-btn-primary rounded-lg px-4 py-3 text-sm text-mainText"
             @click="createProduct"
           >
             <span v-if="sended" class="flex items-center justify-center gap-2">
@@ -1154,6 +1471,63 @@ async function createProduct() {
               {{ $t('common.create') }}
             </span>
           </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="showCreatedProductModal"
+      class="app-modal-overlay z-[120]"
+    >
+      <div class="absolute inset-0 bg-black/75 backdrop-blur-sm" @click="goToProfileAfterCreate"></div>
+      <div class="relative z-10 flex min-h-full items-center justify-center px-4 py-8">
+        <div class="product-created-modal w-full max-w-lg overflow-hidden rounded-[28px] border border-white/10">
+          <div class="relative overflow-hidden px-6 py-7 sm:px-8 sm:py-8">
+            <div class="product-created-modal__hero absolute inset-0"></div>
+            <div class="relative space-y-6">
+              <div class="product-created-modal__icon inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-blue-400/18 bg-blue-500/10 text-blue-200">
+                <ShieldCheck class="h-7 w-7" />
+              </div>
+
+              <div class="space-y-3">
+                <div class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">
+                  {{ $t('common.productStatuses.moderation') }}
+                </div>
+                <h3 class="text-2xl font-semibold tracking-tight text-white sm:text-[2rem]">
+                  {{ $t('pages.forms.createProduct.successTitle') }}
+                </h3>
+                <p class="text-sm leading-6 text-gray-300 sm:text-[15px]">
+                  {{ $t('pages.forms.createProduct.successMessage') }}
+                </p>
+              </div>
+
+              <div class="product-created-modal__summary rounded-2xl border border-white/8 p-4">
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
+                  {{ $t('pages.forms.createProduct.successHintLabel') }}
+                </p>
+                <p class="mt-2 text-sm leading-6 text-gray-300">
+                  {{ $t('pages.forms.createProduct.successHint') }}
+                </p>
+              </div>
+
+              <div class="flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  class="market-primary-surface market-primary-hover inline-flex flex-1 items-center justify-center rounded-2xl px-5 py-3.5 text-sm font-semibold text-white transition-colors duration-200"
+                  @click="goToCreatedProduct"
+                >
+                  {{ $t('pages.forms.createProduct.goToProduct') }}
+                </button>
+                <button
+                  type="button"
+                    class="inline-flex flex-1 items-center justify-center rounded-2xl border border-white/12 bg-white/[0.04] px-5 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:border-white/20 hover:bg-white/[0.07]"
+                    @click="goToProfileAfterCreate"
+                >
+                  {{ $t('pages.forms.createProduct.goToProfile') }}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1189,5 +1563,22 @@ input[type="number"] {
 .wizard-step-back-enter-from {
   opacity: 0;
   transform: translateX(-16px);
+}
+
+.product-created-modal {
+  background: var(--modal-surface-strong);
+  box-shadow: var(--modal-surface-strong-shadow);
+}
+
+.product-created-modal__hero {
+  background: var(--product-created-hero-bg);
+}
+
+.product-created-modal__icon {
+  box-shadow: var(--product-created-badge-shadow);
+}
+
+.product-created-modal__summary {
+  background: var(--overlay-white-03);
 }
 </style>

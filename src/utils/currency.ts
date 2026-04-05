@@ -104,3 +104,26 @@ export function formatCurrencyAmount(amount: number, options: FormatCurrencyOpti
     maximumFractionDigits,
   }).format(converted)
 }
+
+export function formatCompactCurrencyAmount(amount: number, options: FormatCurrencyOptions = {}): string {
+  const {
+    currency = resolvePreferredCurrency(),
+    fromCurrency = 'RUB',
+    maximumFractionDigits = 1,
+  } = options
+
+  const converted = convertCurrencyAmount(amount, fromCurrency, currency)
+  const absoluteValue = Math.abs(converted)
+  const shouldUseCompact = absoluteValue >= 1000
+
+  const numberLabel = new Intl.NumberFormat(getCurrencyLocale(currency), {
+    notation: shouldUseCompact ? 'compact' : 'standard',
+    compactDisplay: 'short',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: shouldUseCompact ? maximumFractionDigits : 0,
+  }).format(converted)
+
+  return currency === 'USD'
+    ? `${getCurrencySymbol(currency)}${numberLabel}`
+    : `${numberLabel} ${getCurrencySymbol(currency)}`
+}

@@ -1,19 +1,30 @@
 <script setup lang="ts">
 import { categoryService } from '@/api/category/CategoryService'
 import { productService } from '@/api/product/ProductService'
+import type { ProductsFilterParams } from '@/api/product/ProductService'
 import MainProductCard from '@/components/mainProductCard.vue'
 import HomeProductListCard from '@/components/HomeProductListCard.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
 import Title from '@/components/Title.vue'
 import type { Category } from '@/validation/category/category'
 import type { Product } from '@/validation/product/product'
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import { getCountryOptions } from '@/utils/countryOptions'
 import { buildCategoryKey, extractIdFromSlugKey } from '@/utils/urlKeys'
-import { ChevronRight, LayoutGrid, Rows3 } from 'lucide-vue-next'
+import {
+  FORTNITE_ACCOUNT_BOOLEAN_FIELDS,
+  FORTNITE_ACCOUNT_COUNT_FIELDS,
+  FORTNITE_ACCOUNT_DATE_FIELDS,
+  createEmptyFortniteAccountFilters,
+  type FortniteAccountCountFieldKey,
+  type FortniteAccountDateFieldKey,
+  isFortniteAccountsCategory,
+} from '@/utils/fortniteAccount'
+import { ChevronRight, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const API_HOST = import.meta.env.VITE_API_HOST
@@ -29,6 +40,7 @@ const isCategoryLoading = ref(true)
 const isSubcategoriesLoading = ref(false)
 const isProductsLoading = ref(true)
 const isLoadingMore = ref(false)
+const isFiltersOpen = ref(false)
 type ProductCardViewMode = 'grid' | 'list'
 const PRODUCT_CARD_VIEW_MODE_STORAGE_KEY = 'home_product_card_view_mode'
 const productCardViewMode = ref<ProductCardViewMode>('grid')
@@ -37,8 +49,18 @@ const loadingSkeletonCount = computed(() => (
     ? perPage.value
     : Math.min(perPage.value, 12)
 ))
+
+function sortCategoriesByActiveProductsCount(categories: Category[]): Category[] {
+  return [...categories].sort((a, b) => {
+    const countDiff = (b.active_products_count ?? 0) - (a.active_products_count ?? 0)
+    if (countDiff !== 0) return countDiff
+    return a.name.localeCompare(b.name)
+  })
+}
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
+const fortniteFilters = reactive(createEmptyFortniteAccountFilters())
+const fortniteCountryOptions = computed(() => getCountryOptions(locale.value))
 
 const categoryKey = computed(() => String(route.params.categoryId ?? ''))
 const requestedPathRaw = computed(() => {
@@ -70,6 +92,28 @@ const breadcrumbItems = computed(() => {
   items.push(...selectedCategoryPath.value)
   return items
 })
+
+const activeCategory = computed(() =>
+  selectedCategoryPath.value[selectedCategoryPath.value.length - 1] ?? category.value
+)
+
+const shouldShowFortniteAccountFilters = computed(() => isFortniteAccountsCategory({
+  parentCategory: category.value,
+  subcategory: activeCategory.value?.parent_id ? activeCategory.value : null,
+}))
+
+const activeFortniteFiltersCount = computed<number>(() => (
+  Object.values(fortniteFilters).reduce<number>((count, value) => {
+    if (value === '' || value === null || value === undefined) {
+      return count
+    }
+    return count + 1
+  }, 0)
+))
+
+const shouldShowSubcategoriesBlock = computed(() =>
+  Boolean(activeCategory.value && activeCategory.value.parent_id === null)
+)
 
 function resolveCategoryImageUrl(imageUrl: string | null): string {
   if (!imageUrl) {
@@ -190,7 +234,7 @@ async function loadSubcategoriesForActiveCategory() {
   isSubcategoriesLoading.value = true
   try {
     const response = await categoryService.getSubcategories(getActiveCategoryFilterKey(), 1, 100)
-    subcategories.value = response.categories
+    subcategories.value = sortCategoriesByActiveProductsCount(response.categories)
   } finally {
     isSubcategoriesLoading.value = false
   }
@@ -257,6 +301,7 @@ async function loadCategoryProducts(page = 1, append = false) {
     getActiveCategoryFilterKey(),
     page,
     perPage.value,
+    getProductFiltersParams(),
   )
   products.value = append ? [...products.value, ...response.products] : response.products
   currentPage.value = response.currentPage
@@ -282,6 +327,178 @@ async function loadMoreProducts() {
   await loadCategoryProducts(currentPage.value + 1, true)
 }
 
+function getProductFiltersParams(): ProductsFilterParams | undefined {
+  if (!shouldShowFortniteAccountFilters.value) {
+    return undefined
+  }
+
+  const filters: ProductsFilterParams = {}
+
+  if (fortniteFilters.country.trim()) {
+    filters.fortniteCountry = fortniteFilters.country.trim().toUpperCase()
+  }
+  if (fortniteFilters.can_change_email !== '') {
+    filters.fortniteCanChangeEmail = fortniteFilters.can_change_email === 'true'
+  }
+  if (fortniteFilters.first_email !== '') {
+    filters.fortniteFirstEmail = fortniteFilters.first_email === 'true'
+  }
+  if (fortniteFilters.email_confirmed !== '') {
+    filters.fortniteEmailConfirmed = fortniteFilters.email_confirmed === 'true'
+  }
+  if (fortniteFilters.parental_control !== '') {
+    filters.fortniteParentalControl = fortniteFilters.parental_control === 'true'
+  }
+  if (fortniteFilters.two_factor_enabled !== '') {
+    filters.fortniteTwoFactorEnabled = fortniteFilters.two_factor_enabled === 'true'
+  }
+  if (fortniteFilters.registration_date_from) {
+    filters.fortniteRegistrationDateFrom = fortniteFilters.registration_date_from
+  }
+  if (fortniteFilters.registration_date_to) {
+    filters.fortniteRegistrationDateTo = fortniteFilters.registration_date_to
+  }
+  if (fortniteFilters.last_email_change_from) {
+    filters.fortniteLastEmailChangeFrom = fortniteFilters.last_email_change_from
+  }
+  if (fortniteFilters.last_email_change_to) {
+    filters.fortniteLastEmailChangeTo = fortniteFilters.last_email_change_to
+  }
+  if (fortniteFilters.last_login_from) {
+    filters.fortniteLastLoginFrom = fortniteFilters.last_login_from
+  }
+  if (fortniteFilters.last_login_to) {
+    filters.fortniteLastLoginTo = fortniteFilters.last_login_to
+  }
+  if (fortniteFilters.last_display_name_change_from) {
+    filters.fortniteLastDisplayNameChangeFrom = fortniteFilters.last_display_name_change_from
+  }
+  if (fortniteFilters.last_display_name_change_to) {
+    filters.fortniteLastDisplayNameChangeTo = fortniteFilters.last_display_name_change_to
+  }
+  if (fortniteFilters.last_match_date_from) {
+    filters.fortniteLastMatchDateFrom = fortniteFilters.last_match_date_from
+  }
+  if (fortniteFilters.last_match_date_to) {
+    filters.fortniteLastMatchDateTo = fortniteFilters.last_match_date_to
+  }
+  if (fortniteFilters.skins_count_min !== '') {
+    filters.fortniteSkinsCountMin = Number(fortniteFilters.skins_count_min)
+  }
+  if (fortniteFilters.skins_count_max !== '') {
+    filters.fortniteSkinsCountMax = Number(fortniteFilters.skins_count_max)
+  }
+  if (fortniteFilters.backpacks_count_min !== '') {
+    filters.fortniteBackpacksCountMin = Number(fortniteFilters.backpacks_count_min)
+  }
+  if (fortniteFilters.backpacks_count_max !== '') {
+    filters.fortniteBackpacksCountMax = Number(fortniteFilters.backpacks_count_max)
+  }
+  if (fortniteFilters.pickaxes_count_min !== '') {
+    filters.fortnitePickaxesCountMin = Number(fortniteFilters.pickaxes_count_min)
+  }
+  if (fortniteFilters.pickaxes_count_max !== '') {
+    filters.fortnitePickaxesCountMax = Number(fortniteFilters.pickaxes_count_max)
+  }
+  if (fortniteFilters.emotes_count_min !== '') {
+    filters.fortniteEmotesCountMin = Number(fortniteFilters.emotes_count_min)
+  }
+  if (fortniteFilters.emotes_count_max !== '') {
+    filters.fortniteEmotesCountMax = Number(fortniteFilters.emotes_count_max)
+  }
+  if (fortniteFilters.gliders_count_min !== '') {
+    filters.fortniteGlidersCountMin = Number(fortniteFilters.gliders_count_min)
+  }
+  if (fortniteFilters.gliders_count_max !== '') {
+    filters.fortniteGlidersCountMax = Number(fortniteFilters.gliders_count_max)
+  }
+  if (fortniteFilters.wraps_count_min !== '') {
+    filters.fortniteWrapsCountMin = Number(fortniteFilters.wraps_count_min)
+  }
+  if (fortniteFilters.wraps_count_max !== '') {
+    filters.fortniteWrapsCountMax = Number(fortniteFilters.wraps_count_max)
+  }
+  if (fortniteFilters.banners_count_min !== '') {
+    filters.fortniteBannersCountMin = Number(fortniteFilters.banners_count_min)
+  }
+  if (fortniteFilters.banners_count_max !== '') {
+    filters.fortniteBannersCountMax = Number(fortniteFilters.banners_count_max)
+  }
+  if (fortniteFilters.sprays_count_min !== '') {
+    filters.fortniteSpraysCountMin = Number(fortniteFilters.sprays_count_min)
+  }
+  if (fortniteFilters.sprays_count_max !== '') {
+    filters.fortniteSpraysCountMax = Number(fortniteFilters.sprays_count_max)
+  }
+  if (fortniteFilters.exclusives_count_min !== '') {
+    filters.fortniteExclusivesCountMin = Number(fortniteFilters.exclusives_count_min)
+  }
+  if (fortniteFilters.exclusives_count_max !== '') {
+    filters.fortniteExclusivesCountMax = Number(fortniteFilters.exclusives_count_max)
+  }
+
+  return Object.keys(filters).length ? filters : undefined
+}
+
+function resetFortniteFilters() {
+  Object.assign(fortniteFilters, createEmptyFortniteAccountFilters())
+}
+
+async function resetAndApplyFortniteFilters() {
+  resetFortniteFilters()
+  await applyFortniteFilters()
+}
+
+function getFortniteDateFilterValue(
+  key: FortniteAccountDateFieldKey,
+  bound: 'from' | 'to',
+): string {
+  const filterKey = `${key}_${bound}` as keyof typeof fortniteFilters
+  const value = fortniteFilters[filterKey]
+  return typeof value === 'string' ? value : ''
+}
+
+function setFortniteDateFilterValue(
+  key: FortniteAccountDateFieldKey,
+  bound: 'from' | 'to',
+  value: string,
+) {
+  const filterKey = `${key}_${bound}` as keyof typeof fortniteFilters
+  fortniteFilters[filterKey] = value as never
+}
+
+function getFortniteCountFilterValue(
+  key: FortniteAccountCountFieldKey,
+  bound: 'min' | 'max',
+): number | '' {
+  const filterKey = `${key}_${bound}` as keyof typeof fortniteFilters
+  const value = fortniteFilters[filterKey]
+  return typeof value === 'number' ? value : ''
+}
+
+function setFortniteCountFilterValue(
+  key: FortniteAccountCountFieldKey,
+  bound: 'min' | 'max',
+  value: string,
+) {
+  const filterKey = `${key}_${bound}` as keyof typeof fortniteFilters
+  if (!value.trim()) {
+    fortniteFilters[filterKey] = '' as never
+    return
+  }
+
+  const parsedValue = Number(value)
+  if (!Number.isFinite(parsedValue)) {
+    return
+  }
+
+  fortniteFilters[filterKey] = Math.max(0, Math.trunc(parsedValue)) as never
+}
+
+async function applyFortniteFilters() {
+  await loadCategoryProducts(1, false)
+}
+
 watch(categoryKey, async () => {
   await loadCategoryPageData()
 })
@@ -300,6 +517,15 @@ watch(requestedPathRaw, async (nextValue) => {
 watch(productCardViewMode, (mode) => {
   if (typeof window === 'undefined') return
   window.localStorage.setItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY, mode)
+})
+
+watch(shouldShowFortniteAccountFilters, (nextValue) => {
+  if (nextValue) {
+    return
+  }
+
+  resetFortniteFilters()
+  isFiltersOpen.value = false
 })
 
 onMounted(async () => {
@@ -343,7 +569,7 @@ onBeforeUnmount(() => {
             <BackButton />
           </div>
           <div class="mt-auto pb-6 sm:pb-7">
-            <h1 class="max-w-4xl text-3xl font-semibold leading-tight text-white drop-shadow-[0_3px_14px_rgba(0,0,0,0.65)] sm:text-5xl lg:text-6xl">
+            <h1 class="category-hero-title max-w-4xl text-3xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
               {{ category.name }}
             </h1>
           </div>
@@ -394,7 +620,7 @@ onBeforeUnmount(() => {
         </template>
       </div>
 
-      <div>
+      <div v-if="shouldShowSubcategoriesBlock">
         <Title :text="t('common.subcategories')" />
         <div v-if="isCategoryLoading || isSubcategoriesLoading" class="mt-4 flex gap-2">
           <div v-for="n in 4" :key="n" class="h-10 w-28 animate-pulse rounded-lg bg-dark-600"></div>
@@ -404,15 +630,9 @@ onBeforeUnmount(() => {
             v-for="subcategory in subcategories"
             :key="subcategory.id"
             type="button"
-            class="inline-flex items-center gap-2 rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2 text-sm text-white transition hover:bg-dark-700/50"
+            class="inline-flex rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2 text-sm text-white transition hover:bg-dark-700/50"
             @click="onSubcategoryClick(subcategory)"
           >
-            <img
-              v-if="subcategory.image_url"
-              :src="resolveCategoryImageUrl(subcategory.image_url)"
-              :alt="subcategory.name"
-              class="h-5 w-5 rounded object-cover border border-dark-600/80"
-            />
             <span>{{ subcategory.name }}</span>
           </button>
         </div>
@@ -421,7 +641,158 @@ onBeforeUnmount(() => {
 
       <div class="mt-10">
         <Title :text="t('common.products')" />
-        <div class="mt-4 flex justify-end">
+        <div class="mt-4 space-y-3">
+          <div
+            v-if="shouldShowFortniteAccountFilters"
+            class="flex flex-wrap items-center justify-between gap-2"
+          >
+            <button
+              type="button"
+              class="inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-semibold transition"
+              :class="isFiltersOpen
+                ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
+                : 'border-dark-600 bg-dark-700/40 text-gray-300 hover:border-dark-500 hover:bg-dark-700/55'"
+              @click="isFiltersOpen = !isFiltersOpen"
+            >
+              <SlidersHorizontal class="h-4 w-4" />
+              <span>{{ t('pages.category.fortniteFiltersTitle') }}</span>
+              <span
+                v-if="activeFortniteFiltersCount > 0"
+                class="inline-flex min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[11px] text-white"
+              >
+                {{ activeFortniteFiltersCount }}
+              </span>
+            </button>
+          </div>
+
+          <div
+            v-if="shouldShowFortniteAccountFilters && isFiltersOpen"
+            class="rounded-2xl border border-dark-700 bg-dark-600/25 p-4 md:p-5"
+          >
+            <div class="space-y-5">
+              <div class="grid gap-3 md:grid-cols-2">
+                <label class="rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2.5">
+                  <span class="block text-xs text-gray-400">{{ t('common.fortniteAccount.fields.country') }}</span>
+                  <select
+                    v-model="fortniteFilters.country"
+                    class="mt-1.5 w-full bg-transparent text-sm text-white outline-none"
+                  >
+                    <option value="">{{ t('common.all') }}</option>
+                    <option
+                      v-for="option in fortniteCountryOptions"
+                      :key="option.code"
+                      :value="option.code"
+                    >
+                      {{ option.label }}
+                    </option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                <label
+                  v-for="field in FORTNITE_ACCOUNT_BOOLEAN_FIELDS"
+                  :key="field.key"
+                  class="rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2.5"
+                >
+                  <span class="block text-xs text-gray-400">{{ t(field.labelKey) }}</span>
+                  <select
+                    v-model="fortniteFilters[field.key]"
+                    class="mt-1.5 w-full bg-transparent text-sm text-white outline-none"
+                  >
+                    <option value="">{{ t('common.all') }}</option>
+                    <option value="true">{{ t('common.fortniteAccount.booleanValues.true') }}</option>
+                    <option value="false">{{ t('common.fortniteAccount.booleanValues.false') }}</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="space-y-3">
+                <p class="text-sm font-semibold text-white">
+                  {{ t('common.fortniteAccount.sections.activity') }}
+                </p>
+                <div class="grid gap-3 md:grid-cols-2">
+                  <div
+                    v-for="field in FORTNITE_ACCOUNT_DATE_FIELDS"
+                    :key="field.key"
+                    class="rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2.5"
+                  >
+                    <span class="block text-xs text-gray-400">{{ t(field.labelKey) }}</span>
+                    <div class="mt-2 grid grid-cols-2 gap-2">
+                      <input
+                        :value="getFortniteDateFilterValue(field.key, 'from')"
+                        type="date"
+                        class="w-full bg-transparent text-sm text-white outline-none"
+                        @input="setFortniteDateFilterValue(field.key, 'from', ($event.target as HTMLInputElement).value)"
+                      />
+                      <input
+                        :value="getFortniteDateFilterValue(field.key, 'to')"
+                        type="date"
+                        class="w-full bg-transparent text-sm text-white outline-none"
+                        @input="setFortniteDateFilterValue(field.key, 'to', ($event.target as HTMLInputElement).value)"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-3">
+                <p class="text-sm font-semibold text-white">
+                  {{ t('common.fortniteAccount.sections.inventory') }}
+                </p>
+                <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  <div
+                    v-for="field in FORTNITE_ACCOUNT_COUNT_FIELDS"
+                    :key="field.key"
+                    class="rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2.5"
+                  >
+                    <span class="block text-xs text-gray-400">{{ t(field.labelKey) }}</span>
+                    <div class="mt-2 grid grid-cols-2 gap-2">
+                      <input
+                        :value="getFortniteCountFilterValue(field.key, 'min')"
+                        type="number"
+                        min="0"
+                        step="1"
+                        inputmode="numeric"
+                        class="w-full bg-transparent text-sm text-white outline-none"
+                        :placeholder="t('pages.category.minValue')"
+                        @input="setFortniteCountFilterValue(field.key, 'min', ($event.target as HTMLInputElement).value)"
+                      />
+                      <input
+                        :value="getFortniteCountFilterValue(field.key, 'max')"
+                        type="number"
+                        min="0"
+                        step="1"
+                        inputmode="numeric"
+                        class="w-full bg-transparent text-sm text-white outline-none"
+                        :placeholder="t('pages.category.maxValue')"
+                        @input="setFortniteCountFilterValue(field.key, 'max', ($event.target as HTMLInputElement).value)"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap items-center justify-end gap-2">
+                <button
+                  type="button"
+                  class="rounded-xl border border-dark-600 bg-dark-700/40 px-4 py-2 text-sm font-semibold text-gray-300 transition hover:border-dark-500 hover:bg-dark-700/60 hover:text-white"
+                  @click="resetAndApplyFortniteFilters"
+                >
+                  {{ t('pages.index.resetFilters') }}
+                </button>
+                <button
+                  type="button"
+                  class="market-primary-surface market-primary-hover rounded-xl px-4 py-2 text-sm font-semibold text-white transition"
+                  @click="applyFortniteFilters"
+                >
+                  {{ t('common.apply') }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end">
           <div
             class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-dark-600 bg-dark-700/40 p-0.5"
             role="group"
@@ -454,6 +825,7 @@ onBeforeUnmount(() => {
             </button>
           </div>
         </div>
+        </div>
 
         <div
           v-if="isProductsLoading"
@@ -469,8 +841,15 @@ onBeforeUnmount(() => {
             :class="productCardViewMode === 'grid' ? 'h-64' : 'h-[118px] sm:h-[134px]'"
           ></div>
         </div>
-        <div v-else-if="products.length === 0" class="mt-6 text-sm text-gray-400">
-          {{ t('pages.category.noProducts') }}
+        <div
+          v-else-if="products.length === 0"
+          class="mt-6 flex justify-center text-center text-sm text-gray-400"
+        >
+          {{
+            shouldShowFortniteAccountFilters && activeFortniteFiltersCount > 0
+              ? t('pages.category.noProductsByFilters')
+              : t('pages.category.noProducts')
+          }}
         </div>
         <div
           v-else-if="productCardViewMode === 'grid'"
@@ -522,7 +901,7 @@ onBeforeUnmount(() => {
   height: 92px;
   background: linear-gradient(
     to bottom,
-    rgba(10, 14, 22, 0) 0%,
+    transparent 0%,
     var(--background-color) 90%
   );
 }
@@ -542,9 +921,11 @@ onBeforeUnmount(() => {
 }
 
 .category-hero-fallback {
-  background:
-    radial-gradient(120% 120% at 10% 0%, rgba(56, 189, 248, 0.25) 0%, rgba(10, 14, 22, 0.4) 45%, rgba(6, 9, 14, 0.85) 100%),
-    linear-gradient(130deg, rgba(59, 130, 246, 0.2) 0%, rgba(10, 14, 22, 0.9) 62%);
+  background: var(--category-hero-fallback-bg);
+}
+
+.category-hero-title {
+  filter: drop-shadow(var(--category-hero-title-shadow));
 }
 
 .products-grid {

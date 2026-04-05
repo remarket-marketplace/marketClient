@@ -15,13 +15,16 @@ import type { ProductsFilterParams } from '@/api/product/ProductService'
 import type { Category } from '@/validation/category/category'
 import type { Product } from '@/validation/product/product'
 import type {
+  SteamTopUpCreatePaymentPayload,
   SteamTopUpCreateOrderPayload,
   SteamTopUpOrder,
+  SteamTopUpPayOrderPayload,
   SteamTopUpService,
 } from '@/validation/steamTopup/steamTopup'
+import { isValidSteamTopUpAccount, normalizeSteamTopUpAccount } from '@/validation/steamTopup/steamTopup'
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Folder, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
+import { ChevronRight, Folder, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
 import axios from 'axios'
 import {
   convertCurrencyAmount,
@@ -35,7 +38,7 @@ import { getErrorMessage } from '@/utils/errorsMap'
 const { t } = useI18n()
 const router = useRouter()
 const API_HOST = import.meta.env.VITE_API_HOST
-const HOME_STEAM_TOPUP_ENABLED = false
+const HOME_STEAM_TOPUP_ENABLED = import.meta.env.VITE_STEAM_TOPUP_ENABLED !== 'false'
 const userStore = useUserStore()
 const { user } = storeToRefs(userStore)
 const selectedCurrency = computed(() => preferredCurrency.value)
@@ -56,6 +59,9 @@ const subCategoryTotalPages = ref(1)
 const categoriesPerPage = ref(30)
 const searchQuery = ref('')
 const searchableCategories = ref<Category[]>([])
+const isSearchDropdownOpen = ref(false)
+const searchDropdownHighlightedIndex = ref(-1)
+const searchDropdownRef = ref<HTMLElement | null>(null)
 const isServerPagination = ref(true)
 const isCategoryPagination = ref(false)
 const isLoadingMore = ref(false)
@@ -64,11 +70,12 @@ const isCategoriesLoading = ref(true)
 const isSubCategoriesLoading = ref(false)
 const isLoadingMoreCategories = ref(false)
 const isLoadingMoreSubCategories = ref(false)
+const isExpandingCategories = ref(false)
 const isSearchPagination = ref(false)
 const minPriceFilter = ref('')
 const maxPriceFilter = ref('')
-const createdFromFilter = ref('')
-const createdToFilter = ref('')
+const onlineSellersOnly = ref(false)
+const autoDeliveryOnly = ref(false)
 const isFiltersOpen = ref(false)
 type ProductCardViewMode = 'grid' | 'list'
 const PRODUCT_CARD_VIEW_MODE_STORAGE_KEY = 'home_product_card_view_mode'
@@ -85,7 +92,11 @@ const categorySearchResults = computed(() => {
     .filter((category) => category.name.toLowerCase().includes(normalizedSearchQuery.value))
     .slice(0, 8)
 })
-
+const hasCategorySearchResults = computed(() => categorySearchResults.value.length > 0)
+const areCategoriesExpanded = ref(false)
+const shouldShowCategoryExpandButton = computed(() => (
+  mainCategories.value.length > 8 || categoryTotalPages.value > 1
+))
 function setProductCardViewMode(mode: ProductCardViewMode): void {
   if (productCardViewMode.value === mode) return
   productCardViewMode.value = mode
@@ -98,6 +109,7 @@ function restoreProductCardViewModeFromStorage(): void {
 }
 
 type SteamAmountMode = 'denomination' | 'quantity'
+type SteamCheckoutCurrency = 'RUB' | 'USD'
 
 const steamServices = ref<SteamTopUpService[]>([])
 const selectedSteamServiceId = ref<number | null>(null)
@@ -116,6 +128,14 @@ const steamRefreshingOrder = ref(false)
 const steamPayingOrder = ref(false)
 const steamChargedAmountRub = ref<number | null>(null)
 const steamBalanceAfterRub = ref<number | null>(null)
+const steamDiscountAmountRub = ref<number | null>(null)
+const steamAppliedPromoCode = ref<string | null>(null)
+const steamPromoDiscountPercent = ref<number | null>(null)
+const steamCheckoutModalOpen = ref(false)
+const steamCheckoutCurrency = ref<SteamCheckoutCurrency>(
+  selectedCurrency.value === 'USD' ? 'USD' : 'RUB',
+)
+const steamCheckoutSubmitting = ref(false)
 
 const selectedSteamService = computed(() => {
   if (selectedSteamServiceId.value === null) return null
@@ -148,13 +168,42 @@ const steamOrderPriceLabel = computed(() => {
   const normalizedPrice = Number.isFinite(price) ? price.toLocaleString(undefined, { maximumFractionDigits: 2 }) : steamOrder.value.price
   return `${normalizedPrice} ${steamOrder.value.currency || 'RUB'}`
 })
-const steamCanCreateOrder = computed(() => {
-  if (!user.value || !selectedSteamService.value) return false
-  if (steamAccount.value.trim().length < 2) return false
-
-  if (steamAmountMode.value === 'denomination') {
-    return steamDenominationId.value !== null
+const selectedSteamDenomination = computed(() => {
+  if (steamDenominationId.value === null) return null
+  return selectedSteamService.value?.denominations?.find((item) => item.id === steamDenominationId.value) ?? null
+})
+const steamAmountPreviewLabel = computed(() => {
+  if (steamAmountMode.value === 'denomination' && selectedSteamDenomination.value) {
+    const denominationPrice = Number(selectedSteamDenomination.value.price)
+    const normalizedPrice = Number.isFinite(denominationPrice)
+      ? denominationPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })
+      : selectedSteamDenomination.value.price
+    const denominationCurrency = selectedSteamDenomination.value.currency || selectedSteamService.value?.currency || ''
+    return `${normalizedPrice} ${denominationCurrency}`.trim()
   }
+
+  const quantity = Number.parseFloat(steamQuantity.value)
+  if (!Number.isFinite(quantity) || quantity <= 0) {
+    return t('pages.index.steamTopUp.quantityPlaceholder')
+  }
+
+  const serviceCurrency = selectedSteamService.value?.currency || selectedSteamService.value?.in_game_currency || ''
+  return `${quantity.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${serviceCurrency}`.trim()
+})
+const steamAmountInputDisabled = computed(() => false)
+const steamCheckoutCurrencySymbol = computed(() => (steamCheckoutCurrency.value === 'USD' ? '$' : '₽'))
+const steamCheckoutAmountLabel = computed(() => {
+  const numericAmount = Number.parseFloat(steamQuantity.value)
+  if (Number.isFinite(numericAmount) && numericAmount > 0) {
+    return `${numericAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${steamCheckoutCurrencySymbol.value}`
+  }
+  return steamAmountPreviewLabel.value
+})
+const steamNormalizedAccount = computed(() => normalizeSteamTopUpAccount(steamAccount.value))
+const steamIsAccountValid = computed(() => isValidSteamTopUpAccount(steamAccount.value))
+const steamCanCreateOrder = computed(() => {
+  if (!user.value) return false
+  if (!steamIsAccountValid.value) return false
 
   const quantity = Number.parseFloat(steamQuantity.value)
   return Number.isFinite(quantity) && quantity > 0
@@ -173,6 +222,14 @@ function isVisibleCategory(category: Category): boolean {
 
 function filterVisibleCategories(categories: Category[]): Category[] {
   return categories.filter(isVisibleCategory)
+}
+
+function sortCategoriesByActiveProductsCount(categories: Category[]): Category[] {
+  return [...categories].sort((a, b) => {
+    const countDiff = (b.active_products_count ?? 0) - (a.active_products_count ?? 0)
+    if (countDiff !== 0) return countDiff
+    return a.name.localeCompare(b.name)
+  })
 }
 
 function isVisibleProduct(product: Product): boolean {
@@ -242,6 +299,17 @@ const pricePresets = computed<PricePreset[]>(() => {
   ]
 })
 
+const hasPriceFilter = computed(() =>
+  parsePriceFilterInRub(minPriceFilter.value) !== undefined
+  || parsePriceFilterInRub(maxPriceFilter.value) !== undefined,
+)
+
+const activeProductFiltersCount = computed(() =>
+  Number(hasPriceFilter.value)
+  + Number(onlineSellersOnly.value)
+  + Number(autoDeliveryOnly.value),
+)
+
 function isPricePresetActive(preset: PricePreset): boolean {
   const min = parsePriceFilterInRub(minPriceFilter.value)
   const max = parsePriceFilterInRub(maxPriceFilter.value)
@@ -262,6 +330,7 @@ async function onPricePresetClick(preset: PricePreset) {
 
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
+let onDocumentClickForSearchDropdown: ((event: MouseEvent) => void) | null = null
 
 function goToProduct(productKey: string) {
   if (!productKey) return
@@ -269,9 +338,65 @@ function goToProduct(productKey: string) {
 }
 
 function goToCategoryPage(category: Category) {
+  isSearchDropdownOpen.value = false
+  searchDropdownHighlightedIndex.value = -1
   const categoryKey = buildCategoryKey(category)
   if (!categoryKey) return
   router.push({ path: `/category/${categoryKey}` })
+}
+
+function openSearchDropdown() {
+  if (!normalizedSearchQuery.value || !hasCategorySearchResults.value) return
+  isSearchDropdownOpen.value = true
+  if (searchDropdownHighlightedIndex.value < 0) {
+    searchDropdownHighlightedIndex.value = 0
+  }
+}
+
+function closeSearchDropdown() {
+  isSearchDropdownOpen.value = false
+  searchDropdownHighlightedIndex.value = -1
+}
+
+function moveSearchDropdownHighlight(direction: 1 | -1) {
+  const total = categorySearchResults.value.length
+  if (!total) {
+    searchDropdownHighlightedIndex.value = -1
+    return
+  }
+  if (!isSearchDropdownOpen.value) {
+    openSearchDropdown()
+    return
+  }
+  const current = searchDropdownHighlightedIndex.value < 0 ? 0 : searchDropdownHighlightedIndex.value
+  searchDropdownHighlightedIndex.value = (current + direction + total) % total
+}
+
+function onSearchDropdownKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    closeSearchDropdown()
+    return
+  }
+
+  if (event.key === 'ArrowDown') {
+    event.preventDefault()
+    moveSearchDropdownHighlight(1)
+    return
+  }
+
+  if (event.key === 'ArrowUp') {
+    event.preventDefault()
+    moveSearchDropdownHighlight(-1)
+    return
+  }
+
+  if (event.key === 'Enter' && isSearchDropdownOpen.value) {
+    if (searchDropdownHighlightedIndex.value < 0) return
+    const category = categorySearchResults.value[searchDropdownHighlightedIndex.value]
+    if (!category) return
+    event.preventDefault()
+    goToCategoryPage(category)
+  }
 }
 
 function resolveCategoryImageUrl(imageUrl: string | null): string {
@@ -291,15 +416,31 @@ function resolveSteamErrorMessage(error: unknown): string {
 
 function setDefaultSteamService(service: SteamTopUpService | null): void {
   steamDenominationId.value = service?.denominations?.[0]?.id ?? null
-  if (service?.denominations?.length) {
+  if (service?.params?.some((param) => param.param_key === 'Quantity')) {
+    steamAmountMode.value = 'quantity'
+    steamQuantity.value = steamQuantity.value || '1000'
+  } else if (service?.denominations?.length) {
     steamAmountMode.value = 'denomination'
     steamQuantity.value = ''
-  } else if (service?.params?.some((param) => param.param_key === 'Quantity')) {
-    steamAmountMode.value = 'quantity'
-    steamQuantity.value = steamQuantity.value || '1'
   } else {
     steamAmountMode.value = 'denomination'
     steamQuantity.value = ''
+  }
+}
+
+function buildSteamPayOrderPayload(): SteamTopUpPayOrderPayload {
+  return {
+    payment_method: 'lava',
+  }
+}
+
+function buildSteamCreatePaymentPayload(): SteamTopUpCreatePaymentPayload | null {
+  if (!steamIsAccountValid.value) return null
+  const amountRub = Number.parseFloat(steamQuantity.value)
+  if (!Number.isFinite(amountRub) || amountRub <= 0) return null
+  return {
+    account: steamNormalizedAccount.value,
+    amount_rub: amountRub,
   }
 }
 
@@ -311,8 +452,8 @@ function clearSteamFeedback(): void {
 function buildSteamCreateOrderPayload(): SteamTopUpCreateOrderPayload | null {
   if (!selectedSteamService.value) return null
 
-  const account = steamAccount.value.trim()
-  if (account.length < 2) return null
+  if (!steamIsAccountValid.value) return null
+  const account = steamNormalizedAccount.value
 
   const payload: SteamTopUpCreateOrderPayload = {
     service_id: selectedSteamService.value.id,
@@ -374,6 +515,9 @@ async function createSteamOrder() {
   clearSteamFeedback()
   steamChargedAmountRub.value = null
   steamBalanceAfterRub.value = null
+  steamDiscountAmountRub.value = null
+  steamAppliedPromoCode.value = null
+  steamPromoDiscountPercent.value = null
   try {
     steamOrder.value = await steamTopupService.createOrder(payload)
     steamSuccess.value = t('pages.index.steamTopUp.orderCreated')
@@ -404,16 +548,86 @@ async function paySteamOrder() {
   steamPayingOrder.value = true
   clearSteamFeedback()
   try {
-    const response = await steamTopupService.payOrder(steamOrder.value.id)
+    const response = await steamTopupService.payOrder(
+      steamOrder.value.id,
+      buildSteamPayOrderPayload(),
+    )
     steamOrder.value = response.order
     steamChargedAmountRub.value = response.charged_amount_rub
     steamBalanceAfterRub.value = response.user_balance_after_rub
+    steamDiscountAmountRub.value = response.discount_amount_rub ?? null
+    steamAppliedPromoCode.value = response.applied_promo_code ?? null
+    steamPromoDiscountPercent.value = response.promo_discount_percent ?? null
+    if (response.payment_url) {
+      steamSuccess.value = t('pages.index.steamTopUp.redirectToPayment')
+      window.location.href = response.payment_url
+      return
+    }
+
     steamSuccess.value = t('pages.index.steamTopUp.orderPaid')
     await userStore.fetchUser()
   } catch (error) {
     steamError.value = resolveSteamErrorMessage(error)
   } finally {
     steamPayingOrder.value = false
+  }
+}
+
+async function submitSteamTopUpPayment() {
+  if (steamCheckoutSubmitting.value) return
+
+  const payload = buildSteamCreatePaymentPayload()
+  if (!payload) {
+    steamError.value = t('errors.FILL_REQUIRED_FIELDS')
+    return
+  }
+
+  steamCheckoutSubmitting.value = true
+  clearSteamFeedback()
+  steamSuccess.value = t('pages.index.steamTopUp.redirectToPayment')
+
+  try {
+    const response = await steamTopupService.createPayment(payload)
+    window.location.href = response.payment_url
+  } catch (error) {
+    steamError.value = resolveSteamErrorMessage(error)
+    steamSuccess.value = ''
+  } finally {
+    steamCheckoutSubmitting.value = false
+  }
+}
+
+function openSteamCheckoutModal() {
+  if (!steamCanCreateOrder.value) return
+  steamCheckoutCurrency.value = selectedCurrency.value === 'USD' ? 'USD' : 'RUB'
+  steamCheckoutModalOpen.value = true
+}
+
+function closeSteamCheckoutModal() {
+  if (steamCheckoutSubmitting.value) return
+  steamCheckoutModalOpen.value = false
+}
+
+async function confirmSteamCheckout() {
+  if (steamCheckoutSubmitting.value) return
+
+  steamCheckoutSubmitting.value = true
+  clearSteamFeedback()
+  try {
+    await createSteamOrder()
+    if (!steamOrder.value) return
+
+    if (!steamOrderReadyToPay.value) {
+      await refreshSteamOrder()
+    }
+
+    if (steamOrderReadyToPay.value && !steamOrderPaid.value) {
+      await paySteamOrder()
+    }
+
+    steamCheckoutModalOpen.value = false
+  } finally {
+    steamCheckoutSubmitting.value = false
   }
 }
 
@@ -509,9 +723,11 @@ async function loadMoreProducts() {
 async function loadMainCategories(page = 1, append = false) {
   if (!append) isCategoriesLoading.value = true
   const res = await categoryService.getAllCategories(page, categoriesPerPage.value)
-  const visibleMainCategories = filterVisibleCategories(res.categories).filter((category) => !category.parent_id)
+  const visibleMainCategories = sortCategoriesByActiveProductsCount(
+    filterVisibleCategories(res.categories).filter((category) => !category.parent_id),
+  )
   mainCategories.value = append
-    ? [...mainCategories.value, ...visibleMainCategories]
+    ? sortCategoriesByActiveProductsCount([...mainCategories.value, ...visibleMainCategories])
     : visibleMainCategories
   categoryPage.value = res.currentPage
   categoryTotalPages.value = res.totalPages
@@ -529,6 +745,25 @@ async function loadMoreMainCategories() {
   isLoadingMoreCategories.value = true
   await loadMainCategories(categoryPage.value + 1, true)
   isLoadingMoreCategories.value = false
+}
+
+async function expandAllMainCategories() {
+  if (isExpandingCategories.value) return
+  isExpandingCategories.value = true
+  try {
+    while (categoryPage.value < categoryTotalPages.value) {
+      await loadMainCategories(categoryPage.value + 1, true)
+    }
+  } finally {
+    isExpandingCategories.value = false
+  }
+}
+
+async function toggleCategoriesExpanded() {
+  areCategoriesExpanded.value = !areCategoriesExpanded.value
+  if (areCategoriesExpanded.value) {
+    await expandAllMainCategories()
+  }
 }
 
 function onMainCategoryClick(category: Category) {
@@ -580,22 +815,9 @@ function parseFilterNumber(value: string | number | null | undefined): number | 
   return Number.isNaN(parsed) ? undefined : parsed
 }
 
-function parseDateFilter(value: string | null | undefined): string | undefined {
-  if (!value) return undefined
-  const normalized = value.trim()
-  if (!normalized) return undefined
-
-  const parsedDate = new Date(`${normalized}T00:00:00`)
-  if (Number.isNaN(parsedDate.getTime())) return undefined
-
-  return normalized
-}
-
 function getProductFiltersParams(): ProductsFilterParams {
   const minPriceRaw = parsePriceFilterInRub(minPriceFilter.value)
   const maxPriceRaw = parsePriceFilterInRub(maxPriceFilter.value)
-  const createdFromRaw = parseDateFilter(createdFromFilter.value)
-  const createdToRaw = parseDateFilter(createdToFilter.value)
 
   const minPrice =
     minPriceRaw !== undefined && maxPriceRaw !== undefined && minPriceRaw > maxPriceRaw
@@ -606,26 +828,18 @@ function getProductFiltersParams(): ProductsFilterParams {
       ? minPriceRaw
       : maxPriceRaw
 
-  const createdFrom =
-    createdFromRaw && createdToRaw && createdFromRaw > createdToRaw
-      ? createdToRaw
-      : createdFromRaw
-  const createdTo =
-    createdFromRaw && createdToRaw && createdFromRaw > createdToRaw
-      ? createdFromRaw
-      : createdToRaw
-
   return {
     minPrice,
     maxPrice,
-    createdFrom,
-    createdTo,
+    onlineSellersOnly: onlineSellersOnly.value,
+    autoDeliveryOnly: autoDeliveryOnly.value,
   }
 }
 
 function clearProductFilters() {
   clearPriceFilters()
-  clearDateFilters()
+  onlineSellersOnly.value = false
+  autoDeliveryOnly.value = false
 }
 
 function clearPriceFilters() {
@@ -633,9 +847,19 @@ function clearPriceFilters() {
   maxPriceFilter.value = ''
 }
 
-function clearDateFilters() {
-  createdFromFilter.value = ''
-  createdToFilter.value = ''
+async function resetProductFilters() {
+  clearProductFilters()
+  await applyProductFilters()
+}
+
+async function toggleOnlineSellersOnlyFilter() {
+  onlineSellersOnly.value = !onlineSellersOnly.value
+  await applyProductFilters()
+}
+
+async function toggleAutoDeliveryOnlyFilter() {
+  autoDeliveryOnly.value = !autoDeliveryOnly.value
+  await applyProductFilters()
 }
 
 async function applyProductFilters() {
@@ -680,28 +904,13 @@ function toggleFiltersVisibility() {
   isFiltersOpen.value = !isFiltersOpen.value
 }
 
-const categoriesScroll = ref<HTMLDivElement | null>(null)
-const categoriesLoadMoreTrigger = ref<HTMLElement | null>(null)
-let categoriesObserver: IntersectionObserver | null = null
-
-const handleCategoriesWheel = (e: WheelEvent) => {
-  const el = e.currentTarget as HTMLElement
-  if (!el) return
-  const canScrollX = el.scrollWidth > el.clientWidth
-  if (!canScrollX) return
-
-  const isHorizontalIntent = Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey
-  if (!isHorizontalIntent) return
-
-  e.preventDefault()
-  const delta = e.shiftKey && e.deltaX === 0 ? e.deltaY : (e.deltaX || e.deltaY)
-  el.scrollLeft += delta
-}
-
 watch(selectedSteamServiceId, () => {
   steamOrder.value = null
   steamChargedAmountRub.value = null
   steamBalanceAfterRub.value = null
+  steamDiscountAmountRub.value = null
+  steamAppliedPromoCode.value = null
+  steamPromoDiscountPercent.value = null
   setDefaultSteamService(selectedSteamService.value)
 
   if (!steamSupportsRegion.value) {
@@ -714,16 +923,18 @@ watch(selectedSteamServiceId, () => {
 
 watch(
   () => user.value?.id,
-  async (currentUserId, previousUserId) => {
+  (currentUserId) => {
     if (!HOME_STEAM_TOPUP_ENABLED) return
     if (!currentUserId) {
       steamServices.value = []
       selectedSteamServiceId.value = null
       steamOrder.value = null
-      return
-    }
-    if (currentUserId !== previousUserId || steamServices.value.length === 0) {
-      await loadSteamServices()
+      steamChargedAmountRub.value = null
+      steamBalanceAfterRub.value = null
+      steamDiscountAmountRub.value = null
+      steamAppliedPromoCode.value = null
+      steamPromoDiscountPercent.value = null
+      steamCheckoutModalOpen.value = false
     }
   },
 )
@@ -733,6 +944,17 @@ watch(productCardViewMode, (mode) => {
   window.localStorage.setItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY, mode)
 })
 
+watch([normalizedSearchQuery, hasCategorySearchResults], ([query, hasResults]) => {
+  if (!query || !hasResults) {
+    closeSearchDropdown()
+    return
+  }
+  isSearchDropdownOpen.value = true
+  if (searchDropdownHighlightedIndex.value < 0) {
+    searchDropdownHighlightedIndex.value = 0
+  }
+})
+
 onMounted(async () => {
   restoreProductCardViewModeFromStorage()
   await Promise.all([
@@ -740,20 +962,25 @@ onMounted(async () => {
     loadMainCategories(),
     loadSearchableCategories(),
   ])
-  if (HOME_STEAM_TOPUP_ENABLED && user.value) {
-    await loadSteamServices()
-  }
   observer = new IntersectionObserver((entries) => { if (entries[0]!.isIntersecting) loadMoreProducts() }, { rootMargin: '300px' })
   if (loadMoreTrigger.value) observer.observe(loadMoreTrigger.value)
-  categoriesObserver = new IntersectionObserver((entries) => { if (entries[0]!.isIntersecting && categoryPage.value < categoryTotalPages.value) loadMoreMainCategories() }, { root: categoriesScroll.value, threshold: 0.1 })
-  if (categoriesLoadMoreTrigger.value) categoriesObserver.observe(categoriesLoadMoreTrigger.value)
+  onDocumentClickForSearchDropdown = (event: MouseEvent) => {
+    const target = event.target as Node | null
+    if (!target) return
+    if (searchDropdownRef.value?.contains(target)) return
+    closeSearchDropdown()
+  }
+  document.addEventListener('click', onDocumentClickForSearchDropdown)
 })
 
 onBeforeUnmount(() => {
   if (searchTimeout) clearTimeout(searchTimeout)
   if (filterTimeout) clearTimeout(filterTimeout)
   observer?.disconnect()
-  categoriesObserver?.disconnect()
+  if (onDocumentClickForSearchDropdown) {
+    document.removeEventListener('click', onDocumentClickForSearchDropdown)
+    onDocumentClickForSearchDropdown = null
+  }
 })
 
 </script>
@@ -775,228 +1002,78 @@ onBeforeUnmount(() => {
       class="relative z-20 flex min-h-screen w-full flex-col items-center px-1 pb-6 sm:px-2 lg:px-2"
       :class="user ? 'pt-20' : 'pt-6'"
     >
-        <SearchField v-model="searchQuery" :placeholder="$t('pages.index.searchPlaceholder')"
-          @search-change="debouncedSearch" class="w-full lg:max-w-2xl" />
-
-        <div
-          v-if="categorySearchResults.length"
-          class="mt-2 w-full rounded-xl border border-dark-700 bg-dark-700/70 p-2 lg:max-w-2xl"
-        >
-          <p class="px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
-            {{ t('pages.index.categoriesFound') }}
-          </p>
+        <div class="w-full lg:max-w-2xl">
           <button
-            v-for="category in categorySearchResults"
-            :key="`search-category-${category.id}`"
+            v-if="HOME_STEAM_TOPUP_ENABLED"
             type="button"
-            class="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-white transition hover:bg-dark-600"
-            @click="goToCategoryPage(category)"
+            class="steam-promo-chip mb-3 inline-flex w-auto self-start items-center justify-start gap-2 rounded-xl border p-2 pr-3 text-left"
+            :class="steamPromoChipWrapperClass"
+            @click="goToSteamTopUpPage"
           >
-            <img
-              v-if="category.image_url"
-              :src="resolveCategoryImageUrl(category.image_url)"
-              :alt="category.name"
-              class="h-6 w-6 rounded object-cover border border-dark-600/80 shrink-0"
-            />
-            <Folder v-else class="h-5 w-5 text-gray-400 shrink-0" />
-            <span class="truncate text-sm leading-5">{{ category.name }}</span>
+            <div class="flex items-center gap-2">
+              <span
+                class="steam-promo-chip__icon inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border shadow-inner"
+                :class="steamPromoIconClass"
+              >
+                <Icon icon="mdi:steam" class="h-6 w-6" />
+              </span>
+              <span
+                class="steam-promo-chip__badge inline-flex h-6 min-w-9 items-center justify-center rounded-md border px-2 text-xs font-semibold leading-none"
+                :class="steamPromoBadgeClass"
+              >
+                5%
+              </span>
+            </div>
+            <div class="min-w-0 flex-1 text-right sm:hidden">
+              <div class="text-sm font-semibold text-white">{{ t('pages.index.steamTopUp.title') }}</div>
+              <div class="truncate text-xs text-gray-400">{{ t('pages.index.steamTopUp.subtitle') }}</div>
+            </div>
           </button>
+          <div
+            ref="searchDropdownRef"
+            class="w-full"
+            @focusin="openSearchDropdown"
+            @keydown="onSearchDropdownKeydown"
+          >
+            <SearchField
+              v-model="searchQuery"
+              :placeholder="$t('pages.index.searchPlaceholder')"
+              @search-change="debouncedSearch"
+              class="home-search-glass w-full"
+            />
+          </div>
         </div>
 
         <div
-          v-if="user && HOME_STEAM_TOPUP_ENABLED"
-          class="mt-4 w-full rounded-2xl border border-dark-700 bg-dark-700/45 p-4 lg:max-w-2xl"
+          v-if="hasCategorySearchResults && isSearchDropdownOpen"
+          class="mt-2 w-full rounded-2xl border border-white/10 bg-[rgba(20,20,30,0.66)] p-2 shadow-[0_16px_38px_rgba(0,0,0,0.4)] backdrop-blur-xl lg:max-w-2xl"
         >
-          <div class="flex flex-col gap-1">
-            <h2 class="text-base font-semibold text-white">{{ t('pages.index.steamTopUp.title') }}</h2>
-            <p class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.subtitle') }}</p>
-          </div>
-
-          <p v-if="steamError" class="mt-3 rounded-lg border border-red-500/35 bg-red-500/10 px-3 py-2 text-sm text-red-200">
-            {{ steamError }}
+          <p class="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-400/85">
+            {{ t('pages.index.categoriesFound') }}
           </p>
-          <p v-if="steamSuccess" class="mt-3 rounded-lg border border-green-500/35 bg-green-500/10 px-3 py-2 text-sm text-green-200">
-            {{ steamSuccess }}
-          </p>
-
-          <div v-if="steamServicesLoading" class="mt-3 text-sm text-gray-400">
-            {{ t('common.loading') }}
-          </div>
-          <div v-else-if="!steamServices.length" class="mt-3 text-sm text-gray-400">
-            {{ t('pages.index.steamTopUp.noServices') }}
-          </div>
-          <div v-else class="mt-3 space-y-3">
-            <label class="block">
-              <span class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.service') }}</span>
-              <select
-                v-model.number="selectedSteamServiceId"
-                class="mt-1 h-10 w-full rounded-xl border border-dark-600 bg-dark-700/45 px-3 text-sm text-white outline-none transition focus:border-blue-400/40"
-              >
-                <option
-                  v-for="service in steamServices"
-                  :key="service.id"
-                  :value="service.id"
-                >
-                  {{ service.name }}
-                </option>
-              </select>
-            </label>
-
-            <label class="block">
-              <span class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.account') }}</span>
-              <input
-                v-model.trim="steamAccount"
-                type="text"
-                autocomplete="off"
-                class="mt-1 h-10 w-full rounded-xl border border-dark-600 bg-dark-700/45 px-3 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-blue-400/40"
-                :placeholder="t('pages.index.steamTopUp.accountPlaceholder')"
-              />
-            </label>
-
-            <div v-if="steamCanToggleAmountMode">
-              <p class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.amountType') }}</p>
-              <div class="mt-1 flex gap-2">
-                <button
-                  type="button"
-                  class="rounded-lg border px-3 py-1.5 text-xs font-semibold transition"
-                  :class="steamAmountMode === 'denomination'
-                    ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
-                    : 'border-dark-600 bg-dark-700/45 text-gray-300 hover:bg-dark-700/60'"
-                  @click="steamAmountMode = 'denomination'"
-                >
-                  {{ t('pages.index.steamTopUp.amountTypeFixed') }}
-                </button>
-                <button
-                  type="button"
-                  class="rounded-lg border px-3 py-1.5 text-xs font-semibold transition"
-                  :class="steamAmountMode === 'quantity'
-                    ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
-                    : 'border-dark-600 bg-dark-700/45 text-gray-300 hover:bg-dark-700/60'"
-                  @click="steamAmountMode = 'quantity'"
-                >
-                  {{ t('pages.index.steamTopUp.amountTypeCustom') }}
-                </button>
-              </div>
-            </div>
-
-            <label
-              v-if="steamAmountMode === 'denomination' && steamHasDenominations"
-              class="block"
-            >
-              <span class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.denomination') }}</span>
-              <select
-                v-model.number="steamDenominationId"
-                class="mt-1 h-10 w-full rounded-xl border border-dark-600 bg-dark-700/45 px-3 text-sm text-white outline-none transition focus:border-blue-400/40"
-              >
-                <option
-                  v-for="denomination in selectedSteamService?.denominations ?? []"
-                  :key="denomination.id"
-                  :value="denomination.id"
-                >
-                  {{ denomination.name }} ({{ denomination.price }} {{ denomination.currency }})
-                </option>
-              </select>
-            </label>
-
-            <label
-              v-else-if="steamSupportsQuantity"
-              class="block"
-            >
-              <span class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.quantity') }}</span>
-              <input
-                v-model.trim="steamQuantity"
-                type="number"
-                min="0.01"
-                step="0.01"
-                inputmode="decimal"
-                class="mt-1 h-10 w-full rounded-xl border border-dark-600 bg-dark-700/45 px-3 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-blue-400/40"
-                :placeholder="t('pages.index.steamTopUp.quantityPlaceholder')"
-              />
-            </label>
-
-            <div
-              v-if="steamSupportsRegion || steamSupportsServer"
-              class="grid grid-cols-1 gap-3 sm:grid-cols-2"
-            >
-              <label v-if="steamSupportsRegion" class="block">
-                <span class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.region') }}</span>
-                <input
-                  v-model.trim="steamRegion"
-                  type="text"
-                  class="mt-1 h-10 w-full rounded-xl border border-dark-600 bg-dark-700/45 px-3 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-blue-400/40"
-                  :placeholder="t('pages.index.steamTopUp.regionPlaceholder')"
-                />
-              </label>
-              <label v-if="steamSupportsServer" class="block">
-                <span class="text-xs text-gray-400">{{ t('pages.index.steamTopUp.server') }}</span>
-                <input
-                  v-model.trim="steamServer"
-                  type="text"
-                  class="mt-1 h-10 w-full rounded-xl border border-dark-600 bg-dark-700/45 px-3 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-blue-400/40"
-                  :placeholder="t('pages.index.steamTopUp.serverPlaceholder')"
-                />
-              </label>
-            </div>
-
-            <button
-              type="button"
-              class="h-10 rounded-xl border border-blue-400/40 bg-blue-500/10 px-4 text-sm font-semibold text-blue-200 transition hover:bg-blue-500/15 disabled:cursor-not-allowed disabled:opacity-50"
-              :disabled="!steamCanCreateOrder || steamCreatingOrder"
-              @click="createSteamOrder"
-            >
-              {{ steamCreatingOrder ? t('pages.index.steamTopUp.creatingOrder') : t('pages.index.steamTopUp.createOrder') }}
-            </button>
-          </div>
-
-          <div
-            v-if="steamOrder"
-            class="mt-4 rounded-xl border border-dark-600 bg-dark-700/35 p-3"
+          <button
+            v-for="(category, index) in categorySearchResults"
+            :key="`search-category-${category.id}`"
+            type="button"
+            class="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm text-white transition duration-200"
+            :class="{
+              'bg-blue-400/15': searchDropdownHighlightedIndex === index,
+              'hover:bg-white/8': searchDropdownHighlightedIndex !== index,
+            }"
+            @mouseenter="searchDropdownHighlightedIndex = index"
+            @click="goToCategoryPage(category)"
           >
-            <p class="text-sm font-semibold text-white">
-              {{ t('pages.index.steamTopUp.orderTitle') }} #{{ steamOrder.id }}
-            </p>
-            <div class="mt-2 grid grid-cols-1 gap-2 text-sm text-gray-300 sm:grid-cols-2">
-              <p>
-                <span class="text-gray-400">{{ t('pages.index.steamTopUp.orderStatus') }}:</span>
-                <span class="ml-1">{{ steamOrder.status }}</span>
-              </p>
-              <p>
-                <span class="text-gray-400">{{ t('pages.index.steamTopUp.orderPrice') }}:</span>
-                <span class="ml-1">{{ steamOrderPriceLabel }}</span>
-              </p>
-              <p v-if="steamOrder.denomination">
-                <span class="text-gray-400">{{ t('pages.index.steamTopUp.denomination') }}:</span>
-                <span class="ml-1">{{ steamOrder.denomination.name }}</span>
-              </p>
-              <p v-if="steamChargedAmountRub !== null">
-                <span class="text-gray-400">{{ t('pages.index.steamTopUp.chargedAmount') }}:</span>
-                <span class="ml-1">{{ formatCurrencyAmount(steamChargedAmountRub, { fromCurrency: 'RUB', currency: 'RUB' }) }}</span>
-              </p>
-              <p v-if="steamBalanceAfterRub !== null">
-                <span class="text-gray-400">{{ t('pages.index.steamTopUp.balanceAfter') }}:</span>
-                <span class="ml-1">{{ formatCurrencyAmount(steamBalanceAfterRub, { fromCurrency: 'RUB', currency: 'RUB' }) }}</span>
-              </p>
-            </div>
-
-            <div class="mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                class="h-9 rounded-lg border border-dark-600 bg-dark-700/50 px-3 text-xs font-semibold text-gray-200 transition hover:bg-dark-700/70 disabled:cursor-not-allowed disabled:opacity-50"
-                :disabled="steamRefreshingOrder"
-                @click="refreshSteamOrder"
-              >
-                {{ steamRefreshingOrder ? t('pages.index.steamTopUp.refreshingOrder') : t('pages.index.steamTopUp.refreshOrder') }}
-              </button>
-              <button
-                type="button"
-                class="h-9 rounded-lg border border-emerald-400/35 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-50"
-                :disabled="!steamOrderReadyToPay || steamOrderPaid || steamPayingOrder"
-                @click="paySteamOrder"
-              >
-                {{ steamPayingOrder ? t('pages.index.steamTopUp.payingOrder') : t('pages.index.steamTopUp.payOrder') }}
-              </button>
-            </div>
-          </div>
+            <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-dark-800/80">
+              <img
+                v-if="category.image_url"
+                :src="resolveCategoryImageUrl(category.image_url)"
+                :alt="category.name"
+                class="h-5 w-5 rounded object-cover"
+              />
+              <Folder v-else class="h-4 w-4 text-gray-400" />
+            </span>
+            <span class="truncate text-sm leading-5">{{ category.name }}</span>
+          </button>
         </div>
 
         <div class="mt-10 w-full sm:mt-16">
@@ -1006,25 +1083,83 @@ onBeforeUnmount(() => {
             <div v-for="n in 5" :key="n" class="h-16 w-16 bg-dark-600 animate-pulse rounded-lg sm:h-20 sm:w-20" />
           </div>
 
-          <div
-            v-else
-            ref="categoriesScroll"
-            @wheel="handleCategoriesWheel"
-            class="overflow-x-auto overflow-y-hidden w-full relative"
-          >
-            <div class="flex min-w-max gap-2 py-1.5 sm:gap-3 sm:py-2">
+          <div v-else class="w-full">
+            <div class="relative">
               <div
+                v-if="!areCategoriesExpanded"
+                class="w-full overflow-hidden"
+              >
+                <div class="flex min-w-max gap-2 py-1.5 sm:gap-3 sm:py-2">
+                  <button
+                    v-for="cat in mainCategories"
+                    :key="cat.id"
+                    type="button"
+                    @click="onMainCategoryClick(cat)"
+                    class="flex-shrink-0 cursor-pointer flex flex-col items-center p-1.5 rounded-lg transition sm:p-2"
+                  >
+                    <div class="h-12 w-12 flex items-center justify-center bg-dark-700 rounded-lg overflow-hidden border border-white/5 shadow-inner sm:h-16 sm:w-16">
+                      <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="w-full h-full object-cover" />
+                      <Folder v-else class="h-6 w-6 text-gray-400 sm:h-8 sm:w-8" />
+                    </div>
+                    <span class="home-category-label mt-1.5 sm:mt-2">{{ cat.name }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <button
+                v-if="shouldShowCategoryExpandButton && !areCategoriesExpanded"
+                type="button"
+                class="market-primary-surface market-primary-hover absolute right-1 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-blue-400/25 text-white shadow-[0_10px_24px_rgba(0,0,0,0.32)] ring-4 ring-dark-800/55 transition disabled:cursor-default disabled:opacity-60 sm:h-12 sm:w-12"
+                :aria-expanded="areCategoriesExpanded"
+                :aria-label="areCategoriesExpanded ? t('pages.index.collapseCategories') : t('pages.index.expandCategories')"
+                :title="areCategoriesExpanded ? t('pages.index.collapseCategories') : t('pages.index.expandCategories')"
+                :disabled="isExpandingCategories"
+                @click="toggleCategoriesExpanded"
+              >
+                <ChevronRight
+                  class="h-5 w-5 transition-transform duration-200 sm:h-6 sm:w-6"
+                  :class="areCategoriesExpanded ? 'rotate-90' : ''"
+                />
+              </button>
+            </div>
+
+            <div
+              v-if="areCategoriesExpanded"
+              class="mt-2 grid sm:grid-cols-6 grid-cols-6 md:grid-cols-8 lg:grid-cols-12 xl:grid-cols-15 gap-1"
+            >
+              <button
                 v-for="cat in mainCategories"
                 :key="cat.id"
+                type="button"
                 @click="onMainCategoryClick(cat)"
-                class="flex-shrink-0 cursor-pointer flex flex-col items-center p-1.5 rounded-lg transition sm:p-2"
+                class="cursor-pointer flex min-w-0 flex-col items-center rounded-lg p-1 transition hover:bg-dark-700/25 sm:p-1.5"
               >
                 <div class="h-12 w-12 flex items-center justify-center bg-dark-700 rounded-lg overflow-hidden border border-white/5 shadow-inner sm:h-16 sm:w-16">
                   <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="w-full h-full object-cover" />
                   <Folder v-else class="h-6 w-6 text-gray-400 sm:h-8 sm:w-8" />
                 </div>
-                <span class="mt-1.5 w-12 truncate text-center text-xs font-medium leading-tight sm:mt-2 sm:w-16 sm:text-sm">{{ cat.name }}</span>
-              </div>
+                <span class="home-category-label mt-1.5 sm:mt-2">
+                  {{ cat.name }}
+                </span>
+              </button>
+
+              <button
+                v-if="shouldShowCategoryExpandButton"
+                type="button"
+                class="flex min-w-0 flex-col items-center rounded-lg p-1 text-white transition disabled:cursor-default disabled:opacity-60 sm:p-1.5"
+                :aria-expanded="areCategoriesExpanded"
+                :aria-label="t('pages.index.collapseCategories')"
+                :title="t('pages.index.collapseCategories')"
+                :disabled="isExpandingCategories"
+                @click="toggleCategoriesExpanded"
+              >
+                <div class="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 sm:h-16 sm:w-16">
+                  <ChevronRight class="h-5 w-5 rotate-270 sm:h-6 sm:w-6" />
+                </div>
+                <span class="mt-1.5 w-full break-words text-center text-xs font-medium leading-tight sm:mt-2 sm:text-sm">
+                  {{ t('pages.index.collapseCategoriesShort') }}
+                </span>
+              </button>
             </div>
           </div>
         </div>
@@ -1046,6 +1181,12 @@ onBeforeUnmount(() => {
             >
               <SlidersHorizontal class="h-4 w-4" />
               <span>{{ t('pages.index.filtersTitle') }}</span>
+              <span
+                v-if="activeProductFiltersCount > 0"
+                class="inline-flex min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[11px] text-white"
+              >
+                {{ activeProductFiltersCount }}
+              </span>
             </button>
 
             <div
@@ -1090,18 +1231,55 @@ onBeforeUnmount(() => {
             leave-to-class="opacity-0 -translate-y-1"
           >
             <div v-if="isFiltersOpen" class="mt-3 w-full rounded-2xl border border-dark-700 bg-dark-600/25 p-4 md:p-5">
-              <div class="flex flex-wrap gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    v-for="preset in pricePresets"
+                    :key="preset.id"
+                    type="button"
+                    class="rounded-full border px-3 py-1.5 text-xs font-semibold transition"
+                    :class="isPricePresetActive(preset)
+                      ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
+                      : 'border-dark-600 bg-dark-700/30 text-gray-300 hover:bg-dark-700/50 hover:text-white'"
+                    @click="onPricePresetClick(preset)"
+                  >
+                    {{ preset.label }}
+                  </button>
+                </div>
+
                 <button
-                  v-for="preset in pricePresets"
-                  :key="preset.id"
+                  v-if="activeProductFiltersCount > 0"
                   type="button"
-                  class="rounded-full border px-3 py-1.5 text-xs font-semibold transition"
-                  :class="isPricePresetActive(preset)
+                  class="text-xs font-semibold text-gray-400 transition hover:text-white"
+                  @click="resetProductFilters"
+                >
+                  {{ t('pages.index.resetFilters') }}
+                </button>
+              </div>
+
+              <div class="mt-4 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  class="rounded-full border px-3 py-2 text-xs font-semibold transition"
+                  :class="onlineSellersOnly
                     ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
                     : 'border-dark-600 bg-dark-700/30 text-gray-300 hover:bg-dark-700/50 hover:text-white'"
-                  @click="onPricePresetClick(preset)"
+                  :aria-pressed="onlineSellersOnly"
+                  @click="toggleOnlineSellersOnlyFilter"
                 >
-                  {{ preset.label }}
+                  {{ t('pages.index.onlineSellersOnly') }}
+                </button>
+
+                <button
+                  type="button"
+                  class="rounded-full border px-3 py-2 text-xs font-semibold transition"
+                  :class="autoDeliveryOnly
+                    ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
+                    : 'border-dark-600 bg-dark-700/30 text-gray-300 hover:bg-dark-700/50 hover:text-white'"
+                  :aria-pressed="autoDeliveryOnly"
+                  @click="toggleAutoDeliveryOnlyFilter"
+                >
+                  {{ t('pages.index.autoDeliveryOnly') }}
                 </button>
               </div>
 
@@ -1139,29 +1317,6 @@ onBeforeUnmount(() => {
                 </label>
               </div>
 
-              <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-                <label class="rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2.5 transition focus-within:border-blue-400/40 focus-within:bg-dark-700/55">
-                  <span class="block text-xs text-gray-400">{{ t('pages.index.dateFrom') }}</span>
-                  <input
-                    v-model="createdFromFilter"
-                    type="date"
-                    class="mt-1.5 w-full bg-transparent text-sm text-white outline-none placeholder-gray-500"
-                    :max="createdToFilter || undefined"
-                    @input="debouncedApplyProductFilters"
-                  />
-                </label>
-
-                <label class="rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2.5 transition focus-within:border-blue-400/40 focus-within:bg-dark-700/55">
-                  <span class="block text-xs text-gray-400">{{ t('pages.index.dateTo') }}</span>
-                  <input
-                    v-model="createdToFilter"
-                    type="date"
-                    class="mt-1.5 w-full bg-transparent text-sm text-white outline-none placeholder-gray-500"
-                    :min="createdFromFilter || undefined"
-                    @input="debouncedApplyProductFilters"
-                  />
-                </label>
-              </div>
             </div>
           </transition>
         </div>
@@ -1256,6 +1411,75 @@ onBeforeUnmount(() => {
 @media (min-width: 2320px) {
   .products-grid {
     grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.steam-topup-amount-input[type='number'] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.steam-topup-amount-input[type='number']::-webkit-outer-spin-button,
+.steam-topup-amount-input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.steam-checkout-modal {
+  background: var(--steam-checkout-modal-bg);
+  backdrop-filter: blur(18px) saturate(115%);
+  -webkit-backdrop-filter: blur(18px) saturate(115%);
+  box-shadow: var(--steam-checkout-modal-inset);
+}
+
+.steam-checkout-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 20 20%27 fill=%27none%27%3E%3Cpath d=%27M6 8l4 4 4-4%27 stroke=%27%2394a3b8%27 stroke-width=%271.8%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+  background-size: 0.85rem 0.85rem;
+}
+
+.home-search-glass :deep(input) {
+  border: 1px solid var(--home-search-glass-border);
+  padding-left: 0.75rem !important;
+  background: var(--home-search-glass-bg);
+  backdrop-filter: blur(10px) saturate(115%);
+  -webkit-backdrop-filter: blur(10px) saturate(115%);
+  box-shadow: var(--home-search-glass-shadow);
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.home-search-glass :deep(input:focus) {
+  border-color: var(--home-search-glass-focus-border);
+  box-shadow: var(--home-search-glass-focus-shadow);
+}
+
+.home-search-glass :deep(svg) {
+  display: none;
+  color: var(--home-search-glass-icon);
+}
+
+.home-category-label {
+  display: block;
+  width: 3rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: center;
+  font-size: 0.6875rem;
+  line-height: 1.15;
+  font-weight: 500;
+  -webkit-mask-image: linear-gradient(to right, #000 0%, #000 78%, transparent 100%);
+  mask-image: linear-gradient(to right, #000 0%, #000 78%, transparent 100%);
+}
+
+@media (min-width: 640px) {
+  .home-category-label {
+    width: 4rem;
+    font-size: 0.75rem;
   }
 }
 </style>

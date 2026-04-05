@@ -2,7 +2,6 @@
 import { productService } from '@/api/product/ProductService'
 import type { Product } from '@/validation/product/product'
 import { onMounted, ref, computed, watch } from 'vue'
-import Loader from '@/components/Loader.vue'
 import FavoriteProductCard from '@/components/FavoriteProductCard.vue'
 import HomeProductListCard from '@/components/HomeProductListCard.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
@@ -30,6 +29,10 @@ const filteredProducts = computed(() => {
     product.category.name.toLowerCase().includes(query)
   )
 })
+
+const loadingSkeletonCount = computed(() => (
+  productCardViewMode.value === 'grid' ? 8 : 5
+))
 
 function setProductCardViewMode(mode: ProductCardViewMode): void {
   if (productCardViewMode.value === mode) return
@@ -148,11 +151,19 @@ watch(productCardViewMode, (mode) => {
     </div>
 
     <!-- Loading state -->
-    <div v-if="isLoading" class="flex items-center justify-center h-64">
-      <div class="text-center space-y-3">
-        <Loader />
-        <p class="text-sm text-gray-400">{{ $t('common.loading') }}</p>
-      </div>
+    <div
+      v-if="isLoading"
+      class="w-full"
+      :class="productCardViewMode === 'grid'
+        ? 'products-grid grid gap-1 md:gap-2'
+        : 'flex flex-col gap-2 md:gap-3'"
+    >
+      <div
+        v-for="n in loadingSkeletonCount"
+        :key="n"
+        class="animate-pulse rounded-xl border border-dark-700 bg-dark-600/70"
+        :class="productCardViewMode === 'grid' ? 'h-64' : 'h-[118px] sm:h-[134px]'"
+      ></div>
     </div>
 
     <!-- Empty state -->
@@ -171,7 +182,7 @@ watch(productCardViewMode, (mode) => {
         </p>
         <router-link 
           to="/"
-          class="inline-flex items-center gap-2 px-6 py-3 mt-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+          class="market-primary-surface market-primary-hover mt-4 inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-medium text-white transition-colors"
         >
           {{ $t('pages.favoriteProducts.browseProducts') }}
         </router-link>

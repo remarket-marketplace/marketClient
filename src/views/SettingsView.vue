@@ -10,6 +10,7 @@ import { useI18n } from 'vue-i18n'
 import SuccessMessage from '@/components/SuccessMessage.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
+import { isSafeImageFile, SAFE_IMAGE_INPUT_ACCEPT } from '@/utils/imageUpload'
 import { AtSign, Bell, Key, Loader2, Lock, Mail, Palette, Send, Shield, ImagePlus, Link2Off } from 'lucide-vue-next'
 import BackButton from '@/components/navigation/BackButton.vue'
 import { useUserStore } from '@/stores/user'
@@ -18,7 +19,6 @@ import { formatCurrencyAmount, resolvePreferredCurrency } from '@/utils/currency
 import { useRoute, useRouter } from 'vue-router'
 import {
   buildCustomNicknameStyleId,
-  CUSTOM_NICKNAME_STYLE_FONT_WEIGHTS,
   CUSTOM_NICKNAME_STYLE_PRICE_RUB,
   isCustomNicknameStyleId,
   resolveNicknameStyleId,
@@ -54,6 +54,39 @@ const changingPasswordCurrentPassword = ref('')
 const changingPasswordNewPassword = ref('')
 const passwordIsChanged = ref(false)
 const passwordErrorMessage = ref<string | null>(null)
+const passwordValidationHints = computed(() => {
+  const value = changingPasswordNewPassword.value
+  return [
+    {
+      key: 'length',
+      label: t('pages.auth.signUp.passwordLengthError'),
+      isMet: value.length >= 8,
+    },
+    {
+      key: 'uppercase',
+      label: t('pages.auth.signUp.passwordUppercaseError'),
+      isMet: /[A-Z]/.test(value),
+    },
+    {
+      key: 'lowercase',
+      label: t('pages.auth.signUp.passwordLowercaseError'),
+      isMet: /[a-z]/.test(value),
+    },
+    {
+      key: 'digit',
+      label: t('pages.auth.signUp.passwordDigitError'),
+      isMet: /\d/.test(value),
+    },
+    {
+      key: 'special',
+      label: t('pages.auth.signUp.passwordSpecialCharError'),
+      isMet: /[^A-Za-z0-9]/.test(value),
+    },
+  ]
+})
+const activePasswordValidationHint = computed(
+  () => passwordValidationHints.value.find((hint) => !hint.isMet) ?? null,
+)
 
 const changingUsername = ref('')
 const isChangingUsername = ref(false)
@@ -107,6 +140,14 @@ const customGlowG = ref(114)
 const customGlowB = ref(182)
 const customFontWeight = ref<CustomNicknameStyleFontWeight>(700)
 const customGlowEnabled = ref(true)
+const customFontWeightOptions: Array<{
+  value: CustomNicknameStyleFontWeight
+  labelKey: 'pages.settingsPage.customFontWeightThin' | 'pages.settingsPage.customFontWeightMedium' | 'pages.settingsPage.customFontWeightBold'
+}> = [
+  { value: 500, labelKey: 'pages.settingsPage.customFontWeightThin' },
+  { value: 700, labelKey: 'pages.settingsPage.customFontWeightMedium' },
+  { value: 900, labelKey: 'pages.settingsPage.customFontWeightBold' },
+]
 
 const currentUsername = computed(() => user.value?.username ?? 'username')
 const currentStyleId = computed(
@@ -148,6 +189,9 @@ const emailNotificationsEnabled = computed(
 )
 const telegramNotificationsEnabled = computed(
   () => notificationsData.value?.telegram_notifications_enabled ?? false,
+)
+const anyNotificationsEnabled = computed(
+  () => emailNotificationsEnabled.value || telegramNotificationsEnabled.value,
 )
 const telegramIntegrationEnabled = computed(
   () => notificationsData.value?.telegram_integration_enabled !== false,
@@ -533,6 +577,24 @@ async function toggleTelegramNotifications() {
   })
 }
 
+async function setAllNotificationsEnabled(enabled: boolean) {
+  if (!notificationsData.value) return
+  if (anyNotificationsEnabled.value === enabled) return
+
+  const payload: {
+    email_notifications_enabled?: boolean
+    telegram_notifications_enabled?: boolean
+  } = {
+    email_notifications_enabled: enabled,
+  }
+
+  if (telegramIntegrationEnabled.value) {
+    payload.telegram_notifications_enabled = enabled
+  }
+
+  await updateNotificationSettings(payload)
+}
+
 async function connectTelegram() {
   if (isTelegramConnectLoading.value) return
   notificationsErrorMessage.value = null
@@ -791,7 +853,7 @@ async function handleProfileBackgroundUpload(event: Event) {
   if (
     !file
     || !profileBackgroundUnlocked.value
-    || !file.type.startsWith('image/')
+    || !isSafeImageFile(file)
     || file.size > 10 * 1024 * 1024
   ) {
     return
@@ -904,6 +966,12 @@ async function changePassword() {
 
   if (!changingPasswordCurrentPassword.value || !changingPasswordNewPassword.value) {
     passwordErrorMessage.value = t('errors.FILL_REQUIRED_FIELDS')
+    isLoading.value = false
+    return
+  }
+
+  if (activePasswordValidationHint.value) {
+    passwordErrorMessage.value = activePasswordValidationHint.value.label
     isLoading.value = false
     return
   }
@@ -1120,30 +1188,41 @@ onUnmounted(() => {
             </div>
 
             <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-6 space-y-4">
-              <div class="flex items-start justify-between gap-3">
+              <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div class="min-w-0">
-                  <div class="flex items-center gap-2 text-white font-semibold">
+                  <div class="flex flex-wrap items-center gap-2 text-white font-semibold">
                     <Mail class="w-4 h-4 text-blue-300" />
                     <span>{{ $t('pages.settingsPage.twoFactorTitle') }}</span>
                   </div>
                   <p class="mt-1 text-xs text-gray-300">{{ $t('pages.settingsPage.twoFactorHint') }}</p>
                 </div>
-                <Checkbox
-                  size="md"
-                  :model-value="twoFactorEnabled"
-                  :disabled="isTwoFactorLoading || isTwoFactorSaving || !twoFactorData"
-                  @update:model-value="toggleTwoFactorSettings"
-                />
-              </div>
-
-              <div class="rounded-lg border border-dark-700 bg-dark-700/35 px-3 py-2 text-xs text-gray-300">
-                <span
-                  class="font-semibold"
-                  :class="twoFactorEnabled ? 'text-emerald-300' : 'text-amber-200'"
+                <div
+                  class="grid w-full grid-cols-2 rounded-xl border border-dark-700 bg-dark-700/50 p-1 sm:w-auto sm:min-w-[220px]"
+                  :class="isTwoFactorLoading || isTwoFactorSaving || !twoFactorData ? 'opacity-60' : ''"
                 >
-                  {{ twoFactorEnabled ? $t('pages.settingsPage.twoFactorEnabled') : $t('pages.settingsPage.twoFactorDisabled') }}
-                </span>
-                <span class="ml-1">{{ $t('pages.settingsPage.twoFactorEmailHint') }}</span>
+                  <button
+                    type="button"
+                    :disabled="isTwoFactorLoading || isTwoFactorSaving || !twoFactorData || twoFactorEnabled"
+                    class="rounded-lg px-4 py-2 text-sm font-semibold transition"
+                    :class="twoFactorEnabled
+                      ? 'settings-toggle-option-active'
+                      : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
+                    @click="!twoFactorEnabled && toggleTwoFactorSettings()"
+                  >
+                    {{ $t('pages.settingsPage.twoFactorEnabled') }}
+                  </button>
+                  <button
+                    type="button"
+                    :disabled="isTwoFactorLoading || isTwoFactorSaving || !twoFactorData || !twoFactorEnabled"
+                    class="rounded-lg px-4 py-2 text-sm font-semibold transition"
+                    :class="!twoFactorEnabled
+                      ? 'settings-toggle-option-danger'
+                      : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
+                    @click="twoFactorEnabled && toggleTwoFactorSettings()"
+                  >
+                    {{ $t('pages.settingsPage.twoFactorDisabled') }}
+                  </button>
+                </div>
               </div>
 
               <div v-if="isTwoFactorLoading || isTwoFactorSaving" class="flex items-center gap-2 text-sm text-gray-300">
@@ -1192,9 +1271,12 @@ onUnmounted(() => {
                     class="w-full"
                   />
                 </div>
-                <p class="text-xs text-gray-400 mt-2">
-                  {{ $t('pages.settingsPage.passwordRequirements') }}
-                </p>
+                <div v-if="changingPasswordNewPassword.length > 0 && activePasswordValidationHint" class="mt-2">
+                  <p class="flex items-center gap-2 text-xs leading-4 text-gray-400">
+                    <span class="inline-flex w-3 justify-center font-semibold">•</span>
+                    <span>{{ activePasswordValidationHint.label }}</span>
+                  </p>
+                </div>
               </div>
 
               <div class="space-y-3">
@@ -1210,7 +1292,7 @@ onUnmounted(() => {
 
               <button
                 :disabled="isLoading || !changingPasswordCurrentPassword || !changingPasswordNewPassword"
-                class="w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 py-3.5 text-white font-semibold hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
+                class="market-btn market-btn-primary w-full rounded-xl py-3.5"
                 @click="changePassword"
               >
                 <Loader2 v-if="isLoading" class="w-4 h-4 animate-spin" />
@@ -1218,31 +1300,6 @@ onUnmounted(() => {
               </button>
             </div>
 
-            <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-6 space-y-4">
-              <h3 class="text-lg font-semibold text-white">{{ $t('pages.settingsPage.passwordStrength') }}</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="space-y-2">
-                  <div class="flex items-center gap-2">
-                    <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                    <span class="text-sm text-gray-300">{{ $t('pages.settingsPage.strengthTip1') }}</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                    <span class="text-sm text-gray-300">{{ $t('pages.settingsPage.strengthTip2') }}</span>
-                  </div>
-                </div>
-                <div class="space-y-2">
-                  <div class="flex items-center gap-2">
-                    <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                    <span class="text-sm text-gray-300">{{ $t('pages.settingsPage.strengthTip3') }}</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                    <span class="text-sm text-gray-300">{{ $t('pages.settingsPage.strengthTip4') }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
 
           <div v-else-if="activeSection === 'nickname'" class="space-y-6">
@@ -1253,7 +1310,7 @@ onUnmounted(() => {
 
             <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-6 space-y-6">
               <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div class="space-y-3">
+                <div class="flex flex-col gap-3 md:min-h-[12.5rem]">
                   <label class="block text-sm font-medium text-gray-300">
                     {{ $t('pages.settingsPage.currentNickname') }}
                   </label>
@@ -1264,20 +1321,23 @@ onUnmounted(() => {
                       class="text-base font-semibold"
                     />
                   </div>
+                  <p class="hidden min-h-[1.25rem] text-xs leading-5 text-gray-400 opacity-0 select-none md:block">
+                    {{ $t('pages.settingsPage.nicknameRequirements') }}
+                  </p>
                 </div>
 
-                <div class="space-y-3">
+                <div class="flex flex-col gap-3 md:min-h-[12.5rem]">
                   <label class="block text-sm font-medium text-gray-300">
                     {{ $t('pages.settingsPage.newNickname') }}
                     <span class="text-red-400 ml-1">*</span>
                   </label>
-                  <TheInput
+                  <input
                     v-model="changingUsername"
                     :placeholder="$t('pages.settingsPage.enterNewNickname')"
                     type="text"
-                    class="w-full"
-                  />
-                  <p class="text-xs text-gray-400">
+                    class="w-full rounded-xl border border-dark-700 bg-dark-700/40 px-4 py-3 text-mainText transition-all duration-200 outline-none placeholder-gray-400"
+                  >
+                  <p class="min-h-[1.25rem] text-xs leading-5 text-gray-400">
                     {{ $t('pages.settingsPage.nicknameRequirements') }}
                   </p>
                 </div>
@@ -1298,7 +1358,7 @@ onUnmounted(() => {
 
               <button
                 type="button"
-                class="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 py-3.5 text-white font-semibold hover:from-emerald-700 hover:to-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
+                class="market-btn market-btn-primary w-full rounded-xl py-3.5"
                 :disabled="!canChangeUsername"
                 @click="requestUsernameChangeConfirmation"
               >
@@ -1322,7 +1382,44 @@ onUnmounted(() => {
             </div>
 
             <div v-else class="rounded-xl border border-dark-700 bg-dark-600/40 p-6 space-y-5">
-              <div class="rounded-xl border border-dark-700 bg-dark-700/30 p-4 flex items-center justify-between gap-3">
+              <div class="rounded-xl border border-dark-700 bg-dark-700/30 p-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 text-white font-semibold">
+                    <Bell class="w-4 h-4 text-amber-300" />
+                    <span>{{ $t('pages.settingsPage.notificationsMasterTitle') }}</span>
+                  </div>
+                  <p class="mt-1 text-xs text-gray-300">{{ $t('pages.settingsPage.notificationsMasterHint') }}</p>
+                </div>
+                <div
+                  class="grid w-full grid-cols-2 rounded-xl border border-dark-700 bg-dark-700/50 p-1 sm:w-auto sm:min-w-[220px]"
+                  :class="isNotificationsSaving ? 'opacity-60' : ''"
+                >
+                  <button
+                    type="button"
+                    :disabled="isNotificationsSaving || anyNotificationsEnabled"
+                    class="rounded-lg px-4 py-2 text-sm font-semibold transition"
+                    :class="anyNotificationsEnabled
+                      ? 'settings-toggle-option-active'
+                      : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
+                    @click="!anyNotificationsEnabled && setAllNotificationsEnabled(true)"
+                  >
+                    {{ $t('pages.settingsPage.twoFactorEnabled') }}
+                  </button>
+                  <button
+                    type="button"
+                    :disabled="isNotificationsSaving || !anyNotificationsEnabled"
+                    class="rounded-lg px-4 py-2 text-sm font-semibold transition"
+                    :class="!anyNotificationsEnabled
+                      ? 'settings-toggle-option-danger'
+                      : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
+                    @click="anyNotificationsEnabled && setAllNotificationsEnabled(false)"
+                  >
+                    {{ $t('pages.settingsPage.twoFactorDisabled') }}
+                  </button>
+                </div>
+              </div>
+
+              <div class="rounded-xl border border-dark-700 bg-dark-700/30 p-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div class="min-w-0">
                   <div class="flex items-center gap-2 text-white font-semibold">
                     <Mail class="w-4 h-4 text-blue-300" />
@@ -1330,19 +1427,40 @@ onUnmounted(() => {
                   </div>
                   <p class="mt-1 text-xs text-gray-300">{{ $t('pages.settingsPage.notificationsEmailHint') }}</p>
                 </div>
-                <Checkbox
-                  size="md"
-                  :model-value="emailNotificationsEnabled"
-                  :disabled="isNotificationsSaving"
-                  @update:model-value="toggleEmailNotifications"
-                />
+                <div
+                  class="grid w-full grid-cols-2 rounded-xl border border-dark-700 bg-dark-700/50 p-1 sm:w-auto sm:min-w-[220px]"
+                  :class="isNotificationsSaving ? 'opacity-60' : ''"
+                >
+                  <button
+                    type="button"
+                    :disabled="isNotificationsSaving || emailNotificationsEnabled"
+                    class="rounded-lg px-4 py-2 text-sm font-semibold transition"
+                    :class="emailNotificationsEnabled
+                      ? 'settings-toggle-option-active'
+                      : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
+                    @click="!emailNotificationsEnabled && toggleEmailNotifications()"
+                  >
+                    {{ $t('pages.settingsPage.twoFactorEnabled') }}
+                  </button>
+                  <button
+                    type="button"
+                    :disabled="isNotificationsSaving || !emailNotificationsEnabled"
+                    class="rounded-lg px-4 py-2 text-sm font-semibold transition"
+                    :class="!emailNotificationsEnabled
+                      ? 'settings-toggle-option-danger'
+                      : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
+                    @click="emailNotificationsEnabled && toggleEmailNotifications()"
+                  >
+                    {{ $t('pages.settingsPage.twoFactorDisabled') }}
+                  </button>
+                </div>
               </div>
 
               <div
                 v-if="telegramIntegrationEnabled"
                 class="rounded-xl border border-dark-700 bg-dark-700/30 p-4 space-y-3"
               >
-                <div class="flex items-center justify-between gap-3">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div class="min-w-0">
                     <div class="flex items-center gap-2 text-white font-semibold">
                       <Send class="w-4 h-4 text-emerald-300" />
@@ -1350,12 +1468,33 @@ onUnmounted(() => {
                     </div>
                     <p class="mt-1 text-xs text-gray-300">{{ $t('pages.settingsPage.notificationsTelegramHint') }}</p>
                   </div>
-                  <Checkbox
-                    size="md"
-                    :model-value="telegramNotificationsEnabled"
-                    :disabled="isNotificationsSaving || !telegramConnected"
-                    @update:model-value="toggleTelegramNotifications"
-                  />
+                  <div
+                    class="grid w-full grid-cols-2 rounded-xl border border-dark-700 bg-dark-700/50 p-1 sm:w-auto sm:min-w-[220px]"
+                    :class="isNotificationsSaving || !telegramConnected ? 'opacity-60' : ''"
+                  >
+                    <button
+                      type="button"
+                      :disabled="isNotificationsSaving || !telegramConnected || telegramNotificationsEnabled"
+                      class="rounded-lg px-4 py-2 text-sm font-semibold transition"
+                      :class="telegramNotificationsEnabled
+                        ? 'settings-toggle-option-active'
+                        : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
+                      @click="!telegramNotificationsEnabled && toggleTelegramNotifications()"
+                    >
+                      {{ $t('pages.settingsPage.twoFactorEnabled') }}
+                    </button>
+                    <button
+                    type="button"
+                    :disabled="isNotificationsSaving || !telegramConnected || !telegramNotificationsEnabled"
+                    class="rounded-lg px-4 py-2 text-sm font-semibold transition"
+                    :class="!telegramNotificationsEnabled
+                      ? 'settings-toggle-option-danger'
+                      : 'text-gray-300 hover:bg-dark-600/80 hover:text-white disabled:hover:bg-transparent'"
+                    @click="telegramNotificationsEnabled && toggleTelegramNotifications()"
+                  >
+                      {{ $t('pages.settingsPage.twoFactorDisabled') }}
+                    </button>
+                  </div>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2 text-xs">
@@ -1375,7 +1514,7 @@ onUnmounted(() => {
                   <button
                     v-if="!telegramConnected"
                     type="button"
-                    class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    class="market-primary-surface market-primary-hover inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
                     :disabled="isTelegramConnectLoading"
                     @click="connectTelegram"
                   >
@@ -1400,7 +1539,7 @@ onUnmounted(() => {
                     :href="pendingTelegramConnectUrl"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="inline-flex items-center gap-2 rounded-lg border border-blue-500/40 bg-blue-500/10 px-3 py-2 text-sm font-semibold text-blue-200 hover:bg-blue-500/20 transition"
+                    class="market-primary-surface market-primary-hover inline-flex items-center gap-2 rounded-lg border border-blue-500/40 px-3 py-2 text-sm font-semibold text-blue-200 transition"
                   >
                     <Send class="w-4 h-4" />
                     <span>{{ $t('pages.settingsPage.notificationsTelegramOpenLink') }}</span>
@@ -1463,7 +1602,7 @@ onUnmounted(() => {
                     v-if="profileBackgroundPreviewUrl"
                     class="absolute inset-0 bg-cover bg-center bg-no-repeat"
                     :style="{
-                      backgroundImage: `linear-gradient(180deg, rgba(8, 12, 19, 0.45) 0%, rgba(8, 12, 19, 0.75) 100%), url(${profileBackgroundPreviewUrl})`,
+                      backgroundImage: `var(--profile-background-preview-overlay), url(${profileBackgroundPreviewUrl})`,
                     }"
                   />
                   <div class="relative z-10 flex h-full w-full items-center justify-center text-xs text-gray-200">
@@ -1535,7 +1674,7 @@ onUnmounted(() => {
                 <input
                   ref="profileBackgroundFileInputRef"
                   type="file"
-                  accept="image/*"
+                  :accept="SAFE_IMAGE_INPUT_ACCEPT"
                   class="hidden"
                   @change="handleProfileBackgroundUpload"
                 />
@@ -1706,18 +1845,20 @@ onUnmounted(() => {
                       <div class="text-[11px] uppercase tracking-wide text-gray-400">
                         {{ $t('pages.settingsPage.customFontWeight') }}
                       </div>
-                      <select
-                        v-model.number="customFontWeight"
-                        class="mt-2 w-full rounded-md border border-dark-500 bg-dark-700 px-2 py-1.5 text-xs text-gray-100 outline-none focus:border-blue-500/60"
-                      >
-                        <option
-                          v-for="weight in CUSTOM_NICKNAME_STYLE_FONT_WEIGHTS"
-                          :key="weight"
-                          :value="weight"
+                      <div class="mt-2 grid w-full grid-cols-3 rounded-xl border border-dark-700 bg-dark-700/50 p-1">
+                        <button
+                          v-for="option in customFontWeightOptions"
+                          :key="option.value"
+                          type="button"
+                          class="rounded-lg px-3 py-2 text-xs font-semibold transition"
+                          :class="customFontWeight === option.value
+                            ? 'settings-toggle-option-active'
+                            : 'text-gray-300 hover:bg-dark-600/80 hover:text-white'"
+                          @click="customFontWeight = option.value"
                         >
-                          {{ weight }}
-                        </option>
-                      </select>
+                          {{ $t(option.labelKey) }}
+                        </button>
+                      </div>
                     </label>
 
                     <label class="rounded-lg border border-dark-600 bg-dark-800/60 px-3 py-2 text-xs text-gray-200">
@@ -1735,12 +1876,7 @@ onUnmounted(() => {
                   <div class="flex justify-end">
                     <button
                       type="button"
-                      class="rounded-lg px-3 py-1.5 text-xs font-semibold transition border"
-                      :class="customStyleCatalogItem?.is_active
-                        ? 'cursor-default border-blue-500/35 bg-blue-600/20 text-blue-200'
-                        : customStyleCatalogItem?.is_owned
-                          ? 'border-emerald-500/35 bg-emerald-600/15 text-emerald-200 hover:bg-emerald-600/25'
-                          : 'border-amber-500/35 bg-amber-600/15 text-amber-100 hover:bg-amber-600/25'"
+                      class="rounded-lg px-5 py-3.5 text-xs font-semibold transition bg-blue-600"
                       :disabled="!stylesCatalog || !!styleActionLoadingId || customStyleCatalogItem?.is_active"
                       @click="requestCustomStyleAction"
                     >
@@ -1877,6 +2013,19 @@ onUnmounted(() => {
   .lg\:overflow-y-auto::-webkit-scrollbar-thumb:hover {
     background-color: var(--overlay-white-30);
   }
+}
+
+.settings-toggle-option-active {
+  background: rgb(var(--palette-blue-600));
+  color: var(--white-solid);
+  box-shadow: var(--settings-toggle-active-shadow);
+}
+
+.settings-toggle-option-danger {
+  border: 1px solid rgb(var(--palette-rose-400) / 0.2);
+  background: rgb(var(--palette-rose-500) / 0.12);
+  color: rgb(var(--palette-rose-100));
+  box-shadow: var(--settings-toggle-danger-shadow);
 }
 
 @media (max-width: 1023px) {

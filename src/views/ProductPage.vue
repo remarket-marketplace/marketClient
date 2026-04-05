@@ -5,20 +5,19 @@ import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import Loader from '@/components/Loader.vue'
 import MainProductCard from '@/components/mainProductCard.vue'
 import HomeProductListCard from '@/components/HomeProductListCard.vue'
+import FortniteAccountSnapshot from '@/components/FortniteAccountSnapshot.vue'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
+import AutoDeliveryTag from '@/components/AutoDeliveryTag.vue'
 import type { Product, ProductImage } from '@/validation/product/product'
 import type { Category } from '@/validation/category/category'
 import { onMounted, ref, onUnmounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { ChevronLeft, ChevronRight, X, Heart, Trash2, Percent, ShoppingBag, LayoutGrid, Rows3 } from 'lucide-vue-next'
-import UserRating from '@/components/UserRating.vue'
 import TrustComponent from './TrustComponent.vue'
 import { useUserStore } from '@/stores/user'
 import BackButton from '@/components/navigation/BackButton.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
-import UserAvatar from '@/components/UserAvatar.vue'
-import StyledUsername from '@/components/StyledUsername.vue'
 import { formatCurrencyAmount, getCurrencySymbol, resolvePreferredCurrency } from '@/utils/currency'
 import { storeToRefs } from 'pinia'
 import { buildCategoryKey, buildProductKey } from '@/utils/urlKeys'
@@ -28,6 +27,7 @@ import {
   encodePriceOfferTemplateMessage,
   type PriceOfferMessageTemplateKey,
 } from '@/utils/priceOfferMessageTemplate'
+import { hasFortniteAccountDetails } from '@/utils/fortniteAccount'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const NORMALIZED_API_HOST = String(API_HOST || '').replace(/\/$/, '')
@@ -102,6 +102,14 @@ const similarProductsLoadingSkeletonCount = computed(() => (
 ))
 
 const productOfferBasePrice = computed(() => Number(product.value?.price ?? 0))
+const maxOfferedPrice = computed(() => {
+  const basePrice = productOfferBasePrice.value
+  if (!Number.isFinite(basePrice) || basePrice <= 0) {
+    return null
+  }
+
+  return Math.max(0.01, Number((basePrice - 0.01).toFixed(2)))
+})
 const offerDiscountPercent = computed(() => calculateDiscountPercent(
   productOfferBasePrice.value,
   Number(offeredPrice.value),
@@ -143,6 +151,10 @@ const displayedSubcategory = computed(() => {
 
   return currentCategory
 })
+
+const shouldShowFortniteAccountDetails = computed(() => (
+  hasFortniteAccountDetails(product.value?.fortnite_account_details)
+))
 
 function setProductCardViewMode(mode: ProductCardViewMode): void {
   if (productCardViewMode.value === mode) return
@@ -348,6 +360,20 @@ function closeOfferConfirm() {
   offerError.value = null
 }
 
+function normalizeOfferedPrice() {
+  const currentValue = Number(offeredPrice.value)
+  if (!Number.isFinite(currentValue)) {
+    return
+  }
+
+  const maxPrice = maxOfferedPrice.value
+  if (maxPrice === null) {
+    return
+  }
+
+  offeredPrice.value = Number(Math.min(Math.max(currentValue, 0.01), maxPrice).toFixed(2))
+}
+
 function getOfferPriceForDiscount(discountPercent: number): number | null {
   if (!product.value) return null
 
@@ -393,6 +419,7 @@ function handleOfferMessageInput() {
 async function handleOfferConfirm() {
   if (!product.value || user.value === null) return
 
+  normalizeOfferedPrice()
   const priceNumber = Number(offeredPrice.value)
   if (!Number.isFinite(priceNumber) || priceNumber <= 0 || priceNumber >= Number(product.value.price)) {
     offerError.value = t('errors.INVALID_PRICE_OFFER')
@@ -521,6 +548,10 @@ function prevImage() {
   }
 }
 
+function closeImageModal() {
+  openImageModal.value = false
+}
+
 async function likeProduct() {
   if (product.value) {
     const result = await productService.addProductLike(product.value.id)
@@ -553,7 +584,7 @@ function handleKeydown(event: KeyboardEvent) {
       break
     case 'Escape':
       event.preventDefault()
-      openImageModal.value = false
+      closeImageModal()
       break
   }
 }
@@ -596,6 +627,35 @@ onUnmounted(() => {
       <div class="w-full min-w-0 space-y-4">
         <div v-if="selectedImage" class="flex justify-center rounded-2xl border border-dark-700 bg-dark-700/40 overflow-hidden">
           <div class="relative w-full aspect-[4/3] sm:aspect-[5/4] lg:aspect-[4/3] max-h-[640px] flex items-center justify-center">
+            <template v-if="product.images && product.images.length > 1">
+              <button
+                type="button"
+                class="absolute inset-y-0 left-0 z-20 w-12 md:w-16 bg-transparent"
+                :aria-label="t('common.previous')"
+                @click="prevImage"
+              />
+              <button
+                type="button"
+                class="absolute inset-y-0 right-0 z-20 w-12 md:w-16 bg-transparent"
+                :aria-label="t('common.next')"
+                @click="nextImage"
+              />
+              <button
+                type="button"
+                class="pointer-events-none absolute left-3 top-1/2 z-30 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-black/45 text-white/90"
+                :aria-label="t('common.previous')"
+              >
+                <ChevronLeft class="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                class="pointer-events-none absolute right-3 top-1/2 z-30 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-black/45 text-white/90"
+                :aria-label="t('common.next')"
+              >
+                <ChevronRight class="h-5 w-5" />
+              </button>
+            </template>
+
             <img :src="`${API_HOST}${selectedImage.image_url}`" :alt="product.title"
               class="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-55 select-none pointer-events-none"
               loading="lazy" aria-hidden="true" />
@@ -621,13 +681,6 @@ onUnmounted(() => {
           {{ $t('pages.product.noImages') }}
         </div>
 
-        <!-- Description -->
-        <div class="py-4 space-y-4 hidden lg:block">
-          <h1 class="text-xl font-bold text-white">{{ $t('pages.product.description') }}</h1>
-          <p class="text-gray-300 leading-relaxed whitespace-pre-line text-sm lg:text-base">
-            {{ product.description || $t('pages.product.descriptionMissing') }}
-          </p>
-        </div>
       </div>
 
       <!-- Product details -->
@@ -642,17 +695,10 @@ onUnmounted(() => {
               <span class="text-2xl lg:text-3xl font-bold text-green-400">
                 {{ formatCurrencyAmount(product.price) }}
               </span>
+              <AutoDeliveryTag v-if="product.auto_delivery" />
               <ProductStatusTag v-if="product.is_owner || user?.role === 'admin'" :product-status="product.status" />
             </div>
           </div>
-        </div>
-
-        <!-- Description -->
-        <div class="space-y-4 lg:hidden">
-          <h1 class="text-xl font-bold text-white">{{ $t('pages.product.description') }}</h1>
-          <p class="text-gray-300 leading-relaxed whitespace-pre-line text-sm lg:text-base">
-            {{ product.description || $t('pages.product.descriptionMissing') }}
-          </p>
         </div>
 
         <!-- Meta info -->
@@ -733,37 +779,15 @@ onUnmounted(() => {
           </p>
         </div>
 
-        <!-- Seller -->
-        <div
-          class="flex items-center gap-4 p-4 rounded-xl bg-dark-600 cursor-pointer transition-all duration-200 hover:bg-dark-600/80 group"
-          @click="router.push(`/user/${product.seller.username}`)">
-          <UserAvatar
-            :avatar-url="product.seller.avatar_url"
-            :alt="product.seller.username"
-            class="w-12 h-12 rounded-full border border-dark-500 object-cover"
-          />
-          <div class="flex-1 flex flex-col gap-1">
-            <StyledUsername
-              :username="product.seller.username"
-              :style-id="product.seller.nickname_style_id"
-              class="text-base font-semibold"
-            />
-            <div class="flex">
-              <UserRating :rating="product.seller.rating" />
-            </div>
-          </div>
-          <div class="text-gray-400 text-xl transition-transform duration-200 group-hover:translate-x-1">
-            →
-          </div>
-        </div>
+        <TrustComponent :product="product" />
 
         <!-- Action buttons -->
-        <div class="pt-6 border-t border-gray-800">
+        <div class="pt-6 border-t border-dark-700">
           <div v-if="!product.is_sold" class="flex flex-col gap-3 sm:flex-row justify-end">
             <div class="w-full flex gap-6 pr-4 items-center justify-end" v-if="product.is_owner">
               <button
                 type="button"
-                class="rounded-lg flex-1 lg:flex-none bg-blue-600 px-4 py-4 text-sm text-white font-semibold transition hover:bg-blue-700 sm:px-6"
+                class="market-primary-surface market-primary-hover rounded-lg flex-1 px-4 py-4 text-sm font-semibold text-white transition lg:flex-none sm:px-6"
                 @click.stop="editProduct">
                 {{ $t('common.edit') }}
               </button>
@@ -777,24 +801,23 @@ onUnmounted(() => {
 
               <div v-if="product.status === 'active'" class="flex w-full items-center justify-end gap-3">
                 <div class="flex min-w-0 flex-1 flex-nowrap items-stretch gap-2">
-                  <button :disabled="user === null" @click="user !== null && openOfferConfirm()" class="h-12 flex-1 whitespace-nowrap rounded-lg px-4 text-sm font-semibold transition
+                  <button :disabled="user === null" @click="user !== null && openOfferConfirm()" class="inline-flex h-12 flex-1 items-center justify-center whitespace-nowrap rounded-lg px-4 text-sm font-semibold leading-none transition
           bg-emerald-600 text-white hover:bg-emerald-700
           disabled:bg-emerald-600/40
           disabled:text-white/60
           disabled:cursor-not-allowed
           disabled:hover:bg-emerald-600/40">
-                    <span class="inline-flex items-center justify-center gap-2">
+                    <span class="inline-flex items-center justify-center gap-2 leading-none">
                       <Percent class="h-4 w-4" />
                       {{ $t('pages.product.offerPrice') }}
                     </span>
                   </button>
-                  <button :disabled="user === null" @click="user !== null && openBuyConfirm()" class="h-12 flex-1 whitespace-nowrap rounded-lg px-4 text-sm font-semibold transition
-          bg-blue-600 text-white hover:bg-blue-700
+                  <button :disabled="user === null" @click="user !== null && openBuyConfirm()" class="market-primary-surface market-primary-hover inline-flex h-12 flex-1 items-center justify-center whitespace-nowrap rounded-lg px-4 text-sm font-semibold leading-none text-white transition
           disabled:bg-blue-600/40
           disabled:text-white/60
           disabled:cursor-not-allowed
           disabled:hover:bg-blue-600/40">
-                    <span class="inline-flex items-center justify-center gap-2">
+                    <span class="inline-flex items-center justify-center gap-2 leading-none">
                       <ShoppingBag class="h-4 w-4" />
                       {{ $t('pages.product.buy') }}
                     </span>
@@ -820,12 +843,34 @@ onUnmounted(() => {
           </div>
 
         </div>
-
-        <TrustComponent v-if="!product.is_owner" />
-        <div v-else class="w-full flex justify-end gap-2 text-gray-400">
+        <div v-if="product.is_owner" class="w-full flex justify-end gap-2 text-gray-400">
           <Heart />
           <span>{{ product.likes }}</span>
         </div>
+      </div>
+    </div>
+
+    <div
+      class="w-full gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] lg:items-start lg:gap-8"
+    >
+      <div
+        v-if="shouldShowFortniteAccountDetails"
+        class="order-1 space-y-4 rounded-2xl border border-dark-700 bg-dark-700/20 p-4 lg:order-2"
+      >
+        <h2 class="text-lg font-semibold text-white">
+          {{ $t('pages.product.fortniteAccountDetails') }}
+        </h2>
+        <FortniteAccountSnapshot
+          :details="product.fortnite_account_details"
+          variant="full"
+        />
+      </div>
+
+      <div class="order-2 space-y-4 py-4 lg:order-1 lg:py-0">
+        <h1 class="text-xl font-bold text-white">{{ $t('pages.product.description') }}</h1>
+        <p class="text-gray-300 leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere] text-sm lg:text-base">
+          {{ product.description || $t('pages.product.descriptionMissing') }}
+        </p>
       </div>
     </div>
 
@@ -843,7 +888,10 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div class="mt-6 w-full flex flex-col gap-4">
+    <div
+      v-if="isSimilarProductsLoading || similarProducts.length"
+      class="mt-6 w-full flex flex-col gap-4"
+    >
       <p class="text-xl sm:text-2xl font-bold">{{ $t('pages.product.similarProducts') }}</p>
       <div class="flex justify-end">
         <div
@@ -914,34 +962,49 @@ onUnmounted(() => {
         />
       </div>
 
-      <p v-else class="text-sm text-gray-400">{{ $t('pages.product.noSimilarProducts') }}</p>
     </div>
 
     <!-- Image modal -->
     <Teleport to="body">
       <div v-if="openImageModal && selectedImage"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 cursor-pointer"
-        @click="openImageModal = false">
+        @click.self="closeImageModal">
         <div class="relative w-full h-full flex items-center justify-center max-w-7xl mx-auto" @click.stop>
+          <template v-if="product.images && product.images.length > 1">
+            <button
+              type="button"
+              class="absolute inset-y-0 left-0 z-20 w-14 md:w-20 bg-transparent"
+              :aria-label="t('common.previous')"
+              @click="prevImage"
+            />
+            <button
+              type="button"
+              class="absolute inset-y-0 right-0 z-20 w-14 md:w-20 bg-transparent"
+              :aria-label="t('common.next')"
+              @click="nextImage"
+            />
+          </template>
+
           <img :src="`${API_HOST}${selectedImage.image_url}`" class="max-w-full max-h-full object-contain rounded-lg"
             :alt="`Modal image: ${product.title}`" loading="lazy" />
 
           <button
-            class="absolute top-4 right-4 text-white hover:text-gray-300 transition-all duration-200 bg-black/50 rounded-full p-2 hover:bg-black/70"
-            @click="openImageModal = false">
+            type="button"
+            class="absolute top-4 right-4 z-30 text-white hover:text-gray-300 transition-all duration-200 bg-black/50 rounded-full p-2 hover:bg-black/70"
+            @click.prevent.stop="closeImageModal">
             <X class="w-6 h-6" />
           </button>
 
           <button v-if="product.images && product.images.length > 1"
+            type="button"
             class="absolute left-4 text-white hover:text-gray-300 transition-all duration-200 bg-black/50 rounded-full p-3 hover:bg-black/70 disabled:opacity-30 disabled:cursor-not-allowed"
-            :disabled="product.images.findIndex(img => img.image_url === selectedImage?.image_url) === 0"
             @click="prevImage">
             <ChevronLeft class="w-6 h-6" />
           </button>
 
           <button v-if="product.images && product.images.length > 1"
+            type="button"
             class="absolute right-4 text-white hover:text-gray-300 transition-all duration-200 bg-black/50 rounded-full p-3 hover:bg-black/70 disabled:opacity-30 disabled:cursor-not-allowed"
-            :disabled="product.images.findIndex(img => img.image_url === selectedImage?.image_url) === product.images.length - 1"
             @click="nextImage">
             <ChevronRight class="w-6 h-6" />
           </button>
@@ -997,8 +1060,11 @@ onUnmounted(() => {
                 v-model.number="offeredPrice"
                 type="number"
                 min="0.01"
+                :max="maxOfferedPrice ?? undefined"
                 step="0.01"
-                class="w-full rounded-lg border border-dark-700 bg-dark-700/60 px-3 py-2 pr-20 text-sm text-white outline-none focus:border-emerald-500"
+                class="price-offer-input w-full rounded-lg border border-dark-700 bg-dark-700/60 px-3 py-2 pr-20 text-sm text-white outline-none focus:border-emerald-500"
+                @input="normalizeOfferedPrice"
+                @blur="normalizeOfferedPrice"
               />
               <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 whitespace-nowrap text-xs text-gray-300">
                 {{ offerCurrencySymbol }} {{ offerCurrencyCode }}
@@ -1156,5 +1222,16 @@ onUnmounted(() => {
 /* Button hover animations */
 button {
   transition: all 0.2s ease-in-out;
+}
+
+.price-offer-input::-webkit-outer-spin-button,
+.price-offer-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.price-offer-input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 </style>

@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory, createMemoryHistory } from "vue-router";
-import { authService } from "@/api/auth/AuthService";
+import { useNavigationStore } from "@/stores/navigation";
+import { useUserStore } from "@/stores/user";
 
 const YANDEX_METRIKA_COUNTER_ID = 106828907;
 
@@ -117,6 +118,18 @@ const routes = [
       meta: { requiredAdmin: true },
     },
     {
+      path: "/admin/withdrawals",
+      name: "admin withdrawals",
+      component: () => import("@/views/admin/AdminWithdrawalsView.vue"),
+      meta: { requiredAdmin: true },
+    },
+    {
+      path: "/admin/promo-codes",
+      name: "admin promo codes",
+      component: () => import("@/views/admin/AdminPromoCodesView.vue"),
+      meta: { requiredAdmin: true },
+    },
+    {
       path: "/admin/deal/:id",
       name: "deal",
       component: () => import("@/views/admin/AdminDealView.vue"),
@@ -174,6 +187,12 @@ const routes = [
       path: "/wallet",
       name: "wallet",
       component: () => import("@/views/WalletView.vue"),
+      meta: { requiredAuthorized: true },
+    },
+    {
+      path: "/steam-topup",
+      name: "steam topup",
+      component: () => import("@/views/SteamTopUpView.vue"),
       meta: { requiredAuthorized: true },
     },
     {
@@ -242,37 +261,47 @@ export function createAppRouter(isSSR = false) {
     },
   })
 
-  router.beforeEach(async (to, from, next) => {
-  const { requiredAdmin, requiredAuthorized, requiredGuest, requiredPartner } = to.meta;
-  
-  if (!requiredAdmin && !requiredAuthorized && !requiredGuest && !requiredPartner) {
-    return next();
-  }
+  router.beforeEach(async (to) => {
+    const navigationStore = useNavigationStore()
+    const userStore = useUserStore()
+    const { requiredAdmin, requiredAuthorized, requiredGuest, requiredPartner } = to.meta
 
-  const user = await authService.getUser();
+    navigationStore.startRoutePending()
 
-  if (requiredAdmin) {
-    return user?.role === 'admin' ? next() : next('/not-access');
-  }
+    if (!requiredAdmin && !requiredAuthorized && !requiredGuest && !requiredPartner) {
+      return true
+    }
 
-  if (requiredPartner) {
-    return user && (user.role === 'partner' || user.role === 'admin')
-      ? next()
-      : next('/not-access');
-  }
+    if (!userStore.isResolved) {
+      await userStore.ensureUserLoaded()
+    }
 
-  if (requiredAuthorized) {
-    return user ? next() : next('/signin');
-  }
+    const user = userStore.user
 
-  if (requiredGuest) {
-    return user ? next('/') : next();
-  }
+    if (requiredAdmin) {
+      return user?.role === 'admin' ? true : '/not-access'
+    }
 
-  next();
+    if (requiredPartner) {
+      return user && (user.role === 'partner' || user.role === 'admin')
+        ? true
+        : '/not-access'
+    }
+
+    if (requiredAuthorized) {
+      return user ? true : '/signin'
+    }
+
+    if (requiredGuest) {
+      return user ? '/' : true
+    }
+
+    return true
   });
 
   router.afterEach(() => {
+    useNavigationStore().finishRoutePending()
+
     if (typeof window === 'undefined') {
       return
     }
@@ -320,6 +349,10 @@ export function createAppRouter(isSSR = false) {
       }
     );
   });
+
+  router.onError(() => {
+    useNavigationStore().finishRoutePending()
+  })
 
   return router
 }

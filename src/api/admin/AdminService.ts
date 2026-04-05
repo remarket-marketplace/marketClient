@@ -19,14 +19,33 @@ import {
   adminPaymentsListSchema,
   type AdminPayment as AdminPaymentModel,
 } from "@/validation/payment/adminPayment";
+import {
+  adminWithdrawalOrderSchema,
+  adminWithdrawalOrdersListSchema,
+  type AdminWithdrawalOrder as AdminWithdrawalOrderModel,
+} from "@/validation/wallet/adminWithdrawal";
+import {
+  adminPromoCodeSchema,
+  adminPromoCodesListSchema,
+  createAdminPromoCodeSchema,
+  updateAdminPromoCodeSchema,
+  type AdminPromoCode as AdminPromoCodeModel,
+  type CreateAdminPromoCodePayload as CreateAdminPromoCodePayloadModel,
+  type UpdateAdminPromoCodePayload as UpdateAdminPromoCodePayloadModel,
+} from "@/validation/promoCode/adminPromoCode";
 
 export type AdminPayment = AdminPaymentModel
+export type AdminWithdrawalOrder = AdminWithdrawalOrderModel
+export type AdminPromoCode = AdminPromoCodeModel
+export type CreateAdminPromoCodePayload = CreateAdminPromoCodePayloadModel
+export type UpdateAdminPromoCodePayload = UpdateAdminPromoCodePayloadModel
 
 export type DashboardStatusBreakdown = { status: string; count: number }
 export type DashboardSeriesPoint = { date: string; value: number }
 export type DashboardCategory = {
   category_id: string
   category_name: string
+  parent_category_name?: string | null
   total_sales: number
   total_deals: number
 }
@@ -83,7 +102,6 @@ export type AdminUpdateUserPayload = {
   description?: string
   has_frozen_balance?: boolean
   is_banned?: boolean
-  is_active?: boolean
   rating?: number
   role?: "user" | "admin" | "partner"
   nickname_style_id?: string
@@ -94,6 +112,8 @@ export type AdminUpdateUserPayload = {
 }
 
 export type PaymentStatus = "PENDING" | "CONFIRMED" | "CANCELED" | "CHARGEBACKED"
+export type PaymentModerationStatus = "CONFIRMED" | "CANCELED"
+export type WithdrawalOrderStatus = "pending" | "confirmed" | "canceled"
 
 export type AdminPaymentsFilters = {
   status?: PaymentStatus | "all"
@@ -101,6 +121,18 @@ export type AdminPaymentsFilters = {
   provider_tx_id?: string
   date_from?: string
   date_to?: string
+}
+
+export type AdminPromoCodesFilters = {
+  search?: string
+  is_active?: "all" | "active" | "inactive"
+  applies_to?: "all" | "wallet_topup" | "marketplace_purchase" | "steam_topup"
+}
+
+export type AdminWithdrawalOrdersFilters = {
+  status?: WithdrawalOrderStatus | "all"
+  user_query?: string
+  sort?: "newest" | "oldest" | "user_asc" | "user_desc" | "amount_desc" | "amount_asc" | "status_asc" | "status_desc"
 }
 
 export const adminService = {
@@ -491,7 +523,8 @@ export const adminService = {
 
   async updateCategoryData (
     categoryId: string,
-    name: string,
+    nameRu: string,
+    nameEn: string,
     description: string,
     isActive: boolean,
     newImage: File | null,
@@ -501,11 +534,13 @@ export const adminService = {
     // update category data
     //
     try {
-      const normalizedName = name.trim()
+      const normalizedNameRu = nameRu.trim()
+      const normalizedNameEn = nameEn.trim()
       const normalizedDescription = description.trim()
       const formData = new FormData()
 
-      formData.append('name', normalizedName)
+      formData.append('name_ru', normalizedNameRu)
+      formData.append('name_en', normalizedNameEn)
       formData.append('description', normalizedDescription)
       formData.append('is_active', isActive ? '1' : '0')
       if (newImage) {
@@ -517,6 +552,15 @@ export const adminService = {
 
       const response = await httpClient.put(`/admin/category/${categoryId}`, formData);
       return CategorySchema.parse(response.data);
+    } catch (e) {
+      return false;
+    }
+  },
+
+  async deleteCategory(categoryId: string) {
+    try {
+      const response = await httpClient.delete(`/admin/category/${categoryId}`);
+      return response.status === 200;
     } catch (e) {
       return false;
     }
@@ -735,7 +779,7 @@ export const adminService = {
 
   async updateAdminPaymentStatus(
     paymentId: string,
-    status: PaymentStatus,
+    status: PaymentModerationStatus,
     reason?: string | null,
   ): Promise<AdminPayment | null> {
     try {
@@ -752,6 +796,157 @@ export const adminService = {
         console.error("Error updating admin payment status:", e)
       }
       return null
+    }
+  },
+
+  async getAdminWithdrawalOrders(
+    page = 1,
+    perPage = 20,
+    filters: AdminWithdrawalOrdersFilters = {},
+  ): Promise<{
+    orders: AdminWithdrawalOrder[]
+    currentPage: number
+    totalPages: number
+    total: number
+  }> {
+    try {
+      const params: Record<string, string | number> = {
+        page,
+        per_page: perPage,
+      }
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value === undefined || value === null) return
+        const normalized = String(value).trim()
+        if (!normalized || normalized === "all") return
+        params[key] = normalized
+      })
+
+      const response = await httpClient.get("/admin/withdrawal-orders", { params })
+      const parsed = adminWithdrawalOrdersListSchema.parse(response.data)
+      return {
+        orders: parsed.orders,
+        currentPage: page,
+        totalPages: parsed.total_pages,
+        total: parsed.total,
+      }
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error("Admin withdrawal orders validation error:", e.issues)
+      } else {
+        console.error("Error fetching admin withdrawal orders:", e)
+      }
+      return {
+        orders: [],
+        currentPage: 1,
+        totalPages: 1,
+        total: 0,
+      }
+    }
+  },
+
+  async updateAdminWithdrawalOrderStatus(
+    orderId: string,
+    status: "confirmed" | "canceled",
+    reason?: string | null,
+  ): Promise<AdminWithdrawalOrder | null> {
+    try {
+      const response = await httpClient.patch("/admin/withdrawal-orders/status", {
+        order_id: orderId,
+        status,
+        reason: reason?.trim() ? reason.trim() : null,
+      })
+      return adminWithdrawalOrderSchema.parse(response.data)
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error("Admin withdrawal status validation error:", e.issues)
+      } else {
+        console.error("Error updating admin withdrawal status:", e)
+      }
+      return null
+    }
+  },
+
+  async getPromoCodes(
+    page = 1,
+    perPage = 20,
+    filters: AdminPromoCodesFilters = {},
+  ): Promise<{
+    promos: AdminPromoCode[]
+    currentPage: number
+    totalPages: number
+    total: number
+  }> {
+    try {
+      const params: Record<string, string | number | boolean> = { page, per_page: perPage }
+      const normalizedSearch = filters.search?.trim()
+      if (normalizedSearch) params.search = normalizedSearch
+
+      if (filters.is_active === "active") params.is_active = true
+      if (filters.is_active === "inactive") params.is_active = false
+
+      if (filters.applies_to && filters.applies_to !== "all") {
+        params.applies_to = filters.applies_to
+      }
+
+      const response = await httpClient.get("/admin/promo-codes", { params })
+      const parsed = adminPromoCodesListSchema.parse(response.data)
+      return {
+        promos: parsed.promos,
+        currentPage: page,
+        totalPages: parsed.total_pages,
+        total: parsed.total,
+      }
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error("Promo codes validation error:", e.issues)
+      } else {
+        console.error("Error fetching promo codes:", e)
+      }
+      return { promos: [], currentPage: 1, totalPages: 1, total: 0 }
+    }
+  },
+
+  async createPromoCode(payload: CreateAdminPromoCodePayload): Promise<AdminPromoCode> {
+    try {
+      const normalizedPayload = createAdminPromoCodeSchema.parse(payload)
+      const response = await httpClient.post("/admin/promo-codes", normalizedPayload)
+      return adminPromoCodeSchema.parse(response.data)
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error("Promo code create validation error:", e.issues)
+      } else {
+        console.error("Error creating promo code:", e)
+      }
+      throw e
+    }
+  },
+
+  async updatePromoCode(
+    promoId: string,
+    payload: UpdateAdminPromoCodePayload,
+  ): Promise<AdminPromoCode | null> {
+    try {
+      const normalizedPayload = updateAdminPromoCodeSchema.parse(payload)
+      const response = await httpClient.patch(`/admin/promo-codes/${promoId}`, normalizedPayload)
+      return adminPromoCodeSchema.parse(response.data)
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error("Promo code update validation error:", e.issues)
+      } else {
+        console.error("Error updating promo code:", e)
+      }
+      return null
+    }
+  },
+
+  async deactivatePromoCode(promoId: string): Promise<boolean> {
+    try {
+      await httpClient.delete(`/admin/promo-codes/${promoId}`)
+      return true
+    } catch (e) {
+      console.error("Error deactivating promo code:", e)
+      return false
     }
   },
 

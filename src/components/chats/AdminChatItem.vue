@@ -75,6 +75,55 @@ const checkMobile = () => {
     isMobile.value = window.innerWidth < 768
 }
 
+const WEEKDAY_SHORT_RU = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'] as const
+
+function startOfDay(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+function startOfWeekMonday(date: Date): Date {
+    const day = date.getDay()
+    const diff = day === 0 ? -6 : 1 - day
+    const monday = new Date(date)
+    monday.setDate(date.getDate() + diff)
+    return startOfDay(monday)
+}
+
+function formatChatListDateLabel(rawDate: string): string {
+    const date = new Date(rawDate)
+    if (Number.isNaN(date.getTime())) return ''
+
+    const now = new Date()
+    const todayStart = startOfDay(now)
+    const messageDayStart = startOfDay(date)
+    const diffDays = Math.round((todayStart.getTime() - messageDayStart.getTime()) / 86400000)
+
+    if (diffDays === 0) {
+        return new Intl.DateTimeFormat('ru-RU', {
+            hour: '2-digit',
+            minute: '2-digit',
+        }).format(date)
+    }
+    if (diffDays === 1) return 'Вчера'
+
+    const weekStart = startOfWeekMonday(now)
+    if (messageDayStart >= weekStart && messageDayStart <= todayStart) {
+        return WEEKDAY_SHORT_RU[date.getDay()] ?? ''
+    }
+
+    return new Intl.DateTimeFormat('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: '2-digit',
+    }).format(date)
+}
+
+const lastMessageDateLabel = computed(() => {
+    const createdAt = props.chat.last_message?.created_at
+    if (!createdAt) return ''
+    return formatChatListDateLabel(createdAt)
+})
+
 onMounted(() => {
     checkMobile()
     window.addEventListener('resize', checkMobile)
@@ -116,7 +165,7 @@ onMounted(() => {
             >
                 <div 
                     v-if="isUserOnline"
-                    class="w-full h-full bg-green-500 rounded-full animate-ping opacity-75"
+                    class="w-full h-full bg-green-500 rounded-full opacity-75"
                 ></div>
             </div>
         </div>
@@ -144,7 +193,7 @@ onMounted(() => {
                     v-if="chat.last_message?.created_at" 
                     class="flex-shrink-0 text-xs text-gray-500 whitespace-nowrap"
                 >
-                    {{new Date(chat.last_message.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}}
+                    {{ lastMessageDateLabel }}
                 </span>
             </div>
 
@@ -207,7 +256,4 @@ onMounted(() => {
     }
 }
 
-.animate-ping {
-    animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
-}
 </style>

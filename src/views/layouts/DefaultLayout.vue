@@ -11,14 +11,14 @@ import {
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import { Icon } from '@iconify/vue'
 import { useUserStore } from '@/stores/user'
 import { useChatStore } from '@/stores/chat'
 import { storeToRefs } from 'pinia'
-import SelectLanguage from '@/components/SelectLanguage.vue'
-import SelectCurrency from '@/components/SelectCurrency.vue'
 import MainPageFooter from '@/components/layout/MainPageFooter.vue'
-import { formatCurrencyAmount } from '@/utils/currency'
+import { formatCompactCurrencyAmount, formatCurrencyAmount } from '@/utils/currency'
 import NotificationsMenu from '@/components/layout/NotificationsMenu.vue'
+import MobileHeaderSettingsMenu from '@/components/layout/MobileHeaderSettingsMenu.vue'
 import type { FunctionalComponent } from 'vue'
 import type { LucideProps } from 'lucide-vue-next'
 
@@ -37,6 +37,7 @@ const chatStore = useChatStore()
 const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
+const HOME_STEAM_TOPUP_ENABLED = import.meta.env.VITE_STEAM_TOPUP_ENABLED !== 'false'
 
 const isDesktop = ref(true)
 const { user } = storeToRefs(store)
@@ -174,6 +175,10 @@ const walletBalanceLabel = computed(() =>
   }),
 )
 
+const walletBalanceCompactLabel = computed(() =>
+  formatCompactCurrencyAmount(Number(user.value?.balance ?? 0)),
+)
+
 const walletTitle = computed(() =>
   t('navigation.market.walletBalance', { balance: walletBalanceLabel.value }),
 )
@@ -184,6 +189,10 @@ function goToWallet() {
     return
   }
   router.push('/wallet')
+}
+
+function goToSteamTopUp() {
+  router.push('/steam-topup')
 }
 
 const mobileNavGridStyle = computed(() => ({
@@ -200,13 +209,44 @@ const mobileNavGridStyle = computed(() => ({
       class="fixed inset-x-0 top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
     >
       <div class="mx-auto w-full 2xl:w-1/2">
-        <div class="mx-auto h-14 w-full flex items-center justify-between px-2 lg:px-4">
-          <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold"
-            @click="router.push('/')">
-            remarket
+        <div class="mx-auto h-14 w-full flex items-center justify-between gap-3 px-2 lg:px-4">
+          <div class="flex flex-shrink-0 items-center gap-2 md:gap-3">
+            <div class="flex cursor-pointer items-center gap-2 text-lg text-mainText font-semibold sm:text-xl"
+              @click="router.push('/')">
+              remarket
+            </div>
+            <button
+              v-if="HOME_STEAM_TOPUP_ENABLED"
+              type="button"
+              class="inline-flex h-9 min-w-[7.6rem] items-center gap-1.5 rounded-full border border-gray-700 bg-transparent pl-2 pr-2.5 text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white md:hidden"
+              :title="t('pages.index.steamTopUp.title')"
+              @click="goToSteamTopUp"
+            >
+              <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-gray-700 text-gray-300">
+                <Icon icon="mdi:steam" class="h-3.5 w-3.5" />
+              </span>
+              <span class="min-w-0 flex-1 text-left text-[10px] font-medium leading-[1.05]">
+                <span class="block truncate">Пополнение</span>
+                <span class="block truncate">Steam</span>
+              </span>
+            </button>
+            <button
+              v-if="HOME_STEAM_TOPUP_ENABLED"
+              type="button"
+              class="hidden h-9 items-center gap-2 rounded-full border border-gray-700 bg-transparent px-3 text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white md:inline-flex"
+              :title="t('pages.index.steamTopUp.title')"
+              @click="goToSteamTopUp"
+            >
+              <span class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-700 text-gray-300 transition-colors duration-200">
+                <Icon icon="mdi:steam" class="h-4 w-4" />
+              </span>
+              <span class="text-sm font-medium leading-none">
+                {{ t('pages.index.steamTopUp.title') }}
+              </span>
+            </button>
           </div>
 
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2 md:gap-3">
             <nav class="hidden items-center gap-6 md:flex">
               <router-link v-for="item in primaryNavItems" :key="item.id" :to="item.to"
                 class="flex items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"
@@ -238,11 +278,11 @@ const mobileNavGridStyle = computed(() => ({
               <button
                 v-if="user && user.role !== 'admin'"
                 type="button"
-                class="inline-flex h-8 items-center gap-1.5 rounded-md border border-white/15 bg-white/10 px-2.5 text-xs text-mainText backdrop-blur-md transition hover:border-white/25 hover:bg-white/15"
+                class="inline-flex h-8 items-center gap-1.5 rounded-md border border-dark-700 bg-dark-600 px-2.5 text-xs text-mainText transition hover:border-dark-500 focus:outline-none"
                 :title="walletTitle"
                 @click="goToWallet"
               >
-                <Wallet class="h-3.5 w-3.5 text-emerald-300" />
+                <Wallet class="h-3.5 w-3.5 text-blue-400" />
                 <span class="font-medium">{{ walletBalanceLabel }}</span>
               </button>
 
@@ -276,31 +316,26 @@ const mobileNavGridStyle = computed(() => ({
               <button
                 v-if="user && user.role === 'admin'"
                 type="button"
-                class="inline-flex h-8 items-center gap-1.5 rounded-md border border-white/15 bg-white/10 px-2.5 text-xs text-mainText backdrop-blur-md transition hover:border-white/25 hover:bg-white/15"
+                class="inline-flex h-8 items-center gap-1.5 rounded-md border border-dark-700 bg-dark-600 px-2.5 text-xs text-mainText transition hover:border-dark-500 focus:outline-none"
                 :title="walletTitle"
                 @click="goToWallet"
               >
-                <Wallet class="h-3.5 w-3.5 text-emerald-300" />
+                <Wallet class="h-3.5 w-3.5 text-blue-400" />
                 <span class="font-medium">{{ walletBalanceLabel }}</span>
               </button>
             </nav>
 
-            <div class="md:order-2">
-              <SelectLanguage />
-            </div>
             <button
               v-if="user"
               type="button"
-              class="inline-flex h-8 items-center gap-1 rounded-md border border-white/15 bg-white/10 px-2 text-[10px] text-mainText backdrop-blur-md transition hover:border-white/25 hover:bg-white/15 md:hidden"
+              class="inline-flex h-8 items-center gap-1 rounded-md border border-dark-700 bg-dark-600 px-2 text-[10px] text-mainText transition hover:border-dark-500 focus:outline-none md:hidden"
               :title="walletTitle"
               @click="goToWallet"
             >
-              <Wallet class="h-3.5 w-3.5 text-emerald-300" />
-              <span class="max-w-[72px] truncate font-medium">{{ walletBalanceLabel }}</span>
+              <Wallet class="h-3.5 w-3.5 text-blue-400" />
+              <span class="block max-w-[64px] truncate font-medium">{{ walletBalanceCompactLabel }}</span>
             </button>
-            <div class="md:order-1">
-              <SelectCurrency />
-            </div>
+            <MobileHeaderSettingsMenu />
             <NotificationsMenu v-if="user?.username" />
           </div>
         </div>

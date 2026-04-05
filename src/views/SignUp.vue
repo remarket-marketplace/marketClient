@@ -3,7 +3,7 @@ import { authService } from '@/api/auth/AuthService'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import TheInput from '@/components/TheInput.vue'
 import { Eye, EyeOff } from 'lucide-vue-next'
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import TheButton from './forms/TheButton.vue'
@@ -21,6 +21,7 @@ const passwordRepeat = ref('')
 const username = ref('')
 
 const captchaToken = ref('')
+const captchaRenderKey = ref(0)
 
 
 // Состояния отправки форм
@@ -39,6 +40,129 @@ const isWelcomeRedirecting = ref(false)
 const usernameError = ref('')
 const emailError = ref('')
 const passwordError = ref('')
+const passwordRepeatError = ref('')
+
+function refreshCaptcha() {
+  captchaToken.value = ''
+  captchaRenderKey.value += 1
+}
+
+function normalizePasswordToLatin(value: string): string {
+  return value.replace(/[^\x21-\x7E]/g, '')
+}
+
+watch(password, (value) => {
+  const normalized = normalizePasswordToLatin(value)
+  if (normalized !== value) {
+    password.value = normalized
+  }
+})
+
+watch(passwordRepeat, (value) => {
+  const normalized = normalizePasswordToLatin(value)
+  if (normalized !== value) {
+    passwordRepeat.value = normalized
+  }
+})
+
+function getPasswordRequirementError(): string {
+  if (!/[A-Z]/.test(password.value)) {
+    return t('pages.auth.signUp.passwordUppercaseError')
+  }
+
+  if (!/[a-z]/.test(password.value)) {
+    return t('pages.auth.signUp.passwordLowercaseError')
+  }
+
+  if (!/\d/.test(password.value)) {
+    return t('pages.auth.signUp.passwordDigitError')
+  }
+
+  if (!/[^A-Za-z0-9]/.test(password.value)) {
+    return t('pages.auth.signUp.passwordSpecialCharError')
+  }
+
+  if (password.value.length < 8) {
+    return t('pages.auth.signUp.passwordLengthError')
+  }
+
+  return ''
+}
+
+const passwordHints = computed(() => {
+  const value = password.value
+  return [
+    {
+      key: 'length',
+      label: t('pages.auth.signUp.passwordLengthError'),
+      isMet: value.length >= 8,
+    },
+    {
+      key: 'uppercase',
+      label: t('pages.auth.signUp.passwordUppercaseError'),
+      isMet: /[A-Z]/.test(value),
+    },
+    {
+      key: 'lowercase',
+      label: t('pages.auth.signUp.passwordLowercaseError'),
+      isMet: /[a-z]/.test(value),
+    },
+    {
+      key: 'digit',
+      label: t('pages.auth.signUp.passwordDigitError'),
+      isMet: /\d/.test(value),
+    },
+    {
+      key: 'special',
+      label: t('pages.auth.signUp.passwordSpecialCharError'),
+      isMet: /[^A-Za-z0-9]/.test(value),
+    },
+  ]
+})
+
+const activePasswordHint = computed(() =>
+  passwordHints.value.find((hint) => !hint.isMet) ?? null,
+)
+
+const isUsernameValidForSubmit = computed(() => {
+  const normalizedUsername = username.value.trim()
+  return (
+    normalizedUsername.length >= 4
+    && normalizedUsername.length <= 32
+    && /^[A-Za-z0-9_]+$/.test(normalizedUsername)
+  )
+})
+
+const isEmailValidForSubmit = computed(() => {
+  const normalizedEmail = email.value.trim()
+  if (!normalizedEmail || normalizedEmail.length > 64) {
+    return false
+  }
+
+  const atIndex = normalizedEmail.indexOf('@')
+  const localPart = atIndex >= 0 ? normalizedEmail.slice(0, atIndex) : ''
+  if (localPart.length > 64) {
+    return false
+  }
+
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)
+})
+
+const isPasswordValidForSubmit = computed(() => password.value.length > 0 && getPasswordRequirementError() === '')
+
+const isPasswordRepeatValidForSubmit = computed(() =>
+  passwordRepeat.value.length > 0 && password.value === passwordRepeat.value,
+)
+
+const canRequestVerificationCode = computed(() =>
+  !sended.value
+  && !showCodeInput.value
+  && Boolean(captchaToken.value)
+  && isUsernameValidForSubmit.value
+  && isEmailValidForSubmit.value
+  && isPasswordValidForSubmit.value
+  && isPasswordRepeatValidForSubmit.value,
+)
 
 function validateUsername() {
   usernameError.value = ''
@@ -85,34 +209,8 @@ function validateEmail() {
 }
 
 function validatePassword() {
-  passwordError.value = ''
-
-  if (password.value.length < 8) {
-    passwordError.value = t('pages.auth.signUp.passwordLengthError')
-    return false
-  }
-
-  if (!/[A-Z]/.test(password.value)) {
-    passwordError.value = t('pages.auth.signUp.passwordUppercaseError')
-    return false
-  }
-
-  if (!/[a-z]/.test(password.value)) {
-    passwordError.value = t('pages.auth.signUp.passwordLowercaseError')
-    return false
-  }
-
-  if (!/\d/.test(password.value)) {
-    passwordError.value = t('pages.auth.signUp.passwordDigitError')
-    return false
-  }
-
-  if (!/[^A-Za-z0-9]/.test(password.value)) {
-    passwordError.value = t('pages.auth.signUp.passwordSpecialCharError')
-    return false
-  }
-
-  return true
+  passwordError.value = getPasswordRequirementError()
+  return passwordError.value === ''
 }
 
 function validateForm() {
@@ -157,7 +255,7 @@ async function sendCode() {
     return
   }
 
-  if (!(await passwordsEquals())) {
+  if (!validatePasswordRepeat()) {
     return
   }
 
@@ -171,6 +269,7 @@ async function sendCode() {
   } catch (error) {
     errorMessage.value = resolveRequestError(error)
   } finally {
+    refreshCaptcha()
     sended.value = false
   }
 }
@@ -199,11 +298,17 @@ function switchPasswordRepeatVisibility() {
   passwordRepeatHidden.value = !passwordRepeatHidden.value
 }
 
-async function passwordsEquals(): Promise<boolean> {
+function validatePasswordRepeat(showFormError = true): boolean {
+  passwordRepeatError.value = ''
+
   if (password.value !== passwordRepeat.value) {
-    errorMessage.value = t('pages.auth.signUp.passwordsMismatch')
+    passwordRepeatError.value = t('pages.auth.signUp.passwordsMismatch')
+    if (showFormError) {
+      errorMessage.value = t('pages.auth.signUp.passwordsMismatch')
+    }
     return false
   }
+  passwordRepeatError.value = ''
   return true
 }
 
@@ -214,7 +319,7 @@ async function completeSignUp() {
 
   normalizeCredentials()
 
-  if (!(await passwordsEquals())) {
+  if (!validatePasswordRepeat()) {
     return
   }
 
@@ -273,7 +378,20 @@ function clearEmailError() {
 }
 
 function clearPasswordError() {
-  passwordError.value = ''
+  if (!password.value) {
+    passwordError.value = ''
+    return
+  }
+
+  passwordError.value = getPasswordRequirementError()
+}
+
+function clearPasswordRepeatError() {
+  if (!passwordRepeat.value.length) {
+    passwordRepeatError.value = ''
+    return
+  }
+  void validatePasswordRepeat(false)
 }
 
 const welcomeText = computed(() => {
@@ -318,17 +436,17 @@ function handleWelcomeFinished() {
           <div>
             <label for="username" class="mb-1 block text-sm text-text-secondary">{{ $t('common.username') }}</label>
             <TheInput id="username" v-model="username" type="text"
-              :placeholder="$t('pages.auth.signUp.usernamePlaceholder')" required @blur="validateUsername"
+              placeholder="" required @blur="validateUsername"
               @input="clearUsernameError" :minlength="4" :maxlength="32" autocomplete="username" />
-            <p v-if="usernameError" class="text-gray-300 text-sm mt-1">{{ usernameError }}</p>
+            <p v-if="usernameError" class="mt-1 text-xs leading-4 text-red-300">{{ usernameError }}</p>
           </div>
 
           <!-- Email -->
           <div>
             <label for="email" class="mb-1 block text-sm text-text-secondary">{{ $t('common.email') }}</label>
-            <TheInput id="email" v-model="email" type="email" :placeholder="$t('common.email')" required
+            <TheInput id="email" v-model="email" type="email" placeholder="" required
               @blur="validateEmail" @input="clearEmailError" :maxlength="64" autocomplete="email" />
-            <p v-if="emailError" class="text-gray-300 text-sm mt-1">{{ emailError }}</p>
+            <p v-if="emailError" class="mt-1 text-xs leading-4 text-red-300">{{ emailError }}</p>
           </div>
 
           <!-- Password с иконкой глаза -->
@@ -344,7 +462,12 @@ function handleWelcomeFinished() {
                 </button>
               </template>
             </TheInput>
-            <p v-if="passwordError" class="text-gray-300 text-sm mt-1">{{ passwordError }}</p>
+            <div v-if="password.length > 0 && activePasswordHint" class="mt-2">
+              <p class="flex items-center gap-2 text-xs leading-4 text-red-300">
+                <span class="inline-flex w-3 justify-center font-semibold">•</span>
+                <span>{{ activePasswordHint.label }}</span>
+              </p>
+            </div>
           </div>
 
           <!-- Confirm Password с иконкой глаза -->
@@ -353,7 +476,7 @@ function handleWelcomeFinished() {
               $t('pages.auth.signUp.confirmPassword')
               }}</label>
             <TheInput id="passwordRepeat" v-model="passwordRepeat" :type="passwordRepeatHidden ? 'password' : 'text'" placeholder="••••••••" required
-              :minlength="8" autocomplete="new-password">
+              :minlength="8" autocomplete="new-password" @input="clearPasswordRepeatError" @blur="clearPasswordRepeatError">
               <template #append>
                 <button type="button" class="text-gray-400 hover:text-gray-300 transition-colors focus:outline-none p-1"
                   @click="switchPasswordRepeatVisibility">
@@ -362,8 +485,9 @@ function handleWelcomeFinished() {
                 </button>
               </template>
             </TheInput>
+            <p v-if="passwordRepeatError" class="text-red-300 text-sm mt-1">{{ passwordRepeatError }}</p>
           </div>
-          <Captcha @verified="(token: string) => captchaToken = token" />
+          <Captcha :key="captchaRenderKey" @verified="(token: string) => captchaToken = token" />
 
           <p class="text-xs text-gray-400 leading-relaxed">
             {{ $t('pages.auth.signUp.legalPrefix') }}
@@ -377,7 +501,7 @@ function handleWelcomeFinished() {
           </p>
 
           <TheButton :button-text="sended ? $t('common.sending') : $t('pages.auth.signUp.getCode')"
-            :sended="sended" class="w-full" />
+            :sended="sended" :disabled="!canRequestVerificationCode" class="w-full" />
 
           <ErrorBanner :message="errorMessage" />
         </form>

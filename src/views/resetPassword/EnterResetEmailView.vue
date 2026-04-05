@@ -5,7 +5,7 @@ import SuccessMessage from '@/components/SuccessMessage.vue'
 import TheButton from '../forms/TheButton.vue'
 import TheInput from '@/components/TheInput.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
-import { computed, ref } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Captcha from '@/components/Captcha.vue'
 import { useRouter } from 'vue-router'
@@ -18,25 +18,65 @@ const email = ref('')
 const errorMessage = ref('')
 const successMessage = ref('')
 
-const sended = ref(false)
+const isSending = ref(false)
 const captchaToken = ref('')
+const captchaRenderKey = ref(0)
+const resendSecondsLeft = ref(0)
+let resendTimer: ReturnType<typeof window.setInterval> | null = null
 
 const emailValid = computed(() => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return emailRegex.test(email.value)
 })
 
+function clearResendTimer() {
+    if (!resendTimer) return
+    window.clearInterval(resendTimer)
+    resendTimer = null
+}
+
+function startResendCooldown(seconds = 30) {
+    clearResendTimer()
+    resendSecondsLeft.value = seconds
+    resendTimer = window.setInterval(() => {
+        if (resendSecondsLeft.value <= 1) {
+            clearResendTimer()
+            resendSecondsLeft.value = 0
+            return
+        }
+        resendSecondsLeft.value -= 1
+    }, 1000)
+}
+
+function refreshCaptcha() {
+    captchaToken.value = ''
+    captchaRenderKey.value += 1
+}
+
 async function sendLetter() {
+    if (isSending.value || resendSecondsLeft.value > 0) return
+    if (!captchaToken.value) {
+        errorMessage.value = t('pages.auth.signIn.completeCaptcha')
+        return
+    }
     try {
-        sended.value = true
+        isSending.value = true
+        errorMessage.value = ''
         await authService.sendPasswordResetLetter(email.value, captchaToken.value)
         successMessage.value = t('pages.resetPassword.ResetLetterSuccessSended')
+        startResendCooldown()
     } catch (error: any) {
-        sended.value = false
         const detail = error?.response?.data?.detail
         errorMessage.value = getErrorMessage(detail, t)
+    } finally {
+        refreshCaptcha()
+        isSending.value = false
     }
 }
+
+onUnmounted(() => {
+    clearResendTimer()
+})
 </script>
 
 <template>
@@ -60,12 +100,26 @@ async function sendLetter() {
                     </p>
 
                     <div>
-                        <Captcha @verified="(token: string) => captchaToken = token" />
+                        <Captcha :key="captchaRenderKey" @verified="(token: string) => captchaToken = token" />
                     </div>
 
-                    <TheButton @click="sendLetter" :button-text="sended ? $t('common.sending') :
+                    <TheButton @click="sendLetter" :button-text="isSending ? $t('common.sending') :
                             $t('pages.passwordRecovery.changePassword')
-                        " :sended="sended" :disabled="!emailValid || sended" class="w-full" />
+                        " :sended="isSending" :disabled="!emailValid || !captchaToken || isSending || resendSecondsLeft > 0" class="w-full" />
+
+                    <button
+                        v-if="successMessage"
+                        type="button"
+                        class="w-full text-center text-sm text-text-link hover:underline disabled:cursor-not-allowed disabled:opacity-60 disabled:no-underline"
+                        :disabled="isSending || resendSecondsLeft > 0 || !captchaToken"
+                        @click="sendLetter"
+                    >
+                        {{
+                            resendSecondsLeft > 0
+                                ? $t('pages.resetPassword.resendIn', { seconds: resendSecondsLeft })
+                                : $t('pages.resetPassword.resend')
+                        }}
+                    </button>
                 </div>
 
 

@@ -54,6 +54,18 @@ textarea {
   touch-action: pan-y; /* Только вертикальный скролл, без зума */
 }
 
+/* Hide default number input spinners across the app */
+input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 /* Отключение увеличения при фокусе на мобильных */
 @media screen and (max-width: 768px) {
   input:focus,
@@ -87,6 +99,11 @@ html {
   scroll-behavior: auto;
 }
 
+:root {
+  --app-mobile-header-height: 3.5rem;
+  --app-mobile-footer-height: 3.5rem;
+}
+
 /* For WebKit browsers */
 * {
   -webkit-overflow-scrolling: touch;
@@ -100,6 +117,82 @@ body {
 
 /* Unified admin buttons (clean, no shadows) */
 @layer components {
+  .market-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: var(--white-solid);
+    font-weight: 600;
+    text-align: center;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+  }
+
+  .market-btn:hover {
+    color: var(--white-solid);
+  }
+
+  .market-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .market-btn-primary,
+  .market-primary-surface {
+    background-color: var(--color-button-primary);
+  }
+
+  .market-btn-primary:hover,
+  .market-primary-surface:hover,
+  .market-primary-hover:hover {
+    background-color: var(--color-button-hover);
+  }
+
+  .market-btn-success {
+    background-color: rgb(var(--palette-emerald-600));
+  }
+
+  .market-btn-success:hover {
+    background-color: rgb(var(--palette-emerald-700));
+  }
+
+  .market-btn-tab-active {
+    background-color: var(--color-button-primary);
+    color: var(--white-solid);
+  }
+
+  .market-btn-tab-active:hover {
+    background-color: var(--color-button-hover);
+    color: var(--white-solid);
+  }
+
+  .app-modal-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 1rem;
+    padding-top: calc(var(--app-mobile-header-height) + env(safe-area-inset-top) + 0.75rem);
+    padding-bottom: calc(var(--app-mobile-footer-height) + env(safe-area-inset-bottom) + 0.75rem);
+  }
+
+  .app-modal-panel {
+    width: 100%;
+    max-height: calc(
+      100dvh - var(--app-mobile-header-height) - var(--app-mobile-footer-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 1.5rem
+    );
+  }
+
+  .app-modal-scroll {
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .admin-btn {
     display: inline-flex;
     align-items: center;
@@ -236,5 +329,65 @@ body {
     background-color: var(--admin-btn-tab-active-bg);
     border-color: var(--admin-btn-tab-active-border);
     color: var(--admin-btn-text-strong);
+  }
+
+  .nickname-preview-glow-cyan {
+    box-shadow: 0 0 20px rgb(var(--palette-cyan-400) / 0.18);
+  }
+
+  .nickname-preview-glow-amber {
+    box-shadow: 0 0 20px rgb(var(--palette-amber-400) / 0.16);
+  }
+
+  .nickname-preview-glow-fuchsia {
+    box-shadow: 0 0 22px rgb(var(--palette-fuchsia-500) / 0.18);
+  }
+
+  .nickname-preview-glow-orange {
+    box-shadow: 0 0 20px rgb(var(--palette-orange-400) / 0.18);
+  }
+
+  .nickname-preview-glow-sky {
+    box-shadow: 0 0 20px rgb(var(--palette-sky-300) / 0.16);
+  }
+
+  .nickname-preview-glow-emerald {
+    box-shadow: 0 0 20px rgb(var(--palette-emerald-400) / 0.16);
+  }
+
+  .nickname-preview-glow-red {
+    box-shadow: 0 0 20px rgb(var(--palette-red-400) / 0.18);
+  }
+
+  .nickname-preview-glow-indigo {
+    box-shadow: 0 0 24px rgb(var(--palette-indigo-400) / 0.18);
+  }
+
+  .nickname-preview-glow-pink {
+    box-shadow: 0 0 20px rgb(var(--palette-pink-400) / 0.16);
+  }
+
+  .nickname-preview-glow-violet {
+    box-shadow: 0 0 24px rgb(var(--palette-violet-500) / 0.2);
+  }
+
+  .nickname-preview-glow-blue {
+    box-shadow: 0 0 20px rgb(var(--palette-blue-400) / 0.16);
+  }
+
+  .nickname-preview-glow-green {
+    box-shadow: 0 0 22px rgb(var(--palette-green-500) / 0.2);
+  }
+}
+
+@media (min-width: 640px) {
+  @layer components {
+    .app-modal-overlay {
+      padding: 1.5rem;
+    }
+
+    .app-modal-panel {
+      max-height: calc(100dvh - 3rem);
+    }
   }
 }

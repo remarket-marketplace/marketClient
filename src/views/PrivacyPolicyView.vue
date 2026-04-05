@@ -1,5 +1,17 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import BackButton from '@/components/navigation/BackButton.vue'
+
+const { t, tm } = useI18n()
+
+type LegalSection = {
+  title?: string
+  paragraphs?: string[]
+  list?: string[]
+}
+
+const sections = computed(() => tm('pages.privacyPolicyPage.sections') as LegalSection[])
 </script>
 
 <template>
@@ -8,101 +20,27 @@ import BackButton from '@/components/navigation/BackButton.vue'
       <div class="flex items-center gap-2">
         <BackButton />
         <h1 class="legal-title text-3xl sm:text-4xl text-mainText">
-          Политика конфиденциальности
+          {{ t('pages.privacyPolicyPage.title') }}
         </h1>
       </div>
 
       <article class="mt-6 legal-copy text-gray-200">
-        <section class="legal-section">
-          <h2 class="legal-heading text-mainText">1. Общие положения</h2>
-          <p class="legal-paragraph">
-            1.1. Настоящая Политика конфиденциальности (далее — «Политика») регулирует порядок
-            обработки и защиты информации, которую Пользователь передаёт при использовании сервиса
-            (далее — «Сервис»).
+        <section
+          v-for="(section, index) in sections"
+          :key="`${index}-${section.title ?? 'section'}`"
+          class="legal-section"
+        >
+          <h2 v-if="section.title" class="legal-heading text-mainText">{{ section.title }}</h2>
+          <p
+            v-for="paragraph in section.paragraphs ?? []"
+            :key="paragraph"
+            class="legal-paragraph"
+          >
+            {{ paragraph }}
           </p>
-          <p class="legal-paragraph">
-            1.2. Используя Сервис, Пользователь подтверждает своё согласие с условиями Политики.
-            Если Пользователь не согласен с условиями — он обязан прекратить использование
-            Сервиса.
-          </p>
-        </section>
-
-        <section class="legal-section">
-          <h2 class="legal-heading text-mainText">2. Сбор информации</h2>
-          <p class="legal-paragraph">2.1. Сервис может собирать следующие типы данных:</p>
-          <ul class="legal-list">
-            <li>идентификаторы аккаунта (логин, ID, никнейм и т.п.);</li>
-            <li>
-              техническую информацию (IP-адрес, данные о браузере, устройстве и операционной
-              системе);
-            </li>
-            <li>историю взаимодействий с Сервисом;</li>
+          <ul v-if="section.list?.length" class="legal-list">
+            <li v-for="item in section.list" :key="item">{{ item }}</li>
           </ul>
-          <p class="legal-paragraph">
-            2.2. Сервис не требует от Пользователя предоставления паспортных данных, документов,
-            фотографий или другой личной информации, кроме минимально необходимой для работы.
-          </p>
-        </section>
-
-        <section class="legal-section">
-          <h2 class="legal-heading text-mainText">3. Использование информации</h2>
-          <p class="legal-paragraph">
-            3.1. Сервис может использовать полученную информацию исключительно для:
-          </p>
-          <ul class="legal-list">
-            <li>обеспечения работы функционала;</li>
-            <li>связи с Пользователем (в том числе для уведомлений и поддержки);</li>
-            <li>анализа и улучшения работы Сервиса.</li>
-          </ul>
-        </section>
-
-        <section class="legal-section">
-          <h2 class="legal-heading text-mainText">4. Передача информации третьим лицам</h2>
-          <p class="legal-paragraph">
-            4.1. Администрация не передаёт полученные данные третьим лицам, за исключением случаев:
-          </p>
-          <ul class="legal-list">
-            <li>если это требуется по закону;</li>
-            <li>
-              если это необходимо для исполнения обязательств перед Пользователем (например, при
-              работе с платёжными системами);
-            </li>
-            <li>если Пользователь сам дал на это согласие.</li>
-          </ul>
-        </section>
-
-        <section class="legal-section">
-          <h2 class="legal-heading text-mainText">5. Хранение и защита данных</h2>
-          <p class="legal-paragraph">
-            5.1. Данные хранятся в течение срока, необходимого для достижения целей обработки.
-          </p>
-          <p class="legal-paragraph">
-            5.2. Администрация принимает разумные меры для защиты данных, но не гарантирует
-            абсолютную безопасность информации при передаче через интернет.
-          </p>
-        </section>
-
-        <section class="legal-section">
-          <h2 class="legal-heading text-mainText">6. Отказ от ответственности</h2>
-          <p class="legal-paragraph">
-            6.1. Пользователь понимает и соглашается, что передача информации через интернет всегда
-            сопряжена с рисками.
-          </p>
-          <p class="legal-paragraph">
-            6.2. Администрация не несёт ответственности за утрату, кражу или раскрытие данных, если
-            это произошло по вине третьих лиц или самого Пользователя.
-          </p>
-        </section>
-
-        <section class="legal-section">
-          <h2 class="legal-heading text-mainText">7. Изменения в Политике</h2>
-          <p class="legal-paragraph">
-            7.1. Администрация вправе изменять условия Политики без предварительного уведомления.
-          </p>
-          <p class="legal-paragraph">
-            7.2. Продолжение использования Сервиса после внесения изменений означает согласие
-            Пользователя с новой редакцией Политики.
-          </p>
         </section>
       </article>
     </div>

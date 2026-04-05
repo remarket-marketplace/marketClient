@@ -60,6 +60,21 @@ const localizedOfferMessage = computed(() => {
   return translatedText === translationKey ? props.message.offer_message : translatedText
 })
 
+const productPreviewImageUrl = computed(() => {
+  const rawImageUrl = props.message.product.images?.[0]?.image_url
+  if (!rawImageUrl) return null
+
+  if (rawImageUrl.startsWith('http://') || rawImageUrl.startsWith('https://')) {
+    return rawImageUrl
+  }
+
+  if (!API_HOST) {
+    return rawImageUrl
+  }
+
+  return `${API_HOST}${rawImageUrl}`
+})
+
 async function acceptOffer() {
   if (!canProcess.value || isProcessing.value) return
   isProcessing.value = true
@@ -94,15 +109,16 @@ function handleViewProduct() {
 </script>
 
 <template>
-  <div class="my-2 w-full min-w-0">
-    <div class="w-full min-w-0 overflow-hidden rounded-xl border border-dark-700 bg-dark-800/40 p-4">
+  <div class="my-1 w-full min-w-0 flex justify-center">
+    <div class="w-full max-w-2xl min-w-0 overflow-hidden rounded-xl border border-dark-700 bg-dark-800/40 p-3 sm:p-3.5">
       <div
-        class="mb-3 flex w-full min-w-0 cursor-pointer gap-3 rounded-lg border border-dark-700 bg-dark-700/45 p-3 transition hover:bg-dark-700/70"
+        class="flex w-full min-w-0 cursor-pointer items-center gap-3 rounded-lg border border-dark-700 bg-dark-700/45 p-2.5 transition hover:bg-dark-700/70"
         @click="handleViewProduct"
       >
-        <div class="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-dark-600 bg-dark-800">
+        <div class="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg border border-dark-600 bg-dark-800">
           <img
-            :src="message.product.images?.[0]?.image_url ? `${API_HOST}${message.product.images[0].image_url}` : ''"
+            v-if="productPreviewImageUrl"
+            :src="productPreviewImageUrl"
             :alt="message.product.title"
             class="h-full w-full object-cover"
             loading="lazy"
@@ -110,30 +126,28 @@ function handleViewProduct() {
         </div>
         <div class="min-w-0 flex-1">
           <p class="truncate text-sm font-semibold text-white">{{ message.product.title }}</p>
-          <p class="mt-1 line-clamp-2 text-xs text-gray-400">{{ message.product.description }}</p>
+          <p class="mt-0.5 text-xs text-gray-400">{{ formatCurrencyAmount(message.product.price) }}</p>
         </div>
-      </div>
-
-      <div class="flex items-center justify-between gap-3">
-        <p class="text-sm font-semibold text-white">
-          {{ t('pages.chats.priceOfferTitle') }}
-        </p>
-        <span class="inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium" :class="statusClass">
+        <span class="inline-flex items-center rounded-md border px-2 py-1 text-[11px] font-medium" :class="statusClass">
           {{ statusLabel }}
         </span>
       </div>
 
-      <div class="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
-        <div class="rounded-lg border border-dark-700 bg-dark-700/50 p-3">
-          <p class="text-xs text-gray-400">{{ t('pages.chats.originalPrice') }}</p>
-          <p class="mt-1 font-semibold text-gray-100">{{ formatCurrencyAmount(message.product.price) }}</p>
+      <div class="mt-3 flex items-center gap-3">
+        <p class="text-sm font-semibold text-white">
+          {{ t('pages.chats.priceOfferTitle') }}
+        </p>
+      </div>
+
+      <div class="mt-2 flex flex-wrap items-center gap-2.5 text-sm">
+        <div class="rounded-lg border border-dark-700 bg-dark-700/45 px-3 py-2">
+          <p class="text-[11px] text-gray-400">{{ t('pages.chats.originalPrice') }}</p>
+          <p class="mt-0.5 font-semibold text-gray-100">{{ formatCurrencyAmount(message.product.price) }}</p>
         </div>
-        <div class="rounded-lg border border-dark-700 bg-dark-700/50 p-3">
-          <p class="text-xs text-gray-400">{{ t('pages.chats.offeredPrice') }}</p>
-          <div class="mt-1 flex flex-wrap items-center gap-2">
-            <span class="text-xs text-gray-500 line-through">
-              {{ formatCurrencyAmount(message.product.price) }}
-            </span>
+        <span class="text-sm text-gray-500">→</span>
+        <div class="rounded-lg border border-dark-700 bg-dark-700/45 px-3 py-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <p class="text-[11px] text-gray-400">{{ t('pages.chats.offeredPrice') }}</p>
             <span
               v-if="offerDiscountPercent !== null"
               class="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-200"
@@ -141,7 +155,7 @@ function handleViewProduct() {
               -{{ offerDiscountPercent }}%
             </span>
           </div>
-          <p class="mt-1 font-semibold text-emerald-300">{{ formatCurrencyAmount(message.offered_price) }}</p>
+          <p class="mt-0.5 font-semibold text-emerald-300">{{ formatCurrencyAmount(message.offered_price) }}</p>
         </div>
       </div>
 
@@ -149,26 +163,27 @@ function handleViewProduct() {
         {{ localizedOfferMessage }}
       </p>
 
-      <div v-if="canProcess" class="mt-4 flex flex-wrap gap-2">
-        <button
-          class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
-          :disabled="isProcessing"
-          @click="acceptOffer"
-        >
-          {{ t('pages.chats.acceptOffer') }}
-        </button>
-        <button
-          class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
-          :disabled="isProcessing"
-          @click="rejectOffer"
-        >
-          {{ t('pages.chats.rejectOffer') }}
-        </button>
+      <div class="mt-3 flex flex-wrap items-end justify-between gap-3">
+        <div v-if="canProcess" class="flex flex-wrap gap-2">
+          <button
+            class="rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+            :disabled="isProcessing"
+            @click="acceptOffer"
+          >
+            {{ t('pages.chats.acceptOffer') }}
+          </button>
+          <button
+            class="rounded-lg bg-red-600 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+            :disabled="isProcessing"
+            @click="rejectOffer"
+          >
+            {{ t('pages.chats.rejectOffer') }}
+          </button>
+        </div>
+        <p class="ml-auto text-xs text-gray-500">{{ formatDate(message.created_at) }}</p>
       </div>
 
       <p v-if="actionError" class="mt-2 text-xs text-red-400">{{ actionError }}</p>
-
-      <p class="mt-3 text-xs text-gray-500">{{ formatDate(message.created_at) }}</p>
     </div>
   </div>
 </template>

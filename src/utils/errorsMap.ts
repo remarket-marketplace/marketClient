@@ -79,6 +79,26 @@ export const errorCodeMap: Record<string, string> = {
   STEAM_TOPUP_ORDER_NOT_READY: 'errors.STEAM_TOPUP_ORDER_NOT_READY',
   STEAM_TOPUP_INVALID_CURRENCY: 'errors.STEAM_TOPUP_INVALID_CURRENCY',
   STEAM_TOPUP_INVALID_AMOUNT: 'errors.STEAM_TOPUP_INVALID_AMOUNT',
+  STEAM_TOPUP_UNSUPPORTED_PAYMENT_METHOD: 'errors.STEAM_TOPUP_UNSUPPORTED_PAYMENT_METHOD',
+  STEAM_TOPUP_PROMO_NOT_FOUND: 'errors.STEAM_TOPUP_PROMO_NOT_FOUND',
+  STEAM_TOPUP_PROMO_INACTIVE: 'errors.STEAM_TOPUP_PROMO_INACTIVE',
+  STEAM_TOPUP_PROMO_EXPIRED: 'errors.STEAM_TOPUP_PROMO_EXPIRED',
+  STEAM_TOPUP_PROMO_USAGE_LIMIT_REACHED: 'errors.STEAM_TOPUP_PROMO_USAGE_LIMIT_REACHED',
+  STEAM_TOPUP_PROMO_USAGE_LIMIT_TOO_LOW: 'errors.STEAM_TOPUP_PROMO_USAGE_LIMIT_TOO_LOW',
+  STEAM_TOPUP_PROMO_NOT_APPLICABLE: 'errors.STEAM_TOPUP_PROMO_NOT_APPLICABLE',
+  STEAM_TOPUP_PROMO_CODE_ALREADY_EXISTS: 'errors.STEAM_TOPUP_PROMO_CODE_ALREADY_EXISTS',
+  PROMO_CODE_NOT_FOUND: 'errors.PROMO_CODE_NOT_FOUND',
+  PROMO_CODE_ALREADY_EXISTS: 'errors.PROMO_CODE_ALREADY_EXISTS',
+  PROMO_CODE_INACTIVE: 'errors.PROMO_CODE_INACTIVE',
+  PROMO_CODE_NOT_STARTED: 'errors.PROMO_CODE_NOT_STARTED',
+  PROMO_CODE_EXPIRED: 'errors.PROMO_CODE_EXPIRED',
+  PROMO_CODE_USAGE_LIMIT_REACHED: 'errors.PROMO_CODE_USAGE_LIMIT_REACHED',
+  PROMO_CODE_USER_USAGE_LIMIT_REACHED: 'errors.PROMO_CODE_USER_USAGE_LIMIT_REACHED',
+  PROMO_CODE_MIN_ORDER_NOT_REACHED: 'errors.PROMO_CODE_MIN_ORDER_NOT_REACHED',
+  PROMO_CODE_CONTEXT_NOT_ALLOWED: 'errors.PROMO_CODE_CONTEXT_NOT_ALLOWED',
+  PROMO_CODE_NOT_APPLICABLE: 'errors.PROMO_CODE_NOT_APPLICABLE',
+  STEAM_TOPUP_INVALID_LOGIN: 'errors.STEAM_TOPUP_INVALID_LOGIN',
+  PAYMENT_TRANSACTION_CREATE_FAILED: 'errors.PAYMENT_TRANSACTION_CREATE_FAILED',
 }
 
 // errorDetail = { error_code: 'TOKEN_NOT_FOUND', error_message: 'Token not found' }
@@ -93,7 +113,15 @@ export function getErrorMessage(errorDetail: unknown, t: (key: string) => string
   }
 
   if (Array.isArray(errorDetail)) {
-    const firstError = errorDetail[0] as { msg?: string } | undefined
+    const firstError = errorDetail[0] as { msg?: string; loc?: Array<string | number> } | undefined
+    const firstErrorMessage = firstError?.msg?.toLowerCase() ?? ''
+    const firstErrorLoc = Array.isArray(firstError?.loc) ? firstError.loc.map(String) : []
+    const isSteamAccountValidationError = firstErrorLoc.includes('account') || firstErrorMessage.includes('steam login')
+
+    if (isSteamAccountValidationError) {
+      return t('errors.STEAM_TOPUP_INVALID_LOGIN')
+    }
+
     if (firstError?.msg) {
       return firstError.msg
     }

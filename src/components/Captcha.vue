@@ -58,8 +58,16 @@ let widgetId: string | null = null
 const MIN_LOADING_INDICATOR_MS = 500
 
 const SITE_KEY =
-  import.meta.env.VITE_TURNSTILE_SITE_KEY ??
-  '0x4AAAAAACcme7gpeL7XYdtm'
+  (
+    typeof window !== 'undefined'
+    && ['localhost', '127.0.0.1'].includes(window.location.hostname)
+  )
+    ? '1x00000000000000000000AA'
+    : (
+      import.meta.env.VITE_TURNSTILE_SITE_KEY
+      ?? import.meta.env.VITE_CAPTCHA_SITE_TOKEN
+      ?? '0x4AAAAAACcme7gpeL7XYdtm'
+    )
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 

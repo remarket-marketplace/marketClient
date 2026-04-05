@@ -7,6 +7,7 @@ const en = {
     back: "Back",
     home: "Home",
     save: "Save",
+    apply: "Apply",
     cancel: "Cancel",
     create: "Create",
     edit: "Edit",
@@ -30,15 +31,20 @@ const en = {
     subcategories: "Subcategories",
     description: "Description",
     name: "Name",
+    nameRu: "Russian name",
+    nameEn: "English name",
     price: "Price",
     image: "Image",
     banner: "Banner",
     images: "Images",
     products: "Products",
+    productsShort: "Products",
     users: "Users",
     profile: "Profile",
     account: "Account",
     settings: "Settings",
+    language: "Language",
+    currency: "Currency",
     balance: "Balance",
     rating: "Rating",
     email: "Email",
@@ -107,6 +113,7 @@ const en = {
     reason: "Reason",
     toChat: "To chat",
     sold: "Sold",
+    autoDelivery: "Auto-delivery",
 
     product: "Product",
     remarket: "Remarket - secure transactions market",
@@ -134,7 +141,46 @@ const en = {
     resolveForSeller: "Resolve for Seller",
     seller: "Seller",
     buyer: "Buyer",
+    reviewsShort: "Reviews",
+    purchasesShort: "Purchases",
+    fortniteAccount: {
+      sections: {
+        profile: "Profile",
+        security: "Security",
+        activity: "Activity",
+        inventory: "Inventory",
+      },
+      booleanValues: {
+        true: "Yes",
+        false: "No",
+      },
+      fields: {
+        can_change_email: "Can change email",
+        last_email_change: "Last email change",
+        first_email: "First email",
+        registration_date: "Registration date",
+        email_confirmed: "Email confirmed",
+        parental_control: "Parental control",
+        display_name: "Display name",
+        country: "Country",
+        two_factor_enabled: "2FA",
+        last_login: "Last login",
+        last_display_name_change: "Last display name change",
+        last_match_date: "Last match",
+        skins_count: "Skins",
+        backpacks_count: "Back blings",
+        pickaxes_count: "Pickaxes",
+        emotes_count: "Emotes",
+        gliders_count: "Gliders",
+        wraps_count: "Wraps",
+        banners_count: "Banners",
+        sprays_count: "Sprays",
+        exclusives_count: "Exclusives",
+      },
+    },
     buy: "Buy",
+    previous: "Previous",
+    next: "Next",
 
     trust: {
       guaranteeTitle: "Safe deal\n guarantee",
@@ -173,6 +219,7 @@ const en = {
         newImageMessage: "New image",
         newSupportMessage: "Support message",
         productStatusUpdated: "Product status updated",
+        sellerNewProduct: "Seller posted a new product",
         generic: "New notification",
       },
       body: {
@@ -184,6 +231,7 @@ const en = {
         reviewText: "{text}",
         productStatus: "{product} • {status}",
         productStatusWithReason: "{product} • {status}. Reason: {reason}",
+        sellerNewProduct: "{seller} posted a new product: {product}",
         empty: "Open chat to view details.",
       },
     },
@@ -208,19 +256,19 @@ const en = {
 
     // deals statuses
     dealStatuses: {
-      pending: "Pending",
-      confirmed: "Confirmed",
-      disputed: "disputed",
-      completed: "completed",
-      cancelled: "cancelled",
-      refunded: "refunded",
+      pending: "Awaiting fulfillment",
+      confirmed: "Fulfilled by seller",
+      disputed: "Disputed",
+      completed: "Completed",
+      cancelled: "Cancelled",
+      refunded: "Refunded",
     },
 
     paymentStatuses: {
       PENDING: "Pending",
       CONFIRMED: "Confirmed",
       CANCELED: "Canceled",
-      CHARGEBACKED: "Chargebacked",
+      CHARGEBACKED: "Payment reversed",
     },
 
     refusalReasons: {
@@ -294,6 +342,7 @@ const en = {
     PROFILE_BACKGROUND_ALREADY_UNLOCKED: "Profile background customization access is already purchased",
     TELEGRAM_NOT_CONFIGURED: "Telegram bot integration is not configured on the server",
     TELEGRAM_NOT_CONNECTED: "Connect Telegram bot first",
+    INVALID_SUBSCRIPTION_TARGET: "You cannot subscribe to yourself",
     TELEGRAM_INTEGRATION_DISABLED: "Telegram integration is temporarily disabled by administrator",
     STEAM_TOPUP_DISABLED: "Steam top-up is temporarily unavailable",
     STEAM_TOPUP_PROVIDER_ERROR: "Steam top-up provider returned an error",
@@ -301,6 +350,26 @@ const en = {
     STEAM_TOPUP_ORDER_NOT_READY: "Order is not ready for payment yet",
     STEAM_TOPUP_INVALID_CURRENCY: "Order currency is invalid",
     STEAM_TOPUP_INVALID_AMOUNT: "Order amount is invalid",
+    STEAM_TOPUP_UNSUPPORTED_PAYMENT_METHOD: "Selected payment method is not supported",
+    STEAM_TOPUP_PROMO_NOT_FOUND: "Steam promo code not found",
+    STEAM_TOPUP_PROMO_INACTIVE: "Steam promo code is inactive",
+    STEAM_TOPUP_PROMO_EXPIRED: "Steam promo code has expired",
+    STEAM_TOPUP_PROMO_USAGE_LIMIT_REACHED: "Steam promo code usage limit has been reached",
+    STEAM_TOPUP_PROMO_USAGE_LIMIT_TOO_LOW: "Promo usage limit cannot be lower than already used",
+    STEAM_TOPUP_PROMO_NOT_APPLICABLE: "Promo code cannot be applied to this order",
+    STEAM_TOPUP_PROMO_CODE_ALREADY_EXISTS: "Steam promo code already exists",
+    PROMO_CODE_NOT_FOUND: "Promo code not found",
+    PROMO_CODE_ALREADY_EXISTS: "Promo code already exists",
+    PROMO_CODE_INACTIVE: "Promo code is inactive",
+    PROMO_CODE_NOT_STARTED: "Promo code is not active yet",
+    PROMO_CODE_EXPIRED: "Promo code has expired",
+    PROMO_CODE_USAGE_LIMIT_REACHED: "Promo code total usage limit reached",
+    PROMO_CODE_USER_USAGE_LIMIT_REACHED: "Promo code user usage limit reached",
+    PROMO_CODE_MIN_ORDER_NOT_REACHED: "Order amount is below promo code minimum",
+    PROMO_CODE_CONTEXT_NOT_ALLOWED: "Promo code cannot be applied to this operation",
+    PROMO_CODE_NOT_APPLICABLE: "Promo code is not applicable",
+    STEAM_TOPUP_INVALID_LOGIN: "Invalid login",
+    PAYMENT_TRANSACTION_CREATE_FAILED: "Failed to create payment, please try again later",
     SERVER_ERROR: "Server error",
     PAYLOAD_IS_EMPTY: "Payload is empty",
     INCORRECT_EMAIL_OR_PASSWORD: "Incorrect email or password",
@@ -390,6 +459,8 @@ const en = {
       products: "Products",
       deals: "Deals",
       payments: "Payments",
+      withdrawals: "Withdrawals",
+      steamTopups: "Steam top-ups",
       categories: "Categories",
       chats: "Chats",
       feedback: "Feedback",
@@ -427,6 +498,189 @@ const en = {
     serverError: {
       title: "Something went wrong, try again later",
     },
+    privacyPolicyPage: {
+      title: "Privacy policy",
+      sections: [
+        {
+          title: "1. General provisions",
+          paragraphs: [
+            "1.1. This Privacy Policy governs how information provided by the user while using the service is processed and protected.",
+            "1.2. By using the service, the user confirms acceptance of this Policy. If the user does not agree with the terms, they must stop using the service."
+          ]
+        },
+        {
+          title: "2. Information collection",
+          paragraphs: [
+            "2.1. The service may collect the following types of data:",
+            "2.2. The service does not require passport data, identity documents, photos, or other personal information beyond what is minimally necessary for operation."
+          ],
+          list: [
+            "account identifiers such as login, ID, nickname, and similar details;",
+            "technical information such as IP address, browser data, device details, and operating system;",
+            "history of interactions with the service."
+          ]
+        },
+        {
+          title: "3. Use of information",
+          paragraphs: [
+            "3.1. The service uses collected information exclusively for the following purposes:"
+          ],
+          list: [
+            "ensuring feature availability and service functionality;",
+            "communicating with the user, including notifications and support;",
+            "analyzing and improving the service."
+          ]
+        },
+        {
+          title: "4. Sharing information with third parties",
+          paragraphs: [
+            "4.1. The administration does not share collected data with third parties, except in the following cases:"
+          ],
+          list: [
+            "when required by law;",
+            "when necessary to fulfill obligations to the user, for example while working with payment systems;",
+            "when the user has explicitly given consent."
+          ]
+        },
+        {
+          title: "5. Data storage and protection",
+          paragraphs: [
+            "5.1. Data is stored for the period required to achieve the purposes of processing.",
+            "5.2. The administration takes reasonable measures to protect data, but does not guarantee absolute security of information transmitted via the internet."
+          ]
+        },
+        {
+          title: "6. Disclaimer of liability",
+          paragraphs: [
+            "6.1. The user understands and agrees that transmitting information over the internet always involves risks.",
+            "6.2. The administration is not liable for loss, theft, or disclosure of data if it occurs due to third parties or the user's own actions."
+          ]
+        },
+        {
+          title: "7. Policy changes",
+          paragraphs: [
+            "7.1. The administration may change this Policy without prior notice.",
+            "7.2. Continued use of the service after changes are made means the user accepts the updated version of the Policy."
+          ]
+        }
+      ]
+    },
+    termsOfServicePage: {
+      title: "Terms of service",
+      supportLead: "10.1. For all questions, the user may contact support:",
+      feedbackLead: "via the",
+      feedbackLink: "feedback page",
+      emailLead: "by email:",
+      sections: [
+        {
+          title: "1. General provisions",
+          paragraphs: [
+            "1.1. These Terms of Service govern the use of the online service provided by the administration.",
+            "1.2. By using the service, including launching the bot, registering, paying for services, or receiving access to materials, the user confirms they have reviewed these Terms and accept them in full.",
+            "1.3. If the user does not agree with the Terms, they must stop using the service."
+          ]
+        },
+        {
+          title: "2. Nature of services and digital goods",
+          paragraphs: [
+            "2.1. The service provides intangible digital goods and services, including informational materials, educational programs, consultations, digital products, and service-related offerings.",
+            "2.2. Materials provided through the service may include:",
+            "2.3. The user understands and agrees that the value of digital goods and services lies in systematization, analysis, presentation, support, and updates, rather than exclusivity of individual information fragments.",
+            "2.4. The service does not claim or guarantee uniqueness, exclusivity, or unavailability of individual material elements outside the service."
+          ],
+          list: [
+            "information from open sources;",
+            "original materials created by the administration and/or third parties;",
+            "analytical reviews, curated selections, recommendations, and structured data."
+          ]
+        },
+        {
+          title: "3. Disclaimer of warranties and liability",
+          paragraphs: [
+            "3.1. The service is provided on an “as is” basis.",
+            "3.2. The administration does not guarantee:",
+            "3.3. The administration is not liable for:",
+            "3.4. All decisions regarding the use of materials, recommendations, and services are made independently by the user at their own risk."
+          ],
+          list: [
+            "that the service will meet the user's expectations;",
+            "achievement of any financial, commercial, professional, or other results;",
+            "uninterrupted or error-free operation of the service;",
+            "any direct or indirect losses, including lost profits;",
+            "consequences of the user's application of received materials;",
+            "actions or omissions of third parties;",
+            "temporary technical failures or access restrictions."
+          ]
+        },
+        {
+          title: "4. Lawful use",
+          paragraphs: [
+            "4.1. The service is not intended to encourage, organize, or facilitate unlawful activity.",
+            "4.2. The user agrees to use the service only within applicable law and third-party rules.",
+            "4.3. Responsibility for the legality of using the service's materials and services rests entirely with the user."
+          ]
+        },
+        {
+          title: "5. Intellectual property",
+          paragraphs: [
+            "5.1. All materials published in the service are protected by intellectual property law.",
+            "5.2. The user may not copy, distribute, resell, transfer to third parties, or otherwise use service materials without permission from the rights holder.",
+            "5.3. Violation of intellectual property rights may result in restriction of access to the service without compensation."
+          ]
+        },
+        {
+          title: "6. Access restriction",
+          paragraphs: [
+            "6.1. The administration may suspend or restrict user access to the service in the following cases:",
+            "6.2. Restricting access does not release the user from obligations that arose earlier.",
+            "6.3. The administration reserves the right to refuse service to users whose actions may create increased risks for the service, payment providers, or third parties."
+          ],
+          list: [
+            "violation of these Terms;",
+            "detected abuse;",
+            "requirements of law or payment providers."
+          ]
+        },
+        {
+          title: "7. Payments and refunds",
+          paragraphs: [
+            "7.1. Payment for services and digital goods is made under the conditions specified in the service before payment.",
+            "7.2. Due to the intangible nature of digital goods and services, refunds are not issued after access is granted, except in the cases listed below.",
+            "7.3. A refund is possible only if:",
+            "7.4. To request a refund review, the user must contact support within 48 hours from the moment of payment.",
+            "7.5. Refund requests are reviewed within up to 48 hours from the moment of contact.",
+            "7.6. If approved, the refund is processed within 72 hours.",
+            "7.7. The user confirms they will not initiate a chargeback through payment systems without first contacting the service support team."
+          ],
+          list: [
+            "the service was not provided due to a technical fault of the platform;",
+            "access to the digital product was not actually granted."
+          ]
+        },
+        {
+          title: "8. Confidentiality",
+          paragraphs: [
+            "8.1. The administration may collect minimally necessary technical data to ensure operation of the service.",
+            "8.2. The administration takes reasonable steps to protect data, but does not guarantee absolute security of transmitted information."
+          ]
+        },
+        {
+          title: "9. Changes to the Terms",
+          paragraphs: [
+            "9.1. The administration may amend these Terms.",
+            "9.2. The current version of the Terms is published in the service.",
+            "9.3. Continued use of the service means the user accepts the updated Terms."
+          ]
+        },
+        {
+          title: "10. Contact information",
+          paragraphs: []
+        },
+        {
+          accent: "By using the service, the user confirms that they have reviewed these Terms and accept them in full."
+        }
+      ]
+    },
 
     index: {
       searchPlaceholder: "Search products...",
@@ -437,30 +691,53 @@ const en = {
       filtersTitle: "Filters",
       priceFrom: "Price from",
       priceTo: "Price to",
+      onlineSellersOnly: "Online sellers",
+      autoDeliveryOnly: "Auto delivery",
       dateFrom: "Added from",
       dateTo: "Added to",
       viewSwitcherLabel: "Card view mode",
       viewGrid: "Grid",
       viewList: "List",
+      expandCategories: "Expand categories",
+      collapseCategories: "Collapse categories",
+      expandCategoriesShort: "More",
+      collapseCategoriesShort: "Hide",
       popularTitle: "Popular",
       popularEmpty: "No popular products yet",
       resetFilters: "Reset",
       steamTopUp: {
         title: "Steam Top-Up",
-        subtitle: "Top up your Steam wallet with balance from your account.",
+        subtitle: "Top up your Steam wallet with balance or external payment.",
+        enterPromo: "Enter promo code",
         service: "Service",
         account: "Steam account",
-        accountPlaceholder: "Enter login / profile identifier",
+        accountPlaceholder: "Enter nickname",
         amountType: "Amount type",
         amountTypeFixed: "Fixed amount",
         amountTypeCustom: "Custom amount",
         denomination: "Top-up option",
         quantity: "Amount",
         quantityPlaceholder: "Enter amount",
+        amountLockedHint: "Amount is fixed for the selected service.",
         region: "Region",
         regionPlaceholder: "Optional region",
         server: "Server",
         serverPlaceholder: "Optional server",
+        paymentMethod: "Payment method",
+        paymentMethodBalance: "Wallet balance",
+        paymentMethodCard: "Bank card",
+        paymentMethodSbp: "SBP",
+        paymentMethodUnavailable: "This payment method is not available yet.",
+        promoCode: "Promo code",
+        promoCodePlaceholder: "Enter promo code (optional)",
+        loginRequired: "You need to sign in to top up Steam.",
+        payNow: "Pay now",
+        checkoutTitle: "Payment confirmation",
+        checkoutSubtitle: "Select currency and top-up method.",
+        checkoutCurrency: "Currency",
+        checkoutMethod: "Top-up method",
+        checkoutAmount: "Amount to pay",
+        checkoutContinue: "Pay",
         createOrder: "Create order",
         creatingOrder: "Creating...",
         refreshOrder: "Refresh status",
@@ -471,10 +748,13 @@ const en = {
         orderTitle: "Current order",
         orderStatus: "Status",
         orderPrice: "Price",
-        chargedAmount: "Charged from balance",
+        chargedAmount: "Amount to charge",
+        discountAmount: "Promo discount",
+        appliedPromo: "Applied promo code",
         balanceAfter: "Balance after payment",
         orderCreated: "Order created. Verify and pay when status is ready.",
         orderPaid: "Payment completed successfully.",
+        redirectToPayment: "Redirecting to payment page...",
       },
     },
 
@@ -482,6 +762,10 @@ const en = {
       notFound: "Category not found",
       noSubcategories: "No subcategories found",
       noProducts: "No products in this category",
+      noProductsByFilters: "No products match these filters",
+      fortniteFiltersTitle: "Account filters",
+      minValue: "Min",
+      maxValue: "Max",
     },
 
     feedback: {
@@ -674,7 +958,7 @@ const en = {
           "Password must contain at least one lowercase letter",
         passwordDigitError: "Password must contain at least one digit",
         passwordSpecialCharError:
-          "Password must contain at least one special character (!@#$%^&*)",
+          "Password must contain at least one special character (for example: !, #, $, %, ^, &, *)",
         passwordsMustEqual: "Passwords must be the equal",
         success: "You have successfully registered!",
         completeCaptcha: "Please complete captcha",
@@ -698,6 +982,8 @@ const en = {
           title: "Verification code",
           hint: "We sent a 6-digit code to your email. Enter it to complete sign in.",
           confirm: "Confirm sign in",
+          resend: "Resend",
+          resendIn: "Resend in {seconds}s",
           invalidCode: "Enter a valid 6-digit code",
           useAnotherAccount: "Use another account",
         },
@@ -728,6 +1014,8 @@ const en = {
       title: "Reset password",
       ResetLetterSuccessSended:
         "An email with a password recovery link has been successfully sent to the specified email address",
+      resend: "Resend",
+      resendIn: "Resend in {seconds}s",
       enterNewPassword: "Enter new password",
       resetPasswordTokenIsExpired: "Token is expired, please try again",
       passwordHasReset: "Password successfully changed!",
@@ -737,6 +1025,7 @@ const en = {
       gallery: "Image Gallery",
       noImages: "No images",
       descriptionMissing: "No description.",
+      fortniteAccountDetails: "Account information",
       buy: "Buy",
       offerPrice: "Offer price",
       modalImage: "Modal Image",
@@ -751,6 +1040,23 @@ const en = {
       raikaName: "raika",
       moderationRejectedTitle: "Product did not pass moderation",
       moderationRejectReasonLabel: "Rejection reason",
+      sellerTrust: {
+        eyebrow: "Seller trust",
+        title: "Seller trust snapshot",
+        subtitle: "Key profile and closed-deal signals help you evaluate the seller before you buy.",
+        profileCta: "Open profile",
+        ratingLabel: "Rating",
+        ratingCaption: "Buyer reviews",
+        noRating: "No reviews yet",
+        successRateLabel: "Deal success rate",
+        successRateCaption: "From closed deals",
+        noClosedDeals: "No closed deals yet",
+        completedDealsLabel: "Deals",
+        completedDealsCaption: "Total for seller",
+        memberSinceLabel: "On platform",
+        memberSinceCaption: "Registration date",
+        footer: "Success rate is based only on closed deals.",
+      },
       deleteConfirm: {
         title: "Confirm Product Deletion",
         message:
@@ -814,7 +1120,12 @@ const en = {
       emptyMessages: "Messages list is empty",
       selectChat: "Select a chat",
       confirmReceipt: "Confirm Receipt",
-      confirmReceipted: "Confirm Receipted",
+      confirmReceipted: "Receipt confirmed",
+      confirmFulfillment: "Confirm fulfillment",
+      confirmFulfillmentMessage: "By clicking this, you confirm that you have fulfilled the deal terms.",
+      fulfillmentConfirmed: "Fulfillment confirmed",
+      awaitSellerFulfillment: "Waiting for seller confirmation",
+      dealCompleted: "Deal completed",
       refund: "Refund",
       refundConfirmMessage: "Are you sure you want to refund this deal?",
       report: "Report",
@@ -854,12 +1165,14 @@ const en = {
       refundCompleted: "Refund completed",
       manualDelivery: "Product delivery by seller",
       contactSeller: "To receive the product, contact the seller in chat",
+      sellerPendingInstructionTitle: "What to do",
+      sellerPendingInstructionText: "Send the product data or item to the buyer in chat. After delivery, click \"Confirm fulfillment\".",
 
-      pending: "Deal created. Waiting for confirmation from both parties.",
+      pending: "Deal created. Waiting for fulfillment confirmation from the seller.",
       confirmed:
-        "Buyer confirmed the receipt, funds are now available to the seller.",
+        "Seller confirmed fulfillment. The auto-confirmation timer has started.",
       disputed: "Buyer has opened a dispute for this deal.",
-      completed: "Deal successfully completed.",
+      completed: "Deal successfully completed. Funds are now available to the seller.",
       cancelled: "Deal cancelled. Funds have been returned to the balance.",
       refunded: "Funds have been refunded to the buyer.",
       support: "Support",
@@ -873,6 +1186,8 @@ const en = {
       offeredPrice: "Offered price",
       acceptOffer: "Accept",
       rejectOffer: "Reject",
+      retrySend: "Retry",
+      messageSendFailed: "Not sent",
       priceOfferStatuses: {
         pending: "Pending",
         accepted: "Accepted",
@@ -917,8 +1232,12 @@ const en = {
       sendMessage: "Send",
       profileLink: "Profile link",
       share: "Share",
+      subscribe: "Subscribe",
+      unsubscribe: "Unsubscribe",
       scanQR: "Scan QR",
       favorites: "Favorites",
+      subscriptions: "Subscriptions",
+      noSubscriptions: "No subscriptions yet",
       bannedStatus: "User is banned",
       banReasonTitle: "Ban reason",
       banReasonMissing: "Reason not specified",
@@ -940,7 +1259,6 @@ const en = {
       changePasswordHint: "Change your password to secure your account",
       twoFactorTitle: "Two-factor authentication",
       twoFactorHint: "Extra login protection with a code from email.",
-      twoFactorEmailHint: "A verification code will be sent to your email on each sign in.",
       twoFactorEnabled: "Enabled",
       twoFactorDisabled: "Disabled",
       twoFactorSaved: "Two-factor settings updated",
@@ -1014,6 +1332,9 @@ const en = {
       customStyleBuilderHint: "Custom style builder hint",
       customStyleBuilderTitle: "Custom style builder",
       customFontWeight: "Font weight",
+      customFontWeightThin: "Thin",
+      customFontWeightMedium: "Medium",
+      customFontWeightBold: "Bold",
       customGlowEnabled: "Enable glow",
       owned: "Owned",
       active: "Active",
@@ -1026,6 +1347,8 @@ const en = {
       noStyles: "No styles found",
       notificationsSectionTitle: "Notifications",
       notificationsSectionHint: "Manage notification channels and connect Telegram bot.",
+      notificationsMasterTitle: "All notifications",
+      notificationsMasterHint: "Quickly enable or disable all notifications.",
       notificationsEmailTitle: "Email notifications",
       notificationsEmailHint: "Account and deal notifications sent to your email.",
       notificationsTelegramTitle: "Telegram notifications",
@@ -1098,11 +1421,65 @@ const en = {
       noTransactionsHint: "Your transaction history will appear here",
       depositAmount: "Deposit Amount",
       depositMin: "Minimum amount: {amount}",
+      paymentProvider: "Payment Service",
+      paymentProviderEyebrow: "Service Route",
+      paymentProviderHint: "The payment link will be created through the selected service.",
+      paymentProviderPlategaHint: "Pay via Platega.",
+      paymentProviderLavaHint: "Pay via Lava.",
+      paymentProvidersUnavailable: "Top-up services are temporarily unavailable.",
       proceedToPayment: "Proceed to Payment",
       withdrawAmount: "Withdrawal Amount",
+      withdrawCard: "Card Number",
+      withdrawCardPlaceholder: "0000 0000 0000 0000",
+      withdrawCardHint: "The request will appear in transaction history and wait for admin review.",
       available: "Available",
       useAll: "All",
-      confirmWithdrawal: "Confirm Withdrawal"
+      confirmWithdrawal: "Confirm Withdrawal",
+      historyDetails: {
+        show: "Show details",
+        hide: "Hide details",
+        operationId: "Operation ID",
+        provider: "Payment service",
+        paymentMethod: "Payment method",
+        providerTransactionId: "Provider transaction ID",
+        confirmedAt: "Confirmed at",
+        destination: "Destination",
+        steamWalletDestination: "Steam wallet top-up",
+        steamBadge: "Steam",
+        balanceImpact: "Balance impact",
+        dealAmount: "Deal amount",
+        operationType: "Operation type",
+        role: "Your role",
+        statusNote: "Comment",
+        note: "Note",
+        buyerRole: "Buyer",
+        sellerRole: "Seller",
+        paymentMethodSbp: "SBP",
+        paymentMethodBankCard: "Bank card",
+        paymentMethodCardAcquiring: "Card acquiring",
+        paymentMethodInternationalCard: "International card",
+        paymentMethodCrypto: "Cryptocurrency",
+        notes: {
+          topUpPending: "The payment was created and is waiting for confirmation from the payment service.",
+          topUpConfirmed: "Funds have already been credited to your balance.",
+          topUpCanceled: "The top-up was canceled or was not completed.",
+          steamTopUpPending: "The Steam top-up payment was created and is waiting for confirmation.",
+          steamTopUpConfirmed: "The Steam top-up payment was completed successfully.",
+          steamTopUpCanceled: "The Steam top-up was canceled or was not completed.",
+          withdrawalPending: "The request has been created and the amount is already reserved on your balance.",
+          withdrawalConfirmed: "The request was confirmed and sent for processing.",
+          withdrawalCanceled: "The request was canceled and the funds should return to your balance.",
+          purchasePending: "The amount is being held until the deal is completed.",
+          purchaseCompleted: "The deal payment has been processed successfully.",
+          purchaseRefunded: "Funds for this deal were returned to your balance.",
+          salePending: "The deal has been created and payout will become available after completion.",
+          saleCompleted: "The amount was credited to your balance after the deal was completed.",
+          saleCanceled: "The payout for this deal was not credited.",
+          refundProcessed: "The refund has been processed and recorded in wallet history.",
+          adjustmentApplied: "A system balance adjustment was applied.",
+        },
+      },
+      withdrawSuccess: "Withdrawal order has been created and added to transaction history."
     },
 
     admin: {
@@ -1186,6 +1563,13 @@ const en = {
         categories: "Categories",
         addCategory: "Add Category",
         addSubcategory: "Add Subcategory",
+        nameRuPlaceholder: "Enter Russian name",
+        nameEnPlaceholder: "Enter English name",
+        deleteCategoryTitle: "Delete category?",
+        deleteSubcategoryTitle: "Delete subcategory?",
+        confirmDeleteCategory: "Delete category \"{name}\"? This action cannot be undone.",
+        confirmDeleteSubcategory: "Delete subcategory \"{name}\"? This action cannot be undone.",
+        deleteFailed: "Failed to delete category. Please try again.",
         selectCategory: "Select a category",
         selectCategoryHint: "Subcategories will be displayed here",
         selectCategoryPrompt: "Select a category to view subcategories",
@@ -1224,7 +1608,7 @@ const en = {
         moderationReasonPlaceholder: "Example: confirmed after manual verification",
         actionConfirm: "Confirm",
         actionCancel: "Cancel",
-        actionChargeback: "Chargeback",
+        actionChargeback: "Reverse payment",
         amount: "Amount",
         createdAt: "Created",
         confirmedAt: "Confirmed",
@@ -1234,6 +1618,55 @@ const en = {
         provider: "Provider",
         transactionId: "Transaction ID",
         history: "Top-up history",
+      },
+
+      withdrawalsPage: {
+        title: "Withdrawal Orders",
+        subtitle: "Withdrawal requests with manual moderation and live user balance.",
+        searchPlaceholder: "Filter by username or user ID",
+        statusFilter: "Order status",
+        empty: "No withdrawal orders found",
+        amount: "Withdrawal amount",
+        balance: "Current balance",
+        createdAt: "Created",
+        statusPending: "Processing",
+        statusConfirmed: "Confirmed",
+        statusCanceled: "Canceled",
+        actionConfirm: "Confirm",
+        actionCancel: "Cancel",
+        moderationTitle: "Withdrawal moderation",
+        moderationMessage: "Confirm the status change for this withdrawal order.",
+        moderationReasonPlaceholder: "Comment for moderation history",
+        sortUserAsc: "User: A-Z",
+        sortUserDesc: "User: Z-A",
+      },
+
+      steamTopupsPage: {
+        title: "Steam top-ups",
+        subtitle: "Create and moderate promo codes for Steam top-ups.",
+        createTitle: "Create promo code",
+        codePlaceholder: "Promo code",
+        discountPlaceholder: "Discount, %",
+        usageLimitPlaceholder: "Usage limit (optional)",
+        expiresAt: "Expires at",
+        activeOnCreate: "Active on create",
+        createAction: "Create promo code",
+        searchPlaceholder: "Search by promo code...",
+        statusFilter: "Promo status",
+        statusActive: "Active",
+        statusInactive: "Inactive",
+        usage: "Usage",
+        unlimited: "Unlimited",
+        createdAt: "Created",
+        discount: "Discount",
+        activate: "Activate",
+        deactivate: "Deactivate",
+        empty: "No promo codes found",
+        createSuccess: "Promo code created successfully",
+        createError: "Failed to create promo code",
+        updateSuccess: "Promo code updated",
+        updateError: "Failed to update promo code",
+        validationError: "Please check promo code fields",
       },
 
       dealPage: {
@@ -1339,7 +1772,7 @@ const en = {
           wallet_top_up_requested: "Top-up requested",
           wallet_top_up_confirmed: "Top-up confirmed",
           wallet_top_up_canceled: "Top-up canceled",
-          wallet_top_up_chargebacked: "Top-up chargebacked",
+          wallet_top_up_chargebacked: "Top-up reversed",
           wallet_top_up_moderated_by_admin: "Top-up moderated by admin",
           feedback_submitted: "Feedback submitted",
           profile_description_updated: "Profile description updated",
@@ -1386,6 +1819,7 @@ const en = {
     },
     walletTypes: {
       top_up: "Top-up",
+      steam_top_up: "Steam Top Up",
       purchase: "Purchase",
       sale: "Sale",
       refund: "Refund",
@@ -1425,7 +1859,7 @@ const en = {
         images: "Product Images (select multiple)",
         count: "Count",
         autoDelivery: "Auto delivery",
-        autoDeliveryHint: "Product will be automatically delivered to the buyer after payment",
+        autoDeliveryHint: "Product will be automatically delivered to the buyer after payment. The deal will be marked as fulfilled automatically.",
         autoDeliveryEnabledHint: "After payment, the buyer will instantly receive the data from the \"Product data\" field",
         selectedImagesCount: "Selected images: {count}",
         creating: "Creating...",
@@ -1471,14 +1905,26 @@ const en = {
         clearForm: "Clear form",
         clearFormTitle: "Quick form reset",
         clearFormHint: "Clears all fields and uploaded images so you can start over safely.",
+        draftAutosaveHint: "Draft is saved automatically on this device.",
+        draftSavedAt: "Last saved: {time}",
+        draftRestoredNotice: "Your draft was restored so you can continue publishing the product.",
+        successTitle: "Product sent for moderation",
+        successMessage: "After moderation, the product will appear in the catalog. Until then, you can open the product card or go to your profile to review your listings.",
+        successHintLabel: "What happens next",
+        successHint: "The product status will update after moderation. All your listings are available in your profile.",
+        goToProduct: "Open product",
+        goToProfile: "Go to profile",
         validationCategoryRequired: "Select a category.",
         validationSubcategoryRequired: "Select a subcategory.",
         validationTitleLength: "Product name: from {min} to {max} characters.",
         validationDescriptionLength: "Description: from {min} to {max} characters.",
         validationProductDataLength: "Product data: from {min} to {max} characters.",
         validationPriceRange: "Price: from {min} to {max}.",
-        validationCountRange: "Quantity: from {min} to {max}.",
+        validationCountRange: "Quantity: whole number from {min} to {max}.",
         validationImagesRange: "Images: from {min} to {max}.",
+        fortniteAccountDetailsTitle: "Account details",
+        fortniteAccountDetailsHint: "Fill in the account attributes so the product works with precise filters and looks informative in the catalog.",
+        validationFortniteAccountDetailsRequired: "Add at least one value to the Fortnite account details block.",
         termsNote: "By creating a product, you agree to our ",
         termsLink: "terms of service",
       },
@@ -1514,7 +1960,7 @@ const en = {
         validationDescriptionLength: "Description: from {min} to {max} characters.",
         validationProductDataLength: "Product data: from {min} to {max} characters.",
         validationPriceRange: "Price: from {min} to {max}.",
-        validationCountRange: "Quantity: from {min} to {max}.",
+        validationCountRange: "Quantity: whole number from {min} to {max}.",
         validationImagesRange: "Images: from {min} to {max}.",
       },
     },

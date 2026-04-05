@@ -60,7 +60,7 @@ const formatDate = (dateString: string) => {
     @click="onClick"
   >
     <!-- Product image -->
-    <div class="relative mb-3 aspect-square w-full overflow-hidden bg-dark-700">
+    <div class="favorite-product-image-surface relative mb-3 aspect-square w-full overflow-hidden">
       <img
         v-if="product.images && product.images.length > 0"
         :src="`${API_HOST}${product.images[0]?.image_url}`"
@@ -179,5 +179,9 @@ const formatDate = (dateString: string) => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.favorite-product-image-surface {
+  background: var(--product-card-image-placeholder-bg);
 }
 </style>

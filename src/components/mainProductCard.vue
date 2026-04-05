@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Product } from '@/validation/product/product'
 import { useI18n } from 'vue-i18n'
 import UserRating from './UserRating.vue'
 import ProductStatusTag from './ProductStatusTag.vue'
+import AutoDeliveryTag from './AutoDeliveryTag.vue'
 import StyledUsername from './StyledUsername.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
 import { buildProductKey } from '@/utils/urlKeys'
@@ -24,8 +25,17 @@ const emit = defineEmits<{
 }>()
 
 const API_HOST = import.meta.env.VITE_API_HOST
+const shouldShowSellerRating = computed(() => props.product.seller.rating > 0)
+const activeImageIndex = ref(0)
+const touchStartX = ref(0)
+const touchStartY = ref(0)
+const suppressNextCardClick = ref(false)
 
 function onClick() {
+  if (suppressNextCardClick.value) {
+    suppressNextCardClick.value = false
+    return
+  }
   emit('click', buildProductKey(props.product))
 }
 
@@ -34,6 +44,62 @@ function goToSeller() {
 }
 
 const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
+const currentImageUrl = computed(() => {
+  if (!props.product.images.length) return ''
+  return `${API_HOST}${props.product.images[activeImageIndex.value]?.image_url ?? props.product.images[0]?.image_url ?? ''}`
+})
+
+function handleImagePointerMove(event: PointerEvent) {
+  if (event.pointerType === 'touch') return
+  const imageCount = props.product.images.length
+  if (imageCount <= 1) return
+
+  const target = event.currentTarget as HTMLElement | null
+  if (!target) return
+
+  const rect = target.getBoundingClientRect()
+  if (rect.width <= 0) return
+
+  const relativeX = Math.min(Math.max(event.clientX - rect.left, 0), rect.width)
+  const ratio = relativeX / rect.width
+  const mappedIndex = Math.min(imageCount - 1, Math.floor(ratio * imageCount))
+  activeImageIndex.value = mappedIndex
+}
+
+function resetActiveImage(event?: PointerEvent) {
+  if (event?.pointerType === 'touch') return
+  activeImageIndex.value = 0
+}
+
+function handleImageTouchStart(event: TouchEvent) {
+  const touch = event.touches[0]
+  if (!touch) return
+  touchStartX.value = touch.clientX
+  touchStartY.value = touch.clientY
+}
+
+function handleImageTouchEnd(event: TouchEvent) {
+  const touch = event.changedTouches[0]
+  if (!touch) return
+  const imageCount = props.product.images.length
+  if (imageCount <= 1) return
+
+  const deltaX = touch.clientX - touchStartX.value
+  const deltaY = touch.clientY - touchStartY.value
+  const horizontalThreshold = 24
+
+  if (Math.abs(deltaX) < horizontalThreshold || Math.abs(deltaX) <= Math.abs(deltaY)) return
+
+  event.preventDefault()
+  suppressNextCardClick.value = true
+
+  if (deltaX < 0) {
+    activeImageIndex.value = (activeImageIndex.value + 1) % imageCount
+    return
+  }
+
+  activeImageIndex.value = (activeImageIndex.value - 1 + imageCount) % imageCount
+}
 </script>
 
 <template>
@@ -41,9 +107,33 @@ const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
     class="flex flex-col cursor-pointer border border-dark-700 rounded-2xl hover:shadow-xl hover:border-dark-500 transition duration-200 bg-dark-900 h-full"
     @click="onClick">
     <!-- Image -->
-    <div class="relative m-1 mb-2 aspect-square w-auto overflow-hidden rounded-xl bg-gray-700 flex-shrink-0 border-[0.5px] border-dark-600/70">
-      <img v-if="product.images.length" :src="`${API_HOST}${product.images[0]?.image_url}`"
-        class="w-full h-full object-cover" alt="product image" />
+    <div
+      class="product-card-image-surface group relative m-1 mb-2 aspect-square w-auto overflow-hidden rounded-xl flex-shrink-0 border-[0.5px] border-dark-600/70"
+      @pointermove="handleImagePointerMove"
+      @pointerleave="resetActiveImage"
+      @touchstart="handleImageTouchStart"
+      @touchend="handleImageTouchEnd"
+    >
+      <Transition name="image-fade" mode="out-in">
+        <img
+          v-if="product.images.length"
+          :key="currentImageUrl"
+          :src="currentImageUrl"
+          class="w-full h-full object-cover"
+          alt="product image"
+        />
+      </Transition>
+      <div
+        v-if="product.images.length > 1"
+        class="touch-dots pointer-events-none absolute inset-x-2 bottom-2 z-10 flex items-center justify-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+      >
+        <span
+          v-for="(_, index) in product.images"
+          :key="`dot-${product.id}-${index}`"
+          class="h-1.5 rounded-full transition-all duration-150"
+          :class="index === activeImageIndex ? 'w-4 bg-white/95' : 'w-1.5 bg-white/55'"
+        />
+      </div>
       <div v-else class="w-full h-full flex items-center justify-center text-sm text-gray-300">
         {{ t('common.noImage') }}
       </div>
@@ -79,14 +169,18 @@ const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
           <span v-if="product.seller.is_active" class="w-2 h-2 rounded-full bg-green-500 flex-shrink-0 self-center" title="Online" />
 
           <!-- Rating -->
-          <div class="inline-flex flex-shrink-0 items-center self-center">
+          <div v-if="shouldShowSellerRating" class="inline-flex flex-shrink-0 items-center self-center">
             <UserRating :rating="product.seller.rating" />
+          </div>
+
+          <div v-if="product.auto_delivery" class="ml-auto inline-flex flex-shrink-0 items-center self-center">
+            <AutoDeliveryTag />
           </div>
         </div>
 
         <!-- Buy button -->
         <button
-          class="group relative w-full flex-shrink-0 cursor-pointer overflow-hidden whitespace-nowrap rounded-lg bg-blue-600 px-2 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700 sm:px-3 sm:py-2 sm:text-sm"
+          class="market-primary-surface market-primary-hover group relative w-full flex-shrink-0 cursor-pointer overflow-hidden whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-semibold text-white transition sm:px-3 sm:py-2 sm:text-sm"
           @click="onClick">
           <span class="block text-center tabular-nums transition-all duration-200 group-hover:-translate-y-full group-hover:opacity-0">
             {{ formattedPrice }}
@@ -110,5 +204,25 @@ const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
   overflow: hidden;
   word-break: break-word;
   text-overflow: ellipsis;
+}
+
+.image-fade-enter-active,
+.image-fade-leave-active {
+  transition: opacity 0.18s ease;
+}
+
+.image-fade-enter-from,
+.image-fade-leave-to {
+  opacity: 0;
+}
+
+@media (hover: none) {
+  .touch-dots {
+    opacity: 1;
+  }
+}
+
+.product-card-image-surface {
+  background: var(--product-card-image-placeholder-bg);
 }
 </style>

@@ -23,6 +23,7 @@ const emit = defineEmits<{
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
+const shouldShowSellerRating = computed(() => props.product.seller.rating > 0)
 
 function onClick() {
   emit('click', buildProductKey(props.product))
@@ -39,7 +40,7 @@ function goToSeller() {
     class="profile-product-card flex h-full cursor-pointer flex-col rounded-2xl border border-dark-700 bg-dark-900 transition duration-200 hover:border-dark-500 hover:shadow-xl"
     @click="onClick"
   >
-    <div class="profile-product-media relative m-1 mb-2 aspect-square w-auto overflow-hidden rounded-xl border-[0.5px] border-dark-600/70 bg-gray-700">
+    <div class="profile-product-media profile-product-image-surface relative m-1 mb-2 aspect-square w-auto overflow-hidden rounded-xl border-[0.5px] border-dark-600/70">
       <img
         v-if="product.images.length"
         :src="`${API_HOST}${product.images[0]?.image_url}`"
@@ -76,7 +77,7 @@ function goToSeller() {
             />
           </button>
           <span v-if="product.seller.is_active" class="h-2 w-2 flex-shrink-0 self-center rounded-full bg-green-500" />
-          <div class="inline-flex flex-shrink-0 items-center self-center">
+          <div v-if="shouldShowSellerRating" class="inline-flex flex-shrink-0 items-center self-center">
             <UserRating :rating="product.seller.rating" />
           </div>
         </div>
@@ -89,7 +90,7 @@ function goToSeller() {
           class="group relative w-full flex-shrink-0 cursor-pointer overflow-hidden whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-semibold transition sm:px-3 sm:py-2 sm:text-sm"
           :class="isOwner
             ? 'border border-dark-600 bg-dark-700/70 text-gray-100 hover:bg-dark-700'
-            : 'group bg-blue-600 text-white hover:bg-blue-700'"
+            : 'group market-primary-surface market-primary-hover text-white'"
           @click.stop="onClick"
         >
           <span
@@ -128,6 +129,10 @@ function goToSeller() {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.profile-product-image-surface {
+  background: var(--product-card-image-placeholder-bg);
 }
 
 @media (max-width: 359px), (min-width: 1536px) and (max-width: 1799px) {

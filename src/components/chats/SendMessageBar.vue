@@ -2,6 +2,7 @@
 import { useImages } from '@/composables/useImages';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { ImagePlus, X } from 'lucide-vue-next';
+import { isSafeImageFile, SAFE_IMAGE_INPUT_ACCEPT } from '@/utils/imageUpload';
 
 const { images } = useImages()
 const MAX_IMAGES_PER_MESSAGE = 5
@@ -82,7 +83,7 @@ const handleImagesSelected = (event: Event) => {
   if (isDisabled.value) return
 
   const input = event.target as HTMLInputElement
-  const uploaded = Array.from(input.files || [])
+  const uploaded = Array.from(input.files || []).filter((file) => isSafeImageFile(file))
   if (uploaded.length === 0) return
 
   const freeSlots = MAX_IMAGES_PER_MESSAGE - selectedFiles.value.length
@@ -108,6 +109,7 @@ onBeforeUnmount(() => {
 watch(
   () => props.newMessage,
   () => resizeMessageInput(),
+  { flush: 'post' },
 )
 </script>
 
@@ -134,7 +136,7 @@ watch(
           <img :src="previewUrl" alt="preview" class="h-full w-full object-cover">
           <button
             type="button"
-            class="absolute right-0.5 top-0.5 rounded-full bg-black/70 p-0.5 text-white transition hover:bg-black"
+            class="message-preview-remove absolute right-0.5 top-0.5 rounded-full p-0.5 text-white transition"
             :disabled="isDisabled"
             @click="removeSelectedImage(index)"
           >
@@ -147,7 +149,7 @@ watch(
     <div class="flex flex-none items-end gap-2">
       <button
         type="button"
-        class="h-12 w-12 flex-none rounded-2xl border border-dark-600 bg-dark-700 text-gray-300 transition hover:bg-dark-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+        class="message-compose-trigger h-12 w-12 flex-none rounded-full border border-white/10 bg-background/80 text-gray-300 backdrop-blur-xl transition hover:border-white/15 hover:bg-background/90 hover:text-white supports-[backdrop-filter]:bg-background/55 supports-[backdrop-filter]:hover:bg-background/65 disabled:cursor-not-allowed disabled:opacity-60"
         :disabled="isDisabled || selectedFiles.length >= MAX_IMAGES_PER_MESSAGE"
         @click="openImagesPicker"
       >
@@ -157,17 +159,17 @@ watch(
       <input
         ref="fileInputRef"
         type="file"
-        accept="image/*"
+        :accept="SAFE_IMAGE_INPUT_ACCEPT"
         multiple
         class="hidden"
         @change="handleImagesSelected"
       >
 
       <div
-        class="flex flex-1 items-end rounded-2xl border px-3 py-2 transition"
+        class="message-compose-shell flex flex-1 items-end rounded-[26px] border px-3 py-2 backdrop-blur-xl transition"
         :class="isDisabled
-          ? 'border-amber-400/40 bg-amber-500/10 opacity-60'
-          : 'border-dark-600 bg-dark-700 focus-within:border-blue-400/60'"
+          ? 'border-amber-400/30 bg-amber-500/10 opacity-60'
+          : 'border-white/10 bg-background/80 focus-within:border-white/15 focus-within:bg-background/90 supports-[backdrop-filter]:bg-background/55 supports-[backdrop-filter]:focus-within:bg-background/65'"
       >
         <textarea
           ref="messageInputRef"
@@ -181,7 +183,7 @@ watch(
           maxlength="500"
         />
         <button
-          class="ml-2 flex h-8 w-8 flex-none items-center justify-center self-end rounded-full border border-blue-400/40 bg-blue-600 text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:border-amber-400/40 disabled:bg-dark-500 disabled:opacity-60 disabled:hover:bg-dark-500"
+          class="market-primary-surface market-primary-hover ml-2 flex h-8 w-8 flex-none items-center justify-center self-end rounded-full border border-blue-400/40 text-white transition disabled:cursor-not-allowed disabled:border-amber-400/40 disabled:bg-dark-500 disabled:opacity-60 disabled:hover:bg-dark-500"
           :disabled="isDisabled || !hasDraftToSend"
           @click="handleSendMessage"
         >
@@ -191,3 +193,21 @@ watch(
     </div>
   </div>
 </template>
+
+<style scoped>
+.message-preview-remove {
+  background: var(--preview-remove-bg);
+}
+
+.message-preview-remove:hover {
+  background: var(--preview-remove-hover-bg);
+}
+
+.message-compose-trigger {
+  box-shadow: var(--glass-fab-shadow);
+}
+
+.message-compose-shell {
+  box-shadow: var(--glass-compose-shadow);
+}
+</style>
