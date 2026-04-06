@@ -199,8 +199,8 @@ const mobileNavGridStyle = computed(() => ({
     <div class="min-h-screen w-screen flex flex-col bg-background text-mainText">
         <header
             class="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div class="mx-auto h-14 w-full flex items-center justify-between gap-3 px-2 lg:px-4 2xl:w-1/2">
-                <div class="flex flex-shrink-0 items-center gap-2 md:gap-3">
+            <div class="mx-auto h-14 w-full flex items-center justify-between gap-3 px-1.5 lg:px-5 2xl:w-1/2">
+                <div class="flex min-w-0 items-center gap-2 md:gap-3">
                     <div class="flex cursor-pointer items-center gap-2 text-lg text-mainText font-semibold sm:text-xl title"
                         @click="router.push('/')">
                         remarket
@@ -208,14 +208,14 @@ const mobileNavGridStyle = computed(() => ({
                     <button
                         v-if="HOME_STEAM_TOPUP_ENABLED"
                         type="button"
-                        class="inline-flex h-9 min-w-[7.6rem] items-center gap-1.5 rounded-full border border-gray-700 bg-transparent pl-2 pr-2.5 text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white md:hidden"
+                        class="inline-flex h-9 min-w-0 max-w-[7.75rem] shrink items-center gap-1 rounded-full border border-gray-700 bg-transparent pl-2 pr-2 text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white md:hidden"
                         :title="t('pages.index.steamTopUp.title')"
                         @click="goToSteamTopUp"
                     >
                         <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-gray-700 text-gray-300">
                             <Icon icon="mdi:steam" class="h-3.5 w-3.5" />
                         </span>
-                        <span class="min-w-0 flex-1 text-left text-[10px] font-medium leading-[1.05]">
+                        <span class="min-w-0 flex-1 text-left text-[9px] font-medium leading-[1.05] sm:text-[10px]">
                             <span class="block truncate">Пополнение</span>
                             <span class="block truncate">Steam</span>
                         </span>
@@ -223,19 +223,19 @@ const mobileNavGridStyle = computed(() => ({
                     <button
                         v-if="HOME_STEAM_TOPUP_ENABLED"
                         type="button"
-                        class="hidden h-9 items-center gap-2 rounded-full border border-gray-700 bg-transparent px-3 text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white md:inline-flex"
+                        class="hidden h-9 min-w-0 max-w-[9.5rem] shrink items-center gap-1.5 rounded-full border border-gray-700 bg-transparent px-2.5 text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white lg:max-w-[8.75rem] xl:max-w-[10rem] 2xl:max-w-none 2xl:px-3 md:inline-flex"
                         :title="t('pages.index.steamTopUp.title')"
                         @click="goToSteamTopUp"
                     >
-                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-700 text-gray-300 transition-colors duration-200">
+                        <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-gray-700 text-gray-300 transition-colors duration-200 lg:h-5 lg:w-5 xl:h-6 xl:w-6">
                             <Icon icon="mdi:steam" class="h-4 w-4" />
                         </span>
-                        <span class="text-sm font-medium leading-none">
+                        <span class="min-w-0 truncate text-xs font-medium leading-none lg:text-[13px] xl:text-sm">
                             {{ t('pages.index.steamTopUp.title') }}
                         </span>
                     </button>
                 </div>
-                <div class="flex items-center gap-2 md:gap-3">
+                <div class="flex min-w-0 items-center gap-2 md:gap-3">
                     <nav class="hidden items-center gap-6 md:flex">
                         <router-link v-for="item in primaryNavItems" :key="item.id" :to="item.to"
                             class="flex items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"
