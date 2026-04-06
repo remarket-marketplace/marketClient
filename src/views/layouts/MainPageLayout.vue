@@ -199,7 +199,7 @@ const mobileNavGridStyle = computed(() => ({
     <div class="min-h-screen w-screen flex flex-col bg-background text-mainText">
         <header
             class="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div class="mx-auto h-14 w-full flex items-center justify-between gap-3 px-1.5 lg:px-5 2xl:w-1/2">
+            <div class="mx-auto h-14 w-full flex items-center justify-between gap-3 px-1.5 lg:px-5 min-[2000px]:w-1/2">
                 <div class="flex min-w-0 items-center gap-2 md:gap-3">
                     <div class="flex cursor-pointer items-center gap-2 text-lg text-mainText font-semibold sm:text-xl title"
                         @click="router.push('/')">
@@ -223,7 +223,7 @@ const mobileNavGridStyle = computed(() => ({
                     <button
                         v-if="HOME_STEAM_TOPUP_ENABLED"
                         type="button"
-                        class="hidden h-9 min-w-0 max-w-[9.5rem] shrink items-center gap-1.5 rounded-full border border-gray-700 bg-transparent px-2.5 text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white lg:max-w-[8.75rem] xl:max-w-[10rem] 2xl:max-w-none 2xl:px-3 md:inline-flex"
+                        class="hidden h-9 min-w-0 max-w-[9.5rem] shrink items-center gap-1.5 rounded-full border border-gray-700 bg-transparent px-2.5 text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white lg:max-w-[8.75rem] xl:max-w-[10rem] min-[2000px]:max-w-none min-[2000px]:px-3 md:inline-flex"
                         :title="t('pages.index.steamTopUp.title')"
                         @click="goToSteamTopUp"
                     >
@@ -331,7 +331,7 @@ const mobileNavGridStyle = computed(() => ({
         </header>
 
         <main class="flex-1 overflow-y-auto">
-            <div class="mx-auto w-full 2xl:w-1/2">
+            <div class="mx-auto w-full min-[2000px]:w-1/2">
                 <div class="px-1.5 lg:px-3" :class="{ 'pb-16': !isDesktop }">
                     <slot />
                 </div>
@@ -339,7 +339,7 @@ const mobileNavGridStyle = computed(() => ({
         </main>
 
         <nav class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-50 h-14 border-t border-gray-700 md:hidden">
-            <div class="mx-auto grid h-full w-full max-w-6xl 2xl:max-w-screen-xl items-center"
+            <div class="mx-auto grid h-full w-full max-w-6xl min-[2000px]:max-w-screen-xl items-center"
                 :style="mobileNavGridStyle">
                 <router-link v-for="item in navItems" :key="item.id" :to="item.to"
                     class="relative flex min-w-0 flex-col items-center justify-center px-0.5 transition-all duration-300 group"
@@ -378,7 +378,7 @@ const mobileNavGridStyle = computed(() => ({
 
         <!-- mobile nav -->
         <nav class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-50 h-14 border-t border-gray-700 md:hidden">
-            <div class="mx-auto grid h-full w-full max-w-6xl 2xl:max-w-screen-xl items-center"
+            <div class="mx-auto grid h-full w-full max-w-6xl min-[2000px]:max-w-screen-xl items-center"
                 :style="mobileNavGridStyle">
                 <router-link v-for="item in navItems" :key="item.id" :to="item.to"
                     class="relative flex min-w-0 flex-col items-center justify-center px-0.5 transition-all duration-300 group"

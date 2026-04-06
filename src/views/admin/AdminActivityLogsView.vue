@@ -236,7 +236,7 @@ onMounted(async () => {
 
     <div
       v-if="isFiltersVisible"
-      class="space-y-2 rounded-xl border border-dark-700 bg-dark-700/30 p-3"
+      class="admin-filter-panel space-y-2 rounded-[1.5rem] p-3"
     >
       <SearchField
         v-model="usernameQuery"
@@ -246,7 +246,7 @@ onMounted(async () => {
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
         <input
           v-model="userIdQuery"
-          class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText focus:border-blue-500 focus:outline-none"
+          class="admin-input-surface h-10 rounded-lg px-3 text-sm text-mainText"
           :placeholder="$t('pages.admin.activityLogs.searchByUserId')"
         />
 
@@ -258,27 +258,27 @@ onMounted(async () => {
 
         <input
           v-model="ipAddress"
-          class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText focus:border-blue-500 focus:outline-none"
+          class="admin-input-surface h-10 rounded-lg px-3 text-sm text-mainText"
           :placeholder="$t('pages.admin.activityLogs.ipAddress')"
         />
 
         <input
           v-model="countryCode"
           maxlength="3"
-          class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm uppercase text-mainText focus:border-blue-500 focus:outline-none"
+          class="admin-input-surface h-10 rounded-lg px-3 text-sm uppercase text-mainText"
           :placeholder="$t('pages.admin.activityLogs.countryCode')"
         />
 
         <input
           v-model="dateFrom"
           type="datetime-local"
-          class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText focus:border-blue-500 focus:outline-none"
+          class="admin-input-surface h-10 rounded-lg px-3 text-sm text-mainText"
         />
 
         <input
           v-model="dateTo"
           type="datetime-local"
-          class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText focus:border-blue-500 focus:outline-none"
+          class="admin-input-surface h-10 rounded-lg px-3 text-sm text-mainText"
         />
       </div>
     </div>
@@ -301,7 +301,7 @@ onMounted(async () => {
         <article
           v-for="log in logs"
           :key="log.id"
-          class="rounded-xl border border-dark-700 bg-dark-600 p-3 sm:p-4"
+          class="admin-surface-card rounded-[1.4rem] p-3 sm:p-4"
         >
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-center gap-2">
@@ -378,7 +378,7 @@ onMounted(async () => {
 
           <pre
             v-if="log.details"
-            class="mt-3 max-h-52 overflow-auto rounded-lg border border-dark-700 bg-dark-800/80 p-2 text-xs text-gray-300"
+            class="admin-surface-soft mt-3 max-h-52 overflow-auto rounded-lg p-2 text-xs text-gray-300"
           >{{ detailsPreview(log.details) }}</pre>
         </article>
 

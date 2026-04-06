@@ -422,7 +422,7 @@ const summaryCards = computed(() => {
       trend: revenueTrend.value,
       sublabel: t('pages.admin.mainPage.lastDays', { days: selectedRange.value }),
       icon: DollarSign,
-      gradient: 'from-cyan-500/80 to-blue-500/70',
+      tone: 'text-cyan-300',
     },
     {
       id: 'deals',
@@ -430,7 +430,7 @@ const summaryCards = computed(() => {
       value: formatNumber(data.count_of_deals),
       sublabel: t('pages.admin.mainPage.disputesActive', { count: formatNumber(data.active_disputes) }),
       icon: Activity,
-      gradient: 'from-emerald-500/80 to-lime-500/70',
+      tone: 'text-emerald-300',
     },
     {
       id: 'users',
@@ -439,7 +439,7 @@ const summaryCards = computed(() => {
       trend: usersTrend.value,
       sublabel: t('pages.admin.mainPage.lastDays', { days: selectedRange.value }),
       icon: Users,
-      gradient: 'from-violet-500/80 to-indigo-500/70',
+      tone: 'text-violet-300',
     },
     {
       id: 'products',
@@ -447,7 +447,7 @@ const summaryCards = computed(() => {
       value: formatNumber(data.count_of_products),
       sublabel: t('pages.admin.mainPage.onModeration', { count: formatNumber(data.moderation_products) }),
       icon: Package,
-      gradient: 'from-amber-500/80 to-orange-500/70',
+      tone: 'text-amber-300',
     },
     {
       id: 'avg-check',
@@ -455,7 +455,7 @@ const summaryCards = computed(() => {
       value: formatCurrency(avgCheck.value),
       sublabel: t('pages.admin.mainPage.perDeal'),
       icon: AlertTriangle,
-      gradient: 'from-sky-500/80 to-cyan-500/70',
+      tone: 'text-sky-300',
     },
   ]
 })
@@ -586,7 +586,7 @@ watch(selectedRange, loadDashboard)
         </h1>
       </div>
 
-      <div class="flex items-center gap-2 bg-dark-600 border border-dark-700 rounded-xl p-1">
+      <div class="admin-surface-soft flex items-center gap-2 rounded-xl p-1">
         <button
           v-for="range in rangeOptions"
           :key="range"
@@ -611,7 +611,7 @@ watch(selectedRange, loadDashboard)
     </div>
 
     <div v-else class="flex flex-col gap-5 overflow-y-auto pb-8">
-      <div class="rounded-2xl border border-dark-700 bg-dark-600 p-4">
+      <div class="admin-surface-panel rounded-2xl p-4">
         <div class="mb-3">
           <p class="text-sm font-semibold text-gray-200">
             {{ t('pages.admin.mainPage.platformSettingsTitle') }}
@@ -640,8 +640,8 @@ watch(selectedRange, loadDashboard)
             {{ platformSettingsSuccess }}
           </div>
 
-          <div v-if="platformSettings" class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
+          <div v-if="platformSettings" class="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
+            <div class="admin-surface-soft rounded-xl p-3">
               <p class="text-sm text-gray-200 font-medium">
                 {{ t('pages.admin.mainPage.registrationToggleLabel') }}
               </p>
@@ -664,7 +664,7 @@ watch(selectedRange, loadDashboard)
               </button>
             </div>
 
-            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
+            <div class="admin-surface-soft rounded-xl p-3">
               <p class="text-sm text-gray-200 font-medium">
                 {{ t('pages.admin.mainPage.productCreationToggleLabel') }}
               </p>
@@ -687,7 +687,7 @@ watch(selectedRange, loadDashboard)
               </button>
             </div>
 
-            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
+            <div class="admin-surface-soft rounded-xl p-3">
               <p class="text-sm text-gray-200 font-medium">
                 {{ t('pages.admin.mainPage.telegramIntegrationToggleLabel') }}
               </p>
@@ -713,11 +713,11 @@ watch(selectedRange, loadDashboard)
         </template>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
         <div
           v-for="card in summaryCards"
           :key="card.id"
-          class="relative overflow-hidden rounded-2xl border border-dark-700 bg-dark-600 p-4 transition-colors hover:border-dark-500"
+          class="admin-surface-card relative overflow-hidden rounded-2xl p-4"
         >
           <div class="flex items-center justify-between gap-3">
             <div class="space-y-1">
@@ -725,10 +725,9 @@ watch(selectedRange, loadDashboard)
               <p class="text-2xl font-semibold text-white leading-tight">{{ card.value }}</p>
             </div>
             <div
-              class="h-12 w-12 flex items-center justify-center rounded-xl bg-gradient-to-br"
-              :class="card.gradient"
+              class="admin-surface-soft h-12 w-12 flex items-center justify-center rounded-xl"
             >
-              <component :is="card.icon" class="text-white" :size="22" />
+              <component :is="card.icon" :class="card.tone" :size="22" />
             </div>
           </div>
 
@@ -749,8 +748,8 @@ watch(selectedRange, loadDashboard)
         </div>
       </div>
 
-      <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <div class="xl:col-span-2 rounded-2xl border border-dark-700 bg-dark-600 p-4">
+      <div class="grid grid-cols-1 gap-4 2xl:grid-cols-12">
+        <div class="admin-surface-panel rounded-2xl p-4 2xl:col-span-8">
           <div class="flex items-center justify-between mb-3">
             <div>
               <p class="text-sm text-gray-300 font-semibold">
@@ -772,7 +771,7 @@ watch(selectedRange, loadDashboard)
           </div>
         </div>
 
-        <div class="rounded-2xl border border-dark-700 bg-dark-600 p-4">
+        <div class="admin-surface-panel rounded-2xl p-4 2xl:col-span-4">
           <div class="flex items-center justify-between mb-3">
             <p class="text-sm text-gray-300 font-semibold">
               {{ t('pages.admin.mainPage.dealsByStatus') }}
@@ -792,8 +791,8 @@ watch(selectedRange, loadDashboard)
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div class="rounded-2xl border border-dark-700 bg-dark-600 p-4">
+      <div class="grid grid-cols-1 gap-4 2xl:grid-cols-12">
+        <div class="admin-surface-panel rounded-2xl p-4 2xl:col-span-7">
           <div class="flex items-center justify-between mb-3">
             <p class="text-sm text-gray-300 font-semibold">
               {{ t('pages.admin.mainPage.topCategories') }}
@@ -817,34 +816,34 @@ watch(selectedRange, loadDashboard)
           </div>
         </div>
 
-        <div class="rounded-2xl border border-dark-700 bg-dark-600 p-4">
+        <div class="admin-surface-panel rounded-2xl p-4 2xl:col-span-5">
           <p class="text-sm text-gray-300 font-semibold mb-3">
             {{ t('pages.admin.mainPage.quickStats') }}
           </p>
-          <div class="grid grid-cols-2 gap-3">
-            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
+          <div class="grid grid-cols-2 gap-3 2xl:grid-cols-3">
+            <div class="admin-surface-soft rounded-xl p-3">
               <p class="text-xs text-gray-400 mb-1">{{ t('common.dealStatuses.pending') }}</p>
               <p class="text-xl font-semibold text-white">{{ formatNumber(getStatusCount('pending')) }}</p>
             </div>
-            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
+            <div class="admin-surface-soft rounded-xl p-3">
               <p class="text-xs text-gray-400 mb-1">{{ t('common.dealStatuses.completed') }}</p>
               <p class="text-xl font-semibold text-white">{{ formatNumber(getStatusCount('completed')) }}</p>
             </div>
-            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
+            <div class="admin-surface-soft rounded-xl p-3">
               <p class="text-xs text-gray-400 mb-1">{{ t('common.dealStatuses.refunded') }}</p>
               <p class="text-xl font-semibold text-white">{{ formatNumber(getStatusCount('refunded')) }}</p>
             </div>
-            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
+            <div class="admin-surface-soft rounded-xl p-3">
               <p class="text-xs text-gray-400 mb-1">{{ t('common.dealStatuses.disputed') }}</p>
               <p class="text-xl font-semibold text-white">{{ formatNumber(getStatusCount('disputed')) }}</p>
             </div>
           </div>
           <div class="mt-4 grid grid-cols-2 gap-3">
-            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
+            <div class="admin-surface-soft rounded-xl p-3">
               <p class="text-xs text-gray-400 mb-1">{{ t('pages.admin.mainPage.activeDisputes') }}</p>
               <p class="text-xl font-semibold text-white">{{ formatNumber(dashboardData?.active_disputes ?? 0) }}</p>
             </div>
-            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
+            <div class="admin-surface-soft rounded-xl p-3">
               <p class="text-xs text-gray-400 mb-1">{{ t('pages.admin.mainPage.onModeration', { count: '' }) }}</p>
               <p class="text-xl font-semibold text-white">{{ formatNumber(dashboardData?.moderation_products ?? 0) }}</p>
             </div>

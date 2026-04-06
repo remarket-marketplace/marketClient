@@ -347,14 +347,14 @@ watch(profileBackgroundUnlocked, (value) => {
           </button>
         </div>
 
-        <div v-if="isLoading" class="flex h-40 items-center justify-center rounded-xl bg-dark-600/25">
+        <div v-if="isLoading" class="admin-surface-soft flex h-40 items-center justify-center rounded-xl">
           <Loader2 class="h-7 w-7 animate-spin text-blue-400" />
           <span class="ml-3 text-text-secondary">{{ $t('common.loading') }}</span>
         </div>
 
         <form v-else class="space-y-8" @submit.prevent="saveUser">
           <div class="grid grid-cols-1 gap-8 lg:grid-cols-[300px,1fr]">
-            <section class="space-y-4">
+            <section class="admin-surface-panel space-y-4 rounded-2xl p-5">
               <h2 class="text-sm font-semibold tracking-wide text-gray-300 uppercase">
                 {{ $t('pages.admin.editUser.avatarLabel') }}
               </h2>
@@ -362,7 +362,7 @@ watch(profileBackgroundUnlocked, (value) => {
                 <img
                   :src="avatarPreviewUrl"
                   :alt="$t('pages.admin.editUser.avatarLabel')"
-                  class="h-16 w-16 rounded-full border border-dark-500 object-cover"
+                  class="h-16 w-16 rounded-full border border-white/10 object-cover"
                 />
                 <div class="min-w-0">
                   <p class="truncate text-sm font-medium text-mainText">{{ username || '-' }}</p>
@@ -396,7 +396,7 @@ watch(profileBackgroundUnlocked, (value) => {
                 {{ $t('pages.admin.editUser.avatarWillBeRemoved') }}
               </p>
 
-              <div v-if="user" class="pt-2 text-sm space-y-2 border-t border-dark-700/70">
+              <div v-if="user" class="pt-2 text-sm space-y-2 border-t border-white/8">
                 <div class="flex items-center justify-between gap-2">
                   <span class="text-text-secondary">{{ $t('common.memberSince') }}</span>
                   <span class="text-mainText">{{ new Date(user.created_at).toLocaleDateString('ru-RU') }}</span>
@@ -409,7 +409,7 @@ watch(profileBackgroundUnlocked, (value) => {
             </section>
 
             <section class="space-y-8">
-              <div class="space-y-4">
+              <div class="admin-surface-panel space-y-4 rounded-2xl p-5">
                 <h2 class="text-sm font-semibold tracking-wide text-gray-300 uppercase">
                   {{ $t('common.account') }}
                 </h2>
@@ -450,7 +450,7 @@ watch(profileBackgroundUnlocked, (value) => {
                     id="description"
                     v-model="description"
                     :placeholder="$t('common.description')"
-                    class="w-full max-h-32 px-3 py-2 rounded-lg bg-dark-600 text-mainText placeholder-text-secondary focus:outline-none focus:ring-1 focus:ring-blue-500/70 transition-colors resize-none"
+                    class="admin-input-surface w-full max-h-32 px-3 py-2 rounded-lg text-mainText placeholder-text-secondary transition-colors resize-none"
                     rows="4"
                     :maxlength="500"
                   />
@@ -460,7 +460,7 @@ watch(profileBackgroundUnlocked, (value) => {
                 </div>
               </div>
 
-              <div class="space-y-4">
+              <div class="admin-surface-panel space-y-4 rounded-2xl p-5">
                 <h2 class="text-sm font-semibold tracking-wide text-gray-300 uppercase">
                   {{ $t('common.settings') }}
                 </h2>
@@ -536,7 +536,7 @@ watch(profileBackgroundUnlocked, (value) => {
                 </div>
               </div>
 
-              <div class="space-y-4">
+              <div class="admin-surface-panel space-y-4 rounded-2xl p-5">
                 <h2 class="text-sm font-semibold tracking-wide text-gray-300 uppercase">
                   {{ $t('pages.admin.editUser.securityTitle') }}
                 </h2>
@@ -575,7 +575,7 @@ watch(profileBackgroundUnlocked, (value) => {
                       {{ $t('pages.admin.editUser.backgroundPreview') }}
                     </p>
                     <div
-                      class="h-20 rounded-lg border border-dark-700 bg-dark-700/35"
+                      class="admin-surface-soft h-20 rounded-lg"
                       :style="profileBackgroundPreviewStyle"
                     />
                     <div class="flex flex-wrap items-center gap-2">
@@ -611,7 +611,7 @@ watch(profileBackgroundUnlocked, (value) => {
                 </div>
               </div>
 
-              <div class="space-y-4">
+              <div class="admin-surface-panel space-y-4 rounded-2xl p-5">
                 <h2 class="text-sm font-semibold tracking-wide text-gray-300 uppercase">
                   {{ $t('pages.admin.editUser.passwordResetTitle') }}
                 </h2>

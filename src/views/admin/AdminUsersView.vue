@@ -342,7 +342,7 @@ watch(sortedUsers, () => {
     </div>
 
     <div
-      class="grid grid-cols-1 sm:grid-cols-3 gap-2"
+      class="admin-filter-panel grid grid-cols-1 gap-2 rounded-[1.5rem] p-3 sm:grid-cols-3"
       :class="{ 'hidden sm:grid': !isMobileFiltersOpen }"
     >
       <CustomSelect
@@ -394,7 +394,7 @@ watch(sortedUsers, () => {
         <div
           v-for="user in visibleUsers"
           :key="user.id"
-          class="bg-dark-600 border border-dark-700 rounded-lg sm:rounded-xl p-3 sm:p-4 hover:border-dark-500 transition-all duration-200"
+          class="admin-surface-card rounded-[1.4rem] p-3 sm:p-4"
         >
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div class="flex items-center gap-3 sm:gap-4">
@@ -403,10 +403,10 @@ watch(sortedUsers, () => {
                   <UserAvatar
                     :avatar-url="user.avatar_url"
                     :alt="user.username"
-                    class="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-dark-400"
+                    class="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-white/10"
                   />
                   <div
-                    class="absolute -bottom-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 rounded-full border-2 border-dark-600"
+                    class="absolute -bottom-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 rounded-full border-2 border-background"
                     :class="user.is_active && !user.is_banned ? 'bg-green-500' : 'bg-gray-500'"
                   />
                 </div>
@@ -489,11 +489,11 @@ watch(sortedUsers, () => {
                 <!-- Dropdown контент -->
                 <div
                   v-if="dropdownOpenId === user.id"
-                  class="absolute right-0 top-full mt-1 w-48 bg-dark-700 border border-dark-600 rounded-lg shadow-lg z-10"
+                  class="admin-surface-soft absolute right-0 top-full z-10 mt-1 w-48 rounded-lg shadow-lg"
                 >
                   <button
                     @click="navigateToEditUser(user.id)"
-                    class="flex items-center gap-2 w-full px-4 py-2 text-sm text-mainText hover:bg-dark-600 transition-colors rounded-lg"
+                    class="flex items-center gap-2 w-full rounded-lg px-4 py-2 text-sm text-mainText transition-colors hover:bg-white/[0.04]"
                   >
                     <Edit class="w-4 h-4" />
                     <span>{{ $t('common.edit') }}</span>
@@ -503,7 +503,7 @@ watch(sortedUsers, () => {
             </div>
           </div>
 
-          <div class="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-dark-700 text-xs text-text-secondary">
+          <div class="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-white/8 text-xs text-text-secondary">
             <div class="flex flex-col xs:flex-row gap-1 xs:gap-2 sm:gap-4">
               <div>{{ $t('common.memberSince') }} {{ new Date(user.created_at).toLocaleDateString('ru-RU') }}</div>
               <div v-if="user.description" class="truncate flex-1 hidden sm:block">
@@ -544,7 +544,7 @@ watch(sortedUsers, () => {
           <div v-if="selectedBanReasonCode === 'otherReason'" class="space-y-2">
             <textarea
               v-model="customBanReason"
-              class="w-full rounded-lg bg-dark-900 border border-dark-700 text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[110px]"
+              class="admin-input-surface w-full rounded-lg text-white px-3 py-2 resize-none min-h-[110px]"
               :placeholder="$t('pages.admin.usersPage.customBanReasonPlaceholder')"
             />
           </div>

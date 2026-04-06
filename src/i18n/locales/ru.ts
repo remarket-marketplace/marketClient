@@ -1577,6 +1577,7 @@ const ru = {
       productsPage: {
         title: "Товары",
         confirmRejectMessage: "Выберите причину отклонения товара",
+        statusModalMessage: "Измените статус товара. Если выбираете отклонение, укажите причину для продавца.",
         rejectReasonLabel: "Причина отклонения",
         selectRejectReason: "Выберите причину",
         customRejectReasonPlaceholder: "Опишите причину отклонения",
