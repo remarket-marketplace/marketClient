@@ -335,7 +335,7 @@ onMounted(async () => {
             </div>
             <div v-if="deal" class="flex items-center gap-4">
               <DealStatusTag :deal-status="deal.status" />
-              <span class="text-2xl font-bold text-green-400">
+              <span class="text-2xl font-bold text-white">
                 {{ formatPrice(deal.price) }}
               </span>
             </div>
@@ -348,14 +348,14 @@ onMounted(async () => {
           </div>
 
           <!-- Error state -->
-          <div v-else-if="errorMessage" class="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+          <div v-else-if="errorMessage" class="rounded-xl border border-red-500/25 bg-red-500/[0.05] p-4">
             <p class="text-red-400 text-center">{{ errorMessage }}</p>
           </div>
 
           <!-- Deal information -->
           <div v-else-if="deal" class="space-y-6">
             <!-- Product card -->
-            <div class="bg-dark-600 border border-dark-700 rounded-xl p-5">
+            <div class="admin-surface-panel rounded-xl p-5">
               <div class="flex items-center justify-between mb-4">
                 <h2 class="text-lg font-semibold text-white flex items-center gap-2">
                   <Package class="w-5 h-5 text-blue-400" />
@@ -372,7 +372,7 @@ onMounted(async () => {
                 <!-- Product image -->
                 <div class="flex-shrink-0">
                   <img :src="getProductImageUrl()" :alt="deal.product.title"
-                    class="w-24 h-24 rounded-lg object-cover border border-dark-400 cursor-pointer"
+                    class="w-24 h-24 rounded-lg object-cover border border-white/10 cursor-pointer"
                     @click="goToProduct(deal.product.id, deal.product.slug)" />
                 </div>
 
@@ -409,11 +409,11 @@ onMounted(async () => {
               </div>
 
               <!-- Product data -->
-              <div v-if="deal.product.product_data_string" class="mt-4 pt-4 border-t border-dark-700">
+              <div v-if="deal.product.product_data_string" class="mt-4 pt-4 border-t border-white/8">
                 <h4 class="text-sm font-medium text-gray-300 mb-2">{{ $t('pages.forms.createProduct.productData') }}:
                 </h4>
                 <pre
-                  class="text-sm text-gray-400 bg-dark-700/50 p-3 rounded-lg overflow-x-auto whitespace-pre-wrap font-mono">
+                  class="admin-surface-soft text-sm text-gray-400 p-3 rounded-lg overflow-x-auto whitespace-pre-wrap font-mono">
 {{ deal.product.product_data_string }}
                 </pre>
               </div>
@@ -422,7 +422,7 @@ onMounted(async () => {
             <!-- Participants -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <!-- Seller -->
-              <div class="bg-dark-600 border border-dark-700 rounded-xl p-5">
+              <div class="admin-surface-panel rounded-xl p-5">
                 <h3 class="text-lg font-semibold text-white flex items-center gap-2 mb-4">
                   <User class="w-5 h-5 text-green-400" />
                   {{ $t('common.seller') }}
@@ -462,7 +462,7 @@ onMounted(async () => {
               </div>
 
               <!-- Buyer -->
-              <div class="bg-dark-600 border border-dark-700 rounded-xl p-5">
+              <div class="admin-surface-panel rounded-xl p-5">
                 <h3 class="text-lg font-semibold text-white flex items-center gap-2 mb-4">
                   <User class="w-5 h-5 text-blue-400" />
                   {{ $t('common.buyer') }}
@@ -503,7 +503,7 @@ onMounted(async () => {
             </div>
 
             <!-- Deal details -->
-            <div class="bg-dark-600 border border-dark-700 rounded-xl p-5">
+            <div class="admin-surface-panel rounded-xl p-5">
               <h3 class="text-lg font-semibold text-white flex items-center gap-2 mb-4">
                 <CreditCard class="w-5 h-5 text-yellow-400" />
                 {{ $t('pages.admin.dealPage.dealDetails') }}
@@ -527,7 +527,7 @@ onMounted(async () => {
 
             <!-- Report section (only for disputed deals) -->
             <div v-if="deal.status === 'disputed' && deal.refusal_reason"
-              class="bg-dark-600 border border-red-500/30 rounded-xl p-5">
+              class="rounded-xl border border-red-500/25 bg-red-500/[0.04] p-5">
               <h3 class="text-lg font-semibold text-white flex items-center gap-2 mb-4">
                 <Shield class="w-5 h-5 text-red-400" />
                 {{ $t('pages.admin.dealPage.reportInfo') }}
@@ -543,12 +543,12 @@ onMounted(async () => {
 
                 <div v-if="deal.refusal_reason.refusal_reason_title === 'otherReason' && deal.refusal_reason.text">
                   <span class="text-sm text-gray-400">{{ $t('pages.admin.dealPage.customReason') }}:</span>
-                  <div class="mt-2 p-3 bg-dark-700/50 rounded-lg border border-gray-700">
+                  <div class="admin-surface-soft mt-2 p-3 rounded-lg">
                     <p class="text-gray-300 whitespace-pre-wrap">{{ deal.refusal_reason.text }}</p>
                   </div>
                 </div>
 
-                <div class="pt-4 border-t border-dark-700">
+                <div class="pt-4 border-t border-white/8">
                   <div class="flex items-center gap-2 text-sm text-gray-400">
                     <MessageSquare class="w-4 h-4" />
                     <span>{{ $t('pages.admin.dealPage.reportId') }}: {{ deal.id }}</span>
@@ -562,11 +562,11 @@ onMounted(async () => {
 
       <!-- Right sidebar - Admin actions -->
       <div
-        class="lg:w-96 lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-full lg:border-l border-dark-700 px-4 lg:px-0 lg:pt-6 lg:pl-6">
+        class="lg:w-96 lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-full lg:border-l border-white/8 px-4 lg:px-0 lg:pt-6 lg:pl-6">
         <div class="pt-6 lg:pt-0">
           <div class="space-y-6 pb-6 lg:pb-0">
             <!-- Admin actions -->
-            <div v-if="deal" class="rounded-xl border border-dark-700 bg-dark-600/40 p-5 space-y-4">
+            <div v-if="deal" class="admin-surface-panel rounded-xl p-5 space-y-4">
               <h3 class="text-sm font-semibold text-white flex items-center gap-2">
                 <Shield class="w-4 h-4 text-blue-400" />
                 {{ $t('pages.admin.dealPage.adminActions') }}
@@ -574,7 +574,7 @@ onMounted(async () => {
 
               <!-- Actions based on deal status -->
               <div class="space-y-3">
-                <div class="space-y-2 pb-2 border-b border-dark-700">
+                <div class="space-y-2 pb-2 border-b border-white/8">
                   <CustomSelect
                     v-model="selectedForcedStatus"
                     :options="dealStatusOptions"
@@ -621,7 +621,7 @@ onMounted(async () => {
 
                 <!-- Other statuses - informational -->
                 <template v-else>
-                  <div class="text-center py-3 px-4 rounded-lg bg-gray-600 text-gray-300">
+                  <div class="admin-surface-soft text-center py-3 px-4 rounded-lg text-gray-300">
                     <div class="flex items-center justify-center gap-2">
                       <CheckCircle v-if="deal.status === 'completed'" class="w-5 h-5 text-green-400" />
                       <Undo2 v-else-if="deal.status === 'refunded'" class="w-5 h-5 text-purple-400" />
@@ -675,7 +675,7 @@ onMounted(async () => {
         </label>
         <textarea
           v-model="disputeReason"
-          class="w-full rounded-lg bg-dark-900 border border-dark-700 text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[110px]"
+          class="admin-input-surface w-full rounded-lg text-white px-3 py-2 resize-none min-h-[110px]"
           :placeholder="$t('pages.admin.dealPage.disputeReasonPlaceholder')"
         />
         <p v-if="reasonError" class="text-red-400 text-sm">

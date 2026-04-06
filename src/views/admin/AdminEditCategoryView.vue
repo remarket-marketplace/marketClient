@@ -141,7 +141,7 @@ onMounted(loadCategory)
     <div class="w-full">
       <BackButton/>
     </div>
-    <div class="max-w-md w-full border border-dark-700 rounded-2xl bg-background p-6 sm:p-8 space-y-6">
+    <div class="admin-surface-panel max-w-md w-full rounded-2xl p-6 sm:p-8 space-y-6">
       <div class="text-center">
         <div class="flex gap-2">
           <h1 class="text-2xl sm:text-3xl font-bold text-mainText">
@@ -179,7 +179,7 @@ onMounted(loadCategory)
             {{ $t('common.description') }}
           </label>
           <textarea v-model="description" rows="3" :maxlength="CATEGORY_DESCRIPTION_MAX_LENGTH"
-            class="w-full max-h-28 px-3 py-2 border border-dark-700 rounded-lg bg-dark-600 text-mainText resize-none" />
+            class="admin-input-surface w-full max-h-28 px-3 py-2 rounded-lg text-mainText resize-none" />
         </div>
 
         <div v-if="!isSubcategory">
@@ -189,7 +189,7 @@ onMounted(loadCategory)
 
           <div v-if="existingImage" class="relative w-32 h-32 mb-3">
             <img :src="`${API_HOST}${existingImage}`"
-              class="w-full h-full object-cover rounded-lg border border-dark-600" />
+              class="w-full h-full object-cover rounded-lg border border-white/10" />
             <button type="button" @click="deleteImage"
               class="absolute -top-2 -right-2 w-5 h-5 bg-red-600 rounded-full flex items-center justify-center">
               <X class="w-3 h-3 text-white" />
@@ -212,7 +212,7 @@ onMounted(loadCategory)
             {{ $t('common.banner') }}
           </label>
 
-          <div v-if="existingBanner" class="relative w-full h-28 mb-3 overflow-hidden rounded-lg border border-dark-600">
+          <div v-if="existingBanner" class="relative w-full h-28 mb-3 overflow-hidden rounded-lg border border-white/10">
             <img :src="`${API_HOST}${existingBanner}`"
               class="w-full h-full object-cover" />
           </div>
@@ -231,7 +231,7 @@ onMounted(loadCategory)
           </label>
         </div>
 
-        <div v-if="category" class="border-t border-dark-700 pt-4 text-sm space-y-2">
+        <div v-if="category" class="border-t border-white/8 pt-4 text-sm space-y-2">
           <div class="flex justify-between">
             <span class="text-text-secondary">ID</span>
             <span class="font-mono text-xs text-mainText">{{ category.id }}</span>

@@ -230,7 +230,7 @@ watch(
 
     <div
       v-if="isFiltersVisible"
-      class="admin-withdrawals-filter-panel grid gap-2 rounded-[1.5rem] border border-white/8 p-3"
+      class="grid gap-2 rounded-[1.5rem] border border-white/8 p-3"
     >
       <SearchField
         v-model="searchQuery"
@@ -388,7 +388,7 @@ watch(
         <textarea
           v-model="moderationReason"
           rows="3"
-          class="w-full rounded-2xl border border-dark-700 bg-dark-700/40 px-3 py-2 text-sm text-mainText focus:border-blue-500 focus:outline-none"
+          class="admin-input-surface w-full rounded-2xl px-3 py-2 text-sm text-mainText"
           :placeholder="$t('pages.admin.withdrawalsPage.moderationReasonPlaceholder')"
         />
       </div>

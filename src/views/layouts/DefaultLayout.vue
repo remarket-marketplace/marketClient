@@ -208,7 +208,7 @@ const mobileNavGridStyle = computed(() => ({
     <header
       class="fixed inset-x-0 top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
     >
-      <div class="mx-auto w-full 2xl:w-1/2">
+      <div class="mx-auto w-full min-[2000px]:w-1/2">
         <div class="mx-auto h-14 w-full flex items-center justify-between gap-3 px-1.5 lg:px-5">
           <div class="flex min-w-0 items-center gap-2 md:gap-3">
             <div class="flex cursor-pointer items-center gap-2 text-lg text-mainText font-semibold sm:text-xl"
@@ -233,7 +233,7 @@ const mobileNavGridStyle = computed(() => ({
             <button
               v-if="HOME_STEAM_TOPUP_ENABLED"
               type="button"
-              class="hidden h-9 min-w-0 max-w-[9.5rem] shrink items-center gap-1.5 rounded-full border border-gray-700 bg-transparent px-2.5 text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white lg:max-w-[8.75rem] xl:max-w-[10rem] 2xl:max-w-none 2xl:px-3 md:inline-flex"
+              class="hidden h-9 min-w-0 max-w-[9.5rem] shrink items-center gap-1.5 rounded-full border border-gray-700 bg-transparent px-2.5 text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white lg:max-w-[8.75rem] xl:max-w-[10rem] min-[2000px]:max-w-none min-[2000px]:px-3 md:inline-flex"
               :title="t('pages.index.steamTopUp.title')"
               @click="goToSteamTopUp"
             >
@@ -347,7 +347,7 @@ const mobileNavGridStyle = computed(() => ({
     </header>
 
     <div
-      class="mx-auto w-full 2xl:w-1/2 no-scrollbar pt-14"
+      class="mx-auto w-full min-[2000px]:w-1/2 no-scrollbar pt-14"
       :class="showFooter ? 'min-h-screen' : 'flex flex-1 min-h-0 flex-col'"
     >
       <main :class="showFooter ? '' : 'flex-1 min-h-0 overflow-hidden'">

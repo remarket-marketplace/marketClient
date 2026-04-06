@@ -243,11 +243,6 @@ watch(selectedCurrency, (nextCurrency, prevCurrency) => {
   background: var(--page-hero-radial-blue-strong);
 }
 
-.steam-topup-field :deep(input) {
-  background: var(--steam-topup-field-bg);
-  border-color: var(--steam-topup-field-border);
-}
-
 .steam-topup-field :deep(input:focus) {
   border-color: var(--steam-topup-field-focus);
 }

@@ -1580,6 +1580,7 @@ const en = {
       productsPage: {
         title: "Products",
         confirmRejectMessage: "Select the reason for rejecting this product",
+        statusModalMessage: "Update the product status. If you choose rejection, provide a reason visible to the seller.",
         rejectReasonLabel: "Rejection reason",
         selectRejectReason: "Select reason",
         customRejectReasonPlaceholder: "Describe rejection reason",

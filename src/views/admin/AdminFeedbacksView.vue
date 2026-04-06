@@ -174,7 +174,7 @@ watch(
         <article
           v-for="feedback in feedbacks"
           :key="feedback.id"
-          class="bg-dark-600 border border-dark-700 rounded-xl p-3 sm:p-4 hover:border-dark-500 transition-colors"
+          class="admin-surface-card rounded-[1.4rem] p-3 sm:p-4"
         >
           <div class="flex items-start justify-between gap-3">
             <div class="flex items-center gap-3 min-w-0">

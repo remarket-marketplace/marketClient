@@ -12,6 +12,7 @@ const _props = defineProps<{
   confirmText?: string 
   cancelText?: string 
   isLoading?: boolean
+  allowOverflowVisible?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -116,7 +117,8 @@ onBeforeUnmount(() => {
 
     <div class="confirm-window-shell relative z-10 flex w-full justify-center">
       <div
-        class="confirm-window app-modal-panel relative flex w-full max-w-md flex-col overflow-hidden rounded-xl border border-dark-700 bg-dark-800 shadow-2xl"
+        class="confirm-window app-modal-panel relative flex w-full max-w-md flex-col rounded-xl border border-dark-700 bg-dark-800 shadow-2xl"
+        :class="_props.allowOverflowVisible ? 'overflow-visible' : 'overflow-hidden'"
       >
         <!-- Header -->
         <div class="shrink-0 border-b border-dark-700 px-6 py-5">
@@ -135,8 +137,11 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Message -->
-        <div class="confirm-window__body app-modal-scroll flex-1 px-6 py-5 space-y-4">
-          <p class="text-gray-300 leading-relaxed">
+        <div
+          class="confirm-window__body flex-1 px-6 py-5 space-y-4"
+          :class="_props.allowOverflowVisible ? 'overflow-visible' : 'app-modal-scroll'"
+        >
+          <p v-if="message" class="text-gray-300 leading-relaxed">
             {{ message }}
           </p>
           <slot name="body"></slot>
