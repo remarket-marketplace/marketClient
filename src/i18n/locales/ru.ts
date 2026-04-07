@@ -71,6 +71,8 @@ const ru = {
     userId: "ID Пользователя",
     online: "Онлайн",
     offline: "Не в сети",
+    lastSeen: "Последний онлайн",
+    avgResponseTime: "Среднее время ответа",
     messageRead: "Прочитано",
     messageUnread: "Непрочитано",
     banned: "Забанен",
@@ -1054,6 +1056,8 @@ const ru = {
         completedDealsCaption: "Всего у продавца",
         memberSinceLabel: "На платформе",
         memberSinceCaption: "Дата регистрации",
+        detailsLabel: "Сводка продавца",
+        detailsSubtitle: "Короткие сигналы по активности и скорости ответа.",
         footer: "Успешность считается только по закрытым сделкам.",
       },
       deleteConfirm: {
