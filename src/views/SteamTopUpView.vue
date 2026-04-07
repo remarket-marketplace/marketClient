@@ -5,7 +5,15 @@ import TheInput from '@/components/TheInput.vue'
 import { useUserStore } from '@/stores/user'
 import { convertCurrencyAmount, getCurrencySymbol, preferredCurrency } from '@/utils/currency'
 import { getErrorMessage } from '@/utils/errorsMap'
-import { isValidSteamTopUpAccount, normalizeSteamTopUpAccount } from '@/validation/steamTopup/steamTopup'
+import {
+  findSteamTopUpServiceByCurrency,
+  isValidSteamTopUpAccount,
+  normalizeSteamTopUpAccount,
+  type SteamTopUpOrder,
+  type SteamTopUpPayOrderPayload,
+  type SteamTopUpService,
+  type SteamTopUpServiceCurrency,
+} from '@/validation/steamTopup/steamTopup'
 import { Icon } from '@iconify/vue'
 import axios from 'axios'
 import { storeToRefs } from 'pinia'
@@ -26,16 +34,19 @@ const steamPromoCode = ref('')
 const steamError = ref('')
 const steamSuccess = ref('')
 const steamCheckoutSubmitting = ref(false)
+const steamServices = ref<SteamTopUpService[]>([])
+const steamServicesLoading = ref(false)
+const steamOrder = ref<SteamTopUpOrder | null>(null)
 
-const selectedCurrency = computed(() => preferredCurrency.value)
+const selectedCurrency = computed<SteamTopUpServiceCurrency>(() => (
+  preferredCurrency.value === 'USD' ? 'USD' : 'RUB'
+))
 const currencySymbol = computed(() => getCurrencySymbol(selectedCurrency.value))
 const currencyInputStep = computed(() => (selectedCurrency.value === 'USD' ? 0.01 : 1))
 const steamNormalizedAccount = computed(() => normalizeSteamTopUpAccount(steamAccount.value))
 const steamIsAccountValid = computed(() => isValidSteamTopUpAccount(steamAccount.value))
 const parsedSteamQuantity = computed(() => Number.parseFloat(steamQuantity.value))
-const steamQuantityRub = computed(() => (
-  convertCurrencyAmount(parsedSteamQuantity.value, selectedCurrency.value, 'RUB')
-))
+const selectedSteamService = computed(() => findSteamTopUpServiceByCurrency(steamServices.value, selectedCurrency.value))
 const quickAmounts = computed(() => {
   return selectedCurrency.value === 'USD'
     ? [...QUICK_AMOUNTS_USD]
@@ -43,8 +54,9 @@ const quickAmounts = computed(() => {
 })
 const steamCanCreateOrder = computed(() => {
   if (!user.value) return false
+  if (!selectedSteamService.value) return false
   if (!steamIsAccountValid.value) return false
-  return Number.isFinite(parsedSteamQuantity.value) && Number.isFinite(steamQuantityRub.value) && steamQuantityRub.value > 0
+  return Number.isFinite(parsedSteamQuantity.value) && parsedSteamQuantity.value > 0
 })
 
 function resolveSteamErrorMessage(error: unknown): string {
@@ -59,9 +71,26 @@ function clearSteamFeedback(): void {
   steamSuccess.value = ''
 }
 
+async function loadSteamServices(): Promise<void> {
+  if (!HOME_STEAM_TOPUP_ENABLED || !user.value) return
+
+  steamServicesLoading.value = true
+  clearSteamFeedback()
+  try {
+    const response = await steamTopupService.getServices()
+    steamServices.value = response.services
+  } catch (error) {
+    steamServices.value = []
+    steamError.value = resolveSteamErrorMessage(error)
+  } finally {
+    steamServicesLoading.value = false
+  }
+}
+
 function setQuickAmount(amount: number): void {
   steamQuantity.value = selectedCurrency.value === 'USD' ? amount.toFixed(2) : String(amount)
   clearSteamFeedback()
+  steamOrder.value = null
 }
 
 function isQuickAmountActive(amount: number): boolean {
@@ -75,11 +104,24 @@ function formatQuickAmount(amount: number): string {
   return `${Math.round(amount)} ${currencySymbol.value}`
 }
 
+function buildSteamPayOrderPayload(): SteamTopUpPayOrderPayload {
+  const promoCode = steamPromoCode.value.trim()
+  return {
+    payment_method: 'lava',
+    ...(promoCode ? { promo_code: promoCode } : {}),
+  }
+}
+
 async function submitSteamTopUpPayment() {
   if (steamCheckoutSubmitting.value) return
 
-  const amountRub = Number(steamQuantityRub.value.toFixed(2))
-  if (!steamIsAccountValid.value || !Number.isFinite(amountRub) || amountRub <= 0) {
+  if (!steamIsAccountValid.value || !selectedSteamService.value) {
+    steamError.value = t('errors.FILL_REQUIRED_FIELDS')
+    return
+  }
+
+  const quantity = parsedSteamQuantity.value
+  if (!Number.isFinite(quantity) || quantity <= 0) {
     steamError.value = t('errors.FILL_REQUIRED_FIELDS')
     return
   }
@@ -89,11 +131,21 @@ async function submitSteamTopUpPayment() {
   steamSuccess.value = t('pages.index.steamTopUp.redirectToPayment')
 
   try {
-    const response = await steamTopupService.createPayment({
+    steamOrder.value = await steamTopupService.createOrder({
+      service_id: selectedSteamService.value.id,
       account: steamNormalizedAccount.value,
-      amount_rub: amountRub,
+      quantity,
     })
-    window.location.href = response.payment_url
+    const response = await steamTopupService.payOrder(
+      steamOrder.value.id,
+      buildSteamPayOrderPayload(),
+    )
+    steamOrder.value = response.order
+    if (response.payment_url) {
+      window.location.href = response.payment_url
+      return
+    }
+    steamSuccess.value = t('pages.index.steamTopUp.orderPaid')
   } catch (error) {
     steamError.value = resolveSteamErrorMessage(error)
     steamSuccess.value = ''
@@ -108,7 +160,21 @@ watch(selectedCurrency, (nextCurrency, prevCurrency) => {
 
   const converted = convertCurrencyAmount(currentInput, prevCurrency, nextCurrency)
   steamQuantity.value = nextCurrency === 'USD' ? converted.toFixed(2) : Math.round(converted).toString()
+  steamOrder.value = null
 })
+
+watch(
+  () => user.value?.id,
+  async (currentUserId) => {
+    steamOrder.value = null
+    if (!currentUserId) {
+      steamServices.value = []
+      return
+    }
+    await loadSteamServices()
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -154,6 +220,18 @@ watch(selectedCurrency, (nextCurrency, prevCurrency) => {
               class="mb-5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200"
             >
               {{ steamSuccess }}
+            </p>
+            <p
+              v-if="steamServicesLoading"
+              class="mb-5 rounded-lg border border-dark-600 bg-dark-700/50 px-4 py-3 text-sm text-gray-300"
+            >
+              {{ t('pages.index.steamTopUp.refreshingOrder') }}
+            </p>
+            <p
+              v-else-if="user && !selectedSteamService"
+              class="mb-5 rounded-lg border border-dark-600 bg-dark-700/50 px-4 py-3 text-sm text-gray-300"
+            >
+              {{ t('pages.index.steamTopUp.noServices') }}
             </p>
 
             <div class="space-y-5">
@@ -221,7 +299,7 @@ watch(selectedCurrency, (nextCurrency, prevCurrency) => {
                 <button
                   type="button"
                   class="market-primary-surface market-primary-hover inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg px-6 text-sm font-semibold text-white transition-colors duration-200 disabled:cursor-not-allowed disabled:bg-blue-600/45 disabled:text-white/75 sm:w-auto sm:min-w-[220px]"
-                  :disabled="!steamCanCreateOrder || steamCheckoutSubmitting"
+                  :disabled="!steamCanCreateOrder || steamCheckoutSubmitting || steamServicesLoading"
                   @click="submitSteamTopUpPayment"
                 >
                   <Loader2 v-if="steamCheckoutSubmitting" class="h-4 w-4 animate-spin" />
