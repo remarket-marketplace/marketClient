@@ -706,7 +706,7 @@ const en = {
       popularEmpty: "No popular products yet",
       resetFilters: "Reset",
       steamTopUp: {
-        title: "Steam Top-Up",
+        title: "Top-Up",
         subtitle: "Top up your Steam wallet with balance or external payment.",
         enterPromo: "Enter promo code",
         service: "Service",

@@ -706,7 +706,7 @@ const ru = {
       popularEmpty: "Пока нет популярных товаров",
       resetFilters: "Сбросить",
       steamTopUp: {
-        title: "Пополнение Steam",
+        title: "Пополнение",
         subtitle: "Пополнение Steam-кошелька через баланс или внешнюю оплату.",
         enterPromo: "Ввести промокод",
         service: "Сервис",
