@@ -6,6 +6,14 @@ const nicknameStyleIdSchema = z
   .nullish()
   .transform((value) => value ?? 'default')
 
+const optionalDateSchema = z
+  .union([z.string(), z.date(), z.null(), z.undefined()])
+  .transform((value) => {
+    if (!value) return null
+    const parsed = value instanceof Date ? value : new Date(value)
+    return Number.isNaN(parsed.getTime()) ? null : parsed
+  })
+
 export const UserReadSchema = z.object({
   id: z.string(),
   email: z.string().email(),
@@ -27,6 +35,8 @@ export const UserReadSchema = z.object({
   ban_reason_code: z.string().nullable().optional(),
   ban_reason_text: z.string().nullable().optional(),
   is_active: z.boolean(),
+  last_seen_at: optionalDateSchema,
+  average_first_response_time_seconds: z.number().int().nonnegative().nullable().optional(),
   rating: z.number().int().nonnegative(),
   role: z.enum(['user', 'admin', 'partner']),
 })
@@ -48,6 +58,8 @@ export const PublicProfileDataSchema = z.object({
     .transform((value) => value ?? ''),
   description: z.string().max(500).nullable(),
   is_active: z.boolean(),
+  last_seen_at: optionalDateSchema,
+  average_first_response_time_seconds: z.number().int().nonnegative().nullable().optional(),
   is_banned: z.boolean(),
   ban_reason_code: z.string().nullable().optional(),
   ban_reason_text: z.string().nullable().optional(),
