@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   ArrowDownToLine,
@@ -40,9 +40,12 @@ const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const HARD_MIN_DEPOSIT_RUB = 10
+const SALE_WITHDRAWAL_DELAY_MS = 24 * 60 * 60 * 1000
 
 const balance = ref(0)
 const isLoading = ref(false)
+const nowTs = ref(Date.now())
+let walletTimerId: ReturnType<typeof setInterval> | null = null
 
 const historyItems = ref<WalletHistoryItem[]>([])
 const expandedTransactionId = ref<string | null>(null)
@@ -139,11 +142,80 @@ const availableBalanceInSelectedCurrency = computed(() =>
   convertCurrencyAmount(balance.value, 'RUB', selectedCurrency.value)
 )
 
+function toValidTimestamp(dateValue: string | null | undefined): number | null {
+  if (!dateValue) return null
+  const raw = dateValue.trim()
+  if (!raw) return null
+
+  // Backend can return naive datetime without timezone; treat it as UTC to avoid local offset drift.
+  const normalized = /([zZ]|[+-]\d{2}:\d{2})$/.test(raw)
+    ? raw
+    : `${raw.replace(' ', 'T')}Z`
+
+  const parsed = Date.parse(normalized)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function isSalePayoutDelayApplicable(item: WalletHistoryItem): boolean {
+  if (item.type !== 'sale') return false
+  if (!Number.isFinite(item.amount) || item.amount <= 0) return false
+
+  const normalizedStatus = item.status.toLowerCase()
+  return !['canceled', 'cancelled', 'rejected', 'refunded'].includes(normalizedStatus)
+}
+
+function getSaleUnlockTimestamp(item: WalletHistoryItem): number | null {
+  const createdAtTs = toValidTimestamp(item.created_at)
+  if (createdAtTs === null) return null
+  return createdAtTs + SALE_WITHDRAWAL_DELAY_MS
+}
+
+const salePayoutTimers = computed(() => {
+  return historyItems.value
+    .filter(isSalePayoutDelayApplicable)
+    .flatMap((item) => {
+      const unlockAt = getSaleUnlockTimestamp(item)
+      if (unlockAt === null) return []
+
+      const remainingMs = unlockAt - nowTs.value
+      if (remainingMs <= 0) return []
+
+      return [{
+        id: item.id,
+        title: item.title || t('pages.wallet.saleTimer.untitledSale'),
+        amount: item.amount,
+        unlockAt,
+        remainingMs,
+      }]
+    })
+})
+
+const totalLockedSaleAmountRub = computed(() =>
+  salePayoutTimers.value.reduce((sum, item) => sum + item.amount, 0),
+)
+
+const withdrawableBalanceRub = computed(() =>
+  Math.max(0, balance.value - totalLockedSaleAmountRub.value),
+)
+
+const withdrawableBalanceInSelectedCurrency = computed(() =>
+  convertCurrencyAmount(withdrawableBalanceRub.value, 'RUB', selectedCurrency.value),
+)
+
+function formatDurationLeft(ms: number): string {
+  const safeMs = Math.max(0, Math.floor(ms))
+  const totalSeconds = Math.floor(safeMs / 1000)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+}
+
 const withdrawInputMin = computed(() => (selectedCurrency.value === 'USD' ? 0.01 : 1))
 const withdrawInputMax = computed(() => {
   return selectedCurrency.value === 'USD'
-    ? Number(availableBalanceInSelectedCurrency.value.toFixed(2))
-    : Math.max(0, Math.floor(availableBalanceInSelectedCurrency.value))
+    ? Number(withdrawableBalanceInSelectedCurrency.value.toFixed(2))
+    : Math.max(0, Math.floor(withdrawableBalanceInSelectedCurrency.value))
 })
 
 const isWithdrawAmountValid = computed(() => {
@@ -151,7 +223,7 @@ const isWithdrawAmountValid = computed(() => {
     Number.isFinite(parsedWithdrawAmount.value)
     && parsedWithdrawAmount.value > 0
     && Number.isFinite(withdrawAmountInRub.value)
-    && withdrawAmountInRub.value <= balance.value
+    && withdrawAmountInRub.value <= withdrawableBalanceRub.value
   )
 })
 const isWithdrawCardValid = computed(() => withdrawCardDigits.value.length >= 12 && withdrawCardDigits.value.length <= 19)
@@ -246,6 +318,17 @@ onMounted(async () => {
   await loadHistory()
   applyAutoDepositFromQuery()
   isLoading.value = false
+
+  walletTimerId = setInterval(() => {
+    nowTs.value = Date.now()
+  }, 1000)
+})
+
+onUnmounted(() => {
+  if (walletTimerId) {
+    clearInterval(walletTimerId)
+    walletTimerId = null
+  }
 })
 
 const loadHistory = async () => {
@@ -311,9 +394,15 @@ const handleWithdraw = async () => {
   withdrawErrorMessage.value = null
   withdrawSuccessMessage.value = null
   isLoading.value = true
+  const normalizedWithdrawAmount = Number(withdrawAmountInRub.value.toFixed(2))
+  if (normalizedWithdrawAmount > withdrawableBalanceRub.value) {
+    withdrawErrorMessage.value = t('pages.wallet.saleTimer.withdrawLimitError')
+    isLoading.value = false
+    return
+  }
 
   const result = await walletService.createWithdrawalOrder(
-    Number(withdrawAmountInRub.value.toFixed(2)),
+    normalizedWithdrawAmount,
     withdrawCardDigits.value,
   )
 
@@ -642,7 +731,7 @@ const minimumDepositText = computed(() => formatCurrencyAmount(minDepositRub.val
 }))
 
 const availableBalanceForInput = () => {
-  const converted = availableBalanceInSelectedCurrency.value
+  const converted = withdrawableBalanceInSelectedCurrency.value
   return selectedCurrency.value === 'USD'
     ? converted.toFixed(2)
     : Math.round(converted).toString()
@@ -731,6 +820,48 @@ const typeLabel = (type: string) => {
                   </div>
                   <span class="text-sm font-medium text-white">{{ $t('pages.wallet.withdraw') }}</span>
                 </button>
+              </div>
+            </div>
+
+            <div
+              v-if="salePayoutTimers.length > 0"
+              class="space-y-3 rounded-xl border border-amber-400/20 bg-amber-400/[0.06] p-4"
+            >
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <div class="text-xs font-semibold uppercase tracking-[0.16em] text-amber-300/80">
+                    {{ $t('pages.wallet.saleTimer.title') }}
+                  </div>
+                  <div class="mt-1 text-sm text-amber-100/90">
+                    {{ $t('pages.wallet.saleTimer.lockedSummary', { amount: formatCurrency(totalLockedSaleAmountRub) }) }}
+                  </div>
+                </div>
+                <div class="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-200">
+                  {{ $t('pages.wallet.saleTimer.availableNow', { amount: formatCurrency(withdrawableBalanceRub) }) }}
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <div
+                  v-for="saleTimer in salePayoutTimers"
+                  :key="saleTimer.id"
+                  class="rounded-lg border border-dark-600/80 bg-dark-800/65 px-3 py-2.5"
+                >
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <div class="truncate text-sm font-medium text-gray-100">{{ saleTimer.title }}</div>
+                      <div class="mt-1 text-xs text-gray-400">
+                        {{ $t('pages.wallet.saleTimer.unlockAt', { date: formatDateTime(new Date(saleTimer.unlockAt).toISOString()) }) }}
+                      </div>
+                    </div>
+                    <div class="text-right">
+                      <div class="text-sm font-semibold text-violet-200">+{{ formatCurrency(saleTimer.amount) }}</div>
+                      <div class="mt-1 rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold tabular-nums text-amber-200">
+                        {{ formatDurationLeft(saleTimer.remainingMs) }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1150,7 +1281,7 @@ const typeLabel = (type: string) => {
               </div>
               <div class="flex items-center justify-between text-xs mt-2">
                 <span class="text-gray-400">
-                  {{ $t('pages.wallet.available') }}: <span class="text-green-400">{{ formatCurrency(balance) }}</span>
+                  {{ $t('pages.wallet.available') }}: <span class="text-green-400">{{ formatCurrency(withdrawableBalanceRub) }}</span>
                 </span>
                 <button 
                   @click="withdrawAmount = availableBalanceForInput()"

@@ -1439,6 +1439,14 @@ const en = {
       available: "Available",
       useAll: "All",
       confirmWithdrawal: "Confirm Withdrawal",
+      saleTimer: {
+        title: "Sale Payout Hold Timers",
+        lockedSummary: "Still on timer: {amount}",
+        availableNow: "Ready to withdraw: {amount}",
+        unlockAt: "Unlocks at: {date}",
+        untitledSale: "Sale without title",
+        withdrawLimitError: "Part of your funds is still under the 24-hour hold. Only unlocked amount can be withdrawn.",
+      },
       historyDetails: {
         show: "Show details",
         hide: "Hide details",
