@@ -14,6 +14,8 @@ export const SellerSchema = z.object({
   nickname_style_id: z.string().max(64).nullish().transform((value) => value ?? 'default'),
   avatar_url: z.string(),
   is_active: z.boolean(),
+  last_seen_at: z.string().nullable().optional(),
+  average_first_response_time_seconds: z.number().int().nonnegative().nullable().optional(),
   is_banned: z.boolean(),
   rating: z.number(),
   created_at: z.string(),

@@ -430,7 +430,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
         <div
           v-for="product in sortedProducts"
           :key="product.id"
-          class="bg-dark-600 border border-dark-700 rounded-lg p-2 sm:p-4 hover:border-dark-500 transition-all duration-200"
+          class="admin-surface-card rounded-[1.4rem] p-2 sm:p-4"
         >
           <!-- Основной контент -->
           <div class="flex flex-col gap-2">
@@ -442,7 +442,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
                   <img
                     :src="`${API_HOST}${product.images[0]?.image_url}`"
                     :alt="product.title"
-                    class="w-12 h-12 sm:w-20 sm:h-20 rounded-lg object-cover border border-dark-400 cursor-pointer"
+                    class="w-12 h-12 sm:w-20 sm:h-20 rounded-lg object-cover border border-white/10 cursor-pointer"
                     @click="navigateToProduct(product.id, product.slug)"
                   />
                 </div>
@@ -573,7 +573,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
           </div>
 
           <!-- Дополнительная информация -->
-          <div class="mt-2 pt-2 border-t border-dark-700 text-[10px] sm:text-xs text-text-secondary">
+          <div class="mt-2 pt-2 border-t border-white/8 text-[10px] sm:text-xs text-text-secondary">
             <div class="flex flex-col xs:flex-row gap-1 xs:gap-2">
               <div class="truncate">{{ $t('common.created') }}: {{ new Date(product.created_at).toLocaleDateString('ru-RU') }}</div>
               <div class="flex items-center gap-1">
@@ -623,7 +623,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
           <div v-if="selectedRejectReasonCode === 'otherReason'" class="space-y-2">
             <textarea
               v-model="customRejectReason"
-              class="w-full rounded-lg bg-dark-900 border border-dark-700 text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[110px]"
+              class="admin-input-surface w-full rounded-lg text-white px-3 py-2 resize-none min-h-[110px]"
               :placeholder="$t('pages.admin.productsPage.customRejectReasonPlaceholder')"
             />
           </div>
@@ -637,30 +637,41 @@ watch([searchQuery, sortBy, statusFilter], () => {
     <ConfirmWindow
       :is-open="confirmStatusWindowOpen"
       :title="$t('common.status')"
-      :message="$t('common.edit')"
+      :message="$t('pages.admin.productsPage.statusModalMessage')"
       :confirm-text="$t('common.save')"
       :cancel-text="$t('common.cancel')"
       :is-loading="isUpdatingStatus"
+      :allow-overflow-visible="true"
       @confirm="confirmStatusUpdate"
       @cancel="cancelStatusUpdate"
     >
       <template #body>
-        <div class="space-y-3">
-          <CustomSelect
-            v-model="selectedProductStatus"
-            :options="productStatusOptions"
-            :placeholder="$t('common.filters.status')"
-          />
-          <template v-if="selectedProductStatus === 'rejected'">
+        <div class="space-y-4">
+          <div class="space-y-2">
+            <label class="block text-sm font-medium text-gray-300">
+              {{ $t('common.status') }}
+            </label>
             <CustomSelect
-              v-model="selectedStatusReasonCode"
-              :options="rejectReasonOptions"
-              :placeholder="$t('pages.admin.productsPage.selectRejectReason')"
+              v-model="selectedProductStatus"
+              :options="productStatusOptions"
+              :placeholder="$t('common.filters.status')"
             />
+          </div>
+          <template v-if="selectedProductStatus === 'rejected'">
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-300">
+                {{ $t('pages.admin.productsPage.rejectReasonLabel') }}
+              </label>
+              <CustomSelect
+                v-model="selectedStatusReasonCode"
+                :options="rejectReasonOptions"
+                :placeholder="$t('pages.admin.productsPage.selectRejectReason')"
+              />
+            </div>
             <div v-if="selectedStatusReasonCode === 'otherReason'" class="space-y-2">
               <textarea
                 v-model="customStatusReason"
-                class="w-full rounded-lg bg-dark-900 border border-dark-700 text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[110px]"
+                class="admin-input-surface w-full rounded-lg text-white px-3 py-2 resize-none min-h-[110px]"
                 :placeholder="$t('pages.admin.productsPage.customRejectReasonPlaceholder')"
               />
             </div>

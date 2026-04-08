@@ -17,7 +17,7 @@ import type { Product } from '@/validation/product/product'
 import type { PublicProfileData, UserRead } from '@/validation/user/userRead'
 import type { SubscriptionSeller } from '@/validation/user/subscriptions'
 import type { ReviewSchema } from '@/validation/review/review'
-import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart, Edit, Calendar, Package, ShoppingBag, MessageSquare, Loader2, LayoutGrid, Rows3, UserPlus, UserCheck, Users } from 'lucide-vue-next'
+import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart, Edit, Calendar, Package, ShoppingBag, MessageSquare, Loader2, LayoutGrid, Rows3, UserPlus, UserCheck, Users, Clock3 } from 'lucide-vue-next'
 import QrcodeVue from 'qrcode.vue'
 import type { Deal } from '@/validation/deal/deal'
 import UserRating from '@/components/UserRating.vue'
@@ -26,9 +26,10 @@ import UserAvatar from '@/components/UserAvatar.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
 import { isSafeImageFile, SAFE_IMAGE_INPUT_ACCEPT } from '@/utils/imageUpload'
+import { formatAverageResponseTime, formatLastSeen } from '@/utils/presence'
 import { buildProductKey } from '@/utils/urlKeys'
 
-const { t } = useI18n()
+const { locale, t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const store = useUserStore()
@@ -60,10 +61,18 @@ const isSubscribedToSeller = computed(() => {
   return Boolean(currentProfileData.value.is_subscribed)
 })
 const isProfileBanned = computed(() => !isOwner.value && Boolean(currentProfileData.value?.is_banned))
-const hasProfileDescription = computed(() => {
-  const description = currentProfileData.value?.description
-  return typeof description === 'string' && description.trim().length > 0
-})
+const profileAverageResponseTimeLabel = computed(() => formatAverageResponseTime(
+  currentProfileData.value?.average_first_response_time_seconds,
+  locale.value,
+  t('common.notSpecified'),
+))
+const profileLastSeenLabel = computed(() => formatLastSeen(
+  currentProfileData.value?.last_seen_at,
+  Boolean(currentProfileData.value?.is_active),
+  locale.value,
+  t('common.notSpecified'),
+  t('common.online'),
+))
 const profileBanReason = computed(() => {
   const profile = currentProfileData.value
   if (!profile?.is_banned) {
@@ -84,6 +93,10 @@ const profileBanReason = computed(() => {
   }
 
   return t('pages.profile.banReasonMissing')
+})
+const hasProfileDescription = computed(() => {
+  const description = currentProfileData.value?.description
+  return typeof description === 'string' && description.trim().length > 0
 })
 type ProfileTab = 'products' | 'reviews' | 'purchases' | 'subscriptions'
 
@@ -736,7 +749,35 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 </button>
               </div>
 
+              <div class="overflow-hidden rounded-xl border border-dark-600 bg-dark-700/30">
+                <div class="grid grid-cols-1 divide-y divide-white/5">
+                  <div class="flex items-center justify-between gap-4 px-3 py-3">
+                    <div class="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-gray-400">
+                    <Clock3 class="w-3.5 h-3.5 text-cyan-400" />
+                    <span>{{ t('common.avgResponseTime') }}</span>
+                  </div>
+                    <div class="text-sm font-semibold text-white text-right">
+                    {{ profileAverageResponseTimeLabel }}
+                    </div>
+                  </div>
+
+                  <div class="flex items-center justify-between gap-4 px-3 py-3">
+                    <div class="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-gray-400">
+                    <Calendar class="w-3.5 h-3.5 text-emerald-400" />
+                    <span>{{ t('common.lastSeen') }}</span>
+                  </div>
+                    <div
+                    class="text-sm font-semibold text-right"
+                    :class="currentProfileData.is_active ? 'text-emerald-300' : 'text-white'"
+                  >
+                    {{ profileLastSeenLabel }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <!-- Description -->
+              <div v-if="hasProfileDescription" class="space-y-3">
               <div v-if="hasProfileDescription" class="space-y-3">
                 <div class="flex items-center justify-between">
                   <h3 class="text-sm font-semibold text-gray-300">{{ t('common.description') }}</h3>
@@ -1201,7 +1242,13 @@ input[type="number"] {
 
 @media (min-width: 1536px) and (max-width: 1799px) {
   .profile-products-grid {
-    grid-template-columns: repeat(1, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1800px) and (max-width: 1999px) {
+  .profile-products-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 

@@ -285,7 +285,7 @@ async function loadPromos() {
     const response = await adminService.getPromoCodes(currentPage.value, perPage, {
       search: searchQuery.value || undefined,
       is_active: statusFilter.value,
-      applies_to: appliesToFilter.value as 'all' | 'wallet_topup' | 'marketplace_purchase',
+      applies_to: appliesToFilter.value,
     })
     promos.value = response.promos
     total.value = response.total
@@ -328,7 +328,7 @@ function buildPayload(): CreateAdminPromoCodePayload | null {
     total_usage_limit: parsedTotalUsage,
     per_user_usage_limit: parsedPerUser,
     is_active: isActive.value,
-    applies_to: appliesTo.value as 'wallet_topup' | 'marketplace_purchase',
+    applies_to: appliesTo.value,
     starts_at: lifetime?.starts_at,
     ends_at: lifetime?.ends_at,
   }
@@ -442,7 +442,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div class="promo-create-panel rounded-xl border border-dark-700 bg-dark-700/30 p-4 sm:p-5 space-y-4">
+    <div class="admin-surface-panel promo-create-panel rounded-[1.5rem] p-4 sm:p-5 space-y-4">
       <div class="flex flex-col gap-1">
         <h2 class="text-base font-semibold text-mainText">Создать промокод</h2>
         <p class="text-xs text-gray-400">Поля, отмеченные <span class="text-red-300">*</span>, обязательны.</p>
@@ -450,7 +450,7 @@ onMounted(async () => {
 
       <div
         ref="basicSectionRef"
-        class="promo-section rounded-lg border border-dark-700/80 bg-dark-600/40 p-4 space-y-4"
+        class="admin-surface-soft promo-section rounded-[1.2rem] p-4 space-y-4"
         :class="{ 'promo-section--invalid': invalidSectionKey === 'basic' }"
       >
         <div class="promo-section__head">
@@ -464,7 +464,7 @@ onMounted(async () => {
             <input
               ref="codeInputRef"
               v-model.trim="code"
-              class="form-control h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
+              class="form-control admin-input-surface h-10 w-full rounded-lg px-3 text-sm text-mainText"
               :class="{ 'form-control--error': requiredErrors.code }"
               placeholder="Например, CODE2026"
             />
@@ -498,7 +498,7 @@ onMounted(async () => {
               type="number"
               step="0.01"
               min="0.01"
-              class="form-control h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
+              class="form-control admin-input-surface h-10 w-full rounded-lg px-3 text-sm text-mainText"
               :class="{ 'form-control--error': requiredErrors.discountValue }"
               placeholder="Введите значение"
             />
@@ -508,7 +508,7 @@ onMounted(async () => {
         </div>
       </div>
 
-      <div class="promo-section rounded-lg border border-dark-700/80 bg-dark-600/40 p-4 space-y-4">
+      <div class="admin-surface-soft promo-section rounded-[1.2rem] p-4 space-y-4">
         <div class="promo-section__head">
           <h3 class="promo-section__title">2. Ограничения</h3>
         </div>
@@ -520,7 +520,7 @@ onMounted(async () => {
               type="number"
               step="0.01"
               min="0"
-              class="form-control h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
+              class="form-control admin-input-surface h-10 w-full rounded-lg px-3 text-sm text-mainText"
               placeholder="Например, 500"
             />
             <p class="field__hint text-xs text-gray-500">От какой суммы код будет работать.</p>
@@ -533,7 +533,7 @@ onMounted(async () => {
               type="number"
               step="1"
               min="1"
-              class="form-control h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
+              class="form-control admin-input-surface h-10 w-full rounded-lg px-3 text-sm text-mainText"
               placeholder="Оставьте пустым без лимита"
             />
             <p class="field__hint text-xs text-gray-500">Общий лимит для всех пользователей.</p>
@@ -548,7 +548,7 @@ onMounted(async () => {
               type="number"
               step="1"
               min="1"
-              class="form-control h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
+              class="form-control admin-input-surface h-10 w-full rounded-lg px-3 text-sm text-mainText"
               placeholder="Минимум 1"
             />
             <p class="field__hint text-xs text-gray-500">Сколько раз один человек может применить код.</p>
@@ -561,7 +561,7 @@ onMounted(async () => {
               type="number"
               step="0.01"
               min="0.01"
-              class="form-control h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
+              class="form-control admin-input-surface h-10 w-full rounded-lg px-3 text-sm text-mainText"
               placeholder="Например, 300"
             />
             <p class="field__hint text-xs text-gray-500">Потолок скидки при процентном типе.</p>
@@ -574,20 +574,20 @@ onMounted(async () => {
 
       <div
         ref="lifetimeSectionRef"
-        class="promo-section rounded-lg border border-dark-700/80 bg-dark-600/40 p-4 space-y-4"
+        class="admin-surface-soft promo-section rounded-[1.2rem] p-4 space-y-4"
         :class="{ 'promo-section--invalid': invalidSectionKey === 'lifetime' }"
       >
         <div class="flex items-center justify-between gap-2">
           <h3 class="promo-section__title">3. Срок действия</h3>
           <span
             class="rounded-full border px-2 py-0.5 text-[11px]"
-            :class="hasLifetime ? 'border-blue-500/40 bg-blue-500/10 text-blue-200' : 'border-dark-700 bg-dark-700/60 text-gray-400'"
+            :class="hasLifetime ? 'border-blue-500/25 bg-blue-500/[0.08] text-blue-200' : 'border-white/10 bg-white/[0.03] text-gray-400'"
           >
             {{ hasLifetime ? 'Ограничен' : 'Бессрочный' }}
           </span>
         </div>
 
-        <div class="rounded-lg border border-dark-700 bg-dark-700/35 px-3 py-3">
+        <div class="admin-surface-soft rounded-lg px-3 py-3">
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div class="space-y-0.5">
               <p class="text-sm text-mainText">Ограничить сроком</p>
@@ -629,7 +629,7 @@ onMounted(async () => {
                 type="number"
                 step="1"
                 min="1"
-                class="form-control h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
+                class="form-control admin-input-surface h-10 w-full rounded-lg px-3 text-sm text-mainText"
                 :class="{ 'form-control--error': requiredErrors.lifetimeValue }"
                 placeholder="Например, 1"
               />
@@ -651,7 +651,7 @@ onMounted(async () => {
                 v-for="preset in lifetimePresets"
                 :key="preset.label"
                 type="button"
-                class="rounded-md border border-dark-600 bg-dark-700/45 px-2.5 py-1 text-xs text-gray-200 transition hover:border-blue-400/45 hover:text-mainText"
+                class="rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs text-gray-200 transition hover:border-blue-400/35 hover:bg-white/[0.05] hover:text-mainText"
                 :class="Number(lifetimeValue) === preset.value && lifetimeUnit === preset.unit
                   ? 'border-blue-500/60 bg-blue-500/12 text-blue-200'
                   : ''"
@@ -662,7 +662,7 @@ onMounted(async () => {
             </div>
           </div>
 
-          <div class="rounded-lg border border-dark-700 bg-dark-700/30 px-3 py-2">
+          <div class="admin-surface-soft rounded-lg px-3 py-2">
             <p class="text-xs text-gray-400">{{ lifetimeSummary }}</p>
             <p class="text-sm text-mainText">
               Истечет:
@@ -676,18 +676,18 @@ onMounted(async () => {
         </p>
       </div>
 
-      <div class="promo-section rounded-lg border border-dark-700/80 bg-dark-600/40 p-4 space-y-4">
+      <div class="admin-surface-soft promo-section rounded-[1.2rem] p-4 space-y-4">
         <div class="flex items-center justify-between gap-2">
           <h3 class="promo-section__title">4. Статус и создание</h3>
           <span
             class="rounded-full border px-2 py-0.5 text-[11px]"
-            :class="isActive ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200' : 'border-dark-700 bg-dark-700/60 text-gray-400'"
+            :class="isActive ? 'border-emerald-500/25 bg-emerald-500/[0.08] text-emerald-200' : 'border-white/10 bg-white/[0.03] text-gray-400'"
           >
             {{ isActive ? 'Активен' : 'Выключен' }}
           </span>
         </div>
 
-        <div class="rounded-lg border border-dark-700 bg-dark-700/35 px-3 py-3">
+        <div class="admin-surface-soft rounded-lg px-3 py-3">
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div class="space-y-0.5">
               <p class="text-sm text-mainText">Сделать промокод активным</p>
@@ -718,12 +718,12 @@ onMounted(async () => {
         </div>
 
         <div class="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_260px]">
-          <div class="preview-card rounded-lg border border-blue-500/35 bg-blue-500/10 px-3 py-3">
+          <div class="preview-card admin-surface-soft rounded-lg px-3 py-3">
             <p class="preview-card__label text-[11px] uppercase tracking-wide text-blue-200/90">Предпросмотр</p>
             <p class="text-sm text-mainText">{{ promoPreview }}</p>
           </div>
 
-          <div class="action-card rounded-lg border border-dark-700 bg-dark-700/35 p-3 space-y-2">
+          <div class="action-card admin-surface-soft rounded-lg p-3 space-y-2">
             <p class="text-xs text-gray-400">Действие</p>
             <button
               type="button"
@@ -739,7 +739,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div class="promo-list-panel rounded-xl border border-dark-700 bg-dark-700/30 p-4 sm:p-5 space-y-4">
+    <div class="admin-surface-panel promo-list-panel rounded-[1.5rem] p-4 sm:p-5 space-y-4">
       <div class="promo-list-panel__head">
         <div>
           <h2 class="text-sm font-semibold text-mainText">Список промокодов</h2>
@@ -754,7 +754,7 @@ onMounted(async () => {
           Сбросить
         </button>
       </div>
-      <div class="rounded-lg border border-dark-700 bg-dark-700/35 p-3 space-y-3">
+      <div class="admin-surface-soft rounded-lg p-3 space-y-3">
         <div class="field space-y-1.5">
           <label class="field__label text-xs font-medium text-gray-300">Поиск по коду</label>
           <SearchField v-model="searchQuery" placeholder="Например, SPRING2026" />
@@ -787,7 +787,7 @@ onMounted(async () => {
       <div v-if="isLoading" class="flex h-32 items-center justify-center">
         <Loader2 class="h-6 w-6 animate-spin text-blue-500" />
       </div>
-      <article v-for="promo in promos" :key="promo.id" class="rounded-xl border border-dark-700 bg-dark-600 p-3 sm:p-4">
+      <article v-for="promo in promos" :key="promo.id" class="admin-surface-card rounded-[1.4rem] p-3 sm:p-4">
         <div class="flex items-center justify-between gap-2">
           <div class="font-semibold text-mainText">{{ promo.code }}</div>
           <button class="admin-btn admin-btn-outline admin-btn-sm" @click="togglePromo(promo)">
@@ -822,21 +822,15 @@ input[type='number'] {
 }
 
 .promo-create-panel {
-  background-image: linear-gradient(180deg, rgb(19 23 32 / 0.44), rgb(17 20 29 / 0.2));
+  background-image: none;
 }
 
 .promo-section {
   position: relative;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.02);
 }
 
 .promo-section::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 10px;
-  pointer-events: none;
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.015);
+  content: none;
 }
 
 .promo-section--invalid {
@@ -895,9 +889,9 @@ input[type='number'] {
 
 .form-control:focus-visible {
   outline: none;
-  border-color: rgb(59 130 246 / 0.95);
-  box-shadow: 0 0 0 3px rgb(37 99 235 / 0.24);
-  background-color: rgb(30 41 59 / 0.28);
+  border-color: rgb(255 255 255 / 0.14);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.04);
+  background-color: rgb(255 255 255 / 0.04);
 }
 
 .form-control--error {
@@ -908,8 +902,8 @@ input[type='number'] {
 .preview-card {
   position: relative;
   padding-left: 44px;
-  border-color: rgb(59 130 246 / 0.38);
-  background-image: linear-gradient(140deg, rgb(37 99 235 / 0.2), rgb(30 64 175 / 0.08));
+  border-color: rgb(59 130 246 / 0.2);
+  background-image: none;
 }
 
 .preview-card::before {
@@ -929,7 +923,7 @@ input[type='number'] {
 }
 
 .action-card {
-  background-image: linear-gradient(180deg, rgb(31 41 55 / 0.4), rgb(17 24 39 / 0.36));
+  background-image: none;
 }
 
 .action-card__button {
@@ -938,7 +932,7 @@ input[type='number'] {
 }
 
 .promo-list-panel {
-  background-image: linear-gradient(180deg, rgb(19 23 32 / 0.42), rgb(17 20 29 / 0.2));
+  background-image: none;
 }
 
 .promo-list-panel__head {
@@ -951,17 +945,17 @@ input[type='number'] {
 .promo-list-panel__reset {
   height: 30px;
   border-radius: 9px;
-  border: 1px solid rgb(71 85 105 / 0.56);
-  background: rgb(15 23 42 / 0.5);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background: rgb(255 255 255 / 0.03);
   color: rgb(203 213 225 / 0.92);
   padding: 0 10px;
   transition: border-color 140ms ease, color 140ms ease, background-color 140ms ease, opacity 140ms ease;
 }
 
 .promo-list-panel__reset:hover:not(:disabled) {
-  border-color: rgb(96 165 250 / 0.5);
+  border-color: rgb(255 255 255 / 0.12);
   color: rgb(241 245 249);
-  background: rgb(30 41 59 / 0.6);
+  background: rgb(255 255 255 / 0.05);
 }
 
 .promo-list-panel__reset:disabled {
@@ -978,11 +972,11 @@ input[type='number'] {
 }
 
 .state-banner--error {
-  box-shadow: 0 8px 20px rgb(127 29 29 / 0.18);
+  box-shadow: none;
 }
 
 .state-banner--success {
-  box-shadow: 0 8px 20px rgb(6 78 59 / 0.18);
+  box-shadow: none;
 }
 
 .fade-slide-enter-active,
@@ -1045,7 +1039,7 @@ input[type='number'] {
   width: calc(50% - 4px);
   height: calc(100% - 8px);
   border-radius: 10px;
-  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 240ms ease, background 240ms ease;
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 240ms ease, background-color 240ms ease;
 }
 
 .segmented-toggle__thumb--right {

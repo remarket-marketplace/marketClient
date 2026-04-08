@@ -71,6 +71,8 @@ const en = {
     userId: "User ID",
     online: "Online",
     offline: "Offline",
+    lastSeen: "Last seen",
+    avgResponseTime: "Average response time",
     messageRead: "Read",
     messageUnread: "Unread",
     banned: "Banned",
@@ -706,7 +708,7 @@ const en = {
       popularEmpty: "No popular products yet",
       resetFilters: "Reset",
       steamTopUp: {
-        title: "Steam Top-Up",
+        title: "Top-Up",
         subtitle: "Top up your Steam wallet with balance or external payment.",
         enterPromo: "Enter promo code",
         service: "Service",
@@ -1055,6 +1057,8 @@ const en = {
         completedDealsCaption: "Total for seller",
         memberSinceLabel: "On platform",
         memberSinceCaption: "Registration date",
+        detailsLabel: "Seller summary",
+        detailsSubtitle: "Quick signals for activity and response speed.",
         footer: "Success rate is based only on closed deals.",
       },
       deleteConfirm: {
@@ -1580,6 +1584,7 @@ const en = {
       productsPage: {
         title: "Products",
         confirmRejectMessage: "Select the reason for rejecting this product",
+        statusModalMessage: "Update the product status. If you choose rejection, provide a reason visible to the seller.",
         rejectReasonLabel: "Rejection reason",
         selectRejectReason: "Select reason",
         customRejectReasonPlaceholder: "Describe rejection reason",

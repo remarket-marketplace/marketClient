@@ -889,11 +889,11 @@ async function sendMessage(payload: { files: File[] }) {
                         ? 'fixed inset-x-0 bottom-0 top-14 z-10 w-full bg-background'
                         : 'w-3/12',
                 ]">
-                <div class="h-full flex flex-col border-dark-600 lg:border-1 md:rounded-3xl">
+                <div class="admin-surface-panel h-full flex flex-col md:rounded-3xl">
                     <div v-if="isMobile" class="px-4 pt-3">
                         <button
                             type="button"
-                            class="inline-flex items-center gap-2 rounded-lg border border-dark-700 bg-dark-700/40 px-3 py-2 text-xs text-gray-200"
+                            class="admin-surface-soft inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-gray-200"
                             @click="goToAdminHome"
                         >
                             <ArrowLeft class="h-4 w-4" />
@@ -967,13 +967,13 @@ async function sendMessage(payload: { files: File[] }) {
                 class="h-full flex flex-1 min-h-0 transition-all duration-300" :class="[
                     isMobile && mobileMode === 'chat'
                         ? 'fixed inset-x-0 bottom-0 top-14 z-10 w-full bg-background'
-                        : 'flex-1 min-w-0 border-1 border-dark-400 rounded-3xl',
+                        : 'admin-surface-panel flex-1 min-w-0 rounded-3xl',
                 ]">
                 <div class="h-full w-full flex flex-col min-h-0 px-2 md:rounded-xl">
                     <div class="flex flex-1 flex-col min-h-0 w-full">
                         <!-- chat title -->
                         <div v-if="currentChat"
-                            class="flex items-center gap-2 sticky top-0 bg-background px-2 py-2 lg:py-3 lg:px-3 z-10 lg:border-b border-dark-700">
+                            class="flex items-center gap-2 sticky top-0 bg-background px-2 py-2 lg:py-3 lg:px-3 z-10 lg:border-b border-white/8">
                             <button v-if="isMobile" class="text-xl font-bold flex-shrink-0" @click="backToChats">
                                 <ArrowLeft />
                             </button>
@@ -986,7 +986,7 @@ async function sendMessage(payload: { files: File[] }) {
                                     <UserAvatar
                                         :avatar-url="currentChat?.another_user.avatar_url"
                                         :alt="currentChat?.another_user.username || ''"
-                                        class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-dark-600 rounded-full object-cover"
+                                        class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-white/10 rounded-full object-cover"
                                     />
                                 </div>
                                 <div class="flex min-w-0 flex-col">
@@ -1029,7 +1029,7 @@ async function sendMessage(payload: { files: File[] }) {
                                             <div class="flex flex-col pt-2 pb-18">
                                                 <template v-for="item in chatTimelineItems" :key="item.message.id">
                                                     <div v-if="item.showDateDivider && item.dateLabel" class="flex justify-center py-2">
-                                                        <span class="rounded-full border border-dark-600/70 bg-dark-900/70 px-3 py-1 text-xs font-medium text-mainText/90">
+                                                        <span class="admin-surface-soft rounded-full px-3 py-1 text-xs font-medium text-mainText/90">
                                                             {{ item.dateLabel }}
                                                         </span>
                                                     </div>

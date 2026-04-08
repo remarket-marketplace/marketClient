@@ -71,6 +71,8 @@ const ru = {
     userId: "ID Пользователя",
     online: "Онлайн",
     offline: "Не в сети",
+    lastSeen: "Последний онлайн",
+    avgResponseTime: "Среднее время ответа",
     messageRead: "Прочитано",
     messageUnread: "Непрочитано",
     banned: "Забанен",
@@ -706,7 +708,7 @@ const ru = {
       popularEmpty: "Пока нет популярных товаров",
       resetFilters: "Сбросить",
       steamTopUp: {
-        title: "Пополнение Steam",
+        title: "Пополнение",
         subtitle: "Пополнение Steam-кошелька через баланс или внешнюю оплату.",
         enterPromo: "Ввести промокод",
         service: "Сервис",
@@ -1054,6 +1056,8 @@ const ru = {
         completedDealsCaption: "Всего у продавца",
         memberSinceLabel: "На платформе",
         memberSinceCaption: "Дата регистрации",
+        detailsLabel: "Сводка продавца",
+        detailsSubtitle: "Короткие сигналы по активности и скорости ответа.",
         footer: "Успешность считается только по закрытым сделкам.",
       },
       deleteConfirm: {
@@ -1577,6 +1581,7 @@ const ru = {
       productsPage: {
         title: "Товары",
         confirmRejectMessage: "Выберите причину отклонения товара",
+        statusModalMessage: "Измените статус товара. Если выбираете отклонение, укажите причину для продавца.",
         rejectReasonLabel: "Причина отклонения",
         selectRejectReason: "Выберите причину",
         customRejectReasonPlaceholder: "Опишите причину отклонения",

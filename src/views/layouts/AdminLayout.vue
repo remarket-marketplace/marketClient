@@ -353,7 +353,7 @@ onUnmounted(() => {
 
         <main class="flex-1 min-h-0 overflow-hidden">
           <div
-            class="h-full w-full 2xl:w-1/2 mx-auto px-1.5 lg:px-3"
+            class="h-full w-full px-1.5 lg:px-4 2xl:px-5"
           >
             <slot />
           </div>
