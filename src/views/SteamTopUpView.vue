@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { steamTopupService } from '@/api/steamTopup/steamTopupService'
+import { promoCodeService } from '@/api/promoCode/promoCodeService'
 import BackButton from '@/components/navigation/BackButton.vue'
 import TheInput from '@/components/TheInput.vue'
 import { useUserStore } from '@/stores/user'
 import { convertCurrencyAmount, getCurrencySymbol, preferredCurrency } from '@/utils/currency'
 import { getErrorMessage } from '@/utils/errorsMap'
+import type { PromoCodeValidationResponse } from '@/validation/promoCode/promoCode'
 import {
   findSteamTopUpServiceByCurrency,
   isValidSteamTopUpAccount,
@@ -17,7 +19,7 @@ import {
 import { Icon } from '@iconify/vue'
 import axios from 'axios'
 import { storeToRefs } from 'pinia'
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Loader2 } from 'lucide-vue-next'
 
@@ -37,6 +39,11 @@ const steamCheckoutSubmitting = ref(false)
 const steamServices = ref<SteamTopUpService[]>([])
 const steamServicesLoading = ref(false)
 const steamOrder = ref<SteamTopUpOrder | null>(null)
+const steamPromoValidationLoading = ref(false)
+const steamPromoValidationError = ref('')
+const steamPromoValidationResult = ref<PromoCodeValidationResponse | null>(null)
+let steamPromoValidationTimer: ReturnType<typeof setTimeout> | null = null
+let steamPromoValidationRequestId = 0
 
 const selectedCurrency = computed<SteamTopUpServiceCurrency>(() => (
   preferredCurrency.value === 'USD' ? 'USD' : 'RUB'
@@ -47,6 +54,18 @@ const steamNormalizedAccount = computed(() => normalizeSteamTopUpAccount(steamAc
 const steamIsAccountValid = computed(() => isValidSteamTopUpAccount(steamAccount.value))
 const parsedSteamQuantity = computed(() => Number.parseFloat(steamQuantity.value))
 const selectedSteamService = computed(() => findSteamTopUpServiceByCurrency(steamServices.value, selectedCurrency.value))
+const steamQuantityRub = computed(() => (
+  convertCurrencyAmount(parsedSteamQuantity.value, selectedCurrency.value, 'RUB')
+))
+const steamAmountRub = computed(() => Number(steamQuantityRub.value.toFixed(2)))
+const steamNormalizedPromoCode = computed(() => steamPromoCode.value.trim().toUpperCase())
+const canValidateSteamPromo = computed(() => (
+  steamNormalizedPromoCode.value.length >= 3
+  && steamIsAccountValid.value
+  && !!selectedSteamService.value
+  && Number.isFinite(steamAmountRub.value)
+  && steamAmountRub.value > 0
+))
 const quickAmounts = computed(() => {
   return selectedCurrency.value === 'USD'
     ? [...QUICK_AMOUNTS_USD]
@@ -71,6 +90,16 @@ function clearSteamFeedback(): void {
   steamSuccess.value = ''
 }
 
+function formatRubAmount(amount: number): string {
+  return `${amount.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ₽`
+}
+
+function clearSteamPromoValidation(): void {
+  steamPromoValidationLoading.value = false
+  steamPromoValidationError.value = ''
+  steamPromoValidationResult.value = null
+}
+
 async function loadSteamServices(): Promise<void> {
   if (!HOME_STEAM_TOPUP_ENABLED || !user.value) return
 
@@ -85,6 +114,53 @@ async function loadSteamServices(): Promise<void> {
   } finally {
     steamServicesLoading.value = false
   }
+}
+
+async function validateSteamPromoCode(): Promise<void> {
+  if (!canValidateSteamPromo.value) {
+    clearSteamPromoValidation()
+    return
+  }
+
+  steamPromoValidationLoading.value = true
+  steamPromoValidationError.value = ''
+  steamPromoValidationResult.value = null
+  const requestId = ++steamPromoValidationRequestId
+
+  try {
+    const result = await promoCodeService.validate({
+      code: steamNormalizedPromoCode.value,
+      context_type: 'steam_topup',
+      amount: steamAmountRub.value,
+    })
+    if (requestId !== steamPromoValidationRequestId) return
+    steamPromoValidationResult.value = result
+  } catch (error) {
+    if (requestId !== steamPromoValidationRequestId) return
+    steamPromoValidationError.value = resolveSteamErrorMessage(error)
+  } finally {
+    if (requestId !== steamPromoValidationRequestId) return
+    steamPromoValidationLoading.value = false
+  }
+}
+
+function scheduleSteamPromoValidation(): void {
+  if (steamPromoValidationTimer) {
+    clearTimeout(steamPromoValidationTimer)
+  }
+  if (!steamNormalizedPromoCode.value) {
+    clearSteamPromoValidation()
+    return
+  }
+  if (!canValidateSteamPromo.value) {
+    steamPromoValidationLoading.value = false
+    steamPromoValidationError.value = ''
+    steamPromoValidationResult.value = null
+    return
+  }
+  steamPromoValidationTimer = setTimeout(() => {
+    void validateSteamPromoCode()
+  }, 450)
 }
 
 function setQuickAmount(amount: number): void {
@@ -105,7 +181,7 @@ function formatQuickAmount(amount: number): string {
 }
 
 function buildSteamPayOrderPayload(): SteamTopUpPayOrderPayload {
-  const promoCode = steamPromoCode.value.trim()
+  const promoCode = steamPromoCode.value.trim().toUpperCase()
   return {
     payment_method: 'lava',
     ...(promoCode ? { promo_code: promoCode } : {}),
@@ -163,18 +239,30 @@ watch(selectedCurrency, (nextCurrency, prevCurrency) => {
   steamOrder.value = null
 })
 
+watch([steamPromoCode, steamQuantity, steamAccount, selectedCurrency], () => {
+  scheduleSteamPromoValidation()
+})
+
 watch(
   () => user.value?.id,
   async (currentUserId) => {
     steamOrder.value = null
     if (!currentUserId) {
       steamServices.value = []
+      clearSteamPromoValidation()
       return
     }
     await loadSteamServices()
+    scheduleSteamPromoValidation()
   },
   { immediate: true },
 )
+
+onBeforeUnmount(() => {
+  if (steamPromoValidationTimer) {
+    clearTimeout(steamPromoValidationTimer)
+  }
+})
 </script>
 
 <template>
@@ -280,6 +368,26 @@ watch(
                 />
               </label>
 
+              <div
+                v-if="steamNormalizedPromoCode"
+                class="rounded-lg border border-blue-400/20 bg-blue-500/5 px-4 py-3 text-sm"
+              >
+                <p v-if="steamPromoValidationLoading" class="text-blue-200">
+                  Проверяем промокод...
+                </p>
+                <p v-else-if="steamPromoValidationError" class="text-red-200">
+                  {{ steamPromoValidationError }}
+                </p>
+                <template v-else-if="steamPromoValidationResult">
+                  <p class="text-emerald-200">
+                    Промокод применится: скидка {{ formatRubAmount(steamPromoValidationResult.discount_amount) }}.
+                  </p>
+                  <p class="mt-1 text-gray-300">
+                    К оплате: {{ formatRubAmount(steamPromoValidationResult.final_amount) }}.
+                  </p>
+                </template>
+              </div>
+
               <div class="flex flex-wrap gap-2">
                 <button
                   v-for="amount in quickAmounts"
@@ -319,6 +427,11 @@ watch(
 <style scoped>
 .steam-topup-page__glow {
   background: var(--page-hero-radial-blue-strong);
+}
+
+.steam-topup-field :deep(input) {
+  background: var(--steam-topup-field-bg);
+  border-color: var(--steam-topup-field-border);
 }
 
 .steam-topup-field :deep(input:focus) {
