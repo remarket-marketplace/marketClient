@@ -447,7 +447,7 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
     </div>
 
     <div class="flex flex-col gap-6 lg:flex-1 lg:grid lg:grid-cols-3 lg:gap-6 lg:overflow-hidden flex-1">
-      <div class="bg-dark-600 border border-dark-700 rounded-xl p-4 lg:col-span-1 min-h-[40vh] lg:h-full flex flex-col">
+      <div class="admin-surface-panel rounded-[1.5rem] p-4 lg:col-span-1 min-h-[40vh] lg:h-full flex flex-col">
         <div class="flex items-center justify-between mb-4 flex-shrink-0">
           <h2 class="text-lg font-semibold text-mainText">{{ t('pages.admin.categoriesPage.categories') }}</h2>
           <span class="text-sm text-text-secondary">{{ filteredCategories.length }}</span>
@@ -467,11 +467,11 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
         </div>
         <div ref="categoriesContainerRef" class="space-y-2 overflow-y-auto flex-1">
           <div v-for="category in sortedCategories" :key="category.id"
-            class="flex items-center gap-3 p-3 rounded-lg border border-dark-700 cursor-pointer transition-all hover:border-blue-500"
-            :class="{'border-blue-500 bg-blue-500/10': selectedCategory?.id === category.id}" @click="selectCategory(category)">
+            class="admin-surface-soft flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:border-white/12"
+            :class="{'border-blue-500/35 bg-blue-500/[0.08]': selectedCategory?.id === category.id}" @click="selectCategory(category)">
             <div class="flex-shrink-0 relative">
               <img v-if="category.image_url" :src="`${API_HOST}${category.image_url}`" class="w-10 h-10 rounded-lg object-cover" :alt="category.name" />
-              <div v-else class="w-10 h-10 rounded-lg bg-dark-700 flex items-center justify-center">
+              <div v-else class="admin-surface-soft w-10 h-10 rounded-lg flex items-center justify-center">
                 <Folder class="w-5 h-5 text-gray-400" />
               </div>
             </div>
@@ -515,7 +515,7 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
         </div>
       </div>
 
-      <div class="bg-dark-600 border border-dark-700 rounded-xl p-4 lg:col-span-2 min-h-[40vh] lg:h-full flex flex-col">
+      <div class="admin-surface-panel rounded-[1.5rem] p-4 lg:col-span-2 min-h-[40vh] lg:h-full flex flex-col">
         <div class="flex items-center justify-between mb-4 flex-shrink-0">
           <div>
             <h2 class="text-lg font-semibold text-mainText">{{ selectedCategory ? selectedCategory.name : t('pages.admin.categoriesPage.selectCategory') }}</h2>
@@ -545,7 +545,7 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
           </div>
           <div ref="subcategoriesContainerRef" class="space-y-3 overflow-y-auto flex-1 min-h-0">
           <div v-for="subcategory in sortedSubcategories" :key="subcategory.id"
-            class="flex items-center gap-3 p-3 rounded-lg border border-dark-700 bg-dark-700/50">
+            class="admin-surface-soft flex items-center gap-3 rounded-lg p-3">
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2">
                 <h3 class="text-mainText font-medium">{{ subcategory.name }}</h3>
@@ -599,7 +599,7 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
       class="app-modal-overlay z-50 bg-black/50"
       @click.self="showAddCategoryModal = false"
     >
-      <div class="app-modal-panel w-full max-w-sm overflow-y-auto rounded-xl border border-dark-700 bg-dark-600 p-6 sm:max-w-md">
+      <div class="app-modal-panel admin-modal-panel w-full max-w-sm overflow-y-auto rounded-xl p-6 sm:max-w-md">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-xl font-bold text-mainText">{{ t('pages.admin.categoriesPage.addCategory') }}</h3>
           <button @click="showAddCategoryModal = false" class="text-gray-400 hover:text-white transition-colors">
@@ -609,15 +609,15 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
         <div class="space-y-4">
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.nameRu') }} *</label>
-            <input v-model="newCategory.nameRu" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" :placeholder="t('pages.admin.categoriesPage.nameRuPlaceholder')" />
+            <input v-model="newCategory.nameRu" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" class="admin-input-surface w-full rounded-lg px-3 py-2 text-mainText" :placeholder="t('pages.admin.categoriesPage.nameRuPlaceholder')" />
           </div>
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.nameEn') }} *</label>
-            <input v-model="newCategory.nameEn" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" :placeholder="t('pages.admin.categoriesPage.nameEnPlaceholder')" />
+            <input v-model="newCategory.nameEn" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" class="admin-input-surface w-full rounded-lg px-3 py-2 text-mainText" :placeholder="t('pages.admin.categoriesPage.nameEnPlaceholder')" />
           </div>
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.description') }}</label>
-            <textarea v-model="newCategory.description" rows="3" :maxlength="CATEGORY_DESCRIPTION_MAX_LENGTH" class="w-full max-h-28 bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите описание" />
+            <textarea v-model="newCategory.description" rows="3" :maxlength="CATEGORY_DESCRIPTION_MAX_LENGTH" class="admin-input-surface w-full max-h-28 rounded-lg px-3 py-2 text-mainText" placeholder="Введите описание" />
           </div>
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.image') }} *</label>
@@ -644,7 +644,7 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
       class="app-modal-overlay z-50 bg-black/50"
       @click.self="showAddSubcategoryModal = false"
     >
-      <div class="app-modal-panel w-full max-w-sm overflow-y-auto rounded-xl border border-dark-700 bg-dark-600 p-6 sm:max-w-md">
+      <div class="app-modal-panel admin-modal-panel w-full max-w-sm overflow-y-auto rounded-xl p-6 sm:max-w-md">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-xl font-bold text-mainText">{{ t('pages.admin.categoriesPage.addSubcategory') }}</h3>
           <button @click="showAddSubcategoryModal = false" class="text-gray-400 hover:text-white transition-colors">
@@ -654,15 +654,15 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
         <div class="space-y-4">
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.nameRu') }} *</label>
-            <input v-model="newSubcategory.nameRu" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" :placeholder="t('pages.admin.categoriesPage.nameRuPlaceholder')" />
+            <input v-model="newSubcategory.nameRu" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" class="admin-input-surface w-full rounded-lg px-3 py-2 text-mainText" :placeholder="t('pages.admin.categoriesPage.nameRuPlaceholder')" />
           </div>
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.nameEn') }} *</label>
-            <input v-model="newSubcategory.nameEn" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" class="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" :placeholder="t('pages.admin.categoriesPage.nameEnPlaceholder')" />
+            <input v-model="newSubcategory.nameEn" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" class="admin-input-surface w-full rounded-lg px-3 py-2 text-mainText" :placeholder="t('pages.admin.categoriesPage.nameEnPlaceholder')" />
           </div>
           <div>
             <label class="block text-sm text-gray-300 mb-2">{{ t('common.description') }}</label>
-            <textarea v-model="newSubcategory.description" rows="3" :maxlength="CATEGORY_DESCRIPTION_MAX_LENGTH" class="w-full max-h-28 bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-mainText focus:outline-none focus:border-blue-500" placeholder="Введите описание" />
+            <textarea v-model="newSubcategory.description" rows="3" :maxlength="CATEGORY_DESCRIPTION_MAX_LENGTH" class="admin-input-surface w-full max-h-28 rounded-lg px-3 py-2 text-mainText" placeholder="Введите описание" />
           </div>
         </div>
         <div class="flex flex-col sm:flex-row gap-3 mt-6">
@@ -681,8 +681,8 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
       class="app-modal-overlay z-50 bg-black/60"
       @click.self="closeDeleteConfirmModal"
     >
-      <div class="app-modal-panel w-full max-w-sm rounded-2xl border border-dark-700 bg-dark-600 p-0 shadow-2xl sm:max-w-md">
-        <div class="border-b border-dark-700/80 px-5 py-4">
+      <div class="app-modal-panel admin-modal-panel w-full max-w-sm rounded-2xl p-0 sm:max-w-md">
+        <div class="border-b border-white/8 px-5 py-4">
           <div class="flex items-start gap-3">
             <div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-500/15 text-red-300">
               <Trash2 class="h-4 w-4" />
@@ -728,7 +728,7 @@ watch(isCreateCategoryModalOpen, (isOpen) => {
       class="app-modal-overlay z-50 bg-black/50"
       @click.self="deleteErrorModalOpen = false"
     >
-      <div class="app-modal-panel w-full max-w-sm overflow-y-auto rounded-xl border border-dark-700 bg-dark-600 p-6 sm:max-w-md">
+      <div class="app-modal-panel admin-modal-panel w-full max-w-sm overflow-y-auto rounded-xl p-6 sm:max-w-md">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-xl font-bold text-mainText">{{ t('common.error') }}</h3>
           <button @click="deleteErrorModalOpen = false" class="text-gray-400 hover:text-white transition-colors">

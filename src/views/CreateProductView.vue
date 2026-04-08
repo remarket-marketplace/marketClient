@@ -18,7 +18,6 @@ import {
   AlertCircle,
   X,
   RotateCcw,
-  ShieldCheck,
 } from 'lucide-vue-next'
 import BackButton from '@/components/navigation/BackButton.vue'
 import Checkbox from '@/components/Checkbox.vue'
@@ -306,6 +305,34 @@ function goToNextStep(): void {
   }
 
   setCurrentStep((currentStep.value + 1) as StepNumber)
+}
+
+function handleWizardEnter(event: KeyboardEvent): void {
+  if (currentStep.value === TOTAL_STEPS || sended.value) {
+    return
+  }
+
+  if (event.isComposing || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) {
+    return
+  }
+
+  const target = event.target
+  if (!(target instanceof HTMLElement)) {
+    return
+  }
+
+  if (
+    target instanceof HTMLTextAreaElement
+    || target instanceof HTMLButtonElement
+    || target instanceof HTMLAnchorElement
+    || target instanceof HTMLSelectElement
+    || target.isContentEditable
+  ) {
+    return
+  }
+
+  event.preventDefault()
+  goToNextStep()
 }
 
 function handleStepClick(step: StepNumber): void {
@@ -916,7 +943,7 @@ async function createProduct() {
     </div>
 
     <div class="lg:min-h-[calc(100dvh-3.5rem)] lg:overflow-y-auto no-scrollbar pb-6">
-      <div class="mx-auto w-full max-w-5xl px-4 lg:px-6 lg:pt-6 space-y-6">
+      <div class="mx-auto w-full max-w-5xl space-y-6 px-4 lg:px-6 lg:pt-6" @keydown.capture.enter="handleWizardEnter">
         <div class="hidden lg:block">
           <div class="flex gap-2">
             <BackButton />
@@ -1480,48 +1507,43 @@ async function createProduct() {
       class="app-modal-overlay z-[120]"
     >
       <div class="absolute inset-0 bg-black/75 backdrop-blur-sm" @click="goToProfileAfterCreate"></div>
-      <div class="relative z-10 flex min-h-full items-center justify-center px-4 py-8">
-        <div class="product-created-modal w-full max-w-lg overflow-hidden rounded-[28px] border border-white/10">
-          <div class="relative overflow-hidden px-6 py-7 sm:px-8 sm:py-8">
-            <div class="product-created-modal__hero absolute inset-0"></div>
-            <div class="relative space-y-6">
-              <div class="product-created-modal__icon inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-blue-400/18 bg-blue-500/10 text-blue-200">
-                <ShieldCheck class="h-7 w-7" />
-              </div>
-
-              <div class="space-y-3">
-                <div class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">
+      <div class="relative z-10 flex min-h-full items-center justify-center px-4 py-8 sm:px-6">
+        <div class="product-created-modal w-full max-w-[44rem] overflow-hidden rounded-[30px] border border-white/10">
+          <div class="relative overflow-hidden px-6 py-7 sm:px-10 sm:py-9">
+            <div class="relative space-y-7">
+              <div class="space-y-3.5">
+                <div class="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.26em] text-gray-400">
                   {{ $t('common.productStatuses.moderation') }}
                 </div>
-                <h3 class="text-2xl font-semibold tracking-tight text-white sm:text-[2rem]">
+                <h3 class="max-w-[28rem] text-[2rem] font-semibold leading-[1.04] tracking-[-0.03em] text-white sm:text-[3rem]">
                   {{ $t('pages.forms.createProduct.successTitle') }}
                 </h3>
-                <p class="text-sm leading-6 text-gray-300 sm:text-[15px]">
+                <p class="max-w-[34rem] text-[15px] leading-8 text-gray-300 sm:text-[1.05rem]">
                   {{ $t('pages.forms.createProduct.successMessage') }}
                 </p>
               </div>
 
-              <div class="product-created-modal__summary rounded-2xl border border-white/8 p-4">
-                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
+              <div class="product-created-modal__summary rounded-[1.4rem] border border-white/8 px-5 py-4 sm:px-6 sm:py-5">
+                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-gray-500">
                   {{ $t('pages.forms.createProduct.successHintLabel') }}
                 </p>
-                <p class="mt-2 text-sm leading-6 text-gray-300">
+                <p class="mt-3 text-[15px] leading-8 text-gray-300">
                   {{ $t('pages.forms.createProduct.successHint') }}
                 </p>
               </div>
 
-              <div class="flex flex-col gap-3 sm:flex-row">
+              <div class="flex flex-col gap-3 pt-1 sm:flex-row">
                 <button
                   type="button"
-                  class="market-primary-surface market-primary-hover inline-flex flex-1 items-center justify-center rounded-2xl px-5 py-3.5 text-sm font-semibold text-white transition-colors duration-200"
+                  class="market-primary-surface market-primary-hover inline-flex min-h-14 flex-1 items-center justify-center rounded-[1.15rem] px-5 py-4 text-base font-semibold text-white transition-colors duration-200"
                   @click="goToCreatedProduct"
                 >
                   {{ $t('pages.forms.createProduct.goToProduct') }}
                 </button>
                 <button
                   type="button"
-                    class="inline-flex flex-1 items-center justify-center rounded-2xl border border-white/12 bg-white/[0.04] px-5 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:border-white/20 hover:bg-white/[0.07]"
-                    @click="goToProfileAfterCreate"
+                  class="inline-flex min-h-14 flex-1 items-center justify-center rounded-[1.15rem] border border-white/12 bg-white/[0.04] px-5 py-4 text-base font-semibold text-white transition-colors duration-200 hover:border-white/20 hover:bg-white/[0.07]"
+                  @click="goToProfileAfterCreate"
                 >
                   {{ $t('pages.forms.createProduct.goToProfile') }}
                 </button>
@@ -1566,16 +1588,8 @@ input[type="number"] {
 }
 
 .product-created-modal {
-  background: var(--modal-surface-strong);
-  box-shadow: var(--modal-surface-strong-shadow);
-}
-
-.product-created-modal__hero {
-  background: var(--product-created-hero-bg);
-}
-
-.product-created-modal__icon {
-  box-shadow: var(--product-created-badge-shadow);
+  background: rgb(var(--palette-dark-900));
+  box-shadow: none;
 }
 
 .product-created-modal__summary {

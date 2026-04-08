@@ -241,7 +241,7 @@ watch(watchedFilters, () => {
 
     <div
       v-if="isFiltersVisible"
-      class="space-y-2 rounded-xl border border-dark-700 bg-dark-700/30 p-3"
+      class="admin-filter-panel space-y-2 rounded-[1.5rem] p-3"
     >
       <SearchField
         v-model="searchQuery"
@@ -257,21 +257,21 @@ watch(watchedFilters, () => {
 
         <input
           v-model="providerTxIdQuery"
-          class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText focus:border-blue-500 focus:outline-none"
+          class="admin-input-surface h-10 rounded-lg px-3 text-sm text-mainText"
           :placeholder="$t('pages.admin.paymentsPage.providerTxIdPlaceholder')"
         />
 
         <input
           v-model="dateFrom"
           type="datetime-local"
-          class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText focus:border-blue-500 focus:outline-none"
+          class="admin-input-surface h-10 rounded-lg px-3 text-sm text-mainText"
           :title="$t('pages.admin.paymentsPage.fromDate')"
         />
 
         <input
           v-model="dateTo"
           type="datetime-local"
-          class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText focus:border-blue-500 focus:outline-none"
+          class="admin-input-surface h-10 rounded-lg px-3 text-sm text-mainText"
           :title="$t('pages.admin.paymentsPage.toDate')"
         />
       </div>
@@ -295,7 +295,7 @@ watch(watchedFilters, () => {
         <article
           v-for="payment in payments"
           :key="payment.id"
-          class="rounded-xl border border-dark-700 bg-dark-600 p-3 sm:p-4"
+          class="admin-surface-card rounded-[1.4rem] p-3 sm:p-4"
         >
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex flex-wrap items-center gap-2">
@@ -413,7 +413,7 @@ watch(watchedFilters, () => {
         <textarea
           v-model="moderationReason"
           rows="3"
-          class="w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 py-2 text-sm text-mainText focus:border-blue-500 focus:outline-none"
+          class="admin-input-surface w-full rounded-lg px-3 py-2 text-sm text-mainText"
           :placeholder="$t('pages.admin.paymentsPage.moderationReasonPlaceholder')"
         />
       </div>

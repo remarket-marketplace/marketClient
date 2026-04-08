@@ -99,7 +99,7 @@ onMounted(async () => {
     </div>
 
     <div v-else-if="feedback" class="space-y-4">
-      <article class="bg-dark-600 border border-dark-700 rounded-xl p-4 space-y-3">
+      <article class="admin-surface-card rounded-[1.4rem] p-4 space-y-3">
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div class="flex items-center gap-3 min-w-0">
             <UserAvatar
@@ -143,7 +143,7 @@ onMounted(async () => {
         </div>
       </article>
 
-      <article class="bg-dark-600 border border-dark-700 rounded-xl p-4">
+      <article class="admin-surface-card rounded-[1.4rem] p-4">
         <h2 class="text-sm sm:text-base font-semibold text-mainText flex items-center gap-2 mb-3">
           <MessageSquareText class="h-4 w-4 text-blue-400" />
           {{ $t('pages.admin.feedbackPage.message') }}
@@ -153,7 +153,7 @@ onMounted(async () => {
         </p>
       </article>
 
-      <article class="bg-dark-600 border border-dark-700 rounded-xl p-4">
+      <article class="admin-surface-card rounded-[1.4rem] p-4">
         <h2 class="text-sm sm:text-base font-semibold text-mainText flex items-center gap-2 mb-3">
           <Paperclip class="h-4 w-4 text-blue-400" />
           {{ $t('pages.admin.feedbackPage.attachments') }}
@@ -184,7 +184,7 @@ onMounted(async () => {
       </article>
     </div>
 
-    <div v-else class="bg-dark-600 border border-dark-700 rounded-xl p-4">
+    <div v-else class="admin-surface-card rounded-[1.4rem] p-4">
       <p class="text-gray-300 mb-3">{{ $t('pages.admin.feedbackPage.loadError') }}</p>
       <button
         type="button"

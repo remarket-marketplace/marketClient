@@ -135,7 +135,7 @@ function goToSeller() {
   background: var(--product-card-image-placeholder-bg);
 }
 
-@media (max-width: 359px), (min-width: 1536px) and (max-width: 1799px) {
+@media (max-width: 359px) {
   .profile-product-card {
     flex-direction: row;
     align-items: center;
@@ -203,19 +203,4 @@ function goToSeller() {
   }
 }
 
-@media (min-width: 1536px) and (max-width: 1799px) {
-  .profile-product-card {
-    height: 142px;
-    min-height: 142px;
-    max-height: 142px;
-  }
-
-  .profile-product-media {
-    width: clamp(160px, 36%, 200px);
-  }
-
-  .profile-product-content {
-    padding: 10px 14px 10px 12px;
-  }
-}
 </style>

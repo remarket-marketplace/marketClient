@@ -394,7 +394,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
         </button>
       </div>
       <div
-        class="grid grid-cols-1 sm:grid-cols-2 gap-2"
+        class="admin-filter-panel grid grid-cols-1 gap-2 rounded-[1.5rem] p-3 sm:grid-cols-2"
         :class="{ 'hidden sm:grid': !isMobileFiltersOpen }"
       >
         <CustomSelect
@@ -444,7 +444,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
       <div ref="listRef" v-else class="h-full overflow-y-auto space-y-4">
         <!-- Карточка сделки -->
         <div v-for="deal in sortedDeals" :key="deal.id"
-          class="bg-dark-600 border border-dark-700 rounded-xl p-4 hover:border-dark-500 transition-all duration-200">
+          class="admin-surface-card rounded-[1.4rem] p-4">
           <div class="flex flex-col gap-4">
             <!-- Заголовок и статус -->
             <div class="flex justify-between items-start">
@@ -473,7 +473,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
             <div class="flex gap-4">
               <div class="flex-shrink-0">
                 <img :src="getProductImageUrl(deal)" :alt="deal.product.title"
-                  class="w-20 h-20 sm:w-24 sm:h-24 rounded-lg object-cover border border-dark-400 cursor-pointer"
+                  class="w-20 h-20 sm:w-24 sm:h-24 rounded-lg object-cover border border-white/10 cursor-pointer"
                   @click="goToProduct(deal.product.id, deal.product.slug)" />
               </div>
               <div class="flex-1 min-w-0">
@@ -492,7 +492,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
             <!-- Участники сделки -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div @click="goToProfile(deal.seller.username)"
-                class="bg-dark-700 hover:bg-dark-700/80 transition rounded-lg p-3 cursor-pointer">
+                class="admin-surface-soft cursor-pointer rounded-lg p-3 transition hover:bg-white/[0.04]">
                 <div class="flex items-center gap-3">
                   <UserAvatar
                     :avatar-url="deal.seller.avatar_url"
@@ -510,7 +510,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
               </div>
 
               <div @click="goToProfile(deal.buyer.username)"
-                class="bg-dark-700 hover:bg-dark-700/80 transition rounded-lg p-3 cursor-pointer">
+                class="admin-surface-soft cursor-pointer rounded-lg p-3 transition hover:bg-white/[0.04]">
                 <div class="flex items-center gap-3">
                   <UserAvatar
                     :avatar-url="deal.buyer.avatar_url"
@@ -546,7 +546,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
             </div>
 
             <!-- Кнопки управления -->
-            <div class="flex flex-col sm:flex-row sm:flex-wrap gap-2 pt-2 border-t border-dark-700">
+            <div class="flex flex-col sm:flex-row sm:flex-wrap gap-2 pt-2 border-t border-white/8">
               <button
                 @click="openDealStatusModal(deal)"
                 :disabled="processingDealId === deal.id"
@@ -582,21 +582,21 @@ watch([searchQuery, sortBy, statusFilter], () => {
               </template>
 
               <template v-else-if="deal.status === 'completed'">
-                <div class="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-600 text-gray-300 rounded-lg text-sm">
+                <div class="admin-surface-soft flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm text-gray-300">
                   <CheckCircle class="w-4 h-4" />
                   <span>{{ $t('common.dealCompleted') }}</span>
                 </div>
               </template>
 
               <template v-else-if="deal.status === 'cancelled'">
-                <div class="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-600 text-gray-300 rounded-lg text-sm">
+                <div class="admin-surface-soft flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm text-gray-300">
                   <XCircle class="w-4 h-4" />
                   <span>{{ $t('common.dealCancelled') }}</span>
                 </div>
               </template>
 
               <template v-else-if="deal.status === 'refunded'">
-                <div class="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-purple-300 rounded-lg text-sm">
+                <div class="flex flex-1 items-center justify-center gap-2 rounded-lg border border-purple-500/25 bg-purple-500/10 px-4 py-2 text-sm text-purple-300">
                   <Undo2 class="w-4 h-4" />
                   <span>{{ $t('common.refundCompleted') }}</span>
                 </div>
@@ -638,7 +638,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
         </label>
         <textarea
           v-model="disputeReason"
-          class="w-full rounded-lg bg-dark-900 border border-dark-700 text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[110px]"
+          class="admin-input-surface w-full rounded-lg text-white px-3 py-2 resize-none min-h-[110px]"
           :placeholder="$t('pages.admin.dealPage.disputeReasonPlaceholder')"
         />
         <p v-if="reasonError" class="text-red-400 text-sm">

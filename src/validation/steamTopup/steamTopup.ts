@@ -1,6 +1,8 @@
 import { z } from 'zod'
 
 export const STEAM_TOPUP_ACCOUNT_PATTERN = /^[a-z0-9]{3,15}$/
+export const STEAM_TOPUP_SUPPORTED_SERVICE_CURRENCIES = ['RUB', 'USD'] as const
+export type SteamTopUpServiceCurrency = typeof STEAM_TOPUP_SUPPORTED_SERVICE_CURRENCIES[number]
 
 export function normalizeSteamTopUpAccount(account: string): string {
   return account.trim().toLowerCase()
@@ -141,3 +143,20 @@ export type SteamTopUpPayOrderPayload = z.infer<typeof steamTopUpPayOrderInputSc
 export type SteamTopUpCreateOrderPayload = z.infer<typeof steamTopUpCreateOrderSchema>
 export type SteamTopUpCreatePaymentResponse = z.infer<typeof steamTopUpCreatePaymentSchema>
 export type SteamTopUpCreatePaymentPayload = z.infer<typeof steamTopUpCreatePaymentInputSchema>
+
+export function normalizeSteamTopUpServiceCurrency(
+  currency: string | null | undefined,
+): SteamTopUpServiceCurrency | null {
+  if (!currency) return null
+  const normalized = currency.trim().toUpperCase()
+  return STEAM_TOPUP_SUPPORTED_SERVICE_CURRENCIES.includes(normalized as SteamTopUpServiceCurrency)
+    ? normalized as SteamTopUpServiceCurrency
+    : null
+}
+
+export function findSteamTopUpServiceByCurrency(
+  services: SteamTopUpService[],
+  currency: SteamTopUpServiceCurrency,
+): SteamTopUpService | null {
+  return services.find((service) => normalizeSteamTopUpServiceCurrency(service.currency) === currency) ?? null
+}
