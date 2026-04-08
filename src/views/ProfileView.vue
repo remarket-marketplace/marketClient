@@ -1241,7 +1241,13 @@ input[type="number"] {
 
 @media (min-width: 1536px) and (max-width: 1799px) {
   .profile-products-grid {
-    grid-template-columns: repeat(1, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1800px) and (max-width: 1999px) {
+  .profile-products-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 
