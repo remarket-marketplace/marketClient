@@ -59,6 +59,7 @@ export const ProductSchema = z.object({
   is_sold: z.boolean(),
   status: z.string(),
   category: CategorySchema,
+  parent_category: CategorySchema.nullable().optional(),
   price: z.number(),
   created_at: z.string(),
   seller: SellerSchema,
