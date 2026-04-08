@@ -777,7 +777,8 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
               </div>
 
               <!-- Description -->
-              <div v-if="isOwner || hasProfileDescription" class="space-y-3">
+              <div v-if="hasProfileDescription" class="space-y-3">
+              <div v-if="hasProfileDescription" class="space-y-3">
                 <div class="flex items-center justify-between">
                   <h3 class="text-sm font-semibold text-gray-300">{{ t('common.description') }}</h3>
                   <button v-if="isOwner && !isEditingDescription" @click="isEditingDescription = true"
@@ -788,7 +789,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 </div>
 
                 <div v-if="!isEditingDescription" class="break-words text-sm leading-relaxed text-gray-300 [overflow-wrap:anywhere]">
-                  <p>{{ currentProfileData.description || t('pages.profile.descriptionMissing') }}</p>
+                  <p>{{ currentProfileData.description }}</p>
                 </div>
 
                 <template v-else>
