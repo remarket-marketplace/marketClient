@@ -152,6 +152,19 @@ const displayedSubcategory = computed(() => {
   return currentCategory
 })
 
+const canNavigateToDisplayedCategory = computed(() => {
+  const currentCategory = displayedCategory.value
+  if (!currentCategory) return false
+  return currentCategory.is_active
+})
+
+const canNavigateToDisplayedSubcategory = computed(() => {
+  return Boolean(
+    displayedCategory.value?.is_active
+    && displayedSubcategory.value?.is_active,
+  )
+})
+
 const shouldShowFortniteAccountDetails = computed(() => (
   hasFortniteAccountDetails(product.value?.fortnite_account_details)
 ))
@@ -167,9 +180,17 @@ function restoreProductCardViewModeFromStorage(): void {
   productCardViewMode.value = saved === 'list' ? 'list' : 'grid'
 }
 
-async function loadCategoryBreadcrumb(category: Category | null | undefined) {
+async function loadCategoryBreadcrumb(
+  category: Category | null | undefined,
+  productParentCategory: Category | null | undefined,
+) {
   if (!category?.parent_id) {
     parentCategory.value = null
+    return
+  }
+
+  if (productParentCategory) {
+    parentCategory.value = productParentCategory
     return
   }
 
@@ -177,6 +198,11 @@ async function loadCategoryBreadcrumb(category: Category | null | undefined) {
 }
 
 async function loadSimilarProducts(baseProduct: Product) {
+  if (!baseProduct.category.is_active || baseProduct.parent_category?.is_active === false) {
+    similarProducts.value = []
+    return
+  }
+
   const categoryKey = buildCategoryKey(baseProduct.category)
   if (!categoryKey) {
     similarProducts.value = []
@@ -244,7 +270,7 @@ async function loadProductData() {
     }
 
     await Promise.all([
-      loadCategoryBreadcrumb(product.value.category),
+      loadCategoryBreadcrumb(product.value.category, product.value.parent_category),
       loadSimilarProducts(product.value),
     ])
   } catch (error: any) {
@@ -719,21 +745,29 @@ onUnmounted(() => {
               class="min-w-0 flex items-center gap-1 text-white"
             >
               <button
+                v-if="canNavigateToDisplayedCategory"
                 type="button"
                 class="truncate text-left text-white transition hover:text-blue-300 hover:underline"
                 @click="goToCategoryPage(displayedCategory)"
               >
                 {{ displayedCategory.name }}
               </button>
+              <span v-else class="truncate text-left text-white">
+                {{ displayedCategory.name }}
+              </span>
               <template v-if="displayedSubcategory">
                 <span class="text-gray-500">/</span>
                 <button
+                  v-if="canNavigateToDisplayedSubcategory"
                   type="button"
                   class="truncate text-left text-white transition hover:text-blue-300 hover:underline"
                   @click="goToCategoryPageWithSubcategory(displayedCategory, displayedSubcategory)"
                 >
                   {{ displayedSubcategory.name }}
                 </button>
+                <span v-else class="truncate text-left text-white">
+                  {{ displayedSubcategory.name }}
+                </span>
               </template>
             </div>
             <span v-else class="text-white">{{ $t('common.notSpecified') }}</span>

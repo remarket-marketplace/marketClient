@@ -521,6 +521,40 @@ export const adminService = {
     }
   },
 
+  async createCategoryData(
+    nameRu: string,
+    nameEn: string,
+    description: string,
+    newImage: File | null,
+    newBanner: File | null,
+    parentId?: string | null,
+  ) {
+    try {
+      const normalizedNameRu = nameRu.trim()
+      const normalizedNameEn = nameEn.trim()
+      const normalizedDescription = description.trim()
+      const formData = new FormData()
+
+      formData.append('name_ru', normalizedNameRu)
+      formData.append('name_en', normalizedNameEn)
+      formData.append('description', normalizedDescription)
+      if (newImage) {
+        formData.append('uploaded_image', newImage)
+      }
+      if (newBanner) {
+        formData.append('uploaded_banner', newBanner)
+      }
+      if (parentId) {
+        formData.append('parent_category_id', parentId)
+      }
+
+      const response = await httpClient.post('/admin/category', formData)
+      return CategorySchema.parse(response.data)
+    } catch (e) {
+      return false
+    }
+  },
+
   async updateCategoryData (
     categoryId: string,
     nameRu: string,
@@ -552,15 +586,6 @@ export const adminService = {
 
       const response = await httpClient.put(`/admin/category/${categoryId}`, formData);
       return CategorySchema.parse(response.data);
-    } catch (e) {
-      return false;
-    }
-  },
-
-  async deleteCategory(categoryId: string) {
-    try {
-      const response = await httpClient.delete(`/admin/category/${categoryId}`);
-      return response.status === 200;
     } catch (e) {
       return false;
     }

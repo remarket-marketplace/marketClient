@@ -117,6 +117,8 @@ const selectedCategory = computed(() => (
 const selectedSubcategory = computed(() => (
   subcategories.value.find(subcategory => subcategory.id === selectedSubcategoryId.value) ?? null
 ))
+const hasValidSelectedCategory = computed(() => Boolean(selectedCategory.value))
+const hasValidSelectedSubcategory = computed(() => Boolean(selectedSubcategory.value))
 const shouldShowFortniteAccountForm = computed(() => isFortniteAccountsCategory({
   parentCategory: selectedCategory.value,
   subcategory: selectedSubcategory.value,
@@ -215,7 +217,8 @@ const imagesCountValid = computed(() => (
 ))
 
 const step1Valid = computed(() => (
-  Boolean(selectedCategoryId.value && selectedSubcategoryId.value)
+  hasValidSelectedCategory.value
+  && hasValidSelectedSubcategory.value
 ))
 const step2Valid = computed(() => (
   titleLengthValid.value
@@ -373,10 +376,10 @@ const priceRangeMaxLabel = computed(() => formatPriceRangeBound(priceInputMax.va
 
 const stepIssues = computed<Record<StepNumber, string[]>>(() => ({
   1: [
-    ...(!selectedCategoryId.value
+    ...(!hasValidSelectedCategory.value
       ? [t('pages.forms.createProduct.validationCategoryRequired')]
       : []),
-    ...(!selectedSubcategoryId.value
+    ...(!hasValidSelectedSubcategory.value
       ? [t('pages.forms.createProduct.validationSubcategoryRequired')]
       : []),
   ],
@@ -563,14 +566,22 @@ const formattedDraftSavedAt = computed(() => {
 async function loadSubcategoriesForCategory(categoryId: string): Promise<void> {
   if (!categoryId) {
     subcategories.value = []
+    selectedSubcategoryId.value = ''
     return
   }
 
   try {
     const subcategoriesData = await categoryService.getSubcategories(categoryId)
-    subcategories.value = subcategoriesData.categories
+    subcategories.value = subcategoriesData.categories.filter(
+      (subcategory: Category) => subcategory.is_active,
+    )
+    if (!subcategories.value.some(subcategory => subcategory.id === selectedSubcategoryId.value)) {
+      selectedSubcategoryId.value = ''
+    }
   } catch (err) {
     console.error('Error loading subcategories:', err)
+    subcategories.value = []
+    selectedSubcategoryId.value = ''
     errorMessage.value = t('pages.forms.createProduct.errorLoadingSubcategories')
   }
 }
@@ -667,7 +678,13 @@ async function restoreSavedCreateProductDraft(): Promise<void> {
     selectedCategoryId.value = savedDraft.selectedCategoryId
     selectedSubcategoryId.value = ''
     await loadSubcategoriesForCategory(savedDraft.selectedCategoryId)
-    selectedSubcategoryId.value = savedDraft.selectedSubcategoryId
+    if (
+      subcategories.value.some(
+        subcategory => subcategory.id === savedDraft.selectedSubcategoryId,
+      )
+    ) {
+      selectedSubcategoryId.value = savedDraft.selectedSubcategoryId
+    }
     title.value = savedDraft.title
     description.value = savedDraft.description
     price.value = savedDraft.price
@@ -708,7 +725,9 @@ onMounted(async () => {
 
     await store.fetchUser()
     const categoriesData = await categoryService.getAllCategories()
-    categories.value = categoriesData.categories
+    categories.value = categoriesData.categories.filter(
+      (category: Category) => category.is_active,
+    )
     const commission = await productService.getCommissionInterest()
     commissionInterest.value = Number(commission)
   } catch (err) {
@@ -875,7 +894,7 @@ async function createProduct() {
       price_currency: selectedCurrency.value,
       product_data: autoDelivery.value ? normalizedProductData.value : undefined,
       fortnite_account_details: shouldShowFortniteAccountForm.value ? fortniteAccountPayload.value : undefined,
-      category_id: selectedSubcategoryId.value,
+      category_id: selectedSubcategory.value?.id ?? '',
       count: countValue.value,
       auto_delivery: autoDelivery.value,
       draft_images: draftImages.value,

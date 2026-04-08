@@ -134,6 +134,11 @@ function goHome() {
   router.push('/')
 }
 
+async function redirectToNotFound() {
+  if (route.name === 'notAccess') return
+  await router.replace({ name: 'notAccess' })
+}
+
 function setProductCardViewMode(mode: ProductCardViewMode): void {
   if (productCardViewMode.value === mode) return
   productCardViewMode.value = mode
@@ -222,7 +227,9 @@ async function resolveCategoryPath(pathSegments: string[]) {
   for (const segment of pathSegments) {
     const response = await categoryService.getSubcategories(parentKey, 1, 100)
     const matched = findCategoryByQueryKey(response.categories, segment)
-    if (!matched) break
+    if (!matched) {
+      return null
+    }
     resolvedPath.push(matched)
     parentKey = buildCategoryKey(matched) || matched.id
   }
@@ -243,7 +250,12 @@ async function loadSubcategoriesForActiveCategory() {
 async function applyPathFromQuery(pathRaw: string) {
   if (!category.value) return
   const requestedPath = splitPathQueryValue(pathRaw)
-  selectedCategoryPath.value = await resolveCategoryPath(requestedPath)
+  const resolvedPath = await resolveCategoryPath(requestedPath)
+  if (requestedPath.length > 0 && resolvedPath === null) {
+    await redirectToNotFound()
+    return
+  }
+  selectedCategoryPath.value = resolvedPath ?? []
   await Promise.all([
     loadSubcategoriesForActiveCategory(),
     loadCategoryProducts(1, false),
@@ -279,6 +291,7 @@ async function loadCategoryMeta() {
     subcategories.value = []
     selectedCategoryPath.value = []
     isCategoryLoading.value = false
+    await redirectToNotFound()
     return
   }
 

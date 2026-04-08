@@ -169,7 +169,13 @@ const routes = [
       path: "/admin/categories/edit/:id",
       name: "edit category",
       component: () => import("@/views/admin/AdminEditCategoryView.vue"),
-      meta: { requiredAuthorized: true },
+      meta: { requiredAdmin: true },
+    },
+    {
+      path: "/admin/categories/create",
+      name: "create category",
+      component: () => import("@/views/admin/AdminCreateCategoryView.vue"),
+      meta: { requiredAdmin: true },
     },
     {
       path: "/admin/chats/:chatId",
