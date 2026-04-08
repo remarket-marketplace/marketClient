@@ -20,6 +20,7 @@ import { useRoute, useRouter } from 'vue-router'
 import UserAvatar from '@/components/UserAvatar.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
 import { createBottomPinController } from '@/utils/chatScroll'
+import { formatLastSeen } from '@/utils/presence'
 
 const { t, locale } = useI18n()
 const route = useRoute()
@@ -510,9 +511,23 @@ const chatDisplayName = computed(() => {
 
 // Вычисляемое свойство для статуса чата
 const chatDisplayStatus = computed(() => {
+  if (!currentChat.value) return ''
+  if (currentChat.value.chat_type === 'support_chat') {
+    return t('common.online')
+  }
+  return formatLastSeen(
+    currentChat.value.another_user.last_seen_at,
+    currentChat.value.another_user.is_active,
+    locale.value,
+    t('common.offline'),
+    t('common.online'),
+  )
+})
+
+const isChatDisplayOnline = computed(() => {
   if (!currentChat.value) return false
   if (currentChat.value.chat_type === 'support_chat') {
-    return true // поддержка всегда онлайн
+    return true
   }
   return currentChat.value.another_user.is_active
 })
@@ -1247,11 +1262,11 @@ async function sendMessage(payload: { files: File[] }) {
                     />
                   </div>
                   <!-- Статус онлайн -->
-                  <p v-if="chatDisplayStatus" class="text-xs text-green-500">
-                    {{ $t('common.online') }}
-                  </p>
-                  <p v-else class="text-xs text-gray-500">
-                    {{ $t('common.offline') }}
+                  <p
+                    class="text-xs"
+                    :class="isChatDisplayOnline ? 'text-green-500' : 'text-gray-500'"
+                  >
+                    {{ chatDisplayStatus }}
                   </p>
                 </div>
               </button>

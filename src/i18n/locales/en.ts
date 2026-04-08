@@ -71,6 +71,8 @@ const en = {
     userId: "User ID",
     online: "Online",
     offline: "Offline",
+    lastSeen: "Last seen",
+    avgResponseTime: "Average response time",
     messageRead: "Read",
     messageUnread: "Unread",
     banned: "Banned",
@@ -1055,6 +1057,8 @@ const en = {
         completedDealsCaption: "Total for seller",
         memberSinceLabel: "On platform",
         memberSinceCaption: "Registration date",
+        detailsLabel: "Seller summary",
+        detailsSubtitle: "Quick signals for activity and response speed.",
         footer: "Success rate is based only on closed deals.",
       },
       deleteConfirm: {

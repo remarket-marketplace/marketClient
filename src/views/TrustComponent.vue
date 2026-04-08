@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ArrowUpRight, BadgeCheck, CalendarDays, ShoppingBag, Star } from 'lucide-vue-next'
+import { ArrowUpRight, BadgeCheck, CalendarDays, Clock3, ShoppingBag, Star } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Product } from '@/validation/product/product'
 import UserAvatar from '@/components/UserAvatar.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
+import { formatAverageResponseTime, formatLastSeen } from '@/utils/presence'
 
 const props = defineProps<{
   product: Product
@@ -43,20 +44,34 @@ const successfulDealsValue = computed(() => {
 const totalDealsValue = computed(() => Intl.NumberFormat(locale.value).format(
   props.product.seller_trust?.total_deals_count ?? 0,
 ))
+
+const averageResponseTimeValue = computed(() => formatAverageResponseTime(
+  props.product.seller.average_first_response_time_seconds,
+  locale.value,
+  t('common.notSpecified'),
+))
+
+const lastSeenValue = computed(() => formatLastSeen(
+  props.product.seller.last_seen_at,
+  props.product.seller.is_active,
+  locale.value,
+  t('common.notSpecified'),
+  t('common.online'),
+))
 </script>
 
 <template>
   <article
-    class="rounded-2xl border border-dark-700 bg-dark-600/25 p-3.5 sm:p-4"
+    class="rounded-2xl border border-dark-700 bg-dark-600/25 p-3 sm:p-3.5"
   >
-    <div class="flex flex-col gap-3.5">
-      <div class="flex items-start justify-between gap-3">
+    <div class="flex flex-col gap-3">
+      <div class="flex items-start justify-between gap-2.5">
         <div class="min-w-0 flex items-center gap-3">
-          <div class="relative h-11 w-11 shrink-0">
+          <div class="relative h-10 w-10 shrink-0">
             <UserAvatar
               :avatar-url="product.seller.avatar_url"
               :alt="product.seller.username"
-              class="h-11 w-11 rounded-full border border-dark-600 object-cover"
+              class="h-10 w-10 rounded-full border border-dark-600 object-cover"
             />
             <div
               class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border border-dark-800"
@@ -70,10 +85,10 @@ const totalDealsValue = computed(() => Intl.NumberFormat(locale.value).format(
           </div>
 
           <div class="min-w-0">
-            <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500">
+            <p class="text-[9px] font-semibold uppercase tracking-[0.18em] text-gray-500">
               {{ $t('pages.product.sellerTrust.eyebrow') }}
             </p>
-            <div class="mt-1 min-w-0">
+            <div class="mt-0.5 min-w-0">
               <StyledUsername
                 :username="product.seller.username"
                 :style-id="product.seller.nickname_style_id"
@@ -85,58 +100,82 @@ const totalDealsValue = computed(() => Intl.NumberFormat(locale.value).format(
 
         <router-link
           :to="sellerProfilePath"
-          class="inline-flex h-8 shrink-0 items-center gap-1 rounded-full border border-dark-600 bg-dark-700/50 px-2.5 text-[11px] font-medium text-gray-300 transition-colors hover:border-dark-500 hover:text-white"
+          class="inline-flex h-8 shrink-0 items-center gap-1 rounded-full border border-dark-600 bg-dark-700/50 px-2.5 text-[10px] font-medium text-gray-300 transition-colors hover:border-dark-500 hover:text-white"
         >
           {{ $t('pages.product.sellerTrust.profileCta') }}
           <ArrowUpRight class="h-3.5 w-3.5" />
         </router-link>
       </div>
 
-      <div class="grid grid-cols-2 gap-2 xl:grid-cols-4">
-        <div class="rounded-xl border border-white/5 bg-black/10 px-3 py-2.5">
-          <div class="metric-head flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-gray-500">
+      <div class="grid grid-cols-2 gap-2 xl:grid-cols-3">
+        <div class="metric-card rounded-xl border border-white/5 bg-black/10 px-3 py-2">
+          <div class="metric-head flex items-center gap-1.5 text-[9px] uppercase tracking-[0.14em] text-gray-500">
             <span class="metric-icon-slot">
               <Star class="metric-icon text-amber-400/80" />
             </span>
             {{ $t('pages.product.sellerTrust.ratingLabel') }}
           </div>
-          <p class="mt-1.5 text-lg font-semibold text-white">
+          <p class="metric-value text-lg font-semibold text-white">
             {{ ratingValue }}
           </p>
         </div>
 
-        <div class="rounded-xl border border-white/5 bg-black/10 px-3 py-2.5">
-          <div class="metric-head flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-gray-500">
+        <div class="metric-card rounded-xl border border-white/5 bg-black/10 px-3 py-2">
+          <div class="metric-head flex items-center gap-1.5 text-[9px] uppercase tracking-[0.14em] text-gray-500">
             <span class="metric-icon-slot">
               <BadgeCheck class="metric-icon text-emerald-400/80" />
             </span>
             {{ $t('pages.product.sellerTrust.successRateLabel') }}
           </div>
-          <p class="mt-1.5 text-lg font-semibold text-white">
+          <p class="metric-value text-lg font-semibold text-white">
             {{ successfulDealsValue }}
           </p>
         </div>
 
-        <div class="rounded-xl border border-white/5 bg-black/10 px-3 py-2.5">
-          <div class="metric-head flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-gray-500">
+        <div class="metric-card rounded-xl border border-white/5 bg-black/10 px-3 py-2">
+          <div class="metric-head flex items-center gap-1.5 text-[9px] uppercase tracking-[0.14em] text-gray-500">
             <span class="metric-icon-slot">
               <ShoppingBag class="metric-icon text-blue-400/80" />
             </span>
             {{ $t('pages.product.sellerTrust.completedDealsLabel') }}
           </div>
-          <p class="mt-1.5 text-lg font-semibold text-white">
+          <p class="metric-value text-lg font-semibold text-white">
             {{ totalDealsValue }}
           </p>
         </div>
 
-        <div class="rounded-xl border border-white/5 bg-black/10 px-3 py-2.5">
-          <div class="metric-head flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-gray-500">
+        <div class="metric-card rounded-xl border border-white/5 bg-black/10 px-3 py-2">
+          <div class="metric-head flex items-center gap-1.5 text-[9px] uppercase tracking-[0.14em] text-gray-500">
+            <span class="metric-icon-slot">
+              <Clock3 class="metric-icon text-cyan-400/80" />
+            </span>
+            {{ $t('common.avgResponseTime') }}
+          </div>
+          <p class="metric-value text-sm font-semibold text-white sm:text-base">
+            {{ averageResponseTimeValue }}
+          </p>
+        </div>
+
+        <div class="metric-card rounded-xl border border-white/5 bg-black/10 px-3 py-2">
+          <div class="metric-head flex items-center gap-1.5 text-[9px] uppercase tracking-[0.14em] text-gray-500">
+            <span class="metric-icon-slot">
+              <Clock3 class="metric-icon text-emerald-400/80" />
+            </span>
+            {{ $t('common.lastSeen') }}
+          </div>
+          <p class="metric-value text-sm font-semibold sm:text-base" :class="product.seller.is_active ? 'text-emerald-300' : 'text-white'">
+            {{ lastSeenValue }}
+          </p>
+        </div>
+
+        <div class="metric-card rounded-xl border border-white/5 bg-black/10 px-3 py-2">
+          <div class="metric-head flex items-center gap-1.5 text-[9px] uppercase tracking-[0.14em] text-gray-500">
             <span class="metric-icon-slot">
               <CalendarDays class="metric-icon text-gray-400" />
             </span>
             {{ $t('pages.product.sellerTrust.memberSinceLabel') }}
           </div>
-          <p class="mt-1.5 whitespace-nowrap text-sm font-semibold text-white sm:text-base">
+          <p class="metric-value whitespace-nowrap text-sm font-semibold text-white sm:text-base">
             {{ formattedRegistrationDate }}
           </p>
         </div>
@@ -163,5 +202,17 @@ const totalDealsValue = computed(() => Intl.NumberFormat(locale.value).format(
   height: 0.875rem;
   width: 0.875rem;
   flex-shrink: 0;
+}
+
+.metric-card {
+  min-height: 82px;
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-value {
+  margin-top: auto;
+  padding-top: 0.55rem;
+  line-height: 1.05;
 }
 </style>
