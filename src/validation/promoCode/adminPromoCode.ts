@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const promoContextSchema = z.enum(['wallet_topup', 'marketplace_purchase'])
+export const promoContextSchema = z.enum(['wallet_topup', 'marketplace_purchase', 'steam_topup'])
 export const promoDiscountTypeSchema = z.enum(['percent', 'fixed'])
 
 export const adminPromoCodeSchema = z.object({

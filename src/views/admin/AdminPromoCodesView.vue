@@ -285,7 +285,7 @@ async function loadPromos() {
     const response = await adminService.getPromoCodes(currentPage.value, perPage, {
       search: searchQuery.value || undefined,
       is_active: statusFilter.value,
-      applies_to: appliesToFilter.value as 'all' | 'wallet_topup' | 'marketplace_purchase',
+      applies_to: appliesToFilter.value,
     })
     promos.value = response.promos
     total.value = response.total
@@ -328,7 +328,7 @@ function buildPayload(): CreateAdminPromoCodePayload | null {
     total_usage_limit: parsedTotalUsage,
     per_user_usage_limit: parsedPerUser,
     is_active: isActive.value,
-    applies_to: appliesTo.value as 'wallet_topup' | 'marketplace_purchase',
+    applies_to: appliesTo.value,
     starts_at: lifetime?.starts_at,
     ends_at: lifetime?.ends_at,
   }

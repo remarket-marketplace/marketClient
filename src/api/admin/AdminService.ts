@@ -126,7 +126,7 @@ export type AdminPaymentsFilters = {
 export type AdminPromoCodesFilters = {
   search?: string
   is_active?: "all" | "active" | "inactive"
-  applies_to?: "all" | "wallet_topup" | "marketplace_purchase"
+  applies_to?: "all" | "wallet_topup" | "marketplace_purchase" | "steam_topup"
 }
 
 export type AdminWithdrawalOrdersFilters = {
