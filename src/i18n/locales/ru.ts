@@ -1436,6 +1436,14 @@ const ru = {
       available: "Доступно",
       useAll: "Всё",
       confirmWithdrawal: "Подтвердить вывод",
+      saleTimer: {
+        title: "Ожидание вывода по продажам",
+        lockedSummary: "На таймере: {amount}",
+        availableNow: "Можно вывести: {amount}",
+        unlockAt: "Разблокируется: {date}",
+        untitledSale: "Продажа без названия",
+        withdrawLimitError: "Часть средств еще на 24-часовом таймере. Доступна только разблокированная сумма.",
+      },
       historyDetails: {
         show: "Показать детали",
         hide: "Скрыть детали",

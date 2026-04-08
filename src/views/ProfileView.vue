@@ -778,7 +778,6 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
               <!-- Description -->
               <div v-if="hasProfileDescription" class="space-y-3">
-              <div v-if="hasProfileDescription" class="space-y-3">
                 <div class="flex items-center justify-between">
                   <h3 class="text-sm font-semibold text-gray-300">{{ t('common.description') }}</h3>
                   <button v-if="isOwner && !isEditingDescription" @click="isEditingDescription = true"
