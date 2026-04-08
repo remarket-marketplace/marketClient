@@ -39,6 +39,7 @@ const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const HARD_MIN_DEPOSIT_RUB = 10
 
 const balance = ref(0)
 const isLoading = ref(false)
@@ -49,7 +50,7 @@ const page = ref(1)
 const perPage = 10
 const totalPages = ref(1)
 const isFetchingTransactions = ref(false)
-const minDepositRub = ref(10)
+const minDepositRub = ref(HARD_MIN_DEPOSIT_RUB)
 const maxDepositRub = ref(100000)
 const defaultDepositProvider: WalletTopUpProvider = 'platega'
 const availableDepositProviders = ref<WalletTopUpProvider[]>([defaultDepositProvider])
@@ -222,7 +223,7 @@ function applyAutoDepositFromQuery() {
   openDepositModal()
 
   if (Number.isFinite(amountRub) && amountRub > 0) {
-    depositAmount.value = resolveDepositAmountFromRub(amountRub)
+    depositAmount.value = resolveDepositAmountFromRub(Math.max(amountRub, HARD_MIN_DEPOSIT_RUB))
   }
 
   clearAutoDepositQuery()
@@ -234,7 +235,7 @@ onMounted(async () => {
   const userBalance: Balance | null = await walletService.getUserBalance()
   if (userBalance) {
     balance.value = userBalance.balance
-    minDepositRub.value = userBalance.top_up_min_amount
+    minDepositRub.value = Math.max(HARD_MIN_DEPOSIT_RUB, userBalance.top_up_min_amount)
     maxDepositRub.value = userBalance.top_up_max_amount
     availableDepositProviders.value = userBalance.available_top_up_providers.length > 0
       ? userBalance.available_top_up_providers
