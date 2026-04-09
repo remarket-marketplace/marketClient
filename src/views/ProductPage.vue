@@ -772,6 +772,10 @@ onUnmounted(() => {
             </div>
             <span v-else class="text-white">{{ $t('common.notSpecified') }}</span>
           </div>
+          <div class="flex items-center gap-3">
+            <span class="text-gray-400 font-medium min-w-20">{{ $t('pages.product.remainingQuantity') }}:</span>
+            <span class="text-white">{{ product.count }}</span>
+          </div>
         </div>
 
         <div
