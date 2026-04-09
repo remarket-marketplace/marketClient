@@ -19,12 +19,13 @@ const props = defineProps<{
   dealStatus: string | null
   dealId: string
   has_review: boolean | null
+  layout?: 'timeline' | 'summary'
 }>()
 
 const router = useRouter()
 
 const localDealStatus = ref<string | null>(null)
-const localHasReview = ref(props.has_review ?? false)
+const localHasReview = ref(false)
 
 const showReviewModal = ref(false)
 const reviewStars = ref(0)
@@ -72,25 +73,57 @@ const showFulfillmentConfirmedBadge = computed(() => (
   isSeller.value && effectiveDealStatus.value === 'confirmed'
 ))
 const currentDealStatus = computed(() => effectiveDealStatus.value ?? 'pending')
+const isSummaryLayout = computed(() => props.layout === 'summary')
+const purchaseLabelKey = computed(() => 'pages.chats.newPurchase')
+const rootClass = computed(() => (
+  isSummaryLayout.value ? 'w-full min-w-0' : 'my-2 w-full min-w-0'
+))
+const cardClass = computed(() => (
+  isSummaryLayout.value
+    ? 'w-full min-w-0'
+    : 'mx-auto w-full max-w-2xl min-w-0 overflow-hidden rounded-2xl border border-dark-700 bg-dark-800/55 p-4'
+))
+const summaryHeaderClass = computed(() => (
+  isSummaryLayout.value
+    ? 'order-1 mb-1.5 flex flex-wrap items-center justify-between gap-2 sm:mb-2'
+    : 'hidden'
+))
+const contentClass = computed(() => (
+  isSummaryLayout.value ? 'order-3 flex flex-col gap-2 sm:gap-2.5' : 'flex items-start gap-3'
+))
+const topRowClass = computed(() => (
+  isSummaryLayout.value ? 'flex items-start gap-2.5 sm:gap-3' : 'contents'
+))
+const imageButtonClass = computed(() => (
+  isSummaryLayout.value
+    ? 'h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg border border-white/10 bg-dark-700 sm:h-11 sm:w-11'
+    : 'h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl border border-dark-600 bg-dark-700'
+))
+const actionsClass = computed(() => (
+  isSummaryLayout.value
+    ? 'order-2 mb-1.5 flex flex-wrap items-center gap-1.5 sm:mb-2 sm:gap-2'
+    : 'mt-4 flex flex-wrap items-center gap-2 border-t border-dark-700/80 pt-3'
+))
+const reviewActionClass = computed(() => (
+  isSummaryLayout.value ? 'order-4 mt-0' : 'mt-3'
+))
+const titleClass = computed(() => (
+  isSummaryLayout.value ? 'mt-0.5 block min-w-0 text-left text-xs font-semibold leading-tight text-white transition hover:text-blue-200 sm:text-[13px]' : 'mt-1 block min-w-0 text-left text-sm font-semibold text-white transition hover:text-blue-200'
+))
+const priceClass = computed(() => (
+  isSummaryLayout.value ? 'text-[11px] font-semibold text-emerald-300 sm:text-xs' : 'text-sm font-semibold text-emerald-300'
+))
+const deliveryClass = computed(() => (
+  isSummaryLayout.value
+    ? 'w-full rounded-lg border border-white/8 bg-white/[0.03] px-2.5 py-1.5'
+    : 'mt-3 rounded-xl border border-dark-700/80 bg-dark-700/45 px-3 py-2.5'
+))
+const helperClass = computed(() => (
+  isSummaryLayout.value
+    ? 'w-full rounded-lg border border-white/8 bg-white/[0.03] px-2.5 py-1.5'
+    : 'mt-3 rounded-xl border border-dark-700/80 bg-dark-700/45 px-3 py-2.5'
+))
 
-const statusBadgeText = computed(() => {
-  if (isDealCompleted.value) {
-    return isBuyer.value ? 'pages.chats.confirmReceipted' : 'pages.chats.dealCompleted'
-  }
-  if (effectiveDealStatus.value === 'cancelled') {
-    return 'pages.chats.cancelled'
-  }
-  if (effectiveDealStatus.value === 'refunded') {
-    return 'pages.chats.refundCompleted'
-  }
-  if (showFulfillmentConfirmedBadge.value) {
-    return 'pages.chats.fulfillmentConfirmed'
-  }
-  if (isAwaitingSellerFulfillment.value) {
-    return 'pages.chats.awaitSellerFulfillment'
-  }
-  return null
-})
 
 const deliverySummary = computed(() => (
   props.product.auto_delivery ? props.product.product_data_string || null : null
@@ -235,6 +268,22 @@ watch(showReviewModal, (isOpen) => {
   document.body.style.overflow = isOpen ? 'hidden' : ''
 })
 
+watch(
+  () => props.dealStatus,
+  (dealStatus) => {
+    localDealStatus.value = dealStatus ?? null
+  },
+  { immediate: true }
+)
+
+watch(
+  () => props.has_review,
+  (hasReview) => {
+    localHasReview.value = hasReview ?? false
+  },
+  { immediate: true }
+)
+
 onBeforeUnmount(() => {
   if (typeof document === 'undefined') return
   document.body.style.overflow = ''
@@ -242,85 +291,99 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="my-2 w-full min-w-0">
-    <div class="mx-auto w-full max-w-2xl min-w-0 overflow-hidden rounded-2xl border border-dark-700 bg-dark-800/55 p-4">
-      <div class="flex items-start gap-3">
-        <button
-          type="button"
-          class="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl border border-dark-600 bg-dark-700"
-          @click="handleViewProduct(product)"
-        >
-          <img
-            :src="`${API_HOST}${product.images?.[0]?.image_url}`"
-            :alt="product.title"
-            class="h-full w-full object-cover"
-            loading="lazy"
-          />
-        </button>
+  <div :class="rootClass">
+    <div :class="cardClass" class="flex min-w-0 flex-col">
+      <div v-if="isSummaryLayout" :class="summaryHeaderClass">
+        <div class="min-w-0">
+          <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-300/90 sm:text-xs sm:tracking-[0.14em]">
+            {{ $t('pages.chats.latestDeal') }}
+          </p>
+        </div>
 
-        <div class="min-w-0 flex-1">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div class="min-w-0 flex-1">
-              <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-300/90">
-                {{ $t('pages.chats.newPurchase') }}
-              </p>
-              <button
-                type="button"
-                class="mt-1 block min-w-0 text-left text-sm font-semibold text-white transition hover:text-blue-200"
-                @click="handleViewProduct(product)"
-              >
-                <span class="line-clamp-2">{{ product.title }}</span>
-              </button>
-            </div>
-
-            <p class="text-sm font-semibold text-emerald-300">
-              {{ formatCurrencyAmount(product.price) }}
-            </p>
-          </div>
-
-          <div class="mt-2 flex flex-wrap items-center gap-2">
-            <DealStatusTag :deal-status="currentDealStatus" />
-            <span v-if="statusBadgeText" class="text-xs text-gray-300">
-              {{ $t(statusBadgeText) }}
-            </span>
-          </div>
-
-          <div
-            v-if="deliverySummary"
-            class="mt-3 rounded-xl border border-dark-700/80 bg-dark-700/45 px-3 py-2.5"
-          >
-            <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-400">
-              {{ $t('pages.chats.productData') }}
-            </p>
-            <p class="mt-1 line-clamp-3 break-words text-sm leading-relaxed text-gray-200 [overflow-wrap:anywhere]">
-              {{ deliverySummary }}
-            </p>
-          </div>
-
-          <div
-            v-else-if="sellerActionTitle && sellerActionText"
-            class="mt-3 rounded-xl border border-blue-500/20 bg-blue-500/10 px-3 py-2.5"
-          >
-            <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-blue-300/90">
-              {{ $t(sellerActionTitle) }}
-            </p>
-            <p class="mt-1 text-sm leading-relaxed text-gray-200">
-              {{ $t(sellerActionText) }}
-            </p>
-          </div>
-
-          <div
-            v-else-if="buyerActionText"
-            class="mt-3 rounded-xl border border-dark-700/80 bg-dark-700/45 px-3 py-2.5"
-          >
-            <p class="text-sm leading-relaxed text-gray-300">
-              {{ $t(buyerActionText) }}
-            </p>
-          </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <DealStatusTag :deal-status="currentDealStatus" />
         </div>
       </div>
 
-      <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-dark-700/80 pt-3">
+      <div :class="contentClass">
+        <div :class="topRowClass">
+          <button
+            type="button"
+            :class="imageButtonClass"
+            @click="handleViewProduct(product)"
+          >
+            <img
+              :src="`${API_HOST}${product.images?.[0]?.image_url}`"
+              :alt="product.title"
+              class="h-full w-full object-cover"
+              loading="lazy"
+            />
+          </button>
+
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-start justify-between gap-2 sm:gap-3">
+              <div class="min-w-0 flex-1">
+                <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-300/90 sm:text-[11px] sm:tracking-[0.14em]">
+                  {{ $t(purchaseLabelKey) }}
+                </p>
+                <button
+                  type="button"
+                  :class="titleClass"
+                  @click="handleViewProduct(product)"
+                >
+                  <span class="line-clamp-2">{{ product.title }}</span>
+                </button>
+              </div>
+
+              <p :class="priceClass">
+                {{ formatCurrencyAmount(product.price) }}
+              </p>
+            </div>
+
+            <div
+              v-if="!isSummaryLayout"
+              class="mt-2 flex flex-wrap items-center gap-2"
+            >
+              <DealStatusTag :deal-status="currentDealStatus" />
+            </div>
+          </div>
+        </div>
+
+        <div
+          v-if="deliverySummary"
+          :class="deliveryClass"
+        >
+          <p class="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 sm:text-[11px]">
+            {{ $t('pages.chats.productData') }}
+          </p>
+          <p class="mt-1 line-clamp-3 break-words text-xs leading-relaxed text-gray-200 sm:text-sm [overflow-wrap:anywhere]">
+            {{ deliverySummary }}
+          </p>
+        </div>
+
+        <div
+          v-else-if="sellerActionTitle && sellerActionText"
+          :class="helperClass"
+        >
+          <p class="text-[10px] font-semibold uppercase tracking-[0.08em] text-blue-300/90 sm:text-[11px]">
+            {{ $t(sellerActionTitle) }}
+          </p>
+          <p class="mt-1 text-xs leading-relaxed text-gray-200 sm:text-sm">
+            {{ $t(sellerActionText) }}
+          </p>
+        </div>
+
+        <div
+          v-else-if="buyerActionText"
+          :class="helperClass"
+        >
+          <p class="text-xs leading-relaxed text-gray-300 sm:text-sm">
+            {{ $t(buyerActionText) }}
+          </p>
+        </div>
+      </div>
+
+      <div :class="actionsClass">
         <template v-if="canConfirmReceipt">
           <button
             class="flex items-center justify-center gap-2 rounded-lg border border-green-500 bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-green-700"
@@ -343,36 +406,6 @@ onBeforeUnmount(() => {
             </svg>
             {{ $t('pages.chats.confirmFulfillment') }}
           </button>
-        </template>
-
-        <template v-else-if="statusBadgeText">
-          <div class="flex items-center justify-center gap-2 rounded-lg border border-dark-600 bg-dark-700/70 px-4 py-2.5 text-sm font-semibold text-gray-200">
-            <svg
-              class="h-4 w-4"
-              :class="{
-                'text-yellow-400': isAwaitingSellerFulfillment,
-                'text-blue-400': showFulfillmentConfirmedBadge,
-                'text-green-400': isDealCompleted,
-                'text-orange-400': isDealRefunded,
-              }"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                v-if="isAwaitingSellerFulfillment"
-                fill-rule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3a1 1 0 00.293.707l2 2a1 1 0 101.414-1.414L11 9.586V7z"
-                clip-rule="evenodd"
-              />
-              <path
-                v-else
-                fill-rule="evenodd"
-                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                clip-rule="evenodd"
-              />
-            </svg>
-            {{ $t(statusBadgeText) }}
-          </div>
         </template>
 
         <template v-if="isSeller && effectiveDealStatus === 'pending'">
@@ -433,7 +466,7 @@ onBeforeUnmount(() => {
       </div>
 
       <template v-if="isDealCompleted && !localHasReview && isBuyer">
-        <div class="mt-3">
+        <div :class="reviewActionClass">
           <button
             class="market-primary-surface market-primary-hover flex items-center justify-center gap-2 rounded-lg border border-blue-500 px-4 py-2.5 text-sm font-semibold text-white"
             @click="openReviewModal"

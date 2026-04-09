@@ -48,6 +48,10 @@ export const useChatStore = defineStore('chat', {
       if (!chat) return
       if (update.last_message) {
         const incoming = update.last_message as ChatMessageUnion
+        if (incoming.message_type === 'update_deal_status_message') {
+          if (typeof update.unread_count === 'number') chat.unread_count = update.unread_count
+          return
+        }
         if (this.shouldApplyLastMessage(chat.last_message as ChatMessageUnion | null, incoming)) {
           chat.last_message = incoming
         }
