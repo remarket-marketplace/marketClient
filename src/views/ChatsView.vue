@@ -1401,12 +1401,20 @@ async function sendMessage(payload: { files: File[] }) {
                   </div>
                 </template>
 
-                <div v-if="selectedChatId" aria-hidden="true" class="h-[124px] w-full flex-none md:h-[108px]" />
+                <div
+                  v-if="selectedChatId"
+                  aria-hidden="true"
+                  class="h-[120px] w-full flex-none md:h-[108px]"
+                />
               </div>
 
-              <div v-if="selectedChatId"
-                class="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-transparent px-1 pb-2 pt-0">
-                <div v-if="lockReminderText" class="pointer-events-auto mx-1 mb-2 rounded-xl border px-3 py-2 text-sm"
+              <div
+                v-if="selectedChatId"
+                class="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-transparent px-1 pb-1 pt-0 md:pb-2"
+              >
+                <div
+                  v-if="lockReminderText"
+                  class="pointer-events-auto mx-1 mb-2 rounded-xl border px-3 py-2 text-sm"
                   :class="lockReminderType === 'sender'
                     ? 'border-amber-400/40 bg-amber-500/10 text-amber-200'
                     : 'border-blue-400/40 bg-blue-500/10 text-blue-200'">
