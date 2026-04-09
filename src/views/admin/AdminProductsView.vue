@@ -12,8 +12,9 @@ import {
   Search,
   ThumbsUp,
   ThumbsDown,
-  Edit,
   SlidersHorizontal,
+  ChevronDown,
+  Pencil,
 } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 import ProductStatusTag from '@/components/ProductStatusTag.vue';
@@ -23,6 +24,7 @@ import CustomSelect from '@/components/CustomSelect.vue';
 import ConfirmWindow from '@/components/ConfirmWindow.vue';
 import { formatCurrencyAmount } from '@/utils/currency';
 import { buildSlugKey } from '@/utils/urlKeys';
+import type { AuditLog } from '@/validation/audit/activityLog';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -34,6 +36,8 @@ const searchQuery = ref('');
 const sortBy = ref('created_desc');
 const statusFilter = ref('all');
 const isMobileFiltersOpen = ref(false);
+const isFiltersHiddenOnScroll = ref(false);
+const lastListScrollTop = ref(0);
 const pageSize = 20;
 const currentPage = ref(1);
 const totalPages = ref(1);
@@ -54,7 +58,15 @@ const selectedStatusReasonCode = ref('invalidDescription');
 const customStatusReason = ref('');
 const statusUpdateError = ref('');
 const isUpdatingStatus = ref(false);
+const productUpdatesById = ref<Record<string, AuditLog>>({});
+const expandedChangesByProductId = ref<Record<string, boolean>>({});
 let observer: IntersectionObserver | null = null;
+
+type ProductChangeItem = {
+  field: string;
+  before: unknown;
+  after: unknown;
+};
 
 async function loadProducts(page = 1, append = false) {
   try {
@@ -73,12 +85,41 @@ async function loadProducts(page = 1, append = false) {
     currentPage.value = data.currentPage;
     totalPages.value = data.totalPages;
     totalProducts.value = data.total;
+    await loadProductChangeLogs();
   } catch (error) {
     console.error('Error loading products:', error);
   } finally {
     isLoading.value = false;
     isLoadingMore.value = false;
     nextTick(setupObserver);
+  }
+}
+
+async function loadProductChangeLogs() {
+  try {
+    const response = await adminService.getActivityLogs(1, 200, {
+      action_type: 'product_updated',
+    });
+    const latestByProductId: Record<string, AuditLog> = {};
+
+    for (const log of response.logs) {
+      if (!log.product_id) continue;
+      if (!log.details || typeof log.details !== 'object') continue;
+
+      const details = log.details as Record<string, unknown>;
+      const hasBefore = !!details.before && typeof details.before === 'object';
+      const hasAfter = !!details.after && typeof details.after === 'object';
+      if (!hasBefore || !hasAfter) continue;
+
+      if (!latestByProductId[log.product_id]) {
+        latestByProductId[log.product_id] = log;
+      }
+    }
+
+    productUpdatesById.value = latestByProductId;
+  } catch (error) {
+    console.error('Error loading product change logs:', error);
+    productUpdatesById.value = {};
   }
 }
 
@@ -147,11 +188,7 @@ async function confirmRejectProduct() {
   isRejecting.value = true;
 
   try {
-    const response = await adminService.rejectProduct(
-      productToReject.value,
-      reasonCode,
-      reasonText,
-    );
+    const response = await adminService.rejectProduct(productToReject.value, reasonCode, reasonText);
     if (response) {
       await loadProducts();
     }
@@ -176,6 +213,97 @@ function cancelRejectProduct() {
 
 function formatPrice(price: number) {
   return formatCurrencyAmount(price);
+}
+
+function normalizeValue(value: unknown): unknown {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed.length ? trimmed : null;
+  }
+  return value;
+}
+
+function isValueChanged(before: unknown, after: unknown): boolean {
+  return JSON.stringify(normalizeValue(before)) !== JSON.stringify(normalizeValue(after));
+}
+
+function getProductChanges(productId: string): ProductChangeItem[] {
+  const log = productUpdatesById.value[productId];
+  if (!log?.details || typeof log.details !== 'object') return [];
+
+  const details = log.details as Record<string, unknown>;
+  const beforeRaw = details.before;
+  const afterRaw = details.after;
+
+  if (!beforeRaw || typeof beforeRaw !== 'object' || !afterRaw || typeof afterRaw !== 'object') {
+    return [];
+  }
+
+  const before = beforeRaw as Record<string, unknown>;
+  const after = afterRaw as Record<string, unknown>;
+  const keys = Array.from(new Set([...Object.keys(before), ...Object.keys(after)]));
+
+  return keys
+    .filter((key) => key !== 'status')
+    .filter((key) => isValueChanged(before[key], after[key]))
+    .map((key) => ({
+      field: key,
+      before: before[key],
+      after: after[key],
+    }));
+}
+
+function hasProductChanges(productId: string): boolean {
+  return getProductChanges(productId).length > 0;
+}
+
+function toggleChanges(productId: string) {
+  expandedChangesByProductId.value[productId] = !expandedChangesByProductId.value[productId];
+}
+
+function isChangesExpanded(productId: string): boolean {
+  return !!expandedChangesByProductId.value[productId];
+}
+
+function getChangesPanelId(productId: string): string {
+  return `product-changes-${productId}`;
+}
+
+function getChangeFieldLabel(field: string): string {
+  const key = `pages.admin.productsPage.changeFields.${field}`;
+  const translated = t(key);
+  return translated === key ? field : translated;
+}
+
+function formatChangeValue(value: unknown): string {
+  if (value === null || value === undefined) {
+    return t('common.notSpecified');
+  }
+  if (typeof value === 'boolean') {
+    return value ? t('common.yes') : t('common.no');
+  }
+  if (typeof value === 'number') {
+    return String(value);
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed.length ? trimmed : t('common.notSpecified');
+  }
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function isNumericValue(value: unknown): boolean {
+  if (typeof value === 'number') return Number.isFinite(value);
+  if (typeof value === 'string') {
+    const normalized = value.trim().replace(',', '.');
+    if (!normalized) return false;
+    return !Number.isNaN(Number(normalized));
+  }
+  return false;
 }
 
 const normalizedQuery = computed(() => searchQuery.value.trim().toLowerCase());
@@ -231,6 +359,10 @@ const displayTotal = computed(() => {
   return totalProducts.value;
 });
 
+const mobileFiltersCount = computed(
+  () => Number(sortBy.value !== 'created_desc') + Number(statusFilter.value !== 'all')
+);
+
 const statusOptions = computed(() => {
   const uniqueStatuses = Array.from(new Set(products.value.map(product => product.status)));
   return [
@@ -242,6 +374,30 @@ const statusOptions = computed(() => {
   ];
 });
 
+function resetFilters() {
+  sortBy.value = 'created_desc';
+  statusFilter.value = 'all';
+}
+
+function handleListScroll(event: Event) {
+  const target = event.target as HTMLElement | null;
+  if (!target) return;
+
+  const nextTop = target.scrollTop;
+  const delta = nextTop - lastListScrollTop.value;
+
+  if (nextTop <= 8) {
+    isFiltersHiddenOnScroll.value = false;
+  } else if (delta > 8) {
+    isFiltersHiddenOnScroll.value = true;
+    isMobileFiltersOpen.value = false;
+  } else if (delta < -8) {
+    isFiltersHiddenOnScroll.value = false;
+  }
+
+  lastListScrollTop.value = nextTop;
+}
+
 const rejectReasonOptions = computed(() => [
   { value: 'invalidDescription', label: t('common.productRejectReasons.invalidDescription') },
   { value: 'prohibitedContent', label: t('common.productRejectReasons.prohibitedContent') },
@@ -249,6 +405,8 @@ const rejectReasonOptions = computed(() => [
   { value: 'termsViolation', label: t('common.productRejectReasons.termsViolation') },
   { value: 'otherReason', label: t('common.productRejectReasons.otherReason') },
 ]);
+
+const rejectConfirmMessage = computed(() => t('pages.admin.productsPage.confirmRejectMessage'));
 
 const productStatusOptions = computed(() => ([
   { value: 'active', label: t('common.productStatuses.active') },
@@ -348,6 +506,8 @@ function setupObserver() {
 
 watch([searchQuery, sortBy, statusFilter], () => {
   if (listRef.value) listRef.value.scrollTop = 0;
+  isFiltersHiddenOnScroll.value = false;
+  lastListScrollTop.value = 0;
   nextTick(setupObserver);
 });
 </script>
@@ -368,7 +528,11 @@ watch([searchQuery, sortBy, statusFilter], () => {
       </div>
     </div>
 
-    <div class="flex flex-col gap-2">
+    <div
+      class="sticky top-0 z-20 -mx-1 px-1 pb-2 admin-filters-sticky filters-shell"
+      :class="{ 'filters-hidden': isFiltersHiddenOnScroll && !isMobileFiltersOpen }"
+    >
+      <div class="flex flex-col gap-2">
       <SearchField v-model="searchQuery" :placeholder="$t('common.search')" />
       <div class="sm:hidden">
         <button
@@ -382,14 +546,15 @@ watch([searchQuery, sortBy, statusFilter], () => {
             {{
               isMobileFiltersOpen
                 ? $t('pages.admin.activityLogs.hideFilters')
-                : $t('pages.admin.activityLogs.showFilters')
+                : $t('common.filtersLabel')
             }}
+            <template v-if="!isMobileFiltersOpen && mobileFiltersCount"> ({{ mobileFiltersCount }})</template>
           </span>
         </button>
       </div>
       <div
-        class="grid grid-cols-1 sm:grid-cols-2 gap-2"
-        :class="{ 'hidden sm:grid': !isMobileFiltersOpen }"
+        class="grid grid-cols-1 sm:grid-cols-2 gap-2 mobile-filter-panel"
+        :class="{ 'mobile-filter-panel-collapsed': !isMobileFiltersOpen }"
       >
         <CustomSelect
           v-model="sortBy"
@@ -409,6 +574,18 @@ watch([searchQuery, sortBy, statusFilter], () => {
           :placeholder="$t('common.filters.status')"
         />
       </div>
+      <div
+        class="sm:hidden flex gap-2 mobile-filter-actions"
+        :class="{ 'mobile-filter-actions-collapsed': !isMobileFiltersOpen }"
+      >
+        <button type="button" class="admin-btn admin-btn-ghost flex-1 justify-center" @click="resetFilters">
+          {{ $t('common.reset') }}
+        </button>
+        <button type="button" class="admin-btn admin-btn-primary flex-1 justify-center" @click="isMobileFiltersOpen = false">
+          {{ $t('common.apply') }}
+        </button>
+      </div>
+      </div>
     </div>
 
     <!-- Список товаров -->
@@ -425,17 +602,18 @@ watch([searchQuery, sortBy, statusFilter], () => {
         </div>
       </div>
 
-      <div ref="listRef" v-else class="h-full overflow-y-auto space-y-2">
+      <div ref="listRef" v-else class="h-full overflow-y-auto space-y-2" @scroll="handleListScroll">
         <!-- Карточка товара -->
         <div
           v-for="product in sortedProducts"
           :key="product.id"
-          class="admin-surface-card rounded-[1.4rem] p-2 sm:p-4"
+          class="admin-surface-card product-list-card rounded-[1.2rem] p-2.5 sm:p-3"
+          :class="{ 'product-has-changes': product.status === 'moderation' && hasProductChanges(product.id) }"
         >
           <!-- Основной контент -->
           <div class="flex flex-col gap-2">
             <!-- Верхняя часть: изображение и заголовок -->
-            <div class="flex justify-between gap-2 sm:gap-4">
+            <div class="flex items-start justify-between gap-2 sm:gap-3.5">
               <!-- Изображение товара -->
               <div class="flex-shrink-0">
                 <div class="relative">
@@ -450,27 +628,34 @@ watch([searchQuery, sortBy, statusFilter], () => {
 
               <!-- Информация о товаре -->
               <div class="flex-1 min-w-0">
-                <div class="flex flex-col gap-1 sm:gap-2">
+                <div class="flex flex-col gap-1.5">
                   <!-- Заголовок и статус -->
                   <div class="flex flex-col gap-1">
                     <h3 
-                      class="text-sm sm:text-lg font-semibold text-mainText line-clamp-2 cursor-pointer"
+                      class="text-sm sm:text-[1.45rem] leading-tight font-semibold text-mainText line-clamp-2 cursor-pointer"
                       @click="navigateToProduct(product.id, product.slug)"
                     >
                       {{ product.title }}
                     </h3>
                     <div class="flex gap-1 flex-wrap">
                       <ProductStatusTag :product-status="product.status" />
+                      <span
+                        v-if="product.status === 'moderation' && hasProductChanges(product.id)"
+                        class="inline-flex items-center gap-1 rounded-full border border-white/7 bg-transparent px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-gray-500"
+                      >
+                        <Pencil class="h-2.5 w-2.5 opacity-70" />
+                        {{ $t('pages.admin.productsPage.changedStatus') }}
+                      </span>
                     </div>
                   </div>
 
                   <!-- Цена и продавец -->
-                  <div class="flex flex-col gap-1 text-xs sm:text-sm">
-                    <div class="flex items-center gap-1 text-green-400 font-semibold">
+                  <div class="flex flex-col gap-0.5 text-xs sm:text-sm">
+                    <div class="flex items-center gap-1 text-green-400 font-semibold leading-none">
                       <span>{{ formatPrice(product.price) }}</span>
                     </div>
                     
-                    <div class="flex items-center gap-1 text-text-secondary">
+                    <div class="flex items-center gap-1 text-text-secondary leading-tight">
                       <User class="w-3 h-3 sm:w-4 sm:h-4" />
                       <span 
                         class="cursor-pointer truncate"
@@ -480,14 +665,18 @@ watch([searchQuery, sortBy, statusFilter], () => {
                       </span>
                     </div>
                   </div>
+
+                  <p class="text-xs text-text-secondary/90 line-clamp-2 leading-[1.25]">
+                    {{ product.description }}
+                  </p>
                 </div>
               </div>
 
-              <div class="hidden lg:flex h-[max-content]">
-                <div class="flex gap-2">
+              <div class="hidden lg:flex h-[max-content] self-start pt-0.5 flex-col items-end gap-2">
+                <div class="flex flex-wrap justify-end gap-1.5 admin-actions-group">
                   <button
                     @click="navigateToProduct(product.id, product.slug)"
-                    class="admin-btn admin-btn-primary px-4 py-3 text-xs"
+                    class="admin-btn admin-btn-ghost px-3.5 py-2.5 text-xs text-gray-200 border-white/12 hover:border-white/25 hover:bg-white/5 admin-action-btn"
                   >
                     <Search class="w-4 h-4" />
                     <span>{{ $t('common.view') }}</span>
@@ -495,17 +684,16 @@ watch([searchQuery, sortBy, statusFilter], () => {
                   <button
                     @click="openStatusConfirm(product)"
                     :disabled="processingProductId === product.id"
-                    class="admin-btn admin-btn-ghost px-4 py-3 text-xs"
+                    class="admin-btn admin-btn-primary px-3.5 py-2.5 text-xs admin-btn-primary-soft admin-action-btn"
                   >
-                    <Edit class="w-4 h-4" />
-                    <span>{{ $t('common.status') }}</span>
+                    <span class="whitespace-nowrap">{{ $t('pages.admin.productsPage.changeStatusAction') }}</span>
                   </button>
 
                   <template v-if="product.status === 'moderation'">
                   <button
                     @click="approveProduct(product.id)"
                     :disabled="processingProductId === product.id"
-                    class="admin-btn admin-btn-success px-4 py-3 text-xs"
+                    class="admin-btn admin-btn-ghost px-3.5 py-2.5 text-xs admin-btn-moderation-approve admin-action-btn"
                   >
                     <ThumbsUp class="w-4 h-4" />
                     <span>{{ $t('common.approve') }}</span>
@@ -514,27 +702,104 @@ watch([searchQuery, sortBy, statusFilter], () => {
                   <button
                     @click="openRejectConfirm(product.id)"
                     :disabled="processingProductId === product.id"
-                    class="admin-btn admin-btn-danger px-4 py-3 text-xs"
+                    class="admin-btn admin-btn-ghost px-3.5 py-2.5 text-xs admin-btn-moderation-reject admin-action-btn"
                   >
                     <ThumbsDown class="w-4 h-4" />
                     <span>{{ $t('common.reject') }}</span>
                   </button>
                   </template>
                 </div>
+                <div class="text-[11px] text-text-secondary/80 text-right leading-tight flex flex-col items-end gap-0.5">
+                  <div>{{ $t('common.created') }}: {{ new Date(product.created_at).toLocaleDateString('ru-RU') }}</div>
+                  <div class="flex items-center justify-end gap-1">
+                    <Image class="w-3 h-3" />
+                    <span>{{ $t('common.images') }}: {{ product.images.length }}</span>
+                  </div>
+                  <div class="flex items-center justify-end gap-1">
+                    <Folder class="w-3 h-3" />
+                    <span>{{ product.category.name }}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <!-- Описание (только на мобилках если есть место) -->
-            <p class="text-xs text-text-secondary line-clamp-2 sm:hidden">
-              {{ product.description }}
-            </p>
+            <div
+              v-if="product.status === 'moderation' && hasProductChanges(product.id)"
+              class="change-panel rounded-xl overflow-hidden"
+            >
+              <button
+                type="button"
+                class="change-panel-header flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left"
+                @click="toggleChanges(product.id)"
+                :aria-expanded="isChangesExpanded(product.id)"
+                :aria-controls="getChangesPanelId(product.id)"
+              >
+                <div class="flex min-w-0 items-center gap-2.5">
+                  <div class="change-panel-dot">
+                    <Pencil class="h-3 w-3 text-slate-300" />
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-[10px] uppercase tracking-[0.16em] text-gray-400">
+                      {{ $t('pages.admin.productsPage.changedStatus') }}
+                    </p>
+                    <p class="truncate text-xs sm:text-sm font-medium text-mainText">
+                      {{ $t('pages.admin.productsPage.showChanges') }} ({{ getProductChanges(product.id).length }})
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="change-panel-count">
+                    {{ getProductChanges(product.id).length }}
+                  </span>
+                  <ChevronDown
+                    class="h-4 w-4 text-gray-300 transition-transform duration-200"
+                    :class="{ 'rotate-180': isChangesExpanded(product.id) }"
+                  />
+                </div>
+              </button>
+              <div
+                v-if="isChangesExpanded(product.id)"
+                :id="getChangesPanelId(product.id)"
+                class="border-t border-white/10 px-3 py-2"
+              >
+                <div class="space-y-1.5">
+                  <div class="hidden sm:grid grid-cols-[170px_1fr_1fr] gap-1.5 px-2 text-[10px] uppercase tracking-[0.1em] text-gray-500">
+                    <span>{{ $t('pages.admin.productsPage.changeTableField') }}</span>
+                    <span>{{ $t('pages.admin.productsPage.changeTableBefore') }}</span>
+                    <span>{{ $t('pages.admin.productsPage.changeTableAfter') }}</span>
+                  </div>
+                  <div
+                    v-for="change in getProductChanges(product.id)"
+                    :key="`${product.id}-${change.field}`"
+                    class="change-table-row grid grid-cols-1 sm:grid-cols-[170px_1fr_1fr] gap-1.5 rounded-lg px-2.5 py-1.5"
+                  >
+                    <div class="change-cell change-cell-field text-[11px] sm:text-xs font-semibold text-gray-100">
+                      {{ getChangeFieldLabel(change.field) }}
+                    </div>
+                    <div class="change-cell change-value change-value-before rounded-md px-2 py-1.5 text-text-secondary text-[11px] sm:text-xs">
+                      <span class="sm:hidden text-gray-500 mr-1">{{ $t('common.before') }}:</span>
+                      <span :class="{ 'change-value-number': isNumericValue(change.before) }">
+                        {{ formatChangeValue(change.before) }}
+                      </span>
+                    </div>
+                    <div class="change-cell change-value change-value-after rounded-md px-2 py-1.5 text-mainText text-[11px] sm:text-xs">
+                      <span class="sm:hidden text-gray-500 mr-1">{{ $t('common.after') }}:</span>
+                      <span class="hidden sm:inline text-slate-500 mr-1">→</span>
+                      <span :class="{ 'change-value-number': isNumericValue(change.after) }">
+                        {{ formatChangeValue(change.after) }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <!-- Действия модерации -->
             <div class="flex lg:hidden flex-col gap-1 sm:gap-2">
               <!-- Кнопка просмотра -->
               <button
                 @click="navigateToProduct(product.id, product.slug)"
-                class="admin-btn admin-btn-primary admin-btn-xs justify-center flex-1"
+                class="admin-btn admin-btn-ghost admin-btn-xs justify-center flex-1 text-gray-200 border-white/12 hover:border-white/25 hover:bg-white/5"
               >
                 <Search class="w-3 h-3" />
                 <span>{{ $t('common.view') }}</span>
@@ -543,10 +808,9 @@ watch([searchQuery, sortBy, statusFilter], () => {
               <button
                 @click="openStatusConfirm(product)"
                 :disabled="processingProductId === product.id"
-                class="admin-btn admin-btn-ghost admin-btn-xs justify-center flex-1"
+                class="admin-btn admin-btn-primary admin-btn-xs justify-center flex-1 admin-btn-primary-soft"
               >
-                <Edit class="w-3 h-3" />
-                <span>{{ $t('common.status') }}</span>
+                <span class="whitespace-nowrap">{{ $t('common.status') }}</span>
               </button>
 
               <!-- Кнопки модерации (только для товаров на модерации) -->
@@ -554,7 +818,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
                 <button
                   @click="approveProduct(product.id)"
                   :disabled="processingProductId === product.id"
-                  class="admin-btn admin-btn-success admin-btn-xs justify-center flex-1"
+                  class="admin-btn admin-btn-ghost admin-btn-xs justify-center flex-1 admin-btn-moderation-approve"
                 >
                   <ThumbsUp class="w-3 h-3" />
                   <span>{{ $t('common.approve') }}</span>
@@ -563,7 +827,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
                 <button
                   @click="openRejectConfirm(product.id)"
                   :disabled="processingProductId === product.id"
-                  class="admin-btn admin-btn-danger admin-btn-xs justify-center flex-1"
+                  class="admin-btn admin-btn-ghost admin-btn-xs justify-center flex-1 admin-btn-moderation-reject"
                 >
                   <ThumbsDown class="w-3 h-3" />
                   <span>{{ $t('common.reject') }}</span>
@@ -573,17 +837,19 @@ watch([searchQuery, sortBy, statusFilter], () => {
           </div>
 
           <!-- Дополнительная информация -->
-          <div class="mt-2 pt-2 border-t border-white/8 text-[10px] sm:text-xs text-text-secondary">
-            <div class="flex flex-col xs:flex-row gap-1 xs:gap-2">
-              <div class="truncate">{{ $t('common.created') }}: {{ new Date(product.created_at).toLocaleDateString('ru-RU') }}</div>
-              <div class="flex items-center gap-1">
+          <div class="mt-1.5 pt-1.5 border-t border-white/8 text-[10px] sm:text-xs text-text-secondary/90 lg:hidden">
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span class="truncate">{{ $t('common.created') }}: {{ new Date(product.created_at).toLocaleDateString('ru-RU') }}</span>
+              <span class="text-white/20">•</span>
+              <span class="inline-flex items-center gap-1">
                 <Image class="w-2 h-2 sm:w-3 sm:h-3" />
-                <span>{{ $t('common.images') }}: {{ product.images.length }}</span>
-              </div>
-              <div class="flex items-center gap-1 sm:hidden">
+                {{ $t('common.images') }}: {{ product.images.length }}
+              </span>
+              <span class="text-white/20 sm:hidden">•</span>
+              <span class="inline-flex items-center gap-1 sm:hidden">
                 <Folder class="w-2 h-2" />
                 <span class="truncate">{{ product.category.name }}</span>
-              </div>
+              </span>
             </div>
             
             <!-- Дополнительные данные (только на десктопе) -->
@@ -603,7 +869,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
     <ConfirmWindow
       :is-open="confirmRejectWindowOpen"
       :title="$t('common.reject')"
-      :message="$t('pages.admin.productsPage.confirmRejectMessage')"
+      :message="rejectConfirmMessage"
       :confirm-text="$t('common.reject')"
       :cancel-text="$t('common.cancel')"
       :is-loading="isRejecting"
@@ -727,10 +993,229 @@ button {
   min-height: 32px;
 }
 
+.admin-btn:focus-visible,
+.change-panel-header:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 1px rgba(148, 163, 184, 0.55),
+    0 0 0 3px rgba(56, 189, 248, 0.22);
+}
+
 /* Убедимся что текст не выходит за пределы */
 .truncate {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.admin-filters-sticky {
+  background: linear-gradient(to bottom, rgba(5, 8, 15, 0.96), rgba(5, 8, 15, 0.78) 70%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+.filters-shell {
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1), opacity 260ms ease, max-height 260ms ease, margin 260ms ease;
+}
+
+.mobile-filter-panel {
+  transition: max-height 240ms ease, opacity 220ms ease, transform 220ms ease, margin 220ms ease;
+}
+
+@media (max-width: 639px) {
+  .mobile-filter-panel {
+    max-height: 220px;
+    opacity: 1;
+    transform: translateY(0);
+    overflow: hidden;
+  }
+
+  .mobile-filter-panel-collapsed {
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-6px);
+    margin-top: -0.15rem;
+    pointer-events: none;
+  }
+
+  .mobile-filter-actions {
+    max-height: 64px;
+    opacity: 1;
+    transform: translateY(0);
+    overflow: hidden;
+    transition: max-height 240ms ease, opacity 220ms ease, transform 220ms ease, margin 220ms ease;
+  }
+
+  .mobile-filter-actions-collapsed {
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-6px);
+    margin-top: -0.15rem;
+    pointer-events: none;
+  }
+}
+
+.filters-hidden {
+  transform: translateY(-10px);
+  opacity: 0;
+  max-height: 0;
+  margin-bottom: -0.25rem;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.product-list-card {
+  position: relative;
+  transition: border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+}
+
+.product-list-card:hover {
+  border-color: rgba(148, 163, 184, 0.22);
+  background: rgba(255, 255, 255, 0.012);
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.3);
+}
+
+.product-has-changes::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 14px;
+  bottom: 14px;
+  width: 2px;
+  border-radius: 9999px;
+  background: rgba(99, 102, 241, 0.45);
+}
+
+.change-panel {
+  position: relative;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(1px);
+  box-shadow: none;
+}
+
+.change-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: none;
+}
+
+.change-panel-header {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+  transition: background-color 180ms ease;
+}
+
+.change-panel-header:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.change-panel-header {
+  color: rgba(241, 245, 249, 0.96);
+}
+
+.change-panel-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 1.6rem;
+  width: 1.6rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.change-panel-count {
+  display: inline-flex;
+  min-width: 1.7rem;
+  justify-content: center;
+  border-radius: 9999px;
+  border: none;
+  background: rgba(148, 163, 184, 0.08);
+  padding: 0.08rem 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #cbd5e1;
+}
+
+.change-table-row {
+  border: none;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.change-cell {
+  min-width: 0;
+}
+
+.change-cell-field {
+  align-self: center;
+}
+
+.change-value {
+  border: none;
+  background: rgba(255, 255, 255, 0.014);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.change-value-before {
+  border-left: 2px solid rgba(148, 163, 184, 0.2);
+}
+
+.change-value-after {
+  border-left: 2px solid rgba(148, 163, 184, 0.26);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.change-value-number {
+  font-weight: 700;
+  color: rgba(241, 245, 249, 0.96);
+}
+
+.admin-actions-group .admin-btn {
+  min-height: 38px;
+}
+
+.admin-action-btn {
+  width: 148px;
+  justify-content: center;
+}
+
+.admin-btn-primary-soft {
+  border-color: rgba(59, 130, 246, 0.38);
+  background: rgba(37, 99, 235, 0.18);
+  color: rgb(219 234 254);
+}
+
+.admin-btn-primary-soft:hover {
+  border-color: rgba(96, 165, 250, 0.5);
+  background: rgba(37, 99, 235, 0.26);
+}
+
+.admin-btn-moderation-approve {
+  color: rgba(209, 250, 229, 0.82);
+  border-color: rgba(148, 163, 184, 0.18);
+  background: transparent;
+}
+
+.admin-btn-moderation-approve:hover,
+.admin-btn-moderation-approve:focus-visible {
+  color: rgba(167, 243, 208, 0.98);
+  border-color: rgba(52, 211, 153, 0.38);
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.admin-btn-moderation-reject {
+  color: rgba(254, 202, 202, 0.92);
+  border-color: rgba(251, 113, 133, 0.24);
+  background: rgba(244, 63, 94, 0.04);
+}
+
+.admin-btn-moderation-reject:hover,
+.admin-btn-moderation-reject:focus-visible {
+  color: rgba(254, 202, 202, 0.98);
+  border-color: rgba(251, 113, 133, 0.38);
+  background: rgba(244, 63, 94, 0.12);
 }
 </style>
