@@ -384,7 +384,6 @@ function goToChat(chatId: string) {
 
 function handleClickOutside(event: MouseEvent) {
   if (showMenu.value && menuContainerRef.value && !menuContainerRef.value.contains(event.target as Node)) showMenu.value = false
-  if (showShareModal.value && shareModalRef.value && !shareModalRef.value.contains(event.target as Node)) closeShareModal()
 }
 
 function triggerFileInput() { if (isOwner.value && fileInputRef.value) fileInputRef.value.click() }
@@ -644,7 +643,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                       <Wallet class="w-4 h-4" />
                       <span>{{ t('pages.profile.wallet') }}</span>
                     </button>
-                    <button @click="openShareModal"
+                    <button @click.stop="openShareModal" type="button"
                       class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-gray-300 hover:bg-dark-700/50 transition-colors">
                       <Share2 class="w-4 h-4" />
                       <span>{{ t('pages.profile.share') }}</span>
@@ -673,7 +672,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                       {{ isSubscribedToSeller ? t('pages.profile.unsubscribe') : t('pages.profile.subscribe') }}
                     </span>
                   </button>
-                  <button @click.stop="openShareModal"
+                  <button @click.stop="openShareModal" type="button"
                     class="w-8 h-8 flex items-center justify-center rounded-lg border border-dark-600 bg-dark-700/50 hover:bg-dark-700 transition-colors"
                     :title="t('pages.profile.share')">
                     <Share2 class="w-4 h-4 text-gray-300" />
@@ -1158,6 +1157,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
       <!-- Share Modal -->
       <Teleport to="body">
         <div v-if="showShareModal"
+          @click.self="closeShareModal"
           class="app-modal-overlay z-50 bg-black/90 backdrop-blur-sm">
           <div ref="shareModalRef"
             class="app-modal-panel relative w-full max-w-md overflow-y-auto rounded-2xl border border-dark-600 bg-dark-800/95 p-4 backdrop-blur-sm sm:p-6 space-y-6"
