@@ -571,8 +571,8 @@ async function loadSubcategoriesForCategory(categoryId: string): Promise<void> {
   }
 
   try {
-    const subcategoriesData = await categoryService.getSubcategories(categoryId)
-    subcategories.value = subcategoriesData.categories.filter(
+    const subcategoriesData = await categoryService.getSubcategoriesFlat(categoryId)
+    subcategories.value = subcategoriesData.filter(
       (subcategory: Category) => subcategory.is_active,
     )
     if (!subcategories.value.some(subcategory => subcategory.id === selectedSubcategoryId.value)) {
@@ -724,8 +724,8 @@ onMounted(async () => {
     }
 
     await store.fetchUser()
-    const categoriesData = await categoryService.getAllCategories()
-    categories.value = categoriesData.categories.filter(
+    const categoriesData = await categoryService.getAllCategoriesFlat()
+    categories.value = categoriesData.filter(
       (category: Category) => category.is_active,
     )
     const commission = await productService.getCommissionInterest()
