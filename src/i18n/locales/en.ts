@@ -1138,7 +1138,7 @@ const en = {
       waitReplyReminderSender: "To continue chatting, wait for the other user to reply.",
       waitReplyReminderRecipient: "This user will be able to send more messages only after your reply.",
       newPurchase: "New purchase",
-      latestDeal: "Latest deal",
+      currentDeal: "Current deal",
       newPriceOffer: "New price offer",
       imageMessage: "Photo",
       newAdminMessage: "New message from support",

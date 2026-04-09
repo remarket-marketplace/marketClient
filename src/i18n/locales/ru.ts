@@ -1137,7 +1137,7 @@ const ru = {
       waitReplyReminderSender: "Чтобы продолжить общение, дождитесь ответа собеседника.",
       waitReplyReminderRecipient: "Пользователь сможет отправлять вам сообщения только после вашего ответа.",
       newPurchase: "Новая покупка",
-      latestDeal: "Последняя сделка",
+      currentDeal: "Текущая сделка",
       newPriceOffer: "Новое предложение цены",
       imageMessage: "Фото",
       newAdminMessage: "Новое сообщение от поддержки",

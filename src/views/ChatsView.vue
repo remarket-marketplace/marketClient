@@ -43,6 +43,7 @@ const isLoadingMoreMessages = ref(false)
 const pageErrorMessage = ref<string | null>(null)
 const sendErrorMessage = ref<string | null>(null)
 const isMobile = ref(false)
+const isDealSummaryCollapsed = ref(false)
 const mobileMode = ref<'chats' | 'chat'>('chats')
 const store = useUserStore()
 const user = ref<UserRead | null>(null)
@@ -616,6 +617,14 @@ const latestDealHasReview = computed(() => {
   if (!latestDealMessage.value) return false
   return latestDealMessage.value.has_review || reviewedDealIds.value.includes(latestDealMessage.value.deal_id)
 })
+const isLatestDealSummaryCollapsible = computed(() => latestDealMessage.value !== null)
+const latestDealTimelinePaddingClass = computed(() => {
+  if (!latestDealMessage.value) return 'pt-2'
+  if (isDealSummaryCollapsed.value) {
+    return 'pt-13'
+  }
+  return 'pt-27 lg:pt-34'
+})
 
 const hasDealSignals = computed(() => {
   if (latestDealMessage.value) {
@@ -697,6 +706,11 @@ const chatParticipantIds = computed<string[]>(() => {
 
 const checkMobile = () => {
   isMobile.value = window.innerWidth < 768
+}
+
+function toggleLatestDealSummaryCollapse() {
+  if (!isLatestDealSummaryCollapsible.value) return
+  isDealSummaryCollapsed.value = !isDealSummaryCollapsed.value
 }
 
 function openChatProfile() {
@@ -781,6 +795,7 @@ watch(selectedChatId, () => {
   sendErrorMessage.value = null
   floatingDateLabel.value = null
   isFloatingDateVisible.value = false
+  isDealSummaryCollapsed.value = false
   latestDealMessage.value = null
   liveDealStatusOverrides.value = {}
   clearDeferredBottomPinTimers()
@@ -1043,6 +1058,7 @@ async function loadChatMessages(
     hasUserScrolledAwayFromTop.value = false
     previousMessageScrollTop.value = 0
     chatMessages.value = []
+    isDealSummaryCollapsed.value = false
     latestDealMessage.value = null
     liveDealStatusOverrides.value = {}
     currentPage.value = 1
@@ -1271,8 +1287,8 @@ async function sendMessage(payload: { files: File[] }) {
         }">
           <div class="flex w-full min-w-0 flex-grow flex-col overflow-hidden">
             <div v-if="currentChat"
-              class="sticky top-0 z-10 mx-1 flex items-center gap-2 bg-background px-2 py-2 lg:mx-2 lg:border-b lg:border-dark-700 lg:px-3 lg:py-3">
-              <button v-if="isMobile" class="text-xl font-bold flex-shrink-0" @click="backToChats">
+              class="sticky top-0 z-10 mx-1 flex items-center gap-2 bg-background px-2 py-1.5 lg:mx-2 lg:border-b lg:border-dark-700 lg:px-3 lg:py-3">
+              <button v-if="isMobile" class="flex h-7 w-7 flex-shrink-0 items-center justify-center" @click="backToChats">
                 <ArrowLeft />
               </button>
               <button v-if="currentChat" type="button"
@@ -1280,29 +1296,28 @@ async function sendMessage(payload: { files: File[] }) {
                 :class="isSupportChat ? 'cursor-default' : 'cursor-pointer focus:outline-none'"
                 :disabled="isSupportChat" @click="openChatProfile">
                 <!-- Аватар чата -->
-                <div class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
+                <div class="h-7 w-7 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
                   <!-- Для чата поддержки - иконка на синем фоне -->
                   <div v-if="isSupportChat"
-                    class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center rounded-full bg-blue-500/20 border-2 border-blue-500/30">
+                    class="h-7 w-7 lg:h-10 lg:w-10 flex items-center justify-center rounded-full bg-blue-500/20 border-2 border-blue-500/30">
                     <Headphones class="w-4 h-4 lg:w-5 lg:h-5 text-blue-400" />
                   </div>
                   <!-- Для обычного чата - фото или инициалы -->
                   <UserAvatar v-else :avatar-url="chatDisplayAvatarUrl" :alt="chatDisplayName"
-                    class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-dark-600 rounded-full object-cover" />
+                    class="h-7 w-7 lg:h-10 lg:w-10 border-2 border-dark-600 rounded-full object-cover" />
                 </div>
 
                 <!-- Информация о чате -->
-                <div class="flex min-w-0 flex-col">
+                <div class="flex min-w-0 flex-col justify-center">
                   <!-- Имя чата -->
-                  <p v-if="isSupportChat" class="truncate font-semibold text-lg text-blue-500">
+                  <p v-if="isSupportChat" class="truncate font-semibold text-base text-blue-500 lg:text-lg">
                     {{ chatDisplayName }}
                   </p>
                   <div v-else class="w-full min-w-0 truncate">
                     <StyledUsername :username="chatDisplayName" :style-id="currentChat?.another_user.nickname_style_id"
-                      class="text-lg font-semibold" />
+                      class="text-base font-semibold leading-tight lg:text-lg" />
                   </div>
-                  <!-- Статус онлайн -->
-                  <p class="text-xs" :class="isChatDisplayOnline ? 'text-green-500' : 'text-gray-500'">
+                  <p class="mt-0.5 text-[11px] leading-none" :class="isChatDisplayOnline ? 'text-green-500' : 'text-gray-500'">
                     {{ chatDisplayStatus }}
                   </p>
                 </div>
@@ -1313,10 +1328,10 @@ async function sendMessage(payload: { files: File[] }) {
               <FloatingDateHeader :label="isFloatingDateVisible ? floatingDateLabel : null" />
               <div
                 v-if="currentChat && latestDealMessage"
-                class="pointer-events-none absolute inset-x-0 top-0 z-10 px-1.5 pt-2 lg:px-4 lg:pt-3"
+                class="pointer-events-none absolute inset-x-0 top-0 z-10 px-1.5 pt-1.5 lg:px-4 lg:pt-3"
               >
                 <div
-                  class="message-compose-shell pointer-events-auto flex items-start rounded-[24px] border border-white/10 bg-background/90 px-2.5 py-2 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 lg:rounded-[26px] lg:px-3 lg:py-2.5"
+                  class="message-compose-shell pointer-events-auto flex items-start rounded-[22px] border border-white/10 bg-background/90 px-2 py-1.5 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 lg:rounded-[26px] lg:px-3 lg:py-2.5"
                 >
                   <NewPurchaseMessage
                     :product="latestDealMessage.product"
@@ -1324,6 +1339,9 @@ async function sendMessage(payload: { files: File[] }) {
                     :deal-status="latestDealStatus"
                     :has_review="latestDealHasReview"
                     layout="summary"
+                    :collapsed="isDealSummaryCollapsed"
+                    :collapsible="isLatestDealSummaryCollapsible"
+                    @toggle-collapse="toggleLatestDealSummaryCollapse"
                   />
                 </div>
               </div>
@@ -1344,7 +1362,7 @@ async function sendMessage(payload: { files: File[] }) {
                     <div v-if="chatTimelineItems.length > 0" class="flex min-w-0 flex-1 flex-col justify-start">
                       <div
                         class="flex min-w-0 flex-col pb-18"
-                        :class="latestDealMessage ? 'pt-30 lg:pt-34' : 'pt-2'"
+                        :class="latestDealTimelinePaddingClass"
                       >
                         <template v-for="item in chatTimelineItems" :key="item.message.id">
                           <div v-if="item.showDateDivider && item.dateLabel" class="flex justify-center py-2">

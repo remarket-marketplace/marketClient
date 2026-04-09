@@ -6,7 +6,7 @@ import { useRouter } from 'vue-router'
 import type { Product } from '@/validation/product/product'
 import type { RefusalReasonsList } from '@/validation/deal/deal'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { RefreshCcw, Star, X } from 'lucide-vue-next'
+import { ChevronDown, ChevronUp, RefreshCcw, Star, X } from 'lucide-vue-next'
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
 import { buildProductKey } from '@/utils/urlKeys'
@@ -20,6 +20,11 @@ const props = defineProps<{
   dealId: string
   has_review: boolean | null
   layout?: 'timeline' | 'summary'
+  collapsed?: boolean
+  collapsible?: boolean
+}>()
+const emit = defineEmits<{
+  toggleCollapse: []
 }>()
 
 const router = useRouter()
@@ -75,24 +80,28 @@ const showFulfillmentConfirmedBadge = computed(() => (
 const currentDealStatus = computed(() => effectiveDealStatus.value ?? 'pending')
 const isSummaryLayout = computed(() => props.layout === 'summary')
 const purchaseLabelKey = computed(() => 'pages.chats.newPurchase')
+const summaryTitleKey = computed(() => 'pages.chats.currentDeal')
+const headerTitleKey = computed(() => (
+  isSummaryLayout.value ? summaryTitleKey.value : purchaseLabelKey.value
+))
 const rootClass = computed(() => (
   isSummaryLayout.value ? 'w-full min-w-0' : 'my-2 w-full min-w-0'
 ))
 const cardClass = computed(() => (
   isSummaryLayout.value
     ? 'w-full min-w-0'
-    : 'mx-auto w-full max-w-2xl min-w-0 overflow-hidden rounded-2xl border border-dark-700 bg-dark-800/55 p-4'
+    : 'message-compose-shell mx-auto flex w-full max-w-2xl min-w-0 flex-col overflow-hidden rounded-[26px] border border-white/10 bg-background/85 px-4 py-3 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70'
 ))
 const summaryHeaderClass = computed(() => (
   isSummaryLayout.value
-    ? 'order-1 mb-1.5 flex flex-wrap items-center justify-between gap-2 sm:mb-2'
-    : 'hidden'
+    ? 'order-1 flex min-h-8 flex-wrap items-center justify-between gap-2'
+    : 'mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-white/8 pb-2.5'
 ))
 const contentClass = computed(() => (
-  isSummaryLayout.value ? 'order-3 flex flex-col gap-2 sm:gap-2.5' : 'flex items-start gap-3'
+  isSummaryLayout.value ? 'order-3 flex flex-col gap-2 sm:gap-2.5' : 'flex flex-col gap-3'
 ))
 const topRowClass = computed(() => (
-  isSummaryLayout.value ? 'flex items-start gap-2.5 sm:gap-3' : 'contents'
+  isSummaryLayout.value ? 'flex items-start gap-2.5 sm:gap-3' : 'flex items-start gap-3'
 ))
 const imageButtonClass = computed(() => (
   isSummaryLayout.value
@@ -101,11 +110,11 @@ const imageButtonClass = computed(() => (
 ))
 const actionsClass = computed(() => (
   isSummaryLayout.value
-    ? 'order-2 mb-1.5 flex flex-wrap items-center gap-1.5 sm:mb-2 sm:gap-2'
-    : 'mt-4 flex flex-wrap items-center gap-2 border-t border-dark-700/80 pt-3'
+    ? 'order-4 mt-1 flex flex-wrap items-center gap-1.5 sm:gap-2'
+    : 'mt-1 flex flex-wrap items-center gap-2 border-t border-white/8 pt-3'
 ))
 const reviewActionClass = computed(() => (
-  isSummaryLayout.value ? 'order-4 mt-0' : 'mt-3'
+  isSummaryLayout.value ? 'order-5 mt-0.5' : 'mt-3'
 ))
 const titleClass = computed(() => (
   isSummaryLayout.value ? 'mt-0.5 block min-w-0 text-left text-xs font-semibold leading-tight text-white transition hover:text-blue-200 sm:text-[13px]' : 'mt-1 block min-w-0 text-left text-sm font-semibold text-white transition hover:text-blue-200'
@@ -116,18 +125,30 @@ const priceClass = computed(() => (
 const deliveryClass = computed(() => (
   isSummaryLayout.value
     ? 'w-full rounded-lg border border-white/8 bg-white/[0.03] px-2.5 py-1.5'
-    : 'mt-3 rounded-xl border border-dark-700/80 bg-dark-700/45 px-3 py-2.5'
+    : 'w-full rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2.5'
 ))
 const helperClass = computed(() => (
   isSummaryLayout.value
     ? 'w-full rounded-lg border border-white/8 bg-white/[0.03] px-2.5 py-1.5'
-    : 'mt-3 rounded-xl border border-dark-700/80 bg-dark-700/45 px-3 py-2.5'
+    : 'w-full rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2.5'
 ))
+const summaryPrimaryButtonClass = computed(() => (
+  'flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-white transition-all sm:px-4 sm:py-2.5 sm:text-sm'
+))
+const summaryStatusClass = computed(() => (
+  'flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-gray-200 sm:px-4 sm:py-2.5 sm:text-sm'
+))
+const shouldShowSummaryToggle = computed(() => isSummaryLayout.value && props.collapsible === true)
+const showSummaryBody = computed(() => !isSummaryLayout.value || props.collapsed !== true)
 
 
 const deliverySummary = computed(() => (
   props.product.auto_delivery ? props.product.product_data_string || null : null
 ))
+
+function handleToggleSummaryCollapse() {
+  emit('toggleCollapse')
+}
 
 const sellerActionTitle = computed(() => {
   if (!isSeller.value || effectiveDealStatus.value !== 'pending') return null
@@ -293,19 +314,28 @@ onBeforeUnmount(() => {
 <template>
   <div :class="rootClass">
     <div :class="cardClass" class="flex min-w-0 flex-col">
-      <div v-if="isSummaryLayout" :class="summaryHeaderClass">
+      <div :class="summaryHeaderClass">
         <div class="min-w-0">
           <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-300/90 sm:text-xs sm:tracking-[0.14em]">
-            {{ $t('pages.chats.latestDeal') }}
+            {{ $t(headerTitleKey) }}
           </p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
           <DealStatusTag :deal-status="currentDealStatus" />
+          <button
+            v-if="shouldShowSummaryToggle"
+            type="button"
+            class="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-gray-300 transition hover:bg-white/[0.06] hover:text-white"
+            @click="handleToggleSummaryCollapse"
+          >
+            <ChevronUp v-if="!props.collapsed" class="h-4 w-4" />
+            <ChevronDown v-else class="h-4 w-4" />
+          </button>
         </div>
       </div>
 
-      <div :class="contentClass">
+      <div v-if="showSummaryBody" :class="contentClass">
         <div :class="topRowClass">
           <button
             type="button"
@@ -323,7 +353,10 @@ onBeforeUnmount(() => {
           <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-start justify-between gap-2 sm:gap-3">
               <div class="min-w-0 flex-1">
-                <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-300/90 sm:text-[11px] sm:tracking-[0.14em]">
+                <p
+                  v-if="isSummaryLayout"
+                  class="text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-300/90 sm:text-[11px] sm:tracking-[0.14em]"
+                >
                   {{ $t(purchaseLabelKey) }}
                 </p>
                 <button
@@ -350,7 +383,40 @@ onBeforeUnmount(() => {
         </div>
 
         <div
-          v-if="deliverySummary"
+          v-if="!isSummaryLayout && deliverySummary"
+          :class="deliveryClass"
+        >
+          <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-400">
+            {{ $t('pages.chats.productData') }}
+          </p>
+          <p class="mt-1 line-clamp-3 break-words text-sm leading-relaxed text-gray-200 [overflow-wrap:anywhere]">
+            {{ deliverySummary }}
+          </p>
+        </div>
+
+        <div
+          v-else-if="!isSummaryLayout && sellerActionTitle && sellerActionText"
+          :class="helperClass"
+        >
+          <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-blue-300/90">
+            {{ $t(sellerActionTitle) }}
+          </p>
+          <p class="mt-1 text-sm leading-relaxed text-gray-200">
+            {{ $t(sellerActionText) }}
+          </p>
+        </div>
+
+        <div
+          v-else-if="!isSummaryLayout && buyerActionText"
+          :class="helperClass"
+        >
+          <p class="text-sm leading-relaxed text-gray-300">
+            {{ $t(buyerActionText) }}
+          </p>
+        </div>
+
+        <div
+          v-if="isSummaryLayout && deliverySummary"
           :class="deliveryClass"
         >
           <p class="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 sm:text-[11px]">
@@ -362,7 +428,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div
-          v-else-if="sellerActionTitle && sellerActionText"
+          v-else-if="isSummaryLayout && sellerActionTitle && sellerActionText"
           :class="helperClass"
         >
           <p class="text-[10px] font-semibold uppercase tracking-[0.08em] text-blue-300/90 sm:text-[11px]">
@@ -374,7 +440,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div
-          v-else-if="buyerActionText"
+          v-else-if="isSummaryLayout && buyerActionText"
           :class="helperClass"
         >
           <p class="text-xs leading-relaxed text-gray-300 sm:text-sm">
@@ -383,10 +449,12 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <div :class="actionsClass">
+      <div v-if="showSummaryBody" :class="actionsClass">
         <template v-if="canConfirmReceipt">
           <button
-            class="flex items-center justify-center gap-2 rounded-lg border border-green-500 bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-green-700"
+            :class="isSummaryLayout
+              ? `${summaryPrimaryButtonClass} border border-green-500 bg-green-600 hover:bg-green-700`
+              : 'flex items-center justify-center gap-2 rounded-lg border border-green-500 bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-green-700'"
             @click="openConfirmReceiptModal()"
           >
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -398,7 +466,9 @@ onBeforeUnmount(() => {
 
         <template v-else-if="canConfirmFulfillment">
           <button
-            class="market-primary-surface market-primary-hover flex items-center justify-center gap-2 rounded-lg border border-blue-500 px-4 py-2.5 text-sm font-semibold text-white transition-all"
+            :class="isSummaryLayout
+              ? `${summaryPrimaryButtonClass} market-primary-surface market-primary-hover border border-blue-500`
+              : 'market-primary-surface market-primary-hover flex items-center justify-center gap-2 rounded-lg border border-blue-500 px-4 py-2.5 text-sm font-semibold text-white transition-all'"
             @click="openConfirmFulfillmentModal()"
           >
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -411,7 +481,9 @@ onBeforeUnmount(() => {
         <template v-if="isSeller && effectiveDealStatus === 'pending'">
           <template v-if="!isDealRefunded">
             <button
-              class="flex items-center justify-center gap-2 rounded-lg border border-orange-500 bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-orange-700"
+              :class="isSummaryLayout
+                ? `${summaryPrimaryButtonClass} border border-orange-500 bg-orange-600 hover:bg-orange-700`
+                : 'flex items-center justify-center gap-2 rounded-lg border border-orange-500 bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-orange-700'"
               @click="openRefundModal"
             >
               <RefreshCcw class="h-4 w-4" />
@@ -419,7 +491,7 @@ onBeforeUnmount(() => {
             </button>
           </template>
           <template v-else>
-            <div class="flex items-center justify-center gap-2 rounded-lg border border-dark-600 bg-dark-700/70 px-4 py-2.5 text-sm font-semibold text-gray-200">
+            <div :class="isSummaryLayout ? `${summaryStatusClass} border border-dark-600 bg-dark-700/70` : 'flex items-center justify-center gap-2 rounded-lg border border-dark-600 bg-dark-700/70 px-4 py-2.5 text-sm font-semibold text-gray-200'">
               <svg class="h-4 w-4 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fill-rule="evenodd"
@@ -435,7 +507,9 @@ onBeforeUnmount(() => {
         <template v-if="isBuyer">
           <div v-if="canSendReport" class="sm:ml-auto flex flex-col gap-2">
             <button
-              class="flex items-center justify-center gap-2 rounded-lg border border-red-500 bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700"
+              :class="isSummaryLayout
+                ? `${summaryPrimaryButtonClass} border border-red-500 bg-red-600 hover:bg-red-700`
+                : 'flex items-center justify-center gap-2 rounded-lg border border-red-500 bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700'"
               @click="openRefusalModal()"
             >
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -451,7 +525,7 @@ onBeforeUnmount(() => {
           </div>
 
           <div v-else-if="showReportedBadge" class="sm:ml-auto flex flex-col gap-2">
-            <div class="flex items-center justify-center gap-2 rounded-lg border border-dark-600 bg-dark-700/70 px-4 py-2.5 text-sm font-semibold text-gray-200">
+            <div :class="isSummaryLayout ? `${summaryStatusClass} border border-dark-600 bg-dark-700/70` : 'flex items-center justify-center gap-2 rounded-lg border border-dark-600 bg-dark-700/70 px-4 py-2.5 text-sm font-semibold text-gray-200'">
               <svg class="h-4 w-4 text-red-400" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fill-rule="evenodd"
@@ -465,7 +539,7 @@ onBeforeUnmount(() => {
         </template>
       </div>
 
-      <template v-if="isDealCompleted && !localHasReview && isBuyer">
+      <template v-if="showSummaryBody && isDealCompleted && !localHasReview && isBuyer">
         <div :class="reviewActionClass">
           <button
             class="market-primary-surface market-primary-hover flex items-center justify-center gap-2 rounded-lg border border-blue-500 px-4 py-2.5 text-sm font-semibold text-white"
