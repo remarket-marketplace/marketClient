@@ -11,8 +11,7 @@ import {
   findSteamTopUpServiceByCurrency,
   isValidSteamTopUpAccount,
   normalizeSteamTopUpAccount,
-  type SteamTopUpOrder,
-  type SteamTopUpPayOrderPayload,
+  type SteamTopUpCreatePaymentPayload,
   type SteamTopUpService,
   type SteamTopUpServiceCurrency,
 } from '@/validation/steamTopup/steamTopup'
@@ -38,7 +37,6 @@ const steamSuccess = ref('')
 const steamCheckoutSubmitting = ref(false)
 const steamServices = ref<SteamTopUpService[]>([])
 const steamServicesLoading = ref(false)
-const steamOrder = ref<SteamTopUpOrder | null>(null)
 const steamPromoValidationLoading = ref(false)
 const steamPromoValidationError = ref('')
 const steamPromoValidationResult = ref<PromoCodeValidationResponse | null>(null)
@@ -166,7 +164,6 @@ function scheduleSteamPromoValidation(): void {
 function setQuickAmount(amount: number): void {
   steamQuantity.value = selectedCurrency.value === 'USD' ? amount.toFixed(2) : String(amount)
   clearSteamFeedback()
-  steamOrder.value = null
 }
 
 function isQuickAmountActive(amount: number): boolean {
@@ -180,24 +177,22 @@ function formatQuickAmount(amount: number): string {
   return `${Math.round(amount)} ${currencySymbol.value}`
 }
 
-function buildSteamPayOrderPayload(): SteamTopUpPayOrderPayload {
-  const promoCode = steamPromoCode.value.trim().toUpperCase()
+function buildSteamCreatePaymentPayload(): SteamTopUpCreatePaymentPayload | null {
+  if (!steamIsAccountValid.value) return null
+  if (!Number.isFinite(steamAmountRub.value) || steamAmountRub.value <= 0) return null
+
   return {
-    payment_method: 'lava',
-    ...(promoCode ? { promo_code: promoCode } : {}),
+    account: steamNormalizedAccount.value,
+    amount_rub: steamAmountRub.value,
+    ...(steamNormalizedPromoCode.value ? { promo_code: steamNormalizedPromoCode.value } : {}),
   }
 }
 
 async function submitSteamTopUpPayment() {
   if (steamCheckoutSubmitting.value) return
 
-  if (!steamIsAccountValid.value || !selectedSteamService.value) {
-    steamError.value = t('errors.FILL_REQUIRED_FIELDS')
-    return
-  }
-
-  const quantity = parsedSteamQuantity.value
-  if (!Number.isFinite(quantity) || quantity <= 0) {
+  const payload = buildSteamCreatePaymentPayload()
+  if (!payload || !selectedSteamService.value) {
     steamError.value = t('errors.FILL_REQUIRED_FIELDS')
     return
   }
@@ -207,21 +202,8 @@ async function submitSteamTopUpPayment() {
   steamSuccess.value = t('pages.index.steamTopUp.redirectToPayment')
 
   try {
-    steamOrder.value = await steamTopupService.createOrder({
-      service_id: selectedSteamService.value.id,
-      account: steamNormalizedAccount.value,
-      quantity,
-    })
-    const response = await steamTopupService.payOrder(
-      steamOrder.value.id,
-      buildSteamPayOrderPayload(),
-    )
-    steamOrder.value = response.order
-    if (response.payment_url) {
-      window.location.href = response.payment_url
-      return
-    }
-    steamSuccess.value = t('pages.index.steamTopUp.orderPaid')
+    const response = await steamTopupService.createPayment(payload)
+    window.location.href = response.payment_url
   } catch (error) {
     steamError.value = resolveSteamErrorMessage(error)
     steamSuccess.value = ''
@@ -236,7 +218,6 @@ watch(selectedCurrency, (nextCurrency, prevCurrency) => {
 
   const converted = convertCurrencyAmount(currentInput, prevCurrency, nextCurrency)
   steamQuantity.value = nextCurrency === 'USD' ? converted.toFixed(2) : Math.round(converted).toString()
-  steamOrder.value = null
 })
 
 watch([steamPromoCode, steamQuantity, steamAccount, selectedCurrency], () => {
@@ -246,7 +227,6 @@ watch([steamPromoCode, steamQuantity, steamAccount, selectedCurrency], () => {
 watch(
   () => user.value?.id,
   async (currentUserId) => {
-    steamOrder.value = null
     if (!currentUserId) {
       steamServices.value = []
       clearSteamPromoValidation()
