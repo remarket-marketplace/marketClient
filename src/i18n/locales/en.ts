@@ -1049,6 +1049,7 @@ const en = {
       raikaName: "raika",
       moderationRejectedTitle: "Product did not pass moderation",
       moderationRejectReasonLabel: "Rejection reason",
+      remainingQuantity: "Remaining",
       sellerTrust: {
         eyebrow: "Seller trust",
         title: "Seller trust snapshot",

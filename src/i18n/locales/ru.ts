@@ -1048,6 +1048,7 @@ const ru = {
       raikaName: "raika",
       moderationRejectedTitle: "Товар не прошел модерацию",
       moderationRejectReasonLabel: "Причина отклонения",
+      remainingQuantity: "Осталось",
       sellerTrust: {
         eyebrow: "Проверка продавца",
         title: "Надежность продавца",
