@@ -9,18 +9,12 @@ defineProps<{
 
 <template>
   <div class="mx-auto w-full max-w-xl min-w-0 rounded-2xl border border-dark-700 bg-dark-800/50 p-4">
-    <div class="flex items-start justify-between gap-3">
-      <div class="min-w-0">
-        <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-300/90">
-          {{ $t('pages.chats.newReview') }}
-        </p>
-        <p class="mt-1 text-sm font-medium text-white break-words [overflow-wrap:anywhere]">
-          {{ $t('pages.chats.buyerLeftReview') }}
-        </p>
-      </div>
-
-      <p class="flex-shrink-0 text-xs text-gray-400">
-        {{ formatDate(review.created_at) }}
+    <div class="min-w-0">
+      <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-300/90">
+        {{ $t('pages.chats.newReview') }}
+      </p>
+      <p class="mt-1 text-sm font-medium text-white break-words [overflow-wrap:anywhere]">
+        {{ $t('pages.chats.buyerLeftReview') }}
       </p>
     </div>
 
@@ -41,5 +35,9 @@ defineProps<{
     >
       {{ review.body || $t('pages.chats.withoutReviewText') }}
     </p>
+
+    <div class="mt-3 flex items-center justify-end text-xs text-gray-300">
+      <span>{{ formatDate(review.created_at) }}</span>
+    </div>
   </div>
 </template>

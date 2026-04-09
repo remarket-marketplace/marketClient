@@ -100,7 +100,13 @@ function formatDate(dateInput: string | Date): string {
   <div class="max-w-full min-w-0" :class="messageAlignment">
     <!-- PRODUCT MESSAGE -->
     <div v-if="product && !isDealStatus && dealId">
-      <NewPurchaseMessage :product="product" :deal-id="dealId" :deal-status="dealStatus" :has_review="hasReview" />
+      <NewPurchaseMessage
+        :product="product"
+        :deal-id="dealId"
+        :deal-status="dealStatus"
+        :has_review="hasReview"
+        :created-at="props.message.created_at"
+      />
     </div>
 
     <!-- TEXT MESSAGE -->

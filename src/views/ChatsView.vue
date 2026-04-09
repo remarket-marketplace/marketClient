@@ -417,9 +417,17 @@ const selectedChatLocalPendingMessages = computed<LocalPendingChatMessage[]>(() 
   return localPendingMessages.value.filter((message) => message.chat_room_id === selectedChatId.value)
 })
 
-const timelineMessages = computed<ChatTimelineMessage[]>(() => (
-  [...normalizeTimelineServerMessages(chatMessages.value), ...selectedChatLocalPendingMessages.value]
-))
+const timelineMessages = computed<ChatTimelineMessage[]>(() => {
+  const normalizedServerMessages = normalizeTimelineServerMessages(chatMessages.value)
+  const latestDealId = latestDealMessage.value?.deal_id ?? null
+  const filteredServerMessages = latestDealId
+    ? normalizedServerMessages.filter((message) => (
+      message.message_type !== 'purchase_message' || message.deal_id !== latestDealId
+    ))
+    : normalizedServerMessages
+
+  return [...filteredServerMessages, ...selectedChatLocalPendingMessages.value]
+})
 
 const chatTimelineItems = computed<ChatTimelineItem[]>(() => {
   let previousDateKey: string | null = null
@@ -1288,7 +1296,8 @@ async function sendMessage(payload: { files: File[] }) {
           <div class="flex w-full min-w-0 flex-grow flex-col overflow-hidden">
             <div v-if="currentChat"
               class="sticky top-0 z-10 mx-1 flex items-center gap-2 bg-background px-2 py-1.5 lg:mx-2 lg:border-b lg:border-dark-700 lg:px-3 lg:py-3">
-              <button v-if="isMobile" class="flex h-7 w-7 flex-shrink-0 items-center justify-center" @click="backToChats">
+              <button v-if="isMobile" class="flex h-7 w-7 flex-shrink-0 items-center justify-center"
+                @click="backToChats">
                 <ArrowLeft />
               </button>
               <button v-if="currentChat" type="button"
@@ -1317,7 +1326,8 @@ async function sendMessage(payload: { files: File[] }) {
                     <StyledUsername :username="chatDisplayName" :style-id="currentChat?.another_user.nickname_style_id"
                       class="text-base font-semibold leading-tight lg:text-lg" />
                   </div>
-                  <p class="mt-0.5 text-[11px] leading-none" :class="isChatDisplayOnline ? 'text-green-500' : 'text-gray-500'">
+                  <p class="mt-0.5 text-[11px] leading-none"
+                    :class="isChatDisplayOnline ? 'text-green-500' : 'text-gray-500'">
                     {{ chatDisplayStatus }}
                   </p>
                 </div>
@@ -1326,23 +1336,14 @@ async function sendMessage(payload: { files: File[] }) {
 
             <div class="relative flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden">
               <FloatingDateHeader :label="isFloatingDateVisible ? floatingDateLabel : null" />
-              <div
-                v-if="currentChat && latestDealMessage"
-                class="pointer-events-none absolute inset-x-0 top-0 z-10 px-1.5 pt-1.5 lg:px-4 lg:pt-3"
-              >
+              <div v-if="currentChat && latestDealMessage"
+                class="pointer-events-none absolute inset-x-0 top-0 z-10 px-1.5 pt-1.5 lg:px-4 lg:pt-3">
                 <div
-                  class="message-compose-shell pointer-events-auto flex items-start rounded-[22px] border border-white/10 bg-background/90 px-2 py-1.5 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 lg:rounded-[26px] lg:px-3 lg:py-2.5"
-                >
-                  <NewPurchaseMessage
-                    :product="latestDealMessage.product"
-                    :deal-id="latestDealMessage.deal_id"
-                    :deal-status="latestDealStatus"
-                    :has_review="latestDealHasReview"
-                    layout="summary"
-                    :collapsed="isDealSummaryCollapsed"
-                    :collapsible="isLatestDealSummaryCollapsible"
-                    @toggle-collapse="toggleLatestDealSummaryCollapse"
-                  />
+                  class="message-compose-shell pointer-events-auto flex items-start rounded-[22px] border border-white/10 bg-background/90 px-2 py-1.5 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 lg:rounded-[26px] lg:px-3 lg:py-2.5">
+                  <NewPurchaseMessage :product="latestDealMessage.product" :deal-id="latestDealMessage.deal_id"
+                    :deal-status="latestDealStatus" :has_review="latestDealHasReview" layout="summary"
+                    :collapsed="isDealSummaryCollapsed" :collapsible="isLatestDealSummaryCollapsible"
+                    @toggle-collapse="toggleLatestDealSummaryCollapse" />
                 </div>
               </div>
               <div ref="messageContainerRef"
@@ -1360,10 +1361,7 @@ async function sendMessage(payload: { files: File[] }) {
                     </div>
 
                     <div v-if="chatTimelineItems.length > 0" class="flex min-w-0 flex-1 flex-col justify-start">
-                      <div
-                        class="flex min-w-0 flex-col pb-18"
-                        :class="latestDealTimelinePaddingClass"
-                      >
+                      <div class="flex min-w-0 flex-col pb-18" :class="latestDealTimelinePaddingClass">
                         <template v-for="item in chatTimelineItems" :key="item.message.id">
                           <div v-if="item.showDateDivider && item.dateLabel" class="flex justify-center py-2">
                             <span
@@ -1401,20 +1399,12 @@ async function sendMessage(payload: { files: File[] }) {
                   </div>
                 </template>
 
-                <div
-                  v-if="selectedChatId"
-                  aria-hidden="true"
-                  class="h-[120px] w-full flex-none md:h-[108px]"
-                />
+                <div v-if="selectedChatId" aria-hidden="true" class="h-[120px] w-full flex-none md:h-[108px]" />
               </div>
 
-              <div
-                v-if="selectedChatId"
-                class="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-transparent px-1 pb-1 pt-0 md:pb-2"
-              >
-                <div
-                  v-if="lockReminderText"
-                  class="pointer-events-auto mx-1 mb-2 rounded-xl border px-3 py-2 text-sm"
+              <div v-if="selectedChatId"
+                class="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-transparent px-1 pb-1 pt-0 md:pb-2">
+                <div v-if="lockReminderText" class="pointer-events-auto mx-1 mb-2 rounded-xl border px-3 py-2 text-sm"
                   :class="lockReminderType === 'sender'
                     ? 'border-amber-400/40 bg-amber-500/10 text-amber-200'
                     : 'border-blue-400/40 bg-blue-500/10 text-blue-200'">

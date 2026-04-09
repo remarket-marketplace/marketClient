@@ -104,92 +104,90 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div
-    v-if="_props.isOpen"
-    class="confirm-window-overlay app-modal-overlay z-[100] transition-opacity duration-200"
-    :class="{ 'opacity-100': _props.isOpen, 'opacity-0': !_props.isOpen }"
-  >
-    <!-- Backdrop -->
+  <Teleport to="body">
     <div
-      class="absolute inset-0 bg-black/50"
-      @click="handleCancel"
-    />
-
-    <div class="confirm-window-shell relative z-10 flex w-full justify-center">
+      v-if="_props.isOpen"
+      class="confirm-window-overlay app-modal-overlay z-[100] transition-opacity duration-200"
+      :class="{ 'opacity-100': _props.isOpen, 'opacity-0': !_props.isOpen }"
+    >
       <div
-        class="confirm-window app-modal-panel relative flex w-full max-w-md flex-col rounded-xl border border-dark-700 bg-dark-800 shadow-2xl"
-        :class="_props.allowOverflowVisible ? 'overflow-visible' : 'overflow-hidden'"
-      >
-        <!-- Header -->
-        <div class="shrink-0 border-b border-dark-700 px-6 py-5">
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-white">
-              {{ title }}
-            </h3>
+        class="absolute inset-0 bg-black/50"
+        @click="handleCancel"
+      />
+
+      <div class="confirm-window-shell relative z-10 flex w-full justify-center">
+        <div
+          class="confirm-window app-modal-panel relative flex w-full max-w-md flex-col rounded-xl border border-dark-700 bg-dark-800 shadow-2xl"
+          :class="_props.allowOverflowVisible ? 'overflow-visible' : 'overflow-hidden'"
+        >
+          <div class="shrink-0 border-b border-dark-700 px-6 py-5">
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-semibold text-white">
+                {{ title }}
+              </h3>
+              <button
+                @click="handleCancel"
+                class="rounded-full p-1 text-gray-400 transition-colors duration-150 hover:text-gray-300"
+                aria-label="Close"
+              >
+                <X class="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          <div
+            class="confirm-window__body flex-1 space-y-4 px-6 py-5"
+            :class="_props.allowOverflowVisible ? 'overflow-visible' : 'app-modal-scroll'"
+          >
+            <p v-if="message" class="text-gray-300 leading-relaxed">
+              {{ message }}
+            </p>
+            <slot name="body"></slot>
+          </div>
+
+          <div class="flex shrink-0 justify-end gap-3 bg-dark-900/50 px-6 py-4">
             <button
+              class="rounded-lg px-5 py-2.5 text-sm font-medium text-gray-400 transition-colors duration-150 hover:bg-dark-700 hover:text-gray-300"
               @click="handleCancel"
-              class="p-1 text-gray-400 hover:text-gray-300 rounded-full transition-colors duration-150"
-              aria-label="Close"
+              :disabled="_props.isLoading"
             >
-              <X class="w-5 h-5" />
+              {{ _props.cancelText ?? t('common.cancel') }}
+            </button>
+            <button
+              class="market-primary-surface market-primary-hover flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-white transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50"
+              :disabled="_props.isLoading"
+              @click="handleConfirm"
+            >
+              <svg
+                v-if="_props.isLoading"
+                class="h-4 w-4 animate-spin"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                />
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              <span>
+                {{ _props.confirmText ?? t('common.confirm') }}
+              </span>
             </button>
           </div>
         </div>
-
-        <!-- Message -->
-        <div
-          class="confirm-window__body flex-1 px-6 py-5 space-y-4"
-          :class="_props.allowOverflowVisible ? 'overflow-visible' : 'app-modal-scroll'"
-        >
-          <p v-if="message" class="text-gray-300 leading-relaxed">
-            {{ message }}
-          </p>
-          <slot name="body"></slot>
-        </div>
-
-        <!-- Actions -->
-        <div class="shrink-0 bg-dark-900/50 px-6 py-4 flex justify-end gap-3">
-          <button
-            class="px-5 py-2.5 text-gray-400 font-medium rounded-lg hover:bg-dark-700 hover:text-gray-300 transition-colors duration-150 text-sm"
-            @click="handleCancel"
-            :disabled="_props.isLoading"
-          >
-            {{ _props.cancelText ?? t('common.cancel') }}
-          </button>
-          <button
-            class="market-primary-surface market-primary-hover flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-white transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50"
-            :disabled="_props.isLoading"
-            @click="handleConfirm"
-          >
-            <svg
-              v-if="_props.isLoading"
-              class="w-4 h-4 animate-spin"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
-              />
-              <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
-            <span>
-              {{ _props.confirmText ?? t('common.confirm') }}
-            </span>
-          </button>
-        </div>
       </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <style scoped>
