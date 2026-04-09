@@ -225,9 +225,8 @@ const mobileNavGridStyle = computed(() => ({
               <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-gray-700 text-gray-300">
                 <Icon icon="mdi:steam" class="h-3.5 w-3.5" />
               </span>
-              <span class="min-w-0 flex-1 text-left text-[9px] font-medium leading-[1.05] sm:text-[10px]">
-                <span class="block truncate">Пополнение</span>
-                <span class="block truncate">Steam</span>
+              <span class="min-w-0 flex-1 truncate text-left text-[10px] font-medium leading-none sm:text-[11px]">
+                {{ t('pages.index.steamTopUp.title') }}
               </span>
             </button>
             <button

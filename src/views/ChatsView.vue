@@ -3,13 +3,14 @@ import { chatsService } from '@/api/chats/chatsService'
 import ChatItem from '@/components/chats/ChatItem.vue'
 import ChatMessage from '@/components/chats/ChatMessage.vue'
 import FloatingDateHeader from '@/components/chats/FloatingDateHeader.vue'
+import NewPurchaseMessage from '@/components/chats/NewPurchaseMessage.vue'
 import PendingChatMessage from '@/components/chats/PendingChatMessage.vue'
 import SendMessageBar from '@/components/chats/SendMessageBar.vue'
 import Loader from '@/components/Loader.vue'
 import { useUserStore } from '@/stores/user'
 import { useChatStore } from '@/stores/chat'
 import type { ChatListItem } from '@/validation/chat/ChatList'
-import type { ChatMessageUnion } from '@/validation/chat/chatMessage'
+import type { ChatMessageUnion, PurchaseMessage } from '@/validation/chat/chatMessage'
 import type { MessagesReadPayload } from '@/validation/chat/chatMessage'
 import type { LocalPendingChatMessage } from '@/validation/chat/localPendingMessage'
 import type { UserRead } from '@/validation/user/userRead'
@@ -29,7 +30,9 @@ const router = useRouter()
 const chatStore = useChatStore()
 const chats = ref<ChatListItem[]>([])
 const chatMessages = ref<ChatMessageUnion[]>([])
+const latestDealMessage = ref<PurchaseMessage | null>(null)
 const localPendingMessages = ref<LocalPendingChatMessage[]>([])
+const liveDealStatusOverrides = ref<Record<string, string>>({})
 const selectedChatId = ref<string | null>(null)
 const messageContainerRef = ref<HTMLElement | null>(null)
 const bottomPin = createBottomPinController(() => messageContainerRef.value)
@@ -40,6 +43,7 @@ const isLoadingMoreMessages = ref(false)
 const pageErrorMessage = ref<string | null>(null)
 const sendErrorMessage = ref<string | null>(null)
 const isMobile = ref(false)
+const isDealSummaryCollapsed = ref(false)
 const mobileMode = ref<'chats' | 'chat'>('chats')
 const store = useUserStore()
 const user = ref<UserRead | null>(null)
@@ -113,6 +117,12 @@ function normalizeMessagesChronological(messages: ChatMessageUnion[]): ChatMessa
   return [...messages].sort((a, b) => getMessageTimestamp(a) - getMessageTimestamp(b))
 }
 
+function isDealStatusUpdateMessage(
+  message: ChatMessageUnion,
+): message is Extract<ChatMessageUnion, { message_type: 'update_deal_status_message' }> {
+  return message.message_type === 'update_deal_status_message'
+}
+
 function isEchoComparableServerMessage(message: ChatMessageUnion): message is EchoComparableServerMessage {
   return message.message_type === 'text_message' || message.message_type === 'image_message'
 }
@@ -135,6 +145,10 @@ function normalizeTimelineServerMessages(messages: ChatMessageUnion[]): ChatMess
   const priceOfferIndexById = new Map<string, number>()
 
   for (const message of messages) {
+    if (isDealStatusUpdateMessage(message)) {
+      continue
+    }
+
     if (message.message_type !== 'price_offer_message') {
       normalizedMessages.push(message)
       continue
@@ -158,6 +172,11 @@ function normalizeTimelineServerMessages(messages: ChatMessageUnion[]): ChatMess
   }
 
   return normalizedMessages
+}
+
+function getPurchaseMessageTimestamp(message: PurchaseMessage | null): number {
+  if (!message) return 0
+  return getMessageTimestamp(message)
 }
 
 function createLocalPendingMessageId(kind: 'text' | 'image'): string {
@@ -561,18 +580,20 @@ const textMessagesInChat = computed<TextMessage[]>(() =>
 const dealStatusOverrides = computed<Record<string, string>>(() => {
   const statuses: Record<string, string> = {}
 
+  if (latestDealMessage.value) {
+    statuses[latestDealMessage.value.deal_id] = latestDealMessage.value.deal_status
+  }
+
   for (const message of chatMessages.value) {
     if (message.message_type === 'purchase_message') {
       statuses[message.deal_id] = statuses[message.deal_id] ?? message.deal_status
-      continue
-    }
-
-    if (message.message_type === 'update_deal_status_message') {
-      statuses[message.deal_id] = message.new_status
     }
   }
 
-  return statuses
+  return {
+    ...statuses,
+    ...liveDealStatusOverrides.value,
+  }
 })
 
 const reviewedDealIds = computed<string[]>(() => {
@@ -587,14 +608,29 @@ const reviewedDealIds = computed<string[]>(() => {
   return Array.from(ids)
 })
 
+const latestDealStatus = computed(() => {
+  if (!latestDealMessage.value) return null
+  return dealStatusOverrides.value[latestDealMessage.value.deal_id] ?? latestDealMessage.value.deal_status
+})
+
+const latestDealHasReview = computed(() => {
+  if (!latestDealMessage.value) return false
+  return latestDealMessage.value.has_review || reviewedDealIds.value.includes(latestDealMessage.value.deal_id)
+})
+const isLatestDealSummaryCollapsible = computed(() => latestDealMessage.value !== null)
+const latestDealTimelinePaddingClass = computed(() => {
+  if (!latestDealMessage.value) return 'pt-2'
+  if (isDealSummaryCollapsed.value) {
+    return 'pt-13'
+  }
+  return 'pt-27 lg:pt-34'
+})
+
 const hasDealSignals = computed(() => {
-  const lastMessageType = currentChat.value?.last_message?.message_type
-  if (lastMessageType === 'purchase_message' || lastMessageType === 'update_deal_status_message') {
+  if (latestDealMessage.value) {
     return true
   }
-  return chatMessages.value.some(message =>
-    message.message_type === 'purchase_message' || message.message_type === 'update_deal_status_message'
-  )
+  return chatMessages.value.some(message => message.message_type === 'purchase_message')
 })
 
 const isChatHistoryFullyLoaded = computed(() => {
@@ -672,6 +708,11 @@ const checkMobile = () => {
   isMobile.value = window.innerWidth < 768
 }
 
+function toggleLatestDealSummaryCollapse() {
+  if (!isLatestDealSummaryCollapsible.value) return
+  isDealSummaryCollapsed.value = !isDealSummaryCollapsed.value
+}
+
 function openChatProfile() {
   if (!currentChat.value || isSupportChat.value) return
   const username = currentChat.value.another_user?.username
@@ -729,6 +770,7 @@ function scheduleDeferredBottomPin(chatId: string) {
 }
 
 let unsubscribeNewMessage: (() => void) | null = null
+let unsubscribeDealStatusUpdate: (() => void) | null = null
 let unsubscribeChatUpdated: (() => void) | null = null
 let unsubscribeMessagesRead: (() => void) | null = null
 
@@ -753,6 +795,9 @@ watch(selectedChatId, () => {
   sendErrorMessage.value = null
   floatingDateLabel.value = null
   isFloatingDateVisible.value = false
+  isDealSummaryCollapsed.value = false
+  latestDealMessage.value = null
+  liveDealStatusOverrides.value = {}
   clearDeferredBottomPinTimers()
   if (floatingDateHideTimerId !== null) {
     clearTimeout(floatingDateHideTimerId)
@@ -820,7 +865,10 @@ onMounted(async () => {
       const chat = chats.value[chatIndex]
 
       if (update.last_message && chat) {
-        if (shouldApplyLastMessage(chat.last_message ?? null, update.last_message)) {
+        if (
+          update.last_message.message_type !== 'update_deal_status_message'
+          && shouldApplyLastMessage(chat.last_message ?? null, update.last_message)
+        ) {
           chat.last_message = update.last_message
         }
       }
@@ -832,12 +880,26 @@ onMounted(async () => {
       chatStore.updateChatFromSocket(update)
     })
 
+    unsubscribeDealStatusUpdate = chatsService.onDealStatusUpdate(message => {
+      if (selectedChatId.value !== message.chat_room_id) return
+      liveDealStatusOverrides.value = {
+        ...liveDealStatusOverrides.value,
+        [message.deal_id]: message.new_status,
+      }
+    })
+
     unsubscribeNewMessage = chatsService.onNewMessage(message => {
       resolveLocalPendingMessageEcho(message)
       if (selectedChatId.value === message.chat_room_id) {
         if (!chatMessages.value.some(m => m.id === message.id)) {
           const shouldStickToBottom = isNearBottom()
           chatMessages.value.push(message)
+          if (
+            message.message_type === 'purchase_message'
+            && getPurchaseMessageTimestamp(message) >= getPurchaseMessageTimestamp(latestDealMessage.value)
+          ) {
+            latestDealMessage.value = message
+          }
           totalMessagesInChat.value = Math.max(
             totalMessagesInChat.value + 1,
             chatMessages.value.length
@@ -881,6 +943,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   unsubscribeNewMessage?.()
+  unsubscribeDealStatusUpdate?.()
   unsubscribeChatUpdated?.()
   unsubscribeMessagesRead?.()
   localPendingMessages.value.forEach(cleanupLocalPendingMessage)
@@ -995,6 +1058,9 @@ async function loadChatMessages(
     hasUserScrolledAwayFromTop.value = false
     previousMessageScrollTop.value = 0
     chatMessages.value = []
+    isDealSummaryCollapsed.value = false
+    latestDealMessage.value = null
+    liveDealStatusOverrides.value = {}
     currentPage.value = 1
     hasMoreMessages.value = true
     totalMessagesInChat.value = 0
@@ -1008,6 +1074,7 @@ async function loadChatMessages(
 
     const response = await chatsService.getChatMessages(chatId, 1, perPage.value)
     chatMessages.value = normalizeMessagesChronological(response.messages)
+    latestDealMessage.value = response.latestDealMessage
     totalMessagesInChat.value = response.total
     totalPages.value = response.totalPages
     hasMoreMessages.value = 1 < totalPages.value
@@ -1220,52 +1287,37 @@ async function sendMessage(payload: { files: File[] }) {
         }">
           <div class="flex w-full min-w-0 flex-grow flex-col overflow-hidden">
             <div v-if="currentChat"
-              class="sticky top-0 z-10 mx-1 flex items-center gap-2 bg-background px-2 py-2 lg:mx-2 lg:border-b lg:border-dark-700 lg:px-3 lg:py-3">
-              <button v-if="isMobile" class="text-xl font-bold flex-shrink-0" @click="backToChats">
+              class="sticky top-0 z-10 mx-1 flex items-center gap-2 bg-background px-2 py-1.5 lg:mx-2 lg:border-b lg:border-dark-700 lg:px-3 lg:py-3">
+              <button v-if="isMobile" class="flex h-7 w-7 flex-shrink-0 items-center justify-center" @click="backToChats">
                 <ArrowLeft />
               </button>
-              <button
-                v-if="currentChat"
-                type="button"
+              <button v-if="currentChat" type="button"
                 class="flex items-center gap-3 flex-1 min-w-0 text-left rounded-lg transition bg-transparent border-0 p-0"
                 :class="isSupportChat ? 'cursor-default' : 'cursor-pointer focus:outline-none'"
-                :disabled="isSupportChat"
-                @click="openChatProfile"
-              >
+                :disabled="isSupportChat" @click="openChatProfile">
                 <!-- Аватар чата -->
-                <div class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
+                <div class="h-7 w-7 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
                   <!-- Для чата поддержки - иконка на синем фоне -->
                   <div v-if="isSupportChat"
-                    class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center rounded-full bg-blue-500/20 border-2 border-blue-500/30">
+                    class="h-7 w-7 lg:h-10 lg:w-10 flex items-center justify-center rounded-full bg-blue-500/20 border-2 border-blue-500/30">
                     <Headphones class="w-4 h-4 lg:w-5 lg:h-5 text-blue-400" />
                   </div>
                   <!-- Для обычного чата - фото или инициалы -->
-                  <UserAvatar
-                    v-else
-                    :avatar-url="chatDisplayAvatarUrl"
-                    :alt="chatDisplayName"
-                    class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-dark-600 rounded-full object-cover"
-                  />
+                  <UserAvatar v-else :avatar-url="chatDisplayAvatarUrl" :alt="chatDisplayName"
+                    class="h-7 w-7 lg:h-10 lg:w-10 border-2 border-dark-600 rounded-full object-cover" />
                 </div>
 
                 <!-- Информация о чате -->
-                <div class="flex min-w-0 flex-col">
+                <div class="flex min-w-0 flex-col justify-center">
                   <!-- Имя чата -->
-                  <p v-if="isSupportChat" class="truncate font-semibold text-lg text-blue-500">
+                  <p v-if="isSupportChat" class="truncate font-semibold text-base text-blue-500 lg:text-lg">
                     {{ chatDisplayName }}
                   </p>
                   <div v-else class="w-full min-w-0 truncate">
-                    <StyledUsername
-                      :username="chatDisplayName"
-                      :style-id="currentChat?.another_user.nickname_style_id"
-                      class="text-lg font-semibold"
-                    />
+                    <StyledUsername :username="chatDisplayName" :style-id="currentChat?.another_user.nickname_style_id"
+                      class="text-base font-semibold leading-tight lg:text-lg" />
                   </div>
-                  <!-- Статус онлайн -->
-                  <p
-                    class="text-xs"
-                    :class="isChatDisplayOnline ? 'text-green-500' : 'text-gray-500'"
-                  >
+                  <p class="mt-0.5 text-[11px] leading-none" :class="isChatDisplayOnline ? 'text-green-500' : 'text-gray-500'">
                     {{ chatDisplayStatus }}
                   </p>
                 </div>
@@ -1274,10 +1326,28 @@ async function sendMessage(payload: { files: File[] }) {
 
             <div class="relative flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden">
               <FloatingDateHeader :label="isFloatingDateVisible ? floatingDateLabel : null" />
-              <div ref="messageContainerRef" class="no-scrollbar flex flex-1 min-h-0 min-w-0 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain pb-2"
-                @scroll="handleScroll"
-                @wheel.passive="cancelChatPinning"
-                @touchstart.passive="cancelChatPinning"
+              <div
+                v-if="currentChat && latestDealMessage"
+                class="pointer-events-none absolute inset-x-0 top-0 z-10 px-1.5 pt-1.5 lg:px-4 lg:pt-3"
+              >
+                <div
+                  class="message-compose-shell pointer-events-auto flex items-start rounded-[22px] border border-white/10 bg-background/90 px-2 py-1.5 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 lg:rounded-[26px] lg:px-3 lg:py-2.5"
+                >
+                  <NewPurchaseMessage
+                    :product="latestDealMessage.product"
+                    :deal-id="latestDealMessage.deal_id"
+                    :deal-status="latestDealStatus"
+                    :has_review="latestDealHasReview"
+                    layout="summary"
+                    :collapsed="isDealSummaryCollapsed"
+                    :collapsible="isLatestDealSummaryCollapsible"
+                    @toggle-collapse="toggleLatestDealSummaryCollapse"
+                  />
+                </div>
+              </div>
+              <div ref="messageContainerRef"
+                class="no-scrollbar flex flex-1 min-h-0 min-w-0 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain pb-2"
+                @scroll="handleScroll" @wheel.passive="cancelChatPinning" @touchstart.passive="cancelChatPinning"
                 @mousedown="cancelChatPinning">
                 <div v-if="isChatLoading" class="flex h-full w-full items-center justify-center">
                   <Loader />
@@ -1290,34 +1360,25 @@ async function sendMessage(payload: { files: File[] }) {
                     </div>
 
                     <div v-if="chatTimelineItems.length > 0" class="flex min-w-0 flex-1 flex-col justify-start">
-                      <div class="flex min-w-0 flex-col pt-2 pb-18">
+                      <div
+                        class="flex min-w-0 flex-col pb-18"
+                        :class="latestDealTimelinePaddingClass"
+                      >
                         <template v-for="item in chatTimelineItems" :key="item.message.id">
                           <div v-if="item.showDateDivider && item.dateLabel" class="flex justify-center py-2">
-                            <span class="rounded-full border border-dark-600/70 bg-dark-900/70 px-3 py-1 text-xs font-medium text-mainText/90">
+                            <span
+                              class="rounded-full border border-dark-600/70 bg-dark-900/70 px-3 py-1 text-xs font-medium text-mainText/90">
                               {{ item.dateLabel }}
                             </span>
                           </div>
 
-                          <div
-                            class="mb-3"
-                            :data-chat-message-index="item.index"
-                            :data-chat-date-key="item.dateKey ?? ''"
-                          >
-                            <PendingChatMessage
-                              v-if="item.isLocal"
-                              :message="item.message as LocalPendingChatMessage"
-                              :format-date="formatPendingMessageDate"
-                              @retry="retryLocalPendingMessage"
-                            />
-                            <ChatMessage
-                              v-else
-                              :message="item.message as ChatMessageUnion"
-                              :user="user"
-                              :showAdminBadge="shouldShowAdminBadge"
-                              :chat-participant-ids="chatParticipantIds"
-                              :deal-status-overrides="dealStatusOverrides"
-                              :reviewed-deal-ids="reviewedDealIds"
-                            />
+                          <div class="mb-3" :data-chat-message-index="item.index"
+                            :data-chat-date-key="item.dateKey ?? ''">
+                            <PendingChatMessage v-if="item.isLocal" :message="item.message as LocalPendingChatMessage"
+                              :format-date="formatPendingMessageDate" @retry="retryLocalPendingMessage" />
+                            <ChatMessage v-else :message="item.message as ChatMessageUnion" :user="user"
+                              :showAdminBadge="shouldShowAdminBadge" :chat-participant-ids="chatParticipantIds"
+                              :deal-status-overrides="dealStatusOverrides" :reviewed-deal-ids="reviewedDealIds" />
                           </div>
                         </template>
                       </div>
@@ -1325,7 +1386,8 @@ async function sendMessage(payload: { files: File[] }) {
 
                     <div v-else-if="selectedChatId != null && chatMessages.length === 0"
                       class="h-full w-full flex items-center justify-center">
-                      <div v-if="isSupportChat" class="flex flex-col items-center justify-center gap-4 text-center px-4">
+                      <div v-if="isSupportChat"
+                        class="flex flex-col items-center justify-center gap-4 text-center px-4">
                         <div class="text-4xl">💬</div>
                         <p class="text-lg text-mainText font-semibold">{{ $t("pages.chats.emptySupport") }}</p>
                         <p class="text-gray-400 text-sm">{{ $t("pages.chats.emptySupportDesc") }}</p>
@@ -1339,45 +1401,27 @@ async function sendMessage(payload: { files: File[] }) {
                   </div>
                 </template>
 
-                <div
-                  v-if="selectedChatId"
-                  aria-hidden="true"
-                  class="h-[124px] w-full flex-none md:h-[108px]"
-                />
+                <div v-if="selectedChatId" aria-hidden="true" class="h-[124px] w-full flex-none md:h-[108px]" />
               </div>
 
-              <div
-                v-if="selectedChatId"
-                class="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-transparent px-1 pb-2 pt-0"
-              >
-                <div
-                  v-if="lockReminderText"
-                  class="pointer-events-auto mx-1 mb-2 rounded-xl border px-3 py-2 text-sm"
+              <div v-if="selectedChatId"
+                class="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-transparent px-1 pb-2 pt-0">
+                <div v-if="lockReminderText" class="pointer-events-auto mx-1 mb-2 rounded-xl border px-3 py-2 text-sm"
                   :class="lockReminderType === 'sender'
                     ? 'border-amber-400/40 bg-amber-500/10 text-amber-200'
-                    : 'border-blue-400/40 bg-blue-500/10 text-blue-200'"
-                >
+                    : 'border-blue-400/40 bg-blue-500/10 text-blue-200'">
                   {{ lockReminderText }}
                 </div>
-                <div
-                  v-if="sendErrorMessage"
-                  class="pointer-events-auto mx-1 mb-2 rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300"
-                >
+                <div v-if="sendErrorMessage"
+                  class="pointer-events-auto mx-1 mb-2 rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
                   {{ sendErrorMessage }}
                 </div>
                 <div class="pointer-events-auto">
-                  <SendMessageBar
-                    v-model:newMessage="newMessage"
-                    :disabled="isSendLocked"
-                    @sendMessage="sendMessage"
-                  />
+                  <SendMessageBar v-model:newMessage="newMessage" :disabled="isSendLocked" @sendMessage="sendMessage" />
                 </div>
               </div>
 
-              <div
-                v-if="isChatPinning"
-                class="absolute inset-0 z-10 flex items-center justify-center bg-background"
-              >
+              <div v-if="isChatPinning" class="absolute inset-0 z-10 flex items-center justify-center bg-background">
                 <Loader />
               </div>
             </div>

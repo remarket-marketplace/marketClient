@@ -90,5 +90,6 @@ export const ChatArrayUnionSchema = z.array(ChatMessageUnionSchema)
 export type ChatMessageUnion = z.infer<typeof ChatMessageUnionSchema>
 export type ChatUpdateSchema = z.infer<typeof ChatUpdateSchema>
 export type MessagesReadPayload = z.infer<typeof MessagesReadSchema>
+export type PurchaseMessage = z.infer<typeof ProductMessageSchema>
 
 export type DealStatusMessageSchema = z.infer<typeof DealStatusMessageSchema>

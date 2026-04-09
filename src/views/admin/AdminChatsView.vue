@@ -35,6 +35,7 @@ const hasMoreChats = ref(true)
 
 // Состояние сообщений
 const chatMessages = ref<ChatMessageUnion[]>([])
+const liveDealStatusOverrides = ref<Record<string, string>>({})
 const selectedChatId = ref<string | null>(null)
 const messageContainerRef = ref<HTMLElement | null>(null)
 const bottomPin = createBottomPinController(() => messageContainerRef.value)
@@ -139,6 +140,12 @@ function normalizeMessagesChronological(messages: ChatMessageUnion[]): ChatMessa
     return [...messages].sort((a, b) => getMessageTimestamp(a) - getMessageTimestamp(b))
 }
 
+function isDealStatusUpdateMessage(
+    message: ChatMessageUnion,
+): message is Extract<ChatMessageUnion, { message_type: 'update_deal_status_message' }> {
+    return message.message_type === 'update_deal_status_message'
+}
+
 function mergePriceOfferTimelineMessage(
     firstMessage: PriceOfferChatMessage,
     latestMessage: PriceOfferChatMessage,
@@ -157,6 +164,10 @@ function normalizeTimelineServerMessages(messages: ChatMessageUnion[]): ChatMess
     const priceOfferIndexById = new Map<string, number>()
 
     for (const message of messages) {
+        if (isDealStatusUpdateMessage(message)) {
+            continue
+        }
+
         if (message.message_type !== 'price_offer_message') {
             normalizedMessages.push(message)
             continue
@@ -263,15 +274,13 @@ const dealStatusOverrides = computed<Record<string, string>>(() => {
     for (const message of chatMessages.value) {
         if (message.message_type === 'purchase_message') {
             statuses[message.deal_id] = statuses[message.deal_id] ?? message.deal_status
-            continue
-        }
-
-        if (message.message_type === 'update_deal_status_message') {
-            statuses[message.deal_id] = message.new_status
         }
     }
 
-    return statuses
+    return {
+        ...statuses,
+        ...liveDealStatusOverrides.value,
+    }
 })
 
 const reviewedDealIds = computed<string[]>(() => {
@@ -469,6 +478,7 @@ const checkMobile = () => {
 }
 
 let unsubscribeNewMessage: (() => void) | null = null
+let unsubscribeDealStatusUpdate: (() => void) | null = null
 let unsubscribeChatUpdated: (() => void) | null = null
 
 onMounted(async () => {
@@ -533,6 +543,13 @@ onMounted(async () => {
                 }
             }
         })
+        unsubscribeDealStatusUpdate = chatsService.onDealStatusUpdate(message => {
+            if (selectedChatId.value !== message.chat_room_id) return
+            liveDealStatusOverrides.value = {
+                ...liveDealStatusOverrides.value,
+                [message.deal_id]: message.new_status,
+            }
+        })
 
         await loadChats()
 
@@ -555,6 +572,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
     unsubscribeNewMessage?.()
+    unsubscribeDealStatusUpdate?.()
     unsubscribeChatUpdated?.()
     clearDeferredBottomPinTimers()
     bottomPin.stop()
@@ -576,6 +594,7 @@ watch([searchQuery, sortBy, presenceFilter, unreadFilter], () => {
 watch(selectedChatId, () => {
     floatingDateLabel.value = null
     isFloatingDateVisible.value = false
+    liveDealStatusOverrides.value = {}
     clearDeferredBottomPinTimers()
     if (floatingDateHideTimerId !== null) {
         clearTimeout(floatingDateHideTimerId)
@@ -783,6 +802,7 @@ async function loadChatMessages(
         hasUserScrolledAwayFromTop.value = false
         previousMessageScrollTop.value = 0
         chatMessages.value = []
+        liveDealStatusOverrides.value = {}
         messagesCurrentPage.value = 1
         hasMoreMessages.value = true
 
