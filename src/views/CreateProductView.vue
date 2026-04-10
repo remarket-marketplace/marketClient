@@ -232,12 +232,12 @@ const step4Valid = computed(() => priceValid.value && countValid.value)
 // Calculate seller's final amount
 const totalPriceInRub = computed(() => priceValueRub.value * countValue.value)
 const commissionAmountInRub = computed(() => {
-  if (!commissionInterest.value) return 0
+  if (commissionInterest.value === null) return 0
   return totalPriceInRub.value * (commissionInterest.value / 100)
 })
 
 const sellerAmount = computed(() => {
-  if (!price.value || !commissionInterest.value) return 0
+  if (!price.value || commissionInterest.value === null) return 0
   return Math.max(0, totalPriceInRub.value - commissionAmountInRub.value)
 })
 
@@ -729,7 +729,10 @@ onMounted(async () => {
       (category: Category) => category.is_active,
     )
     const commission = await productService.getCommissionInterest()
-    commissionInterest.value = Number(commission)
+    const normalizedCommission = Number(commission)
+    commissionInterest.value = Number.isFinite(normalizedCommission)
+      ? normalizedCommission
+      : null
   } catch (err) {
     console.error('Error loading data for product creation:', err)
     errorMessage.value = t('common.error')
@@ -1411,7 +1414,7 @@ async function createProduct() {
                     <div class="flex items-center justify-between">
                       <span class="text-sm text-gray-400">
                         {{ $t('pages.forms.createProduct.commission') }}:
-                        <span v-if="commissionInterest" class="text-blue-400 ml-1">
+                        <span v-if="commissionInterest !== null" class="text-blue-400 ml-1">
                           ({{ commissionInterest }}%)
                         </span>
                       </span>
@@ -1432,7 +1435,7 @@ async function createProduct() {
                     </div>
                   </div>
 
-                  <div v-if="commissionInterest" class="mt-4 p-3 rounded-lg bg-blue-900/20 border border-blue-800/30">
+                  <div v-if="commissionInterest !== null" class="mt-4 p-3 rounded-lg bg-blue-900/20 border border-blue-800/30">
                     <p class="text-xs text-blue-300 leading-relaxed">
                       {{ $t('pages.forms.createProduct.commissionNote', { percent: commissionInterest }) }}
                     </p>
