@@ -20,7 +20,7 @@ import { CheckCircle } from 'lucide-vue-next'
             </p>
 
             <button @click="$router.push('/wallet')"
-                class="mt-6 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition-all duration-200">
+                class="market-primary-surface market-primary-hover mt-6 w-full rounded-xl border border-blue-500 py-3 font-semibold text-white transition-all duration-200">
                 {{ $t('pages.paymentSuccess.toWallet') }}
             </button>
 

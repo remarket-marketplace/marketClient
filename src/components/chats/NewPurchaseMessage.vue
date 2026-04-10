@@ -7,7 +7,8 @@ import { useRouter } from 'vue-router'
 import type { Product } from '@/validation/product/product'
 import type { RefusalReasonsList } from '@/validation/deal/deal'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { ChevronDown, ChevronUp, RefreshCcw, Star, X } from 'lucide-vue-next'
+import { ChevronDown, ChevronUp, RefreshCcw, Star } from 'lucide-vue-next'
+import AppModal from '@/components/AppModal.vue'
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
 import { buildProductKey } from '@/utils/urlKeys'
@@ -468,8 +469,8 @@ onBeforeUnmount(() => {
         <template v-if="canConfirmReceipt">
           <button
             :class="isSummaryLayout
-              ? `${summaryPrimaryButtonClass} border border-green-500 bg-green-600 hover:bg-green-700`
-              : 'flex items-center justify-center gap-2 rounded-lg border border-green-500 bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-green-700'"
+              ? `${summaryPrimaryButtonClass} market-primary-surface market-primary-hover border border-blue-500`
+              : 'market-primary-surface market-primary-hover flex items-center justify-center gap-2 rounded-lg border border-blue-500 px-4 py-2.5 text-sm font-semibold text-white transition-all'"
             @click="openConfirmReceiptModal()"
           >
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -497,8 +498,8 @@ onBeforeUnmount(() => {
           <template v-if="!isDealRefunded">
             <button
               :class="isSummaryLayout
-                ? `${summaryPrimaryButtonClass} border border-orange-500 bg-orange-600 hover:bg-orange-700`
-                : 'flex items-center justify-center gap-2 rounded-lg border border-orange-500 bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-orange-700'"
+                ? `${summaryPrimaryButtonClass} border border-white/10 bg-white/[0.04] text-gray-200 hover:border-white/20 hover:bg-white/[0.08] hover:text-white`
+                : 'flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-gray-200 transition-all hover:border-white/20 hover:bg-white/[0.08] hover:text-white'"
               @click="openRefundModal"
             >
               <RefreshCcw class="h-4 w-4" />
@@ -523,8 +524,8 @@ onBeforeUnmount(() => {
           <div v-if="canSendReport" class="sm:ml-auto flex flex-col gap-2">
             <button
               :class="isSummaryLayout
-                ? `${summaryPrimaryButtonClass} border border-red-500 bg-red-600 hover:bg-red-700`
-                : 'flex items-center justify-center gap-2 rounded-lg border border-red-500 bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700'"
+                ? `${summaryPrimaryButtonClass} border border-white/10 bg-white/[0.04] text-gray-200 hover:border-white/20 hover:bg-white/[0.08] hover:text-white`
+                : 'flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-gray-200 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white'"
               @click="openRefusalModal()"
             >
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -572,169 +573,140 @@ onBeforeUnmount(() => {
     </div>
   </div>
 
-  <Teleport to="body">
-    <transition name="fade">
-      <div v-if="showReviewModal" class="app-modal-overlay z-50">
-        <div class="absolute inset-0 bg-black/65 backdrop-blur-sm" @click="closeReviewModal"></div>
+  <AppModal
+    :is-open="showReviewModal"
+    :title="$t('pages.chats.leaveReview')"
+    :description="$t('pages.chats.writeReview')"
+    size="sm"
+    :dismissible="!reviewSubmitting"
+    body-class="space-y-5"
+    @cancel="closeReviewModal"
+  >
+    <div class="flex justify-center gap-2">
+      <button
+        v-for="n in 5"
+        :key="n"
+        type="button"
+        class="rounded-full p-1 transition-transform hover:scale-105 disabled:cursor-not-allowed"
+        :disabled="reviewSubmitting"
+        @click="reviewStars = n"
+      >
+        <Star
+          class="h-8 w-8"
+          :class="reviewStars >= n ? 'fill-blue-500 text-blue-500' : 'text-gray-600'"
+        />
+      </button>
+    </div>
 
-        <div class="app-modal-panel relative flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-dark-700 bg-dark-800/95 shadow-2xl">
-          <div class="flex items-center justify-between border-b border-dark-700/80 px-5 py-4">
-            <div>
-              <h3 class="text-lg font-semibold text-white">{{ $t('pages.chats.leaveReview') }}</h3>
-              <p class="mt-1 text-sm text-gray-400">{{ $t('pages.chats.writeReview') }}</p>
-            </div>
-            <button
-              type="button"
-              class="rounded-lg p-1 text-gray-400 transition hover:bg-dark-700/70 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-              :disabled="reviewSubmitting"
-              @click="closeReviewModal"
-            >
-              <X class="h-5 w-5" />
-            </button>
-          </div>
+    <textarea
+      v-model="reviewText"
+      rows="5"
+      maxlength="1000"
+      class="w-full resize-none rounded-2xl border border-dark-600 bg-dark-700/55 p-3 text-sm text-gray-100 outline-none transition placeholder:text-gray-500 focus:border-blue-500/60 focus:bg-dark-700/75"
+      :placeholder="$t('pages.chats.writeReview')"
+      :disabled="reviewSubmitting"
+    ></textarea>
 
-          <div class="app-modal-scroll space-y-5 px-5 py-5">
-            <div class="flex justify-center gap-2">
-              <button
-                v-for="n in 5"
-                :key="n"
-                type="button"
-                class="rounded-full p-1 transition-transform hover:scale-105 disabled:cursor-not-allowed"
-                :disabled="reviewSubmitting"
-                @click="reviewStars = n"
-              >
-                <Star
-                  class="h-8 w-8"
-                  :class="reviewStars >= n ? 'fill-blue-500 text-blue-500' : 'text-gray-600'"
-                />
-              </button>
-            </div>
-
-            <textarea
-              v-model="reviewText"
-              rows="5"
-              maxlength="1000"
-              class="w-full resize-none rounded-2xl border border-dark-600 bg-dark-700/55 p-3 text-sm text-gray-100 outline-none transition placeholder:text-gray-500 focus:border-blue-500/60 focus:bg-dark-700/75"
-              :placeholder="$t('pages.chats.writeReview')"
-              :disabled="reviewSubmitting"
-            ></textarea>
-
-            <div class="flex items-center justify-between gap-3">
-              <button
-                type="button"
-                class="rounded-lg px-4 py-2.5 text-sm font-medium text-gray-300 transition hover:bg-dark-700/70 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                :disabled="reviewSubmitting"
-                @click="closeReviewModal"
-              >
-                {{ $t('common.cancel') }}
-              </button>
-              <button
-                type="button"
-                class="rounded-lg border border-green-500 bg-green-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:border-dark-600 disabled:bg-dark-700 disabled:text-gray-500"
-                :disabled="reviewStars < 1 || reviewSubmitting"
-                @click="handleSendReview()"
-              >
-                {{ $t('pages.chats.sendReview') }}
-              </button>
-            </div>
-          </div>
-        </div>
+    <template #footer>
+      <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          class="inline-flex min-h-11 items-center justify-center rounded-[1rem] border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-medium text-gray-200 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:px-6"
+          :disabled="reviewSubmitting"
+          @click="closeReviewModal"
+        >
+          {{ $t('common.cancel') }}
+        </button>
+        <button
+          type="button"
+          class="market-primary-surface market-primary-hover inline-flex min-h-11 items-center justify-center rounded-[1rem] border border-blue-500 px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:border-dark-600 disabled:bg-dark-700 disabled:text-gray-500 sm:min-h-12 sm:px-6"
+          :disabled="reviewStars < 1 || reviewSubmitting"
+          @click="handleSendReview()"
+        >
+          {{ $t('pages.chats.sendReview') }}
+        </button>
       </div>
-    </transition>
-  </Teleport>
+    </template>
+  </AppModal>
 
-  <Teleport to="body">
-    <transition name="fade">
-      <div v-if="showRefusalModal" class="app-modal-overlay z-50">
-        <div class="absolute inset-0 bg-black/50" @click="closeRefusalModal"></div>
-
-        <div class="app-modal-panel relative flex w-full max-w-md flex-col rounded-2xl border border-gray-800 bg-dark-800 shadow-2xl">
-          <div class="flex items-center justify-between border-b border-gray-700/50 p-6 pb-4">
-            <h3 class="text-xl font-semibold text-white">
-              {{ $t('pages.chats.selectReason') }}
-            </h3>
-            <button
-              class="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-700/30 hover:text-gray-300"
-              @click="closeRefusalModal"
+  <AppModal
+    :is-open="showRefusalModal"
+    :title="$t('pages.chats.selectReason')"
+    size="sm"
+    body-class="space-y-4"
+    @cancel="closeRefusalModal"
+  >
+    <div class="max-h-80 space-y-2 overflow-y-auto pr-1">
+      <button
+        v-for="reason in refusalReasons"
+        :key="reason.id"
+        class="w-full rounded-2xl border px-4 py-3.5 text-left transition-colors duration-200"
+        :class="selectedRefusalId === reason.id
+          ? 'border-blue-500/45 bg-dark-700/75 text-white'
+          : 'border-dark-600 bg-dark-700/40 text-gray-300 hover:border-dark-500 hover:bg-dark-700/55 hover:text-white'"
+        @click="selectedRefusalId = reason.id"
+      >
+        <div class="flex items-center">
+          <div class="mr-3 flex-shrink-0">
+            <div
+              class="flex h-5 w-5 items-center justify-center rounded-full border transition-colors duration-200"
+              :class="selectedRefusalId === reason.id
+                ? 'border-blue-400 bg-blue-500/15 ring-1 ring-blue-500/30'
+                : 'border-gray-500 bg-dark-900/90'"
             >
-              <X class="h-5 w-5" />
-            </button>
-          </div>
-
-          <div class="app-modal-scroll p-4">
-            <div class="max-h-80 space-y-2 overflow-y-auto pr-1">
-              <button
-                v-for="reason in refusalReasons"
-                :key="reason.id"
-                class="w-full rounded-2xl border px-4 py-3.5 text-left transition-colors duration-200"
-                :class="selectedRefusalId === reason.id
-                  ? 'border-blue-500/45 bg-dark-700/75 text-white'
-                  : 'border-dark-600 bg-dark-700/40 text-gray-300 hover:border-dark-500 hover:bg-dark-700/55 hover:text-white'"
-                @click="selectedRefusalId = reason.id"
-              >
-                <div class="flex items-center">
-                  <div class="mr-3 flex-shrink-0">
-                    <div
-                      class="flex h-5 w-5 items-center justify-center rounded-full border transition-colors duration-200"
-                      :class="selectedRefusalId === reason.id
-                        ? 'border-blue-400 bg-blue-500/15 ring-1 ring-blue-500/30'
-                        : 'border-gray-500 bg-dark-900/90'"
-                    >
-                      <div
-                        v-if="selectedRefusalId === reason.id"
-                        class="h-2.5 w-2.5 rounded-full bg-blue-400"
-                      ></div>
-                    </div>
-                  </div>
-
-                  <span class="text-sm font-medium leading-relaxed">
-                    {{ $t(`common.refusalReasons.${reason.title}`) }}
-                  </span>
-                </div>
-              </button>
-            </div>
-
-            <div v-if="isOtherReasonSelected" class="mt-4">
-              <textarea
-                v-model="customReasonText"
-                :maxlength="MAX_CUSTOM_REASON_LENGTH"
-                rows="4"
-                class="w-full rounded-2xl border border-dark-500 bg-dark-700/55 p-3 text-sm text-gray-100 outline-none transition-colors placeholder:text-gray-500 focus:border-blue-500/60 focus:bg-dark-700/75"
-                :placeholder="$t('pages.chats.enterCustomReason')"
-              ></textarea>
-              <div class="mt-2 flex items-center justify-between text-xs text-gray-400">
-                <span v-if="customReasonText.length >= MAX_CUSTOM_REASON_LENGTH" class="text-red-400">
-                  {{ $t('pages.chats.maxCharactersReached') }}
-                </span>
-                <span class="ml-auto">
-                  {{ customReasonText.length }}/{{ MAX_CUSTOM_REASON_LENGTH }}
-                </span>
-              </div>
+              <div
+                v-if="selectedRefusalId === reason.id"
+                class="h-2.5 w-2.5 rounded-full bg-blue-400"
+              ></div>
             </div>
           </div>
 
-          <div class="flex justify-end gap-3 border-t border-gray-700/50 p-6 pt-4">
-            <button
-              class="rounded-lg px-5 py-2.5 font-medium text-gray-300 transition-colors hover:bg-gray-700/50 hover:text-white"
-              @click="closeRefusalModal"
-            >
-              {{ $t('common.cancel') }}
-            </button>
-            <button
-              class="rounded-lg px-5 py-2.5 font-medium transition-colors"
-              :class="!selectedRefusalId || (isOtherReasonSelected && !customReasonText.trim())
-                ? 'cursor-not-allowed bg-gray-700 text-gray-500'
-                : 'market-primary-surface market-primary-hover text-white'"
-              :disabled="!selectedRefusalId || (isOtherReasonSelected && !customReasonText.trim())"
-              @click="handleReport(dealId)"
-            >
-              {{ $t('pages.chats.sendReport') }}
-            </button>
-          </div>
+          <span class="text-sm font-medium leading-relaxed">
+            {{ $t(`common.refusalReasons.${reason.title}`) }}
+          </span>
         </div>
+      </button>
+    </div>
+
+    <div v-if="isOtherReasonSelected" class="space-y-2">
+      <textarea
+        v-model="customReasonText"
+        :maxlength="MAX_CUSTOM_REASON_LENGTH"
+        rows="4"
+        class="w-full rounded-2xl border border-dark-500 bg-dark-700/55 p-3 text-sm text-gray-100 outline-none transition-colors placeholder:text-gray-500 focus:border-blue-500/60 focus:bg-dark-700/75"
+        :placeholder="$t('pages.chats.enterCustomReason')"
+      ></textarea>
+      <div class="flex items-center justify-between text-xs text-gray-400">
+        <span v-if="customReasonText.length >= MAX_CUSTOM_REASON_LENGTH" class="text-red-400">
+          {{ $t('pages.chats.maxCharactersReached') }}
+        </span>
+        <span class="ml-auto">
+          {{ customReasonText.length }}/{{ MAX_CUSTOM_REASON_LENGTH }}
+        </span>
       </div>
-    </transition>
-  </Teleport>
+    </div>
+
+    <template #footer>
+      <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <button
+          class="inline-flex min-h-11 items-center justify-center rounded-[1rem] border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-medium text-gray-200 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white sm:min-h-12 sm:px-6"
+          @click="closeRefusalModal"
+        >
+          {{ $t('common.cancel') }}
+        </button>
+        <button
+          class="inline-flex min-h-11 items-center justify-center rounded-[1rem] px-5 py-3 text-sm font-semibold transition-colors sm:min-h-12 sm:px-6"
+          :class="!selectedRefusalId || (isOtherReasonSelected && !customReasonText.trim())
+            ? 'cursor-not-allowed bg-gray-700 text-gray-500'
+            : 'market-primary-surface market-primary-hover text-white'"
+          :disabled="!selectedRefusalId || (isOtherReasonSelected && !customReasonText.trim())"
+          @click="handleReport(dealId)"
+        >
+          {{ $t('pages.chats.sendReport') }}
+        </button>
+      </div>
+    </template>
+  </AppModal>
 
   <ConfirmWindow
     :isOpen="showConfirmModal"
@@ -779,13 +751,4 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
 </style>

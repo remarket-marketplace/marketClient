@@ -8,7 +8,6 @@ import {
   Clock,
   CheckCircle,
   Flame,
-  X,
   XCircle,
   Plus,
   Minus,
@@ -22,6 +21,7 @@ import {
 } from 'lucide-vue-next'
 import { walletService } from '@/api/wallet/walletService'
 import type { Balance, WalletHistoryItem, WalletTopUpProvider } from '@/validation/wallet/wallet'
+import AppModal from '@/components/AppModal.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { LocationQueryValue } from 'vue-router'
@@ -1108,231 +1108,157 @@ const typeLabel = (type: string) => {
       </div>
     </div>
 
-    <!-- Deposit Modal -->
-    <Teleport to="body">
-      <div 
-        v-if="showDepositModal" 
-        class="app-modal-overlay z-50 bg-black/90 backdrop-blur-sm"
-      >
-        <div class="app-modal-panel relative w-full max-w-md overflow-y-auto rounded-2xl border border-dark-600 bg-dark-800/95 p-6 backdrop-blur-sm space-y-6">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full border border-dark-500 bg-dark-700/70 flex items-center justify-center">
-                <ArrowDownToLine class="w-5 h-5 text-gray-200" />
-              </div>
-              <h3 class="text-xl font-bold text-white">{{ $t('pages.wallet.deposit') }}</h3>
-            </div>
-            <button 
-              type="button"
-              @click="closeDepositModal"
-              class="rounded-full p-1 text-gray-400 transition-colors duration-150 hover:text-gray-300"
-              aria-label="Close"
-            >
-              <X class="w-5 h-5" />
-            </button>
-          </div>
-          
-          <div class="space-y-4">
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-300">
-                {{ $t('pages.wallet.depositAmount') }}
-              </label>
-              <div class="relative">
-                <input
-                  v-model="depositAmount"
-                  type="number"
-                  :min="depositInputMin"
-                  :max="depositInputMax"
-                  :step="currencyInputStep"
-                  placeholder="0"
-                  class="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-white text-lg font-semibold outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
-                />
-                <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 text-sm font-medium">
-                  {{ currencySymbol }}
-                </div>
-              </div>
-              <p class="text-xs text-gray-400 mt-2">
-                {{ $t('pages.wallet.depositMin', { amount: minimumDepositText }) }}
-              </p>
-            </div>
+    <AppModal
+      :is-open="showDepositModal"
+      :title="$t('pages.wallet.deposit')"
+      size="sm"
+      body-class="space-y-4"
+      @cancel="closeDepositModal"
+    >
+      <div class="flex items-center gap-3">
+        <div class="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]">
+          <ArrowDownToLine class="h-5 w-5 text-gray-200" />
+        </div>
+        <p class="text-sm text-gray-400">
+          {{ $t('pages.wallet.depositMin', { amount: minimumDepositText }) }}
+        </p>
+      </div>
 
-            <div
-              class="space-y-3"
-              role="radiogroup"
-              :aria-label="$t('pages.wallet.paymentProvider')"
-            >
-              <div class="flex items-center justify-between gap-3">
-                <label class="block text-sm font-medium text-gray-300">
-                  {{ $t('pages.wallet.paymentProvider') }}
-                </label>
-                <span class="text-[10px] font-semibold uppercase tracking-[0.24em] text-gray-500">
-                  {{ $t('pages.wallet.paymentProviderEyebrow') }}
-                </span>
-              </div>
-
-              <div
-                v-if="depositProviderOptions.length > 0"
-                class="grid gap-3"
-              >
-                <button
-                  v-for="option in depositProviderOptions"
-                  :key="option.id"
-                  type="button"
-                  :aria-pressed="selectedDepositProvider === option.id"
-                  class="group relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-200 sm:p-5"
-                  :class="selectedDepositProvider === option.id ? option.activeClass : 'border-dark-600 bg-dark-700/40 hover:border-dark-500 hover:bg-dark-700/70'"
-                  @click="selectedDepositProvider = option.id"
-                >
-                  <div
-                    class="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200"
-                    :class="[option.surfaceClass, selectedDepositProvider === option.id ? 'opacity-100' : 'group-hover:opacity-70']"
-                  />
-
-                  <div class="relative flex items-start gap-4">
-                    <div
-                      class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border transition-colors duration-200"
-                      :class="selectedDepositProvider === option.id ? option.activeIconClass : 'border-dark-600 bg-dark-700/75 text-gray-300'"
-                    >
-                      <component :is="option.icon" class="h-5 w-5" />
-                    </div>
-
-                    <div class="min-w-0 flex-1">
-                      <div class="flex items-center justify-between gap-3">
-                        <div class="text-base font-semibold text-white sm:text-lg">
-                          {{ option.title }}
-                        </div>
-                        <span
-                          class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-200"
-                          :class="selectedDepositProvider === option.id ? option.activeIndicatorClass : 'border-dark-500 bg-dark-700/80'"
-                        >
-                          <span
-                            class="h-2 w-2 rounded-full transition-opacity duration-200"
-                            :class="selectedDepositProvider === option.id ? 'bg-white opacity-100' : 'bg-transparent opacity-0'"
-                          />
-                        </span>
-                      </div>
-
-                      <p
-                        class="mt-2 max-w-[20rem] text-sm leading-6 transition-colors duration-200"
-                        :class="selectedDepositProvider === option.id ? option.activeCopyClass : 'text-gray-400'"
-                      >
-                        {{ option.description }}
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              </div>
-              <div
-                v-else
-                class="rounded-2xl border border-rose-500/20 bg-rose-500/8 px-4 py-3 text-sm text-rose-200"
-              >
-                {{ $t('pages.wallet.paymentProvidersUnavailable') }}
-              </div>
-
-              <p class="text-xs text-gray-400">
-                {{ $t('pages.wallet.paymentProviderHint') }}
-              </p>
-            </div>
-
-            <div
-              v-if="depositErrorMessage"
-              class="rounded-xl border border-rose-500/20 bg-rose-500/8 px-4 py-3 text-sm text-rose-200"
-            >
-              {{ depositErrorMessage }}
-            </div>
-
-            <button
-              @click="handleDeposit"
-              :disabled="!canSubmitDeposit || isLoading"
-              class="market-btn market-btn-primary w-full rounded-xl py-3.5"
-            >
-              <span v-if="isLoading" class="flex items-center justify-center gap-2">
-                <Loader2 class="w-4 h-4 animate-spin text-white" />
-                {{ $t('common.loading') }}
-              </span>
-              <span v-else>
-                {{ $t('pages.wallet.proceedToPayment') }}
-              </span>
-            </button>
+      <div class="space-y-2">
+        <label class="block text-sm font-medium text-gray-300">
+          {{ $t('pages.wallet.depositAmount') }}
+        </label>
+        <div class="relative">
+          <input
+            v-model="depositAmount"
+            type="number"
+            :min="depositInputMin"
+            :max="depositInputMax"
+            :step="currencyInputStep"
+            placeholder="0"
+            class="w-full rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3 text-lg font-semibold text-white outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+          />
+          <div class="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-300">
+            {{ currencySymbol }}
           </div>
         </div>
       </div>
-    </Teleport>
 
-    <!-- Withdraw Modal -->
-    <Teleport to="body">
-      <div 
-        v-if="showWithdrawModal" 
-        class="app-modal-overlay z-50 bg-black/90 backdrop-blur-sm"
+      <div
+        class="space-y-3"
+        role="radiogroup"
+        :aria-label="$t('pages.wallet.paymentProvider')"
       >
-        <div class="app-modal-panel relative w-full max-w-md overflow-y-auto rounded-2xl border border-dark-600 bg-dark-800/95 p-6 backdrop-blur-sm space-y-6">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div class="flex h-10 w-10 items-center justify-center rounded-full border border-dark-600 bg-dark-700/75">
-                <ArrowUpFromLine class="w-5 h-5 text-gray-300" />
-              </div>
-              <h3 class="text-xl font-bold text-white">{{ $t('pages.wallet.withdraw') }}</h3>
-            </div>
-            <button 
-              type="button"
-              @click="closeWithdrawModal"
-              class="rounded-full p-1 text-gray-400 transition-colors duration-150 hover:text-gray-300"
-              aria-label="Close"
-            >
-              <X class="w-5 h-5" />
-            </button>
-          </div>
-          
-          <div class="space-y-4">
-            <div class="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
-              <div class="text-[11px] uppercase tracking-[0.24em] text-gray-500">
-                {{ $t('pages.wallet.withdrawCard') }}
-              </div>
-              <input
-                v-model="withdrawCardNumber"
-                type="text"
-                inputmode="numeric"
-                autocomplete="cc-number"
-                maxlength="23"
-                :placeholder="$t('pages.wallet.withdrawCardPlaceholder')"
-                class="mt-3 w-full border-none bg-transparent p-0 text-lg font-semibold tracking-[0.18em] text-white outline-none placeholder:text-gray-600"
-                @input="formatCardNumberInput"
-              />
-              <p class="mt-2 text-xs text-gray-400">
-                {{ $t('pages.wallet.withdrawCardHint') }}
-              </p>
-            </div>
+        <div class="flex items-center justify-between gap-3">
+          <label class="block text-sm font-medium text-gray-300">
+            {{ $t('pages.wallet.paymentProvider') }}
+          </label>
+          <span class="text-[10px] font-semibold uppercase tracking-[0.24em] text-gray-500">
+            {{ $t('pages.wallet.paymentProviderEyebrow') }}
+          </span>
+        </div>
 
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-300">
-                {{ $t('pages.wallet.withdrawAmount') }}
-              </label>
-              <div class="relative">
-                <input
-                  v-model="withdrawAmount"
-                  type="number"
-                  :max="withdrawInputMax"
-                  :min="withdrawInputMin"
-                  :step="currencyInputStep"
-                  placeholder="0"
-                  class="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-white text-lg font-semibold outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
-                />
-                <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 text-sm font-medium">
-                  {{ currencySymbol }}
-                </div>
+        <div
+          v-if="depositProviderOptions.length > 0"
+          class="grid gap-3"
+        >
+          <button
+            v-for="option in depositProviderOptions"
+            :key="option.id"
+            type="button"
+            :aria-pressed="selectedDepositProvider === option.id"
+            class="group relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-200 sm:p-5"
+            :class="selectedDepositProvider === option.id ? option.activeClass : 'border-dark-600 bg-dark-700/40 hover:border-dark-500 hover:bg-dark-700/70'"
+            @click="selectedDepositProvider = option.id"
+          >
+            <div
+              class="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200"
+              :class="[option.surfaceClass, selectedDepositProvider === option.id ? 'opacity-100' : 'group-hover:opacity-70']"
+            />
+
+            <div class="relative flex items-start gap-4">
+              <div
+                class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border transition-colors duration-200"
+                :class="selectedDepositProvider === option.id ? option.activeIconClass : 'border-dark-600 bg-dark-700/75 text-gray-300'"
+              >
+                <component :is="option.icon" class="h-5 w-5" />
               </div>
-              <div class="flex items-center justify-between text-xs mt-2">
-                <span class="text-gray-400">
-                  {{ $t('pages.wallet.available') }}: <span class="text-green-400">{{ formatCurrency(withdrawableBalanceRub) }}</span>
-                </span>
-                <button 
-                  @click="withdrawAmount = availableBalanceForInput()"
-                  class="text-blue-400 hover:text-blue-300 transition-colors"
+
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center justify-between gap-3">
+                  <div class="text-base font-semibold text-white sm:text-lg">
+                    {{ option.title }}
+                  </div>
+                  <span
+                    class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-200"
+                    :class="selectedDepositProvider === option.id ? option.activeIndicatorClass : 'border-dark-500 bg-dark-700/80'"
+                  >
+                    <span
+                      class="h-2 w-2 rounded-full transition-opacity duration-200"
+                      :class="selectedDepositProvider === option.id ? 'bg-white opacity-100' : 'bg-transparent opacity-0'"
+                    />
+                  </span>
+                </div>
+
+                <p
+                  class="mt-2 max-w-[20rem] text-sm leading-6 transition-colors duration-200"
+                  :class="selectedDepositProvider === option.id ? option.activeCopyClass : 'text-gray-400'"
                 >
-                  {{ $t('pages.wallet.useAll') }}
-                </button>
+                  {{ option.description }}
+                </p>
               </div>
             </div>
+          </button>
+        </div>
+        <div
+          v-else
+          class="rounded-2xl border border-rose-500/20 bg-rose-500/8 px-4 py-3 text-sm text-rose-200"
+        >
+          {{ $t('pages.wallet.paymentProvidersUnavailable') }}
+        </div>
+
+        <p class="text-xs text-gray-400">
+          {{ $t('pages.wallet.paymentProviderHint') }}
+        </p>
+      </div>
+
+      <div
+        v-if="depositErrorMessage"
+        class="rounded-xl border border-rose-500/20 bg-rose-500/8 px-4 py-3 text-sm text-rose-200"
+      >
+        {{ depositErrorMessage }}
+      </div>
+
+      <button
+        @click="handleDeposit"
+        :disabled="!canSubmitDeposit || isLoading"
+        class="market-btn market-btn-primary w-full rounded-xl py-3.5"
+      >
+        <span v-if="isLoading" class="flex items-center justify-center gap-2">
+          <Loader2 class="w-4 h-4 animate-spin text-white" />
+          {{ $t('common.loading') }}
+        </span>
+        <span v-else>
+          {{ $t('pages.wallet.proceedToPayment') }}
+        </span>
+      </button>
+    </AppModal>
+
+    <AppModal
+      :is-open="showWithdrawModal"
+      :title="$t('pages.wallet.withdraw')"
+      size="sm"
+      body-class="space-y-4"
+      @cancel="closeWithdrawModal"
+    >
+      <div class="flex items-center gap-3">
+        <div class="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]">
+          <ArrowUpFromLine class="h-5 w-5 text-gray-300" />
+        </div>
+        <p class="text-sm text-gray-400">
+          {{ $t('pages.wallet.available') }}: <span class="text-emerald-300">{{ formatCurrency(withdrawableBalanceRub) }}</span>
+        </p>
+      </div>
 
             <div
               v-if="Number.isFinite(withdrawAmountInRub) && withdrawAmountInRub > 0"
@@ -1363,30 +1289,87 @@ const typeLabel = (type: string) => {
               {{ withdrawErrorMessage }}
             </div>
 
-            <div
-              v-if="withdrawSuccessMessage"
-              class="rounded-xl border border-emerald-500/20 bg-emerald-500/8 px-4 py-3 text-sm text-emerald-200"
-            >
-              {{ withdrawSuccessMessage }}
-            </div>
+      <div class="space-y-2">
+        <label class="block text-sm font-medium text-gray-300">
+          {{ $t('pages.wallet.withdrawAmount') }}
+        </label>
+        <div class="relative">
+          <input
+            v-model="withdrawAmount"
+            type="number"
+            :max="withdrawInputMax"
+            :min="withdrawInputMin"
+            :step="currencyInputStep"
+            placeholder="0"
+            class="w-full rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3 text-lg font-semibold text-white outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+          />
+          <div class="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-300">
+            {{ currencySymbol }}
+          </div>
+        </div>
+        <div class="mt-2 flex items-center justify-between text-xs">
+          <span class="text-gray-400">
+            {{ $t('pages.wallet.available') }}: <span class="text-green-400">{{ formatCurrency(withdrawableBalanceRub) }}</span>
+          </span>
+          <button
+            @click="withdrawAmount = availableBalanceForInput()"
+            class="text-blue-400 transition-colors hover:text-blue-300"
+          >
+            {{ $t('pages.wallet.useAll') }}
+          </button>
+        </div>
+      </div>
 
-            <button
-              @click="handleWithdraw"
-              :disabled="!canSubmitWithdrawal || isLoading"
-              class="market-btn market-btn-primary w-full rounded-xl py-3.5"
-            >
-              <span v-if="isLoading" class="flex items-center justify-center gap-2">
-                <Loader2 class="w-4 h-4 animate-spin text-white" />
-                {{ $t('common.loading') }}
-              </span>
-              <span v-else>
-                {{ $t('pages.wallet.confirmWithdrawal') }}
-              </span>
-            </button>
+      <div
+        v-if="Number.isFinite(withdrawAmountInRub) && withdrawAmountInRub > 0"
+        class="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3"
+      >
+        <div class="grid gap-2 text-sm text-gray-300">
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-gray-400">{{ $t('pages.wallet.withdrawSummary.requestedAmount') }}</span>
+            <span class="font-medium text-white">{{ formatCurrency(withdrawAmountInRub) }}</span>
+          </div>
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-gray-400">
+              {{ $t('pages.wallet.withdrawSummary.commission', { percent: withdrawalCommissionPercent }) }}
+            </span>
+            <span class="font-medium text-amber-200">{{ formatCurrency(withdrawCommissionAmountRub) }}</span>
+          </div>
+          <div class="flex items-center justify-between gap-3 border-t border-white/8 pt-2">
+            <span class="text-gray-400">{{ $t('pages.wallet.withdrawSummary.payoutAmount') }}</span>
+            <span class="text-base font-semibold text-emerald-300">{{ formatCurrency(withdrawPayoutAmountRub) }}</span>
           </div>
         </div>
       </div>
-    </Teleport>
+
+      <div
+        v-if="withdrawErrorMessage"
+        class="rounded-xl border border-rose-500/20 bg-rose-500/8 px-4 py-3 text-sm text-rose-200"
+      >
+        {{ withdrawErrorMessage }}
+      </div>
+
+      <div
+        v-if="withdrawSuccessMessage"
+        class="rounded-xl border border-emerald-500/20 bg-emerald-500/8 px-4 py-3 text-sm text-emerald-200"
+      >
+        {{ withdrawSuccessMessage }}
+      </div>
+
+      <button
+        @click="handleWithdraw"
+        :disabled="!canSubmitWithdrawal || isLoading"
+        class="market-btn market-btn-primary w-full rounded-xl py-3.5"
+      >
+        <span v-if="isLoading" class="flex items-center justify-center gap-2">
+          <Loader2 class="w-4 h-4 animate-spin text-white" />
+          {{ $t('common.loading') }}
+        </span>
+        <span v-else>
+          {{ $t('pages.wallet.confirmWithdrawal') }}
+        </span>
+      </button>
+    </AppModal>
   </div>
 </template>
 

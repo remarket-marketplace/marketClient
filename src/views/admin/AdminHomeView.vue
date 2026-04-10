@@ -709,8 +709,8 @@ watch(selectedRange, loadDashboard)
               <button
                 class="mt-3 rounded-lg border px-3 py-2 text-xs font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
                 :class="platformSettings.registration_enabled
-                  ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25'
-                  : 'border-red-500/40 bg-red-500/15 text-red-200 hover:bg-red-500/25'"
+                  ? 'border-blue-500/40 bg-blue-600/80 text-white hover:bg-blue-500'
+                  : 'border-white/10 bg-white/[0.04] text-gray-200 hover:border-white/20 hover:bg-white/[0.08] hover:text-white'"
                 :disabled="isPlatformSettingsSaving"
                 @click="openRegistrationToggleConfirm"
               >
@@ -732,8 +732,8 @@ watch(selectedRange, loadDashboard)
               <button
                 class="mt-3 rounded-lg border px-3 py-2 text-xs font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
                 :class="platformSettings.product_creation_enabled
-                  ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25'
-                  : 'border-red-500/40 bg-red-500/15 text-red-200 hover:bg-red-500/25'"
+                  ? 'border-blue-500/40 bg-blue-600/80 text-white hover:bg-blue-500'
+                  : 'border-white/10 bg-white/[0.04] text-gray-200 hover:border-white/20 hover:bg-white/[0.08] hover:text-white'"
                 :disabled="isPlatformSettingsSaving"
                 @click="openProductCreationToggleConfirm"
               >
@@ -755,8 +755,8 @@ watch(selectedRange, loadDashboard)
               <button
                 class="mt-3 rounded-lg border px-3 py-2 text-xs font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
                 :class="platformSettings.telegram_integration_enabled
-                  ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25'
-                  : 'border-red-500/40 bg-red-500/15 text-red-200 hover:bg-red-500/25'"
+                  ? 'border-blue-500/40 bg-blue-600/80 text-white hover:bg-blue-500'
+                  : 'border-white/10 bg-white/[0.04] text-gray-200 hover:border-white/20 hover:bg-white/[0.08] hover:text-white'"
                 :disabled="isPlatformSettingsSaving"
                 @click="openTelegramIntegrationToggleConfirm"
               >

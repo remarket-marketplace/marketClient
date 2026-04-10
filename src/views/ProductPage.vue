@@ -845,11 +845,11 @@ onUnmounted(() => {
               <div v-if="product.status === 'active'" class="flex w-full items-center justify-end gap-3">
                 <div class="flex min-w-0 flex-1 flex-nowrap items-stretch gap-2">
                   <button :disabled="user === null" @click="user !== null && openOfferConfirm()" class="inline-flex h-12 flex-1 items-center justify-center whitespace-nowrap rounded-lg px-4 text-sm font-semibold leading-none transition
-          bg-emerald-600 text-white hover:bg-emerald-700
-          disabled:bg-emerald-600/40
-          disabled:text-white/60
+          border border-white/10 bg-white/[0.04] text-gray-200 hover:border-white/20 hover:bg-white/[0.08] hover:text-white
+          disabled:bg-white/[0.03]
+          disabled:text-white/45
           disabled:cursor-not-allowed
-          disabled:hover:bg-emerald-600/40">
+          disabled:hover:bg-white/[0.03]">
                     <span class="inline-flex items-center justify-center gap-2 leading-none">
                       <Percent class="h-4 w-4" />
                       {{ $t('pages.product.offerPrice') }}
@@ -1101,8 +1101,8 @@ onUnmounted(() => {
                 type="button"
                 class="rounded-md border px-2.5 py-1 text-xs font-medium transition-colors"
                 :class="isDiscountPresetActive(discount)
-                  ? 'border-emerald-400 bg-emerald-500/25 text-emerald-100'
-                  : 'border-emerald-700/50 bg-emerald-900/20 text-emerald-200 hover:bg-emerald-900/35'"
+                  ? 'border-blue-400 bg-blue-500/25 text-blue-100'
+                  : 'border-white/10 bg-white/[0.04] text-gray-300 hover:border-white/20 hover:bg-white/[0.08] hover:text-white'"
                 @click="applyOfferDiscount(discount)"
               >
                 -{{ discount }}%
@@ -1115,7 +1115,7 @@ onUnmounted(() => {
                 min="0.01"
                 :max="maxOfferedPrice ?? undefined"
                 step="0.01"
-                class="price-offer-input w-full rounded-lg border border-dark-700 bg-dark-700/60 px-3 py-2 pr-20 text-sm text-white outline-none focus:border-emerald-500"
+                class="price-offer-input w-full rounded-lg border border-dark-700 bg-dark-700/60 px-3 py-2 pr-20 text-sm text-white outline-none focus:border-blue-500"
                 @input="normalizeOfferedPrice"
                 @blur="normalizeOfferedPrice"
               />
@@ -1126,17 +1126,17 @@ onUnmounted(() => {
           </div>
           <div
             v-if="offerDiscountPercent !== null"
-            class="rounded-lg border border-emerald-700/30 bg-emerald-900/15 p-3"
+            class="rounded-lg border border-blue-500/25 bg-blue-500/10 p-3"
           >
             <p class="text-xs text-gray-300">{{ $t('pages.product.offerPriceConfirm.previewLabel') }}</p>
             <div class="mt-1 flex flex-wrap items-center gap-2">
               <span class="text-xs text-gray-500 line-through">
                 {{ formatCurrencyAmount(Number(product?.price ?? 0), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
               </span>
-              <span class="text-sm font-semibold text-emerald-300">
+              <span class="text-sm font-semibold text-blue-200">
                 {{ formatCurrencyAmount(Number(offeredPrice ?? 0), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
               </span>
-              <span class="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-200">
+              <span class="inline-flex items-center rounded-full border border-blue-400/30 bg-blue-500/15 px-2 py-0.5 text-[11px] font-semibold text-blue-200">
                 {{ $t('pages.product.offerPriceConfirm.discountBadge', { percent: offerDiscountPercent }) }}
               </span>
             </div>
@@ -1162,8 +1162,8 @@ onUnmounted(() => {
                   type="button"
                   class="rounded-md border px-2.5 py-1 text-left text-[11px] leading-4 transition-colors"
                   :class="selectedOfferMessageTemplateKey === template.id
-                    ? 'border-emerald-400 bg-emerald-500/25 text-emerald-100'
-                    : 'border-emerald-700/50 bg-emerald-900/20 text-emerald-200 hover:bg-emerald-900/35'"
+                    ? 'border-blue-400 bg-blue-500/25 text-blue-100'
+                    : 'border-white/10 bg-white/[0.04] text-gray-300 hover:border-white/20 hover:bg-white/[0.08] hover:text-white'"
                   @click="applyOfferMessageTemplate(template.id)"
                 >
                   {{ template.text }}

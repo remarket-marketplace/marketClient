@@ -69,7 +69,7 @@ const imagePreviewUrls = computed(() => (
         <span>{{ t('pages.chats.messageSendFailed') }}</span>
         <button
           type="button"
-          class="rounded-full border border-red-400/40 px-2 py-0.5 text-[11px] font-medium text-red-200 transition hover:bg-red-500/10 hover:text-red-100"
+          class="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-medium text-gray-200 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
           @click="emit('retry', message.id)"
         >
           {{ $t('pages.chats.retrySend') }}

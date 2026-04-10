@@ -154,7 +154,7 @@ function clearAll() {
         v-if="filesCount > 0"
         type="button"
         @click="clearAll"
-        class="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors"
+        class="flex items-center gap-1 text-xs text-gray-300 transition-colors hover:text-white"
       >
         <X class="w-3 h-3" />
         {{ $t('components.fileUploader.clearAll') }}
@@ -196,7 +196,7 @@ function clearAll() {
         <button
           type="button"
           @click.stop="removeImage(index)"
-          class="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white p-1.5 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100"
+          class="absolute top-2 right-2 rounded-full border border-white/10 bg-dark-900/90 p-1.5 text-gray-200 transition-all duration-200 opacity-0 group-hover:opacity-100 hover:border-white/20 hover:bg-dark-900 hover:text-white"
           :title="$t('common.delete')"
         >
           <Trash2 class="w-3.5 h-3.5" />
