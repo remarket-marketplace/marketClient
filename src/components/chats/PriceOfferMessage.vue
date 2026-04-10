@@ -166,14 +166,14 @@ function handleViewProduct() {
       <div class="mt-3 flex flex-wrap items-end justify-between gap-3">
         <div v-if="canProcess" class="flex flex-wrap gap-2">
           <button
-            class="rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+            class="market-primary-surface market-primary-hover rounded-lg border border-blue-500 px-3.5 py-2 text-sm font-semibold text-white transition disabled:opacity-50"
             :disabled="isProcessing"
             @click="acceptOffer"
           >
             {{ t('pages.chats.acceptOffer') }}
           </button>
           <button
-            class="rounded-lg bg-red-600 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+            class="rounded-lg border border-white/10 bg-white/[0.04] px-3.5 py-2 text-sm font-semibold text-gray-200 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white disabled:opacity-50"
             :disabled="isProcessing"
             @click="rejectOffer"
           >

@@ -91,7 +91,7 @@ const formatDate = (dateString: string) => {
       <!-- Heart button -->
       <button
         @click.stop="removeProductFromFavorites"
-        class="absolute top-2 right-2 p-2 rounded-full bg-dark-900/90 backdrop-blur-sm hover:bg-red-900/90 transition-colors"
+        class="absolute top-2 right-2 rounded-full border border-white/10 bg-dark-900/90 p-2 backdrop-blur-sm transition-colors hover:border-white/20 hover:bg-dark-900"
         :title="$t('pages.favoriteProducts.remove')"
       >
         <Heart

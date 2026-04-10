@@ -24,6 +24,7 @@ import UserRating from '@/components/UserRating.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
+import AppModal from '@/components/AppModal.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
 import { isSafeImageFile, SAFE_IMAGE_INPUT_ACCEPT } from '@/utils/imageUpload'
 import { formatAverageResponseTime, formatLastSeen } from '@/utils/presence'
@@ -44,7 +45,6 @@ const isEditingDescription = ref(false)
 
 const showMenu = ref(false)
 const menuContainerRef = ref<HTMLElement | null>(null)
-const shareModalRef = ref<HTMLElement | null>(null)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const isUploading = ref(false)
 const showAvatarOverlay = ref(false)
@@ -650,7 +650,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                     </button>
                     <hr class="border-dark-200">
                     <button @click="logout"
-                      class="w-full rounded-b-xl flex items-center gap-3 px-4 py-3 text-left text-sm text-red-400 hover:bg-dark-700/50 transition-colors">
+                      class="w-full rounded-b-xl flex items-center gap-3 px-4 py-3 text-left text-sm text-gray-300 transition-colors hover:bg-dark-700/50 hover:text-white">
                       <LogOut class="w-4 h-4" />
                       <span>{{ t('pages.profile.logout') }}</span>
                     </button>
@@ -1073,7 +1073,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                           <span class="truncate">{{ deal.seller.username }}</span>
                         </div>
                         <div @click="goToProfile(deal.buyer.username)"
-                          class="text-xs px-2 py-1.5 rounded-lg bg-green-500/20 text-green-300 hover:bg-green-500/30 transition-colors cursor-pointer truncate text-center"
+                          class="cursor-pointer truncate rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1.5 text-center text-xs text-gray-200 transition-colors hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
                           :title="`${t('common.buyer')}: ${deal.buyer.username}`">
                           <span class="hidden sm:inline">{{ t('common.buyer') }}: </span>
                           <span class="truncate">{{ deal.buyer.username }}</span>
@@ -1154,52 +1154,43 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
         </div>
       </div>
 
-      <!-- Share Modal -->
-      <Teleport to="body">
-        <div v-if="showShareModal"
-          @click.self="closeShareModal"
-          class="app-modal-overlay z-50 bg-black/90 backdrop-blur-sm">
-          <div ref="shareModalRef"
-            class="app-modal-panel relative w-full max-w-md overflow-y-auto rounded-2xl border border-dark-600 bg-dark-800/95 p-4 backdrop-blur-sm sm:p-6 space-y-6"
-            @click.stop>
-            <div class="flex items-center justify-between">
-              <h3 class="text-xl font-bold text-white">{{ t('pages.profile.shareProfile') }}</h3>
-              <button @click="closeShareModal"
-                class="w-8 h-8 flex items-center justify-center rounded-lg border border-dark-600 bg-dark-700/50 hover:bg-dark-700 transition-colors">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="w-4 h-4 text-gray-300">
-                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                </svg>
-              </button>
-            </div>
+      <AppModal
+        :is-open="showShareModal"
+        :title="t('pages.profile.shareProfile')"
+        size="sm"
+        body-class="space-y-5"
+        @cancel="closeShareModal"
+      >
+        <div class="flex flex-col items-center space-y-4">
+          <div class="rounded-2xl bg-white p-4 shadow-[0_20px_50px_rgba(0,0,0,0.2)]">
+            <QrcodeVue :value="profileUrl" :size="180" level="H" />
+          </div>
+          <p class="text-center text-sm text-gray-300">{{ t('pages.profile.scanQR') }}</p>
+        </div>
 
-            <div class="space-y-4">
-              <div class="flex flex-col items-center space-y-4">
-                <div class="bg-white p-4 rounded-xl">
-                  <QrcodeVue :value="profileUrl" :size="180" level="H" />
-                </div>
-                <p class="text-sm text-gray-300 text-center">{{ t('pages.profile.scanQR') }}</p>
-              </div>
-
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-300">{{ t('pages.profile.profileLink') }}</label>
-                <div class="space-y-2">
-                  <div class="w-full min-w-0">
-                    <input type="text" :value="profileUrl" readonly
-                      class="w-full min-w-0 px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-sm text-white outline-none" />
-                  </div>
-                  <button @click="copyProfileLink"
-                    class="market-btn w-full rounded-lg border border-transparent px-4 py-2.5 text-sm text-white"
-                    :class="isCopied ? 'market-btn-success' : 'market-btn-primary text-mainText'">
-                    <Check v-if="isCopied" class="w-4 h-4" />
-                    <Copy v-else class="w-4 h-4" />
-                    {{ isCopied ? t('common.copied') : t('common.copy') }}
-                  </button>
-                </div>
-              </div>
+        <div class="space-y-2">
+          <label class="block text-sm font-medium text-gray-300">{{ t('pages.profile.profileLink') }}</label>
+          <div class="space-y-2">
+            <div class="w-full min-w-0">
+              <input
+                type="text"
+                :value="profileUrl"
+                readonly
+                class="w-full min-w-0 rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm text-white outline-none"
+              />
             </div>
+            <button
+              @click="copyProfileLink"
+              class="market-btn w-full rounded-xl px-4 py-3 text-sm"
+              :class="isCopied ? 'market-btn-secondary text-white' : 'market-btn-primary text-mainText'"
+            >
+              <Check v-if="isCopied" class="w-4 h-4" />
+              <Copy v-else class="w-4 h-4" />
+              {{ isCopied ? t('common.copied') : t('common.copy') }}
+            </button>
           </div>
         </div>
-      </Teleport>
+      </AppModal>
 
     </div>
   </div>

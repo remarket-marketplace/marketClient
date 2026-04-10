@@ -149,6 +149,18 @@ body {
     background-color: var(--color-button-hover);
   }
 
+  .market-btn-secondary {
+    border: 1px solid rgb(var(--palette-white) / 0.1);
+    background-color: rgb(var(--palette-white) / 0.04);
+    color: rgb(var(--palette-gray-200));
+  }
+
+  .market-btn-secondary:hover {
+    border-color: rgb(var(--palette-white) / 0.18);
+    background-color: rgb(var(--palette-white) / 0.08);
+    color: var(--white-solid);
+  }
+
   .market-btn-success {
     background-color: rgb(var(--palette-emerald-600));
   }
@@ -234,36 +246,38 @@ body {
   }
 
   .admin-btn-success {
-    background-color: var(--admin-btn-success-bg);
+    background-color: var(--color-button-primary);
     border-color: transparent;
     color: var(--admin-btn-text-strong);
   }
 
   .admin-btn-success:hover {
-    background-color: var(--admin-btn-success-hover-bg);
+    background-color: var(--color-button-hover);
     border-color: transparent;
   }
 
   .admin-btn-danger {
-    background-color: var(--admin-btn-danger-bg);
-    border-color: transparent;
-    color: var(--admin-btn-text-strong);
+    background-color: rgb(var(--palette-white) / 0.04);
+    border-color: rgb(var(--palette-white) / 0.1);
+    color: rgb(var(--palette-gray-200));
   }
 
   .admin-btn-danger:hover {
-    background-color: var(--admin-btn-danger-hover-bg);
-    border-color: transparent;
-  }
-
-  .admin-btn-accent {
-    background-color: var(--admin-btn-accent-bg);
-    border-color: transparent;
+    background-color: rgb(var(--palette-white) / 0.08);
+    border-color: rgb(var(--palette-white) / 0.18);
     color: var(--admin-btn-text-strong);
   }
 
+  .admin-btn-accent {
+    background-color: rgb(var(--palette-white) / 0.04);
+    border-color: rgb(var(--palette-white) / 0.1);
+    color: rgb(var(--palette-gray-200));
+  }
+
   .admin-btn-accent:hover {
-    background-color: var(--admin-btn-accent-hover-bg);
-    border-color: transparent;
+    background-color: rgb(var(--palette-white) / 0.08);
+    border-color: rgb(var(--palette-white) / 0.18);
+    color: var(--admin-btn-text-strong);
   }
 
   .admin-btn-muted {

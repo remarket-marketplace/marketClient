@@ -1107,12 +1107,12 @@ onUnmounted(() => {
                 type="button"
                 class="w-full flex items-start gap-3 p-3 rounded-lg text-left transition"
                 :class="isSectionActive('nickname')
-                  ? 'bg-emerald-600/20 border border-emerald-500/30'
+                  ? 'bg-blue-600/20 border border-blue-500/30'
                   : 'border border-transparent hover:bg-dark-700/60'"
                 @click="switchSection('nickname')"
               >
                 <div class="mt-0.5 h-8 w-8 shrink-0 rounded-full bg-dark-700 flex items-center justify-center overflow-visible">
-                  <AtSign class="h-4 w-4 shrink-0" :class="isSectionActive('nickname') ? 'text-emerald-300' : 'text-gray-400'" />
+                  <AtSign class="h-4 w-4 shrink-0" :class="isSectionActive('nickname') ? 'text-blue-300' : 'text-gray-400'" />
                 </div>
                 <div class="min-w-0">
                   <h3 class="font-semibold leading-5 text-white">{{ $t('pages.settingsPage.nicknameMenu') }}</h3>

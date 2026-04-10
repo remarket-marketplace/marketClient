@@ -362,7 +362,7 @@ async function updateProduct() {
           <div
             v-for="image in existingImages"
             :key="image.id"
-            class="group relative aspect-square rounded-lg overflow-hidden border border-dark-700 bg-dark-600 transition-all duration-200 hover:border-red-500"
+            class="group relative aspect-square rounded-lg overflow-hidden border border-dark-700 bg-dark-600 transition-all duration-200 hover:border-blue-500/40"
           >
             <img
               :src="`${API_HOST}${image.image_url}`"
@@ -376,7 +376,7 @@ async function updateProduct() {
               <button
                 type="button"
                 @click="deleteExistingImage(image.id)"
-                class="opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-all duration-200"
+                class="rounded-full border border-white/10 bg-dark-900/90 p-2 text-gray-200 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:border-white/20 hover:bg-dark-900 hover:text-white"
                 :title="$t('common.delete')"
               >
                 <X class="w-4 h-4" />

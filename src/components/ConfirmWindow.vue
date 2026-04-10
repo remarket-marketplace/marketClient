@@ -1,16 +1,15 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { X } from 'lucide-vue-next'
+import AppModal from '@/components/AppModal.vue'
 
 const { t } = useI18n()
 
-const _props = defineProps<{
+const props = defineProps<{
   isOpen: boolean
   title: string
   message: string
-  confirmText?: string 
-  cancelText?: string 
+  confirmText?: string
+  cancelText?: string
   isLoading?: boolean
   allowOverflowVisible?: boolean
 }>()
@@ -20,222 +19,69 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-const MODAL_OPEN_CLASS = 'modal-open'
-let scrollLockCount = 0
-let lockedScrollY = 0
-
-function lockPageScroll() {
-  if (typeof document === 'undefined') return
-  if (scrollLockCount === 0) {
-    lockedScrollY = window.scrollY || document.documentElement.scrollTop || 0
-    document.documentElement.classList.add(MODAL_OPEN_CLASS)
-    document.body.classList.add(MODAL_OPEN_CLASS)
-    document.body.style.top = `-${lockedScrollY}px`
-  }
-  scrollLockCount += 1
-}
-
-function unlockPageScroll() {
-  if (typeof document === 'undefined' || scrollLockCount === 0) return
-  scrollLockCount -= 1
-  if (scrollLockCount > 0) return
-
-  const offsetTop = document.body.style.top
-  document.documentElement.classList.remove(MODAL_OPEN_CLASS)
-  document.body.classList.remove(MODAL_OPEN_CLASS)
-  document.body.style.top = ''
-
-  const restoredScrollY = Number.parseInt(offsetTop || '0', 10)
-  window.scrollTo({
-    top: Number.isFinite(restoredScrollY) ? Math.abs(restoredScrollY) : lockedScrollY,
-    left: 0,
-    behavior: 'auto',
-  })
-}
-
-const isScrollLockedByThisModal = ref(false)
-
 function handleConfirm() {
+  if (props.isLoading) return
   emit('confirm')
 }
 
 function handleCancel() {
+  if (props.isLoading) return
   emit('cancel')
 }
-
-function handleEsc(e: KeyboardEvent) {
-  if (e.key === 'Escape' && _props.isOpen) {
-    emit('cancel')
-  }
-}
-
-function lockIfNeeded() {
-  if (isScrollLockedByThisModal.value) return
-  lockPageScroll()
-  isScrollLockedByThisModal.value = true
-}
-
-function unlockIfNeeded() {
-  if (!isScrollLockedByThisModal.value) return
-  unlockPageScroll()
-  isScrollLockedByThisModal.value = false
-}
-
-watch(
-  () => _props.isOpen,
-  (isOpen) => {
-    if (isOpen) {
-      lockIfNeeded()
-      return
-    }
-    unlockIfNeeded()
-  },
-  { immediate: true },
-)
-
-onMounted(() => {
-  document.addEventListener('keydown', handleEsc)
-})
-
-onBeforeUnmount(() => { 
-  document.removeEventListener('keydown', handleEsc)
-  unlockIfNeeded()
-})
 </script>
 
 <template>
-  <Teleport to="body">
-    <div
-      v-if="_props.isOpen"
-      class="confirm-window-overlay app-modal-overlay z-[100] transition-opacity duration-200"
-      :class="{ 'opacity-100': _props.isOpen, 'opacity-0': !_props.isOpen }"
-    >
-      <div
-        class="absolute inset-0 bg-black/50"
-        @click="handleCancel"
-      />
+  <AppModal
+    :is-open="props.isOpen"
+    :title="props.title"
+    :description="props.message"
+    size="sm"
+    :dismissible="!props.isLoading"
+    :allow-overflow-visible="props.allowOverflowVisible"
+    body-class="space-y-4"
+    footer-class="pt-0"
+    @cancel="handleCancel"
+  >
+    <slot name="body"></slot>
 
-      <div class="confirm-window-shell relative z-10 flex w-full justify-center">
-        <div
-          class="confirm-window app-modal-panel relative flex w-full max-w-md flex-col rounded-xl border border-dark-700 bg-dark-800 shadow-2xl"
-          :class="_props.allowOverflowVisible ? 'overflow-visible' : 'overflow-hidden'"
+    <template #footer>
+      <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <button
+          class="inline-flex min-h-11 items-center justify-center rounded-[1rem] border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-medium text-gray-200 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:px-6"
+          :disabled="props.isLoading"
+          @click="handleCancel"
         >
-          <div class="shrink-0 border-b border-dark-700 px-6 py-5">
-            <div class="flex items-center justify-between">
-              <h3 class="text-lg font-semibold text-white">
-                {{ title }}
-              </h3>
-              <button
-                @click="handleCancel"
-                class="rounded-full p-1 text-gray-400 transition-colors duration-150 hover:text-gray-300"
-                aria-label="Close"
-              >
-                <X class="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-
-          <div
-            class="confirm-window__body flex-1 space-y-4 px-6 py-5"
-            :class="_props.allowOverflowVisible ? 'overflow-visible' : 'app-modal-scroll'"
+          {{ props.cancelText ?? t('common.cancel') }}
+        </button>
+        <button
+          class="market-primary-surface market-primary-hover inline-flex min-h-11 items-center justify-center gap-2 rounded-[1rem] px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:px-6"
+          :disabled="props.isLoading"
+          @click="handleConfirm"
+        >
+          <svg
+            v-if="props.isLoading"
+            class="h-4 w-4 animate-spin"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
           >
-            <p v-if="message" class="text-gray-300 leading-relaxed">
-              {{ message }}
-            </p>
-            <slot name="body"></slot>
-          </div>
-
-          <div class="flex shrink-0 justify-end gap-3 bg-dark-900/50 px-6 py-4">
-            <button
-              class="rounded-lg px-5 py-2.5 text-sm font-medium text-gray-400 transition-colors duration-150 hover:bg-dark-700 hover:text-gray-300"
-              @click="handleCancel"
-              :disabled="_props.isLoading"
-            >
-              {{ _props.cancelText ?? t('common.cancel') }}
-            </button>
-            <button
-              class="market-primary-surface market-primary-hover flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-white transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50"
-              :disabled="_props.isLoading"
-              @click="handleConfirm"
-            >
-              <svg
-                v-if="_props.isLoading"
-                class="h-4 w-4 animate-spin"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  class="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  stroke-width="4"
-                />
-                <path
-                  class="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
-              <span>
-                {{ _props.confirmText ?? t('common.confirm') }}
-              </span>
-            </button>
-          </div>
-        </div>
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            />
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
+          <span>{{ props.confirmText ?? t('common.confirm') }}</span>
+        </button>
       </div>
-    </div>
-  </Teleport>
+    </template>
+  </AppModal>
 </template>
-
-<style scoped>
-:global(html.modal-open),
-:global(body.modal-open) {
-  overflow: hidden;
-  overscroll-behavior: none;
-}
-
-:global(body.modal-open) {
-  position: fixed;
-  left: 0;
-  right: 0;
-  width: 100%;
-}
-
-/* Smooth backdrop animation */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-/* Modal enter animation */
-.modal-enter-active {
-  animation: modal-enter 0.2s ease-out;
-}
-
-.modal-leave-active {
-  animation: modal-enter 0.2s ease-out reverse;
-}
-
-@keyframes modal-enter {
-  from {
-    opacity: 0;
-    transform: translateY(-10px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.confirm-window {
-  max-height: min(42rem, 100%);
-}
-</style>

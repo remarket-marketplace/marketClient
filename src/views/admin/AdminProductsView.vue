@@ -1194,28 +1194,28 @@ button {
 }
 
 .admin-btn-moderation-approve {
-  color: rgba(209, 250, 229, 0.82);
-  border-color: rgba(148, 163, 184, 0.18);
-  background: transparent;
+  color: rgb(219 234 254);
+  border-color: rgba(59, 130, 246, 0.38);
+  background: rgba(37, 99, 235, 0.18);
 }
 
 .admin-btn-moderation-approve:hover,
 .admin-btn-moderation-approve:focus-visible {
-  color: rgba(167, 243, 208, 0.98);
-  border-color: rgba(52, 211, 153, 0.38);
-  background: rgba(16, 185, 129, 0.12);
+  color: rgb(239 246 255);
+  border-color: rgba(96, 165, 250, 0.5);
+  background: rgba(37, 99, 235, 0.26);
 }
 
 .admin-btn-moderation-reject {
-  color: rgba(254, 202, 202, 0.92);
-  border-color: rgba(251, 113, 133, 0.24);
-  background: rgba(244, 63, 94, 0.04);
+  color: rgb(229 231 235);
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .admin-btn-moderation-reject:hover,
 .admin-btn-moderation-reject:focus-visible {
-  color: rgba(254, 202, 202, 0.98);
-  border-color: rgba(251, 113, 133, 0.38);
-  background: rgba(244, 63, 94, 0.12);
+  color: rgb(255 255 255);
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
 }
 </style>

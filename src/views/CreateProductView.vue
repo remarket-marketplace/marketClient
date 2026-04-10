@@ -6,6 +6,7 @@ import CustomSelect from '@/components/CustomSelect.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import FileUploader from '@/components/FileUploader.vue'
 import FortniteAccountFields from '@/components/FortniteAccountFields.vue'
+import AppModal from '@/components/AppModal.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import type { Category } from '@/validation/category/category'
@@ -1271,7 +1272,7 @@ async function createProduct() {
                     <div
                       v-for="(image, index) in draftImages"
                       :key="`${image}-${index}`"
-                      class="group relative aspect-square rounded-lg overflow-hidden border border-dark-700 bg-dark-600 transition-all duration-200 hover:border-red-500"
+                      class="group relative aspect-square rounded-lg overflow-hidden border border-dark-700 bg-dark-600 transition-all duration-200 hover:border-blue-500/40"
                     >
                       <img
                         :src="`${API_HOST}${image}`"
@@ -1283,7 +1284,7 @@ async function createProduct() {
                         <button
                           type="button"
                           @click="removeDraftImage(index)"
-                          class="opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-all duration-200"
+                          class="rounded-full border border-white/10 bg-dark-900/90 p-2 text-gray-200 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:border-white/20 hover:bg-dark-900 hover:text-white"
                           :title="$t('common.delete')"
                         >
                           <X class="w-4 h-4" />
@@ -1524,57 +1525,45 @@ async function createProduct() {
       </div>
     </div>
 
-    <div
-      v-if="showCreatedProductModal"
-      class="app-modal-overlay z-[120]"
+    <AppModal
+      :is-open="showCreatedProductModal"
+      :eyebrow="$t('common.productStatuses.moderation')"
+      :title="$t('pages.forms.createProduct.successTitle')"
+      :description="$t('pages.forms.createProduct.successMessage')"
+      size="xl"
+      title-scale="hero"
+      :show-close-button="false"
+      body-class="space-y-7 sm:space-y-8"
+      @cancel="goToProfileAfterCreate"
     >
-      <div class="absolute inset-0 bg-black/75 backdrop-blur-sm" @click="goToProfileAfterCreate"></div>
-      <div class="relative z-10 flex min-h-full items-center justify-center px-4 py-8 sm:px-6">
-        <div class="product-created-modal w-full max-w-[44rem] overflow-hidden rounded-[30px] border border-white/10">
-          <div class="relative overflow-hidden px-6 py-7 sm:px-10 sm:py-9">
-            <div class="relative space-y-7">
-              <div class="space-y-3.5">
-                <div class="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.26em] text-gray-400">
-                  {{ $t('common.productStatuses.moderation') }}
-                </div>
-                <h3 class="max-w-[28rem] text-[2rem] font-semibold leading-[1.04] tracking-[-0.03em] text-white sm:text-[3rem]">
-                  {{ $t('pages.forms.createProduct.successTitle') }}
-                </h3>
-                <p class="max-w-[34rem] text-[15px] leading-8 text-gray-300 sm:text-[1.05rem]">
-                  {{ $t('pages.forms.createProduct.successMessage') }}
-                </p>
-              </div>
-
-              <div class="product-created-modal__summary rounded-[1.4rem] border border-white/8 px-5 py-4 sm:px-6 sm:py-5">
-                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-gray-500">
-                  {{ $t('pages.forms.createProduct.successHintLabel') }}
-                </p>
-                <p class="mt-3 text-[15px] leading-8 text-gray-300">
-                  {{ $t('pages.forms.createProduct.successHint') }}
-                </p>
-              </div>
-
-              <div class="flex flex-col gap-3 pt-1 sm:flex-row">
-                <button
-                  type="button"
-                  class="market-primary-surface market-primary-hover inline-flex min-h-14 flex-1 items-center justify-center rounded-[1.15rem] px-5 py-4 text-base font-semibold text-white transition-colors duration-200"
-                  @click="goToCreatedProduct"
-                >
-                  {{ $t('pages.forms.createProduct.goToProduct') }}
-                </button>
-                <button
-                  type="button"
-                  class="inline-flex min-h-14 flex-1 items-center justify-center rounded-[1.15rem] border border-white/12 bg-white/[0.04] px-5 py-4 text-base font-semibold text-white transition-colors duration-200 hover:border-white/20 hover:bg-white/[0.07]"
-                  @click="goToProfileAfterCreate"
-                >
-                  {{ $t('pages.forms.createProduct.goToProfile') }}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div class="rounded-[1.4rem] border border-white/8 bg-white/[0.03] px-5 py-4 sm:px-6 sm:py-5">
+        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-gray-500">
+          {{ $t('pages.forms.createProduct.successHintLabel') }}
+        </p>
+        <p class="mt-3 break-words text-[15px] leading-8 text-gray-300">
+          {{ $t('pages.forms.createProduct.successHint') }}
+        </p>
       </div>
-    </div>
+
+      <template #footer>
+        <div class="flex flex-col gap-3 sm:flex-row">
+          <button
+            type="button"
+            class="market-primary-surface market-primary-hover inline-flex min-h-14 flex-1 items-center justify-center rounded-[1.15rem] px-5 py-4 text-base font-semibold text-white transition-colors duration-200"
+            @click="goToCreatedProduct"
+          >
+            {{ $t('pages.forms.createProduct.goToProduct') }}
+          </button>
+          <button
+            type="button"
+            class="inline-flex min-h-14 flex-1 items-center justify-center rounded-[1.15rem] border border-white/12 bg-white/[0.04] px-5 py-4 text-base font-semibold text-white transition-colors duration-200 hover:border-white/20 hover:bg-white/[0.07]"
+            @click="goToProfileAfterCreate"
+          >
+            {{ $t('pages.forms.createProduct.goToProfile') }}
+          </button>
+        </div>
+      </template>
+    </AppModal>
   </div>
 </template>
 
@@ -1609,12 +1598,4 @@ input[type="number"] {
   transform: translateX(-16px);
 }
 
-.product-created-modal {
-  background: rgb(var(--palette-dark-900));
-  box-shadow: none;
-}
-
-.product-created-modal__summary {
-  background: var(--overlay-white-03);
-}
 </style>
