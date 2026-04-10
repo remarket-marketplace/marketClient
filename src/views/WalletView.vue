@@ -65,6 +65,7 @@ const withdrawAmount = ref('')
 const withdrawCardNumber = ref('')
 const withdrawErrorMessage = ref<string | null>(null)
 const withdrawSuccessMessage = ref<string | null>(null)
+const withdrawalCommissionPercent = ref(0)
 const selectedCurrency = computed(() => preferredCurrency.value)
 const currencySymbol = computed(() => getCurrencySymbol(selectedCurrency.value))
 const currencyFractionDigits = computed(() => (selectedCurrency.value === 'USD' ? 2 : 0))
@@ -202,6 +203,21 @@ const withdrawableBalanceInSelectedCurrency = computed(() =>
   convertCurrencyAmount(withdrawableBalanceRub.value, 'RUB', selectedCurrency.value),
 )
 
+const withdrawCommissionAmountRub = computed(() => {
+  if (!Number.isFinite(withdrawAmountInRub.value) || withdrawAmountInRub.value <= 0) return 0
+  return Number(
+    (
+      withdrawAmountInRub.value
+      * (withdrawalCommissionPercent.value / 100)
+    ).toFixed(2),
+  )
+})
+
+const withdrawPayoutAmountRub = computed(() => {
+  if (!Number.isFinite(withdrawAmountInRub.value) || withdrawAmountInRub.value <= 0) return 0
+  return Math.max(0, Number((withdrawAmountInRub.value - withdrawCommissionAmountRub.value).toFixed(2)))
+})
+
 function formatDurationLeft(ms: number): string {
   const safeMs = Math.max(0, Math.floor(ms))
   const totalSeconds = Math.floor(safeMs / 1000)
@@ -309,6 +325,7 @@ onMounted(async () => {
     balance.value = userBalance.balance
     minDepositRub.value = Math.max(HARD_MIN_DEPOSIT_RUB, userBalance.top_up_min_amount)
     maxDepositRub.value = userBalance.top_up_max_amount
+    withdrawalCommissionPercent.value = userBalance.withdrawal_commission_percent ?? 0
     availableDepositProviders.value = userBalance.available_top_up_providers.length > 0
       ? userBalance.available_top_up_providers
       : [defaultDepositProvider]
@@ -411,7 +428,9 @@ const handleWithdraw = async () => {
     userStore.updateUserProfile({ balance: result.data.current_balance })
     withdrawAmount.value = ''
     withdrawCardNumber.value = ''
-    withdrawSuccessMessage.value = t('pages.wallet.withdrawSuccess')
+    withdrawSuccessMessage.value = t('pages.wallet.withdrawSuccess', {
+      amount: formatCurrency(result.data.payout_amount ?? normalizedWithdrawAmount),
+    })
     await resetHistory()
     isLoading.value = false
     setTimeout(() => {
@@ -671,8 +690,31 @@ const getTransactionDetails = (item: WalletHistoryItem) => {
 
   if (typeof item.gross_amount === 'number') {
     details.push({
-      label: t('pages.wallet.historyDetails.dealAmount'),
+      label: item.type === 'withdrawal'
+        ? t('pages.wallet.historyDetails.requestedAmount')
+        : t('pages.wallet.historyDetails.dealAmount'),
       value: formatCurrency(item.gross_amount),
+    })
+  }
+
+  if (typeof item.commission_percent === 'number') {
+    details.push({
+      label: t('pages.wallet.historyDetails.commissionPercent'),
+      value: `${item.commission_percent}%`,
+    })
+  }
+
+  if (typeof item.commission_amount === 'number') {
+    details.push({
+      label: t('pages.wallet.historyDetails.commissionAmount'),
+      value: formatCurrency(item.commission_amount),
+    })
+  }
+
+  if (typeof item.payout_amount === 'number') {
+    details.push({
+      label: t('pages.wallet.historyDetails.payoutAmount'),
+      value: formatCurrency(item.payout_amount),
     })
   }
 
@@ -1289,6 +1331,28 @@ const typeLabel = (type: string) => {
                 >
                   {{ $t('pages.wallet.useAll') }}
                 </button>
+              </div>
+            </div>
+
+            <div
+              v-if="Number.isFinite(withdrawAmountInRub) && withdrawAmountInRub > 0"
+              class="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3"
+            >
+              <div class="grid gap-2 text-sm text-gray-300">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-gray-400">{{ $t('pages.wallet.withdrawSummary.requestedAmount') }}</span>
+                  <span class="font-medium text-white">{{ formatCurrency(withdrawAmountInRub) }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-gray-400">
+                    {{ $t('pages.wallet.withdrawSummary.commission', { percent: withdrawalCommissionPercent }) }}
+                  </span>
+                  <span class="font-medium text-amber-200">{{ formatCurrency(withdrawCommissionAmountRub) }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3 border-t border-white/8 pt-2">
+                  <span class="text-gray-400">{{ $t('pages.wallet.withdrawSummary.payoutAmount') }}</span>
+                  <span class="text-base font-semibold text-emerald-300">{{ formatCurrency(withdrawPayoutAmountRub) }}</span>
+                </div>
               </div>
             </div>
 

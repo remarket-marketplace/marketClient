@@ -6,6 +6,7 @@ export const balanceSchema = z.object({
   balance: z.number(),
   top_up_min_amount: z.number().int().positive(),
   top_up_max_amount: z.number().int().positive(),
+  withdrawal_commission_percent: z.number().min(0).max(100).default(0),
   available_top_up_providers: z.array(walletTopUpProviderSchema).default(["platega"]),
 });
 
@@ -26,6 +27,9 @@ export const createWithdrawalOrderRequestSchema = z.object({
 export const createWithdrawalOrderResponseSchema = z.object({
   id: z.string().uuid(),
   amount: z.number(),
+  commission_percent: z.number().nullable().optional(),
+  commission_amount: z.number().nullable().optional(),
+  payout_amount: z.number().nullable().optional(),
   status: z.enum(['pending', 'confirmed', 'canceled']),
   masked_card_number: z.string(),
   created_at: z.string(),
@@ -67,6 +71,9 @@ export const walletHistoryItem = z.object({
   note: z.string().nullable().optional(),
   product_id: z.string().uuid().nullable(),
   gross_amount: z.number().nullable().optional(),
+  commission_percent: z.number().nullable().optional(),
+  commission_amount: z.number().nullable().optional(),
+  payout_amount: z.number().nullable().optional(),
   payment_provider: z.string().nullable().optional(),
   payment_method: z.string().nullable().optional(),
   provider_tx_id: z.string().nullable().optional(),
