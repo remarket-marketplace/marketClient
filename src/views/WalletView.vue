@@ -1260,24 +1260,34 @@ const typeLabel = (type: string) => {
         </p>
       </div>
 
-      <div class="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
-        <div class="text-[11px] uppercase tracking-[0.24em] text-gray-500">
-          {{ $t('pages.wallet.withdrawCard') }}
-        </div>
-        <input
-          v-model="withdrawCardNumber"
-          type="text"
-          inputmode="numeric"
-          autocomplete="cc-number"
-          maxlength="23"
-          :placeholder="$t('pages.wallet.withdrawCardPlaceholder')"
-          class="mt-3 w-full border-none bg-transparent p-0 text-lg font-semibold tracking-[0.18em] text-white outline-none placeholder:text-gray-600"
-          @input="formatCardNumberInput"
-        />
-        <p class="mt-2 text-xs text-gray-400">
-          {{ $t('pages.wallet.withdrawCardHint') }}
-        </p>
-      </div>
+            <div
+              v-if="Number.isFinite(withdrawAmountInRub) && withdrawAmountInRub > 0"
+              class="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3"
+            >
+              <div class="grid gap-2 text-sm text-gray-300">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-gray-400">{{ $t('pages.wallet.withdrawSummary.requestedAmount') }}</span>
+                  <span class="font-medium text-white">{{ formatCurrency(withdrawAmountInRub) }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-gray-400">
+                    {{ $t('pages.wallet.withdrawSummary.commission', { percent: withdrawalCommissionPercent }) }}
+                  </span>
+                  <span class="font-medium text-amber-200">{{ formatCurrency(withdrawCommissionAmountRub) }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3 border-t border-white/8 pt-2">
+                  <span class="text-gray-400">{{ $t('pages.wallet.withdrawSummary.payoutAmount') }}</span>
+                  <span class="text-base font-semibold text-emerald-300">{{ formatCurrency(withdrawPayoutAmountRub) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div
+              v-if="withdrawErrorMessage"
+              class="rounded-xl border border-rose-500/20 bg-rose-500/8 px-4 py-3 text-sm text-rose-200"
+            >
+              {{ withdrawErrorMessage }}
+            </div>
 
       <div class="space-y-2">
         <label class="block text-sm font-medium text-gray-300">
