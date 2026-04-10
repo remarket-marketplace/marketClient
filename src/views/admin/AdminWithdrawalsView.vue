@@ -252,9 +252,10 @@ watch(
     </div>
 
     <div class="min-h-0 flex-1 overflow-hidden">
-      <div class="grid grid-cols-[1.2fr_0.9fr_0.9fr_0.8fr_0.9fr] gap-4 border-b border-white/8 px-5 py-4 text-[11px] uppercase tracking-[0.24em] text-gray-500 max-lg:hidden">
+      <div class="grid grid-cols-[1.2fr_0.8fr_0.8fr_0.9fr_0.8fr_0.9fr] gap-4 border-b border-white/8 px-5 py-4 text-[11px] uppercase tracking-[0.24em] text-gray-500 max-lg:hidden">
         <span>{{ $t('common.username') }}</span>
         <span>{{ $t('pages.admin.withdrawalsPage.amount') }}</span>
+        <span>{{ $t('pages.admin.withdrawalsPage.payoutAmount') }}</span>
         <span>{{ $t('pages.admin.withdrawalsPage.balance') }}</span>
         <span>{{ $t('common.status') }}</span>
         <span>{{ $t('pages.admin.withdrawalsPage.createdAt') }}</span>
@@ -278,7 +279,7 @@ watch(
           :key="order.id"
           class="group mb-3 rounded-[1.4rem] border border-white/8 p-4 transition-all duration-200 hover:border-white/12 sm:p-5"
         >
-          <div class="grid gap-4 lg:grid-cols-[1.2fr_0.9fr_0.9fr_0.8fr_0.9fr] lg:items-center">
+          <div class="grid gap-4 lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.9fr_0.8fr_0.9fr] lg:items-center">
             <div class="min-w-0">
               <div class="flex items-center gap-3">
                 <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-sky-400/18 bg-sky-400/10 text-sky-100">
@@ -313,6 +314,22 @@ watch(
             <div>
               <div class="text-xs uppercase tracking-[0.18em] text-gray-500 lg:hidden">{{ $t('pages.admin.withdrawalsPage.amount') }}</div>
               <div class="text-base font-semibold text-white">{{ formatMoney(order.amount) }}</div>
+            </div>
+
+            <div>
+              <div class="text-xs uppercase tracking-[0.18em] text-gray-500 lg:hidden">{{ $t('pages.admin.withdrawalsPage.payoutAmount') }}</div>
+              <div class="text-base font-semibold text-emerald-200">
+                {{ formatMoney(order.payout_amount ?? order.amount) }}
+              </div>
+              <div
+                v-if="typeof order.commission_amount === 'number' && order.commission_amount > 0"
+                class="mt-1 text-xs text-gray-500"
+              >
+                {{ $t('pages.admin.withdrawalsPage.commissionShort', {
+                  amount: formatMoney(order.commission_amount),
+                  percent: order.commission_percent ?? 0,
+                }) }}
+              </div>
             </div>
 
             <div>
