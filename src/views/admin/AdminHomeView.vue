@@ -32,6 +32,7 @@ const isError = ref(false)
 const selectedRange = ref(30)
 const rangeOptions = [7, 30, 90, 180]
 const platformSettings = ref<PlatformSettings | null>(null)
+const persistedPlatformSettings = ref<PlatformSettings | null>(null)
 const isPlatformSettingsLoading = ref(true)
 const isPlatformSettingsSaving = ref(false)
 const platformSettingsError = ref('')
@@ -135,6 +136,52 @@ const toSafeString = (value: unknown, fallback: string) => {
     if (trimmed) return trimmed
   }
   return fallback
+}
+
+const clonePlatformSettings = (value: PlatformSettings): PlatformSettings => ({
+  ...value,
+})
+
+const isValidCommissionValue = (value: unknown) => {
+  if (value === '' || value === null || value === undefined) return false
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed >= 0 && parsed <= 100
+}
+
+const commissionSettingsValid = computed(() => {
+  if (!platformSettings.value) return false
+  return (
+    isValidCommissionValue(platformSettings.value.deal_commission_percent)
+    && isValidCommissionValue(platformSettings.value.withdrawal_commission_percent)
+  )
+})
+
+const commissionSettingsDirty = computed(() => {
+  if (!platformSettings.value || !persistedPlatformSettings.value) return false
+  return (
+    Number(platformSettings.value.deal_commission_percent)
+      !== Number(persistedPlatformSettings.value.deal_commission_percent)
+    || Number(platformSettings.value.withdrawal_commission_percent)
+      !== Number(persistedPlatformSettings.value.withdrawal_commission_percent)
+  )
+})
+
+const getEffectiveCommissionPayload = () => {
+  const source = commissionSettingsValid.value
+    ? platformSettings.value
+    : persistedPlatformSettings.value
+
+  if (!source) {
+    return {
+      deal_commission_percent: 0,
+      withdrawal_commission_percent: 0,
+    }
+  }
+
+  return {
+    deal_commission_percent: Number(source.deal_commission_percent),
+    withdrawal_commission_percent: Number(source.withdrawal_commission_percent),
+  }
 }
 
 const revenueTrend = computed(() => calcTrend(dashboardData.value?.revenue_by_day))
@@ -479,7 +526,8 @@ const loadPlatformSettings = async () => {
   if (!data) {
     platformSettingsError.value = t('pages.admin.mainPage.platformSettingsLoadError')
   } else {
-    platformSettings.value = data
+    platformSettings.value = clonePlatformSettings(data)
+    persistedPlatformSettings.value = clonePlatformSettings(data)
   }
   isPlatformSettingsLoading.value = false
 }
@@ -495,7 +543,8 @@ const updatePlatformSettings = async (payload: PlatformSettings) => {
   if (!updated) {
     platformSettingsError.value = t('pages.admin.mainPage.platformSettingsSaveError')
   } else {
-    platformSettings.value = updated
+    platformSettings.value = clonePlatformSettings(updated)
+    persistedPlatformSettings.value = clonePlatformSettings(updated)
     platformSettingsSuccess.value = t('pages.admin.mainPage.platformSettingsSaved')
   }
 
@@ -560,8 +609,17 @@ const confirmPlatformToggle = async () => {
   await updatePlatformSettings({
     ...platformSettings.value,
     [key]: nextValue,
+    ...getEffectiveCommissionPayload(),
   })
   pendingPlatformToggle.value = null
+}
+
+const saveCommissionSettings = async () => {
+  if (!platformSettings.value || !commissionSettingsValid.value) return
+  await updatePlatformSettings({
+    ...platformSettings.value,
+    ...getEffectiveCommissionPayload(),
+  })
 }
 
 onMounted(async () => {
@@ -708,6 +766,68 @@ watch(selectedRange, loadDashboard)
                     : t('pages.admin.mainPage.disabled')
                 }}
               </button>
+            </div>
+
+            <div class="admin-surface-soft rounded-xl p-4 md:col-span-2 2xl:col-span-3">
+              <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div class="max-w-2xl">
+                  <p class="text-sm text-gray-200 font-medium">
+                    {{ t('pages.admin.mainPage.commissionSettingsTitle') }}
+                  </p>
+                  <p class="mt-1 text-xs text-gray-400">
+                    {{ t('pages.admin.mainPage.commissionSettingsHint') }}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  class="admin-btn admin-btn-primary shrink-0"
+                  :disabled="!commissionSettingsDirty || !commissionSettingsValid || isPlatformSettingsSaving"
+                  @click="saveCommissionSettings"
+                >
+                  {{ t('pages.admin.mainPage.saveCommissionSettings') }}
+                </button>
+              </div>
+
+              <div class="mt-4 grid gap-3 md:grid-cols-2">
+                <label class="admin-surface-panel rounded-xl p-3">
+                  <span class="text-xs uppercase tracking-[0.18em] text-gray-500">
+                    {{ t('pages.admin.mainPage.dealCommissionLabel') }}
+                  </span>
+                  <input
+                    v-model.number="platformSettings.deal_commission_percent"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    class="mt-3 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-lg font-semibold text-white outline-none transition focus:border-sky-400/45 focus:bg-sky-400/5"
+                  >
+                  <p class="mt-2 text-xs text-gray-400">
+                    {{ t('pages.admin.mainPage.dealCommissionHint') }}
+                  </p>
+                </label>
+
+                <label class="admin-surface-panel rounded-xl p-3">
+                  <span class="text-xs uppercase tracking-[0.18em] text-gray-500">
+                    {{ t('pages.admin.mainPage.withdrawalCommissionLabel') }}
+                  </span>
+                  <input
+                    v-model.number="platformSettings.withdrawal_commission_percent"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    class="mt-3 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-lg font-semibold text-white outline-none transition focus:border-sky-400/45 focus:bg-sky-400/5"
+                  >
+                  <p class="mt-2 text-xs text-gray-400">
+                    {{ t('pages.admin.mainPage.withdrawalCommissionHint') }}
+                  </p>
+                </label>
+              </div>
+
+              <p class="mt-3 text-xs text-gray-500">
+                {{ t('pages.admin.mainPage.commissionSnapshotHint') }}
+              </p>
             </div>
           </div>
         </template>

@@ -1465,6 +1465,10 @@ const ru = {
         steamBadge: "Steam",
         balanceImpact: "Влияние на баланс",
         dealAmount: "Сумма сделки",
+        requestedAmount: "Сумма заявки",
+        commissionPercent: "Комиссия, %",
+        commissionAmount: "Сумма комиссии",
+        payoutAmount: "К выплате / зачислению",
         operationType: "Тип операции",
         role: "Ваша роль",
         statusNote: "Комментарий",
@@ -1496,7 +1500,12 @@ const ru = {
           adjustmentApplied: "Системная корректировка баланса применена.",
         },
       },
-      withdrawSuccess: "Ордер на вывод создан и добавлен в историю операций."
+      withdrawSummary: {
+        requestedAmount: "Спишется с баланса",
+        commission: "Комиссия платформы {percent}%",
+        payoutAmount: "Поступит на карту",
+      },
+      withdrawSuccess: "Ордер на вывод создан. К выплате: {amount}."
     },
 
     admin: {
@@ -1545,6 +1554,14 @@ const ru = {
         productCreationToggleHint: "При отключении нельзя создать новый товар.",
         telegramIntegrationToggleLabel: "Интеграция Telegram",
         telegramIntegrationToggleHint: "При отключении пользователи не смогут подключить Telegram-бота.",
+        commissionSettingsTitle: "Комиссии платформы",
+        commissionSettingsHint: "Управляйте процентом комиссии продажи и процентом комиссии на вывод средств.",
+        dealCommissionLabel: "Комиссия сделки, %",
+        dealCommissionHint: "Удерживается из суммы продажи и влияет только на новые сделки.",
+        withdrawalCommissionLabel: "Комиссия вывода, %",
+        withdrawalCommissionHint: "Удерживается из суммы заявки на вывод и влияет только на новые ордеры.",
+        commissionSnapshotHint: "Изменения применяются только к новым сделкам и новым заявкам на вывод. Уже созданные операции сохраняют прежний snapshot комиссии.",
+        saveCommissionSettings: "Сохранить комиссии",
         enabled: "Включено",
         disabled: "Отключено",
         platformSettingsLoadError: "Не удалось загрузить настройки платформы",
@@ -1667,6 +1684,7 @@ const ru = {
         statusFilter: "Статус ордера",
         empty: "Ордеры на вывод не найдены",
         amount: "Сумма вывода",
+        payoutAmount: "К выплате",
         balance: "Текущий баланс",
         createdAt: "Создан",
         statusPending: "В обработке",
@@ -1679,6 +1697,7 @@ const ru = {
         moderationReasonPlaceholder: "Комментарий для истории модерации",
         sortUserAsc: "Пользователь: А–Я",
         sortUserDesc: "Пользователь: Я–А",
+        commissionShort: "Комиссия: {amount} ({percent}%)",
       },
 
       steamTopupsPage: {
