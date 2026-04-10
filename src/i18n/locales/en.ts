@@ -1468,6 +1468,10 @@ const en = {
         steamBadge: "Steam",
         balanceImpact: "Balance impact",
         dealAmount: "Deal amount",
+        requestedAmount: "Requested amount",
+        commissionPercent: "Commission, %",
+        commissionAmount: "Commission amount",
+        payoutAmount: "Net payout / credit",
         operationType: "Operation type",
         role: "Your role",
         statusNote: "Comment",
@@ -1499,7 +1503,12 @@ const en = {
           adjustmentApplied: "A system balance adjustment was applied.",
         },
       },
-      withdrawSuccess: "Withdrawal order has been created and added to transaction history."
+      withdrawSummary: {
+        requestedAmount: "Deducted from balance",
+        commission: "Platform commission {percent}%",
+        payoutAmount: "Sent to card",
+      },
+      withdrawSuccess: "Withdrawal order created. Payout amount: {amount}."
     },
 
     admin: {
@@ -1548,6 +1557,14 @@ const en = {
         productCreationToggleHint: "When disabled, users cannot create new products.",
         telegramIntegrationToggleLabel: "Telegram integration",
         telegramIntegrationToggleHint: "When disabled, users cannot connect the Telegram bot.",
+        commissionSettingsTitle: "Platform commissions",
+        commissionSettingsHint: "Manage the sale commission percent and the withdrawal commission percent.",
+        dealCommissionLabel: "Deal commission, %",
+        dealCommissionHint: "Deducted from the sale amount and applied only to new deals.",
+        withdrawalCommissionLabel: "Withdrawal commission, %",
+        withdrawalCommissionHint: "Deducted from the withdrawal request amount and applied only to new withdrawal orders.",
+        commissionSnapshotHint: "Changes apply only to new deals and new withdrawal requests. Existing operations keep their original commission snapshot.",
+        saveCommissionSettings: "Save commissions",
         enabled: "Enabled",
         disabled: "Disabled",
         platformSettingsLoadError: "Failed to load platform settings",
@@ -1670,6 +1687,7 @@ const en = {
         statusFilter: "Order status",
         empty: "No withdrawal orders found",
         amount: "Withdrawal amount",
+        payoutAmount: "Payout amount",
         balance: "Current balance",
         createdAt: "Created",
         statusPending: "Processing",
@@ -1682,6 +1700,7 @@ const en = {
         moderationReasonPlaceholder: "Comment for moderation history",
         sortUserAsc: "User: A-Z",
         sortUserDesc: "User: Z-A",
+        commissionShort: "Fee: {amount} ({percent}%)",
       },
 
       steamTopupsPage: {

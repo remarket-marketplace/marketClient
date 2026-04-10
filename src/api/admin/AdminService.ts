@@ -93,6 +93,8 @@ export type PlatformSettings = {
   registration_enabled: boolean
   product_creation_enabled: boolean
   telegram_integration_enabled: boolean
+  deal_commission_percent: number
+  withdrawal_commission_percent: number
 }
 
 export type AdminUpdateUserPayload = {
