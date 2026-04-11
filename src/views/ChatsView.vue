@@ -64,6 +64,8 @@ const totalPages = ref(0)
 const perPage = ref(15)
 const hasMoreMessages = ref(true)
 const totalMessagesInChat = ref(0)
+const routeChatAvailabilityRetryDelaysMs = [0, 250, 500, 900] as const
+const routeChatRefreshRetryDelaysMs = [350, 900, 1700] as const
 const isMessageLimitLockedByServer = ref(false)
 const topLoadThresholdPx = 8
 const previousMessageScrollTop = ref(0)
@@ -187,6 +189,47 @@ function normalizeTimelineServerMessages(messages: ChatMessageUnion[]): ChatMess
 function getPurchaseMessageTimestamp(message: PurchaseMessage | null): number {
   if (!message) return 0
   return getMessageTimestamp(message)
+}
+
+function getLatestPurchaseMessageFromMessages(messages: ChatMessageUnion[]): PurchaseMessage | null {
+  const purchaseMessages = messages.filter(
+    (message): message is PurchaseMessage => message.message_type === 'purchase_message',
+  )
+  if (purchaseMessages.length === 0) return null
+
+  return purchaseMessages.reduce((latest, current) => (
+    getPurchaseMessageTimestamp(current) >= getPurchaseMessageTimestamp(latest) ? current : latest
+  ))
+}
+
+function pickLatestPurchaseMessage(
+  currentMessage: PurchaseMessage | null,
+  candidateMessage: PurchaseMessage | null,
+): PurchaseMessage | null {
+  if (!candidateMessage) return currentMessage
+  if (!currentMessage) return candidateMessage
+  return getPurchaseMessageTimestamp(candidateMessage) >= getPurchaseMessageTimestamp(currentMessage)
+    ? candidateMessage
+    : currentMessage
+}
+
+function mergeChatMessages(messages: ChatMessageUnion[]) {
+  if (messages.length === 0) return
+
+  const existingMessageIds = new Set(chatMessages.value.map((message) => message.id))
+  const newMessages = messages.filter((message) => !existingMessageIds.has(message.id))
+  if (newMessages.length === 0) return
+
+  chatMessages.value = normalizeMessagesChronological([
+    ...chatMessages.value,
+    ...newMessages,
+  ])
+}
+
+function waitMs(delayMs: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, delayMs)
+  })
 }
 
 function createLocalPendingMessageId(kind: 'text' | 'image'): string {
@@ -916,14 +959,8 @@ watch(
     if (selectedChatId.value === chatId) return
     if (isPageLoading.value) return
 
-    const exists = chats.value.some(chat => chat.id === chatId)
-    if (!exists) {
-      await loadChats()
-    }
-
-    if (chats.value.some(chat => chat.id === chatId)) {
-      await loadChatMessages(chatId, { settleToBottomAfterRouteOpen: true })
-    }
+    await ensureChatAvailableForRoute(chatId)
+    await loadChatMessages(chatId, { settleToBottomAfterRouteOpen: true })
   }
 )
 
@@ -1005,10 +1042,8 @@ onMounted(async () => {
 
     const initialRouteChatId = routeChatId.value
     if (initialRouteChatId) {
-      const exists = chats.value.some(c => c.id === initialRouteChatId)
-      if (exists) {
-        await loadChatMessages(initialRouteChatId, { settleToBottomAfterRouteOpen: true })
-      }
+      await ensureChatAvailableForRoute(initialRouteChatId)
+      await loadChatMessages(initialRouteChatId, { settleToBottomAfterRouteOpen: true })
       return
     }
 
@@ -1052,6 +1087,49 @@ onUnmounted(() => {
 async function loadChats() {
   chats.value = await chatsService.getChats()
   chatStore.setChats(chats.value)
+}
+
+async function ensureChatAvailableForRoute(chatId: string): Promise<void> {
+  for (const delayMs of routeChatAvailabilityRetryDelaysMs) {
+    if (selectedChatId.value === chatId || chats.value.some((chat) => chat.id === chatId)) {
+      return
+    }
+
+    if (delayMs > 0) {
+      await waitMs(delayMs)
+      if (selectedChatId.value === chatId || chats.value.some((chat) => chat.id === chatId)) {
+        return
+      }
+    }
+
+    await loadChats()
+  }
+}
+
+async function refreshRouteOpenedChat(chatId: string): Promise<void> {
+  for (const delayMs of routeChatRefreshRetryDelaysMs) {
+    await waitMs(delayMs)
+    if (selectedChatId.value !== chatId) return
+
+    const response = await chatsService.getChatMessages(chatId, 1, perPage.value)
+    if (selectedChatId.value !== chatId) return
+
+    mergeChatMessages(response.messages)
+
+    const latestDealCandidate = response.latestDealMessage ?? getLatestPurchaseMessageFromMessages(response.messages)
+    latestDealMessage.value = pickLatestPurchaseMessage(latestDealMessage.value, latestDealCandidate)
+
+    if (response.total > 0) {
+      totalMessagesInChat.value = Math.max(totalMessagesInChat.value, response.total)
+      totalPages.value = Math.max(totalPages.value, response.totalPages)
+      hasMoreMessages.value = currentPage.value < totalPages.value
+    }
+
+    if (latestDealMessage.value) {
+      scheduleDeferredDealSummaryMeasurement(chatId)
+      return
+    }
+  }
 }
 
 function scrollToBottom() {
@@ -1162,8 +1240,8 @@ async function loadChatMessages(
 
     const response = await chatsService.getChatMessages(chatId, 1, perPage.value)
     chatMessages.value = normalizeMessagesChronological(response.messages)
-    latestDealMessage.value = response.latestDealMessage
-    if (response.latestDealMessage) {
+    latestDealMessage.value = response.latestDealMessage ?? getLatestPurchaseMessageFromMessages(chatMessages.value)
+    if (latestDealMessage.value) {
       scheduleDeferredDealSummaryMeasurement(chatId)
     }
     totalMessagesInChat.value = response.total
@@ -1171,6 +1249,9 @@ async function loadChatMessages(
     hasMoreMessages.value = 1 < totalPages.value
     chatStore.resetUnread(chatId)
     void chatsService.markChatRead(chatId)
+    if (!chats.value.some((chat) => chat.id === chatId)) {
+      void ensureChatAvailableForRoute(chatId)
+    }
 
     if (isMobile.value) mobileMode.value = 'chat'
     shouldScrollToBottom = true
@@ -1199,6 +1280,7 @@ async function loadChatMessages(
         scheduleFloatingDateLabelUpdate()
         if (options.settleToBottomAfterRouteOpen) {
           scheduleDeferredBottomPin(chatId)
+          void refreshRouteOpenedChat(chatId)
         }
       } finally {
         isChatPinning.value = false
