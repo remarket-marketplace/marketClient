@@ -336,6 +336,8 @@ function applyAutoDepositFromQuery() {
 }
 
 onMounted(async () => {
+  window.addEventListener('scroll', handleWindowScroll, { passive: true })
+
   isLoading.value = true
 
   const userBalance: Balance | null = await walletService.getUserBalance()
@@ -360,6 +362,8 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  window.removeEventListener('scroll', handleWindowScroll)
+
   if (walletTimerId) {
     clearInterval(walletTimerId)
     walletTimerId = null
@@ -390,10 +394,26 @@ const resetHistory = async () => {
   await loadHistory()
 }
 
-const handleScroll = async (event: Event) => {
+const isNearBottom = (scrollTop: number, viewportHeight: number, fullHeight: number, threshold = 50) => {
+  return scrollTop + viewportHeight >= fullHeight - threshold
+}
+
+const handleScroll = (event: Event) => {
   const target = event.target as HTMLElement
-  if (target.scrollTop + target.clientHeight >= target.scrollHeight - 50) {
-    await loadHistory()
+  if (isNearBottom(target.scrollTop, target.clientHeight, target.scrollHeight)) {
+    void loadHistory()
+  }
+}
+
+const handleWindowScroll = () => {
+  const doc = document.documentElement
+  const body = document.body
+  const scrollTop = window.scrollY || doc.scrollTop || body?.scrollTop || 0
+  const viewportHeight = window.innerHeight || doc.clientHeight || 0
+  const fullHeight = Math.max(doc.scrollHeight, body?.scrollHeight ?? 0)
+
+  if (isNearBottom(scrollTop, viewportHeight, fullHeight, 80)) {
+    void loadHistory()
   }
 }
 
