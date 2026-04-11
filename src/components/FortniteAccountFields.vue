@@ -11,6 +11,8 @@ import {
   FORTNITE_ACCOUNT_BOOLEAN_FIELDS,
   FORTNITE_ACCOUNT_COUNT_FIELDS,
   FORTNITE_ACCOUNT_DATE_FIELDS,
+  FORTNITE_ACCOUNT_MANUAL_CREATE_BOOLEAN_FIELDS,
+  FORTNITE_ACCOUNT_MANUAL_CREATE_COUNT_FIELDS,
   FORTNITE_ACCOUNT_TEXT_FIELDS,
   type FortniteAccountBooleanFieldKey,
   type FortniteAccountCountFieldKey,
@@ -20,9 +22,16 @@ import {
   type FortniteBooleanSelectValue,
 } from '@/utils/fortniteAccount'
 
-const props = defineProps<{
+type FortniteAccountFieldsMode = 'all' | 'manual-create'
+
+const props = withDefaults(defineProps<{
   modelValue: FortniteAccountFormState
-}>()
+  mode?: FortniteAccountFieldsMode
+  disabled?: boolean
+}>(), {
+  mode: 'all',
+  disabled: false,
+})
 
 const { locale } = useI18n()
 
@@ -30,17 +39,40 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: FortniteAccountFormState): void
 }>()
 
-const textFields = computed(() => FORTNITE_ACCOUNT_TEXT_FIELDS)
+const isManualCreateMode = computed(() => props.mode === 'manual-create')
+const textFields = computed(() => (
+  isManualCreateMode.value ? [] : FORTNITE_ACCOUNT_TEXT_FIELDS
+))
+const booleanFields = computed(() => (
+  isManualCreateMode.value
+    ? FORTNITE_ACCOUNT_MANUAL_CREATE_BOOLEAN_FIELDS
+    : FORTNITE_ACCOUNT_BOOLEAN_FIELDS
+))
+const dateFields = computed(() => (
+  isManualCreateMode.value ? [] : FORTNITE_ACCOUNT_DATE_FIELDS
+))
+const countFields = computed(() => (
+  isManualCreateMode.value
+    ? FORTNITE_ACCOUNT_MANUAL_CREATE_COUNT_FIELDS
+    : FORTNITE_ACCOUNT_COUNT_FIELDS
+))
 const countryOptions = computed(() => getCountryOptions(locale.value))
 const normalizedCountryValue = computed(() => normalizeCountryCode(props.modelValue.country))
 const hasLegacyCountryCode = computed(() => (
   Boolean(normalizedCountryValue.value) && !isKnownCountryCode(normalizedCountryValue.value)
 ))
+const fieldClass = computed(() => [
+  'w-full rounded-lg border border-dark-700 bg-dark-600 px-4 py-3 text-sm text-white outline-none',
+  props.disabled ? 'cursor-not-allowed opacity-70' : 'placeholder-gray-500',
+])
 
 function updateField<K extends keyof FortniteAccountFormState>(
   key: K,
   value: FortniteAccountFormState[K],
 ) {
+  if (props.disabled) {
+    return
+  }
   emit('update:modelValue', {
     ...props.modelValue,
     [key]: value,
@@ -83,7 +115,7 @@ function updateCountField(key: FortniteAccountCountFieldKey, value: string) {
 
 <template>
   <div class="space-y-6">
-    <div class="space-y-3">
+    <div v-if="textFields.length" class="space-y-3">
       <h4 class="text-sm font-semibold text-white">
         {{ $t('common.fortniteAccount.sections.profile') }}
       </h4>
@@ -100,7 +132,8 @@ function updateCountField(key: FortniteAccountCountFieldKey, value: string) {
             :value="props.modelValue[field.key]"
             type="text"
             maxlength="64"
-            class="w-full rounded-lg border border-dark-700 bg-dark-600 px-4 py-3 text-sm text-white outline-none placeholder-gray-500"
+            :disabled="props.disabled"
+            :class="fieldClass"
             @input="updateTextField(field.key, ($event.target as HTMLInputElement).value)"
           />
         </label>
@@ -111,7 +144,8 @@ function updateCountField(key: FortniteAccountCountFieldKey, value: string) {
           </span>
           <select
             :value="normalizedCountryValue"
-            class="w-full rounded-lg border border-dark-700 bg-dark-600 px-4 py-3 text-sm text-white outline-none"
+            :disabled="props.disabled"
+            :class="fieldClass"
             @change="updateCountryField(($event.target as HTMLSelectElement).value)"
           >
             <option value="">
@@ -147,7 +181,7 @@ function updateCountField(key: FortniteAccountCountFieldKey, value: string) {
       </h4>
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         <label
-          v-for="field in FORTNITE_ACCOUNT_BOOLEAN_FIELDS"
+          v-for="field in booleanFields"
           :key="field.key"
           class="space-y-2"
         >
@@ -156,7 +190,8 @@ function updateCountField(key: FortniteAccountCountFieldKey, value: string) {
           </span>
           <select
             :value="props.modelValue[field.key]"
-            class="w-full rounded-lg border border-dark-700 bg-dark-600 px-4 py-3 text-sm text-white outline-none"
+            :disabled="props.disabled"
+            :class="fieldClass"
             @change="updateBooleanField(field.key, ($event.target as HTMLSelectElement).value)"
           >
             <option value="">
@@ -173,13 +208,13 @@ function updateCountField(key: FortniteAccountCountFieldKey, value: string) {
       </div>
     </div>
 
-    <div class="space-y-3">
+    <div v-if="dateFields.length" class="space-y-3">
       <h4 class="text-sm font-semibold text-white">
         {{ $t('common.fortniteAccount.sections.activity') }}
       </h4>
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         <label
-          v-for="field in FORTNITE_ACCOUNT_DATE_FIELDS"
+          v-for="field in dateFields"
           :key="field.key"
           class="space-y-2"
         >
@@ -189,7 +224,8 @@ function updateCountField(key: FortniteAccountCountFieldKey, value: string) {
           <input
             :value="props.modelValue[field.key]"
             type="date"
-            class="w-full rounded-lg border border-dark-700 bg-dark-600 px-4 py-3 text-sm text-white outline-none"
+            :disabled="props.disabled"
+            :class="fieldClass"
             @input="updateDateField(field.key, ($event.target as HTMLInputElement).value)"
           />
         </label>
@@ -202,7 +238,7 @@ function updateCountField(key: FortniteAccountCountFieldKey, value: string) {
       </h4>
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         <label
-          v-for="field in FORTNITE_ACCOUNT_COUNT_FIELDS"
+          v-for="field in countFields"
           :key="field.key"
           class="space-y-2"
         >
@@ -215,7 +251,8 @@ function updateCountField(key: FortniteAccountCountFieldKey, value: string) {
             min="0"
             step="1"
             inputmode="numeric"
-            class="w-full rounded-lg border border-dark-700 bg-dark-600 px-4 py-3 text-sm text-white outline-none"
+            :disabled="props.disabled"
+            :class="fieldClass"
             @input="updateCountField(field.key, ($event.target as HTMLInputElement).value)"
           />
         </label>

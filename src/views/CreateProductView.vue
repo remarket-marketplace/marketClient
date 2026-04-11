@@ -40,6 +40,7 @@ import { getErrorMessage } from '@/utils/errorsMap'
 import {
   buildFortniteAccountPayload,
   createEmptyFortniteAccountForm,
+  FORTNITE_ACCOUNT_MANUAL_CREATE_ALLOWED_FIELDS,
   fortniteAccountDetailsToForm,
   isAccountsSubcategory,
   isFortniteAccountsCategory,
@@ -124,7 +125,12 @@ const shouldShowFortniteAccountForm = computed(() => isFortniteAccountsCategory(
   parentCategory: selectedCategory.value,
   subcategory: selectedSubcategory.value,
 }))
-const fortniteAccountPayload = computed(() => buildFortniteAccountPayload(fortniteAccountForm.value))
+const fortniteAccountPayload = computed(() => buildFortniteAccountPayload(
+  fortniteAccountForm.value,
+  isRaikaDraftApplied.value
+    ? undefined
+    : { allowedFields: FORTNITE_ACCOUNT_MANUAL_CREATE_ALLOWED_FIELDS },
+))
 
 const PRODUCT_LIMITS = {
   title: { min: 10, max: 50 },
@@ -898,6 +904,7 @@ async function createProduct() {
       price_currency: selectedCurrency.value,
       product_data: autoDelivery.value ? normalizedProductData.value : undefined,
       fortnite_account_details: shouldShowFortniteAccountForm.value ? fortniteAccountPayload.value : undefined,
+      draft_id: draftId.value || undefined,
       category_id: selectedSubcategory.value?.id ?? '',
       count: countValue.value,
       auto_delivery: autoDelivery.value,
@@ -1080,6 +1087,7 @@ async function createProduct() {
                     :placeholder="t('pages.forms.createProduct.selectCategory')"
                     searchable
                     class="w-full"
+                    :disabled="!isStandardCreateFlow"
                   />
                 </div>
 
@@ -1094,10 +1102,17 @@ async function createProduct() {
                     :placeholder="t('pages.forms.createProduct.selectSubcategory')"
                     searchable
                     class="w-full"
-                    :disabled="!selectedCategoryId || !subcategoryOptions.length"
+                    :disabled="!isStandardCreateFlow || !selectedCategoryId || !subcategoryOptions.length"
                   />
                 </div>
               </div>
+
+              <p
+                v-if="!isStandardCreateFlow"
+                class="text-xs leading-relaxed text-blue-300"
+              >
+                {{ $t('pages.forms.createProduct.raikaCategoryLockedHint') }}
+              </p>
             </template>
 
             <template v-else-if="currentStep === 2">
@@ -1169,11 +1184,19 @@ async function createProduct() {
                       {{ $t('pages.forms.createProduct.fortniteAccountDetailsTitle') }}
                     </h4>
                     <p class="text-xs text-gray-400 leading-relaxed">
-                      {{ $t('pages.forms.createProduct.fortniteAccountDetailsHint') }}
+                      {{
+                        isRaikaDraftApplied
+                          ? $t('pages.forms.createProduct.fortniteAccountDetailsLockedHint')
+                          : $t('pages.forms.createProduct.fortniteAccountDetailsHint')
+                      }}
                     </p>
                   </div>
 
-                  <FortniteAccountFields v-model="fortniteAccountForm" />
+                  <FortniteAccountFields
+                    v-model="fortniteAccountForm"
+                    mode="manual-create"
+                    :disabled="isRaikaDraftApplied"
+                  />
 
                   <p
                     class="text-xs"

@@ -403,6 +403,9 @@ export const productService = {
           JSON.stringify(productData.fortnite_account_details),
         );
       }
+      if (typeof productData.draft_id === "string" && productData.draft_id.trim().length > 0) {
+        formData.append("draft_id", productData.draft_id.trim());
+      }
       formData.append("category_id", productData.category_id);
       formData.append("count", productData.count);
       formData.append("auto_delivery", productData.auto_delivery);

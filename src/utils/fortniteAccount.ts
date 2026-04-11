@@ -32,6 +32,8 @@ export type FortniteAccountCountFieldKey =
   | 'sprays_count'
   | 'exclusives_count'
 
+export type FortniteAccountFormFieldKey = keyof FortniteAccountFormState
+
 export interface FortniteAccountFormState {
   can_change_email: FortniteBooleanSelectValue
   last_email_change: string
@@ -131,6 +133,23 @@ export const FORTNITE_ACCOUNT_COUNT_FIELDS: FortniteFieldConfig<FortniteAccountC
   { key: 'sprays_count', labelKey: 'common.fortniteAccount.fields.sprays_count' },
   { key: 'exclusives_count', labelKey: 'common.fortniteAccount.fields.exclusives_count' },
 ]
+
+export const FORTNITE_ACCOUNT_MANUAL_CREATE_BOOLEAN_FIELDS: FortniteFieldConfig<FortniteAccountBooleanFieldKey>[] = [
+  { key: 'can_change_email', labelKey: 'common.fortniteAccount.fields.can_change_email' },
+  { key: 'first_email', labelKey: 'common.fortniteAccount.fields.first_email' },
+  { key: 'parental_control', labelKey: 'common.fortniteAccount.fields.parental_control' },
+]
+
+export const FORTNITE_ACCOUNT_MANUAL_CREATE_COUNT_FIELDS: FortniteFieldConfig<FortniteAccountCountFieldKey>[] = [
+  { key: 'skins_count', labelKey: 'common.fortniteAccount.fields.skins_count' },
+]
+
+export const FORTNITE_ACCOUNT_MANUAL_CREATE_ALLOWED_FIELDS: readonly FortniteAccountFormFieldKey[] = [
+  'can_change_email',
+  'first_email',
+  'parental_control',
+  'skins_count',
+] as const
 
 const COMPACT_COUNT_FIELD_KEYS: FortniteAccountCountFieldKey[] = [
   'skins_count',
@@ -270,8 +289,11 @@ export function fortniteAccountDetailsToForm(
 
 export function buildFortniteAccountPayload(
   form: FortniteAccountFormState,
+  options?: {
+    allowedFields?: readonly FortniteAccountFormFieldKey[]
+  },
 ): Partial<FortniteAccountDetails> | undefined {
-  const payload: Partial<FortniteAccountDetails> = {
+  const rawPayload: Partial<FortniteAccountDetails> = {
     can_change_email: selectValueToBoolean(form.can_change_email),
     last_email_change: normalizeOptionalString(form.last_email_change),
     first_email: selectValueToBoolean(form.first_email),
@@ -294,6 +316,14 @@ export function buildFortniteAccountPayload(
     sprays_count: normalizeOptionalNumber(form.sprays_count),
     exclusives_count: normalizeOptionalNumber(form.exclusives_count),
   }
+
+  const payload = options?.allowedFields?.length
+    ? Object.fromEntries(
+      Object.entries(rawPayload).filter(([fieldKey]) => options.allowedFields?.includes(
+        fieldKey as FortniteAccountFormFieldKey,
+      )),
+    ) as Partial<FortniteAccountDetails>
+    : rawPayload
 
   return hasFortniteAccountDetails(payload) ? payload : undefined
 }
