@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   ArrowDownToLine,
@@ -53,9 +53,6 @@ const page = ref(1)
 const perPage = 10
 const totalPages = ref(1)
 const isFetchingTransactions = ref(false)
-const saleTimersPage = ref(1)
-const saleTimersPerPage = 20
-const historyItemRefs = ref<Record<string, HTMLElement>>({})
 const minDepositRub = ref(HARD_MIN_DEPOSIT_RUB)
 const maxDepositRub = ref(100000)
 const defaultDepositProvider: WalletTopUpProvider = 'platega'
@@ -187,7 +184,6 @@ const salePayoutTimers = computed(() => {
 
       return [{
         id: item.id,
-        productId: item.product_id,
         title: item.title || t('pages.wallet.saleTimer.untitledSale'),
         amount: item.amount,
         unlockAt,
@@ -195,22 +191,6 @@ const salePayoutTimers = computed(() => {
       }]
     })
 })
-
-const visibleSalePayoutTimers = computed(() =>
-  salePayoutTimers.value.slice(0, saleTimersPage.value * saleTimersPerPage),
-)
-
-const hasMoreSalePayoutTimers = computed(() =>
-  visibleSalePayoutTimers.value.length < salePayoutTimers.value.length,
-)
-
-watch(
-  () => salePayoutTimers.value.length,
-  (next, prev) => {
-    if (next >= prev) return
-    saleTimersPage.value = 1
-  },
-)
 
 const totalLockedSaleAmountRub = computed(() =>
   salePayoutTimers.value.reduce((sum, item) => sum + item.amount, 0),
@@ -417,41 +397,31 @@ const handleScroll = async (event: Event) => {
   }
 }
 
-const handleSaleTimersScroll = (event: Event) => {
-  const target = event.target as HTMLElement
-  if (target.scrollTop + target.clientHeight < target.scrollHeight - 50) return
-  if (!hasMoreSalePayoutTimers.value) return
-  saleTimersPage.value += 1
+const getSaleTimerForHistoryItem = (item: WalletHistoryItem): { unlockAt: number; remainingMs: number } | null => {
+  if (!isSalePayoutDelayApplicable(item)) return null
+  const unlockAt = getSaleUnlockTimestamp(item)
+  if (unlockAt === null) return null
+
+  const remainingMs = unlockAt - nowTs.value
+  if (remainingMs <= 0) return null
+
+  return { unlockAt, remainingMs }
 }
 
-const setHistoryItemRef = (id: string, element: Element | { $el?: Element } | null) => {
-  const rawElement = element && '$el' in element ? element.$el : element
-  if (rawElement instanceof HTMLElement) {
-    historyItemRefs.value[id] = rawElement
-    return
-  }
-  delete historyItemRefs.value[id]
+const getSaleTimerRemainingText = (item: WalletHistoryItem): string | null => {
+  const saleTimer = getSaleTimerForHistoryItem(item)
+  if (!saleTimer) return null
+  const hoursLeft = Math.max(1, Math.ceil(saleTimer.remainingMs / (60 * 60 * 1000)))
+  return t('pages.wallet.saleTimer.canWithdrawIn', {
+    hours: hoursLeft,
+  })
 }
 
-const openSaleTimerHistory = async (historyItemId: string) => {
-  let historyItem = historyItems.value.find((item) => item.id === historyItemId)
-
-  while (!historyItem && page.value <= totalPages.value) {
-    await loadHistory()
-    historyItem = historyItems.value.find((item) => item.id === historyItemId)
-  }
-
-  if (!historyItem) return
-
-  expandedTransactionId.value = historyItem.id
-  await nextTick()
-
-  const targetElement = historyItemRefs.value[historyItem.id]
-  if (!targetElement) return
-
-  targetElement.scrollIntoView({
-    behavior: 'smooth',
-    block: 'center',
+const getSaleTimerUnlockText = (item: WalletHistoryItem): string | null => {
+  const saleTimer = getSaleTimerForHistoryItem(item)
+  if (!saleTimer) return null
+  return t('pages.wallet.saleTimer.unlockAt', {
+    date: formatDateTime(new Date(saleTimer.unlockAt).toISOString()),
   })
 }
 
@@ -795,6 +765,22 @@ const getTransactionDetails = (item: WalletHistoryItem) => {
     })
   }
 
+  const saleTimerRemainingText = getSaleTimerRemainingText(item)
+  if (saleTimerRemainingText) {
+    details.push({
+      label: t('pages.wallet.historyDetails.withdrawAvailableIn'),
+      value: saleTimerRemainingText,
+    })
+  }
+
+  const saleTimerUnlockText = getSaleTimerUnlockText(item)
+  if (saleTimerUnlockText) {
+    details.push({
+      label: t('pages.wallet.historyDetails.unlockAt'),
+      value: saleTimerUnlockText,
+    })
+  }
+
   const providerName = formatProviderName(item.payment_provider)
   if (providerName) {
     details.push({
@@ -985,63 +971,6 @@ const typeLabel = (type: string) => {
               </div>
             </div>
 
-            <div
-              v-if="salePayoutTimers.length > 0"
-              class="space-y-3 rounded-xl border border-amber-400/20 bg-amber-400/[0.06] p-4"
-            >
-              <div class="flex items-center justify-between gap-3">
-                <div>
-                  <div class="text-xs font-semibold uppercase tracking-[0.16em] text-amber-300/80">
-                    {{ $t('pages.wallet.saleTimer.title') }}
-                  </div>
-                  <div class="mt-1 text-sm text-amber-100/90">
-                    {{ $t('pages.wallet.saleTimer.lockedSummary', { amount: formatCurrency(totalLockedSaleAmountRub) }) }}
-                  </div>
-                </div>
-                <div class="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-200">
-                  {{ $t('pages.wallet.saleTimer.availableNow', { amount: formatCurrency(withdrawableBalanceRub) }) }}
-                </div>
-              </div>
-
-              <div
-                class="space-y-2 max-h-64 overflow-y-auto pr-1"
-                @scroll.passive="handleSaleTimersScroll"
-              >
-              <div
-                v-for="saleTimer in visibleSalePayoutTimers"
-                :key="saleTimer.id"
-                class="rounded-lg border border-dark-600/80 bg-dark-800/65 px-3 py-2.5"
-              >
-                <div class="flex items-start justify-between gap-3">
-                  <div class="min-w-0">
-                      <button
-                        type="button"
-                        class="block w-full truncate text-left text-sm font-medium text-gray-100 transition-colors hover:text-blue-200"
-                        @click="openSaleTimerHistory(saleTimer.id)"
-                      >
-                        {{ saleTimer.title }}
-                      </button>
-                      <div class="mt-1 text-xs text-gray-400">
-                        {{ $t('pages.wallet.saleTimer.unlockAt', { date: formatDateTime(new Date(saleTimer.unlockAt).toISOString()) }) }}
-                      </div>
-                    </div>
-                    <div class="text-right">
-                      <div class="text-sm font-semibold text-violet-200">+{{ formatCurrency(saleTimer.amount) }}</div>
-                      <div class="mt-1 rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold tabular-nums text-amber-200">
-                        {{ formatDurationLeft(saleTimer.remainingMs) }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div
-                  v-if="hasMoreSalePayoutTimers"
-                  class="py-1 text-center text-xs text-gray-400"
-                >
-                  {{ $t('common.loading') }}...
-                </div>
-              </div>
-            </div>
-
             <!-- Info cards -->
             <div class="space-y-3">
               <div class="flex items-center gap-3 p-4 rounded-lg border border-dark-600 bg-dark-700/30">
@@ -1105,7 +1034,6 @@ const typeLabel = (type: string) => {
               <div
                 v-for="tx in historyItems"
                 :key="tx.id"
-                :ref="(el) => setHistoryItemRef(tx.id, el)"
                 :class="[
                   'group rounded-2xl border p-4 transition-all duration-300 sm:p-5',
                   isHistoryItemExpanded(tx.id)
@@ -1151,23 +1079,29 @@ const typeLabel = (type: string) => {
                               <Gamepad2 class="h-3.5 w-3.5" />
                               <span>{{ $t('pages.wallet.historyDetails.steamBadge') }}</span>
                             </div>
+                            <div
+                              v-if="getSaleTimerForHistoryItem(tx)"
+                              class="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-200"
+                            >
+                              <Clock class="h-3.5 w-3.5" />
+                              <span class="tabular-nums">{{ formatDurationLeft(getSaleTimerForHistoryItem(tx)!.remainingMs) }}</span>
+                            </div>
                           </div>
 
                         <template v-if="tx.title">
                           <div
                             class="max-w-2xl text-sm font-medium leading-5 text-gray-200/92"
+                            style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"
                           >
                             <router-link
                               v-if="tx.product_id"
                               :to="`/product/${buildSlugKey(tx.title, tx.product_id, 'product')}`"
-                              class="transition-colors duration-200 hover:text-blue-200"
-                              style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"
+                              class="inline transition-colors duration-200 hover:text-blue-200"
                             >
                               {{ tx.title }}
                             </router-link>
                             <span
                               v-else
-                              style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"
                             >
                               {{ tx.title }}
                             </span>
