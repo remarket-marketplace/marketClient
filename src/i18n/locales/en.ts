@@ -1180,6 +1180,8 @@ const en = {
       contactSeller: "To receive the product, contact the seller in chat",
       sellerPendingInstructionTitle: "What to do",
       sellerPendingInstructionText: "Send the product data or item to the buyer in chat. After delivery, click \"Confirm fulfillment\".",
+      dealTimer: "In deal: {value}",
+      autoConfirmTimer: "Auto-confirm in {value}",
 
       pending: "Deal created. Waiting for fulfillment confirmation from the seller.",
       confirmed:

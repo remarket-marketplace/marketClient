@@ -23,6 +23,12 @@ const props = defineProps<{
   has_review: boolean | null
   layout?: 'timeline' | 'summary'
   createdAt?: string | null
+  dealStatusTimeline?: Array<{
+    id: string
+    deal_id: string
+    status: string
+    created_at: string
+  }>
   collapsed?: boolean
   collapsible?: boolean
 }>()
@@ -156,6 +162,114 @@ const timelineTimestamp = computed(() => {
     minute: '2-digit',
   })
 })
+
+const DEAL_AUTO_CONFIRM_WINDOW_MS = 24 * 60 * 60 * 1000
+const dealTimerNowTs = ref(Date.now())
+let dealTimerIntervalId: ReturnType<typeof setInterval> | null = null
+
+const isFinalDealStatus = computed(() => (
+  ['completed', 'refunded', 'cancelled', 'canceled'].includes((effectiveDealStatus.value ?? '').toLowerCase())
+))
+
+const normalizedDealTimeline = computed(() => {
+  return [...(props.dealStatusTimeline ?? [])]
+    .map((item) => ({
+      ...item,
+      status: item.status.toLowerCase(),
+      timestamp: Date.parse(item.created_at),
+    }))
+    .filter((item) => Number.isFinite(item.timestamp))
+    .sort((a, b) => a.timestamp - b.timestamp)
+})
+
+const autoConfirmStartAtTs = computed<number | null>(() => {
+  for (const event of normalizedDealTimeline.value) {
+    if (event.status === 'confirmed') {
+      return event.timestamp
+    }
+  }
+  return null
+})
+
+function calculatePausedDurationMs(nowTs: number, startTs: number): number {
+  let pausedDurationMs = 0
+  let disputeStartedAt: number | null = null
+
+  for (const event of normalizedDealTimeline.value) {
+    if (event.timestamp < startTs) continue
+
+    if (event.status === 'disputed') {
+      if (disputeStartedAt === null) {
+        disputeStartedAt = event.timestamp
+      }
+      continue
+    }
+
+    if (event.status === 'confirmed' && disputeStartedAt !== null) {
+      pausedDurationMs += Math.max(0, event.timestamp - disputeStartedAt)
+      disputeStartedAt = null
+    }
+  }
+
+  const isDisputedNow = (effectiveDealStatus.value ?? '').toLowerCase() === 'disputed'
+  if (disputeStartedAt !== null && isDisputedNow) {
+    pausedDurationMs += Math.max(0, nowTs - disputeStartedAt)
+  }
+
+  return pausedDurationMs
+}
+
+const shouldShowAutoConfirmTimer = computed(() => {
+  const normalizedStatus = (effectiveDealStatus.value ?? '').toLowerCase()
+  if (!isSummaryLayout.value) return false
+  if (isFinalDealStatus.value) return false
+  if (autoConfirmStartAtTs.value === null) return false
+  return normalizedStatus === 'confirmed' || normalizedStatus === 'disputed'
+})
+
+const autoConfirmRemainingMs = computed<number | null>(() => {
+  if (!shouldShowAutoConfirmTimer.value) return null
+  const startTs = autoConfirmStartAtTs.value
+  if (startTs === null) return null
+
+  const pausedDurationMs = calculatePausedDurationMs(dealTimerNowTs.value, startTs)
+  const elapsedMs = Math.max(0, dealTimerNowTs.value - startTs - pausedDurationMs)
+  return Math.max(0, DEAL_AUTO_CONFIRM_WINDOW_MS - elapsedMs)
+})
+
+const autoConfirmTimerLabel = computed(() => {
+  if (autoConfirmRemainingMs.value === null) return null
+  const totalMinutes = Math.floor(autoConfirmRemainingMs.value / (60 * 1000))
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+})
+
+function startDealTimerInterval() {
+  if (dealTimerIntervalId !== null) return
+  dealTimerIntervalId = setInterval(() => {
+    dealTimerNowTs.value = Date.now()
+  }, 1000)
+}
+
+function stopDealTimerInterval() {
+  if (dealTimerIntervalId === null) return
+  clearInterval(dealTimerIntervalId)
+  dealTimerIntervalId = null
+}
+
+watch(
+  shouldShowAutoConfirmTimer,
+  (shouldShow) => {
+    if (shouldShow) {
+      dealTimerNowTs.value = Date.now()
+      startDealTimerInterval()
+      return
+    }
+    stopDealTimerInterval()
+  },
+  { immediate: true },
+)
 
 
 const deliverySummary = computed(() => (
@@ -322,6 +436,7 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  stopDealTimerInterval()
   if (typeof document === 'undefined') return
   document.body.style.overflow = ''
 })
@@ -338,6 +453,12 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
+          <span
+            v-if="shouldShowAutoConfirmTimer && autoConfirmTimerLabel"
+            class="inline-flex items-center rounded-full border border-white/12 bg-white/[0.04] px-2 py-1 text-[10px] font-semibold tracking-[0.06em] text-gray-200 sm:text-[11px]"
+          >
+            {{ $t('pages.chats.autoConfirmTimer', { value: autoConfirmTimerLabel }) }}
+          </span>
           <DealStatusTag :deal-status="currentDealStatus" />
           <button
             v-if="shouldShowSummaryToggle"
