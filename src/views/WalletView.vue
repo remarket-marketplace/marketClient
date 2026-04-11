@@ -158,6 +158,12 @@ function toValidTimestamp(dateValue: string | null | undefined): number | null {
   return Number.isFinite(parsed) ? parsed : null
 }
 
+function toValidDate(dateValue: string | null | undefined): Date | null {
+  const timestamp = toValidTimestamp(dateValue)
+  if (timestamp === null) return null
+  return new Date(timestamp)
+}
+
 function isSalePayoutDelayApplicable(item: WalletHistoryItem): boolean {
   if (item.type !== 'sale') return false
   if (!Number.isFinite(item.amount) || item.amount <= 0) return false
@@ -500,7 +506,9 @@ const formatCurrency = (amount: number) => {
 }
 
 const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('ru-RU', {
+  const date = toValidDate(dateString)
+  if (!date) return dateString
+  return date.toLocaleDateString('ru-RU', {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
@@ -509,7 +517,9 @@ const formatDate = (dateString: string) => {
 }
 
 const formatDateTime = (dateString: string) => {
-  return new Date(dateString).toLocaleString('ru-RU', {
+  const date = toValidDate(dateString)
+  if (!date) return dateString
+  return date.toLocaleString('ru-RU', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
