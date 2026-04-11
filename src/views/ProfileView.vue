@@ -776,7 +776,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
               </div>
 
               <!-- Description -->
-              <div v-if="hasProfileDescription" class="space-y-3">
+              <div v-if="hasProfileDescription || isOwner" class="space-y-3">
                 <div class="flex items-center justify-between">
                   <h3 class="text-sm font-semibold text-gray-300">{{ t('common.description') }}</h3>
                   <button v-if="isOwner && !isEditingDescription" @click="isEditingDescription = true"
@@ -787,7 +787,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 </div>
 
                 <div v-if="!isEditingDescription" class="break-words text-sm leading-relaxed text-gray-300 [overflow-wrap:anywhere]">
-                  <p>{{ currentProfileData.description }}</p>
+                  <p>{{ currentProfileData.description?.trim() || t('pages.profile.descriptionMissing') }}</p>
                 </div>
 
                 <template v-else>
@@ -800,7 +800,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                       {{ t('common.cancel') }}
                     </button>
                     <button @click="updateProfileDescription(newDescription)"
-                      :disabled="!newDescription.trim() || newDescription === currentProfileData.description"
+                      :disabled="newDescription.trim() === (currentProfileData.description ?? '').trim()"
                       class="market-primary-surface market-primary-hover rounded-lg px-3 py-1.5 text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50">
                       {{ t('common.save') }}
                     </button>
