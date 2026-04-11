@@ -258,10 +258,22 @@ const routes = [
 
 export function createAppRouter(isSSR = false) {
   const history = isSSR ? createMemoryHistory() : createWebHistory(import.meta.env.BASE_URL)
+
+  const isProfileTabSwitch = (to: any, from: any) => (
+    to.name === 'profile'
+    && from.name === 'profile'
+    && to.path === from.path
+    && to.query.tab !== from.query.tab
+  )
+
   const router = createRouter({
     history,
     routes,
-    scrollBehavior() {
+    scrollBehavior(to, from) {
+      if (isProfileTabSwitch(to, from)) {
+        return false
+      }
+
       // Always open next page from the top.
       return { left: 0, top: 0, behavior: "auto" }
     },
@@ -305,10 +317,14 @@ export function createAppRouter(isSSR = false) {
     return true
   });
 
-  router.afterEach(() => {
+  router.afterEach((to, from) => {
     useNavigationStore().finishRoutePending()
 
     if (typeof window === 'undefined') {
+      return
+    }
+
+    if (isProfileTabSwitch(to, from)) {
       return
     }
 
