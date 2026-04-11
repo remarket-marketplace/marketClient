@@ -10,7 +10,7 @@ import Loader from '@/components/Loader.vue'
 import { useUserStore } from '@/stores/user'
 import { useChatStore } from '@/stores/chat'
 import type { ChatListItem } from '@/validation/chat/ChatList'
-import type { ChatMessageUnion, PurchaseMessage } from '@/validation/chat/chatMessage'
+import type { ChatMessageUnion, ChatUpdateSchema, PurchaseMessage } from '@/validation/chat/chatMessage'
 import type { MessagesReadPayload } from '@/validation/chat/chatMessage'
 import type { LocalPendingChatMessage } from '@/validation/chat/localPendingMessage'
 import type { UserRead } from '@/validation/user/userRead'
@@ -885,7 +885,10 @@ function scheduleDeferredDealSummaryMeasurement(chatId: string) {
 let unsubscribeNewMessage: (() => void) | null = null
 let unsubscribeDealStatusUpdate: (() => void) | null = null
 let unsubscribeChatUpdated: (() => void) | null = null
+let unsubscribeChatNotification: (() => void) | null = null
 let unsubscribeMessagesRead: (() => void) | null = null
+let chatListRefreshTimeoutId: number | null = null
+let isChatListRefreshInFlight = false
 
 function applyMessagesReadUpdate(update: MessagesReadPayload) {
   if (update.chat_id === selectedChatId.value && update.message_ids.length > 0) {
@@ -977,29 +980,11 @@ onMounted(async () => {
       await chatsService.connectChatsWebsocket()
     }
 
-    unsubscribeChatUpdated = chatsService.onChatUpdated(update => {
-      const chatIndex = chats.value.findIndex(c => c.id === update.chat_id)
-      if (chatIndex === -1) return
-
-      const chat = chats.value[chatIndex]
-
-      if (update.last_message && chat) {
-        if (
-          (
-            update.last_message.message_type !== 'update_deal_status_message'
-            || update.last_message.new_status === 'disputed'
-          )
-          && shouldApplyLastMessage(chat.last_message ?? null, update.last_message)
-        ) {
-          chat.last_message = update.last_message
-        }
-      }
-      if (chat) {
-        if (typeof update.unread_count === 'number') {
-          chat.unread_count = update.unread_count
-        }
-      }
-      chatStore.updateChatFromSocket(update)
+    unsubscribeChatUpdated = chatsService.onChatUpdated((update) => {
+      applyIncomingChatUpdate(update)
+    })
+    unsubscribeChatNotification = chatsService.onChatNotification((update) => {
+      applyIncomingChatUpdate(update)
     })
 
     unsubscribeDealStatusUpdate = chatsService.onDealStatusUpdate(message => {
@@ -1065,6 +1050,7 @@ onUnmounted(() => {
   unsubscribeNewMessage?.()
   unsubscribeDealStatusUpdate?.()
   unsubscribeChatUpdated?.()
+  unsubscribeChatNotification?.()
   unsubscribeMessagesRead?.()
   latestDealSummaryResizeObserver?.disconnect()
   latestDealSummaryResizeObserver = null
@@ -1081,12 +1067,63 @@ onUnmounted(() => {
     clearTimeout(floatingDateHideTimerId)
     floatingDateHideTimerId = null
   }
+  if (chatListRefreshTimeoutId !== null) {
+    clearTimeout(chatListRefreshTimeoutId)
+    chatListRefreshTimeoutId = null
+  }
   window.removeEventListener('resize', checkMobile)
 })
 
 async function loadChats() {
   chats.value = await chatsService.getChats()
   chatStore.setChats(chats.value)
+}
+
+async function refreshChatsFromSocketEvent() {
+  if (isChatListRefreshInFlight) return
+  isChatListRefreshInFlight = true
+  try {
+    await loadChats()
+  } finally {
+    isChatListRefreshInFlight = false
+  }
+}
+
+function scheduleChatsRefreshFromSocketEvent() {
+  if (chatListRefreshTimeoutId !== null) return
+
+  chatListRefreshTimeoutId = window.setTimeout(() => {
+    chatListRefreshTimeoutId = null
+    void refreshChatsFromSocketEvent()
+  }, 120)
+}
+
+function applyIncomingChatUpdate(update: ChatUpdateSchema) {
+  const chatIndex = chats.value.findIndex((chat) => chat.id === update.chat_id)
+  if (chatIndex === -1) {
+    scheduleChatsRefreshFromSocketEvent()
+    return
+  }
+
+  const chat = chats.value[chatIndex]
+
+  if (update.last_message && chat) {
+    if (
+      (
+        update.last_message.message_type !== 'update_deal_status_message'
+        || update.last_message.new_status === 'disputed'
+      )
+      && shouldApplyLastMessage(chat.last_message ?? null, update.last_message)
+    ) {
+      chat.last_message = update.last_message
+    }
+  }
+
+  if (chat && typeof update.unread_count === 'number') {
+    chat.unread_count = update.unread_count
+  }
+
+  chatStore.updateChatFromSocket(update)
 }
 
 async function ensureChatAvailableForRoute(chatId: string): Promise<void> {
