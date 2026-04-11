@@ -157,6 +157,64 @@ const timelineTimestamp = computed(() => {
   })
 })
 
+const dealTimerNowTs = ref(Date.now())
+let dealTimerIntervalId: ReturnType<typeof setInterval> | null = null
+
+const isFinalDealStatus = computed(() => (
+  ['completed', 'refunded', 'cancelled', 'canceled'].includes((effectiveDealStatus.value ?? '').toLowerCase())
+))
+
+const parsedDealCreatedAtTs = computed(() => {
+  if (!props.createdAt) return null
+  const parsed = Date.parse(props.createdAt)
+  return Number.isFinite(parsed) ? parsed : null
+})
+
+const shouldShowSummaryDealTimer = computed(() => (
+  isSummaryLayout.value && !isFinalDealStatus.value && parsedDealCreatedAtTs.value !== null
+))
+
+const dealTimerElapsedMs = computed(() => {
+  if (!shouldShowSummaryDealTimer.value || parsedDealCreatedAtTs.value === null) return null
+  return Math.max(0, dealTimerNowTs.value - parsedDealCreatedAtTs.value)
+})
+
+const dealTimerLabel = computed(() => {
+  if (dealTimerElapsedMs.value === null) return null
+  const totalSeconds = Math.floor(dealTimerElapsedMs.value / 1000)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  const value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+  return value
+})
+
+function startDealTimerInterval() {
+  if (dealTimerIntervalId !== null) return
+  dealTimerIntervalId = setInterval(() => {
+    dealTimerNowTs.value = Date.now()
+  }, 1000)
+}
+
+function stopDealTimerInterval() {
+  if (dealTimerIntervalId === null) return
+  clearInterval(dealTimerIntervalId)
+  dealTimerIntervalId = null
+}
+
+watch(
+  shouldShowSummaryDealTimer,
+  (shouldShow) => {
+    if (shouldShow) {
+      dealTimerNowTs.value = Date.now()
+      startDealTimerInterval()
+      return
+    }
+    stopDealTimerInterval()
+  },
+  { immediate: true },
+)
+
 
 const deliverySummary = computed(() => (
   props.product.auto_delivery ? props.product.product_data_string || null : null
@@ -322,6 +380,7 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  stopDealTimerInterval()
   if (typeof document === 'undefined') return
   document.body.style.overflow = ''
 })
@@ -338,6 +397,12 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
+          <span
+            v-if="shouldShowSummaryDealTimer && dealTimerLabel"
+            class="inline-flex items-center rounded-full border border-white/12 bg-white/[0.04] px-2 py-1 text-[10px] font-semibold tracking-[0.06em] text-gray-200 sm:text-[11px]"
+          >
+            {{ $t('pages.chats.dealTimer', { value: dealTimerLabel }) }}
+          </span>
           <DealStatusTag :deal-status="currentDealStatus" />
           <button
             v-if="shouldShowSummaryToggle"

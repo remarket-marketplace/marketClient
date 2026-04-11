@@ -1562,6 +1562,7 @@ async function sendMessage(payload: { files: File[] }) {
                   class="message-compose-shell pointer-events-auto flex items-start rounded-[22px] border border-white/10 bg-background/90 px-2 py-1.5 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 lg:rounded-[26px] lg:px-3 lg:py-2.5">
                   <NewPurchaseMessage :product="resolvedLatestDealMessage.product" :deal-id="resolvedLatestDealMessage.deal_id"
                     :deal-status="latestDealStatus" :has_review="latestDealHasReview" layout="summary"
+                    :created-at="resolvedLatestDealMessage.created_at"
                     :collapsed="isDealSummaryCollapsed" :collapsible="isLatestDealSummaryCollapsible"
                     @toggle-collapse="toggleLatestDealSummaryCollapse" />
                 </div>
