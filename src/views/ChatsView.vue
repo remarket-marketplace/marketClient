@@ -33,6 +33,13 @@ const chatMessages = ref<ChatMessageUnion[]>([])
 const latestDealMessage = ref<PurchaseMessage | null>(null)
 const localPendingMessages = ref<LocalPendingChatMessage[]>([])
 const liveDealStatusOverrides = ref<Record<string, string>>({})
+type DealStatusTimelineEvent = {
+  id: string
+  deal_id: string
+  status: string
+  created_at: string
+}
+const liveDealStatusEventsById = ref<Record<string, DealStatusTimelineEvent>>({})
 const selectedChatId = ref<string | null>(null)
 const messageContainerRef = ref<HTMLElement | null>(null)
 const latestDealSummaryRef = ref<HTMLElement | null>(null)
@@ -684,6 +691,38 @@ const latestDealStatus = computed(() => {
   )
 })
 
+const latestDealStatusTimeline = computed<DealStatusTimelineEvent[]>(() => {
+  if (!resolvedLatestDealMessage.value) return []
+
+  const currentDeal = resolvedLatestDealMessage.value
+  const timelineById: Record<string, DealStatusTimelineEvent> = {
+    [`purchase-${currentDeal.deal_id}`]: {
+      id: `purchase-${currentDeal.deal_id}`,
+      deal_id: currentDeal.deal_id,
+      status: currentDeal.deal_status,
+      created_at: currentDeal.created_at,
+    },
+  }
+
+  for (const message of chatMessages.value) {
+    if (message.message_type !== 'update_deal_status_message') continue
+    if (message.deal_id !== currentDeal.deal_id) continue
+    timelineById[message.id] = {
+      id: message.id,
+      deal_id: message.deal_id,
+      status: message.new_status,
+      created_at: message.created_at,
+    }
+  }
+
+  for (const event of Object.values(liveDealStatusEventsById.value)) {
+    if (event.deal_id !== currentDeal.deal_id) continue
+    timelineById[event.id] = event
+  }
+
+  return Object.values(timelineById).sort((a, b) => getMessageTimestamp(a) - getMessageTimestamp(b))
+})
+
 const latestDealHasReview = computed(() => {
   if (!resolvedLatestDealMessage.value) return false
   return (
@@ -928,6 +967,7 @@ watch(selectedChatId, () => {
   latestDealMessage.value = null
   latestDealSummaryHeightPx.value = 0
   liveDealStatusOverrides.value = {}
+  liveDealStatusEventsById.value = {}
   clearDeferredBottomPinTimers()
   clearDeferredDealSummaryMeasureTimers()
   if (floatingDateHideTimerId !== null) {
@@ -1005,6 +1045,15 @@ onMounted(async () => {
       liveDealStatusOverrides.value = {
         ...liveDealStatusOverrides.value,
         [message.deal_id]: message.new_status,
+      }
+      liveDealStatusEventsById.value = {
+        ...liveDealStatusEventsById.value,
+        [message.id]: {
+          id: message.id,
+          deal_id: message.deal_id,
+          status: message.new_status,
+          created_at: message.created_at,
+        },
       }
     })
 
@@ -1277,6 +1326,7 @@ async function loadChatMessages(
     isDealSummaryCollapsed.value = false
     latestDealMessage.value = null
     liveDealStatusOverrides.value = {}
+    liveDealStatusEventsById.value = {}
     currentPage.value = 1
     hasMoreMessages.value = true
     totalMessagesInChat.value = 0
@@ -1563,6 +1613,7 @@ async function sendMessage(payload: { files: File[] }) {
                   <NewPurchaseMessage :product="resolvedLatestDealMessage.product" :deal-id="resolvedLatestDealMessage.deal_id"
                     :deal-status="latestDealStatus" :has_review="latestDealHasReview" layout="summary"
                     :created-at="resolvedLatestDealMessage.created_at"
+                    :deal-status-timeline="latestDealStatusTimeline"
                     :collapsed="isDealSummaryCollapsed" :collapsible="isLatestDealSummaryCollapsible"
                     @toggle-collapse="toggleLatestDealSummaryCollapse" />
                 </div>
