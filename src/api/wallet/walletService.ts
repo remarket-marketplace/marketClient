@@ -66,7 +66,7 @@ export const walletService = {
     }
   },
 
-  async getHistory(page = 1, perPage = 10): Promise<WalletHistoryResponse | null> {
+  async getHistory(page = 1, perPage = 20): Promise<WalletHistoryResponse | null> {
     try {
       const response = await httpClient.get("/wallet/history", {
         params: { page, per_page: perPage },
