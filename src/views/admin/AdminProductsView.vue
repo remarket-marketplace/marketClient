@@ -226,6 +226,17 @@ function formatPrice(price: number) {
   return formatCurrencyAmount(price);
 }
 
+function getProductCategoryPath(product: Product): string {
+  const parentCategoryName = product.parent_category?.name?.trim() ?? '';
+  const categoryName = product.category?.name?.trim() ?? '';
+
+  if (parentCategoryName && categoryName && parentCategoryName !== categoryName) {
+    return `${parentCategoryName} > ${categoryName}`;
+  }
+
+  return categoryName || parentCategoryName || t('common.notSpecified');
+}
+
 function normalizeValue(value: unknown): unknown {
   if (typeof value === 'string') {
     const trimmed = value.trim();
@@ -741,7 +752,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
                   </div>
                   <div class="flex items-center justify-end gap-1">
                     <Folder class="w-3 h-3" />
-                    <span>{{ product.category.name }}</span>
+                    <span>{{ getProductCategoryPath(product) }}</span>
                   </div>
                 </div>
               </div>
@@ -877,7 +888,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
               <span class="text-white/20 sm:hidden">•</span>
               <span class="inline-flex items-center gap-1 sm:hidden">
                 <Folder class="w-2 h-2" />
-                <span class="truncate">{{ product.category.name }}</span>
+                <span class="truncate">{{ getProductCategoryPath(product) }}</span>
               </span>
             </div>
             
