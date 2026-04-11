@@ -21,7 +21,7 @@ export const topUpBalanceResponse = z.object({
 
 export const createWithdrawalOrderRequestSchema = z.object({
   amount: z.number().positive(),
-  card_number: z.string().min(12).max(32),
+  card_number: z.string().regex(/^T[1-9A-HJ-NP-Za-km-z]{33}$/, 'Invalid TRC-20 wallet address'),
 });
 
 export const createWithdrawalOrderResponseSchema = z.object({

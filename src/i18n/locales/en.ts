@@ -1441,9 +1441,10 @@ const en = {
       paymentProvidersUnavailable: "Top-up services are temporarily unavailable.",
       proceedToPayment: "Proceed to Payment",
       withdrawAmount: "Withdrawal Amount",
-      withdrawCard: "Card Number",
-      withdrawCardPlaceholder: "0000 0000 0000 0000",
-      withdrawCardHint: "The request will appear in transaction history and wait for admin review.",
+      withdrawAmountInvalid: "Enter a valid withdrawal amount.",
+      withdrawWalletAddress: "TRC-20 Wallet Address",
+      withdrawWalletAddressPlaceholder: "T...",
+      withdrawWalletAddressInvalid: "Enter a valid TRC-20 address. It must start with T and contain 34 characters.",
       available: "Available",
       useAll: "All",
       confirmWithdrawal: "Confirm Withdrawal",
@@ -1506,7 +1507,7 @@ const en = {
       withdrawSummary: {
         requestedAmount: "Deducted from balance",
         commission: "Platform commission {percent}%",
-        payoutAmount: "Sent to card",
+        payoutAmount: "Sent to wallet",
       },
       withdrawSuccess: "Withdrawal order created. Payout amount: {amount}."
     },

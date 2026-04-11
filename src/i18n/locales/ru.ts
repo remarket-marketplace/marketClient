@@ -1438,9 +1438,10 @@ const ru = {
       paymentProvidersUnavailable: "Сервисы пополнения временно недоступны.",
       proceedToPayment: "Перейти к оплате",
       withdrawAmount: "Сумма вывода",
-      withdrawCard: "Номер карты",
-      withdrawCardPlaceholder: "0000 0000 0000 0000",
-      withdrawCardHint: "Заявка появится в истории операций и будет обработана администратором.",
+      withdrawAmountInvalid: "Введите корректную сумму вывода.",
+      withdrawWalletAddress: "Адрес кошелька TRC-20",
+      withdrawWalletAddressPlaceholder: "T...",
+      withdrawWalletAddressInvalid: "Введите корректный адрес TRC-20. Адрес должен начинаться с T и содержать 34 символа.",
       available: "Доступно",
       useAll: "Всё",
       confirmWithdrawal: "Подтвердить вывод",
@@ -1503,7 +1504,7 @@ const ru = {
       withdrawSummary: {
         requestedAmount: "Спишется с баланса",
         commission: "Комиссия платформы {percent}%",
-        payoutAmount: "Поступит на карту",
+        payoutAmount: "Поступит на кошелёк",
       },
       withdrawSuccess: "Ордер на вывод создан. К выплате: {amount}."
     },

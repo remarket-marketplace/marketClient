@@ -62,7 +62,8 @@ const depositErrorMessage = ref<string | null>(null)
 
 const depositAmount = ref('')
 const withdrawAmount = ref('')
-const withdrawCardNumber = ref('')
+const withdrawWalletAddress = ref('')
+const hasBlurredWithdrawWalletAddress = ref(false)
 const withdrawErrorMessage = ref<string | null>(null)
 const withdrawSuccessMessage = ref<string | null>(null)
 const withdrawalCommissionPercent = ref(0)
@@ -81,7 +82,7 @@ const depositAmountInRub = computed(() => {
 const withdrawAmountInRub = computed(() => {
   return convertCurrencyAmount(parsedWithdrawAmount.value, selectedCurrency.value, 'RUB')
 })
-const withdrawCardDigits = computed(() => withdrawCardNumber.value.replace(/\D/g, ''))
+const withdrawWalletAddressNormalized = computed(() => withdrawWalletAddress.value.trim())
 
 const depositInputMin = computed(() => {
   const converted = convertCurrencyAmount(minDepositRub.value, 'RUB', selectedCurrency.value)
@@ -242,8 +243,23 @@ const isWithdrawAmountValid = computed(() => {
     && withdrawAmountInRub.value <= withdrawableBalanceRub.value
   )
 })
-const isWithdrawCardValid = computed(() => withdrawCardDigits.value.length >= 12 && withdrawCardDigits.value.length <= 19)
-const canSubmitWithdrawal = computed(() => isWithdrawAmountValid.value && isWithdrawCardValid.value)
+const isWithdrawWalletAddressValid = computed(() => /^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(withdrawWalletAddressNormalized.value))
+const canSubmitWithdrawal = computed(() => isWithdrawAmountValid.value && isWithdrawWalletAddressValid.value)
+const withdrawAmountValidationMessage = computed(() => {
+  if (!withdrawAmount.value.trim()) return null
+  if (!Number.isFinite(parsedWithdrawAmount.value) || parsedWithdrawAmount.value <= 0) {
+    return t('pages.wallet.withdrawAmountInvalid')
+  }
+  if (!Number.isFinite(withdrawAmountInRub.value) || withdrawAmountInRub.value > withdrawableBalanceRub.value) {
+    return t('pages.wallet.saleTimer.withdrawLimitError')
+  }
+  return null
+})
+const withdrawWalletAddressValidationMessage = computed(() => {
+  if (!hasBlurredWithdrawWalletAddress.value || !withdrawWalletAddressNormalized.value) return null
+  if (isWithdrawWalletAddressValid.value) return null
+  return t('pages.wallet.withdrawWalletAddressInvalid')
+})
 
 // New states for modals
 const showDepositModal = ref(false)
@@ -294,10 +310,12 @@ function closeDepositModal() {
 function openWithdrawModal() {
   withdrawErrorMessage.value = null
   withdrawSuccessMessage.value = null
+  hasBlurredWithdrawWalletAddress.value = false
   showWithdrawModal.value = true
 }
 
 function closeWithdrawModal() {
+  hasBlurredWithdrawWalletAddress.value = false
   showWithdrawModal.value = false
 }
 
@@ -406,10 +424,11 @@ const handleDeposit = async () => {
 }
 
 const handleWithdraw = async () => {
-  if (!canSubmitWithdrawal.value) return
-
   withdrawErrorMessage.value = null
   withdrawSuccessMessage.value = null
+
+  if (!canSubmitWithdrawal.value) return
+
   isLoading.value = true
   const normalizedWithdrawAmount = Number(withdrawAmountInRub.value.toFixed(2))
   if (normalizedWithdrawAmount > withdrawableBalanceRub.value) {
@@ -420,14 +439,14 @@ const handleWithdraw = async () => {
 
   const result = await walletService.createWithdrawalOrder(
     normalizedWithdrawAmount,
-    withdrawCardDigits.value,
+    withdrawWalletAddressNormalized.value,
   )
 
   if (result.data) {
     balance.value = result.data.current_balance
     userStore.updateUserProfile({ balance: result.data.current_balance })
     withdrawAmount.value = ''
-    withdrawCardNumber.value = ''
+    withdrawWalletAddress.value = ''
     withdrawSuccessMessage.value = t('pages.wallet.withdrawSuccess', {
       amount: formatCurrency(result.data.payout_amount ?? normalizedWithdrawAmount),
     })
@@ -779,9 +798,52 @@ const availableBalanceForInput = () => {
     : Math.round(converted).toString()
 }
 
-const formatCardNumberInput = () => {
-  const digits = withdrawCardDigits.value.slice(0, 19)
-  withdrawCardNumber.value = digits.replace(/(\d{4})(?=\d)/g, '$1 ').trim()
+const normalizeWithdrawAmountInput = (event: Event) => {
+  withdrawErrorMessage.value = null
+  withdrawSuccessMessage.value = null
+
+  const target = event.target as HTMLInputElement
+  const rawValue = target.value.replace(',', '.')
+
+  if (rawValue !== target.value) {
+    target.value = rawValue
+  }
+
+  withdrawAmount.value = rawValue
+
+  if (!rawValue) return
+
+  const parsed = Number.parseFloat(rawValue)
+  if (!Number.isFinite(parsed)) return
+
+  if (parsed < 0) {
+    withdrawAmount.value = ''
+    target.value = ''
+    return
+  }
+
+  if (parsed > withdrawInputMax.value) {
+    const maxValue = availableBalanceForInput()
+    withdrawAmount.value = maxValue
+    target.value = maxValue
+    return
+  }
+
+  if (selectedCurrency.value !== 'USD' && rawValue.includes('.')) {
+    const normalizedInteger = Math.floor(parsed).toString()
+    withdrawAmount.value = normalizedInteger
+    target.value = normalizedInteger
+  }
+}
+
+const normalizeWithdrawWalletAddressInput = () => {
+  withdrawErrorMessage.value = null
+  withdrawSuccessMessage.value = null
+  withdrawWalletAddress.value = withdrawWalletAddress.value.replace(/\s+/g, '').slice(0, 34)
+}
+
+const handleWithdrawWalletAddressBlur = () => {
+  hasBlurredWithdrawWalletAddress.value = true
 }
 
 const typeLabel = (type: string) => {
@@ -1251,44 +1313,6 @@ const typeLabel = (type: string) => {
       body-class="space-y-4"
       @cancel="closeWithdrawModal"
     >
-      <div class="flex items-center gap-3">
-        <div class="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]">
-          <ArrowUpFromLine class="h-5 w-5 text-gray-300" />
-        </div>
-        <p class="text-sm text-gray-400">
-          {{ $t('pages.wallet.available') }}: <span class="text-emerald-300">{{ formatCurrency(withdrawableBalanceRub) }}</span>
-        </p>
-      </div>
-
-            <div
-              v-if="Number.isFinite(withdrawAmountInRub) && withdrawAmountInRub > 0"
-              class="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3"
-            >
-              <div class="grid gap-2 text-sm text-gray-300">
-                <div class="flex items-center justify-between gap-3">
-                  <span class="text-gray-400">{{ $t('pages.wallet.withdrawSummary.requestedAmount') }}</span>
-                  <span class="font-medium text-white">{{ formatCurrency(withdrawAmountInRub) }}</span>
-                </div>
-                <div class="flex items-center justify-between gap-3">
-                  <span class="text-gray-400">
-                    {{ $t('pages.wallet.withdrawSummary.commission', { percent: withdrawalCommissionPercent }) }}
-                  </span>
-                  <span class="font-medium text-amber-200">{{ formatCurrency(withdrawCommissionAmountRub) }}</span>
-                </div>
-                <div class="flex items-center justify-between gap-3 border-t border-white/8 pt-2">
-                  <span class="text-gray-400">{{ $t('pages.wallet.withdrawSummary.payoutAmount') }}</span>
-                  <span class="text-base font-semibold text-emerald-300">{{ formatCurrency(withdrawPayoutAmountRub) }}</span>
-                </div>
-              </div>
-            </div>
-
-            <div
-              v-if="withdrawErrorMessage"
-              class="rounded-xl border border-rose-500/20 bg-rose-500/8 px-4 py-3 text-sm text-rose-200"
-            >
-              {{ withdrawErrorMessage }}
-            </div>
-
       <div class="space-y-2">
         <label class="block text-sm font-medium text-gray-300">
           {{ $t('pages.wallet.withdrawAmount') }}
@@ -1301,7 +1325,11 @@ const typeLabel = (type: string) => {
             :min="withdrawInputMin"
             :step="currencyInputStep"
             placeholder="0"
-            class="w-full rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3 text-lg font-semibold text-white outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+            class="w-full rounded-xl border bg-white/[0.03] px-4 py-3 text-lg font-semibold text-white outline-none focus:ring-2"
+            :class="withdrawAmountValidationMessage
+              ? 'border-rose-500/40 focus:border-rose-500 focus:ring-rose-500/30'
+              : 'border-white/8 focus:border-blue-500 focus:ring-blue-500/30'"
+            @input="normalizeWithdrawAmountInput"
           />
           <div class="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-300">
             {{ currencySymbol }}
@@ -1309,7 +1337,7 @@ const typeLabel = (type: string) => {
         </div>
         <div class="mt-2 flex items-center justify-between text-xs">
           <span class="text-gray-400">
-            {{ $t('pages.wallet.available') }}: <span class="text-green-400">{{ formatCurrency(withdrawableBalanceRub) }}</span>
+            {{ $t('pages.wallet.available') }}: <span class="text-blue-400">{{ formatCurrency(withdrawableBalanceRub) }}</span>
           </span>
           <button
             @click="withdrawAmount = availableBalanceForInput()"
@@ -1318,6 +1346,34 @@ const typeLabel = (type: string) => {
             {{ $t('pages.wallet.useAll') }}
           </button>
         </div>
+        <p v-if="withdrawAmountValidationMessage" class="text-xs text-rose-300">
+          {{ withdrawAmountValidationMessage }}
+        </p>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-sm font-medium text-gray-300">
+          {{ $t('pages.wallet.withdrawWalletAddress') }}
+        </label>
+        <input
+          v-model="withdrawWalletAddress"
+          type="text"
+          inputmode="text"
+          autocomplete="off"
+          spellcheck="false"
+          autocapitalize="off"
+          maxlength="34"
+          :placeholder="$t('pages.wallet.withdrawWalletAddressPlaceholder')"
+          class="w-full rounded-xl border bg-white/[0.03] px-4 py-3 text-lg font-semibold text-white outline-none focus:ring-2"
+          :class="withdrawWalletAddressValidationMessage
+            ? 'border-rose-500/40 focus:border-rose-500 focus:ring-rose-500/30'
+            : 'border-white/8 focus:border-blue-500 focus:ring-blue-500/30'"
+          @input="normalizeWithdrawWalletAddressInput"
+          @blur="handleWithdrawWalletAddressBlur"
+        />
+        <p v-if="withdrawWalletAddressValidationMessage" class="text-xs text-rose-300">
+          {{ withdrawWalletAddressValidationMessage }}
+        </p>
       </div>
 
       <div
@@ -1340,13 +1396,6 @@ const typeLabel = (type: string) => {
             <span class="text-base font-semibold text-emerald-300">{{ formatCurrency(withdrawPayoutAmountRub) }}</span>
           </div>
         </div>
-      </div>
-
-      <div
-        v-if="withdrawErrorMessage"
-        class="rounded-xl border border-rose-500/20 bg-rose-500/8 px-4 py-3 text-sm text-rose-200"
-      >
-        {{ withdrawErrorMessage }}
       </div>
 
       <div
