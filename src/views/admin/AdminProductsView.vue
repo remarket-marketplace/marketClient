@@ -736,6 +736,10 @@ watch([searchQuery, sortBy, statusFilter], () => {
                     <span>{{ $t('common.images') }}: {{ product.images.length }}</span>
                   </div>
                   <div class="flex items-center justify-end gap-1">
+                    <Package class="w-3 h-3" />
+                    <span>{{ $t('common.quantity') }}: {{ product.count }}</span>
+                  </div>
+                  <div class="flex items-center justify-end gap-1">
                     <Folder class="w-3 h-3" />
                     <span>{{ product.category.name }}</span>
                   </div>
@@ -864,6 +868,11 @@ watch([searchQuery, sortBy, statusFilter], () => {
               <span class="inline-flex items-center gap-1">
                 <Image class="w-2 h-2 sm:w-3 sm:h-3" />
                 {{ $t('common.images') }}: {{ product.images.length }}
+              </span>
+              <span class="text-white/20">•</span>
+              <span class="inline-flex items-center gap-1">
+                <Package class="w-2 h-2 sm:w-3 sm:h-3" />
+                {{ $t('common.quantity') }}: {{ product.count }}
               </span>
               <span class="text-white/20 sm:hidden">•</span>
               <span class="inline-flex items-center gap-1 sm:hidden">
