@@ -1163,6 +1163,7 @@ const en = {
       writeReview: "Write review",
       sendReview: "Send review",
       buyerLeftReview: "Buyer left review",
+      reviewForDeal: "Review for deal",
       withoutReviewText: "Without message",
       selectReason: "Select a reason",
       late_delivery: "Late delivery",

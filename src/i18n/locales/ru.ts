@@ -1162,6 +1162,7 @@ const ru = {
       writeReview: "Напишите отзыв",
       sendReview: "Отправить отзыв",
       buyerLeftReview: "Покупатель оставил отзыв",
+      reviewForDeal: "Отзыв к сделке",
       withoutReviewText: "Без сообщения",
       selectReason: "Выберите причину",
       late_delivery: "Задержка доставки",

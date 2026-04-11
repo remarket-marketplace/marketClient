@@ -47,6 +47,7 @@ export const DealStatusMessageSchema = BaseMessageSchema.extend({
 
 export const ReviewMessageSchema = BaseMessageSchema.extend({
   message_type: z.literal('review_message'),
+  product: ProductSchema,
   review: ReviewSchema,
 })
 
