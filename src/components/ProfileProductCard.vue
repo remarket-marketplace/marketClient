@@ -5,6 +5,7 @@ import type { Product } from '@/validation/product/product'
 import { useI18n } from 'vue-i18n'
 import ProductStatusTag from './ProductStatusTag.vue'
 import UserRating from './UserRating.vue'
+import AutoDeliveryTag from './AutoDeliveryTag.vue'
 import StyledUsername from './StyledUsername.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
 import { buildProductKey } from '@/utils/urlKeys'
@@ -80,9 +81,16 @@ function goToSeller() {
           <div v-if="shouldShowSellerRating" class="inline-flex flex-shrink-0 items-center self-center">
             <UserRating :rating="product.seller.rating" />
           </div>
+
+          <div v-if="product.auto_delivery" class="ml-auto inline-flex flex-shrink-0 items-center self-center">
+            <AutoDeliveryTag />
+          </div>
         </div>
 
-        <div v-if="isOwner" class="flex w-full justify-end">
+        <div v-if="isOwner" class="flex w-full items-center justify-between gap-2">
+          <div v-if="product.auto_delivery" class="inline-flex flex-shrink-0 items-center self-center">
+            <AutoDeliveryTag />
+          </div>
           <ProductStatusTag :product-status="product.status" size="compact" />
         </div>
 
