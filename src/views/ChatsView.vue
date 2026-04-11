@@ -35,6 +35,7 @@ const localPendingMessages = ref<LocalPendingChatMessage[]>([])
 const liveDealStatusOverrides = ref<Record<string, string>>({})
 const selectedChatId = ref<string | null>(null)
 const messageContainerRef = ref<HTMLElement | null>(null)
+const latestDealSummaryRef = ref<HTMLElement | null>(null)
 const bottomPin = createBottomPinController(() => messageContainerRef.value)
 const isPageLoading = ref(false)
 const isChatLoading = ref(false)
@@ -53,7 +54,10 @@ const isFloatingDateVisible = ref(false)
 let floatingDateRafId: number | null = null
 let floatingDateHideTimerId: number | null = null
 let deferredBottomPinTimeoutIds: number[] = []
+let deferredDealSummaryMeasureTimeoutIds: number[] = []
 let localPendingMessageSequence = 0
+let latestDealSummaryResizeObserver: ResizeObserver | null = null
+const latestDealSummaryHeightPx = ref(0)
 
 const currentPage = ref(1)
 const totalPages = ref(0)
@@ -123,6 +127,12 @@ function isDealStatusUpdateMessage(
   return message.message_type === 'update_deal_status_message'
 }
 
+function shouldShowDealStatusMessageInTimeline(
+  message: Extract<ChatMessageUnion, { message_type: 'update_deal_status_message' }>,
+): boolean {
+  return message.new_status === 'disputed'
+}
+
 function isEchoComparableServerMessage(message: ChatMessageUnion): message is EchoComparableServerMessage {
   return message.message_type === 'text_message' || message.message_type === 'image_message'
 }
@@ -145,7 +155,7 @@ function normalizeTimelineServerMessages(messages: ChatMessageUnion[]): ChatMess
   const priceOfferIndexById = new Map<string, number>()
 
   for (const message of messages) {
-    if (isDealStatusUpdateMessage(message)) {
+    if (isDealStatusUpdateMessage(message) && !shouldShowDealStatusMessageInTimeline(message)) {
       continue
     }
 
@@ -626,12 +636,15 @@ const latestDealHasReview = computed(() => {
   return latestDealMessage.value.has_review || reviewedDealIds.value.includes(latestDealMessage.value.deal_id)
 })
 const isLatestDealSummaryCollapsible = computed(() => latestDealMessage.value !== null)
-const latestDealTimelinePaddingClass = computed(() => {
-  if (!latestDealMessage.value) return 'pt-2'
-  if (isDealSummaryCollapsed.value) {
-    return 'pt-13'
+const latestDealTimelinePaddingStyle = computed(() => {
+  const baseTopPaddingPx = 8
+  if (!latestDealMessage.value) {
+    return { paddingTop: `${baseTopPaddingPx}px` }
   }
-  return 'pt-27 lg:pt-34'
+
+  return {
+    paddingTop: `${Math.max(baseTopPaddingPx, latestDealSummaryHeightPx.value + baseTopPaddingPx)}px`,
+  }
 })
 
 const hasDealSignals = computed(() => {
@@ -721,6 +734,32 @@ function toggleLatestDealSummaryCollapse() {
   isDealSummaryCollapsed.value = !isDealSummaryCollapsed.value
 }
 
+function updateLatestDealSummaryHeight() {
+  latestDealSummaryHeightPx.value = latestDealSummaryRef.value?.offsetHeight ?? 0
+}
+
+function reconnectLatestDealSummaryObserver() {
+  latestDealSummaryResizeObserver?.disconnect()
+  latestDealSummaryResizeObserver = null
+
+  if (typeof window === 'undefined' || typeof ResizeObserver === 'undefined') {
+    updateLatestDealSummaryHeight()
+    return
+  }
+
+  const element = latestDealSummaryRef.value
+  if (!element) {
+    latestDealSummaryHeightPx.value = 0
+    return
+  }
+
+  latestDealSummaryResizeObserver = new ResizeObserver(() => {
+    updateLatestDealSummaryHeight()
+  })
+  latestDealSummaryResizeObserver.observe(element)
+  updateLatestDealSummaryHeight()
+}
+
 function openChatProfile() {
   if (!currentChat.value || isSupportChat.value) return
   const username = currentChat.value.another_user?.username
@@ -753,6 +792,13 @@ function clearDeferredBottomPinTimers() {
   deferredBottomPinTimeoutIds = []
 }
 
+function clearDeferredDealSummaryMeasureTimers() {
+  for (const timeoutId of deferredDealSummaryMeasureTimeoutIds) {
+    clearTimeout(timeoutId)
+  }
+  deferredDealSummaryMeasureTimeoutIds = []
+}
+
 function syncScrollStateFromContainer() {
   const container = messageContainerRef.value
   if (!container) return
@@ -774,6 +820,22 @@ function scheduleDeferredBottomPin(chatId: string) {
     }, delay)
 
     deferredBottomPinTimeoutIds.push(timeoutId)
+  }
+}
+
+function scheduleDeferredDealSummaryMeasurement(chatId: string) {
+  clearDeferredDealSummaryMeasureTimers()
+
+  const delays = [0, 40, 120, 260, 520]
+  for (const delay of delays) {
+    const timeoutId = window.setTimeout(async () => {
+      if (selectedChatId.value !== chatId) return
+      await nextTick()
+      reconnectLatestDealSummaryObserver()
+      updateLatestDealSummaryHeight()
+    }, delay)
+
+    deferredDealSummaryMeasureTimeoutIds.push(timeoutId)
   }
 }
 
@@ -805,8 +867,10 @@ watch(selectedChatId, () => {
   isFloatingDateVisible.value = false
   isDealSummaryCollapsed.value = false
   latestDealMessage.value = null
+  latestDealSummaryHeightPx.value = 0
   liveDealStatusOverrides.value = {}
   clearDeferredBottomPinTimers()
+  clearDeferredDealSummaryMeasureTimers()
   if (floatingDateHideTimerId !== null) {
     clearTimeout(floatingDateHideTimerId)
     floatingDateHideTimerId = null
@@ -818,6 +882,16 @@ watch([hasReplyFromAnotherUser, hasDealSignals], ([hasReply, hasDeal]) => {
     isMessageLimitLockedByServer.value = false
   }
 })
+
+watch(
+  () => [latestDealMessage.value?.deal_id ?? null, isDealSummaryCollapsed.value],
+  () => {
+    void nextTick(() => {
+      reconnectLatestDealSummaryObserver()
+    })
+  },
+  { immediate: true },
+)
 
 watch(
   () => [
@@ -874,7 +948,10 @@ onMounted(async () => {
 
       if (update.last_message && chat) {
         if (
-          update.last_message.message_type !== 'update_deal_status_message'
+          (
+            update.last_message.message_type !== 'update_deal_status_message'
+            || update.last_message.new_status === 'disputed'
+          )
           && shouldApplyLastMessage(chat.last_message ?? null, update.last_message)
         ) {
           chat.last_message = update.last_message
@@ -954,9 +1031,12 @@ onUnmounted(() => {
   unsubscribeDealStatusUpdate?.()
   unsubscribeChatUpdated?.()
   unsubscribeMessagesRead?.()
+  latestDealSummaryResizeObserver?.disconnect()
+  latestDealSummaryResizeObserver = null
   localPendingMessages.value.forEach(cleanupLocalPendingMessage)
   localPendingMessages.value = []
   clearDeferredBottomPinTimers()
+  clearDeferredDealSummaryMeasureTimers()
   bottomPin.stop()
   if (floatingDateRafId !== null) {
     cancelAnimationFrame(floatingDateRafId)
@@ -1083,6 +1163,9 @@ async function loadChatMessages(
     const response = await chatsService.getChatMessages(chatId, 1, perPage.value)
     chatMessages.value = normalizeMessagesChronological(response.messages)
     latestDealMessage.value = response.latestDealMessage
+    if (response.latestDealMessage) {
+      scheduleDeferredDealSummaryMeasurement(chatId)
+    }
     totalMessagesInChat.value = response.total
     totalPages.value = response.totalPages
     hasMoreMessages.value = 1 < totalPages.value
@@ -1107,6 +1190,11 @@ async function loadChatMessages(
         if (container) {
           previousMessageScrollTop.value = container.scrollTop
           hasUserScrolledAwayFromTop.value = container.scrollTop > topLoadThresholdPx
+        }
+        if (latestDealMessage.value) {
+          reconnectLatestDealSummaryObserver()
+          updateLatestDealSummaryHeight()
+          scheduleDeferredDealSummaryMeasurement(chatId)
         }
         scheduleFloatingDateLabelUpdate()
         if (options.settleToBottomAfterRouteOpen) {
@@ -1338,7 +1426,7 @@ async function sendMessage(payload: { files: File[] }) {
               <FloatingDateHeader :label="isFloatingDateVisible ? floatingDateLabel : null" />
               <div v-if="currentChat && latestDealMessage"
                 class="pointer-events-none absolute inset-x-0 top-0 z-10 px-1.5 pt-1.5 lg:px-4 lg:pt-3">
-                <div
+                <div ref="latestDealSummaryRef"
                   class="message-compose-shell pointer-events-auto flex items-start rounded-[22px] border border-white/10 bg-background/90 px-2 py-1.5 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 lg:rounded-[26px] lg:px-3 lg:py-2.5">
                   <NewPurchaseMessage :product="latestDealMessage.product" :deal-id="latestDealMessage.deal_id"
                     :deal-status="latestDealStatus" :has_review="latestDealHasReview" layout="summary"
@@ -1361,7 +1449,7 @@ async function sendMessage(payload: { files: File[] }) {
                     </div>
 
                     <div v-if="chatTimelineItems.length > 0" class="flex min-w-0 flex-1 flex-col justify-start">
-                      <div class="flex min-w-0 flex-col pb-18" :class="latestDealTimelinePaddingClass">
+                      <div class="flex min-w-0 flex-col pb-18" :style="latestDealTimelinePaddingStyle">
                         <template v-for="item in chatTimelineItems" :key="item.message.id">
                           <div v-if="item.showDateDivider && item.dateLabel" class="flex justify-center py-2">
                             <span

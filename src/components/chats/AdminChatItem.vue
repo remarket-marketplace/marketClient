@@ -49,7 +49,7 @@ const formattedLastMessage = computed((): string | null => {
             text = t('pages.chats.imageMessage')
             break
         case "update_deal_status_message":
-            text = t('pages.chats.updateDealStatus')
+            text = t(`pages.chats.${props.chat.last_message.new_status}`)
             break
         case "review_message":
             text = t('pages.chats.newReview')

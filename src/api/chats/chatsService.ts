@@ -131,6 +131,9 @@ export const chatsService = {
           const validated = ChatMessageUnionSchema.parse(payload);
           if (validated.message_type === "update_deal_status_message") {
             dealStatusUpdateCallbacks.forEach((cb) => cb(validated));
+            if (validated.new_status === "disputed") {
+              newMessageCallbacks.forEach((cb) => cb(validated));
+            }
             return;
           }
           newMessageCallbacks.forEach((cb) => cb(validated));
