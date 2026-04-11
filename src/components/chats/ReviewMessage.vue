@@ -55,9 +55,6 @@ function handleViewProduct() {
             {{ $t('pages.chats.buyerLeftReview') }}
           </p>
         </div>
-        <div class="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-200">
-          <span>{{ formatCurrencyAmount(message.product.price) }}</span>
-        </div>
       </div>
 
       <div class="flex flex-col gap-3">
