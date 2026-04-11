@@ -511,6 +511,69 @@ export const adminService = {
     }
   },
 
+  async getAdminCategories(page = 1, perPage = 30) {
+    try {
+      const response = await httpClient.get("/admin/categories", {
+        params: {
+          page,
+          per_page: perPage,
+        },
+      });
+
+      return {
+        categories: response.data.categories.map((cat: unknown) =>
+          CategorySchema.parse(cat),
+        ),
+        currentPage: page,
+        totalPages: response.data.total_pages,
+      };
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error(e.issues);
+        return {
+          categories: [],
+          currentPage: 1,
+          totalPages: 1,
+        };
+      }
+
+      throw e;
+    }
+  },
+
+  async getAdminSubcategories(parentId: string, page = 1, perPage = 20) {
+    try {
+      const response = await httpClient.get(
+        `/admin/categories/subcategories/${parentId}`,
+        {
+          params: {
+            page,
+            per_page: perPage,
+          },
+        },
+      );
+
+      return {
+        categories: response.data.categories.map((cat: unknown) =>
+          CategorySchema.parse(cat),
+        ),
+        currentPage: response.data.current_page || page,
+        totalPages: response.data.total_pages,
+      };
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error(e.issues);
+        return {
+          categories: [],
+          currentPage: 1,
+          totalPages: 1,
+        };
+      }
+
+      throw e;
+    }
+  },
+
   async getCategoryData(categoryId: string) {
     //
     // get category data
@@ -519,7 +582,12 @@ export const adminService = {
       const response = await httpClient.get(`/admin/category/${categoryId}`);
       return CategorySchema.parse(response.data);
     } catch (e) {
-      return false;
+      if (e instanceof ZodError) {
+        console.error(e.issues);
+        return false;
+      }
+
+      throw e;
     }
   },
 
@@ -553,7 +621,12 @@ export const adminService = {
       const response = await httpClient.post('/admin/category', formData)
       return CategorySchema.parse(response.data)
     } catch (e) {
-      return false
+      if (e instanceof ZodError) {
+        console.error(e.issues)
+        return false
+      }
+
+      throw e
     }
   },
 
@@ -589,7 +662,12 @@ export const adminService = {
       const response = await httpClient.put(`/admin/category/${categoryId}`, formData);
       return CategorySchema.parse(response.data);
     } catch (e) {
-      return false;
+      if (e instanceof ZodError) {
+        console.error(e.issues);
+        return false;
+      }
+
+      throw e;
     }
   },
 

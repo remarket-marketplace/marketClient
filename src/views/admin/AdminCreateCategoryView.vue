@@ -4,6 +4,7 @@ import ErrorBanner from '@/components/ErrorBanner.vue'
 import SuccessMessage from '@/components/SuccessMessage.vue'
 import FileUploader from '@/components/FileUploader.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
+import { getErrorMessage } from '@/utils/errorsMap'
 import type { Category } from '@/validation/category/category'
 import {
   CATEGORY_DESCRIPTION_MAX_LENGTH,
@@ -63,6 +64,12 @@ const pageSubtitle = computed(() => (
     : t('pages.admin.categoryCreate.categorySubtitle')
 ))
 
+function getApiErrorDetail(error: unknown): unknown {
+  if (!error || typeof error !== 'object') return error
+  const response = (error as { response?: { data?: { detail?: unknown } } }).response
+  return response?.data?.detail ?? error
+}
+
 async function loadParentCategory(): Promise<void> {
   if (!parentCategoryId.value) {
     parentCategory.value = null
@@ -121,7 +128,7 @@ async function saveCategory(): Promise<void> {
     }, 700)
   } catch (error) {
     console.error('Failed to create category:', error)
-    errorMessage.value = t('pages.admin.categoryCreate.errorSaving')
+    errorMessage.value = getErrorMessage(getApiErrorDetail(error), t)
   } finally {
     isSaving.value = false
   }

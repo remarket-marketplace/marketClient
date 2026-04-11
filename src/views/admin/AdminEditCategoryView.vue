@@ -5,6 +5,7 @@ import SuccessMessage from '@/components/SuccessMessage.vue'
 import FileUploader from '@/components/FileUploader.vue'
 import Checkbox from '@/components/Checkbox.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
+import { getErrorMessage } from '@/utils/errorsMap'
 import type { z } from 'zod'
 import {
   CategorySchema,
@@ -46,6 +47,12 @@ const hasImage = computed(() => Boolean(existingImage.value || newImage.value.le
 const normalizedNameRu = computed(() => nameRu.value.trim())
 const normalizedNameEn = computed(() => nameEn.value.trim())
 const normalizedDescription = computed(() => description.value.trim())
+
+function getApiErrorDetail(error: unknown): unknown {
+  if (!error || typeof error !== 'object') return error
+  const response = (error as { response?: { data?: { detail?: unknown } } }).response
+  return response?.data?.detail ?? error
+}
 
 function toAssetUrl(path: string | null): string {
   if (!path) return ''
@@ -131,7 +138,7 @@ async function saveCategory() {
     }, 1000)
   } catch (error) {
     console.error('Failed to save category:', error)
-    errorMessage.value = t('pages.admin.editCategory.errorSaving')
+    errorMessage.value = getErrorMessage(getApiErrorDetail(error), t)
   } finally {
     isSaving.value = false
   }
