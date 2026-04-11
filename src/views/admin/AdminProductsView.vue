@@ -59,6 +59,7 @@ const customStatusReason = ref('');
 const statusUpdateError = ref('');
 const isUpdatingStatus = ref(false);
 const productUpdatesById = ref<Record<string, AuditLog>>({});
+const productActivityById = ref<Record<string, number>>({});
 const expandedChangesByProductId = ref<Record<string, boolean>>({});
 let observer: IntersectionObserver | null = null;
 
@@ -101,9 +102,17 @@ async function loadProductChangeLogs() {
       action_type: 'product_updated',
     });
     const latestByProductId: Record<string, AuditLog> = {};
+    const activityByProductId: Record<string, number> = {};
 
     for (const log of response.logs) {
       if (!log.product_id) continue;
+
+      const logTimestamp = Date.parse(log.created_at);
+      if (Number.isFinite(logTimestamp)) {
+        const currentTimestamp = activityByProductId[log.product_id] ?? 0;
+        activityByProductId[log.product_id] = Math.max(currentTimestamp, logTimestamp);
+      }
+
       if (!log.details || typeof log.details !== 'object') continue;
 
       const details = log.details as Record<string, unknown>;
@@ -117,9 +126,11 @@ async function loadProductChangeLogs() {
     }
 
     productUpdatesById.value = latestByProductId;
+    productActivityById.value = activityByProductId;
   } catch (error) {
     console.error('Error loading product change logs:', error);
     productUpdatesById.value = {};
+    productActivityById.value = {};
   }
 }
 
@@ -306,6 +317,13 @@ function isNumericValue(value: unknown): boolean {
   return false;
 }
 
+function getProductActivityTimestamp(product: Product): number {
+  const createdAtTimestamp = Date.parse(product.created_at);
+  const fallbackCreatedAt = Number.isFinite(createdAtTimestamp) ? createdAtTimestamp : 0;
+  const updatedTimestamp = productActivityById.value[product.id] ?? 0;
+  return Math.max(fallbackCreatedAt, updatedTimestamp);
+}
+
 const normalizedQuery = computed(() => searchQuery.value.trim().toLowerCase());
 
 const filteredProducts = computed(() => {
@@ -334,7 +352,9 @@ const sortedProducts = computed(() => {
   const data = [...filteredProducts.value];
   switch (sortBy.value) {
     case 'created_desc':
-      return data;
+      return data.sort(
+        (a, b) => getProductActivityTimestamp(b) - getProductActivityTimestamp(a)
+      );
     case 'created_asc':
       return data.sort(
         (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
