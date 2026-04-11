@@ -213,6 +213,13 @@ function pickLatestPurchaseMessage(
     : currentMessage
 }
 
+const resolvedLatestDealMessage = computed<PurchaseMessage | null>(() => (
+  pickLatestPurchaseMessage(
+    latestDealMessage.value,
+    getLatestPurchaseMessageFromMessages(chatMessages.value),
+  )
+))
+
 function mergeChatMessages(messages: ChatMessageUnion[]) {
   if (messages.length === 0) return
 
@@ -472,7 +479,7 @@ const selectedChatLocalPendingMessages = computed<LocalPendingChatMessage[]>(() 
 
 const timelineMessages = computed<ChatTimelineMessage[]>(() => {
   const normalizedServerMessages = normalizeTimelineServerMessages(chatMessages.value)
-  const latestDealId = latestDealMessage.value?.deal_id ?? null
+  const latestDealId = resolvedLatestDealMessage.value?.deal_id ?? null
   const filteredServerMessages = latestDealId
     ? normalizedServerMessages.filter((message) => (
       message.message_type !== 'purchase_message' || message.deal_id !== latestDealId
@@ -641,8 +648,8 @@ const textMessagesInChat = computed<TextMessage[]>(() =>
 const dealStatusOverrides = computed<Record<string, string>>(() => {
   const statuses: Record<string, string> = {}
 
-  if (latestDealMessage.value) {
-    statuses[latestDealMessage.value.deal_id] = latestDealMessage.value.deal_status
+  if (resolvedLatestDealMessage.value) {
+    statuses[resolvedLatestDealMessage.value.deal_id] = resolvedLatestDealMessage.value.deal_status
   }
 
   for (const message of chatMessages.value) {
@@ -670,18 +677,24 @@ const reviewedDealIds = computed<string[]>(() => {
 })
 
 const latestDealStatus = computed(() => {
-  if (!latestDealMessage.value) return null
-  return dealStatusOverrides.value[latestDealMessage.value.deal_id] ?? latestDealMessage.value.deal_status
+  if (!resolvedLatestDealMessage.value) return null
+  return (
+    dealStatusOverrides.value[resolvedLatestDealMessage.value.deal_id]
+    ?? resolvedLatestDealMessage.value.deal_status
+  )
 })
 
 const latestDealHasReview = computed(() => {
-  if (!latestDealMessage.value) return false
-  return latestDealMessage.value.has_review || reviewedDealIds.value.includes(latestDealMessage.value.deal_id)
+  if (!resolvedLatestDealMessage.value) return false
+  return (
+    resolvedLatestDealMessage.value.has_review
+    || reviewedDealIds.value.includes(resolvedLatestDealMessage.value.deal_id)
+  )
 })
-const isLatestDealSummaryCollapsible = computed(() => latestDealMessage.value !== null)
+const isLatestDealSummaryCollapsible = computed(() => resolvedLatestDealMessage.value !== null)
 const latestDealTimelinePaddingStyle = computed(() => {
   const baseTopPaddingPx = 8
-  if (!latestDealMessage.value) {
+  if (!resolvedLatestDealMessage.value) {
     return { paddingTop: `${baseTopPaddingPx}px` }
   }
 
@@ -691,7 +704,7 @@ const latestDealTimelinePaddingStyle = computed(() => {
 })
 
 const hasDealSignals = computed(() => {
-  if (latestDealMessage.value) {
+  if (resolvedLatestDealMessage.value) {
     return true
   }
   return chatMessages.value.some(message => message.message_type === 'purchase_message')
@@ -930,7 +943,7 @@ watch([hasReplyFromAnotherUser, hasDealSignals], ([hasReply, hasDeal]) => {
 })
 
 watch(
-  () => [latestDealMessage.value?.deal_id ?? null, isDealSummaryCollapsed.value],
+  () => [resolvedLatestDealMessage.value?.deal_id ?? null, isDealSummaryCollapsed.value],
   () => {
     void nextTick(() => {
       reconnectLatestDealSummaryObserver()
@@ -1001,11 +1014,11 @@ onMounted(async () => {
         if (!chatMessages.value.some(m => m.id === message.id)) {
           const shouldStickToBottom = isNearBottom()
           chatMessages.value.push(message)
-          if (
-            message.message_type === 'purchase_message'
-            && getPurchaseMessageTimestamp(message) >= getPurchaseMessageTimestamp(latestDealMessage.value)
-          ) {
-            latestDealMessage.value = message
+          if (message.message_type === 'purchase_message') {
+            latestDealMessage.value = pickLatestPurchaseMessage(
+              resolvedLatestDealMessage.value,
+              message,
+            )
           }
           totalMessagesInChat.value = Math.max(
             totalMessagesInChat.value + 1,
@@ -1162,7 +1175,7 @@ async function refreshRouteOpenedChat(chatId: string): Promise<void> {
       hasMoreMessages.value = currentPage.value < totalPages.value
     }
 
-    if (latestDealMessage.value) {
+    if (resolvedLatestDealMessage.value) {
       scheduleDeferredDealSummaryMeasurement(chatId)
       return
     }
@@ -1278,7 +1291,7 @@ async function loadChatMessages(
     const response = await chatsService.getChatMessages(chatId, 1, perPage.value)
     chatMessages.value = normalizeMessagesChronological(response.messages)
     latestDealMessage.value = response.latestDealMessage ?? getLatestPurchaseMessageFromMessages(chatMessages.value)
-    if (latestDealMessage.value) {
+    if (resolvedLatestDealMessage.value) {
       scheduleDeferredDealSummaryMeasurement(chatId)
     }
     totalMessagesInChat.value = response.total
@@ -1309,7 +1322,7 @@ async function loadChatMessages(
           previousMessageScrollTop.value = container.scrollTop
           hasUserScrolledAwayFromTop.value = container.scrollTop > topLoadThresholdPx
         }
-        if (latestDealMessage.value) {
+        if (resolvedLatestDealMessage.value) {
           reconnectLatestDealSummaryObserver()
           updateLatestDealSummaryHeight()
           scheduleDeferredDealSummaryMeasurement(chatId)
@@ -1543,11 +1556,11 @@ async function sendMessage(payload: { files: File[] }) {
 
             <div class="relative flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden">
               <FloatingDateHeader :label="isFloatingDateVisible ? floatingDateLabel : null" />
-              <div v-if="currentChat && latestDealMessage"
+              <div v-if="currentChat && resolvedLatestDealMessage"
                 class="pointer-events-none absolute inset-x-0 top-0 z-10 px-1.5 pt-1.5 lg:px-4 lg:pt-3">
                 <div ref="latestDealSummaryRef"
                   class="message-compose-shell pointer-events-auto flex items-start rounded-[22px] border border-white/10 bg-background/90 px-2 py-1.5 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 lg:rounded-[26px] lg:px-3 lg:py-2.5">
-                  <NewPurchaseMessage :product="latestDealMessage.product" :deal-id="latestDealMessage.deal_id"
+                  <NewPurchaseMessage :product="resolvedLatestDealMessage.product" :deal-id="resolvedLatestDealMessage.deal_id"
                     :deal-status="latestDealStatus" :has_review="latestDealHasReview" layout="summary"
                     :collapsed="isDealSummaryCollapsed" :collapsible="isLatestDealSummaryCollapsible"
                     @toggle-collapse="toggleLatestDealSummaryCollapse" />
