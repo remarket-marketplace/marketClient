@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { categoryService } from '@/api/category/CategoryService'
+import { adminService } from '@/api/admin/AdminService'
 import type { Category } from '@/validation/category/category'
 import {
   Plus,
@@ -52,7 +52,7 @@ onMounted(async () => {
 async function loadCategories(page = 1, append = false) {
   try {
     if (!append) isLoading.value = true
-    const res = await categoryService.getAllCategories(page, categoriesPerPage.value)
+    const res = await adminService.getAdminCategories(page, categoriesPerPage.value)
     if (append) {
       categories.value = [...categories.value, ...res.categories]
     } else {
@@ -71,7 +71,11 @@ async function loadCategories(page = 1, append = false) {
 async function loadSubcategories(categoryId: string, page = 1, append = false) {
   try {
     isLoadingSubcategories.value = true
-    const res = await categoryService.getSubcategories(categoryId, page, categoriesPerPage.value)
+    const res = await adminService.getAdminSubcategories(
+      categoryId,
+      page,
+      categoriesPerPage.value,
+    )
     if (append) {
       subcategories.value = [...subcategories.value, ...res.categories]
     } else {
