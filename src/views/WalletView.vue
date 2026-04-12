@@ -117,6 +117,7 @@ const depositProviderOptions = computed(() => {
       id: 'platega' as WalletTopUpProvider,
       title: 'Platega',
       description: t('pages.wallet.paymentProviderPlategaHint'),
+      badges: [] as string[],
       icon: Landmark,
       surfaceClass: 'bg-gradient-to-br from-sky-400/22 via-sky-400/8 to-transparent',
       activeClass: 'border-sky-400/60 bg-sky-500/10',
@@ -128,6 +129,11 @@ const depositProviderOptions = computed(() => {
       id: 'lava' as WalletTopUpProvider,
       title: 'Lava',
       description: t('pages.wallet.paymentProviderLavaHint'),
+      badges: [
+        t('pages.wallet.paymentProviderLavaCardsFee'),
+        t('pages.wallet.paymentProviderLavaSbpFee'),
+        t('pages.wallet.paymentProviderLavaCryptoFee'),
+      ],
       icon: Flame,
       surfaceClass: 'bg-gradient-to-br from-orange-400/22 via-amber-400/8 to-transparent',
       activeClass: 'border-orange-400/60 bg-orange-500/10',
@@ -1306,6 +1312,22 @@ const typeLabel = (type: string) => {
                 >
                   {{ option.description }}
                 </p>
+
+                <div
+                  v-if="option.badges.length"
+                  class="mt-3 flex flex-wrap gap-2"
+                >
+                  <span
+                    v-for="badge in option.badges"
+                    :key="badge"
+                    class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-[0.02em] transition-colors duration-200"
+                    :class="selectedDepositProvider === option.id
+                      ? 'border-orange-300/30 bg-orange-400/12 text-orange-50'
+                      : 'border-white/10 bg-white/[0.04] text-gray-300'"
+                  >
+                    {{ badge }}
+                  </span>
+                </div>
               </div>
             </div>
           </button>
