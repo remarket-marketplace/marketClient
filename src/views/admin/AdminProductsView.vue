@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { adminService } from '@/api/admin/AdminService';
+import { categoryService } from '@/api/category/CategoryService';
 import type { Product } from '@/validation/product/product';
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
@@ -61,6 +62,7 @@ const isUpdatingStatus = ref(false);
 const productUpdatesById = ref<Record<string, AuditLog>>({});
 const productActivityById = ref<Record<string, number>>({});
 const expandedChangesByProductId = ref<Record<string, boolean>>({});
+const categoryNameById = ref<Record<string, string>>({});
 let observer: IntersectionObserver | null = null;
 
 type ProductChangeItem = {
@@ -93,6 +95,20 @@ async function loadProducts(page = 1, append = false) {
     isLoading.value = false;
     isLoadingMore.value = false;
     nextTick(setupObserver);
+  }
+}
+
+async function loadCategoryLookup() {
+  try {
+    const categories = await categoryService.getAllCategoriesFlat(100, 50);
+    const nextLookup: Record<string, string> = {};
+    for (const category of categories) {
+      nextLookup[category.id] = category.name?.trim() ?? '';
+    }
+    categoryNameById.value = nextLookup;
+  } catch (error) {
+    console.error('Error loading category lookup:', error);
+    categoryNameById.value = {};
   }
 }
 
@@ -135,7 +151,7 @@ async function loadProductChangeLogs() {
 }
 
 onMounted(async () => {
-  await loadProducts();
+  await Promise.all([loadCategoryLookup(), loadProducts()]);
   nextTick(setupObserver);
 });
 
@@ -226,15 +242,43 @@ function formatPrice(price: number) {
   return formatCurrencyAmount(price);
 }
 
-function getProductCategoryPath(product: Product): string {
-  const parentCategoryName = product.parent_category?.name?.trim() ?? '';
+function getProductCategoryDetails(product: Product): { category: string; subcategory: string } {
+  const parentCategoryId = product.category?.parent_id ?? null;
+  const parentCategoryName = product.parent_category?.name?.trim()
+    || (parentCategoryId ? categoryNameById.value[parentCategoryId]?.trim() : '')
+    || '';
   const categoryName = product.category?.name?.trim() ?? '';
+  const notSpecified = t('common.notSpecified');
 
   if (parentCategoryName && categoryName && parentCategoryName !== categoryName) {
-    return `${parentCategoryName} > ${categoryName}`;
+    return {
+      category: parentCategoryName,
+      subcategory: categoryName,
+    };
   }
 
-  return categoryName || parentCategoryName || t('common.notSpecified');
+  if (parentCategoryId && categoryName) {
+    return {
+      category: parentCategoryName || notSpecified,
+      subcategory: categoryName,
+    };
+  }
+
+  return {
+    category: categoryName || parentCategoryName || notSpecified,
+    subcategory: notSpecified,
+  };
+}
+
+function getProductCategoryTrail(product: Product): string {
+  const { category, subcategory } = getProductCategoryDetails(product);
+  const notSpecified = t('common.notSpecified');
+
+  if (!subcategory || subcategory === notSpecified) {
+    return category;
+  }
+
+  return `${category} > ${subcategory}`;
 }
 
 function normalizeValue(value: unknown): unknown {
@@ -750,9 +794,9 @@ watch([searchQuery, sortBy, statusFilter], () => {
                     <Package class="w-3 h-3" />
                     <span>{{ $t('common.quantity') }}: {{ product.count }}</span>
                   </div>
-                  <div class="flex items-center justify-end gap-1">
+                  <div class="flex items-center justify-end gap-1 max-w-[280px]">
                     <Folder class="w-3 h-3" />
-                    <span>{{ getProductCategoryPath(product) }}</span>
+                    <span class="truncate">{{ getProductCategoryTrail(product) }}</span>
                   </div>
                 </div>
               </div>
@@ -886,9 +930,9 @@ watch([searchQuery, sortBy, statusFilter], () => {
                 {{ $t('common.quantity') }}: {{ product.count }}
               </span>
               <span class="text-white/20 sm:hidden">•</span>
-              <span class="inline-flex items-center gap-1 sm:hidden">
+              <span class="inline-flex items-center gap-1 sm:hidden min-w-0">
                 <Folder class="w-2 h-2" />
-                <span class="truncate">{{ getProductCategoryPath(product) }}</span>
+                <span class="truncate max-w-[220px]">{{ getProductCategoryTrail(product) }}</span>
               </span>
             </div>
             
