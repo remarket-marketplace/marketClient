@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import type { ChatMessageUnion } from '@/validation/chat/chatMessage'
 import { buildProductKey } from '@/utils/urlKeys'
 import { formatCurrencyAmount } from '@/utils/currency'
+import { formatChatTime } from '@/utils/chatDate'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 
@@ -13,6 +15,7 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+const { locale } = useI18n()
 
 const productPreviewImageUrl = computed(() => {
   const rawImageUrl = props.message.product.images?.[0]?.image_url
@@ -27,14 +30,7 @@ const productPreviewImageUrl = computed(() => {
 })
 
 const reviewStars = computed(() => Array.from({ length: 5 }, (_, index) => index < props.message.review.rating))
-const timelineTimestamp = computed(() => {
-  const parsed = new Date(props.message.created_at)
-  if (Number.isNaN(parsed.getTime())) return null
-  return parsed.toLocaleString('ru-RU', {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-})
+const timelineTimestamp = computed(() => formatChatTime(props.message.created_at, locale.value) || null)
 
 function handleViewProduct() {
   const productKey = buildProductKey(props.message.product)

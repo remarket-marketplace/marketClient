@@ -11,6 +11,7 @@ import { ChevronDown, ChevronUp, RefreshCcw, Star } from 'lucide-vue-next'
 import AppModal from '@/components/AppModal.vue'
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
+import { formatChatTime, getChatTimestamp } from '@/utils/chatDate'
 import { buildProductKey } from '@/utils/urlKeys'
 import DealStatusTag from '@/components/DealStatusTag.vue'
 
@@ -152,15 +153,7 @@ const shouldShowSummaryToggle = computed(() => isSummaryLayout.value && props.co
 const showSummaryBody = computed(() => !isSummaryLayout.value || props.collapsed !== true)
 const timelineTimestamp = computed(() => {
   if (isSummaryLayout.value || !props.createdAt) return null
-
-  const parsed = new Date(props.createdAt)
-  if (Number.isNaN(parsed.getTime())) return null
-
-  const localeCode = locale.value.startsWith('ru') ? 'ru-RU' : 'en-US'
-  return parsed.toLocaleString(localeCode, {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  return formatChatTime(props.createdAt, locale.value) || null
 })
 
 const DEAL_AUTO_CONFIRM_WINDOW_MS = 24 * 60 * 60 * 1000
@@ -176,7 +169,7 @@ const normalizedDealTimeline = computed(() => {
     .map((item) => ({
       ...item,
       status: item.status.toLowerCase(),
-      timestamp: Date.parse(item.created_at),
+      timestamp: getChatTimestamp(item.created_at),
     }))
     .filter((item) => Number.isFinite(item.timestamp))
     .sort((a, b) => a.timestamp - b.timestamp)

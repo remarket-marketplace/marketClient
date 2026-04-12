@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import NewPurchaseMessage from './NewPurchaseMessage.vue'
 import PriceOfferMessage from './PriceOfferMessage.vue'
 import type { Product } from '@/validation/product/product'
@@ -8,6 +9,7 @@ import TextMessage from './TextMessage.vue'
 import DealStatusMessage from './DealStatusMessage.vue'
 import ReviewMessage from './ReviewMessage.vue'
 import ImageMessage from './ImageMessage.vue'
+import { formatChatTime } from '@/utils/chatDate'
 
 // ===== TYPE GUARDS =====
 function isTextMessage(msg: ChatMessageUnion): msg is Extract<ChatMessageUnion, { message_type: 'text_message' }> {
@@ -40,6 +42,7 @@ const props = defineProps<{
   dealStatusOverrides?: Record<string, string>
   reviewedDealIds?: string[]
 }>()
+const { locale } = useI18n()
 
 const textMessage = computed(() => isTextMessage(props.message) ? props.message : null)
 const imageMessage = computed(() => isImageMessage(props.message) ? props.message : null)
@@ -83,16 +86,7 @@ const messageAlignment = computed(() => {
 })
 
 function formatDate(dateInput: string | Date): string {
-  if (!dateInput) return '';
-  
-  const date = typeof dateInput === 'string' 
-    ? new Date(dateInput) 
-    : dateInput;
-  
-  return date.toLocaleString('ru-RU', { 
-    hour: '2-digit', 
-    minute: '2-digit',
-  });
+  return formatChatTime(dateInput, locale.value)
 }
 </script>
 

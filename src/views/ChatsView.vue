@@ -20,6 +20,7 @@ import { ArrowLeft, Headphones } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import UserAvatar from '@/components/UserAvatar.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
+import { formatChatTime, getChatTimestamp, parseChatDate } from '@/utils/chatDate'
 import { createBottomPinController } from '@/utils/chatScroll'
 import { formatLastSeen } from '@/utils/presence'
 
@@ -90,10 +91,7 @@ const routeChatId = computed(() => {
 })
 
 function getLastMessageTimestamp(chat: ChatListItem): number {
-  const createdAt = chat.last_message?.created_at
-  if (!createdAt) return 0
-  const timestamp = new Date(createdAt).getTime()
-  return Number.isFinite(timestamp) ? timestamp : 0
+  return getChatTimestamp(chat.last_message?.created_at)
 }
 
 function shouldApplyLastMessage(
@@ -120,10 +118,7 @@ function isLocalPendingMessage(message: ChatTimelineMessage): message is LocalPe
 }
 
 function getMessageTimestamp(message: { created_at: string }): number {
-  const createdAt = message.created_at
-  if (!createdAt) return 0
-  const timestamp = new Date(createdAt).getTime()
-  return Number.isFinite(timestamp) ? timestamp : 0
+  return getChatTimestamp(message.created_at)
 }
 
 function normalizeMessagesChronological(messages: ChatMessageUnion[]): ChatMessageUnion[] {
@@ -415,8 +410,8 @@ function toDateKey(date: Date): string {
 }
 
 function parseMessageDateKey(message: ChatTimelineMessage): string | null {
-  const parsed = new Date(message.created_at)
-  if (Number.isNaN(parsed.getTime())) return null
+  const parsed = parseChatDate(message.created_at)
+  if (!parsed) return null
 
   const messageDayStart = toLocalDayStart(parsed)
   const todayStart = toLocalDayStart(new Date())
@@ -466,17 +461,7 @@ function capitalizeDateLabel(label: string): string {
 }
 
 function formatPendingMessageDate(dateInput: string | Date): string {
-  if (!dateInput) return ''
-
-  const date = typeof dateInput === 'string'
-    ? new Date(dateInput)
-    : dateInput
-
-  const localeCode = locale.value.startsWith('ru') ? 'ru-RU' : 'en-US'
-  return date.toLocaleString(localeCode, {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  return formatChatTime(dateInput, locale.value)
 }
 
 const selectedChatLocalPendingMessages = computed<LocalPendingChatMessage[]>(() => {
