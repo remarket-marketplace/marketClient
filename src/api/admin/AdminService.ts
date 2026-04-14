@@ -430,10 +430,14 @@ export const adminService = {
     }
   },
 
-  async getAllDeals(page: number, perPage: number) {
+  async getAllDeals(page: number, perPage: number, status?: string) {
     try {
       const response = await httpClient.get("/admin/deals", {
-        params: { page, per_page: perPage },
+        params: {
+          page,
+          per_page: perPage,
+          ...(status ? { status } : {}),
+        },
       });
       return DealsListSchema.parse(response.data);
     } catch (e) {

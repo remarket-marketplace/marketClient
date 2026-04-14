@@ -248,6 +248,7 @@ const en = {
         newPriceOffer: "New price offer",
         priceOfferUpdated: "Price offer updated",
         dealStatusUpdated: "Deal status updated",
+        disputeResolved: "Dispute resolved",
         newReview: "New review",
         newChatMessage: "New message",
         newImageMessage: "New image",
@@ -264,6 +265,7 @@ const en = {
         message: "Message",
         review: "Review",
         newProduct: "New product",
+        resolved: "Resolved",
       },
       body: {
         messagePreview: "{text}",
@@ -271,6 +273,7 @@ const en = {
         priceOffer: "{product} • {price}",
         priceOfferStatus: "{product} • {status}",
         dealStatus: "{product} • {status}",
+        disputeResolved: "{product} • {reason}",
         reviewText: "{text}",
         productStatus: "{product} • {status}",
         productStatusWithReason: "{product} • {status}. Reason: {reason}",

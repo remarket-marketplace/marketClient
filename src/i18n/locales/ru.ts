@@ -233,6 +233,7 @@ const ru = {
         newPriceOffer: "Новое предложение цены",
         priceOfferUpdated: "Обновление предложения цены",
         dealStatusUpdated: "Обновление статуса сделки",
+        disputeResolved: "Спор решен",
         newReview: "Новый отзыв",
         newChatMessage: "Новое сообщение",
         newImageMessage: "Новое изображение",
@@ -249,6 +250,7 @@ const ru = {
         message: "Сообщение",
         review: "Отзыв",
         newProduct: "Новый товар",
+        resolved: "Решено",
       },
       body: {
         messagePreview: "{text}",
@@ -256,6 +258,7 @@ const ru = {
         priceOffer: "{product} • {price}",
         priceOfferStatus: "{product} • {status}",
         dealStatus: "{product} • {status}",
+        disputeResolved: "{product} • {reason}",
         reviewText: "{text}",
         productStatus: "{product} • {status}",
         productStatusWithReason: "{product} • {status}. Причина: {reason}",
