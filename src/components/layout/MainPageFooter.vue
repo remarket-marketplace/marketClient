@@ -1,3 +1,11 @@
+<script setup lang="ts">
+import { requestCookieSettingsOpen } from '@/composables/useCookieConsent'
+
+function openCookieSettings() {
+  requestCookieSettingsOpen()
+}
+</script>
+
 <template>
   <footer
     class="relative w-full px-4 md:px-6 lg:px-8 pt-12 pb-22 lg:pb-16 overflow-hidden border-t border-dark-700"
@@ -77,6 +85,15 @@
                 <router-link to="/terms" class="text-gray-400 hover:text-white transition-colors duration-300 font-light">
                   {{ $t('footer.termsOfService', 'Условия использования') }}
                 </router-link>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  class="bg-transparent p-0 text-gray-400 hover:text-white transition-colors duration-300 font-light"
+                  @click="openCookieSettings"
+                >
+                  {{ $t('common.cookies.manage') }}
+                </button>
               </li>
               <li>
                 <router-link to="/rules" class="text-gray-400 hover:text-white transition-colors duration-300 font-light">

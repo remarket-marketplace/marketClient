@@ -12,6 +12,7 @@ import { storeToRefs } from 'pinia'
 import { authService } from './api/auth/AuthService'
 import MainPageLayout from './views/layouts/MainPageLayout.vue'
 import AppRouteSkeleton from './components/layout/AppRouteSkeleton.vue'
+import CookieConsentBanner from './components/layout/CookieConsentBanner.vue'
 
 const store = useUserStore()
 const navigationStore = useNavigationStore()
@@ -209,6 +210,8 @@ const layout = computed(() => {
         </Suspense>
       </RouterView>
     </component>
+
+    <CookieConsentBanner />
   </div>
 </template>
 
