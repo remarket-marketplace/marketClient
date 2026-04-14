@@ -23,6 +23,7 @@ const isUserLoaded = ref(false)
 let unsubscribeChatUpdated: (() => void) | null = null
 let unsubscribeNotificationCreated: (() => void) | null = null
 let onlinePingIntervalHandle: number | null = null
+let notificationsSyncIntervalHandle: number | null = null
 let chatSyncVersion = 0
 let isResyncingChats = false
 let needResyncChats = false
@@ -30,6 +31,10 @@ const onlinePingIntervalMs = Number(import.meta.env.VITE_ONLINE_PING_INTERVAL_MS
 const resolvedOnlinePingIntervalMs = Number.isFinite(onlinePingIntervalMs)
   ? Math.max(1000, Math.floor(onlinePingIntervalMs))
   : 4000
+const notificationsSyncIntervalMs = Number(import.meta.env.VITE_NOTIFICATIONS_SYNC_INTERVAL_MS ?? 15000)
+const resolvedNotificationsSyncIntervalMs = Number.isFinite(notificationsSyncIntervalMs)
+  ? Math.max(5000, Math.floor(notificationsSyncIntervalMs))
+  : 15000
 
 const { user } = storeToRefs(store)
 const { routePending } = storeToRefs(navigationStore)
@@ -54,18 +59,40 @@ function stopOnlinePing() {
   onlinePingIntervalHandle = null
 }
 
+function syncNotificationsSafely(force = true) {
+  if (!user.value?.id) return
+  void notificationStore.loadInbox(force).catch(() => null)
+}
+
+function startNotificationsSync() {
+  if (notificationsSyncIntervalHandle) return
+  syncNotificationsSafely(true)
+  notificationsSyncIntervalHandle = window.setInterval(() => {
+    syncNotificationsSafely(true)
+  }, resolvedNotificationsSyncIntervalMs)
+}
+
+function stopNotificationsSync() {
+  if (!notificationsSyncIntervalHandle) return
+  clearInterval(notificationsSyncIntervalHandle)
+  notificationsSyncIntervalHandle = null
+}
+
 function handleVisibilityChange() {
   if (document.visibilityState === 'visible') {
     pingOnlineSafely()
+    syncNotificationsSafely(true)
   }
 }
 
 function handleWindowFocus() {
   pingOnlineSafely()
+  syncNotificationsSafely(true)
 }
 
 function handleWindowOnline() {
   pingOnlineSafely()
+  syncNotificationsSafely(true)
 }
 
 async function resyncChats(userId: string, syncVersion: number) {
@@ -146,9 +173,11 @@ watch(
   (userId) => {
     if (userId) {
       startOnlinePing()
+      startNotificationsSync()
       return
     }
     stopOnlinePing()
+    stopNotificationsSync()
   },
   { immediate: true }
 )
@@ -170,6 +199,7 @@ onUnmounted(() => {
   unsubscribeChatUpdated?.()
   unsubscribeNotificationCreated?.()
   stopOnlinePing()
+  stopNotificationsSync()
   window.removeEventListener('focus', handleWindowFocus)
   window.removeEventListener('online', handleWindowOnline)
   document.removeEventListener('visibilitychange', handleVisibilityChange)
