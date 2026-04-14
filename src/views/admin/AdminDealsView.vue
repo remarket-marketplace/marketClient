@@ -128,7 +128,7 @@ const sortedDeals = computed(() => {
 })
 
 const displayTotal = computed(() => {
-  if (normalizedQuery.value || statusFilter.value !== 'all') {
+  if (normalizedQuery.value) {
     return filteredDeals.value.length
   }
   return totalCount.value || deals.value.length
@@ -153,7 +153,11 @@ async function loadDeals(reset = false) {
 
   isLoading.value = true
   try {
-    const response: DealsList | false = await adminService.getAllDeals(currentPage.value, perPage.value)
+    const response: DealsList | false = await adminService.getAllDeals(
+      currentPage.value,
+      perPage.value,
+      statusFilter.value === 'all' ? undefined : statusFilter.value,
+    )
     if (response !== false) {
       const dealsData = response.deals || []
       if (reset) {
@@ -358,6 +362,10 @@ onUnmounted(() => {
 
 watch([searchQuery, sortBy, statusFilter], () => {
   if (listRef.value) listRef.value.scrollTop = 0
+})
+
+watch(statusFilter, async () => {
+  await loadDeals(true)
 })
 </script>
 
