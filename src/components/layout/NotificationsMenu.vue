@@ -34,8 +34,9 @@ const isClearConfirmOpen = ref(false)
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const MESSAGE_PREVIEW_MAX_LENGTH = 20
+const DISPUTE_REASON_PREVIEW_MAX_LENGTH = 80
 
-type NotificationBadgeTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger'
+type NotificationBadgeTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'accent'
 type NotificationBadge = {
   label: string
   tone: NotificationBadgeTone
@@ -191,6 +192,31 @@ function getNotificationBody(item: InboxNotification): string {
     return ''
   }
 
+  if (item.event_type === 'dispute_resolved') {
+    const params = item.body_i18n_params ?? {}
+    const payload = item.payload ?? {}
+
+    const product = typeof params.product === 'string' && params.product.trim().length > 0
+      ? params.product.trim()
+      : typeof payload.product_title === 'string' && payload.product_title.trim().length > 0
+        ? payload.product_title.trim()
+        : ''
+
+    const reasonRaw = typeof params.reason === 'string' && params.reason.trim().length > 0
+      ? params.reason.trim()
+      : typeof payload.dispute_reason === 'string' && payload.dispute_reason.trim().length > 0
+        ? payload.dispute_reason.trim()
+        : ''
+
+    const reason = reasonRaw
+      ? truncateWithEllipsis(reasonRaw, DISPUTE_REASON_PREVIEW_MAX_LENGTH)
+      : ''
+
+    if (product && reason) return `${product} • ${reason}`
+    if (reason) return reason
+    if (product) return product
+  }
+
   if (item.event_type === 'deal_status_updated') {
     const params = item.body_i18n_params ?? {}
     if (typeof params.product === 'string' && params.product.trim().length > 0) {
@@ -270,10 +296,11 @@ function getStatusTone(statusValue: string): NotificationBadgeTone {
     case 'rejected':
     case 'cancelled':
     case 'disputed':
-    case 'refunded':
     case 'deleted':
     case 'expired':
       return 'danger'
+    case 'refunded':
+      return 'accent'
     default:
       return 'info'
   }
@@ -281,6 +308,8 @@ function getStatusTone(statusValue: string): NotificationBadgeTone {
 
 function getContextBadge(item: InboxNotification): NotificationBadge | null {
   switch (item.event_type) {
+    case 'dispute_resolved':
+      return { label: t('common.notifications.labels.resolved'), tone: 'success' }
     case 'product_status_updated':
       return { label: t('common.notifications.labels.product'), tone: 'neutral' }
     case 'new_price_offer':
@@ -331,6 +360,8 @@ function getBadgeClasses(tone: NotificationBadgeTone): string {
       return 'border-amber-400/35 bg-amber-500/10 text-amber-200'
     case 'danger':
       return 'border-red-400/35 bg-red-500/10 text-red-200'
+    case 'accent':
+      return 'border-purple-400/35 bg-purple-500/10 text-purple-200'
     case 'info':
       return 'border-sky-400/35 bg-sky-500/10 text-sky-200'
     default:
@@ -340,6 +371,8 @@ function getBadgeClasses(tone: NotificationBadgeTone): string {
 
 function getIconComponent(item: InboxNotification) {
   switch (item.event_type) {
+    case 'dispute_resolved':
+      return ShieldAlert
     case 'new_purchase':
     case 'new_sale':
       return ShoppingBag
