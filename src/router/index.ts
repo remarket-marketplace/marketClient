@@ -187,7 +187,13 @@ const routes = [
       path: "/partner/fortnite-stats",
       name: "partner fortnite stats",
       component: () => import("@/views/partner/PartnerFortniteStatsView.vue"),
-      meta: { requiredPartner: true },
+      meta: { requiredPartner: true, partnerType: 'raika' },
+    },
+    {
+      path: "/partner/vpn-stats",
+      name: "partner vpn stats",
+      component: () => import("@/views/partner/PartnerScopeVpnStatsView.vue"),
+      meta: { requiredPartner: true, partnerType: 'vpn' },
     },
     {
       path: "/wallet",
@@ -200,6 +206,12 @@ const routes = [
       name: "steam topup",
       component: () => import("@/views/SteamTopUpView.vue"),
       meta: { requiredAuthorized: true },
+    },
+    {
+      path: "/vpn",
+      alias: "/remarket-vpn",
+      name: "scope vpn",
+      component: () => import("@/views/VpnServiceView.vue"),
     },
     {
       path: "/settings",
@@ -283,6 +295,7 @@ export function createAppRouter(isSSR = false) {
     const navigationStore = useNavigationStore()
     const userStore = useUserStore()
     const { requiredAdmin, requiredAuthorized, requiredGuest, requiredPartner } = to.meta
+    const partnerType = to.meta.partnerType as string | undefined
 
     navigationStore.startRoutePending()
 
@@ -301,9 +314,24 @@ export function createAppRouter(isSSR = false) {
     }
 
     if (requiredPartner) {
-      return user && (user.role === 'partner' || user.role === 'admin')
-        ? true
-        : '/not-access'
+      // Admins always have access
+      if (user?.role === 'admin') {
+        return true
+      }
+      // Check if user is partner and has correct partner type
+      if (user?.role === 'partner') {
+        // Determine partner type if not set (fallback for backward compatibility)
+        const actualPartnerType = user.partner_type || 
+          (user.username === 'ScopeVPN' ? 'vpn' : 'raika')
+        
+        if (partnerType && actualPartnerType !== partnerType) {
+          // Partner trying to access wrong panel
+          return '/not-access'
+        }
+        return true
+      }
+      // Not a partner or admin
+      return '/not-access'
     }
 
     if (requiredAuthorized) {
