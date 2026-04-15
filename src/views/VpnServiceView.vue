@@ -18,10 +18,10 @@ import {
   Check,
   Clock,
   Copy,
-  Download,
   ExternalLink,
   Globe,
   MonitorDown,
+  ShoppingCart,
   Smartphone,
   Landmark,
   Youtube,
@@ -33,7 +33,6 @@ interface VpnPlan {
   id: VpnPlanId
   duration: string
   caption: string
-  action: string
   price: number
   priceLabel: string
 }
@@ -94,7 +93,6 @@ const planOptions = computed<VpnPlan[]>(() => [
     id: 'month',
     duration: t('pages.vpn.plans.month.duration'),
     caption: t('pages.vpn.plans.month.caption'),
-    action: t('pages.vpn.plans.month.action'),
     price: planPrices.value.month,
     priceLabel: formatPlanPrice(planPrices.value.month),
   },
@@ -102,7 +100,6 @@ const planOptions = computed<VpnPlan[]>(() => [
     id: 'quarter',
     duration: t('pages.vpn.plans.quarter.duration'),
     caption: t('pages.vpn.plans.quarter.caption'),
-    action: t('pages.vpn.plans.quarter.action'),
     price: planPrices.value.quarter,
     priceLabel: formatPlanPrice(planPrices.value.quarter),
   },
@@ -110,7 +107,6 @@ const planOptions = computed<VpnPlan[]>(() => [
     id: 'halfyear',
     duration: t('pages.vpn.plans.halfyear.duration'),
     caption: t('pages.vpn.plans.halfyear.caption'),
-    action: t('pages.vpn.plans.halfyear.action'),
     price: planPrices.value.halfyear,
     priceLabel: formatPlanPrice(planPrices.value.halfyear),
   },
@@ -338,71 +334,50 @@ onMounted(() => {
   <section class="vpn-page relative left-1/2 right-1/2 -mt-14 ml-[-50vw] mr-[-50vw] min-h-[calc(100dvh-3.5rem)] w-screen overflow-hidden pt-14 text-white">
     <div class="vpn-page__grid pointer-events-none absolute inset-0"></div>
 
-    <div class="relative mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-6xl flex-col px-4 pb-14 pt-6 sm:px-6 lg:px-8">
-      <div class="mb-8 flex items-center justify-between gap-4">
+    <div class="vpn-page__inner relative mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-6xl flex-col px-4 pb-14 pt-6 sm:px-6 lg:px-8">
+      <div class="mb-6 flex items-center justify-between gap-4 md:mb-8">
         <BackButton />
       </div>
 
-      <div class="grid flex-1 items-center gap-10 lg:grid-cols-[minmax(0,1fr)_420px]">
-        <div class="vpn-page__copy max-w-3xl">
-          <h1 class="mt-4 text-balance text-5xl font-semibold leading-none text-white sm:text-6xl lg:text-7xl">
+      <div class="vpn-hero-grid grid flex-1 items-center gap-x-10 gap-y-7">
+        <div class="vpn-page__copy vpn-hero-text max-w-3xl">
+          <h1 class="text-balance text-5xl font-semibold leading-none text-white sm:text-6xl lg:text-7xl">
             {{ t('pages.vpn.title') }}
           </h1>
           <p class="mt-5 max-w-2xl text-base leading-7 text-gray-300 sm:text-lg">
             {{ t('pages.vpn.subtitle') }}
           </p>
-
-          <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-            <button
-              type="button"
-              class="market-primary-surface market-primary-hover inline-flex h-12 items-center justify-center gap-2 rounded-lg px-5 text-sm font-semibold text-white transition-colors duration-200"
-              @click="scrollToPlans"
-            >
-              <span>{{ t('pages.vpn.heroAction') }}</span>
-              <ArrowRight class="h-4 w-4" stroke-width="1.7" />
-            </button>
-            <button
-              v-if="isTrialAvailable"
-              type="button"
-              class="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-white/[0.1] bg-white/[0.04] px-5 text-sm font-semibold text-gray-100 transition-colors duration-200 hover:bg-white/[0.08]"
-              @click="openTrialModal"
-            >
-              <Clock class="h-4 w-4 text-blue-200" stroke-width="1.7" />
-              <span>{{ t('pages.vpn.trialAction') }}</span>
-            </button>
-          </div>
-
-          <div class="mt-10 grid max-w-xl grid-cols-3 divide-x divide-white/[0.08] rounded-lg border border-white/[0.08] bg-white/[0.03]">
-            <div class="px-3 py-4">
-              <p class="text-xl font-semibold text-white">{{ t('pages.vpn.stats.month') }}</p>
-              <p class="mt-1 text-xs text-gray-400">{{ t('pages.vpn.stats.monthLabel') }}</p>
-            </div>
-            <div class="px-3 py-4">
-              <p class="text-xl font-semibold text-white">{{ t('pages.vpn.stats.quarter') }}</p>
-              <p class="mt-1 text-xs text-gray-400">{{ t('pages.vpn.stats.quarterLabel') }}</p>
-            </div>
-            <div class="px-3 py-4">
-              <p class="text-xl font-semibold text-white">{{ t('pages.vpn.stats.halfyear') }}</p>
-              <p class="mt-1 text-xs text-gray-400">{{ t('pages.vpn.stats.halfyearLabel') }}</p>
-            </div>
-          </div>
         </div>
 
-        <div class="vpn-visual relative min-h-[430px] overflow-hidden rounded-lg border border-white/[0.08]">
-          <div class="vpn-visual__scan"></div>
-          <div class="vpn-visual__grid"></div>
+        <div class="vpn-hero-actions flex flex-col gap-3 sm:flex-row">
+          <button
+            type="button"
+            class="market-primary-surface market-primary-hover inline-flex h-12 items-center justify-center gap-2 rounded-lg px-5 text-sm font-semibold text-white transition-colors duration-200"
+            @click="scrollToPlans"
+          >
+            <span>{{ t('pages.vpn.heroAction') }}</span>
+            <ArrowRight class="h-4 w-4" stroke-width="1.7" />
+          </button>
+          <button
+            v-if="isTrialAvailable"
+            type="button"
+            class="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-white/[0.1] bg-white/[0.04] px-5 text-sm font-semibold text-gray-100 transition-colors duration-200 hover:bg-white/[0.08]"
+            @click="openTrialModal"
+          >
+            <Clock class="h-4 w-4 text-blue-200" stroke-width="1.7" />
+            <span>{{ t('pages.vpn.trialAction') }}</span>
+          </button>
+        </div>
 
-          <div class="vpn-visual__logo absolute left-1/2 top-1/2 flex h-40 w-40 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full">
+        <div class="vpn-visual relative min-h-[430px]">
+          <div class="vpn-visual__logo absolute left-1/2 top-1/2 flex h-80 w-80 -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full sm:h-96 sm:w-96">
             <img
               :src="scopeVpnLogoSrc"
               alt="Scope VPN"
-              class="h-full w-full object-contain"
+              class="h-full w-full object-cover"
               loading="eager"
             />
           </div>
-
-          <div class="vpn-visual__ring vpn-visual__ring--one"></div>
-          <div class="vpn-visual__ring vpn-visual__ring--two"></div>
 
           <div class="vpn-node vpn-node--top">
             <BrainCircuit class="h-4 w-4 text-blue-200" />
@@ -527,9 +502,6 @@ onMounted(() => {
             </div>
 
             <p class="mt-4 min-h-12 text-sm leading-6 text-gray-300">{{ plan.caption }}</p>
-            <span class="mt-5 inline-flex h-10 w-full items-center justify-center rounded-lg border border-white/[0.1] text-sm font-semibold text-white transition group-hover:bg-white/[0.06]">
-              {{ plan.action }}
-            </span>
           </button>
         </div>
 
@@ -556,7 +528,7 @@ onMounted(() => {
                   : t('pages.vpn.buySelected', { duration: selectedPlan.duration })
               }}
             </span>
-            <Download class="h-4 w-4" stroke-width="1.7" />
+            <ShoppingCart class="h-4 w-4" stroke-width="1.7" />
           </button>
         </div>
       </section>
@@ -662,61 +634,28 @@ onMounted(() => {
   animation: vpn-enter 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+.vpn-hero-grid {
+  align-content: center;
+  grid-template-areas:
+    "text visual"
+    "actions visual";
+  grid-template-columns: minmax(0, 1fr) 420px;
+}
+
+.vpn-hero-text {
+  grid-area: text;
+}
+
+.vpn-hero-actions {
+  grid-area: actions;
+  margin-top: 0.25rem;
+  animation: vpn-enter 0.7s 0.08s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 .vpn-visual {
-  background:
-    linear-gradient(180deg, rgb(21 27 36 / 0.88), rgb(13 17 23 / 0.96)),
-    rgb(17 24 39);
-  box-shadow: inset 0 1px 0 rgb(var(--palette-white) / 0.06);
+  grid-area: visual;
+  align-self: center;
   animation: vpn-enter 0.78s 0.12s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.vpn-visual__grid {
-  position: absolute;
-  inset: 0;
-  opacity: 0.44;
-  background-image:
-    linear-gradient(to right, rgb(var(--palette-blue-400) / 0.12) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(var(--palette-white) / 0.06) 1px, transparent 1px);
-  background-size: 38px 38px;
-}
-
-.vpn-visual__scan {
-  position: absolute;
-  inset-inline: 0;
-  top: -20%;
-  height: 34%;
-  background: linear-gradient(to bottom, transparent, rgb(var(--palette-blue-400) / 0.12), transparent);
-  animation: vpn-scan 6s linear infinite;
-}
-
-.vpn-visual__logo {
-  background: rgb(239 250 255);
-  padding: 0.25rem;
-  box-shadow:
-    0 0 0 1px rgb(var(--palette-blue-300) / 0.2),
-    0 18px 64px rgb(var(--palette-blue-900) / 0.3),
-    0 0 42px rgb(var(--palette-blue-400) / 0.16);
-}
-
-.vpn-visual__ring {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  border: 1px solid rgb(var(--palette-blue-300) / 0.2);
-  border-radius: 9999px;
-  transform: translate(-50%, -50%);
-}
-
-.vpn-visual__ring--one {
-  height: 230px;
-  width: 230px;
-  animation: vpn-ring 4.2s ease-in-out infinite;
-}
-
-.vpn-visual__ring--two {
-  height: 320px;
-  width: 320px;
-  animation: vpn-ring 4.2s 0.8s ease-in-out infinite;
 }
 
 .vpn-node {
@@ -726,14 +665,23 @@ onMounted(() => {
   align-items: center;
   gap: 0.5rem;
   min-width: 8.5rem;
-  border: 1px solid rgb(var(--palette-white) / 0.1);
-  border-radius: 0.5rem;
-  background: rgb(12 17 24 / 0.82);
+  border: 1px solid rgb(var(--palette-white) / 0.12);
+  border-radius: 9999px;
+  background: rgb(12 17 24 / 0.44);
   padding: 0.625rem 0.75rem;
   color: rgb(var(--palette-gray-200));
   font-size: 0.8125rem;
   font-weight: 600;
-  box-shadow: inset 0 1px 0 rgb(var(--palette-white) / 0.05);
+  white-space: nowrap;
+  box-shadow:
+    inset 0 1px 0 rgb(var(--palette-white) / 0.08),
+    0 14px 32px rgb(0 0 0 / 0.18);
+  backdrop-filter: saturate(140%) blur(18px);
+  -webkit-backdrop-filter: saturate(140%) blur(18px);
+}
+
+.vpn-node span {
+  white-space: nowrap;
 }
 
 .vpn-node--top {
@@ -767,47 +715,137 @@ onMounted(() => {
   }
 }
 
-@keyframes vpn-scan {
-  0% {
-    transform: translateY(0);
+@media (max-width: 1023px) {
+  .vpn-page__inner {
+    min-height: auto;
+    padding-bottom: 3rem;
   }
 
-  100% {
-    transform: translateY(420%);
-  }
-}
-
-@keyframes vpn-ring {
-  0%,
-  100% {
-    opacity: 0.42;
-    transform: translate(-50%, -50%) scale(0.98);
+  .vpn-hero-grid {
+    grid-template-columns: minmax(0, 1fr) clamp(13rem, 34vw, 18rem);
+    gap: clamp(0.75rem, 3vw, 2rem);
+    flex: initial;
   }
 
-  50% {
-    opacity: 0.82;
-    transform: translate(-50%, -50%) scale(1.03);
+  .vpn-page__copy h1 {
+    font-size: clamp(2.75rem, 10vw, 4.5rem);
   }
-}
 
-@media (max-width: 640px) {
+  .vpn-page__copy p {
+    max-width: 32rem;
+    font-size: clamp(0.875rem, 2.8vw, 1.125rem);
+    line-height: 1.55;
+  }
+
+  .vpn-visual {
+    min-height: clamp(17rem, 44vw, 26rem);
+  }
+
+  .vpn-visual__logo {
+    height: clamp(11rem, 36vw, 20rem) !important;
+    width: clamp(11rem, 36vw, 20rem) !important;
+  }
+
   .vpn-node {
-    min-width: 7.5rem;
+    min-width: max-content;
+    padding: 0.5rem 0.625rem;
     font-size: 0.75rem;
   }
 
   .vpn-node--top {
-    left: 1rem;
-    top: 3.5rem;
+    left: 0;
+    top: 2.25rem;
   }
 
   .vpn-node--right {
-    right: 1rem;
+    right: 0;
+    top: 46%;
   }
 
   .vpn-node--bottom {
-    bottom: 3rem;
-    left: 1rem;
+    bottom: 2.5rem;
+    left: 0.25rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .vpn-page__inner {
+    padding-top: 1rem;
+    padding-bottom: 2.25rem;
+  }
+
+  .vpn-hero-grid {
+    grid-template-areas:
+      "text visual"
+      "actions actions";
+    grid-template-columns: minmax(0, 1fr) clamp(10rem, 38vw, 12rem);
+    align-items: center;
+    column-gap: 0.75rem;
+    row-gap: 1.25rem;
+  }
+
+  .vpn-page__copy h1 {
+    font-size: clamp(2.6rem, 14vw, 4.25rem);
+  }
+
+  .vpn-page__copy p {
+    margin-top: 0.875rem;
+    max-width: 18rem;
+    font-size: clamp(0.8125rem, 3.5vw, 0.95rem);
+    line-height: 1.45;
+  }
+
+  .vpn-hero-actions {
+    width: 100%;
+  }
+
+  .vpn-visual {
+    min-height: clamp(13rem, 52vw, 16rem);
+    overflow: visible;
+  }
+
+  .vpn-visual__logo {
+    height: clamp(8rem, 35vw, 10.25rem) !important;
+    width: clamp(8rem, 35vw, 10.25rem) !important;
+  }
+
+  .vpn-node {
+    gap: 0.3rem;
+    min-width: max-content;
+    max-width: none;
+    padding: 0.36rem 0.5rem;
+    border-color: rgb(var(--palette-white) / 0.13);
+    background: rgb(12 17 24 / 0.34);
+    font-size: 0.6rem;
+    line-height: 1;
+    box-shadow:
+      inset 0 1px 0 rgb(var(--palette-white) / 0.07),
+      0 10px 24px rgb(0 0 0 / 0.16);
+    backdrop-filter: saturate(150%) blur(20px);
+    -webkit-backdrop-filter: saturate(150%) blur(20px);
+  }
+
+  .vpn-node svg {
+    height: 0.8125rem;
+    width: 0.8125rem;
+  }
+
+  .vpn-node--top {
+    left: 50%;
+    top: 0.45rem;
+    transform: translateX(-50%);
+  }
+
+  .vpn-node--right {
+    right: -0.25rem;
+    top: 48%;
+    transform: translateY(-50%);
+  }
+
+  .vpn-node--bottom {
+    bottom: 0.5rem;
+    left: 50%;
+    transform: translateX(-50%);
   }
 }
 </style>

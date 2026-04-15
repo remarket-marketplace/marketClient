@@ -43,6 +43,11 @@ const isDesktop = ref(true)
 const { user } = storeToRefs(store)
 const { unreadTotal } = storeToRefs(chatStore)
 
+const getPartnerType = () => {
+    if (user.value?.partner_type) return user.value.partner_type
+    return user.value?.username?.toLowerCase() === 'scopevpn' ? 'vpn' : 'raika'
+}
+
 function checkDesktop() {
     isDesktop.value = window.innerWidth >= 768
 }
@@ -85,7 +90,7 @@ const isActiveRoute = (item: NavItem) => {
         return currentPath.startsWith('/admin')
     }
 
-    if (item.to === '/partner/fortnite-stats') {
+    if (item.to.startsWith('/partner/')) {
         return currentPath.startsWith('/partner/')
     }
 
@@ -143,8 +148,7 @@ const navItems = computed(() => {
     }
 
     if (user.value?.role === 'partner') {
-        const partnerType = user.value?.partner_type || 
-          (user.value?.username === 'ScopeVPN' ? 'vpn' : 'raika')
+        const partnerType = getPartnerType()
         const partnerRoute = partnerType === 'vpn' 
             ? '/partner/vpn-stats' 
             : '/partner/fortnite-stats'
@@ -271,7 +275,7 @@ const mobileNavGridStyle = computed(() => ({
                         <button
                             v-if="user && user.role !== 'admin'"
                             type="button"
-                            class="inline-flex h-8 items-center gap-1.5 rounded-md border border-dark-700 bg-dark-600 px-2.5 text-xs text-mainText transition hover:border-dark-500 focus:outline-none"
+                            class="inline-flex h-8 items-center gap-1.5 rounded-full border border-gray-700 bg-transparent px-2.5 text-xs text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white focus:outline-none"
                             :title="walletTitle"
                             @click="goToWallet"
                         >
@@ -309,7 +313,7 @@ const mobileNavGridStyle = computed(() => ({
                         <button
                             v-if="user && user.role === 'admin'"
                             type="button"
-                            class="inline-flex h-8 items-center gap-1.5 rounded-md border border-dark-700 bg-dark-600 px-2.5 text-xs text-mainText transition hover:border-dark-500 focus:outline-none"
+                            class="inline-flex h-8 items-center gap-1.5 rounded-full border border-gray-700 bg-transparent px-2.5 text-xs text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white focus:outline-none"
                             :title="walletTitle"
                             @click="goToWallet"
                         >
@@ -321,7 +325,7 @@ const mobileNavGridStyle = computed(() => ({
                     <button
                         v-if="user"
                         type="button"
-                        class="inline-flex h-8 items-center gap-1 rounded-md border border-dark-700 bg-dark-600 px-2 text-[10px] text-mainText transition hover:border-dark-500 focus:outline-none md:hidden"
+                        class="inline-flex h-8 items-center gap-1 rounded-full border border-gray-700 bg-transparent px-2 text-[10px] text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white focus:outline-none md:hidden"
                         :title="walletTitle"
                         @click="goToWallet"
                     >

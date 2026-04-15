@@ -816,7 +816,7 @@ const en = {
     vpn: {
       eyebrow: "Scope VPN",
       title: "Scope VPN",
-      subtitle: "A subscription for AI tools, work services, and approved locations. After purchase, add the key to Happ or Incy.",
+      subtitle: "Your personal key to a freer internet. Fast servers, approved locations, 24/7 support.",
       heroAction: "Choose period",
       trialAction: "Trial period",
       pricePending: "Price is being configured",

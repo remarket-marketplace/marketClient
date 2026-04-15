@@ -82,12 +82,12 @@ onUnmounted(() => {
   <div ref="rootRef" class="relative">
     <button
       type="button"
-      class="relative flex h-8 w-8 items-center justify-center rounded-md border border-dark-700 bg-dark-600 text-mainText transition hover:border-dark-500 focus:outline-none"
+      class="relative flex h-8 w-8 items-center justify-center rounded-full border border-gray-700 bg-transparent text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white focus:outline-none"
       :aria-expanded="isOpen"
       :aria-label="t('common.settings')"
       @click="toggleMenu"
     >
-      <SlidersHorizontal class="h-3.5 w-3.5 text-mainText/70" />
+      <SlidersHorizontal class="h-3.5 w-3.5 text-current opacity-80" />
     </button>
 
     <transition

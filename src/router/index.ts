@@ -268,6 +268,12 @@ const routes = [
     },
   ]
 
+const getPartnerType = (user: { partner_type?: string | null; username?: string | null } | null | undefined) => {
+  if (!user) return null
+  if (user.partner_type) return user.partner_type
+  return user.username?.toLowerCase() === 'scopevpn' ? 'vpn' : 'raika'
+}
+
 export function createAppRouter(isSSR = false) {
   const history = isSSR ? createMemoryHistory() : createWebHistory(import.meta.env.BASE_URL)
 
@@ -320,9 +326,7 @@ export function createAppRouter(isSSR = false) {
       }
       // Check if user is partner and has correct partner type
       if (user?.role === 'partner') {
-        // Determine partner type if not set (fallback for backward compatibility)
-        const actualPartnerType = user.partner_type || 
-          (user.username === 'ScopeVPN' ? 'vpn' : 'raika')
+        const actualPartnerType = getPartnerType(user)
         
         if (partnerType && actualPartnerType !== partnerType) {
           // Partner trying to access wrong panel
