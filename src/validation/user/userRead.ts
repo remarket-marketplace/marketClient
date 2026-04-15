@@ -39,6 +39,7 @@ export const UserReadSchema = z.object({
   average_first_response_time_seconds: z.number().int().nonnegative().nullable().optional(),
   rating: z.number().int().nonnegative(),
   role: z.enum(['user', 'admin', 'partner']),
+  partner_type: z.enum(['raika', 'vpn']).nullable().optional(),
 })
 
 export type UserRead = z.infer<typeof UserReadSchema>

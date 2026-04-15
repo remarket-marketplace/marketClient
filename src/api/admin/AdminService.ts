@@ -79,6 +79,20 @@ export type PartnerStats = {
   deals_by_status: DashboardStatusBreakdown[]
 }
 
+export type ScopeVpnPartnerStats = {
+  trial_count: number
+  purchase_count: number
+  total_orders: number
+  total_purchase_amount: number
+  average_purchase_amount: number
+  orders_by_status: DashboardStatusBreakdown[]
+  orders_by_plan: Array<{
+    plan: string
+    count: number
+    revenue: number
+  }>
+}
+
 export type ActivityLogFilters = {
   user_id?: string
   username?: string
@@ -95,6 +109,9 @@ export type PlatformSettings = {
   telegram_integration_enabled: boolean
   deal_commission_percent: number
   withdrawal_commission_percent: number
+  vpn_month_price: number
+  vpn_quarter_price: number
+  vpn_halfyear_price: number
 }
 
 export type AdminUpdateUserPayload = {
@@ -193,6 +210,16 @@ export const adminService = {
       return response.data as PartnerStats;
     } catch (e) {
       console.error("Failed to load partner fortnite stats", e);
+      return null;
+    }
+  },
+
+  async getScopeVpnPartnerStats(): Promise<ScopeVpnPartnerStats | null> {
+    try {
+      const response = await httpClient.get("/admin/partners/vpn-stats");
+      return response.data as ScopeVpnPartnerStats;
+    } catch (e) {
+      console.error("Failed to load Scope VPN partner stats", e);
       return null;
     }
   },

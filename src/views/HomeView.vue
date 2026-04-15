@@ -8,6 +8,7 @@ import SearchField from '@/components/SearchField.vue'
 import Title from '@/components/Title.vue'
 import HeroSection from '@/components/HeroSection.vue'
 import HeroBackground from '@/components/HeroBackground.vue'
+import ScopeVpnCta from '@/components/ScopeVpnCta.vue'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
@@ -1049,6 +1050,8 @@ onBeforeUnmount(() => {
             <span class="truncate text-sm leading-5">{{ category.name }}</span>
           </button>
         </div>
+
+        <ScopeVpnCta />
 
         <div class="mt-10 w-full sm:mt-16">
           <Title :text="t('common.categories')" />

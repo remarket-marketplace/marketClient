@@ -6,6 +6,7 @@ import MainProductCard from '@/components/mainProductCard.vue'
 import HomeProductListCard from '@/components/HomeProductListCard.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
 import Title from '@/components/Title.vue'
+import ScopeVpnCta from '@/components/ScopeVpnCta.vue'
 import type { Category } from '@/validation/category/category'
 import type { Product } from '@/validation/product/product'
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
@@ -114,6 +115,27 @@ const activeFortniteFiltersCount = computed<number>(() => (
 const shouldShowSubcategoriesBlock = computed(() =>
   Boolean(activeCategory.value && activeCategory.value.parent_id === null)
 )
+
+const shouldShowVpnCta = computed(() => {
+  const candidates = [
+    category.value,
+    activeCategory.value,
+    ...selectedCategoryPath.value,
+  ]
+
+  return candidates.some(isVpnCategoryCandidate) || isVpnTextCandidate(categoryKey.value)
+})
+
+function isVpnTextCandidate(value: unknown): boolean {
+  const normalized = String(value ?? '').trim().toLowerCase()
+  if (!normalized) return false
+  return /(^|[^a-z0-9])vpn([^a-z0-9]|$)/i.test(normalized) || normalized.includes('впн')
+}
+
+function isVpnCategoryCandidate(item: Category | null | undefined): boolean {
+  if (!item) return false
+  return [item.name, item.name_ru, item.name_en, item.slug].some(isVpnTextCandidate)
+}
 
 function resolveCategoryImageUrl(imageUrl: string | null): string {
   if (!imageUrl) {
@@ -632,6 +654,8 @@ onBeforeUnmount(() => {
           />
         </template>
       </div>
+
+      <ScopeVpnCta v-if="shouldShowVpnCta" variant="category" />
 
       <div v-if="shouldShowSubcategoriesBlock">
         <Title :text="t('common.subcategories')" />

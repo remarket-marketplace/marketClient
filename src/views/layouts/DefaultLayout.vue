@@ -148,11 +148,16 @@ const navItems = computed(() => {
   }
 
   if (user.value?.role === 'partner') {
+    const partnerType = user.value?.partner_type || 
+      (user.value?.username === 'ScopeVPN' ? 'vpn' : 'raika')
+    const partnerRoute = partnerType === 'vpn' 
+      ? '/partner/vpn-stats' 
+      : '/partner/fortnite-stats'
     items.push({
       id: 'partner-stats',
       title: t('common.partner'),
       icon: BarChart3,
-      to: '/partner/fortnite-stats',
+      to: partnerRoute,
       partner: true
     })
   }
