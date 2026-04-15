@@ -1280,6 +1280,13 @@ const ru = {
       yesterday: "Вчера",
       waitReplyReminderSender: "Чтобы продолжить общение, дождитесь ответа собеседника.",
       waitReplyReminderRecipient: "Пользователь сможет отправлять вам сообщения только после вашего ответа.",
+      scopeVpn: {
+        trialTitle: "Scope VPN: пробный период на 1 сутки",
+        paidTitle: "Scope VPN: доступ на {days} дней",
+        connectionLink: "Ссылка для подключения",
+        trafficLimit: "Лимит трафика: {limit} ГБ",
+        copyLink: "Скопировать ссылку подключения",
+      },
       newPurchase: "Новая покупка",
       currentDeal: "Текущая сделка",
       newPriceOffer: "Новое предложение цены",

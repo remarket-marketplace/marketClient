@@ -1281,6 +1281,13 @@ const en = {
       yesterday: "Yesterday",
       waitReplyReminderSender: "To continue chatting, wait for the other user to reply.",
       waitReplyReminderRecipient: "This user will be able to send more messages only after your reply.",
+      scopeVpn: {
+        trialTitle: "Scope VPN: trial period for 1 day",
+        paidTitle: "Scope VPN: access for {days} days",
+        connectionLink: "Connection link",
+        trafficLimit: "Traffic limit: {limit} GB",
+        copyLink: "Copy connection link",
+      },
       newPurchase: "New purchase",
       currentDeal: "Current deal",
       newPriceOffer: "New price offer",

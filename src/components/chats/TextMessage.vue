@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Check, CheckCheck } from 'lucide-vue-next'
+import { computed, ref } from 'vue'
+import { Check, CheckCheck, Copy } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 interface TextMessageProps {
   id: string;
@@ -26,6 +26,49 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+const isScopeVpnLinkCopied = ref(false)
+
+const scopeVpnData = computed(() => {
+  const data = props.textMessage?.data
+  if (!data?.scope_vpn_order_id || typeof data.subscription_url !== 'string') {
+    return null
+  }
+
+  return {
+    subscriptionUrl: data.subscription_url,
+    durationDays: Number(data.duration_days) || null,
+    isTrial: Boolean(data.is_trial),
+    trafficLimitGb: Number(data.traffic_limit_gb) || null,
+  }
+})
+
+const scopeVpnTitle = computed(() => {
+  if (!scopeVpnData.value) return ''
+  if (scopeVpnData.value.isTrial) {
+    return t('pages.chats.scopeVpn.trialTitle')
+  }
+  return t('pages.chats.scopeVpn.paidTitle', {
+    days: scopeVpnData.value.durationDays ?? '',
+  })
+})
+
+const scopeVpnTrafficLimit = computed(() => {
+  if (!scopeVpnData.value?.trafficLimitGb) return ''
+  return t('pages.chats.scopeVpn.trafficLimit', {
+    limit: scopeVpnData.value.trafficLimitGb,
+  })
+})
+
+async function copyScopeVpnLink() {
+  const url = scopeVpnData.value?.subscriptionUrl
+  if (!url || typeof navigator === 'undefined' || !navigator.clipboard) return
+
+  await navigator.clipboard.writeText(url)
+  isScopeVpnLinkCopied.value = true
+  window.setTimeout(() => {
+    isScopeVpnLinkCopied.value = false
+  }, 1600)
+}
 
 const adminContent = computed(() => {
   if (!props.textMessage) return ''
@@ -144,6 +187,64 @@ const shouldRenderAdminMessage = computed(() => {
 	</div>
 
 	<!-- Regular messages -->
+	<div v-else-if="textMessage != null && scopeVpnData" class="min-w-0 max-w-[92%] rounded-2xl border border-dark-700 bg-dark-800/50 px-3.5 py-3 text-sm text-mainText md:max-w-md" :class="textMessage.sender_id === user?.id ? 'self-end' : 'self-start'">
+    <div v-if="senderLabel || forceShowSender" class="mb-2 flex items-center gap-2">
+      <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full" :class="pillClasses">
+        {{ senderLabel || $t('common.user') }}
+      </span>
+    </div>
+
+    <div class="min-w-0">
+        <p class="text-sm font-semibold text-white">{{ scopeVpnTitle }}</p>
+        <p class="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-gray-400">
+          {{ t('pages.chats.scopeVpn.connectionLink') }}
+        </p>
+
+        <button
+          type="button"
+          class="mt-2 flex w-full min-w-0 items-center gap-2 rounded-xl border border-dark-600 bg-dark-900/55 px-3 py-2 text-left transition hover:border-dark-500 hover:bg-dark-900/75"
+          :title="t('pages.chats.scopeVpn.copyLink')"
+          @click="copyScopeVpnLink"
+        >
+          <span class="min-w-0 flex-1 break-all text-xs leading-5 text-gray-100">
+            {{ scopeVpnData.subscriptionUrl }}
+          </span>
+          <span class="inline-flex shrink-0 items-center gap-1 rounded-full border border-dark-600 bg-dark-700/70 px-2 py-1 text-[11px] font-semibold text-gray-200">
+            <Copy class="h-3.5 w-3.5" stroke-width="1.8" />
+            {{ isScopeVpnLinkCopied ? t('common.copied') : t('common.copy') }}
+          </span>
+        </button>
+
+        <p v-if="scopeVpnTrafficLimit" class="mt-2 text-xs leading-5 text-gray-300">
+          {{ scopeVpnTrafficLimit }}
+        </p>
+    </div>
+
+    <div class="mt-2 flex items-center justify-end gap-2 text-xs text-gray-400">
+      <span>{{ formatDate(textMessage.created_at) }}</span>
+      <span
+        v-if="isOwnMessage"
+        class="inline-flex items-center leading-none select-none transition-colors duration-200"
+        :class="readStatusClass"
+        :title="readStatusTitle"
+        :aria-label="readStatusTitle"
+      >
+        <Check
+          v-if="!textMessage.is_read"
+          class="h-3.5 w-3.5 translate-y-[0.25px]"
+          :stroke-width="2.35"
+          aria-hidden="true"
+        />
+        <CheckCheck
+          v-else
+          class="h-3.5 w-3.5 -translate-x-[0.5px] translate-y-[0.25px]"
+          :stroke-width="2.35"
+          aria-hidden="true"
+        />
+      </span>
+    </div>
+	</div>
+
 	<div v-else-if="textMessage != null" class="min-w-0 max-w-[70%] rounded-xl px-4 py-2 text-sm break-words [overflow-wrap:anywhere] md:max-w-[40%]" :class="[
     bubbleRoleClass,
     textMessage.sender_id === user?.id ? 'self-end' : 'self-start'

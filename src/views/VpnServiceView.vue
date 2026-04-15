@@ -805,19 +805,31 @@ onMounted(() => {
   }
 
   .vpn-visual__logo {
-    height: clamp(8rem, 35vw, 10.25rem) !important;
-    width: clamp(8rem, 35vw, 10.25rem) !important;
+    position: absolute !important;
+    left: auto !important;
+    right: -0.15rem;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    height: clamp(8rem, 34vw, 10rem) !important;
+    width: clamp(8rem, 34vw, 10rem) !important;
   }
 
   .vpn-node {
-    gap: 0.3rem;
+    position: absolute;
+    display: inline-flex;
+    flex-direction: row;
+    gap: 0.25rem;
     min-width: max-content;
     max-width: none;
-    padding: 0.36rem 0.5rem;
+    width: auto;
+    align-items: center;
+    justify-content: center;
+    padding: 0.32rem 0.46rem;
     border-color: rgb(var(--palette-white) / 0.13);
     background: rgb(12 17 24 / 0.34);
-    font-size: 0.6rem;
+    font-size: 0.58rem;
     line-height: 1;
+    text-align: left;
     box-shadow:
       inset 0 1px 0 rgb(var(--palette-white) / 0.07),
       0 10px 24px rgb(0 0 0 / 0.16);
@@ -826,26 +838,30 @@ onMounted(() => {
   }
 
   .vpn-node svg {
-    height: 0.8125rem;
-    width: 0.8125rem;
+    height: 0.75rem;
+    width: 0.75rem;
   }
 
   .vpn-node--top {
-    left: 50%;
-    top: 0.45rem;
-    transform: translateX(-50%);
+    left: 0.25rem;
+    top: 0.75rem;
+    transform: none !important;
+    border-radius: 9999px;
   }
 
   .vpn-node--right {
     right: -0.25rem;
-    top: 48%;
-    transform: translateY(-50%);
+    top: 49%;
+    transform: translateY(-50%) !important;
+    border-inline-width: 1px;
+    border-radius: 9999px;
   }
 
   .vpn-node--bottom {
-    bottom: 0.5rem;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0.25rem;
+    bottom: 0.75rem;
+    transform: none !important;
+    border-radius: 9999px;
   }
 }
 </style>

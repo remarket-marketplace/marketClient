@@ -727,11 +727,33 @@ const latestDealTimelinePaddingStyle = computed(() => {
   }
 })
 
+function messageHasDealMetadata(message: ChatTimelineMessage): boolean {
+  if (message.message_type !== 'text_message' && message.message_type !== 'image_message') {
+    return false
+  }
+  if (!('data' in message)) {
+    return false
+  }
+
+  const data = message.data
+  return Boolean(
+    data
+    && (
+      typeof data.deal_id === 'string'
+      || typeof data.scope_vpn_order_id === 'string'
+    ),
+  )
+}
+
 const hasDealSignals = computed(() => {
   if (resolvedLatestDealMessage.value) {
     return true
   }
-  return chatMessages.value.some(message => message.message_type === 'purchase_message')
+  return chatMessages.value.some(message => (
+    message.message_type === 'purchase_message'
+    || message.message_type === 'price_offer_message' && Boolean(message.accepted_deal_id)
+    || messageHasDealMetadata(message)
+  ))
 })
 
 const isChatHistoryFullyLoaded = computed(() => {
