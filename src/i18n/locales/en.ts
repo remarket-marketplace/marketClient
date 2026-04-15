@@ -1136,6 +1136,8 @@ const en = {
         title: "Make a price offer",
         message: "Set a price below current and optionally add a message for the seller.",
         offeredPriceLabel: "Your price",
+        minPriceHint: "Maximum discount is {percent}%. Minimum offer price: {minPrice}.",
+        minPriceError: "Minimum offer price is {minPrice} (max {percent}% discount).",
         quickDiscountsLabel: "Quick discount buttons",
         previewLabel: "Offer preview",
         discountBadge: "{percent}% lower",

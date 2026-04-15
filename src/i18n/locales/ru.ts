@@ -1135,6 +1135,8 @@ const ru = {
         title: "Предложить свою цену",
         message: "Укажите цену ниже текущей и при желании оставьте комментарий продавцу.",
         offeredPriceLabel: "Ваша цена",
+        minPriceHint: "Скидка не более {percent}%. Минимальная цена: {minPrice}.",
+        minPriceError: "Минимальная цена — {minPrice} (скидка не более {percent}%).",
         quickDiscountsLabel: "Быстрые кнопки снижения",
         previewLabel: "Итог предложения",
         discountBadge: "Ниже на {percent}%",
