@@ -391,6 +391,7 @@ const ru = {
     INVALID_SUBSCRIPTION_TARGET: "Нельзя подписаться на самого себя",
     TELEGRAM_INTEGRATION_DISABLED: "Интеграция Telegram временно отключена администратором",
     STEAM_TOPUP_DISABLED: "Пополнение Steam временно недоступно",
+    STEAM_TOPUP_PROVIDER_WHITELIST: "Пополнение Steam недоступно: IP сервера не добавлен в whitelist у провайдера",
     STEAM_TOPUP_PROVIDER_ERROR: "Провайдер пополнения Steam вернул ошибку",
     STEAM_TOPUP_SERVICE_NOT_FOUND: "Сервис пополнения Steam не найден",
     STEAM_TOPUP_ORDER_NOT_READY: "Заказ еще не готов к оплате",
@@ -1291,6 +1292,11 @@ const ru = {
       yesterday: "Вчера",
       waitReplyReminderSender: "Чтобы продолжить общение, дождитесь ответа собеседника.",
       waitReplyReminderRecipient: "Пользователь сможет отправлять вам сообщения только после вашего ответа.",
+      openLink: "Открыть ссылку",
+      externalLinkModal: {
+        title: "Перейти по ссылке?",
+        description: "Вы собираетесь открыть внешнюю ссылку.",
+      },
       scopeVpn: {
         trialTitle: "Scope VPN: пробный период на 1 сутки",
         paidTitle: "Scope VPN: доступ на {days} дней",

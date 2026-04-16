@@ -391,6 +391,7 @@ const en = {
     INVALID_SUBSCRIPTION_TARGET: "You cannot subscribe to yourself",
     TELEGRAM_INTEGRATION_DISABLED: "Telegram integration is temporarily disabled by administrator",
     STEAM_TOPUP_DISABLED: "Steam top-up is temporarily unavailable",
+    STEAM_TOPUP_PROVIDER_WHITELIST: "Steam top-up is unavailable: the server IP is not whitelisted by the provider",
     STEAM_TOPUP_PROVIDER_ERROR: "Steam top-up provider returned an error",
     STEAM_TOPUP_SERVICE_NOT_FOUND: "Steam top-up service not found",
     STEAM_TOPUP_ORDER_NOT_READY: "Order is not ready for payment yet",
@@ -1292,6 +1293,11 @@ const en = {
       yesterday: "Yesterday",
       waitReplyReminderSender: "To continue chatting, wait for the other user to reply.",
       waitReplyReminderRecipient: "This user will be able to send more messages only after your reply.",
+      openLink: "Open link",
+      externalLinkModal: {
+        title: "Open this link?",
+        description: "You are about to open an external link.",
+      },
       scopeVpn: {
         trialTitle: "Scope VPN: trial period for 1 day",
         paidTitle: "Scope VPN: access for {days} days",

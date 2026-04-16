@@ -116,23 +116,17 @@ onUnmounted(() => {
 const navItems = computed(() => {
   const items: NavItem[] = [
     {
-      id: 'home',
-      title: t('navigation.market.home'),
-      icon: Home,
-      to: '/'
+      id: 'sell',
+      title: t('navigation.market.sell'),
+      icon: PlusCircle,
+      to: user && user.value?.username ? '/product/create' : '/signin',
+      sell: true
     },
     {
       id: 'chats',
       title: t('navigation.market.chats'),
       icon: MessageCircle,
       to: user && user.value?.username ? '/chats' : '/signin',
-    },
-    {
-      id: 'sell',
-      title: t('navigation.market.sell'),
-      icon: PlusCircle,
-      to: user && user.value?.username ? '/product/create' : '/signin',
-      sell: true
     },
     {
       id: 'profile',
@@ -156,6 +150,62 @@ const navItems = computed(() => {
     const partnerType = getPartnerType()
     const partnerRoute = partnerType === 'vpn' 
       ? '/partner/vpn-stats' 
+      : '/partner/fortnite-stats'
+    items.push({
+      id: 'partner-stats',
+      title: t('common.partner'),
+      icon: BarChart3,
+      to: partnerRoute,
+      partner: true
+    })
+  }
+
+  return items
+})
+
+const mobileNavItems = computed(() => {
+  const items: NavItem[] = [
+    {
+      id: 'home',
+      title: t('navigation.market.home'),
+      icon: Home,
+      to: '/'
+    },
+    {
+      id: 'sell',
+      title: t('navigation.market.sell'),
+      icon: PlusCircle,
+      to: user && user.value?.username ? '/product/create' : '/signin',
+      sell: true
+    },
+    {
+      id: 'chats',
+      title: t('navigation.market.chats'),
+      icon: MessageCircle,
+      to: user && user.value?.username ? '/chats' : '/signin',
+    },
+    {
+      id: 'profile',
+      title: t('navigation.market.profile'),
+      icon: User,
+      to: user && user.value?.username ? `/user/${user.value.username}` : '/signin',
+    },
+  ]
+
+  if (user.value?.role === 'admin') {
+    items.push({
+      id: 'admin',
+      title: t('navigation.market.admin'),
+      icon: Shield,
+      to: '/admin',
+      admin: true
+    })
+  }
+
+  if (user.value?.role === 'partner') {
+    const partnerType = getPartnerType()
+    const partnerRoute = partnerType === 'vpn'
+      ? '/partner/vpn-stats'
       : '/partner/fortnite-stats'
     items.push({
       id: 'partner-stats',
@@ -205,7 +255,7 @@ function goToSteamTopUp() {
 }
 
 const mobileNavGridStyle = computed(() => ({
-  gridTemplateColumns: `repeat(${Math.max(1, navItems.value.length)}, minmax(0, 1fr))`,
+  gridTemplateColumns: `repeat(${Math.max(1, mobileNavItems.value.length)}, minmax(0, 1fr))`,
 }))
 </script>
 
@@ -283,17 +333,6 @@ const mobileNavGridStyle = computed(() => ({
                 </span>
               </router-link>
 
-              <button
-                v-if="user && user.role !== 'admin'"
-                type="button"
-                class="inline-flex h-9 items-center gap-1.5 rounded-full border border-gray-700 bg-transparent px-2.5 text-xs text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white focus:outline-none"
-                :title="walletTitle"
-                @click="goToWallet"
-              >
-                <Wallet class="h-3.5 w-3.5 text-blue-400" />
-                <span class="font-medium">{{ walletBalanceLabel }}</span>
-              </button>
-
               <router-link v-for="item in roleNavItems" :key="item.id" :to="item.to"
                 class="flex items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"
                 :class="{
@@ -320,6 +359,17 @@ const mobileNavGridStyle = computed(() => ({
                   {{ item.title }}
                 </span>
               </router-link>
+
+              <button
+                v-if="user && user.role !== 'admin'"
+                type="button"
+                class="inline-flex h-9 items-center gap-1.5 rounded-full border border-gray-700 bg-transparent px-2.5 text-xs text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white focus:outline-none"
+                :title="walletTitle"
+                @click="goToWallet"
+              >
+                <Wallet class="h-3.5 w-3.5 text-blue-400" />
+                <span class="font-medium">{{ walletBalanceLabel }}</span>
+              </button>
 
               <button
                 v-if="user && user.role === 'admin'"
@@ -366,7 +416,7 @@ const mobileNavGridStyle = computed(() => ({
   
       <nav class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-30 h-14 border-t border-gray-700 md:hidden">
         <div class="mx-auto grid h-full w-full items-center" :style="mobileNavGridStyle">
-          <router-link v-for="item in navItems" :key="item.id" :to="item.to"
+          <router-link v-for="item in mobileNavItems" :key="item.id" :to="item.to"
             class="relative flex min-w-0 flex-col items-center justify-center px-0.5 transition-all duration-300 group" :class="{
               'opacity-100': isActiveRouteMobile(item),
               'opacity-70': !isActiveRouteMobile(item)

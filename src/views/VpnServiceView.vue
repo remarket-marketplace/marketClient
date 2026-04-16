@@ -396,7 +396,7 @@ onMounted(() => {
     </div>
 
     <div class="relative mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">
-      <section class="grid gap-6 border-y border-white/[0.08] py-10 lg:grid-cols-[0.85fr_1.15fr]">
+      <section class="grid gap-6 py-10 lg:grid-cols-[0.85fr_1.15fr]">
         <div>
           <p class="text-sm font-medium text-blue-200">{{ t('pages.vpn.featuresEyebrow') }}</p>
           <h2 class="mt-3 text-3xl font-semibold leading-tight text-white sm:text-4xl">
@@ -404,7 +404,7 @@ onMounted(() => {
           </h2>
         </div>
 
-        <div class="divide-y divide-white/[0.08]">
+        <div>
           <div
             v-for="feature in featureItems"
             :key="feature.title"
@@ -421,7 +421,7 @@ onMounted(() => {
         </div>
       </section>
 
-      <section class="grid gap-6 border-b border-white/[0.08] py-10 lg:grid-cols-[0.85fr_1.15fr]">
+      <section class="grid gap-6 py-10 lg:grid-cols-[0.85fr_1.15fr]">
         <div>
           <p class="text-sm font-medium text-blue-200">{{ t('pages.vpn.appsEyebrow') }}</p>
           <h2 class="mt-3 text-3xl font-semibold leading-tight text-white sm:text-4xl">

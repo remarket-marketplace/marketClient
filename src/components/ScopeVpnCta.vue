@@ -57,11 +57,13 @@ const text = computed(() => (
 
 <style scoped>
 .scope-vpn-entry {
+  width: 100%;
   color: var(--white-solid);
 }
 
 .scope-vpn-entry__link {
   display: flex;
+  width: 100%;
   min-height: 4.25rem;
   align-items: center;
   gap: 0.75rem;

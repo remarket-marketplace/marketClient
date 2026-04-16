@@ -75,7 +75,7 @@ async function loadArchivedProducts(page = 1, append = false) {
       userStore.user.username,
       page,
       perPage,
-      'rejected',
+      'archive',
     )
 
     products.value = append ? [...products.value, ...response.products] : response.products

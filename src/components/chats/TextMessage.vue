@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { Check, CheckCheck, Copy } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
+import AppModal from '@/components/AppModal.vue'
 
 interface TextMessageProps {
   id: string;
@@ -28,7 +29,7 @@ const props = defineProps<{
 
 const { t, locale } = useI18n()
 const isScopeVpnLinkCopied = ref(false)
-const copiedInlineLink = ref<string | null>(null)
+const pendingExternalUrl = ref<string | null>(null)
 
 type TextPart =
   | { type: 'text'; value: string }
@@ -126,16 +127,20 @@ async function copyScopeVpnLink() {
   }, 1600)
 }
 
-async function copyInlineLink(url: string) {
-  if (!url || typeof navigator === 'undefined' || !navigator.clipboard) return
+function requestOpenExternalLink(url: string) {
+  if (!url) return
+  pendingExternalUrl.value = url
+}
 
-  await navigator.clipboard.writeText(url)
-  copiedInlineLink.value = url
-  window.setTimeout(() => {
-    if (copiedInlineLink.value === url) {
-      copiedInlineLink.value = null
-    }
-  }, 1600)
+function closeExternalLinkModal() {
+  pendingExternalUrl.value = null
+}
+
+function confirmOpenExternalLink() {
+  const url = pendingExternalUrl.value
+  if (!url || typeof window === 'undefined') return
+  window.open(url, '_blank', 'noopener,noreferrer')
+  pendingExternalUrl.value = null
 }
 
 const adminContent = computed(() => {
@@ -233,9 +238,9 @@ const shouldRenderAdminMessage = computed(() => {
               <button
                 v-else
                 type="button"
-                class="inline rounded-sm text-sky-300 underline decoration-sky-300/70 underline-offset-2 transition hover:text-sky-200"
-                :title="copiedInlineLink === part.value ? t('common.copied') : t('common.copy')"
-                @click="copyInlineLink(part.value)"
+                class="inline-block max-w-full whitespace-normal break-all align-baseline rounded-sm text-left text-sky-300 underline decoration-sky-300/70 underline-offset-2 transition hover:text-sky-200"
+                :title="t('pages.chats.openLink')"
+                @click="requestOpenExternalLink(part.value)"
               >
                 {{ part.value }}
               </button>
@@ -251,9 +256,9 @@ const shouldRenderAdminMessage = computed(() => {
                   <button
                     v-else
                     type="button"
-                    class="inline rounded-sm text-sky-300 underline decoration-sky-300/70 underline-offset-2 transition hover:text-sky-200"
-                    :title="copiedInlineLink === part.value ? t('common.copied') : t('common.copy')"
-                    @click="copyInlineLink(part.value)"
+                    class="inline-block max-w-full whitespace-normal break-all align-baseline rounded-sm text-left text-sky-300 underline decoration-sky-300/70 underline-offset-2 transition hover:text-sky-200"
+                    :title="t('pages.chats.openLink')"
+                    @click="requestOpenExternalLink(part.value)"
                   >
                     {{ part.value }}
                   </button>
@@ -303,20 +308,25 @@ const shouldRenderAdminMessage = computed(() => {
           {{ t('pages.chats.scopeVpn.connectionLink') }}
         </p>
 
-        <button
-          type="button"
-          class="mt-2 flex w-full min-w-0 items-center gap-2 rounded-xl border border-dark-600 bg-dark-900/55 px-3 py-2 text-left transition hover:border-dark-500 hover:bg-dark-900/75"
-          :title="t('pages.chats.scopeVpn.copyLink')"
-          @click="copyScopeVpnLink"
-        >
-          <span class="min-w-0 flex-1 break-all text-xs leading-5 text-gray-100">
+        <div class="mt-2 flex w-full min-w-0 items-start gap-2 rounded-xl border border-dark-600 bg-dark-900/55 px-3 py-2">
+          <button
+            type="button"
+          class="min-w-0 flex-1 whitespace-normal break-all text-left text-xs leading-5 text-sky-300 underline decoration-sky-300/70 underline-offset-2 transition hover:text-sky-200"
+            :title="t('pages.chats.openLink')"
+            @click="requestOpenExternalLink(scopeVpnData.subscriptionUrl)"
+          >
             {{ scopeVpnData.subscriptionUrl }}
-          </span>
-          <span class="inline-flex shrink-0 items-center gap-1 rounded-full border border-dark-600 bg-dark-700/70 px-2 py-1 text-[11px] font-semibold text-gray-200">
+          </button>
+          <button
+            type="button"
+            class="inline-flex shrink-0 items-center gap-1 rounded-full border border-dark-600 bg-dark-700/70 px-2 py-1 text-[11px] font-semibold text-gray-200 transition hover:border-dark-500 hover:text-white"
+            :title="t('pages.chats.scopeVpn.copyLink')"
+            @click="copyScopeVpnLink"
+          >
             <Copy class="h-3.5 w-3.5" stroke-width="1.8" />
             {{ isScopeVpnLinkCopied ? t('common.copied') : t('common.copy') }}
-          </span>
-        </button>
+          </button>
+        </div>
 
         <p v-if="scopeVpnTrafficLimit" class="mt-2 text-xs leading-5 text-gray-300">
           {{ scopeVpnTrafficLimit }}
@@ -364,9 +374,9 @@ const shouldRenderAdminMessage = computed(() => {
         <button
           v-else
           type="button"
-          class="inline rounded-sm text-sky-200 underline decoration-sky-200/70 underline-offset-2 transition hover:text-sky-100"
-          :title="copiedInlineLink === part.value ? t('common.copied') : t('common.copy')"
-          @click="copyInlineLink(part.value)"
+          class="inline-block max-w-full whitespace-normal break-all align-baseline rounded-sm text-left text-sky-200 underline decoration-sky-200/70 underline-offset-2 transition hover:text-sky-100"
+          :title="t('pages.chats.openLink')"
+          @click="requestOpenExternalLink(part.value)"
         >
           {{ part.value }}
         </button>
@@ -382,9 +392,9 @@ const shouldRenderAdminMessage = computed(() => {
             <button
               v-else
               type="button"
-              class="inline rounded-sm text-sky-200 underline decoration-sky-200/70 underline-offset-2 transition hover:text-sky-100"
-              :title="copiedInlineLink === part.value ? t('common.copied') : t('common.copy')"
-              @click="copyInlineLink(part.value)"
+              class="inline-block max-w-full whitespace-normal break-all align-baseline rounded-sm text-left text-sky-200 underline decoration-sky-200/70 underline-offset-2 transition hover:text-sky-100"
+              :title="t('pages.chats.openLink')"
+              @click="requestOpenExternalLink(part.value)"
             >
               {{ part.value }}
             </button>
@@ -416,4 +426,37 @@ const shouldRenderAdminMessage = computed(() => {
       </span>
     </div>
 	</div>
+
+  <AppModal
+    :is-open="Boolean(pendingExternalUrl)"
+    :title="t('pages.chats.externalLinkModal.title')"
+    :description="t('pages.chats.externalLinkModal.description')"
+    size="sm"
+    @cancel="closeExternalLinkModal"
+  >
+    <div class="rounded-lg border border-white/[0.08] bg-white/[0.03] p-3">
+      <p class="break-all text-sm leading-6 text-gray-100">
+        {{ pendingExternalUrl }}
+      </p>
+    </div>
+
+    <template #footer>
+      <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          class="inline-flex h-10 items-center justify-center rounded-lg border border-white/[0.1] bg-white/[0.04] px-4 text-sm font-semibold text-gray-200 transition hover:bg-white/[0.08]"
+          @click="closeExternalLinkModal"
+        >
+          {{ t('common.cancel') }}
+        </button>
+        <button
+          type="button"
+          class="market-primary-surface market-primary-hover inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-semibold text-white transition-colors duration-200"
+          @click="confirmOpenExternalLink"
+        >
+          {{ t('pages.chats.openLink') }}
+        </button>
+      </div>
+    </template>
+  </AppModal>
 </template>
