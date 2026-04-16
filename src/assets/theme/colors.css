@@ -16,6 +16,10 @@
   --palette-dark-700: 42 42 42;
   --palette-dark-800: 31 31 31;
   --palette-dark-900: 18 18 18;
+  --palette-night-800: 20 20 30;
+  --palette-navy-925: 5 8 15;
+  --palette-navy-900: 2 6 23;
+  --palette-navy-850: 12 17 24;
 
   --palette-gray-50: 249 250 251;
   --palette-gray-100: 243 244 246;
@@ -30,6 +34,7 @@
 
   --palette-slate-100: 241 245 249;
   --palette-slate-300: 203 213 225;
+  --palette-slate-400: 148 163 184;
   --palette-slate-500: 100 116 139;
   --palette-slate-600: 71 85 105;
   --palette-slate-700: 51 65 85;
@@ -62,6 +67,7 @@
   --palette-cyan-900: 22 78 99;
 
   --palette-sky-500: 14 165 233;
+  --palette-sky-25: 239 250 255;
   --palette-sky-900: 12 74 110;
   --palette-indigo-400: 129 140 248;
   --palette-indigo-500: 99 102 241;
@@ -286,7 +292,7 @@
   --chart-status-confirmed: rgb(var(--palette-cyan-400)); /* Confirmed deals bar color. */
   --chart-status-completed: rgb(var(--palette-green-500)); /* Completed deals bar color. */
   --chart-status-disputed: rgb(var(--palette-rose-400)); /* Disputed deals bar color. */
-  --chart-status-cancelled: rgb(148 163 184); /* Cancelled deals bar color. */
+  --chart-status-cancelled: rgb(var(--palette-slate-400)); /* Cancelled deals bar color. */
   --chart-status-refunded: rgb(var(--palette-orange-500)); /* Refunded deals bar color. */
   --chart-status-default: rgb(var(--palette-blue-400)); /* Fallback status bar color. */
   --chart-series-top-categories: rgb(var(--palette-emerald-400)); /* Top categories bar series color. */

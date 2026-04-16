@@ -42,20 +42,20 @@ const pendingPlatformToggle = ref<{
   nextValue: boolean
 } | null>(null)
 
-const CHART_COLORS = {
-  axisText: '#9ca3af',
-  legendText: '#e5e7eb',
-  gridBorder: '#334155',
-  revenue: '#0ea5e9',
-  users: '#a855f7',
-  statusPending: '#f59e0b',
-  statusConfirmed: '#22d3ee',
-  statusCompleted: '#22c55e',
-  statusDisputed: '#fb7185',
-  statusCancelled: '#94a3b8',
-  statusRefunded: '#f97316',
-  statusDefault: '#60a5fa',
-  topCategories: '#34d399',
+const CHART_FALLBACK_TOKENS = {
+  axisText: '--palette-gray-400',
+  legendText: '--palette-gray-200',
+  gridBorder: '--palette-slate-500',
+  revenue: '--palette-sky-500',
+  users: '--palette-purple-500',
+  statusPending: '--palette-amber-500',
+  statusConfirmed: '--palette-cyan-400',
+  statusCompleted: '--palette-green-500',
+  statusDisputed: '--palette-rose-400',
+  statusCancelled: '--palette-slate-400',
+  statusRefunded: '--palette-orange-500',
+  statusDefault: '--palette-blue-400',
+  topCategories: '--palette-emerald-400',
 } as const
 
 function normalizeApexColor(value: string, fallback: string): string {
@@ -78,10 +78,7 @@ function normalizeApexColor(value: string, fallback: string): string {
     }
 
     const rgbLike = normalized.match(/^rgba?\((.+)\)$/i)
-    if (!rgbLike) return null
-
-    const body = rgbLike[1] ?? ''
-    if (!body) return null
+    const body = rgbLike?.[1] ?? normalized
     const numbers = body.match(/[\d.]+/g)
     if (!numbers || numbers.length < 3) return null
 
@@ -97,9 +94,11 @@ function normalizeApexColor(value: string, fallback: string): string {
 }
 
 const cssVar = (token: string, fallback: string) => {
-  if (typeof window === 'undefined') return normalizeApexColor('', fallback)
-  const value = window.getComputedStyle(document.documentElement).getPropertyValue(token).trim()
-  return normalizeApexColor(value, fallback)
+  if (typeof window === 'undefined') return normalizeApexColor('', '')
+  const styles = window.getComputedStyle(document.documentElement)
+  const value = styles.getPropertyValue(token).trim()
+  const fallbackValue = styles.getPropertyValue(fallback).trim() || styles.getPropertyValue('--palette-blue-500').trim()
+  return normalizeApexColor(value, fallbackValue)
 }
 
 const formatCurrency = (value: number) =>
@@ -276,11 +275,11 @@ const revenueSeries = computed(() => {
 })
 
 const revenueOptions = computed<ApexOptions>(() => {
-  const axisText = cssVar('--chart-axis-text', CHART_COLORS.axisText)
-  const legendText = cssVar('--chart-legend-text', CHART_COLORS.legendText)
-  const gridBorder = cssVar('--chart-grid-border', CHART_COLORS.gridBorder)
-  const revenueColor = cssVar('--chart-series-revenue', CHART_COLORS.revenue)
-  const usersColor = cssVar('--chart-series-users', CHART_COLORS.users)
+  const axisText = cssVar('--chart-axis-text', CHART_FALLBACK_TOKENS.axisText)
+  const legendText = cssVar('--chart-legend-text', CHART_FALLBACK_TOKENS.legendText)
+  const gridBorder = cssVar('--chart-grid-border', CHART_FALLBACK_TOKENS.gridBorder)
+  const revenueColor = cssVar('--chart-series-revenue', CHART_FALLBACK_TOKENS.revenue)
+  const usersColor = cssVar('--chart-series-users', CHART_FALLBACK_TOKENS.users)
 
   return {
     chart: {
@@ -364,8 +363,8 @@ const revenueOptions = computed<ApexOptions>(() => {
 })
 
 const statusOptions = computed<ApexOptions>(() => {
-  const axisText = cssVar('--chart-axis-text', CHART_COLORS.axisText)
-  const gridBorder = cssVar('--chart-grid-border', CHART_COLORS.gridBorder)
+  const axisText = cssVar('--chart-axis-text', CHART_FALLBACK_TOKENS.axisText)
+  const gridBorder = cssVar('--chart-grid-border', CHART_FALLBACK_TOKENS.gridBorder)
   const statuses = dealsStatus.value
   const categories = statuses.map((s) => {
     const translated = t(`common.dealStatuses.${s.status}`)
@@ -373,14 +372,14 @@ const statusOptions = computed<ApexOptions>(() => {
     return String(label)
   })
   const colorsMap: Record<string, string> = {
-    pending: cssVar('--chart-status-pending', CHART_COLORS.statusPending),
-    confirmed: cssVar('--chart-status-confirmed', CHART_COLORS.statusConfirmed),
-    completed: cssVar('--chart-status-completed', CHART_COLORS.statusCompleted),
-    disputed: cssVar('--chart-status-disputed', CHART_COLORS.statusDisputed),
-    cancelled: cssVar('--chart-status-cancelled', CHART_COLORS.statusCancelled),
-    refunded: cssVar('--chart-status-refunded', CHART_COLORS.statusRefunded),
+    pending: cssVar('--chart-status-pending', CHART_FALLBACK_TOKENS.statusPending),
+    confirmed: cssVar('--chart-status-confirmed', CHART_FALLBACK_TOKENS.statusConfirmed),
+    completed: cssVar('--chart-status-completed', CHART_FALLBACK_TOKENS.statusCompleted),
+    disputed: cssVar('--chart-status-disputed', CHART_FALLBACK_TOKENS.statusDisputed),
+    cancelled: cssVar('--chart-status-cancelled', CHART_FALLBACK_TOKENS.statusCancelled),
+    refunded: cssVar('--chart-status-refunded', CHART_FALLBACK_TOKENS.statusRefunded),
   }
-  const fallbackColor = cssVar('--chart-status-default', CHART_COLORS.statusDefault)
+  const fallbackColor = cssVar('--chart-status-default', CHART_FALLBACK_TOKENS.statusDefault)
   const colors = statuses.map(s => colorsMap[s.status] || fallbackColor)
   return {
     chart: {
@@ -426,10 +425,10 @@ const statusSeries = computed(() => [
 ])
 
 const topCategoriesOptions = computed<ApexOptions>(() => {
-  const axisText = cssVar('--chart-axis-text', CHART_COLORS.axisText)
-  const legendText = cssVar('--chart-legend-text', CHART_COLORS.legendText)
-  const gridBorder = cssVar('--chart-grid-border', CHART_COLORS.gridBorder)
-  const seriesColor = cssVar('--chart-series-top-categories', CHART_COLORS.topCategories)
+  const axisText = cssVar('--chart-axis-text', CHART_FALLBACK_TOKENS.axisText)
+  const legendText = cssVar('--chart-legend-text', CHART_FALLBACK_TOKENS.legendText)
+  const gridBorder = cssVar('--chart-grid-border', CHART_FALLBACK_TOKENS.gridBorder)
+  const seriesColor = cssVar('--chart-series-top-categories', CHART_FALLBACK_TOKENS.topCategories)
 
   return {
     chart: {
