@@ -110,7 +110,7 @@ onUnmounted(() => {
   <Transition name="cookie-banner">
     <aside
       v-if="showBanner"
-      class="fixed inset-x-2 bottom-16 z-[150] mx-auto max-w-4xl rounded-2xl border border-white/15 bg-dark-900/95 p-4 text-mainText shadow-[0_20px_55px_rgba(0,0,0,0.55)] backdrop-blur-xl md:bottom-4 md:px-5"
+      class="cookie-banner-surface fixed inset-x-2 bottom-16 z-[150] mx-auto max-w-4xl rounded-2xl border border-white/15 bg-dark-900/95 p-4 text-mainText backdrop-blur-xl md:bottom-4 md:px-5"
       role="dialog"
       aria-live="polite"
       :aria-label="t('common.cookies.title')"
@@ -164,7 +164,7 @@ onUnmounted(() => {
       aria-modal="true"
       :aria-label="t('common.cookies.modalTitle')"
     >
-      <div class="w-full max-w-xl rounded-2xl border border-white/15 bg-dark-900 p-4 text-mainText shadow-[0_25px_80px_rgba(0,0,0,0.6)] sm:p-5">
+      <div class="cookie-modal-surface w-full max-w-xl rounded-2xl border border-white/15 bg-dark-900 p-4 text-mainText sm:p-5">
         <div class="mb-4 flex items-start justify-between gap-3">
           <div>
             <h3 class="text-base font-semibold text-white">{{ t('common.cookies.modalTitle') }}</h3>
@@ -272,6 +272,14 @@ onUnmounted(() => {
 .cookie-banner-enter-active,
 .cookie-banner-leave-active {
   transition: all 0.2s ease;
+}
+
+.cookie-banner-surface {
+  box-shadow: 0 20px 55px rgb(var(--palette-black) / 0.55);
+}
+
+.cookie-modal-surface {
+  box-shadow: 0 25px 80px rgb(var(--palette-black) / 0.6);
 }
 
 .cookie-banner-enter-from,

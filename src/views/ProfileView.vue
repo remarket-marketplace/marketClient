@@ -1165,7 +1165,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
         @cancel="closeShareModal"
       >
         <div class="flex flex-col items-center space-y-4">
-          <div class="rounded-2xl bg-white p-4 shadow-[0_20px_50px_rgba(0,0,0,0.2)]">
+          <div class="profile-qr-card rounded-2xl bg-white p-4">
             <QrcodeVue :value="profileUrl" :size="180" level="H" />
           </div>
           <p class="text-center text-sm text-gray-300">{{ t('pages.profile.scanQR') }}</p>
@@ -1209,6 +1209,10 @@ input[type="number"]::-webkit-outer-spin-button {
 
 input[type="number"] {
   -moz-appearance: textfield;
+}
+
+.profile-qr-card {
+  box-shadow: 0 20px 50px rgb(var(--palette-black) / 0.2);
 }
 
 .profile-products-grid {

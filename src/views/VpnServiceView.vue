@@ -618,7 +618,7 @@ onMounted(() => {
 
 <style scoped>
 .vpn-page {
-  background: rgb(18 18 18);
+  background: var(--background-color);
 }
 
 .vpn-page__grid {
@@ -626,8 +626,8 @@ onMounted(() => {
     linear-gradient(to right, rgb(var(--palette-white) / 0.045) 1px, transparent 1px),
     linear-gradient(to bottom, rgb(var(--palette-white) / 0.045) 1px, transparent 1px);
   background-size: 72px 72px;
-  mask-image: linear-gradient(to bottom, black 0%, black 54%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 54%, transparent 100%);
+  mask-image: linear-gradient(to bottom, rgb(var(--palette-black)) 0%, rgb(var(--palette-black)) 54%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, rgb(var(--palette-black)) 0%, rgb(var(--palette-black)) 54%, transparent 100%);
 }
 
 .vpn-page__copy {
@@ -667,7 +667,7 @@ onMounted(() => {
   min-width: 8.5rem;
   border: 1px solid rgb(var(--palette-white) / 0.12);
   border-radius: 9999px;
-  background: rgb(12 17 24 / 0.44);
+  background: rgb(var(--palette-navy-850) / 0.44);
   padding: 0.625rem 0.75rem;
   color: rgb(var(--palette-gray-200));
   font-size: 0.8125rem;
@@ -675,7 +675,7 @@ onMounted(() => {
   white-space: nowrap;
   box-shadow:
     inset 0 1px 0 rgb(var(--palette-white) / 0.08),
-    0 14px 32px rgb(0 0 0 / 0.18);
+    0 14px 32px rgb(var(--palette-black) / 0.18);
   backdrop-filter: saturate(140%) blur(18px);
   -webkit-backdrop-filter: saturate(140%) blur(18px);
 }
@@ -826,13 +826,13 @@ onMounted(() => {
     justify-content: center;
     padding: 0.32rem 0.46rem;
     border-color: rgb(var(--palette-white) / 0.13);
-    background: rgb(12 17 24 / 0.34);
+    background: rgb(var(--palette-navy-850) / 0.34);
     font-size: 0.58rem;
     line-height: 1;
     text-align: left;
     box-shadow:
       inset 0 1px 0 rgb(var(--palette-white) / 0.07),
-      0 10px 24px rgb(0 0 0 / 0.16);
+      0 10px 24px rgb(var(--palette-black) / 0.16);
     backdrop-filter: saturate(150%) blur(20px);
     -webkit-backdrop-filter: saturate(150%) blur(20px);
   }

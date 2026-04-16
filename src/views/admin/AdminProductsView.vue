@@ -1081,8 +1081,8 @@ button {
 .change-panel-header:focus-visible {
   outline: none;
   box-shadow:
-    0 0 0 1px rgba(148, 163, 184, 0.55),
-    0 0 0 3px rgba(56, 189, 248, 0.22);
+    0 0 0 1px rgb(var(--palette-slate-400) / 0.55),
+    0 0 0 3px rgb(var(--palette-sky-400) / 0.22);
 }
 
 /* Убедимся что текст не выходит за пределы */
@@ -1093,7 +1093,12 @@ button {
 }
 
 .admin-filters-sticky {
-  background: linear-gradient(to bottom, rgba(5, 8, 15, 0.96), rgba(5, 8, 15, 0.78) 70%, transparent);
+  background: linear-gradient(
+    to bottom,
+    rgb(var(--palette-navy-925) / 0.96),
+    rgb(var(--palette-navy-925) / 0.78) 70%,
+    transparent
+  );
   backdrop-filter: blur(2px);
 }
 
@@ -1153,9 +1158,9 @@ button {
 }
 
 .product-list-card:hover {
-  border-color: rgba(148, 163, 184, 0.22);
-  background: rgba(255, 255, 255, 0.012);
-  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.3);
+  border-color: rgb(var(--palette-slate-400) / 0.22);
+  background: rgb(var(--palette-white) / 0.012);
+  box-shadow: 0 8px 24px rgb(var(--palette-navy-900) / 0.3);
 }
 
 .product-has-changes::before {
@@ -1166,13 +1171,13 @@ button {
   bottom: 14px;
   width: 2px;
   border-radius: 9999px;
-  background: rgba(99, 102, 241, 0.45);
+  background: rgb(var(--palette-indigo-500) / 0.45);
 }
 
 .change-panel {
   position: relative;
-  border: 1px solid rgba(148, 163, 184, 0.12);
-  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgb(var(--palette-slate-400) / 0.12);
+  background: rgb(var(--palette-white) / 0.02);
   backdrop-filter: blur(1px);
   box-shadow: none;
 }
@@ -1186,16 +1191,16 @@ button {
 }
 
 .change-panel-header {
-  border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+  border-bottom: 1px solid rgb(var(--palette-slate-400) / 0.08);
   transition: background-color 180ms ease;
 }
 
 .change-panel-header:hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgb(var(--palette-white) / 0.02);
 }
 
 .change-panel-header {
-  color: rgba(241, 245, 249, 0.96);
+  color: rgb(var(--palette-slate-100) / 0.96);
 }
 
 .change-panel-dot {
@@ -1205,8 +1210,8 @@ button {
   height: 1.6rem;
   width: 1.6rem;
   border-radius: 9999px;
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid rgb(var(--palette-slate-400) / 0.22);
+  background: rgb(var(--palette-slate-400) / 0.08);
 }
 
 .change-panel-count {
@@ -1215,16 +1220,16 @@ button {
   justify-content: center;
   border-radius: 9999px;
   border: none;
-  background: rgba(148, 163, 184, 0.08);
+  background: rgb(var(--palette-slate-400) / 0.08);
   padding: 0.08rem 0.45rem;
   font-size: 0.68rem;
   font-weight: 700;
-  color: #cbd5e1;
+  color: rgb(var(--palette-slate-300));
 }
 
 .change-table-row {
   border: none;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgb(var(--palette-white) / 0.02);
 }
 
 .change-cell {
@@ -1237,24 +1242,24 @@ button {
 
 .change-value {
   border: none;
-  background: rgba(255, 255, 255, 0.014);
+  background: rgb(var(--palette-white) / 0.014);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .change-value-before {
-  border-left: 2px solid rgba(148, 163, 184, 0.2);
+  border-left: 2px solid rgb(var(--palette-slate-400) / 0.2);
 }
 
 .change-value-after {
-  border-left: 2px solid rgba(148, 163, 184, 0.26);
-  background: rgba(255, 255, 255, 0.02);
+  border-left: 2px solid rgb(var(--palette-slate-400) / 0.26);
+  background: rgb(var(--palette-white) / 0.02);
 }
 
 .change-value-number {
   font-weight: 700;
-  color: rgba(241, 245, 249, 0.96);
+  color: rgb(var(--palette-slate-100) / 0.96);
 }
 
 .admin-actions-group .admin-btn {
@@ -1267,39 +1272,39 @@ button {
 }
 
 .admin-btn-primary-soft {
-  border-color: rgba(59, 130, 246, 0.38);
-  background: rgba(37, 99, 235, 0.18);
-  color: rgb(219 234 254);
+  border-color: rgb(var(--palette-blue-500) / 0.38);
+  background: rgb(var(--palette-blue-600) / 0.18);
+  color: rgb(var(--palette-blue-100));
 }
 
 .admin-btn-primary-soft:hover {
-  border-color: rgba(96, 165, 250, 0.5);
-  background: rgba(37, 99, 235, 0.26);
+  border-color: rgb(var(--palette-blue-400) / 0.5);
+  background: rgb(var(--palette-blue-600) / 0.26);
 }
 
 .admin-btn-moderation-approve {
-  color: rgb(219 234 254);
-  border-color: rgba(59, 130, 246, 0.38);
-  background: rgba(37, 99, 235, 0.18);
+  color: rgb(var(--palette-blue-100));
+  border-color: rgb(var(--palette-blue-500) / 0.38);
+  background: rgb(var(--palette-blue-600) / 0.18);
 }
 
 .admin-btn-moderation-approve:hover,
 .admin-btn-moderation-approve:focus-visible {
-  color: rgb(239 246 255);
-  border-color: rgba(96, 165, 250, 0.5);
-  background: rgba(37, 99, 235, 0.26);
+  color: rgb(var(--palette-sky-50));
+  border-color: rgb(var(--palette-blue-400) / 0.5);
+  background: rgb(var(--palette-blue-600) / 0.26);
 }
 
 .admin-btn-moderation-reject {
-  color: rgb(229 231 235);
-  border-color: rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
+  color: rgb(var(--palette-gray-200));
+  border-color: rgb(var(--palette-white) / 0.1);
+  background: rgb(var(--palette-white) / 0.04);
 }
 
 .admin-btn-moderation-reject:hover,
 .admin-btn-moderation-reject:focus-visible {
-  color: rgb(255 255 255);
-  border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.08);
+  color: rgb(var(--palette-white));
+  border-color: rgb(var(--palette-white) / 0.18);
+  background: rgb(var(--palette-white) / 0.08);
 }
 </style>

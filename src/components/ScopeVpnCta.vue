@@ -88,7 +88,7 @@ const text = computed(() => (
   justify-content: center;
   overflow: hidden;
   border-radius: 9999px;
-  background: rgb(239 250 255);
+  background: rgb(var(--palette-sky-25));
 }
 
 .scope-vpn-entry__action {

@@ -175,7 +175,7 @@ watch(isOpen, async (opened) => {
         <ul
           v-show="isOpen"
           ref="dropdownRef"
-          class="fixed z-[180] overflow-auto rounded-xl border border-white/10 bg-dark-800/96 py-1 shadow-[0_24px_80px_rgba(0,0,0,0.58)] backdrop-blur-xl"
+          class="custom-select-dropdown fixed z-[180] overflow-auto rounded-xl border border-white/10 bg-dark-800/96 py-1 backdrop-blur-xl"
           :class="dropdownPlacement === 'top' ? 'origin-bottom' : 'origin-top'"
           :style="dropdownStyle"
           role="listbox"
@@ -240,5 +240,9 @@ watch(isOpen, async (opened) => {
 .fade-leave-from {
   opacity: 1;
   transform: translateY(0);
+}
+
+.custom-select-dropdown {
+  box-shadow: 0 24px 80px rgb(var(--palette-black) / 0.58);
 }
 </style>

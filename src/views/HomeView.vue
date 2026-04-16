@@ -1021,7 +1021,7 @@ onBeforeUnmount(() => {
 
         <div
           v-if="hasCategorySearchResults && isSearchDropdownOpen"
-          class="mt-2 w-full rounded-2xl border border-white/10 bg-[rgba(20,20,30,0.66)] p-2 shadow-[0_16px_38px_rgba(0,0,0,0.4)] backdrop-blur-xl"
+          class="home-category-search-dropdown mt-2 w-full rounded-2xl border border-white/10 p-2 backdrop-blur-xl"
         >
           <p class="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-400/85">
             {{ t('pages.index.categoriesFound') }}
@@ -1086,7 +1086,7 @@ onBeforeUnmount(() => {
               <button
                 v-if="shouldShowCategoryExpandButton && !areCategoriesExpanded"
                 type="button"
-                class="market-primary-surface market-primary-hover absolute right-1 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-blue-400/25 text-white shadow-[0_10px_24px_rgba(0,0,0,0.32)] ring-4 ring-dark-800/55 transition disabled:cursor-default disabled:opacity-60 sm:h-12 sm:w-12"
+                class="home-category-expand-btn market-primary-surface market-primary-hover absolute right-1 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-blue-400/25 text-white ring-4 ring-dark-800/55 transition disabled:cursor-default disabled:opacity-60 sm:h-12 sm:w-12"
                 :aria-expanded="areCategoriesExpanded"
                 :aria-label="areCategoriesExpanded ? t('pages.index.collapseCategories') : t('pages.index.expandCategories')"
                 :title="areCategoriesExpanded ? t('pages.index.collapseCategories') : t('pages.index.expandCategories')"
@@ -1449,8 +1449,17 @@ onBeforeUnmount(() => {
   font-size: 0.6875rem;
   line-height: 1.15;
   font-weight: 500;
-  -webkit-mask-image: linear-gradient(to right, #000 0%, #000 78%, transparent 100%);
-  mask-image: linear-gradient(to right, #000 0%, #000 78%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, rgb(var(--palette-black)) 0%, rgb(var(--palette-black)) 78%, transparent 100%);
+  mask-image: linear-gradient(to right, rgb(var(--palette-black)) 0%, rgb(var(--palette-black)) 78%, transparent 100%);
+}
+
+.home-category-search-dropdown {
+  background: rgb(var(--palette-night-800) / 0.66);
+  box-shadow: 0 16px 38px rgb(var(--palette-black) / 0.4);
+}
+
+.home-category-expand-btn {
+  box-shadow: 0 10px 24px rgb(var(--palette-black) / 0.32);
 }
 
 .home-expanded-categories-grid {
