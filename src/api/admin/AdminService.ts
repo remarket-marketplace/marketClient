@@ -93,6 +93,11 @@ export type ScopeVpnPartnerStats = {
   }>
 }
 
+export type ScopeVpnPartnerMessageSettings = {
+  partner_message_ru: string
+  partner_message_en: string
+}
+
 export type ActivityLogFilters = {
   user_id?: string
   username?: string
@@ -220,6 +225,28 @@ export const adminService = {
       return response.data as ScopeVpnPartnerStats;
     } catch (e) {
       console.error("Failed to load Scope VPN partner stats", e);
+      return null;
+    }
+  },
+
+  async getScopeVpnPartnerMessageSettings(): Promise<ScopeVpnPartnerMessageSettings | null> {
+    try {
+      const response = await httpClient.get("/admin/partners/vpn-message-settings");
+      return response.data as ScopeVpnPartnerMessageSettings;
+    } catch (e) {
+      console.error("Failed to load Scope VPN partner message settings", e);
+      return null;
+    }
+  },
+
+  async updateScopeVpnPartnerMessageSettings(
+    payload: ScopeVpnPartnerMessageSettings,
+  ): Promise<ScopeVpnPartnerMessageSettings | null> {
+    try {
+      const response = await httpClient.patch("/admin/partners/vpn-message-settings", payload);
+      return response.data as ScopeVpnPartnerMessageSettings;
+    } catch (e) {
+      console.error("Failed to update Scope VPN partner message settings", e);
       return null;
     }
   },

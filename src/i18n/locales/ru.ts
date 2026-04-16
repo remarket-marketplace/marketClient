@@ -1255,6 +1255,17 @@ const ru = {
       remove: 'Удалить из избранного',
     },
 
+    archiveProducts: {
+      title: 'Архив',
+      subtitle: 'Отклоненные товары после модерации',
+      searchPlaceholder: 'Поиск в архиве...',
+      archive: 'Архив товаров',
+      emptyTitle: 'Архив пуст',
+      emptyDescription: 'Отклоненные товары появятся здесь',
+      noResults: 'Ничего не найдено',
+      tryDifferentQuery: 'Попробуйте изменить поисковый запрос',
+    },
+
     chats: {
       title: "Чаты",
       errorLoadingChats: "Ошибка загрузки чатов",
@@ -1283,7 +1294,7 @@ const ru = {
       scopeVpn: {
         trialTitle: "Scope VPN: пробный период на 1 сутки",
         paidTitle: "Scope VPN: доступ на {days} дней",
-        connectionLink: "Ссылка для подключения",
+        connectionLink: "Ключ для подключения",
         trafficLimit: "Лимит трафика: {limit} ГБ",
         copyLink: "Скопировать ссылку подключения",
       },
@@ -1391,6 +1402,7 @@ const ru = {
       unsubscribe: "Отписаться",
       scanQR: "Сканировать QR код",
       favorites: "Избранное",
+      archive: "Архив",
       subscriptions: "Подписки",
       noSubscriptions: "Нет подписок",
       bannedStatus: "Пользователь заблокирован",

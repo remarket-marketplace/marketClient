@@ -702,6 +702,7 @@ export const productService = {
     username: string,
     page = 1,
     perPage = 20,
+    status?: string,
   ): Promise<{
     products: Product[];
     total: number;
@@ -714,6 +715,7 @@ export const productService = {
           params: {
             page,
             per_page: perPage,
+            status,
           },
         },
       );

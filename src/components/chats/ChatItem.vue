@@ -6,7 +6,7 @@ import { ShoppingBag, Headphones, Image as ImageIcon } from 'lucide-vue-next';
 import UserAvatar from '@/components/UserAvatar.vue';
 import StyledUsername from '@/components/StyledUsername.vue';
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const props = defineProps<{
     chat: ChatListItem,
@@ -37,7 +37,24 @@ const formattedLastMessage = computed((): string | null => {
             // Check if this is an admin message
             const last = props.chat.last_message as any
             const dataKey = last.data?.i18n_key
-            if (dataKey) {
+            const scopeVpnMessageRu = typeof last.data?.scope_vpn_partner_message_ru === 'string'
+                ? last.data.scope_vpn_partner_message_ru.trim()
+                : ''
+            const scopeVpnMessageEn = typeof last.data?.scope_vpn_partner_message_en === 'string'
+                ? last.data.scope_vpn_partner_message_en.trim()
+                : ''
+            if (scopeVpnMessageRu || scopeVpnMessageEn) {
+                text = locale.value.startsWith('ru')
+                    ? (scopeVpnMessageRu || scopeVpnMessageEn)
+                    : (scopeVpnMessageEn || scopeVpnMessageRu)
+            } else if (last.data?.scope_vpn_order_id && typeof last.data?.subscription_url === 'string') {
+                if (last.data?.is_trial) {
+                    text = t('pages.chats.scopeVpn.trialTitle')
+                } else {
+                    const days = Number(last.data?.duration_days) || ''
+                    text = t('pages.chats.scopeVpn.paidTitle', { days })
+                }
+            } else if (dataKey) {
                 const prefix = t(String(dataKey))
                 const reason = last.data?.reason || ''
                 text = `${prefix} ${reason}`.trim()

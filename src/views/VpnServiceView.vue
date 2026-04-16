@@ -850,8 +850,8 @@ onMounted(() => {
   }
 
   .vpn-node--right {
-    right: -0.25rem;
-    top: 49%;
+    right: -1rem;
+    top: 43%;
     transform: translateY(-50%) !important;
     border-inline-width: 1px;
     border-radius: 9999px;

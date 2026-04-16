@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { adminService, type ScopeVpnPartnerStats } from '@/api/admin/AdminService'
+import {
+  adminService,
+  type ScopeVpnPartnerMessageSettings,
+  type ScopeVpnPartnerStats,
+} from '@/api/admin/AdminService'
 import Loader from '@/components/Loader.vue'
 import { computed, onMounted, ref } from 'vue'
 import { formatCurrencyAmount } from '@/utils/currency'
@@ -7,6 +11,18 @@ import { formatCurrencyAmount } from '@/utils/currency'
 const isLoading = ref(true)
 const isError = ref(false)
 const stats = ref<ScopeVpnPartnerStats | null>(null)
+const isSettingsLoading = ref(true)
+const isSettingsSaving = ref(false)
+const settingsError = ref('')
+const settingsSuccess = ref('')
+const messageSettings = ref<ScopeVpnPartnerMessageSettings>({
+  partner_message_ru: '',
+  partner_message_en: '',
+})
+const persistedMessageSettings = ref<ScopeVpnPartnerMessageSettings>({
+  partner_message_ru: '',
+  partner_message_en: '',
+})
 
 const formatNumber = (value: number) =>
   new Intl.NumberFormat('ru-RU').format(Math.round(value || 0))
@@ -52,6 +68,11 @@ const statusRows = computed(() =>
   })),
 )
 
+const messageSettingsDirty = computed(() =>
+  messageSettings.value.partner_message_ru !== persistedMessageSettings.value.partner_message_ru
+  || messageSettings.value.partner_message_en !== persistedMessageSettings.value.partner_message_en,
+)
+
 async function loadStats() {
   isLoading.value = true
   isError.value = false
@@ -65,8 +86,44 @@ async function loadStats() {
   isLoading.value = false
 }
 
+async function loadMessageSettings() {
+  isSettingsLoading.value = true
+  settingsError.value = ''
+  settingsSuccess.value = ''
+
+  const data = await adminService.getScopeVpnPartnerMessageSettings()
+  if (!data) {
+    settingsError.value = 'Не удалось загрузить шаблоны сообщений.'
+  } else {
+    messageSettings.value = { ...data }
+    persistedMessageSettings.value = { ...data }
+  }
+
+  isSettingsLoading.value = false
+}
+
+async function saveMessageSettings() {
+  if (!messageSettingsDirty.value || isSettingsSaving.value) return
+
+  isSettingsSaving.value = true
+  settingsError.value = ''
+  settingsSuccess.value = ''
+
+  const updated = await adminService.updateScopeVpnPartnerMessageSettings(messageSettings.value)
+  if (!updated) {
+    settingsError.value = 'Не удалось сохранить шаблоны сообщений.'
+  } else {
+    messageSettings.value = { ...updated }
+    persistedMessageSettings.value = { ...updated }
+    settingsSuccess.value = 'Шаблоны сохранены.'
+  }
+
+  isSettingsSaving.value = false
+}
+
 onMounted(() => {
   void loadStats()
+  void loadMessageSettings()
 })
 </script>
 
@@ -93,6 +150,60 @@ onMounted(() => {
       </div>
 
       <template v-else>
+        <div class="rounded-2xl border border-dark-700 bg-dark-600 p-5">
+          <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div class="max-w-2xl">
+              <h2 class="text-lg font-semibold text-white">Сообщение при покупке VPN</h2>
+              <p class="mt-2 text-sm leading-6 text-gray-400">
+                Этот текст будет уходить покупателю в чат сделки вместе со ссылкой на подключение.
+                Русская версия показывается для `ru`, английская для `en`.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              class="inline-flex h-11 items-center justify-center rounded-xl border border-blue-500/30 bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+              :disabled="isSettingsLoading || isSettingsSaving || !messageSettingsDirty"
+              @click="saveMessageSettings"
+            >
+              {{ isSettingsSaving ? 'Сохраняем...' : 'Сохранить шаблоны' }}
+            </button>
+          </div>
+
+          <div v-if="isSettingsLoading" class="mt-5 flex justify-center rounded-2xl border border-dark-700 bg-dark-700/40 p-8">
+            <Loader />
+          </div>
+
+          <div v-else class="mt-5 grid gap-4 lg:grid-cols-2">
+            <label class="flex flex-col gap-2">
+              <span class="text-sm font-medium text-white">Русская версия</span>
+              <textarea
+                v-model="messageSettings.partner_message_ru"
+                class="min-h-[180px] rounded-2xl border border-dark-700 bg-dark-700/50 px-4 py-3 text-sm leading-6 text-gray-100 outline-none transition placeholder:text-gray-500 focus:border-dark-500"
+                placeholder="Например: Если появятся вопросы по подключению или скорости, напишите в этот чат."
+                maxlength="4000"
+              />
+            </label>
+
+            <label class="flex flex-col gap-2">
+              <span class="text-sm font-medium text-white">English version</span>
+              <textarea
+                v-model="messageSettings.partner_message_en"
+                class="min-h-[180px] rounded-2xl border border-dark-700 bg-dark-700/50 px-4 py-3 text-sm leading-6 text-gray-100 outline-none transition placeholder:text-gray-500 focus:border-dark-500"
+                placeholder="For example: If you need help with setup or connection quality, reply in this chat."
+                maxlength="4000"
+              />
+            </label>
+          </div>
+
+          <p v-if="settingsError" class="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            {{ settingsError }}
+          </p>
+          <p v-else-if="settingsSuccess" class="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+            {{ settingsSuccess }}
+          </p>
+        </div>
+
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
           <div
             v-for="card in metricCards"

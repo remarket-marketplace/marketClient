@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { Check, CheckCheck, Copy } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
+
 interface TextMessageProps {
   id: string;
   chat_room_id: string;
@@ -25,8 +26,49 @@ const props = defineProps<{
   forceShowSender?: boolean;
 }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const isScopeVpnLinkCopied = ref(false)
+const copiedInlineLink = ref<string | null>(null)
+
+type TextPart =
+  | { type: 'text'; value: string }
+  | { type: 'url'; value: string }
+  | { type: 'newline'; value: '\n' }
+
+const URL_PATTERN = /(https?:\/\/[^\s]+)/g
+
+function splitTextWithLinks(content: string): TextPart[] {
+  if (!content) return []
+
+  const parts: TextPart[] = []
+  const lines = content.split('\n')
+
+  lines.forEach((line, lineIndex) => {
+    let lastIndex = 0
+
+    for (const match of line.matchAll(URL_PATTERN)) {
+      const url = match[0]
+      const start = match.index ?? 0
+
+      if (start > lastIndex) {
+        parts.push({ type: 'text', value: line.slice(lastIndex, start) })
+      }
+
+      parts.push({ type: 'url', value: url })
+      lastIndex = start + url.length
+    }
+
+    if (lastIndex < line.length) {
+      parts.push({ type: 'text', value: line.slice(lastIndex) })
+    }
+
+    if (lineIndex < lines.length - 1) {
+      parts.push({ type: 'newline', value: '\n' })
+    }
+  })
+
+  return parts
+}
 
 const scopeVpnData = computed(() => {
   const data = props.textMessage?.data
@@ -40,6 +82,20 @@ const scopeVpnData = computed(() => {
     isTrial: Boolean(data.is_trial),
     trafficLimitGb: Number(data.traffic_limit_gb) || null,
   }
+})
+
+const scopeVpnPartnerTemplateText = computed(() => {
+  const data = props.textMessage?.data
+  if (!data || typeof data.subscription_url === 'string') return ''
+
+  const ru = typeof data.scope_vpn_partner_message_ru === 'string'
+    ? data.scope_vpn_partner_message_ru.trim()
+    : ''
+  const en = typeof data.scope_vpn_partner_message_en === 'string'
+    ? data.scope_vpn_partner_message_en.trim()
+    : ''
+
+  return locale.value.startsWith('ru') ? (ru || en) : (en || ru)
 })
 
 const scopeVpnTitle = computed(() => {
@@ -70,6 +126,18 @@ async function copyScopeVpnLink() {
   }, 1600)
 }
 
+async function copyInlineLink(url: string) {
+  if (!url || typeof navigator === 'undefined' || !navigator.clipboard) return
+
+  await navigator.clipboard.writeText(url)
+  copiedInlineLink.value = url
+  window.setTimeout(() => {
+    if (copiedInlineLink.value === url) {
+      copiedInlineLink.value = null
+    }
+  }, 1600)
+}
+
 const adminContent = computed(() => {
   if (!props.textMessage) return ''
   if (props.textMessage.data?.i18n_key) {
@@ -81,12 +149,19 @@ const adminContent = computed(() => {
 
 const regularContent = computed(() => {
   if (!props.textMessage) return ''
+  if (scopeVpnPartnerTemplateText.value) {
+    return scopeVpnPartnerTemplateText.value
+  }
   if (props.textMessage.data?.i18n_key) {
     const prefix = t(String(props.textMessage.data.i18n_key))
     return prefix
   }
   return props.textMessage.text
 })
+
+const adminContentParts = computed(() => splitTextWithLinks(adminContent.value))
+const regularContentParts = computed(() => splitTextWithLinks(regularContent.value))
+const reasonTextParts = computed(() => splitTextWithLinks(reasonText.value))
 
 const reasonText = computed(() => {
   if (!props.textMessage) return ''
@@ -151,11 +226,39 @@ const shouldRenderAdminMessage = computed(() => {
 				<div class="min-w-0 flex-1">
 					<p class="text-blue-200 font-medium text-xs mb-1">{{ $t('common.admin') }}</p>
           <p v-if="senderLabel || forceShowSender" class="text-xs text-gray-400 mb-1">{{ senderLabel || $t('common.admin') }}</p>
-					<p class="whitespace-pre-wrap text-gray-100 break-words [overflow-wrap:anywhere]">{{ adminContent }}</p>
+					<p class="whitespace-pre-wrap text-gray-100 break-words [overflow-wrap:anywhere]">
+            <template v-for="(part, index) in adminContentParts" :key="`admin-${textMessage?.id}-${index}`">
+              <br v-if="part.type === 'newline'" />
+              <template v-else-if="part.type === 'text'">{{ part.value }}</template>
+              <button
+                v-else
+                type="button"
+                class="inline rounded-sm text-sky-300 underline decoration-sky-300/70 underline-offset-2 transition hover:text-sky-200"
+                :title="copiedInlineLink === part.value ? t('common.copied') : t('common.copy')"
+                @click="copyInlineLink(part.value)"
+              >
+                {{ part.value }}
+              </button>
+            </template>
+          </p>
           <div v-if="hasReason" class="mt-2 space-y-2">
             <p class="font-semibold text-gray-50">{{ $t('common.reason') }}</p>
             <div class="rounded-lg border border-dark-600 bg-dark-900/70 px-3 py-2 text-gray-100">
-              <p class="whitespace-pre-line break-words [overflow-wrap:anywhere]">{{ reasonText }}</p>
+              <p class="whitespace-pre-line break-words [overflow-wrap:anywhere]">
+                <template v-for="(part, index) in reasonTextParts" :key="`admin-reason-${textMessage?.id}-${index}`">
+                  <br v-if="part.type === 'newline'" />
+                  <template v-else-if="part.type === 'text'">{{ part.value }}</template>
+                  <button
+                    v-else
+                    type="button"
+                    class="inline rounded-sm text-sky-300 underline decoration-sky-300/70 underline-offset-2 transition hover:text-sky-200"
+                    :title="copiedInlineLink === part.value ? t('common.copied') : t('common.copy')"
+                    @click="copyInlineLink(part.value)"
+                  >
+                    {{ part.value }}
+                  </button>
+                </template>
+              </p>
             </div>
           </div>
           <div class="mt-2 flex items-center justify-end gap-2 text-xs text-gray-400">
@@ -254,11 +357,39 @@ const shouldRenderAdminMessage = computed(() => {
         {{ senderLabel || $t('common.user') }}
       </span>
     </div>
-		<p class="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{{ regularContent }}</p>
+		<p class="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+      <template v-for="(part, index) in regularContentParts" :key="`regular-${textMessage.id}-${index}`">
+        <br v-if="part.type === 'newline'" />
+        <template v-else-if="part.type === 'text'">{{ part.value }}</template>
+        <button
+          v-else
+          type="button"
+          class="inline rounded-sm text-sky-200 underline decoration-sky-200/70 underline-offset-2 transition hover:text-sky-100"
+          :title="copiedInlineLink === part.value ? t('common.copied') : t('common.copy')"
+          @click="copyInlineLink(part.value)"
+        >
+          {{ part.value }}
+        </button>
+      </template>
+    </p>
     <div v-if="hasReason" class="mt-2 space-y-2">
       <p class="font-semibold text-gray-50">{{ $t('common.reason') }}</p>
       <div class="rounded-lg border border-dark-700 bg-dark-900/60 px-3 py-2 text-gray-100">
-        <p class="whitespace-pre-line break-words [overflow-wrap:anywhere]">{{ reasonText }}</p>
+        <p class="whitespace-pre-line break-words [overflow-wrap:anywhere]">
+          <template v-for="(part, index) in reasonTextParts" :key="`regular-reason-${textMessage.id}-${index}`">
+            <br v-if="part.type === 'newline'" />
+            <template v-else-if="part.type === 'text'">{{ part.value }}</template>
+            <button
+              v-else
+              type="button"
+              class="inline rounded-sm text-sky-200 underline decoration-sky-200/70 underline-offset-2 transition hover:text-sky-100"
+              :title="copiedInlineLink === part.value ? t('common.copied') : t('common.copy')"
+              @click="copyInlineLink(part.value)"
+            >
+              {{ part.value }}
+            </button>
+          </template>
+        </p>
       </div>
     </div>
     <div class="mt-1 flex items-center justify-end gap-2 text-xs text-gray-300">

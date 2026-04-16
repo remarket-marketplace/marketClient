@@ -286,7 +286,7 @@ const mobileNavGridStyle = computed(() => ({
               <button
                 v-if="user && user.role !== 'admin'"
                 type="button"
-                class="inline-flex h-8 items-center gap-1.5 rounded-full border border-gray-700 bg-transparent px-2.5 text-xs text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white focus:outline-none"
+                class="inline-flex h-9 items-center gap-1.5 rounded-full border border-gray-700 bg-transparent px-2.5 text-xs text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white focus:outline-none"
                 :title="walletTitle"
                 @click="goToWallet"
               >
@@ -324,7 +324,7 @@ const mobileNavGridStyle = computed(() => ({
               <button
                 v-if="user && user.role === 'admin'"
                 type="button"
-                class="inline-flex h-8 items-center gap-1.5 rounded-full border border-gray-700 bg-transparent px-2.5 text-xs text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white focus:outline-none"
+                class="inline-flex h-9 items-center gap-1.5 rounded-full border border-gray-700 bg-transparent px-2.5 text-xs text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white focus:outline-none"
                 :title="walletTitle"
                 @click="goToWallet"
               >
@@ -336,7 +336,7 @@ const mobileNavGridStyle = computed(() => ({
             <button
               v-if="user"
               type="button"
-              class="inline-flex h-8 items-center gap-1 rounded-full border border-gray-700 bg-transparent px-2 text-[10px] text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white focus:outline-none md:hidden"
+              class="inline-flex h-9 items-center gap-1 rounded-full border border-gray-700 bg-transparent px-2 text-[10px] text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white focus:outline-none md:hidden"
               :title="walletTitle"
               @click="goToWallet"
             >

@@ -42,6 +42,13 @@ const routes = [
       path: "/user/products/favorites",
       name: "favorites products",
       component: () => import("@/views/FavoritesProductsView.vue"),
+      meta: { requiredAuthorized: true },
+    },
+    {
+      path: "/user/products/archive",
+      name: "archived products",
+      component: () => import("@/views/ArchivedProductsView.vue"),
+      meta: { requiredAuthorized: true },
     },
     {
       path: "/product/create",

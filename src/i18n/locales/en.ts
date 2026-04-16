@@ -1256,6 +1256,17 @@ const en = {
       remove: 'Remove from favorites',
     },
 
+    archiveProducts: {
+      title: 'Archive',
+      subtitle: 'Rejected products after moderation',
+      searchPlaceholder: 'Search in archive...',
+      archive: 'Product archive',
+      emptyTitle: 'Archive is empty',
+      emptyDescription: 'Rejected products will appear here',
+      noResults: 'Nothing found',
+      tryDifferentQuery: 'Try changing your search query',
+    },
+
     chats: {
       title: "Chats",
       errorLoadingChats: "Error loading chats",
@@ -1284,7 +1295,7 @@ const en = {
       scopeVpn: {
         trialTitle: "Scope VPN: trial period for 1 day",
         paidTitle: "Scope VPN: access for {days} days",
-        connectionLink: "Connection link",
+        connectionLink: "Connection key",
         trafficLimit: "Traffic limit: {limit} GB",
         copyLink: "Copy connection link",
       },
@@ -1394,6 +1405,7 @@ const en = {
       unsubscribe: "Unsubscribe",
       scanQR: "Scan QR",
       favorites: "Favorites",
+      archive: "Archive",
       subscriptions: "Subscriptions",
       noSubscriptions: "No subscriptions yet",
       bannedStatus: "User is banned",

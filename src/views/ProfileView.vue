@@ -17,7 +17,7 @@ import type { Product } from '@/validation/product/product'
 import type { PublicProfileData, UserRead } from '@/validation/user/userRead'
 import type { SubscriptionSeller } from '@/validation/user/subscriptions'
 import type { ReviewSchema } from '@/validation/review/review'
-import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart, Edit, Calendar, Package, ShoppingBag, MessageSquare, Loader2, LayoutGrid, Rows3, UserPlus, UserCheck, Users, Clock3 } from 'lucide-vue-next'
+import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart, Archive, Edit, Calendar, Package, ShoppingBag, MessageSquare, Loader2, LayoutGrid, Rows3, UserPlus, UserCheck, Users } from 'lucide-vue-next'
 import QrcodeVue from 'qrcode.vue'
 import type { Deal } from '@/validation/deal/deal'
 import UserRating from '@/components/UserRating.vue'
@@ -27,7 +27,7 @@ import StyledUsername from '@/components/StyledUsername.vue'
 import AppModal from '@/components/AppModal.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
 import { isSafeImageFile, SAFE_IMAGE_INPUT_ACCEPT } from '@/utils/imageUpload'
-import { formatAverageResponseTime, formatLastSeen } from '@/utils/presence'
+import { formatLastSeen } from '@/utils/presence'
 import { buildProductKey } from '@/utils/urlKeys'
 
 const { locale, t } = useI18n()
@@ -61,11 +61,6 @@ const isSubscribedToSeller = computed(() => {
   return Boolean(currentProfileData.value.is_subscribed)
 })
 const isProfileBanned = computed(() => !isOwner.value && Boolean(currentProfileData.value?.is_banned))
-const profileAverageResponseTimeLabel = computed(() => formatAverageResponseTime(
-  currentProfileData.value?.average_first_response_time_seconds,
-  locale.value,
-  t('common.notSpecified'),
-))
 const profileLastSeenLabel = computed(() => formatLastSeen(
   currentProfileData.value?.last_seen_at,
   Boolean(currentProfileData.value?.is_active),
@@ -752,16 +747,6 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 <div class="grid grid-cols-1 divide-y divide-white/5">
                   <div class="flex items-center justify-between gap-4 px-3 py-3">
                     <div class="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-gray-400">
-                    <Clock3 class="w-3.5 h-3.5 text-cyan-400" />
-                    <span>{{ t('common.avgResponseTime') }}</span>
-                  </div>
-                    <div class="text-sm font-semibold text-white text-right">
-                    {{ profileAverageResponseTimeLabel }}
-                    </div>
-                  </div>
-
-                  <div class="flex items-center justify-between gap-4 px-3 py-3">
-                    <div class="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-gray-400">
                     <Calendar class="w-3.5 h-3.5 text-emerald-400" />
                     <span>{{ t('common.lastSeen') }}</span>
                   </div>
@@ -833,12 +818,19 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                   }}</span>
               </div>
 
-              <!-- Favorites button -->
-              <button v-if="isOwner" @click="router.push('/user/products/favorites')"
-                class="w-full flex items-center justify-center gap-2 rounded-lg border border-dark-600 bg-dark-700/50 px-4 py-3 text-sm text-gray-300 hover:bg-dark-700 hover:text-white transition-all duration-200">
-                <Heart class="w-4 h-4 text-red-400" />
-                <span>{{ $t('pages.profile.favorites') }}</span>
-              </button>
+              <div v-if="isOwner" class="grid w-full grid-cols-2 gap-2">
+                <button @click="router.push('/user/products/favorites')"
+                  class="w-full flex items-center justify-center gap-2 rounded-lg border border-dark-600 bg-dark-700/50 px-4 py-3 text-sm text-gray-300 hover:bg-dark-700 hover:text-white transition-all duration-200">
+                  <Heart class="w-4 h-4 text-red-400" />
+                  <span>{{ $t('pages.profile.favorites') }}</span>
+                </button>
+
+                <button @click="router.push('/user/products/archive')"
+                  class="w-full flex items-center justify-center gap-2 rounded-lg border border-dark-600 bg-dark-700/50 px-4 py-3 text-sm text-gray-300 hover:bg-dark-700 hover:text-white transition-all duration-200">
+                  <Archive class="w-4 h-4 text-gray-300" />
+                  <span>{{ $t('pages.profile.archive') }}</span>
+                </button>
+              </div>
 
               <button v-else-if="currentUser && !isProfileBanned" type="button" :disabled="isOpeningDirectChat"
                 @pointerdown.stop.prevent="openDirectChat" @click.stop.prevent="openDirectChat"
