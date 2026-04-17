@@ -4,14 +4,10 @@ import { productService } from '@/api/product/ProductService'
 import { steamTopupService } from '@/api/steamTopup/steamTopupService'
 import MainProductCard from '@/components/mainProductCard.vue'
 import HomeProductListCard from '@/components/HomeProductListCard.vue'
-import SearchField from '@/components/SearchField.vue'
 import Title from '@/components/Title.vue'
-import HeroSection from '@/components/HeroSection.vue'
-import HeroBackground from '@/components/HeroBackground.vue'
-import ScopeVpnCta from '@/components/ScopeVpnCta.vue'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import type { ProductsFilterParams } from '@/api/product/ProductService'
 import type { Category } from '@/validation/category/category'
 import type { Product } from '@/validation/product/product'
@@ -25,7 +21,7 @@ import type {
 import { isValidSteamTopUpAccount, normalizeSteamTopUpAccount } from '@/validation/steamTopup/steamTopup'
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ChevronRight, Folder, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
+import { CirclePlay, Folder, Headset, LayoutGrid, Rows3, ShieldCheck, ShoppingCart, SlidersHorizontal, Zap } from 'lucide-vue-next'
 import axios from 'axios'
 import {
   convertCurrencyAmount,
@@ -38,6 +34,7 @@ import { getErrorMessage } from '@/utils/errorsMap'
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 const API_HOST = import.meta.env.VITE_API_HOST
 const HOME_STEAM_TOPUP_ENABLED = import.meta.env.VITE_STEAM_TOPUP_ENABLED !== 'false'
 const userStore = useUserStore()
@@ -71,7 +68,6 @@ const isCategoriesLoading = ref(true)
 const isSubCategoriesLoading = ref(false)
 const isLoadingMoreCategories = ref(false)
 const isLoadingMoreSubCategories = ref(false)
-const isExpandingCategories = ref(false)
 const isSearchPagination = ref(false)
 const minPriceFilter = ref('')
 const maxPriceFilter = ref('')
@@ -94,10 +90,8 @@ const categorySearchResults = computed(() => {
     .slice(0, 8)
 })
 const hasCategorySearchResults = computed(() => categorySearchResults.value.length > 0)
-const areCategoriesExpanded = ref(false)
-const shouldShowCategoryExpandButton = computed(() => (
-  mainCategories.value.length > 8 || categoryTotalPages.value > 1
-))
+const popularCategories = computed(() => mainCategories.value.slice(0, 6))
+
 function setProductCardViewMode(mode: ProductCardViewMode): void {
   if (productCardViewMode.value === mode) return
   productCardViewMode.value = mode
@@ -336,6 +330,13 @@ let onDocumentClickForSearchDropdown: ((event: MouseEvent) => void) | null = nul
 function goToProduct(productKey: string) {
   if (!productKey) return
   router.push({ path: `/product/${productKey}` })
+}
+
+function scrollToCatalogStart() {
+  if (typeof window === 'undefined') return
+  const section = document.getElementById('catalog-start')
+  if (!section) return
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 function goToCategoryPage(category: Category) {
@@ -748,27 +749,12 @@ async function loadMoreMainCategories() {
   isLoadingMoreCategories.value = false
 }
 
-async function expandAllMainCategories() {
-  if (isExpandingCategories.value) return
-  isExpandingCategories.value = true
-  try {
-    while (categoryPage.value < categoryTotalPages.value) {
-      await loadMainCategories(categoryPage.value + 1, true)
-    }
-  } finally {
-    isExpandingCategories.value = false
-  }
-}
-
-async function toggleCategoriesExpanded() {
-  areCategoriesExpanded.value = !areCategoriesExpanded.value
-  if (areCategoriesExpanded.value) {
-    await expandAllMainCategories()
-  }
-}
-
 function onMainCategoryClick(category: Category) {
   goToCategoryPage(category)
+}
+
+function onMainCategoryTileClick(category: Category) {
+  onMainCategoryClick(category)
 }
 
 async function loadMoreSubCategories() {
@@ -945,6 +931,17 @@ watch(productCardViewMode, (mode) => {
   window.localStorage.setItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY, mode)
 })
 
+watch(
+  () => route.query.q,
+  (value) => {
+    const normalized = typeof value === 'string' ? value : ''
+    if (normalized === searchQuery.value) return
+    searchQuery.value = normalized
+    debouncedSearch()
+  },
+  { immediate: true },
+)
+
 watch([normalizedSearchQuery, hasCategorySearchResults], ([query, hasResults]) => {
   if (!query || !hasResults) {
     closeSearchDropdown()
@@ -987,41 +984,110 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <HeroSection v-if="!user" />
-
   <div id="catalog-start" class="scroll-mt-24"></div>
 
-  <section class="relative w-full flex flex-col items-center">
-    <div
-      v-if="user"
-      class="pointer-events-none absolute top-0 left-1/2 right-1/2 ml-[-50vw] mr-[-50vw] h-[70vh] w-screen z-0"
-    >
-      <HeroBackground />
-    </div>
+  <section class="home-page relative isolate w-full flex flex-col items-center">
+    <div class="home-page__backdrop pointer-events-none fixed inset-0 z-0" />
 
     <div
-      class="relative z-20 flex min-h-screen w-full flex-col items-center px-1 pb-6 sm:px-2 lg:px-2"
-      :class="user ? 'pt-20' : 'pt-6'"
+      class="relative z-10 flex min-h-screen w-full flex-col items-center px-1 pb-8 sm:px-2 lg:px-2"
     >
-        <div class="w-full">
-          <div
-            ref="searchDropdownRef"
-            class="w-full"
-            @focusin="openSearchDropdown"
-            @keydown="onSearchDropdownKeydown"
-          >
-            <SearchField
-              v-model="searchQuery"
-              :placeholder="$t('pages.index.searchPlaceholder')"
-              @search-change="debouncedSearch"
-              class="home-search-glass w-full"
-            />
+        <div class="home-hero w-full">
+          <div class="home-hero__placeholder">
+            <div class="home-hero-banner">
+              <div class="home-hero-banner__left">
+                <div class="home-hero-banner__badge">
+                  <Zap class="h-3.5 w-3.5" />
+                  <span>Мгновенная доставка</span>
+                </div>
+
+                <h1 class="home-hero-banner__title">
+                  Цифровые товары.
+                  <span>Доступ сразу.</span>
+                </h1>
+
+                <p class="home-hero-banner__text">
+                  re-market объединяет проверенные аккаунты, ключи и VPN-сервисы.
+                  Покупайте безопасно, получайте товар за секунды.
+                </p>
+
+                <div class="home-hero-banner__features">
+                  <div class="home-hero-banner__feature">
+                    <span class="home-hero-banner__feature-icon"><ShieldCheck class="h-4 w-4" /></span>
+                    <span>Безопасно</span>
+                  </div>
+                  <div class="home-hero-banner__feature">
+                    <span class="home-hero-banner__feature-icon"><Zap class="h-4 w-4" /></span>
+                    <span>Моментально</span>
+                  </div>
+                  <div class="home-hero-banner__feature">
+                    <span class="home-hero-banner__feature-icon"><Headset class="h-4 w-4" /></span>
+                    <span>Поддержка 24/7</span>
+                  </div>
+                </div>
+
+                <div class="home-hero-banner__actions">
+                  <button type="button" class="home-hero-banner__action home-hero-banner__action--primary" @click="scrollToCatalogStart">
+                    <ShoppingCart class="h-4 w-4" />
+                    <span>Смотреть каталог</span>
+                  </button>
+                  <button type="button" class="home-hero-banner__action home-hero-banner__action--secondary" @click="router.push('/become-seller')">
+                    <CirclePlay class="h-4 w-4" />
+                    <span>Как это работает</span>
+                  </button>
+                </div>
+              </div>
+
+            </div>
           </div>
+
+          <aside class="home-hero__aside">
+            <article class="home-hero__info-card home-hero__info-card--vpn">
+              <div class="home-hero__vpn-head">
+                <img src="/scope-vpn-icon.svg" alt="Scope VPN" class="home-hero__vpn-logo" />
+                <div class="home-hero__vpn-content">
+                  <div class="home-hero__vpn-row">
+                    <p class="home-hero__info-title home-hero__info-title--vpn">Scope VPN</p>
+                    <button type="button" class="home-hero__info-link home-hero__info-link--vpn" @click="router.push('/vpn')">
+                      Подробнее
+                    </button>
+                  </div>
+                  <p class="home-hero__info-copy home-hero__info-copy--vpn">Белые локации для мобильного интернета, YouTube, банков и рабочих сервисов.</p>
+                </div>
+              </div>
+            </article>
+
+            <article class="home-hero__info-card">
+              <p class="home-hero__info-title">Популярные категории</p>
+              <p class="home-hero__info-copy">Быстрый доступ к самым востребованным разделам.</p>
+              <div class="home-hero__categories">
+                <button
+                  v-for="category in popularCategories"
+                  :key="`hero-popular-${category.id}`"
+                  type="button"
+                  class="home-hero__category-chip"
+                  @click="onMainCategoryTileClick(category)"
+                >
+                  {{ category.name }}
+                </button>
+                <button
+                  v-if="popularCategories.length === 0"
+                  type="button"
+                  class="home-hero__category-chip home-hero__category-chip--muted"
+                  @click="scrollToCatalogStart"
+                >
+                  Открыть каталог
+                </button>
+              </div>
+            </article>
+          </aside>
         </div>
 
         <div
           v-if="hasCategorySearchResults && isSearchDropdownOpen"
-          class="home-category-search-dropdown mt-2 w-full rounded-2xl border border-white/10 p-2 backdrop-blur-xl"
+          ref="searchDropdownRef"
+          class="home-category-search-dropdown mt-3 w-full rounded-2xl border border-white/10 p-2 backdrop-blur-xl"
+          @keydown="onSearchDropdownKeydown"
         >
           <p class="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-400/85">
             {{ t('pages.index.categoriesFound') }}
@@ -1051,91 +1117,34 @@ onBeforeUnmount(() => {
           </button>
         </div>
 
-        <ScopeVpnCta />
-
-        <div class="mt-10 w-full sm:mt-16">
+        <div class="mt-10 w-full sm:mt-12">
           <Title :text="t('common.categories')" />
 
-          <div v-if="isCategoriesLoading" class="flex gap-2 overflow-x-auto sm:gap-3">
-            <div v-for="n in 5" :key="n" class="h-16 w-16 bg-dark-600 animate-pulse rounded-lg sm:h-20 sm:w-20" />
+          <div v-if="isCategoriesLoading" class="home-categories-strip mt-4">
+            <div
+              v-for="n in 10"
+              :key="n"
+              class="w-[102px] shrink-0 animate-pulse"
+            >
+              <div class="h-[74px] w-[74px] rounded-2xl bg-dark-600/70" />
+              <div class="mt-2.5 h-3.5 w-16 rounded bg-dark-700/70" />
+            </div>
           </div>
 
-          <div v-else class="w-full">
-            <div class="relative">
-              <div
-                v-if="!areCategoriesExpanded"
-                class="w-full overflow-hidden"
-              >
-                <div class="flex min-w-max gap-2 py-1.5 sm:gap-3 sm:py-2">
-                  <button
-                    v-for="cat in mainCategories"
-                    :key="cat.id"
-                    type="button"
-                    @click="onMainCategoryClick(cat)"
-                    class="flex-shrink-0 cursor-pointer flex flex-col items-center p-1.5 rounded-lg transition sm:p-2"
-                  >
-                    <div class="h-12 w-12 flex items-center justify-center bg-dark-700 rounded-lg overflow-hidden border border-white/5 shadow-inner sm:h-16 sm:w-16">
-                      <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="w-full h-full object-cover" />
-                      <Folder v-else class="h-6 w-6 text-gray-400 sm:h-8 sm:w-8" />
-                    </div>
-                    <span class="home-category-label mt-1.5 sm:mt-2">{{ cat.name }}</span>
-                  </button>
-                </div>
-              </div>
-
-              <button
-                v-if="shouldShowCategoryExpandButton && !areCategoriesExpanded"
-                type="button"
-                class="home-category-expand-btn market-primary-surface market-primary-hover absolute right-1 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-blue-400/25 text-white ring-4 ring-dark-800/55 transition disabled:cursor-default disabled:opacity-60 sm:h-12 sm:w-12"
-                :aria-expanded="areCategoriesExpanded"
-                :aria-label="areCategoriesExpanded ? t('pages.index.collapseCategories') : t('pages.index.expandCategories')"
-                :title="areCategoriesExpanded ? t('pages.index.collapseCategories') : t('pages.index.expandCategories')"
-                :disabled="isExpandingCategories"
-                @click="toggleCategoriesExpanded"
-              >
-                <ChevronRight
-                  class="h-5 w-5 transition-transform duration-200 sm:h-6 sm:w-6"
-                  :class="areCategoriesExpanded ? 'rotate-90' : ''"
-                />
-              </button>
-            </div>
-
-            <div
-              v-if="areCategoriesExpanded"
-              class="home-expanded-categories-grid mt-2"
-            >
+          <div v-else class="home-categories-strip-wrapper mt-4">
+            <div class="home-categories-strip">
               <button
                 v-for="cat in mainCategories"
                 :key="cat.id"
                 type="button"
-                @click="onMainCategoryClick(cat)"
-                class="home-expanded-category-card cursor-pointer flex w-full flex-col items-center rounded-lg p-1 transition hover:bg-dark-700/25 sm:p-1.5"
+                @click="onMainCategoryTileClick(cat)"
+                class="home-category-tile"
               >
-                <div class="h-12 w-12 flex items-center justify-center bg-dark-700 rounded-lg overflow-hidden border border-white/5 shadow-inner sm:h-16 sm:w-16">
-                  <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="w-full h-full object-cover" />
-                  <Folder v-else class="h-6 w-6 text-gray-400 sm:h-8 sm:w-8" />
-                </div>
-                <span class="home-category-label mt-1.5 sm:mt-2">
-                  {{ cat.name }}
+                <span class="home-category-tile__icon">
+                  <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="h-full w-full object-cover" />
+                  <Folder v-else class="h-6 w-6 text-gray-300" />
                 </span>
-              </button>
-
-              <button
-                v-if="shouldShowCategoryExpandButton"
-                type="button"
-                class="home-expanded-category-card flex w-full flex-col items-center rounded-lg p-1 text-white transition disabled:cursor-default disabled:opacity-60 sm:p-1.5"
-                :aria-expanded="areCategoriesExpanded"
-                :aria-label="t('pages.index.collapseCategories')"
-                :title="t('pages.index.collapseCategories')"
-                :disabled="isExpandingCategories"
-                @click="toggleCategoriesExpanded"
-              >
-                <div class="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 sm:h-16 sm:w-16">
-                  <ChevronRight class="h-5 w-5 rotate-270 sm:h-6 sm:w-6" />
-                </div>
-                <span class="home-category-label mt-1.5 sm:mt-2">
-                  {{ t('pages.index.collapseCategoriesShort') }}
-                </span>
+                <span class="home-category-tile__name">{{ cat.name }}</span>
               </button>
             </div>
           </div>
@@ -1420,73 +1429,636 @@ onBeforeUnmount(() => {
   background-size: 0.85rem 0.85rem;
 }
 
-.home-search-glass :deep(input) {
-  border: 1px solid var(--home-search-glass-border);
-  padding-left: 0.75rem !important;
-  background: var(--home-search-glass-bg);
-  backdrop-filter: blur(10px) saturate(115%);
-  -webkit-backdrop-filter: blur(10px) saturate(115%);
-  box-shadow: var(--home-search-glass-shadow);
-  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.home-search-glass :deep(input:focus) {
-  border-color: var(--home-search-glass-focus-border);
-  box-shadow: var(--home-search-glass-focus-shadow);
-}
-
-.home-search-glass :deep(svg) {
-  display: none;
-  color: var(--home-search-glass-icon);
-}
-
-.home-category-label {
-  display: block;
-  width: 3rem;
-  overflow: hidden;
-  white-space: nowrap;
-  text-align: center;
-  font-size: 0.6875rem;
-  line-height: 1.15;
-  font-weight: 500;
-  -webkit-mask-image: linear-gradient(to right, rgb(var(--palette-black)) 0%, rgb(var(--palette-black)) 78%, transparent 100%);
-  mask-image: linear-gradient(to right, rgb(var(--palette-black)) 0%, rgb(var(--palette-black)) 78%, transparent 100%);
+.home-page__backdrop {
+  background:
+    radial-gradient(72% 42% at 14% -10%, rgb(var(--palette-blue-500) / 0.24), transparent 62%),
+    radial-gradient(78% 44% at 100% -8%, rgb(var(--palette-violet-500) / 0.2), transparent 64%),
+    radial-gradient(110% 64% at 50% 120%, rgb(var(--palette-blue-950) / 0.18), transparent 66%),
+    linear-gradient(180deg, rgb(var(--palette-dark-900)) 0%, rgb(8 12 22) 52%, rgb(6 10 18) 100%);
 }
 
 .home-category-search-dropdown {
-  background: rgb(var(--palette-night-800) / 0.66);
-  box-shadow: 0 16px 38px rgb(var(--palette-black) / 0.4);
+  background: linear-gradient(145deg, rgb(var(--palette-dark-800) / 0.86), rgb(var(--palette-gray-900) / 0.82));
+  box-shadow: 0 16px 38px rgb(var(--palette-black) / 0.45);
 }
 
-.home-category-expand-btn {
-  box-shadow: 0 10px 24px rgb(var(--palette-black) / 0.32);
-}
-
-.home-expanded-categories-grid {
+.home-hero {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(3.5rem, 1fr));
-  gap: 0.25rem;
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.85rem;
 }
 
-.home-expanded-category-card {
-  max-width: 3.5rem;
-  justify-self: center;
+.home-hero__placeholder {
+  min-height: 320px;
+  border-radius: 1rem;
+  padding: 0;
+}
+
+.home-hero-banner {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid rgb(var(--palette-white) / 0.08);
+  background:
+    linear-gradient(
+      90deg,
+      rgb(var(--palette-blue-950) / 0.84) 0%,
+      rgb(var(--palette-blue-950) / 0.72) 36%,
+      rgb(var(--palette-blue-950) / 0.34) 58%,
+      rgb(var(--palette-dark-900) / 0.52) 100%
+    ),
+    url('/459bea1d-6051-417a-aa16-02eddbe398de.png');
+  background-size: cover;
+  background-position: center;
+  padding: 1.1rem;
+  display: block;
+  min-height: 360px;
+}
+
+.home-hero-banner::before {
+  content: '';
+  position: absolute;
+  inset: -40% auto auto -15%;
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, rgb(var(--palette-blue-500) / 0.22), transparent 68%);
+  pointer-events: none;
+}
+
+.home-hero-banner::after {
+  content: '';
+  position: absolute;
+  right: -110px;
+  top: -90px;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgb(var(--palette-violet-500) / 0.18), transparent 72%);
+  pointer-events: none;
+}
+
+.home-hero-banner__left {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.92rem;
+  max-width: 52rem;
+}
+
+.home-hero-banner__badge {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  border-radius: 9999px;
+  border: 1px solid rgb(var(--palette-violet-300) / 0.32);
+  background: linear-gradient(120deg, rgb(var(--palette-violet-500) / 0.22), rgb(var(--palette-blue-500) / 0.16));
+  padding: 0.38rem 0.82rem;
+  color: rgb(var(--palette-violet-100));
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.home-hero-banner__title {
+  color: rgb(var(--palette-gray-100));
+  font-size: clamp(2.7rem, 4.6vw, 5.4rem);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+}
+
+.home-hero-banner__title span {
+  display: block;
+  color: rgb(var(--palette-violet-200));
+  text-shadow: 0 0 22px rgb(var(--palette-violet-500) / 0.42);
+}
+
+.home-hero-banner__text {
+  max-width: 34ch;
+  color: rgb(var(--palette-gray-300));
+  font-size: 1.06rem;
+  line-height: 1.54;
+}
+
+.home-hero-banner__features {
+  margin-top: 0.2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.72rem;
+}
+
+.home-hero-banner__feature {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgb(var(--palette-white) / 0.14);
+  background: rgb(var(--palette-dark-700) / 0.6);
+  padding: 0.44rem 0.74rem;
+  color: rgb(var(--palette-gray-100));
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.home-hero-banner__feature-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgb(var(--palette-blue-200));
+}
+
+.hero-creative {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.hero-creative__toast {
+  border-radius: 0.88rem;
+  border: 1px solid rgb(var(--palette-white) / 0.1);
+  background: linear-gradient(130deg, rgb(var(--palette-gray-900) / 0.85), rgb(var(--palette-dark-700) / 0.88));
+  padding: 0.52rem 0.66rem;
+  color: rgb(var(--palette-violet-200));
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.48rem;
+  align-items: center;
+  transform: rotate(2deg);
+}
+
+.hero-creative__toast-text {
+  min-width: 0;
+}
+
+.hero-creative__toast-title {
+  color: rgb(var(--palette-gray-100));
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.hero-creative__toast-subtitle {
+  margin-top: 0.1rem;
+  color: rgb(var(--palette-gray-400));
+  font-size: 0.74rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hero-creative__toast > span:last-child {
+  color: rgb(var(--palette-gray-400));
+  font-size: 0.74rem;
+}
+
+.hero-creative__stage {
+  position: relative;
+  min-height: 280px;
+}
+
+.hero-creative__box {
+  position: absolute;
+  left: 0;
+  top: 0.55rem;
+  width: 56%;
+  height: 210px;
+  border-radius: 1rem;
+  border: 1px solid rgb(var(--palette-white) / 0.12);
+  background:
+    linear-gradient(140deg, rgb(var(--palette-gray-700) / 0.35), transparent 30%),
+    linear-gradient(130deg, rgb(var(--palette-gray-900) / 0.9), rgb(var(--palette-dark-700) / 0.9));
+  box-shadow:
+    0 18px 42px rgb(var(--palette-black) / 0.42),
+    inset 0 1px 0 rgb(var(--palette-white) / 0.08);
+  overflow: hidden;
+}
+
+.hero-creative__box-ribbon {
+  position: absolute;
+  left: 38%;
+  top: -8px;
+  width: 36px;
+  height: 74px;
+  background: linear-gradient(180deg, rgb(var(--palette-violet-400)), rgb(var(--palette-violet-700)));
+  clip-path: polygon(0 0, 100% 0, 100% 86%, 50% 100%, 0 86%);
+}
+
+.hero-creative__box-label {
+  position: absolute;
+  left: 1rem;
+  top: 5.2rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(var(--palette-white) / 0.16);
+  background: rgb(var(--palette-white) / 0.9);
+  color: rgb(var(--palette-gray-900));
+  padding: 0.38rem 0.44rem;
+  font-size: 0.63rem;
+  font-weight: 700;
+  line-height: 1.05;
+}
+
+.hero-creative__box-bolt {
+  position: absolute;
+  right: 1.1rem;
+  bottom: 0.95rem;
+  color: rgb(var(--palette-violet-200));
+  opacity: 0.82;
+}
+
+.hero-creative__glass {
+  position: absolute;
+  right: 0;
+  top: 1.6rem;
+  width: 64%;
+  border-radius: 1.1rem;
+  border: 1px solid rgb(var(--palette-blue-300) / 0.36);
+  background:
+    radial-gradient(120% 100% at 10% -10%, rgb(var(--palette-violet-500) / 0.16), transparent 58%),
+    linear-gradient(140deg, rgb(var(--palette-blue-950) / 0.64), rgb(var(--palette-dark-700) / 0.72));
+  box-shadow:
+    0 0 26px rgb(var(--palette-blue-500) / 0.24),
+    0 14px 34px rgb(var(--palette-black) / 0.36),
+    inset 0 1px 0 rgb(var(--palette-white) / 0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 0.72rem;
+}
+
+.hero-creative__badge {
+  border-radius: 9999px;
+  border: 1px solid rgb(var(--palette-violet-300) / 0.38);
+  background: rgb(var(--palette-violet-500) / 0.15);
+  color: rgb(var(--palette-violet-100));
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.5rem;
+}
+
+.hero-creative__title {
+  margin-top: 0.44rem;
+  color: rgb(var(--palette-gray-100));
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.06;
+}
+
+.hero-creative__meta {
+  margin-top: 0.42rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.hero-creative__meta span {
+  border-radius: 0.6rem;
+  border: 1px solid rgb(var(--palette-white) / 0.1);
+  background: rgb(var(--palette-dark-800) / 0.45);
+  color: rgb(var(--palette-gray-200));
+  font-size: 0.74rem;
+  padding: 0.22rem 0.44rem;
+}
+
+.hero-creative__status {
+  margin-top: 0.56rem;
+  border-radius: 0.78rem;
+  border: 1px solid rgb(var(--palette-emerald-300) / 0.22);
+  background: linear-gradient(130deg, rgb(var(--palette-emerald-500) / 0.18), rgb(var(--palette-dark-700) / 0.4));
+  padding: 0.46rem 0.56rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.42rem;
+  align-items: center;
+  color: rgb(var(--palette-emerald-200));
+}
+
+.hero-creative__status-title {
+  color: rgb(var(--palette-gray-100));
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.hero-creative__status-subtitle {
+  margin-top: 0.1rem;
+  color: rgb(var(--palette-gray-300));
+  font-size: 0.72rem;
+}
+
+.hero-creative__status > span:last-child {
+  color: rgb(var(--palette-gray-200));
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.hero-creative__bottom {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.56rem;
+}
+
+.hero-creative__pill {
+  border-radius: 0.88rem;
+  border: 1px solid rgb(var(--palette-white) / 0.12);
+  background: linear-gradient(130deg, rgb(var(--palette-dark-800) / 0.58), rgb(var(--palette-dark-700) / 0.6));
+  padding: 0.5rem 0.58rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.42rem;
+  align-items: center;
+}
+
+.hero-creative__pill-icon {
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 9999px;
+  border: 1px solid rgb(var(--palette-white) / 0.12);
+  background: rgb(var(--palette-violet-500) / 0.14);
+  color: rgb(var(--palette-violet-200));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-creative__pill p:first-child {
+  color: rgb(var(--palette-gray-100));
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.hero-creative__pill p:last-child {
+  margin-top: 0.08rem;
+  color: rgb(var(--palette-gray-400));
+  font-size: 0.7rem;
+  line-height: 1.2;
+}
+
+.home-hero-banner__actions {
+  margin-top: 0.52rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.home-hero-banner__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.46rem;
+  border-radius: 0.82rem;
+  padding: 0.62rem 1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.home-hero-banner__action:hover {
+  transform: translateY(-1px);
+}
+
+.home-hero-banner__action--primary {
+  background: linear-gradient(120deg, rgb(var(--palette-blue-500)), rgb(var(--palette-violet-500)));
+  color: rgb(var(--palette-white));
+  box-shadow: 0 10px 24px rgb(var(--palette-blue-600) / 0.34);
+}
+
+.home-hero-banner__action--primary:hover {
+  box-shadow: 0 14px 30px rgb(var(--palette-violet-500) / 0.34);
+}
+
+.home-hero-banner__action--secondary {
+  border-color: rgb(var(--palette-white) / 0.16);
+  background: rgb(var(--palette-dark-800) / 0.35);
+  color: rgb(var(--palette-gray-100));
+}
+
+.home-hero-banner__action--secondary:hover {
+  border-color: rgb(var(--palette-blue-300) / 0.36);
+  background: rgb(var(--palette-dark-700) / 0.45);
+}
+
+.home-hero__aside {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.72rem;
+}
+
+.home-hero__info-card {
+  border-radius: 1rem;
+  border: 1px solid rgb(var(--palette-white) / 0.1);
+  background: linear-gradient(132deg, rgb(var(--palette-gray-900) / 0.76), rgb(var(--palette-dark-700) / 0.8));
+  box-shadow:
+    inset 0 1px 0 rgb(var(--palette-white) / 0.05),
+    0 10px 24px rgb(var(--palette-black) / 0.26);
+  padding: 0.86rem 0.92rem;
+  min-height: 118px;
+}
+
+.home-hero__info-card--vpn {
+  border-color: rgb(var(--palette-blue-400) / 0.3);
+  background:
+    radial-gradient(90% 110% at 0% 0%, rgb(var(--palette-violet-500) / 0.22), transparent 58%),
+    linear-gradient(132deg, rgb(var(--palette-gray-900) / 0.8), rgb(var(--palette-dark-700) / 0.84));
+}
+
+.home-hero__vpn-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.66rem;
+  align-items: center;
+}
+
+.home-hero__vpn-content {
+  min-width: 0;
+}
+
+.home-hero__vpn-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.home-hero__vpn-logo {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+  box-shadow:
+    0 6px 14px rgb(var(--palette-blue-900) / 0.4),
+    inset 0 1px 0 rgb(var(--palette-white) / 0.25);
+  object-fit: cover;
+}
+
+.home-hero__info-title {
+  color: rgb(var(--palette-gray-100));
+  font-size: 0.96rem;
+  font-weight: 700;
+}
+
+.home-hero__info-title--vpn {
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+.home-hero__info-copy {
+  margin-top: 0.35rem;
+  color: rgb(var(--palette-gray-300));
+  font-size: 0.8rem;
+  line-height: 1.38;
+}
+
+.home-hero__info-copy--vpn {
+  margin-top: 0.22rem;
+  font-size: 0.74rem;
+  line-height: 1.32;
+  color: rgb(var(--palette-gray-400));
+}
+
+.home-hero__info-link {
+  margin-top: 0.68rem;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  border: 1px solid rgb(var(--palette-blue-400) / 0.34);
+  background: rgb(var(--palette-blue-500) / 0.14);
+  padding: 0.28rem 0.64rem;
+  color: rgb(var(--palette-blue-100));
+  font-size: 0.76rem;
+  font-weight: 600;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.home-hero__info-link--vpn {
+  margin-top: 0;
+  padding: 0.18rem 0.5rem;
+  font-size: 0.68rem;
+  flex-shrink: 0;
+}
+
+.home-hero__info-link:hover {
+  border-color: rgb(var(--palette-blue-300) / 0.45);
+  background: rgb(var(--palette-blue-500) / 0.2);
+}
+
+.home-hero__categories {
+  margin-top: 0.62rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.44rem;
+}
+
+.home-hero__category-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  border: 1px solid rgb(var(--palette-white) / 0.14);
+  background: rgb(var(--palette-dark-800) / 0.38);
+  color: rgb(var(--palette-gray-100));
+  font-size: 0.74rem;
+  font-weight: 500;
+  padding: 0.3rem 0.68rem;
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+}
+
+.home-hero__category-chip:hover {
+  border-color: rgb(var(--palette-blue-300) / 0.42);
+  background: rgb(var(--palette-blue-500) / 0.14);
+  transform: translateY(-1px);
+}
+
+.home-hero__category-chip--muted {
+  color: rgb(var(--palette-gray-300));
+}
+
+.home-categories-strip-wrapper {
+  position: relative;
+}
+
+.home-categories-strip {
+  display: flex;
+  gap: 1.1rem;
+  overflow-x: auto;
+  padding-bottom: 0.45rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--palette-white) / 0.25) transparent;
+}
+
+.home-categories-strip::-webkit-scrollbar {
+  height: 6px;
+}
+
+.home-categories-strip::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: rgb(var(--palette-white) / 0.2);
+}
+
+.home-categories-strip::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.home-category-tile {
+  width: 6.4rem;
+  min-width: 6.4rem;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.58rem;
+  color: rgb(var(--palette-gray-100));
+  transition: transform 0.2s ease;
+}
+
+.home-category-tile:hover {
+  transform: translateY(-1px);
+}
+
+.home-category-tile__icon {
+  height: 4.625rem;
+  width: 4.625rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgb(var(--palette-white) / 0.14);
+  background: rgb(var(--palette-dark-800) / 0.75);
+  box-shadow:
+    inset 0 1px 0 rgb(var(--palette-white) / 0.05),
+    0 8px 16px rgb(var(--palette-black) / 0.24);
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home-category-tile__name {
+  width: 100%;
+  color: rgb(var(--palette-gray-100));
+  font-size: 0.92rem;
+  font-weight: 500;
+  line-height: 1.3;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 @media (min-width: 640px) {
-  .home-category-label {
-    width: 4rem;
-    font-size: 0.75rem;
+  .home-hero-banner {
+    min-height: 560px;
+    padding: 1.65rem;
+    background-position: center;
   }
 
-  .home-expanded-categories-grid {
-    grid-template-columns: repeat(auto-fit, minmax(4.5rem, 1fr));
-    gap: 0.5rem;
+  .home-hero-banner__action {
+    min-width: 220px;
+    min-height: 58px;
+    font-size: 1rem;
   }
+}
 
-  .home-expanded-category-card {
-    max-width: 4.5rem;
+@media (min-width: 1024px) {
+  .home-hero {
+    grid-template-columns: minmax(0, 1fr) 265px;
+    align-items: stretch;
   }
 }
 </style>
