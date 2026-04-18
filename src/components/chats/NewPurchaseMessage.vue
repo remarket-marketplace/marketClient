@@ -483,12 +483,6 @@ onBeforeUnmount(() => {
           <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-start justify-between gap-2 sm:gap-3">
               <div class="min-w-0 flex-1">
-                <p
-                  v-if="isSummaryLayout"
-                  class="text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-300/90 sm:text-[11px] sm:tracking-[0.14em]"
-                >
-                  {{ $t(purchaseLabelKey) }}
-                </p>
                 <button
                   type="button"
                   :class="titleClass"
