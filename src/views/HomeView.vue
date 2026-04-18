@@ -89,6 +89,7 @@ const loadingSkeletonCount = computed(() => (
     ? perPage.value
     : Math.min(perPage.value, 12)
 ))
+const brokenCategoryImages = ref<Record<string, true>>({})
 const normalizedSearchQuery = computed(() => searchQuery.value.trim().toLowerCase())
 const categorySearchResults = computed(() => {
   if (normalizedSearchQuery.value.length < 1) return []
@@ -110,6 +111,17 @@ function restoreProductCardViewModeFromStorage(): void {
   if (typeof window === 'undefined') return
   const saved = window.localStorage.getItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY)
   productCardViewMode.value = saved === 'list' ? 'list' : 'grid'
+}
+
+function isCategoryImageAvailable(categoryId: string, imageUrl: string | null): boolean {
+  return Boolean(imageUrl) && !brokenCategoryImages.value[categoryId]
+}
+
+function markCategoryImageBroken(categoryId: string): void {
+  brokenCategoryImages.value = {
+    ...brokenCategoryImages.value,
+    [categoryId]: true,
+  }
 }
 
 type SteamAmountMode = 'denomination' | 'quantity'
@@ -1039,23 +1051,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <HeroSection v-if="!user">
-    <template #search>
-      <div
-        ref="searchDropdownRef"
-        class="relative w-full"
-        @focusin="openSearchDropdown"
-        @keydown="onSearchDropdownKeydown"
-      >
-        <SearchField
-          v-model="searchQuery"
-          :placeholder="$t('pages.index.searchPlaceholder')"
-          @search-change="debouncedSearch"
-          class="home-search-glass w-full"
-        />
-      </div>
-    </template>
-  </HeroSection>
+  <HeroSection v-if="!user" />
 
   <div id="catalog-start" class="scroll-mt-24"></div>
 
@@ -1087,8 +1083,26 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <ScopeVpnCta />
-        <SteamTopUpCta v-if="HOME_STEAM_TOPUP_ENABLED" />
+        <div class="mt-4 grid w-full items-stretch gap-3 lg:grid-cols-2">
+          <ScopeVpnCta />
+          <SteamTopUpCta v-if="HOME_STEAM_TOPUP_ENABLED" />
+        </div>
+
+        <div v-if="!user" class="mt-4 w-full sm:mt-5">
+          <div
+            ref="searchDropdownRef"
+            class="relative w-full"
+            @focusin="openSearchDropdown"
+            @keydown="onSearchDropdownKeydown"
+          >
+            <SearchField
+              v-model="searchQuery"
+              :placeholder="$t('pages.index.searchPlaceholder')"
+              @search-change="debouncedSearch"
+              class="home-search-glass w-full"
+            />
+          </div>
+        </div>
 
         <div class="mt-10 w-full sm:mt-16">
           <Title :text="t('common.categories')" />
@@ -1112,7 +1126,12 @@ onBeforeUnmount(() => {
                     class="flex-shrink-0 cursor-pointer flex flex-col items-center p-1.5 rounded-lg transition sm:p-2"
                   >
                     <div class="h-12 w-12 flex items-center justify-center bg-dark-700 rounded-lg overflow-hidden border border-white/5 shadow-inner sm:h-16 sm:w-16">
-                      <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="w-full h-full object-cover" />
+                      <img
+                        v-if="isCategoryImageAvailable(cat.id, cat.image_url)"
+                        :src="`${API_HOST}${cat.image_url}`"
+                        class="w-full h-full object-cover"
+                        @error="markCategoryImageBroken(cat.id)"
+                      />
                       <Folder v-else class="h-6 w-6 text-gray-400 sm:h-8 sm:w-8" />
                     </div>
                     <span class="home-category-label mt-1.5 sm:mt-2">{{ cat.name }}</span>
@@ -1149,7 +1168,12 @@ onBeforeUnmount(() => {
                 class="home-expanded-category-card cursor-pointer flex w-full flex-col items-center rounded-lg p-1 transition hover:bg-dark-700/25 sm:p-1.5"
               >
                 <div class="h-12 w-12 flex items-center justify-center bg-dark-700 rounded-lg overflow-hidden border border-white/5 shadow-inner sm:h-16 sm:w-16">
-                  <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="w-full h-full object-cover" />
+                  <img
+                    v-if="isCategoryImageAvailable(cat.id, cat.image_url)"
+                    :src="`${API_HOST}${cat.image_url}`"
+                    class="w-full h-full object-cover"
+                    @error="markCategoryImageBroken(cat.id)"
+                  />
                   <Folder v-else class="h-6 w-6 text-gray-400 sm:h-8 sm:w-8" />
                 </div>
                 <span class="home-category-label mt-1.5 sm:mt-2">
@@ -1403,10 +1427,11 @@ onBeforeUnmount(() => {
       >
         <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-dark-800/80">
           <img
-            v-if="category.image_url"
+            v-if="isCategoryImageAvailable(category.id, category.image_url)"
             :src="resolveCategoryImageUrl(category.image_url)"
             :alt="category.name"
             class="h-6 w-6 rounded-md object-cover"
+            @error="markCategoryImageBroken(category.id)"
           />
           <Folder v-else class="h-4 w-4 text-gray-400" />
         </span>

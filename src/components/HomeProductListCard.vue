@@ -8,6 +8,7 @@ import StyledUsername from '@/components/StyledUsername.vue'
 import UserRating from '@/components/UserRating.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
 import { buildProductKey } from '@/utils/urlKeys'
+import { ImageOff } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -27,10 +28,22 @@ const activeImageIndex = ref(0)
 const touchStartX = ref(0)
 const touchStartY = ref(0)
 const suppressNextCardClick = ref(false)
+const brokenImageUrls = ref<Record<string, true>>({})
 const currentImageUrl = computed(() => {
   if (!props.product.images.length) return ''
   return `${API_HOST}${props.product.images[activeImageIndex.value]?.image_url ?? props.product.images[0]?.image_url ?? ''}`
 })
+const hasVisibleImage = computed(() => (
+  Boolean(currentImageUrl.value) && !brokenImageUrls.value[currentImageUrl.value]
+))
+
+function markCurrentImageBroken(): void {
+  if (!currentImageUrl.value) return
+  brokenImageUrls.value = {
+    ...brokenImageUrls.value,
+    [currentImageUrl.value]: true,
+  }
+}
 
 function onClick() {
   if (suppressNextCardClick.value) {
@@ -111,15 +124,16 @@ function handleImageTouchEnd(event: TouchEvent) {
     >
       <Transition name="image-fade" mode="out-in">
         <img
-          v-if="product.images.length"
+          v-if="hasVisibleImage"
           :key="currentImageUrl"
           :src="currentImageUrl"
           class="h-full w-full object-cover"
           alt="product image"
+          @error="markCurrentImageBroken"
         />
       </Transition>
       <div
-        v-if="product.images.length > 1"
+        v-if="product.images.length > 1 && hasVisibleImage"
         class="touch-dots pointer-events-none absolute inset-x-2 bottom-2 z-10 flex items-center justify-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100"
       >
         <span
@@ -129,8 +143,9 @@ function handleImageTouchEnd(event: TouchEvent) {
           :class="index === activeImageIndex ? 'w-4 bg-white/95' : 'w-1.5 bg-white/55'"
         />
       </div>
-      <div v-else class="flex h-full w-full items-center justify-center text-xs text-gray-300 sm:text-sm">
-        {{ t('common.noImage') }}
+      <div v-else class="flex h-full w-full flex-col items-center justify-center gap-1.5 text-gray-300">
+        <ImageOff class="h-6 w-6 text-gray-500 sm:h-7 sm:w-7" />
+        <span class="text-xs sm:text-sm">{{ t('common.noImage') }}</span>
       </div>
     </div>
 

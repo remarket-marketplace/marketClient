@@ -6,6 +6,7 @@
   --palette-brand: 30 64 175;
   --palette-white: 255 255 255;
   --palette-black: 0 0 0;
+  --pallette-background: 10 10 10;
   --palette-light-100: 245 245 245;
   --palette-light-200: 229 229 229;
 
@@ -142,7 +143,7 @@
 
   /* Semantic app tokens (recommended for fast restyling) */
   --primary-color: rgb(var(--palette-blue-600)); /* Main accent across app (links, active accents). */
-  --background-color: rgb(var(--palette-dark-900)); /* Global page background. */
+  --background-color: rgb(var(--pallette-background)); /* Global page background. */
   --main-text: rgb(var(--palette-gray-50)); /* Main readable text color. */
   --link-text: rgb(var(--palette-blue-600)); /* Link color in text content. */
   --error-text: rgb(var(--palette-red-500)); /* Error text and validation states. */

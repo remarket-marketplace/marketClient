@@ -252,14 +252,14 @@ const mobileNavGridStyle = computed(() => ({
     <div class="min-h-screen w-screen flex flex-col bg-background text-mainText">
         <header
             class="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div class="mx-auto h-14 w-full flex items-center justify-between gap-3 px-1.5 lg:px-5 min-[2000px]:w-1/2">
-                <div class="flex min-w-0 items-center gap-2 md:gap-3">
-                    <div class="flex cursor-pointer items-center gap-2 text-lg text-mainText font-semibold sm:text-xl title"
+            <div class="mx-auto flex h-12 w-full items-center justify-between gap-2 px-1.5 sm:h-14 sm:gap-3 lg:px-5 min-[2000px]:w-1/2">
+                <div class="flex min-w-0 items-center gap-1.5 sm:gap-2 md:gap-3">
+                    <div class="flex cursor-pointer items-center gap-2 text-base text-mainText font-semibold sm:text-xl title"
                         @click="router.push('/')">
                         remarket
                     </div>
                 </div>
-                <div class="flex min-w-0 items-center gap-2 md:gap-3">
+                <div class="flex min-w-0 items-center gap-1.5 sm:gap-2 md:gap-3">
                     <nav class="hidden items-center gap-6 md:flex">
                         <router-link v-for="item in primaryNavItems" :key="item.id" :to="item.to"
                             class="flex items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"

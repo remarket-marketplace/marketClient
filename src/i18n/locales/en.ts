@@ -762,8 +762,9 @@ const en = {
       popularEmpty: "No popular products yet",
       resetFilters: "Reset",
       steamTopUp: {
-        title: "Top-Up",
-        subtitle: "Top up your Steam wallet with balance or external payment.",
+        title: "Top up wallet",
+        subtitle: "With balance or external payment in a couple of steps.",
+        quickBadge: "Balance / card",
         enterPromo: "Enter promo code",
         service: "Service",
         account: "Steam account",
@@ -896,11 +897,11 @@ const en = {
       },
       cta: {
         eyebrow: "Scope VPN",
-        title: "Scope VPN",
-        text: "Approved locations for mobile internet, YouTube, banks, and work services.",
-        categoryTitle: "Scope VPN is available",
-        categoryText: "Approved locations and stable connection are available on a separate page.",
-        action: "Details",
+        title: "Connect VPN",
+        text: "Approved locations, trial access, and quick setup through Happ or Incy.",
+        categoryTitle: "Open VPN",
+        categoryText: "Plans, trial access, and connection without extra steps.",
+        action: "Open",
       },
     },
 
@@ -2245,10 +2246,34 @@ const en = {
   },
 
   hero: {
-    badge: "Secure Digital Asset Trading",
-    mainTitle: "The Marketplace",
-    mainTitleGradient: "Built on Trust",
-    description: "Next-generation trading platform. Buy and sell digital goods with full fund protection and quality guarantee. Verified sellers, fair pricing, honest trading. Your secure place for digital commerce.",
+    badge: "Safe digital purchases",
+    titleLead: "Steam, VPN,",
+    titleAccent: "and digital goods without extra steps",
+    description: "Steam top-ups, Scope VPN, accounts, keys, and services are gathered in one catalog. Clear navigation, verified sellers, and deal protection help people find what they need quickly and buy with confidence.",
+    routesLabel: "Quick access to key journeys",
+    highlights: {
+      protection: "Deal protection until delivery is confirmed",
+      sellers: "Verified sellers, reviews, and moderation",
+    },
+    routes: {
+      steam: {
+        eyebrow: "Steam",
+        title: "Top up Steam",
+        text: "A short and familiar flow: enter the login, choose the amount, and move to payment without extra screens.",
+        badge: "Fast and clear",
+      },
+      vpn: {
+        eyebrow: "Scope VPN",
+        title: "Connect Scope VPN",
+        text: "A dedicated page with plans, trial access, and simple setup through Happ or Incy.",
+        badge: "Trial access",
+      },
+    },
+    visual: {
+      order: "Payment in a couple of steps",
+      secure: "Protected until the result",
+      vpn: "Steam and Scope VPN close at hand",
+    },
     exploreCatalog: "Explore Catalog",
     startSelling: "Start Selling",
   },
