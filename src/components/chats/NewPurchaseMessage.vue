@@ -235,7 +235,25 @@ const autoConfirmTimerLabel = computed(() => {
   const totalMinutes = Math.floor(autoConfirmRemainingMs.value / (60 * 1000))
   const hours = Math.floor(totalMinutes / 60)
   const minutes = totalMinutes % 60
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+
+  const normalizedLocale = String(locale.value || 'en').toLowerCase()
+  if (normalizedLocale.startsWith('ru')) {
+    const getRuPlural = (value: number, one: string, few: string, many: string) => {
+      const mod10 = value % 10
+      const mod100 = value % 100
+      if (mod10 === 1 && mod100 !== 11) return one
+      if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few
+      return many
+    }
+
+    const hoursLabel = getRuPlural(hours, 'час', 'часа', 'часов')
+    const minutesLabel = getRuPlural(minutes, 'минута', 'минуты', 'минут')
+    return `${hours} ${hoursLabel} ${minutes} ${minutesLabel}`
+  }
+
+  const hoursLabel = hours === 1 ? 'hour' : 'hours'
+  const minutesLabel = minutes === 1 ? 'minute' : 'minutes'
+  return `${hours} ${hoursLabel} ${minutes} ${minutesLabel}`
 })
 
 function startDealTimerInterval() {
