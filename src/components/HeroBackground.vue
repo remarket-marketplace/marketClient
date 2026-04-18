@@ -14,9 +14,6 @@ withDefaults(
     <div class="absolute inset-0 bg-background"></div>
     <div class="absolute inset-0 noise-overlay-bg opacity-20 mix-blend-soft-light"></div>
 
-    <div class="absolute top-0 left-1/4 h-[500px] w-[500px] rounded-full bg-blue-600/30 blur-[120px] animate-blob"></div>
-    <div class="absolute top-1/4 right-1/4 h-[400px] w-[400px] rounded-full bg-cyan-500/20 blur-[100px] animate-blob animation-delay-2000"></div>
-    <div class="absolute -bottom-20 left-1/2 h-[600px] w-[600px] rounded-full bg-blue-700/20 blur-[130px] animate-blob animation-delay-4000"></div>
   </div>
 </template>
 

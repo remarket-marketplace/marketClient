@@ -221,12 +221,12 @@
   /* Search, checkout, and top-up surfaces */
   --steam-checkout-modal-bg: linear-gradient(165deg, rgb(39 42 48 / 0.82) 0%, rgb(31 34 39 / 0.8) 52%, rgb(24 27 31 / 0.82) 100%); /* Home Steam checkout modal surface. */
   --steam-checkout-modal-inset: inset 0 1px 0 rgb(var(--palette-white) / 0.05); /* Home Steam checkout modal inset edge. */
-  --home-search-glass-border: rgb(var(--palette-slate-600) / 0.48); /* Home search field border. */
-  --home-search-glass-bg: linear-gradient(135deg, rgb(var(--palette-gray-800) / 0.42) 0%, rgb(var(--palette-gray-900) / 0.36) 100%); /* Home search field glass fill. */
-  --home-search-glass-shadow: inset 0 1px 0 rgb(var(--palette-white) / 0.07), 0 10px 30px rgb(2 6 23 / 0.28); /* Home search field default shadow. */
-  --home-search-glass-focus-border: rgb(var(--palette-blue-400) / 0.55); /* Home search field focus border. */
-  --home-search-glass-focus-shadow: inset 0 1px 0 rgb(var(--palette-white) / 0.08), 0 12px 30px rgb(2 6 23 / 0.34); /* Home search field focus shadow. */
-  --home-search-glass-icon: rgb(var(--palette-gray-400) / 0.85); /* Home search icon color. */
+  --home-search-glass-border: rgb(var(--palette-white) / 0.08); /* Home search field border. */
+  --home-search-glass-bg: rgb(var(--palette-white) / 0.03); /* Home search field fill. */
+  --home-search-glass-shadow: none; /* Home search field default shadow. */
+  --home-search-glass-focus-border: rgb(var(--palette-white) / 0.14); /* Home search field focus border. */
+  --home-search-glass-focus-shadow: none; /* Home search field focus shadow. */
+  --home-search-glass-icon: rgb(var(--palette-gray-400) / 0.78); /* Home search icon color. */
   --steam-topup-panel-bg: linear-gradient(135deg, rgb(27 40 56) 0%, rgb(22 32 45) 52%, rgb(16 24 34) 100%); /* Steam top-up standalone page surface. */
   --steam-topup-panel-shadow: 0 16px 40px rgb(var(--palette-black) / 0.38); /* Steam top-up standalone page shadow. */
   --steam-topup-icon-bg: rgb(15 20 27 / 0.7); /* Steam top-up icon tile background. */
