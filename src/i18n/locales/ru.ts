@@ -1304,7 +1304,7 @@ const ru = {
         trafficLimit: "Лимит трафика: {limit} ГБ",
         copyLink: "Скопировать ссылку подключения",
       },
-      newPurchase: "Новая покупка",
+      newPurchase: "Прошедшая сделка",
       currentDeal: "Текущая сделка",
       newPriceOffer: "Новое предложение цены",
       imageMessage: "Фото",
