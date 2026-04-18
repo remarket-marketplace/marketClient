@@ -1863,6 +1863,7 @@ const ru = {
         statusFilter: "Статус ордера",
         empty: "Ордеры на вывод не найдены",
         amount: "Сумма вывода",
+        amountShort: "Сумма",
         payoutAmount: "К выплате",
         balance: "Текущий баланс",
         createdAt: "Создан",

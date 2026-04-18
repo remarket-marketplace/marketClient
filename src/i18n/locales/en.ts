@@ -1866,6 +1866,7 @@ const en = {
         statusFilter: "Order status",
         empty: "No withdrawal orders found",
         amount: "Withdrawal amount",
+        amountShort: "Amount",
         payoutAmount: "Payout amount",
         balance: "Current balance",
         createdAt: "Created",
