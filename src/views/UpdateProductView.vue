@@ -48,7 +48,7 @@ const currencySymbol = computed(() => getCurrencySymbol(selectedCurrency.value))
 const usdRubRate = computed(() => getUsdRubRate())
 
 const PRODUCT_LIMITS = {
-  title: { min: 10, max: 50 },
+  title: { min: 10, max: 80 },
   description: { min: 10, max: 1200 },
   productData: { min: 10, max: 128 },
   count: { min: 1, max: 5000 },
