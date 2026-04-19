@@ -130,7 +130,7 @@ const navItems = computed(() => {
     },
     {
       id: 'profile',
-      title: t('navigation.market.profile'),
+      title: user && user.value?.username ? t('navigation.market.profile') : t('navigation.market.login'),
       icon: User,
       to: user && user.value?.username ? `/user/${user.value.username}` : '/signin',
     },
@@ -186,7 +186,7 @@ const mobileNavItems = computed(() => {
     },
     {
       id: 'profile',
-      title: t('navigation.market.profile'),
+      title: user && user.value?.username ? t('navigation.market.profile') : t('navigation.market.login'),
       icon: User,
       to: user && user.value?.username ? `/user/${user.value.username}` : '/signin',
     },

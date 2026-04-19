@@ -62,17 +62,17 @@ const spacingClass = computed(() => (isCompactVariant.value ? 'mt-3' : ''))
   display: flex;
   width: 100%;
   height: 100%;
-  min-height: 7.25rem;
+  min-height: 6rem;
   align-items: stretch;
-  gap: 1rem;
+  gap: 0.9rem;
   overflow: hidden;
   border: 1px solid rgb(var(--palette-white) / 0.08);
   border-radius: 1.25rem;
   background:
     radial-gradient(circle at 0% 50%, rgb(102 192 244 / 0.12), transparent 38%),
     linear-gradient(135deg, rgb(31 40 54 / 0.95) 0%, rgb(17 24 34 / 0.96) 100%);
-  padding: 1rem 1rem 1rem 1.05rem;
-  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+  padding: 0.75rem 0.9rem 0.75rem 0.95rem;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .steam-topup-entry__link::before {
@@ -88,7 +88,6 @@ const spacingClass = computed(() => (isCompactVariant.value ? 'mt-3' : ''))
 }
 
 .steam-topup-entry__link:hover {
-  transform: translateY(-2px);
   border-color: rgb(102 192 244 / 0.28);
   background:
     radial-gradient(circle at 0% 50%, rgb(102 192 244 / 0.16), transparent 42%),
@@ -105,8 +104,8 @@ const spacingClass = computed(() => (isCompactVariant.value ? 'mt-3' : ''))
 
 .steam-topup-entry__logo {
   display: flex;
-  height: 3rem;
-  width: 3rem;
+  height: 2.55rem;
+  width: 2.55rem;
   align-items: center;
   justify-content: center;
   overflow: hidden;
@@ -138,7 +137,6 @@ const spacingClass = computed(() => (isCompactVariant.value ? 'mt-3' : ''))
 
 .steam-topup-entry__title {
   display: block;
-  margin-top: 0.45rem;
   color: var(--white-solid);
   font-size: 1rem;
   line-height: 1.2;
@@ -202,8 +200,9 @@ const spacingClass = computed(() => (isCompactVariant.value ? 'mt-3' : ''))
 @media (max-width: 767px) {
   .steam-topup-entry__link {
     align-items: flex-start;
-    min-height: 7rem;
-    gap: 0.85rem;
+    min-height: 5.8rem;
+    gap: 0.75rem;
+    padding: 0.75rem;
   }
 
   .steam-topup-entry__tail {

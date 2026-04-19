@@ -1067,28 +1067,12 @@ onBeforeUnmount(() => {
       class="relative z-20 flex min-h-screen w-full flex-col items-center px-1 pb-6 sm:px-2 lg:px-2"
       :class="user ? 'pt-20' : 'pt-6'"
     >
-        <div v-if="user" class="w-full">
-          <div
-            ref="searchDropdownRef"
-            class="relative w-full"
-            @focusin="openSearchDropdown"
-            @keydown="onSearchDropdownKeydown"
-          >
-            <SearchField
-              v-model="searchQuery"
-              :placeholder="$t('pages.index.searchPlaceholder')"
-              @search-change="debouncedSearch"
-              class="home-search-glass w-full"
-            />
-          </div>
-        </div>
-
         <div class="mt-4 grid w-full items-stretch gap-3 lg:grid-cols-2">
           <ScopeVpnCta />
           <SteamTopUpCta v-if="HOME_STEAM_TOPUP_ENABLED" />
         </div>
 
-        <div v-if="!user" class="mt-4 w-full sm:mt-5">
+        <div class="mt-4 w-full sm:mt-5">
           <div
             ref="searchDropdownRef"
             class="relative w-full"
@@ -1545,9 +1529,12 @@ onBeforeUnmount(() => {
 .home-search-glass :deep(svg) {
   display: block;
   left: 1rem;
+  z-index: 1;
   height: 1.1rem;
   width: 1.1rem;
-  color: var(--home-search-glass-icon);
+  color: rgb(var(--palette-gray-300) / 0.92);
+  stroke-width: 2.2;
+  pointer-events: none;
 }
 
 .home-category-label {

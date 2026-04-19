@@ -1540,7 +1540,7 @@ async function sendMessage(payload: { files: File[] }) {
             : 'w-3/12',
         ]">
         <div class="h-full flex flex-col border-dark-600 lg:border-1 md:rounded-3xl" :class="{
-          'pt-16': isMobile && mobileMode === 'chats',
+          'pt-[calc(var(--app-mobile-header-height)+0.5rem)]': isMobile && mobileMode === 'chats',
         }">
           <p class="my-4 text-2xl px-4 text-mainText font-semibold">
             {{ $t('pages.chats.title') }}
@@ -1568,7 +1568,7 @@ async function sendMessage(payload: { files: File[] }) {
         ]">
         <div class="flex w-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-2 md:rounded-xl" :class="{
           'pb-16': isMobile && mobileMode === 'chat',
-          'pt-16': isMobile && mobileMode === 'chat',
+          'pt-[calc(var(--app-mobile-header-height)+0.5rem)]': isMobile && mobileMode === 'chat',
         }">
           <div class="flex w-full min-w-0 flex-grow flex-col overflow-hidden">
             <div v-if="currentChat"
