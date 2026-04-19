@@ -1,10 +1,12 @@
 import { httpClient } from '..'
 
-export type ScopeVpnPlanId = 'month' | 'quarter' | 'halfyear'
+export type ScopeVpnPlanId = 'month' | 'quarter' | 'halfyear' | 'year'
 export type ScopeVpnOrderPlanId = ScopeVpnPlanId | 'trial'
 
 export type ScopeVpnPlan = {
   id: ScopeVpnPlanId
+  months: number
+  devices: number
   duration_days: number
   price: number
 }
@@ -12,6 +14,8 @@ export type ScopeVpnPlan = {
 export type ScopeVpnOrder = {
   id: string
   plan: ScopeVpnOrderPlanId
+  months: number
+  devices: number
   duration_days: number
   price: number
   subscription_url: string
@@ -28,9 +32,10 @@ export const vpnService = {
     return Array.isArray(response.data?.plans) ? response.data.plans : []
   },
 
-  async purchase(planId: ScopeVpnPlanId): Promise<ScopeVpnOrder> {
+  async purchase(payload: { months: number; devices: number }): Promise<ScopeVpnOrder> {
     const response = await httpClient.post('/vpn/purchase', {
-      plan_id: planId,
+      months: payload.months,
+      devices: payload.devices,
     })
     return response.data as ScopeVpnOrder
   },

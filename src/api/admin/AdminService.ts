@@ -98,6 +98,16 @@ export type ScopeVpnPartnerMessageSettings = {
   partner_message_en: string
 }
 
+export type ScopeVpnPricingItem = {
+  months: number
+  devices: number
+  price: number
+}
+
+export type ScopeVpnPricingResponse = {
+  prices: ScopeVpnPricingItem[]
+}
+
 export type ActivityLogFilters = {
   user_id?: string
   username?: string
@@ -247,6 +257,28 @@ export const adminService = {
       return response.data as ScopeVpnPartnerMessageSettings;
     } catch (e) {
       console.error("Failed to update Scope VPN partner message settings", e);
+      return null;
+    }
+  },
+
+  async getScopeVpnPartnerPricing(): Promise<ScopeVpnPricingResponse | null> {
+    try {
+      const response = await httpClient.get("/admin/partners/vpn-pricing");
+      return response.data as ScopeVpnPricingResponse;
+    } catch (e) {
+      console.error("Failed to load Scope VPN pricing", e);
+      return null;
+    }
+  },
+
+  async updateScopeVpnPartnerPricing(
+    payload: ScopeVpnPricingResponse,
+  ): Promise<ScopeVpnPricingResponse | null> {
+    try {
+      const response = await httpClient.patch("/admin/partners/vpn-pricing", payload);
+      return response.data as ScopeVpnPricingResponse;
+    } catch (e) {
+      console.error("Failed to update Scope VPN pricing", e);
       return null;
     }
   },
