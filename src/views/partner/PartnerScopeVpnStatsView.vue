@@ -2,6 +2,7 @@
 import {
   adminService,
   type ScopeVpnPartnerMessageSettings,
+  type ScopeVpnPricingItem,
   type ScopeVpnPartnerStats,
 } from '@/api/admin/AdminService'
 import Loader from '@/components/Loader.vue'
@@ -15,6 +16,10 @@ const isSettingsLoading = ref(true)
 const isSettingsSaving = ref(false)
 const settingsError = ref('')
 const settingsSuccess = ref('')
+const isPricingLoading = ref(true)
+const isPricingSaving = ref(false)
+const pricingError = ref('')
+const pricingSuccess = ref('')
 const messageSettings = ref<ScopeVpnPartnerMessageSettings>({
   partner_message_ru: '',
   partner_message_en: '',
@@ -23,6 +28,26 @@ const persistedMessageSettings = ref<ScopeVpnPartnerMessageSettings>({
   partner_message_ru: '',
   partner_message_en: '',
 })
+
+type VpnPeriodMonths = 1 | 3 | 6 | 12
+
+const vpnPeriods: Array<{ months: VpnPeriodMonths; label: string; hint: string }> = [
+  { months: 1, label: '1 месяц', hint: 'Короткий доступ' },
+  { months: 3, label: '3 месяца', hint: 'Средний срок' },
+  { months: 6, label: '6 месяцев', hint: 'Долгий срок' },
+  { months: 12, label: '12 месяцев', hint: 'Годовой доступ' },
+]
+const vpnDeviceCounts = Array.from({ length: 10 }, (_, index) => index + 1)
+const defaultPricingMatrix: Record<VpnPeriodMonths, Record<number, number>> = {
+  1: { 1: 199, 2: 249, 3: 299, 4: 349, 5: 399, 6: 449, 7: 499, 8: 549, 9: 599, 10: 649 },
+  3: { 1: 449, 2: 629, 3: 759, 4: 889, 5: 1019, 6: 1149, 7: 1279, 8: 1409, 9: 1539, 10: 1699 },
+  6: { 1: 849, 2: 1069, 3: 1284, 4: 1509, 5: 1729, 6: 1994, 7: 2169, 8: 2389, 9: 2609, 10: 2829 },
+  12: { 1: 1549, 2: 1949, 3: 2349, 4: 2749, 5: 3149, 6: 3549, 7: 3949, 8: 4349, 9: 4749, 10: 5149 },
+}
+
+const selectedPricingPeriod = ref<VpnPeriodMonths>(1)
+const pricingMatrix = ref(clonePricingMatrix(defaultPricingMatrix))
+const persistedPricingMatrix = ref(clonePricingMatrix(defaultPricingMatrix))
 
 const formatNumber = (value: number) =>
   new Intl.NumberFormat('ru-RU').format(Math.round(value || 0))
@@ -35,6 +60,7 @@ const planLabels: Record<string, string> = {
   month: '1 месяц',
   quarter: '3 месяца',
   halfyear: '6 месяцев',
+  year: '12 месяцев',
 }
 
 const statusLabels: Record<string, string> = {
@@ -73,6 +99,64 @@ const messageSettingsDirty = computed(() =>
   || messageSettings.value.partner_message_en !== persistedMessageSettings.value.partner_message_en,
 )
 
+const pricingDirty = computed(() =>
+  JSON.stringify(pricingMatrix.value) !== JSON.stringify(persistedPricingMatrix.value),
+)
+
+const pricingValid = computed(() =>
+  vpnPeriods.every(({ months }) =>
+    vpnDeviceCounts.every((devices) => {
+      const price = Number(pricingMatrix.value[months][devices])
+      return Number.isFinite(price) && price >= 0 && price <= 1_000_000
+    }),
+  ),
+)
+
+const pricingRows = computed(() =>
+  vpnDeviceCounts.map((devices) => ({
+    devices,
+    price: Number(pricingMatrix.value[selectedPricingPeriod.value][devices]) || 0,
+  })),
+)
+
+function clonePricingMatrix(
+  source: Record<VpnPeriodMonths, Record<number, number>>,
+): Record<VpnPeriodMonths, Record<number, number>> {
+  return {
+    1: { ...source[1] },
+    3: { ...source[3] },
+    6: { ...source[6] },
+    12: { ...source[12] },
+  }
+}
+
+function isVpnPeriodMonths(value: number): value is VpnPeriodMonths {
+  return vpnPeriods.some((period) => period.months === value)
+}
+
+function applyPricingItems(items: ScopeVpnPricingItem[]) {
+  const next = clonePricingMatrix(defaultPricingMatrix)
+  for (const item of items) {
+    const months = Number(item.months)
+    const devices = Number(item.devices)
+    if (isVpnPeriodMonths(months) && devices >= 1 && devices <= 10) {
+      next[months][devices] = Number(item.price) || 0
+    }
+  }
+  pricingMatrix.value = clonePricingMatrix(next)
+  persistedPricingMatrix.value = clonePricingMatrix(next)
+}
+
+function buildPricingPayload(): ScopeVpnPricingItem[] {
+  return vpnPeriods.flatMap(({ months }) =>
+    vpnDeviceCounts.map((devices) => ({
+      months,
+      devices,
+      price: Number(pricingMatrix.value[months][devices]) || 0,
+    })),
+  )
+}
+
 async function loadStats() {
   isLoading.value = true
   isError.value = false
@@ -84,6 +168,41 @@ async function loadStats() {
     stats.value = data
   }
   isLoading.value = false
+}
+
+async function loadPricing() {
+  isPricingLoading.value = true
+  pricingError.value = ''
+  pricingSuccess.value = ''
+
+  const data = await adminService.getScopeVpnPartnerPricing()
+  if (!data) {
+    pricingError.value = 'Не удалось загрузить тарифную сетку.'
+  } else {
+    applyPricingItems(data.prices)
+  }
+
+  isPricingLoading.value = false
+}
+
+async function savePricing() {
+  if (!pricingDirty.value || !pricingValid.value || isPricingSaving.value) return
+
+  isPricingSaving.value = true
+  pricingError.value = ''
+  pricingSuccess.value = ''
+
+  const updated = await adminService.updateScopeVpnPartnerPricing({
+    prices: buildPricingPayload(),
+  })
+  if (!updated) {
+    pricingError.value = 'Не удалось сохранить тарифную сетку.'
+  } else {
+    applyPricingItems(updated.prices)
+    pricingSuccess.value = 'Тарифная сетка сохранена.'
+  }
+
+  isPricingSaving.value = false
 }
 
 async function loadMessageSettings() {
@@ -123,6 +242,7 @@ async function saveMessageSettings() {
 
 onMounted(() => {
   void loadStats()
+  void loadPricing()
   void loadMessageSettings()
 })
 </script>
@@ -150,6 +270,81 @@ onMounted(() => {
       </div>
 
       <template v-else>
+        <div class="rounded-2xl border border-dark-700 bg-dark-600 p-5">
+          <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div class="max-w-2xl">
+              <h2 class="text-lg font-semibold text-white">Тарифная сетка Scope VPN</h2>
+              <p class="mt-2 text-sm leading-6 text-gray-400">
+                Цены настраиваются отдельно для каждого срока и количества устройств. Покупатель увидит итоговую цену сразу в конфигураторе.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              class="inline-flex h-11 items-center justify-center rounded-xl border border-blue-500/30 bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+              :disabled="isPricingLoading || isPricingSaving || !pricingDirty || !pricingValid"
+              @click="savePricing"
+            >
+              {{ isPricingSaving ? 'Сохраняем...' : 'Сохранить цены' }}
+            </button>
+          </div>
+
+          <div v-if="isPricingLoading" class="mt-5 flex justify-center rounded-2xl border border-dark-700 bg-dark-700/40 p-8">
+            <Loader />
+          </div>
+
+          <div v-else class="mt-5">
+            <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              <button
+                v-for="period in vpnPeriods"
+                :key="period.months"
+                type="button"
+                class="rounded-2xl border px-4 py-3 text-left transition"
+                :class="selectedPricingPeriod === period.months
+                  ? 'border-blue-400/50 bg-blue-500/15'
+                  : 'border-dark-700 bg-dark-700/40 hover:border-dark-500'"
+                @click="selectedPricingPeriod = period.months"
+              >
+                <p class="text-sm font-semibold text-white">{{ period.label }}</p>
+                <p class="mt-1 text-xs text-gray-400">{{ period.hint }}</p>
+              </button>
+            </div>
+
+            <div class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+              <label
+                v-for="row in pricingRows"
+                :key="`${selectedPricingPeriod}-${row.devices}`"
+                class="rounded-2xl border border-dark-700 bg-dark-700/40 p-3"
+              >
+                <span class="text-xs uppercase tracking-[0.16em] text-gray-500">
+                  {{ row.devices }} устр.
+                </span>
+                <div class="mt-2 flex items-center rounded-xl border border-dark-600 bg-dark-800/70 px-3 focus-within:border-blue-400/60">
+                  <input
+                    v-model.number="pricingMatrix[selectedPricingPeriod][row.devices]"
+                    type="number"
+                    min="0"
+                    max="1000000"
+                    step="1"
+                    class="h-11 min-w-0 flex-1 bg-transparent text-sm font-semibold text-white outline-none placeholder:text-gray-600"
+                  />
+                  <span class="text-sm font-semibold text-gray-500">₽</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <p v-if="pricingError" class="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            {{ pricingError }}
+          </p>
+          <p v-else-if="pricingSuccess" class="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+            {{ pricingSuccess }}
+          </p>
+          <p v-else-if="!pricingValid" class="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+            Проверьте цены: допустимы значения от 0 до 1 000 000 ₽.
+          </p>
+        </div>
+
         <div class="rounded-2xl border border-dark-700 bg-dark-600 p-5">
           <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div class="max-w-2xl">
