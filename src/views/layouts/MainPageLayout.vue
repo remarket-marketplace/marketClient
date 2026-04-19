@@ -11,7 +11,6 @@ import {
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { Icon } from '@iconify/vue'
 import { useUserStore } from '@/stores/user'
 import { useChatStore } from '@/stores/chat'
 import { storeToRefs } from 'pinia'
@@ -37,7 +36,6 @@ const chatStore = useChatStore()
 const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
-const HOME_STEAM_TOPUP_ENABLED = import.meta.env.VITE_STEAM_TOPUP_ENABLED !== 'false'
 
 const isDesktop = ref(true)
 const { user } = storeToRefs(store)
@@ -124,7 +122,7 @@ const navItems = computed(() => {
         },
         {
             id: 'profile',
-            title: t('navigation.market.profile'),
+            title: user && user.value?.username ? t('navigation.market.profile') : t('navigation.market.login'),
             icon: User,
             to: user && user.value?.username ? `/user/${user.value.username}` : '/signin',
         },
@@ -181,7 +179,7 @@ const mobileNavItems = computed(() => {
         },
         {
             id: 'profile',
-            title: t('navigation.market.profile'),
+            title: user && user.value?.username ? t('navigation.market.profile') : t('navigation.market.login'),
             icon: User,
             to: user && user.value?.username ? `/user/${user.value.username}` : '/signin',
         },
@@ -245,10 +243,6 @@ function goToWallet() {
     router.push('/wallet')
 }
 
-function goToSteamTopUp() {
-    router.push('/steam-topup')
-}
-
 const mobileNavGridStyle = computed(() => ({
     gridTemplateColumns: `repeat(${Math.max(1, mobileNavItems.value.length)}, minmax(0, 1fr))`,
 }))
@@ -258,42 +252,14 @@ const mobileNavGridStyle = computed(() => ({
     <div class="min-h-screen w-screen flex flex-col bg-background text-mainText">
         <header
             class="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div class="mx-auto h-14 w-full flex items-center justify-between gap-3 px-1.5 lg:px-5 min-[2000px]:w-1/2">
-                <div class="flex min-w-0 items-center gap-2 md:gap-3">
-                    <div class="flex cursor-pointer items-center gap-2 text-lg text-mainText font-semibold sm:text-xl title"
+            <div class="mx-auto flex h-12 w-full items-center justify-between gap-2 px-1.5 sm:h-14 sm:gap-3 lg:px-5 min-[2000px]:w-1/2">
+                <div class="flex min-w-0 items-center gap-1.5 sm:gap-2 md:gap-3">
+                    <div class="flex cursor-pointer items-center gap-2 text-base text-mainText font-semibold sm:text-xl title"
                         @click="router.push('/')">
                         remarket
                     </div>
-                    <button
-                        v-if="HOME_STEAM_TOPUP_ENABLED"
-                        type="button"
-                        class="inline-flex h-9 min-w-0 max-w-[7.75rem] shrink items-center gap-1 rounded-full border border-gray-700 bg-transparent pl-2 pr-2 text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white md:hidden"
-                        :title="t('pages.index.steamTopUp.title')"
-                        @click="goToSteamTopUp"
-                    >
-                        <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-gray-700 text-gray-300">
-                            <Icon icon="mdi:steam" class="h-3.5 w-3.5" />
-                        </span>
-                        <span class="min-w-0 flex-1 truncate text-left text-[10px] font-medium leading-none sm:text-[11px]">
-                            {{ t('pages.index.steamTopUp.title') }}
-                        </span>
-                    </button>
-                    <button
-                        v-if="HOME_STEAM_TOPUP_ENABLED"
-                        type="button"
-                        class="hidden h-9 min-w-0 max-w-[9.5rem] shrink items-center gap-1.5 rounded-full border border-gray-700 bg-transparent px-2.5 text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white lg:max-w-[8.75rem] xl:max-w-[10rem] min-[2000px]:max-w-none min-[2000px]:px-3 md:inline-flex"
-                        :title="t('pages.index.steamTopUp.title')"
-                        @click="goToSteamTopUp"
-                    >
-                        <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-gray-700 text-gray-300 transition-colors duration-200 lg:h-5 lg:w-5 xl:h-6 xl:w-6">
-                            <Icon icon="mdi:steam" class="h-4 w-4" />
-                        </span>
-                        <span class="min-w-0 truncate text-xs font-medium leading-none lg:text-[13px] xl:text-sm">
-                            {{ t('pages.index.steamTopUp.title') }}
-                        </span>
-                    </button>
                 </div>
-                <div class="flex min-w-0 items-center gap-2 md:gap-3">
+                <div class="flex min-w-0 items-center gap-1.5 sm:gap-2 md:gap-3">
                     <nav class="hidden items-center gap-6 md:flex">
                         <router-link v-for="item in primaryNavItems" :key="item.id" :to="item.to"
                             class="flex items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"

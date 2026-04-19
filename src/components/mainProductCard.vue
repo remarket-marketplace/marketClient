@@ -9,6 +9,7 @@ import AutoDeliveryTag from './AutoDeliveryTag.vue'
 import StyledUsername from './StyledUsername.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
 import { buildProductKey } from '@/utils/urlKeys'
+import { ImageOff } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -30,6 +31,7 @@ const activeImageIndex = ref(0)
 const touchStartX = ref(0)
 const touchStartY = ref(0)
 const suppressNextCardClick = ref(false)
+const brokenImageUrls = ref<Record<string, true>>({})
 
 function onClick() {
   if (suppressNextCardClick.value) {
@@ -48,6 +50,17 @@ const currentImageUrl = computed(() => {
   if (!props.product.images.length) return ''
   return `${API_HOST}${props.product.images[activeImageIndex.value]?.image_url ?? props.product.images[0]?.image_url ?? ''}`
 })
+const hasVisibleImage = computed(() => (
+  Boolean(currentImageUrl.value) && !brokenImageUrls.value[currentImageUrl.value]
+))
+
+function markCurrentImageBroken(): void {
+  if (!currentImageUrl.value) return
+  brokenImageUrls.value = {
+    ...brokenImageUrls.value,
+    [currentImageUrl.value]: true,
+  }
+}
 
 function handleImagePointerMove(event: PointerEvent) {
   if (event.pointerType === 'touch') return
@@ -116,15 +129,16 @@ function handleImageTouchEnd(event: TouchEvent) {
     >
       <Transition name="image-fade" mode="out-in">
         <img
-          v-if="product.images.length"
+          v-if="hasVisibleImage"
           :key="currentImageUrl"
           :src="currentImageUrl"
           class="w-full h-full object-cover"
           alt="product image"
+          @error="markCurrentImageBroken"
         />
       </Transition>
       <div
-        v-if="product.images.length > 1"
+        v-if="product.images.length > 1 && hasVisibleImage"
         class="touch-dots pointer-events-none absolute inset-x-2 bottom-2 z-10 flex items-center justify-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100"
       >
         <span
@@ -134,8 +148,9 @@ function handleImageTouchEnd(event: TouchEvent) {
           :class="index === activeImageIndex ? 'w-4 bg-white/95' : 'w-1.5 bg-white/55'"
         />
       </div>
-      <div v-else class="w-full h-full flex items-center justify-center text-sm text-gray-300">
-        {{ t('common.noImage') }}
+      <div v-else class="flex h-full w-full flex-col items-center justify-center gap-2 text-gray-300">
+        <ImageOff class="h-7 w-7 text-gray-500" />
+        <span class="text-sm">{{ t('common.noImage') }}</span>
       </div>
       <div v-if="showStatusTag" class="pointer-events-none absolute right-2 top-2 z-10">
         <ProductStatusTag :product-status="product.status" />

@@ -9,6 +9,7 @@ import Title from '@/components/Title.vue'
 import HeroSection from '@/components/HeroSection.vue'
 import HeroBackground from '@/components/HeroBackground.vue'
 import ScopeVpnCta from '@/components/ScopeVpnCta.vue'
+import SteamTopUpCta from '@/components/SteamTopUpCta.vue'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
@@ -23,7 +24,7 @@ import type {
   SteamTopUpService,
 } from '@/validation/steamTopup/steamTopup'
 import { isValidSteamTopUpAccount, normalizeSteamTopUpAccount } from '@/validation/steamTopup/steamTopup'
-import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ChevronRight, Folder, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
 import axios from 'axios'
@@ -63,6 +64,8 @@ const searchableCategories = ref<Category[]>([])
 const isSearchDropdownOpen = ref(false)
 const searchDropdownHighlightedIndex = ref(-1)
 const searchDropdownRef = ref<HTMLElement | null>(null)
+const searchDropdownFloatingRef = ref<HTMLElement | null>(null)
+const searchDropdownStyle = ref<Record<string, string>>({})
 const isServerPagination = ref(true)
 const isCategoryPagination = ref(false)
 const isLoadingMore = ref(false)
@@ -86,6 +89,7 @@ const loadingSkeletonCount = computed(() => (
     ? perPage.value
     : Math.min(perPage.value, 12)
 ))
+const brokenCategoryImages = ref<Record<string, true>>({})
 const normalizedSearchQuery = computed(() => searchQuery.value.trim().toLowerCase())
 const categorySearchResults = computed(() => {
   if (normalizedSearchQuery.value.length < 1) return []
@@ -107,6 +111,17 @@ function restoreProductCardViewModeFromStorage(): void {
   if (typeof window === 'undefined') return
   const saved = window.localStorage.getItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY)
   productCardViewMode.value = saved === 'list' ? 'list' : 'grid'
+}
+
+function isCategoryImageAvailable(categoryId: string, imageUrl: string | null): boolean {
+  return Boolean(imageUrl) && !brokenCategoryImages.value[categoryId]
+}
+
+function markCategoryImageBroken(categoryId: string): void {
+  brokenCategoryImages.value = {
+    ...brokenCategoryImages.value,
+    [categoryId]: true,
+  }
 }
 
 type SteamAmountMode = 'denomination' | 'quantity'
@@ -332,6 +347,7 @@ async function onPricePresetClick(preset: PricePreset) {
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 let onDocumentClickForSearchDropdown: ((event: MouseEvent) => void) | null = null
+let onWindowChangeForSearchDropdown: (() => void) | null = null
 
 function goToProduct(productKey: string) {
   if (!productKey) return
@@ -352,11 +368,37 @@ function openSearchDropdown() {
   if (searchDropdownHighlightedIndex.value < 0) {
     searchDropdownHighlightedIndex.value = 0
   }
+  void nextTick(() => {
+    updateSearchDropdownPosition()
+  })
 }
 
 function closeSearchDropdown() {
   isSearchDropdownOpen.value = false
   searchDropdownHighlightedIndex.value = -1
+}
+
+function updateSearchDropdownPosition() {
+  if (typeof window === 'undefined') return
+  const anchor = searchDropdownRef.value
+  if (!anchor) return
+
+  const rect = anchor.getBoundingClientRect()
+  const viewportPadding = 12
+  const width = Math.min(rect.width, window.innerWidth - viewportPadding * 2)
+  const left = Math.min(
+    Math.max(rect.left, viewportPadding),
+    window.innerWidth - viewportPadding - width,
+  )
+  const top = rect.bottom + 8
+  const maxHeight = Math.max(window.innerHeight - top - viewportPadding, 160)
+
+  searchDropdownStyle.value = {
+    top: `${top}px`,
+    left: `${left}px`,
+    width: `${width}px`,
+    maxHeight: `${maxHeight}px`,
+  }
 }
 
 function moveSearchDropdownHighlight(direction: 1 | -1) {
@@ -954,6 +996,16 @@ watch([normalizedSearchQuery, hasCategorySearchResults], ([query, hasResults]) =
   if (searchDropdownHighlightedIndex.value < 0) {
     searchDropdownHighlightedIndex.value = 0
   }
+  void nextTick(() => {
+    updateSearchDropdownPosition()
+  })
+})
+
+watch(isSearchDropdownOpen, (isOpen) => {
+  if (!isOpen) return
+  void nextTick(() => {
+    updateSearchDropdownPosition()
+  })
 })
 
 onMounted(async () => {
@@ -969,9 +1021,16 @@ onMounted(async () => {
     const target = event.target as Node | null
     if (!target) return
     if (searchDropdownRef.value?.contains(target)) return
+    if (searchDropdownFloatingRef.value?.contains(target)) return
     closeSearchDropdown()
   }
   document.addEventListener('click', onDocumentClickForSearchDropdown)
+  onWindowChangeForSearchDropdown = () => {
+    if (!isSearchDropdownOpen.value) return
+    updateSearchDropdownPosition()
+  }
+  window.addEventListener('resize', onWindowChangeForSearchDropdown)
+  window.addEventListener('scroll', onWindowChangeForSearchDropdown, true)
 })
 
 onBeforeUnmount(() => {
@@ -981,6 +1040,11 @@ onBeforeUnmount(() => {
   if (onDocumentClickForSearchDropdown) {
     document.removeEventListener('click', onDocumentClickForSearchDropdown)
     onDocumentClickForSearchDropdown = null
+  }
+  if (onWindowChangeForSearchDropdown) {
+    window.removeEventListener('resize', onWindowChangeForSearchDropdown)
+    window.removeEventListener('scroll', onWindowChangeForSearchDropdown, true)
+    onWindowChangeForSearchDropdown = null
   }
 })
 
@@ -1003,10 +1067,15 @@ onBeforeUnmount(() => {
       class="relative z-20 flex min-h-screen w-full flex-col items-center px-1 pb-6 sm:px-2 lg:px-2"
       :class="user ? 'pt-20' : 'pt-6'"
     >
-        <div class="w-full">
+        <div class="mt-4 grid w-full items-stretch gap-3 lg:grid-cols-2">
+          <ScopeVpnCta />
+          <SteamTopUpCta v-if="HOME_STEAM_TOPUP_ENABLED" />
+        </div>
+
+        <div class="mt-4 w-full sm:mt-5">
           <div
             ref="searchDropdownRef"
-            class="w-full"
+            class="relative w-full"
             @focusin="openSearchDropdown"
             @keydown="onSearchDropdownKeydown"
           >
@@ -1018,40 +1087,6 @@ onBeforeUnmount(() => {
             />
           </div>
         </div>
-
-        <div
-          v-if="hasCategorySearchResults && isSearchDropdownOpen"
-          class="home-category-search-dropdown mt-2 w-full rounded-2xl border border-white/10 p-2 backdrop-blur-xl"
-        >
-          <p class="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-400/85">
-            {{ t('pages.index.categoriesFound') }}
-          </p>
-          <button
-            v-for="(category, index) in categorySearchResults"
-            :key="`search-category-${category.id}`"
-            type="button"
-            class="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm text-white transition duration-200"
-            :class="{
-              'bg-blue-400/15': searchDropdownHighlightedIndex === index,
-              'hover:bg-white/8': searchDropdownHighlightedIndex !== index,
-            }"
-            @mouseenter="searchDropdownHighlightedIndex = index"
-            @click="goToCategoryPage(category)"
-          >
-            <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-dark-800/80">
-              <img
-                v-if="category.image_url"
-                :src="resolveCategoryImageUrl(category.image_url)"
-                :alt="category.name"
-                class="h-6 w-6 rounded-md object-cover"
-              />
-              <Folder v-else class="h-4 w-4 text-gray-400" />
-            </span>
-            <span class="truncate text-sm leading-5">{{ category.name }}</span>
-          </button>
-        </div>
-
-        <ScopeVpnCta />
 
         <div class="mt-10 w-full sm:mt-16">
           <Title :text="t('common.categories')" />
@@ -1075,7 +1110,12 @@ onBeforeUnmount(() => {
                     class="flex-shrink-0 cursor-pointer flex flex-col items-center p-1.5 rounded-lg transition sm:p-2"
                   >
                     <div class="h-12 w-12 flex items-center justify-center bg-dark-700 rounded-lg overflow-hidden border border-white/5 shadow-inner sm:h-16 sm:w-16">
-                      <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="w-full h-full object-cover" />
+                      <img
+                        v-if="isCategoryImageAvailable(cat.id, cat.image_url)"
+                        :src="`${API_HOST}${cat.image_url}`"
+                        class="w-full h-full object-cover"
+                        @error="markCategoryImageBroken(cat.id)"
+                      />
                       <Folder v-else class="h-6 w-6 text-gray-400 sm:h-8 sm:w-8" />
                     </div>
                     <span class="home-category-label mt-1.5 sm:mt-2">{{ cat.name }}</span>
@@ -1112,7 +1152,12 @@ onBeforeUnmount(() => {
                 class="home-expanded-category-card cursor-pointer flex w-full flex-col items-center rounded-lg p-1 transition hover:bg-dark-700/25 sm:p-1.5"
               >
                 <div class="h-12 w-12 flex items-center justify-center bg-dark-700 rounded-lg overflow-hidden border border-white/5 shadow-inner sm:h-16 sm:w-16">
-                  <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="w-full h-full object-cover" />
+                  <img
+                    v-if="isCategoryImageAvailable(cat.id, cat.image_url)"
+                    :src="`${API_HOST}${cat.image_url}`"
+                    class="w-full h-full object-cover"
+                    @error="markCategoryImageBroken(cat.id)"
+                  />
                   <Folder v-else class="h-6 w-6 text-gray-400 sm:h-8 sm:w-8" />
                 </div>
                 <span class="home-category-label mt-1.5 sm:mt-2">
@@ -1341,6 +1386,43 @@ onBeforeUnmount(() => {
 
     <div ref="loadMoreTrigger" class="h-10"></div>
   </section>
+
+  <Teleport to="body">
+    <div
+      v-if="hasCategorySearchResults && isSearchDropdownOpen"
+      ref="searchDropdownFloatingRef"
+      class="home-category-search-dropdown fixed z-[180] overflow-y-auto rounded-2xl border border-white/10 p-2 backdrop-blur-xl"
+      :style="searchDropdownStyle"
+    >
+      <p class="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-400/85">
+        {{ t('pages.index.categoriesFound') }}
+      </p>
+      <button
+        v-for="(category, index) in categorySearchResults"
+        :key="`search-category-${category.id}`"
+        type="button"
+        class="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm text-white transition duration-200"
+        :class="{
+          'bg-white/7': searchDropdownHighlightedIndex === index,
+          'hover:bg-white/5': searchDropdownHighlightedIndex !== index,
+        }"
+        @mouseenter="searchDropdownHighlightedIndex = index"
+        @click="goToCategoryPage(category)"
+      >
+        <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-dark-800/80">
+          <img
+            v-if="isCategoryImageAvailable(category.id, category.image_url)"
+            :src="resolveCategoryImageUrl(category.image_url)"
+            :alt="category.name"
+            class="h-6 w-6 rounded-md object-cover"
+            @error="markCategoryImageBroken(category.id)"
+          />
+          <Folder v-else class="h-4 w-4 text-gray-400" />
+        </span>
+        <span class="truncate text-sm leading-5">{{ category.name }}</span>
+      </button>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -1422,22 +1504,37 @@ onBeforeUnmount(() => {
 
 .home-search-glass :deep(input) {
   border: 1px solid var(--home-search-glass-border);
-  padding-left: 0.75rem !important;
+  min-height: 3.5rem;
+  border-radius: 0.75rem;
+  padding-left: 2.9rem !important;
+  padding-right: 1rem !important;
   background: var(--home-search-glass-bg);
-  backdrop-filter: blur(10px) saturate(115%);
-  -webkit-backdrop-filter: blur(10px) saturate(115%);
+  color: rgb(var(--palette-white) / 0.94);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   box-shadow: var(--home-search-glass-shadow);
   transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.home-search-glass :deep(input::placeholder) {
+  color: rgb(var(--palette-gray-400) / 0.82);
 }
 
 .home-search-glass :deep(input:focus) {
   border-color: var(--home-search-glass-focus-border);
   box-shadow: var(--home-search-glass-focus-shadow);
+  background: rgb(var(--palette-white) / 0.04);
 }
 
 .home-search-glass :deep(svg) {
-  display: none;
-  color: var(--home-search-glass-icon);
+  display: block;
+  left: 1rem;
+  z-index: 1;
+  height: 1.1rem;
+  width: 1.1rem;
+  color: rgb(var(--palette-gray-300) / 0.92);
+  stroke-width: 2.2;
+  pointer-events: none;
 }
 
 .home-category-label {
@@ -1454,8 +1551,11 @@ onBeforeUnmount(() => {
 }
 
 .home-category-search-dropdown {
-  background: rgb(var(--palette-night-800) / 0.66);
-  box-shadow: 0 16px 38px rgb(var(--palette-black) / 0.4);
+  border-color: rgb(var(--palette-white) / 0.08);
+  background: rgb(var(--palette-white) / 0.035);
+  box-shadow: none;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .home-category-expand-btn {

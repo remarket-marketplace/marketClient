@@ -10,7 +10,7 @@ import { useUserStore } from '@/stores/user'
 import { vpnService, type ScopeVpnOrder, type ScopeVpnPlanId } from '@/api/vpn/VpnService'
 import { formatCurrencyAmount } from '@/utils/currency'
 import { getErrorMessage } from '@/utils/errorsMap'
-import scopeVpnLogoSrc from '@/assets/images/circle_logo_transparent.png'
+import scopeVpnLogoSrc from '@/assets/images/scope_vpn_logo.png'
 import { Icon } from '@iconify/vue'
 import {
   ArrowRight,

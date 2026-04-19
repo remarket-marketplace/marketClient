@@ -410,16 +410,24 @@ onBeforeUnmount(() => {
 }
 
 .steam-topup-field :deep(input) {
-  background: var(--steam-topup-field-bg);
-  border-color: var(--steam-topup-field-border);
+  min-height: 3.5rem;
+  border-color: var(--home-search-glass-border);
+  border-radius: 0.75rem;
+  background: var(--home-search-glass-bg);
+  color: rgb(var(--palette-white) / 0.94);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: var(--home-search-glass-shadow);
 }
 
 .steam-topup-field :deep(input:focus) {
-  border-color: var(--steam-topup-field-focus);
+  border-color: var(--home-search-glass-focus-border);
+  background: rgb(var(--palette-white) / 0.04);
+  box-shadow: var(--home-search-glass-focus-shadow);
 }
 
 .steam-topup-field :deep(input::placeholder) {
-  color: rgb(var(--palette-slate-500));
+  color: rgb(var(--palette-gray-400) / 0.82);
 }
 
 .steam-topup-amount-input :deep(input[type='number']) {
