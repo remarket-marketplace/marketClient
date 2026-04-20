@@ -763,6 +763,7 @@ const en = {
       resetFilters: "Reset",
       steamTopUp: {
         title: "Top up wallet",
+        navLabel: "Top up",
         subtitle: "With balance or external payment in a couple of steps.",
         quickBadge: "Balance / card",
         enterPromo: "Enter promo code",

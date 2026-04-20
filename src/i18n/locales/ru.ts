@@ -763,6 +763,7 @@ const ru = {
       resetFilters: "Сбросить",
       steamTopUp: {
         title: "Пополнить кошелёк",
+        navLabel: "Пополнить",
         subtitle: "Через баланс или внешнюю оплату за пару шагов.",
         quickBadge: "Баланс / карта",
         enterPromo: "Ввести промокод",

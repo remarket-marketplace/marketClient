@@ -19,7 +19,7 @@ const highlights = computed(() => ([
 <template>
   <section class="relative w-full pt-[clamp(4.15rem,6vw,5.15rem)] pb-6 max-[767px]:pt-[4.5rem] max-[767px]:pb-5">
     <div
-      class="relative isolate overflow-hidden rounded-[1.9rem] border border-white/8 bg-[rgb(5_8_15)] bg-cover bg-[center_right] shadow-[0_24px_70px_rgba(0,0,0,0.28)] min-[768px]:min-h-[31rem] min-[768px]:[background-position:68%_center] max-[767px]:rounded-[1.5rem] max-[767px]:bg-[center_center]"
+      class="relative isolate overflow-hidden rounded-[1.9rem] border border-white/8 bg-[rgb(5_8_15)] bg-cover bg-[center_right] min-[768px]:min-h-[31rem] min-[768px]:[background-position:68%_center] max-[767px]:rounded-[1.5rem] max-[767px]:bg-[center_center]"
       :style="heroBackgroundStyle"
     >
       <HeroBackground class="absolute inset-0 z-0 opacity-34" :masked="false" />
