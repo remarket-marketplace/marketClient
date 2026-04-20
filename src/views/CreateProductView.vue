@@ -77,6 +77,7 @@ const createdProduct = ref<{ id: string; slug: string } | null>(null)
 const showCreatedProductModal = ref(false)
 const commissionInterest = ref<number | null>(null)
 const autoDelivery = ref<boolean>(true)
+const isOfficial = ref<boolean>(false)
 const isLoadingDraft = ref(false)
 const isRaikaDraftApplied = ref(false)
 const draftImages = ref<string[]>([])
@@ -119,6 +120,7 @@ const selectedCategory = computed(() => (
 const selectedSubcategory = computed(() => (
   subcategories.value.find(subcategory => subcategory.id === selectedSubcategoryId.value) ?? null
 ))
+const canMarkProductOfficial = computed(() => store.user?.role === 'admin')
 const hasValidSelectedCategory = computed(() => Boolean(selectedCategory.value))
 const hasValidSelectedSubcategory = computed(() => Boolean(selectedSubcategory.value))
 const shouldShowFortniteAccountForm = computed(() => isFortniteAccountsCategory({
@@ -477,6 +479,7 @@ const hasAnyFormData = computed(() => (
   || images.value.length > 0
   || draftImages.value.length > 0
   || !autoDelivery.value
+  || isOfficial.value
   || isRaikaDraftApplied.value
 ))
 
@@ -618,6 +621,7 @@ function buildCreateProductDraftPayload(): CreateProductDraftPayload {
     fortniteAccountDetails: { ...fortniteAccountForm.value },
     count: count.value,
     autoDelivery: autoDelivery.value,
+    isOfficial: isOfficial.value,
     images: [...images.value],
     currentStep: currentStep.value,
   }
@@ -702,6 +706,7 @@ async function restoreSavedCreateProductDraft(): Promise<void> {
     images.value = savedDraft.images
     count.value = savedDraft.count
     autoDelivery.value = savedDraft.autoDelivery
+    isOfficial.value = canMarkProductOfficial.value ? savedDraft.isOfficial : false
     currentStep.value = savedDraft.currentStep
     showStepIssues.value = false
     lastDraftSavedAt.value = savedDraft.updatedAt || null
@@ -793,6 +798,12 @@ watch(selectedCurrency, (nextCurrency, prevCurrency) => {
     : Math.round(converted).toString()
 })
 
+watch(canMarkProductOfficial, (allowed) => {
+  if (!allowed) {
+    isOfficial.value = false
+  }
+})
+
 watch(
   [
     selectedCategoryId,
@@ -805,6 +816,7 @@ watch(
     images,
     count,
     autoDelivery,
+    isOfficial,
     currentStep,
   ],
   () => {
@@ -851,6 +863,7 @@ function clearForm() {
   draftImages.value = []
   count.value = 1
   autoDelivery.value = true
+  isOfficial.value = false
   errorMessage.value = ''
   isRaikaDraftApplied.value = false
   currentStep.value = 1
@@ -908,6 +921,7 @@ async function createProduct() {
       category_id: selectedSubcategory.value?.id ?? '',
       count: countValue.value,
       auto_delivery: autoDelivery.value,
+      is_official: canMarkProductOfficial.value ? isOfficial.value : false,
       draft_images: draftImages.value,
     }
 
@@ -1223,6 +1237,23 @@ async function createProduct() {
                       <Info class="w-4 h-4 mt-0.5 flex-shrink-0" />
                       {{ $t('pages.forms.createProduct.autoDeliveryEnabledHint') }}
                     </p>
+                  </div>
+                </div>
+
+                <div
+                  v-if="canMarkProductOfficial"
+                  class="rounded-xl border border-blue-700/40 bg-blue-950/20 p-5 space-y-3"
+                >
+                  <div class="flex items-center justify-between">
+                    <div class="space-y-1">
+                      <h4 class="text-sm font-semibold text-white">
+                        Официальный товар remarket
+                      </h4>
+                      <p class="text-xs text-blue-200/85 leading-relaxed">
+                        Товар попадет в отдельную официальную карусель в категориях.
+                      </p>
+                    </div>
+                    <Checkbox v-model="isOfficial" size="lg" />
                   </div>
                 </div>
 
