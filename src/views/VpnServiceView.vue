@@ -7,7 +7,7 @@ import AppModal from '@/components/AppModal.vue'
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
 import { useUserStore } from '@/stores/user'
-import { vpnService, type ScopeVpnOrder, type ScopeVpnPlanId } from '@/api/vpn/VpnService'
+import { vpnService, type ScopeVpnOrder } from '@/api/vpn/VpnService'
 import { formatCurrencyAmount } from '@/utils/currency'
 import { getErrorMessage } from '@/utils/errorsMap'
 import scopeVpnLogoSrc from '@/assets/images/scope_vpn_logo.png'
@@ -27,14 +27,16 @@ import {
   Youtube,
 } from 'lucide-vue-next'
 
-type VpnPlanId = ScopeVpnPlanId
+type VpnPeriodMonths = 1 | 3 | 6 | 12
 
-interface VpnPlan {
-  id: VpnPlanId
+interface VpnPeriodOption {
+  months: VpnPeriodMonths
   duration: string
   caption: string
   price: number
   priceLabel: string
+  monthlyLabel: string
+  badge?: string
 }
 
 interface VpnFeature {
@@ -62,18 +64,67 @@ const { user } = storeToRefs(userStore)
 
 const TRIAL_MIN_ACCOUNT_AGE_MS = 7 * 24 * 60 * 60 * 1000
 const TRIAL_MIN_BALANCE_RUB = 50
+const VPN_PERIODS: VpnPeriodMonths[] = [1, 3, 6, 12]
+const VPN_DEVICES = Array.from({ length: 10 }, (_, index) => index + 1)
+const DEFAULT_VPN_PRICES: Record<VpnPeriodMonths, Record<number, number>> = {
+  1: {
+    1: 199,
+    2: 249,
+    3: 299,
+    4: 349,
+    5: 399,
+    6: 449,
+    7: 499,
+    8: 549,
+    9: 599,
+    10: 649,
+  },
+  3: {
+    1: 449,
+    2: 629,
+    3: 759,
+    4: 889,
+    5: 1019,
+    6: 1149,
+    7: 1279,
+    8: 1409,
+    9: 1539,
+    10: 1699,
+  },
+  6: {
+    1: 849,
+    2: 1069,
+    3: 1284,
+    4: 1509,
+    5: 1729,
+    6: 1994,
+    7: 2169,
+    8: 2389,
+    9: 2609,
+    10: 2829,
+  },
+  12: {
+    1: 1549,
+    2: 1949,
+    3: 2349,
+    4: 2749,
+    5: 3149,
+    6: 3549,
+    7: 3949,
+    8: 4349,
+    9: 4749,
+    10: 5149,
+  },
+}
 
-const selectedPlanId = ref<VpnPlanId>('month')
+const selectedMonths = ref<VpnPeriodMonths>(1)
+const selectedDevices = ref(1)
 const isPlansLoading = ref(false)
 const isPurchaseLoading = ref(false)
 const isTrialLoading = ref(false)
 const actionError = ref('')
 const modalError = ref('')
-const planPrices = ref<Record<VpnPlanId, number>>({
-  month: 0,
-  quarter: 0,
-  halfyear: 0,
-})
+const planPrices = ref(cloneVpnPrices(DEFAULT_VPN_PRICES))
 const orderModalOpen = ref(false)
 const orderModalMode = ref<'purchase' | 'trial'>('purchase')
 const orderResult = ref<ScopeVpnOrder | null>(null)
@@ -81,34 +132,67 @@ const isSubscriptionCopied = ref(false)
 
 // Модальное окно подтверждения покупки
 const confirmModalOpen = ref(false)
-const pendingPlanId = ref<VpnPlanId | null>(null)
+const pendingSelection = ref<{ months: VpnPeriodMonths; devices: number } | null>(null)
+
+function cloneVpnPrices(
+  prices: Record<VpnPeriodMonths, Record<number, number>>,
+): Record<VpnPeriodMonths, Record<number, number>> {
+  return {
+    1: { ...prices[1] },
+    3: { ...prices[3] },
+    6: { ...prices[6] },
+    12: { ...prices[12] },
+  }
+}
+
+function isVpnPeriodMonths(value: number): value is VpnPeriodMonths {
+  return VPN_PERIODS.includes(value as VpnPeriodMonths)
+}
 
 function formatPlanPrice(price: number): string {
   if (!Number.isFinite(price) || price <= 0) return t('pages.vpn.pricePending')
   return formatCurrencyAmount(price)
 }
 
-const planOptions = computed<VpnPlan[]>(() => [
+function getPlanPrice(months: VpnPeriodMonths, devices: number): number {
+  return Number(planPrices.value[months]?.[devices]) || 0
+}
+
+const periodOptions = computed<VpnPeriodOption[]>(() => [
   {
-    id: 'month',
+    months: 1,
     duration: t('pages.vpn.plans.month.duration'),
     caption: t('pages.vpn.plans.month.caption'),
-    price: planPrices.value.month,
-    priceLabel: formatPlanPrice(planPrices.value.month),
+    price: getPlanPrice(1, selectedDevices.value),
+    priceLabel: formatPlanPrice(getPlanPrice(1, selectedDevices.value)),
+    monthlyLabel: formatPlanPrice(getPlanPrice(1, selectedDevices.value)),
   },
   {
-    id: 'quarter',
+    months: 3,
     duration: t('pages.vpn.plans.quarter.duration'),
     caption: t('pages.vpn.plans.quarter.caption'),
-    price: planPrices.value.quarter,
-    priceLabel: formatPlanPrice(planPrices.value.quarter),
+    price: getPlanPrice(3, selectedDevices.value),
+    priceLabel: formatPlanPrice(getPlanPrice(3, selectedDevices.value)),
+    monthlyLabel: formatPlanPrice(getPlanPrice(3, selectedDevices.value) / 3),
+    badge: t('pages.vpn.plans.quarter.badge'),
   },
   {
-    id: 'halfyear',
+    months: 6,
     duration: t('pages.vpn.plans.halfyear.duration'),
     caption: t('pages.vpn.plans.halfyear.caption'),
-    price: planPrices.value.halfyear,
-    priceLabel: formatPlanPrice(planPrices.value.halfyear),
+    price: getPlanPrice(6, selectedDevices.value),
+    priceLabel: formatPlanPrice(getPlanPrice(6, selectedDevices.value)),
+    monthlyLabel: formatPlanPrice(getPlanPrice(6, selectedDevices.value) / 6),
+    badge: t('pages.vpn.plans.halfyear.badge'),
+  },
+  {
+    months: 12,
+    duration: t('pages.vpn.plans.year.duration'),
+    caption: t('pages.vpn.plans.year.caption'),
+    price: getPlanPrice(12, selectedDevices.value),
+    priceLabel: formatPlanPrice(getPlanPrice(12, selectedDevices.value)),
+    monthlyLabel: formatPlanPrice(getPlanPrice(12, selectedDevices.value) / 12),
+    badge: t('pages.vpn.plans.year.badge'),
   },
 ])
 
@@ -180,13 +264,10 @@ const appItems = computed<VpnApp[]>(() => [
   },
 ])
 
-const selectedPlan = computed<VpnPlan>(() =>
-  planOptions.value.find((plan) => plan.id === selectedPlanId.value) ?? planOptions.value[0]!,
+const selectedPeriod = computed<VpnPeriodOption>(() =>
+  periodOptions.value.find((plan) => plan.months === selectedMonths.value) ?? periodOptions.value[0]!,
 )
 
-<<<<<<< Updated upstream
-const selectedPlanPriceLabel = computed(() => selectedPlan.value.priceLabel)
-=======
 const selectedPlanPrice = computed(() => getPlanPrice(selectedMonths.value, selectedDevices.value))
 const selectedPlanPriceLabel = computed(() => formatPlanPrice(selectedPlanPrice.value))
 const selectedMonthlyPriceLabel = computed(() =>
@@ -208,7 +289,6 @@ const confirmMessage = computed(() =>
     price: selectedPlanPriceLabel.value,
   }),
 )
->>>>>>> Stashed changes
 
 const isTrialAvailable = computed(() => {
   if (!user.value) return false
@@ -220,8 +300,12 @@ const isTrialAvailable = computed(() => {
   return isAccountOldEnough || user.value.balance > TRIAL_MIN_BALANCE_RUB
 })
 
-function selectPlan(planId: VpnPlanId): void {
-  selectedPlanId.value = planId
+function selectPeriod(months: VpnPeriodMonths): void {
+  selectedMonths.value = months
+}
+
+function selectDevices(devices: number): void {
+  selectedDevices.value = devices
 }
 
 function scrollToPlans(): void {
@@ -238,10 +322,12 @@ async function loadPlans(): Promise<void> {
   isPlansLoading.value = true
   try {
     const plans = await vpnService.getPlans()
-    const nextPrices = { ...planPrices.value }
+    const nextPrices = cloneVpnPrices(DEFAULT_VPN_PRICES)
     for (const plan of plans) {
-      if (plan.id in nextPrices) {
-        nextPrices[plan.id] = Number(plan.price) || 0
+      const months = Number(plan.months)
+      const devices = Number(plan.devices)
+      if (isVpnPeriodMonths(months) && devices >= 1 && devices <= 10) {
+        nextPrices[months][devices] = Number(plan.price) || 0
       }
     }
     planPrices.value = nextPrices
@@ -277,28 +363,30 @@ function closeOrderModal(): void {
 async function buySelectedPlan(): Promise<void> {
   if (!requireUser()) return
   actionError.value = ''
-  // Сохраняем выбранный план и показываем модаль подтверждения
-  pendingPlanId.value = selectedPlanId.value
+  pendingSelection.value = {
+    months: selectedMonths.value,
+    devices: selectedDevices.value,
+  }
   confirmModalOpen.value = true
 }
 
 async function confirmPurchase(): Promise<void> {
-  if (!pendingPlanId.value) return
+  if (!pendingSelection.value) return
   actionError.value = ''
   modalError.value = ''
   isPurchaseLoading.value = true
   confirmModalOpen.value = false
   try {
-    const order = await vpnService.purchase(pendingPlanId.value)
+    const order = await vpnService.purchase(pendingSelection.value)
     userStore.updateUserProfile({ balance: order.balance })
     orderResult.value = order
     orderModalMode.value = 'purchase'
     orderModalOpen.value = true
     isSubscriptionCopied.value = false
-    pendingPlanId.value = null
+    pendingSelection.value = null
   } catch (error) {
     actionError.value = resolveErrorMessage(error)
-    pendingPlanId.value = null
+    pendingSelection.value = null
   } finally {
     isPurchaseLoading.value = false
   }
@@ -306,7 +394,7 @@ async function confirmPurchase(): Promise<void> {
 
 function cancelPurchase(): void {
   confirmModalOpen.value = false
-  pendingPlanId.value = null
+  pendingSelection.value = null
 }
 
 async function confirmTrial(): Promise<void> {
@@ -489,30 +577,18 @@ onMounted(() => {
       </section>
 
       <section id="vpn-plans" class="scroll-mt-24 py-12">
-        <div class="max-w-2xl">
+        <div class="max-w-3xl">
           <p class="text-sm font-medium text-blue-200">{{ t('pages.vpn.plansEyebrow') }}</p>
           <h2 class="mt-3 text-3xl font-semibold leading-tight text-white sm:text-4xl">
             {{ t('pages.vpn.plansTitle') }}
           </h2>
+          <p class="mt-3 text-sm leading-6 text-gray-400">
+            {{ t('pages.vpn.plansSubtitle') }}
+          </p>
         </div>
 
-<<<<<<< Updated upstream
-        <div class="mt-7 grid gap-3 lg:grid-cols-3">
-          <button
-            v-for="plan in planOptions"
-            :key="plan.id"
-            type="button"
-            class="vpn-plan group rounded-lg border p-5 text-left transition duration-200"
-            :class="selectedPlanId === plan.id
-              ? 'border-blue-400/45 bg-blue-500/[0.12]'
-              : 'border-white/[0.08] bg-white/[0.03] hover:border-white/[0.16] hover:bg-white/[0.06]'"
-            :aria-pressed="selectedPlanId === plan.id"
-            @click="selectPlan(plan.id)"
-          >
-            <div class="flex items-start justify-between gap-3">
-=======
-        <div class="mt-7 grid items-stretch gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div class="flex flex-col gap-4">
+        <div class="mt-7 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div class="space-y-4">
             <div class="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 sm:p-5">
               <div class="flex items-start justify-between gap-4">
                 <div>
@@ -639,28 +715,12 @@ onMounted(() => {
               {{ t('pages.vpn.summaryEyebrow') }}
             </p>
             <div class="mt-4 flex items-end justify-between gap-4">
->>>>>>> Stashed changes
               <div>
-                <h3 class="mt-2 text-3xl font-semibold text-white">{{ plan.duration }}</h3>
-                <p class="mt-2 text-sm font-semibold text-blue-200">
-                  {{ isPlansLoading ? t('common.loading') : plan.priceLabel }}
+                <p class="text-sm text-gray-400">{{ t('pages.vpn.total') }}</p>
+                <p class="mt-1 text-4xl font-semibold leading-none text-white">
+                  {{ isPlansLoading ? t('common.loading') : selectedPlanPriceLabel }}
                 </p>
               </div>
-<<<<<<< Updated upstream
-              <span
-                class="flex h-7 w-7 items-center justify-center rounded-full border transition"
-                :class="selectedPlanId === plan.id
-                  ? 'border-blue-300 bg-blue-500 text-white'
-                  : 'border-white/[0.14] text-transparent group-hover:text-gray-400'"
-              >
-                <Check class="h-4 w-4" stroke-width="2" />
-              </span>
-            </div>
-
-            <p class="mt-4 min-h-12 text-sm leading-6 text-gray-300">{{ plan.caption }}</p>
-          </button>
-        </div>
-=======
               <div class="pb-1 text-right text-xs leading-5 text-gray-400">
                 <p>{{ selectedPeriod.duration }}</p>
                 <p>{{ selectedDevicesFullLabel }}</p>
@@ -681,33 +741,28 @@ onMounted(() => {
                 <span class="font-medium text-white">{{ selectedMonthlyPriceLabel }}</span>
               </div>
             </div>
->>>>>>> Stashed changes
 
-        <div class="mt-5 flex flex-col gap-3 rounded-lg border border-white/[0.08] bg-white/[0.03] p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p class="text-sm font-semibold text-white">
-              {{ t('pages.vpn.selectedPlan', { duration: selectedPlan.duration }) }}
-            </p>
-            <p class="mt-1 text-sm text-gray-400">
+            <p class="mt-5 rounded-xl border border-white/[0.08] bg-black/[0.14] px-3 py-2 text-xs leading-5 text-gray-400">
               {{ t('pages.vpn.selectedPlanHint', { price: selectedPlanPriceLabel }) }}
             </p>
-            <p v-if="actionError" class="mt-2 text-sm text-red-300">{{ actionError }}</p>
-          </div>
-          <button
-            type="button"
-            class="market-primary-surface market-primary-hover inline-flex h-11 items-center justify-center gap-2 rounded-lg px-5 text-sm font-semibold text-white transition-colors duration-200"
-            :disabled="isPurchaseLoading"
-            @click="buySelectedPlan"
-          >
-            <span>
-              {{
-                isPurchaseLoading
-                  ? t('pages.vpn.processing')
-                  : t('pages.vpn.buySelected', { duration: selectedPlan.duration })
-              }}
-            </span>
-            <ShoppingCart class="h-4 w-4" stroke-width="1.7" />
-          </button>
+            <p v-if="actionError" class="mt-3 text-sm text-red-300">{{ actionError }}</p>
+
+            <button
+              type="button"
+              class="market-primary-surface market-primary-hover mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-white transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60"
+              :disabled="isPurchaseLoading || selectedPlanPrice <= 0"
+              @click="buySelectedPlan"
+            >
+              <span>
+                {{
+                  isPurchaseLoading
+                    ? t('pages.vpn.processing')
+                    : t('pages.vpn.buySelected', { price: selectedPlanPriceLabel })
+                }}
+              </span>
+              <ShoppingCart class="h-4 w-4" stroke-width="1.7" />
+            </button>
+          </aside>
         </div>
       </section>
     </div>
@@ -784,7 +839,7 @@ onMounted(() => {
     <ConfirmWindow
       :is-open="confirmModalOpen"
       :title="t('pages.vpn.confirm.title')"
-      :message="t('pages.vpn.confirm.message')"
+      :message="confirmMessage"
       :confirm-text="t('pages.vpn.confirm.confirm')"
       :cancel-text="t('pages.vpn.confirm.cancel')"
       :is-loading="isPurchaseLoading"

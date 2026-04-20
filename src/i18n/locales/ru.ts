@@ -857,9 +857,6 @@ const ru = {
         incyText: "Альтернативный клиент для iOS, Android, Windows и Linux.",
       },
       plansEyebrow: "Периоды",
-<<<<<<< Updated upstream
-      plansTitle: "Выберите срок доступа",
-=======
       plansTitle: "Соберите тариф под себя",
       plansSubtitle: "Выберите срок подписки и количество устройств.",
       periodStep: "Шаг 1",
@@ -877,27 +874,35 @@ const ru = {
       summaryPeriod: "Срок",
       summaryDevices: "Устройства",
       summaryMonthly: "В месяц",
->>>>>>> Stashed changes
       plans: {
         month: {
           duration: "1 месяц",
-          caption: "Основной вариант для регулярной работы.",
+          caption: "Быстрый старт без длинной подписки.",
+          badge: "Можно продлить позже",
           action: "Купить на месяц",
         },
         quarter: {
           duration: "3 месяца",
-          caption: "Для тех, кому нужен запас без частого продления.",
+          caption: "Оптимально, если VPN нужен каждый день.",
+          badge: "Меньше продлений",
           action: "Купить на 3 месяца",
         },
         halfyear: {
           duration: "6 месяцев",
-          caption: "Для долгого использования без частых продлений.",
+          caption: "Для стабильного доступа на несколько месяцев.",
+          badge: "Выгоднее помесячно",
           action: "Купить на 6 месяцев",
+        },
+        year: {
+          duration: "12 месяцев",
+          caption: "Максимальный запас и самая низкая цена в месяц.",
+          badge: "Лучшее на год",
+          action: "Купить на 12 месяцев",
         },
       },
       selectedPlan: "Выбран срок: {duration}",
       selectedPlanHint: "Стоимость: {price}. После покупки ссылка появится здесь и в чате.",
-      buySelected: "Купить {duration}",
+      buySelected: "Купить за {price}",
       modal: {
         trialTitle: "Пробный период",
         trialDescription: "Подтвердите создание тестового доступа Scope VPN.",
@@ -911,7 +916,7 @@ const ru = {
       },
       confirm: {
         title: "Подтвердить покупку",
-        message: "Вы уверены, что хотите купить VPN? Средства будут списаны с вашего счёта.",
+        message: "Вы покупаете Scope VPN на {duration}, лимит: {devices}. К списанию: {price}.",
         confirm: "Купить",
         cancel: "Отмена",
       },

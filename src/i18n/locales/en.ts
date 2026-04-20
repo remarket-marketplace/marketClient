@@ -877,23 +877,32 @@ const en = {
       plans: {
         month: {
           duration: "1 month",
-          caption: "The main option for regular work.",
+          caption: "Quick start without a long subscription.",
+          badge: "Extend later",
           action: "Buy month",
         },
         quarter: {
           duration: "3 months",
-          caption: "For users who need more time with fewer renewals.",
+          caption: "A practical option if you use VPN every day.",
+          badge: "Fewer renewals",
           action: "Buy 3 months",
         },
         halfyear: {
           duration: "6 months",
-          caption: "For long-term use without frequent renewals.",
+          caption: "Stable access for several months.",
+          badge: "Better monthly rate",
           action: "Buy 6 months",
+        },
+        year: {
+          duration: "12 months",
+          caption: "Maximum runway and the lowest monthly rate.",
+          badge: "Best for a year",
+          action: "Buy 12 months",
         },
       },
       selectedPlan: "Selected period: {duration}",
       selectedPlanHint: "Price: {price}. After purchase, the link appears here and in chat.",
-      buySelected: "Buy {duration}",
+      buySelected: "Buy for {price}",
       modal: {
         trialTitle: "Trial period",
         trialDescription: "Confirm creation of Scope VPN test access.",
@@ -907,7 +916,7 @@ const en = {
       },
       confirm: {
         title: "Confirm purchase",
-        message: "Are you sure you want to buy VPN? Funds will be deducted from your account.",
+        message: "You are buying Scope VPN for {duration}, limit: {devices}. Charge: {price}.",
         confirm: "Buy",
         cancel: "Cancel",
       },
