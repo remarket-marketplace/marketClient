@@ -834,6 +834,7 @@ function getProductFiltersParams(): ProductsFilterParams {
     maxPrice,
     onlineSellersOnly: onlineSellersOnly.value,
     autoDeliveryOnly: autoDeliveryOnly.value,
+    excludeOfficial: true,
   }
 }
 

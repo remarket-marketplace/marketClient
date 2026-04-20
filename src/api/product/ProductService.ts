@@ -37,6 +37,8 @@ export interface ProductsFilterParams {
   createdTo?: string;
   onlineSellersOnly?: boolean;
   autoDeliveryOnly?: boolean;
+  isOfficialOnly?: boolean;
+  excludeOfficial?: boolean;
   fortniteCountry?: string;
   fortniteCanChangeEmail?: boolean;
   fortniteFirstEmail?: boolean;
@@ -95,6 +97,8 @@ function buildProductsFilterParams(filters?: ProductsFilterParams) {
   if (filters.createdTo) params.created_to = filters.createdTo;
   if (filters.onlineSellersOnly === true) params.online_sellers_only = true;
   if (filters.autoDeliveryOnly === true) params.auto_delivery_only = true;
+  if (filters.isOfficialOnly === true) params.is_official_only = true;
+  if (filters.excludeOfficial === true) params.exclude_official = true;
   if (filters.fortniteCountry) params.fortnite_country = filters.fortniteCountry;
   if (filters.fortniteCanChangeEmail !== undefined) params.fortnite_can_change_email = filters.fortniteCanChangeEmail;
   if (filters.fortniteFirstEmail !== undefined) params.fortnite_first_email = filters.fortniteFirstEmail;
@@ -409,6 +413,7 @@ export const productService = {
       formData.append("category_id", productData.category_id);
       formData.append("count", productData.count);
       formData.append("auto_delivery", productData.auto_delivery);
+      formData.append("is_official", String(Boolean(productData.is_official)));
 
       [...draftImagesFromPayload, ...draftImagesFromDirectUpload].forEach(
         (imageUrl: string) => {

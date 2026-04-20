@@ -66,6 +66,7 @@ export const ProductSchema = z.object({
   images: z.array(ProductImageSchema),
   count: z.number(),
   auto_delivery: z.boolean(),
+  is_official: z.boolean().optional(),
   is_raika_verified: z.boolean().optional(),
   moderation_reject_reason_code: z.string().nullable().optional(),
   moderation_reject_reason_text: z.string().nullable().optional(),

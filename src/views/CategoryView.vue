@@ -9,11 +9,12 @@ import Title from '@/components/Title.vue'
 import ScopeVpnCta from '@/components/ScopeVpnCta.vue'
 import type { Category } from '@/validation/category/category'
 import type { Product } from '@/validation/product/product'
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import { formatCurrencyAmount } from '@/utils/currency'
 import { getCountryOptions } from '@/utils/countryOptions'
-import { buildCategoryKey, extractIdFromSlugKey } from '@/utils/urlKeys'
+import { buildCategoryKey, buildProductKey, extractIdFromSlugKey } from '@/utils/urlKeys'
 import {
   FORTNITE_ACCOUNT_BOOLEAN_FIELDS,
   FORTNITE_ACCOUNT_COUNT_FIELDS,
@@ -23,7 +24,7 @@ import {
   type FortniteAccountDateFieldKey,
   isFortniteAccountsCategory,
 } from '@/utils/fortniteAccount'
-import { ChevronRight, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
+import { BadgeCheck, ChevronLeft, ChevronRight, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
 
 const { t, locale } = useI18n()
 const route = useRoute()
@@ -34,12 +35,21 @@ const category = ref<Category | null>(null)
 const subcategories = ref<Category[]>([])
 const selectedCategoryPath = ref<Category[]>([])
 const products = ref<Product[]>([])
+const officialProducts = ref<Product[]>([])
+const officialProductsSourceCategory = ref<Category | null>(null)
+const officialSubcategoryCounts = ref<Record<string, number>>({})
+const isOfficialSubcategoryCountsLoading = ref(false)
+const officialCarouselRef = ref<HTMLElement | null>(null)
+const isOfficialCarouselAtStart = ref(true)
+const isOfficialCarouselAtEnd = ref(false)
 const currentPage = ref(1)
 const totalPages = ref(1)
 const perPage = ref(30)
+const officialProductsPerPage = ref(14)
 const isCategoryLoading = ref(true)
 const isSubcategoriesLoading = ref(false)
 const isProductsLoading = ref(true)
+const isOfficialProductsLoading = ref(false)
 const isLoadingMore = ref(false)
 const isFiltersOpen = ref(false)
 type ProductCardViewMode = 'grid' | 'list'
@@ -137,6 +147,101 @@ function isVpnCategoryCandidate(item: Category | null | undefined): boolean {
   return [item.name, item.name_ru, item.name_en, item.slug].some(isVpnTextCandidate)
 }
 
+const shouldShowOfficialRemarketCarousel = computed(() =>
+  isOfficialProductsLoading.value || officialProducts.value.length > 0
+)
+
+const officialProductsCountText = computed(() => {
+  const count = officialProducts.value.length
+  return `${count} ${getProductWordFormRu(count)}`
+})
+
+const officialProductsSourceText = computed(() => {
+  const sourceCategory = officialProductsSourceCategory.value
+  if (!sourceCategory) return ''
+  return `из раздела ${sourceCategory.name}`
+})
+
+function getProductWordFormRu(count: number): string {
+  const normalizedCount = Math.abs(Math.trunc(count))
+  const mod10 = normalizedCount % 10
+  const mod100 = normalizedCount % 100
+  if (mod10 === 1 && mod100 !== 11) return 'товар'
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'товара'
+  return 'товаров'
+}
+
+function formatOfficialPrice(price: number): string {
+  return formatCurrencyAmount(price, {
+    currency: 'RUB',
+    fromCurrency: 'RUB',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  })
+}
+
+function updateOfficialCarouselState() {
+  const carouselElement = officialCarouselRef.value
+  if (!carouselElement) {
+    isOfficialCarouselAtStart.value = true
+    isOfficialCarouselAtEnd.value = true
+    return
+  }
+
+  const maxScrollLeft = Math.max(0, carouselElement.scrollWidth - carouselElement.clientWidth)
+  const scrollLeft = Math.max(0, carouselElement.scrollLeft)
+  const edgeThreshold = 8
+  isOfficialCarouselAtStart.value = scrollLeft <= edgeThreshold
+  isOfficialCarouselAtEnd.value = scrollLeft >= maxScrollLeft - edgeThreshold
+}
+
+function handleOfficialCarouselScroll() {
+  updateOfficialCarouselState()
+}
+
+function scrollOfficialCarousel(direction: 'prev' | 'next') {
+  const carouselElement = officialCarouselRef.value
+  if (!carouselElement) return
+
+  const firstCard = carouselElement.querySelector<HTMLElement>('[data-official-card]')
+  const scrollStep = firstCard
+    ? firstCard.offsetWidth + 16
+    : Math.max(320, Math.round(carouselElement.clientWidth * 0.82))
+
+  carouselElement.scrollBy({
+    left: direction === 'next' ? scrollStep : -scrollStep,
+    behavior: 'smooth',
+  })
+
+  window.setTimeout(updateOfficialCarouselState, 320)
+}
+
+function openOfficialStorePage() {
+  const rootCategory = category.value
+  if (!rootCategory) return
+
+  const query: Record<string, string> = {}
+  const rootCategoryKey = buildCategoryKey(rootCategory) || rootCategory.id
+  if (rootCategoryKey) {
+    query.gameCategoryId = rootCategoryKey
+  }
+
+  const currentActiveCategory = activeCategory.value
+  const selectedSubcategoryForQuery = (
+    currentActiveCategory && currentActiveCategory.parent_id !== null
+      ? currentActiveCategory
+      : officialProductsSourceCategory.value
+  )
+  if (selectedSubcategoryForQuery) {
+    const subcategoryKey = buildCategoryKey(selectedSubcategoryForQuery) || selectedSubcategoryForQuery.id
+    if (subcategoryKey) {
+      query.subcategoryId = subcategoryKey
+    }
+  }
+
+  router.push({ path: '/official', query })
+}
+
 function resolveCategoryImageUrl(imageUrl: string | null): string {
   if (!imageUrl) {
     return ''
@@ -147,9 +252,24 @@ function resolveCategoryImageUrl(imageUrl: string | null): string {
   return `${API_HOST}${imageUrl}`
 }
 
+function resolveProductImageUrl(product: Product): string {
+  const firstImage = product.images[0]?.image_url ?? ''
+  if (!firstImage) return ''
+  if (firstImage.startsWith('http://') || firstImage.startsWith('https://')) {
+    return firstImage
+  }
+  return `${API_HOST}${firstImage}`
+}
+
 function goToProduct(productKey: string) {
   if (!productKey) return
   router.push({ path: `/product/${productKey}` })
+}
+
+function goToProductByModel(product: Product) {
+  const productKey = buildProductKey(product)
+  if (!productKey) return
+  goToProduct(productKey)
 }
 
 function goHome() {
@@ -264,8 +384,49 @@ async function loadSubcategoriesForActiveCategory() {
   try {
     const response = await categoryService.getSubcategories(getActiveCategoryFilterKey(), 1, 100)
     subcategories.value = sortCategoriesByActiveProductsCount(response.categories)
+    if (selectedCategoryPath.value.length === 0) {
+      await loadOfficialCountsForSubcategories(subcategories.value)
+      return
+    }
   } finally {
     isSubcategoriesLoading.value = false
+  }
+}
+
+async function getOfficialProductsCountForCategory(categoryValue: Category): Promise<number> {
+  const categoryFilterKey = buildCategoryKey(categoryValue) || categoryValue.id
+  if (!categoryFilterKey) return 0
+
+  const response = await productService.getProductsByCategory(
+    categoryFilterKey,
+    1,
+    1,
+    { isOfficialOnly: true },
+  )
+  return response.total > 0 ? response.total : response.products.length
+}
+
+async function loadOfficialCountsForSubcategories(subcategoriesList: Category[]) {
+  if (!subcategoriesList.length) {
+    officialSubcategoryCounts.value = {}
+    return
+  }
+
+  isOfficialSubcategoryCountsLoading.value = true
+  try {
+    const countsEntries = await Promise.all(
+      subcategoriesList.map(async (subcategory) => {
+        const count = await getOfficialProductsCountForCategory(subcategory)
+        return [subcategory.id, count] as const
+      }),
+    )
+
+    officialSubcategoryCounts.value = countsEntries.reduce<Record<string, number>>((acc, [id, count]) => {
+      acc[id] = count
+      return acc
+    }, {})
+  } finally {
+    isOfficialSubcategoryCountsLoading.value = false
   }
 }
 
@@ -278,9 +439,11 @@ async function applyPathFromQuery(pathRaw: string) {
     return
   }
   selectedCategoryPath.value = resolvedPath ?? []
+  await loadSubcategoriesForActiveCategory()
+
   await Promise.all([
-    loadSubcategoriesForActiveCategory(),
     loadCategoryProducts(1, false),
+    loadOfficialProductsForCarousel(),
   ])
   await syncPathQueryWithState()
 }
@@ -291,6 +454,7 @@ async function onSubcategoryClick(subcategory: Category) {
   await Promise.all([
     loadSubcategoriesForActiveCategory(),
     loadCategoryProducts(1, false),
+    loadOfficialProductsForCarousel(),
   ])
 }
 
@@ -302,6 +466,7 @@ async function onBreadcrumbClick(index: number) {
   await Promise.all([
     loadSubcategoriesForActiveCategory(),
     loadCategoryProducts(1, false),
+    loadOfficialProductsForCarousel(),
   ])
 }
 
@@ -336,7 +501,10 @@ async function loadCategoryProducts(page = 1, append = false) {
     getActiveCategoryFilterKey(),
     page,
     perPage.value,
-    getProductFiltersParams(),
+    {
+      ...(getProductFiltersParams() ?? {}),
+      excludeOfficial: true,
+    },
   )
   products.value = append ? [...products.value, ...response.products] : response.products
   currentPage.value = response.currentPage
@@ -346,11 +514,73 @@ async function loadCategoryProducts(page = 1, append = false) {
   isProductsLoading.value = false
 }
 
+async function loadOfficialProductsForCarousel() {
+  const currentActiveCategory = activeCategory.value
+  if (!currentActiveCategory) {
+    officialProducts.value = []
+    officialProductsSourceCategory.value = null
+    isOfficialProductsLoading.value = false
+    updateOfficialCarouselState()
+    return
+  }
+
+  let sourceCategory: Category | null = null
+  if (currentActiveCategory.parent_id !== null) {
+    const knownOfficialCount = officialSubcategoryCounts.value[currentActiveCategory.id]
+    if (knownOfficialCount === 0) {
+      officialProducts.value = []
+      officialProductsSourceCategory.value = null
+      isOfficialProductsLoading.value = false
+      updateOfficialCarouselState()
+      return
+    }
+    sourceCategory = currentActiveCategory
+  } else {
+    const knownCounts = officialSubcategoryCounts.value
+    const missingCounts = subcategories.value.some((subcategory) => knownCounts[subcategory.id] === undefined)
+    if ((Object.keys(knownCounts).length === 0 || missingCounts) && subcategories.value.length > 0) {
+      await loadOfficialCountsForSubcategories(subcategories.value)
+    }
+
+    sourceCategory = subcategories.value.find((subcategory) =>
+      (officialSubcategoryCounts.value[subcategory.id] ?? 0) > 0
+    ) ?? null
+  }
+
+  if (!sourceCategory) {
+    officialProducts.value = []
+    officialProductsSourceCategory.value = null
+    isOfficialProductsLoading.value = false
+    updateOfficialCarouselState()
+    return
+  }
+
+  isOfficialProductsLoading.value = true
+  try {
+    const sourceCategoryKey = buildCategoryKey(sourceCategory) || sourceCategory.id
+    const response = await productService.getProductsByCategory(
+      sourceCategoryKey,
+      1,
+      officialProductsPerPage.value,
+      { isOfficialOnly: true },
+    )
+    officialSubcategoryCounts.value[sourceCategory.id] = response.total
+    officialProducts.value = response.products
+    officialProductsSourceCategory.value = sourceCategory
+    await nextTick()
+    updateOfficialCarouselState()
+  } finally {
+    isOfficialProductsLoading.value = false
+  }
+}
+
 async function loadCategoryPageData() {
   if (!categoryKey.value) return
   await loadCategoryMeta()
   if (!category.value) {
     products.value = []
+    officialProducts.value = []
+    officialProductsSourceCategory.value = null
     isProductsLoading.value = false
     return
   }
@@ -563,9 +793,25 @@ watch(shouldShowFortniteAccountFilters, (nextValue) => {
   isFiltersOpen.value = false
 })
 
+watch(() => officialProducts.value.length, async () => {
+  await nextTick()
+  updateOfficialCarouselState()
+})
+
+watch(shouldShowOfficialRemarketCarousel, async (nextValue) => {
+  if (nextValue) {
+    await nextTick()
+    updateOfficialCarouselState()
+    return
+  }
+  isOfficialCarouselAtStart.value = true
+  isOfficialCarouselAtEnd.value = true
+})
+
 onMounted(async () => {
   restoreProductCardViewModeFromStorage()
   await loadCategoryPageData()
+  window.addEventListener('resize', updateOfficialCarouselState, { passive: true })
   observer = new IntersectionObserver((entries) => {
     if (entries[0]?.isIntersecting) {
       loadMoreProducts()
@@ -574,43 +820,84 @@ onMounted(async () => {
   if (loadMoreTrigger.value) {
     observer.observe(loadMoreTrigger.value)
   }
+  await nextTick()
+  updateOfficialCarouselState()
 })
 
 onBeforeUnmount(() => {
   observer?.disconnect()
+  window.removeEventListener('resize', updateOfficialCarouselState)
 })
 </script>
 
 <template>
-  <section class="relative w-full pb-10">
+  <section class="relative w-full pb-8">
     <div class="relative">
-      <div v-if="isCategoryLoading" class="relative h-[336px] sm:h-[432px]">
-        <div class="category-hero-bg-fullbleed absolute inset-y-0 overflow-hidden animate-pulse bg-dark-700/70"></div>
-      </div>
-      <div v-else-if="category" class="relative h-[336px] sm:h-[432px]">
-        <div class="category-hero-bg-fullbleed absolute inset-y-0 overflow-hidden">
-          <img
-            v-if="categoryBannerUrl"
-            :src="categoryBannerUrl"
-            :alt="category.name"
-            class="absolute inset-0 h-full w-full object-cover"
-          />
-          <div v-else class="absolute inset-0 category-hero-fallback"></div>
-          <div class="absolute inset-0 bg-black/55"></div>
-          <div class="category-hero-bottom-fade"></div>
-        </div>
-        <div class="category-content-shell relative z-10 flex h-full flex-col">
-          <div class="pt-6 sm:pt-8">
-            <BackButton />
-          </div>
-          <div class="mt-auto pb-6 sm:pb-7">
-            <h1 class="category-hero-title max-w-4xl text-3xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
-              {{ category.name }}
-            </h1>
-          </div>
+      <div v-if="isCategoryLoading" class="relative h-[252px] sm:h-[320px]">
+        <div class="category-content-shell relative z-10 h-full pt-3 sm:pt-4">
+          <BackButton />
+          <div class="mt-3 h-[194px] animate-pulse rounded-2xl bg-dark-700/70 sm:mt-4 sm:h-[258px] sm:rounded-3xl"></div>
         </div>
       </div>
-      <div v-else class="relative h-[336px] sm:h-[432px]">
+      <div v-else-if="category" class="relative h-[252px] sm:h-[320px]">
+        <div class="category-content-shell relative z-10 h-full pt-3 sm:pt-4">
+          <BackButton />
+
+          <div class="relative mt-3 h-[194px] overflow-hidden rounded-2xl sm:mt-4 sm:h-[258px] sm:rounded-3xl">
+            <template v-if="categoryBannerUrl">
+              <img
+                :src="categoryBannerUrl"
+                :alt="category.name"
+                class="absolute inset-0 h-full w-full object-cover scale-105 blur-xl opacity-35"
+              />
+              <img
+                :src="categoryBannerUrl"
+                :alt="category.name"
+                class="absolute inset-0 h-full w-full object-cover object-[center_18%] px-0 sm:object-contain sm:object-[center_12%] sm:px-6"
+              />
+            </template>
+            <div v-else class="absolute inset-0 category-hero-fallback"></div>
+            <div class="absolute inset-0 bg-black/42"></div>
+            <div class="category-hero-bottom-fade"></div>
+
+            <div class="relative z-10 flex h-full flex-col justify-end p-3 sm:p-5">
+              <h1 class="category-hero-title max-w-4xl text-3xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
+                {{ category.name }}
+              </h1>
+
+              <div
+                v-if="breadcrumbItems.length"
+                class="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-gray-200/90 sm:text-sm"
+              >
+                <button
+                  type="button"
+                  class="rounded px-1 py-0.5 transition hover:text-white"
+                  @click="goHome"
+                >
+                  {{ t('common.home') }}
+                </button>
+                <ChevronRight class="h-3.5 w-3.5 text-gray-300/80" />
+                <template v-for="(breadcrumb, index) in breadcrumbItems" :key="`${breadcrumb.id}-${index}`">
+                  <button
+                    type="button"
+                    class="rounded px-1 py-0.5 transition"
+                    :class="index === breadcrumbItems.length - 1 ? 'text-white cursor-default' : 'hover:text-white'"
+                    :disabled="index === breadcrumbItems.length - 1"
+                    @click="onBreadcrumbClick(index)"
+                  >
+                    {{ breadcrumb.name }}
+                  </button>
+                  <ChevronRight
+                    v-if="index < breadcrumbItems.length - 1"
+                    class="h-3.5 w-3.5 text-gray-300/80"
+                  />
+                </template>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-else class="relative h-[252px] sm:h-[320px]">
         <div class="category-hero-bg-fullbleed absolute inset-y-0 overflow-hidden">
           <div class="absolute inset-0 category-hero-fallback"></div>
           <div class="absolute inset-0 bg-black/55"></div>
@@ -625,10 +912,10 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <div class="category-content-shell mt-8">
+    <div class="category-content-shell mt-0 sm:mt-1">
       <div
-        v-if="breadcrumbItems.length"
-        class="mb-5 flex flex-wrap items-center gap-1.5 text-xs text-gray-300 sm:text-sm"
+        v-if="breadcrumbItems.length && !category"
+        class="mb-3 flex flex-wrap items-center gap-1.5 text-xs text-gray-300 sm:text-sm"
       >
         <button
           type="button"
@@ -659,10 +946,10 @@ onBeforeUnmount(() => {
 
       <div v-if="shouldShowSubcategoriesBlock">
         <Title :text="t('common.subcategories')" />
-        <div v-if="isCategoryLoading || isSubcategoriesLoading" class="mt-4 flex gap-2">
+        <div v-if="isCategoryLoading || isSubcategoriesLoading" class="mt-3 flex gap-2">
           <div v-for="n in 4" :key="n" class="h-10 w-28 animate-pulse rounded-lg bg-dark-600"></div>
         </div>
-        <div v-else-if="subcategories.length" class="mt-4 flex flex-wrap gap-2">
+        <div v-else-if="subcategories.length" class="mt-3 flex flex-wrap gap-2">
           <button
             v-for="subcategory in subcategories"
             :key="subcategory.id"
@@ -673,10 +960,138 @@ onBeforeUnmount(() => {
             <span>{{ subcategory.name }}</span>
           </button>
         </div>
-        <div v-else class="mt-4 text-sm text-gray-400">{{ t('pages.category.noSubcategories') }}</div>
+        <div v-else class="mt-3 text-sm text-gray-400">{{ t('pages.category.noSubcategories') }}</div>
       </div>
 
-      <div class="mt-10">
+      <div
+        v-if="shouldShowOfficialRemarketCarousel"
+        class="official-showcase mt-5 rounded-3xl border border-white/12 p-4 sm:mt-6 sm:p-5"
+      >
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5">
+            <div class="inline-flex items-center gap-2 rounded-full border border-blue-300/70 bg-blue-500/32 px-3 py-1.5 text-sm font-semibold tracking-wide text-blue-50 shadow-[0_0_0_1px_rgba(59,130,246,0.22)_inset]">
+              <BadgeCheck class="h-4 w-4" />
+              <span>Официально от remarket</span>
+            </div>
+            <span class="hidden text-sm font-medium text-blue-100/85 sm:inline-flex sm:items-center sm:gap-2">
+              {{ officialProductsCountText }}
+              <span v-if="officialProductsSourceText" class="text-blue-200/85">{{ officialProductsSourceText }}</span>
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="official-showcase__ghost-btn !hidden sm:!inline-flex"
+              @click="openOfficialStorePage"
+            >
+              <span>Смотреть все</span>
+              <ChevronRight class="h-4 w-4" />
+            </button>
+
+            <div class="hidden items-center gap-1 rounded-full border border-[rgba(219,224,232,0.32)] bg-[rgba(56,61,73,0.54)] p-1 sm:inline-flex">
+              <button
+                type="button"
+                class="official-showcase__arrow-btn"
+                :disabled="isOfficialCarouselAtStart || officialProducts.length <= 1"
+                aria-label="Прокрутить влево"
+                @click="scrollOfficialCarousel('prev')"
+              >
+                <ChevronLeft class="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                class="official-showcase__arrow-btn"
+                :disabled="isOfficialCarouselAtEnd || officialProducts.length <= 1"
+                aria-label="Прокрутить вправо"
+                @click="scrollOfficialCarousel('next')"
+              >
+                <ChevronRight class="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3 text-sm font-medium text-blue-100/85 sm:hidden">
+          {{ officialProductsCountText }}
+          <span v-if="officialProductsSourceText" class="ml-1 text-blue-200/85">• {{ officialProductsSourceText }}</span>
+        </div>
+
+        <div v-if="isOfficialProductsLoading" class="official-carousel flex gap-4 overflow-x-auto pb-2 no-scrollbar">
+          <div
+            v-for="n in 7"
+            :key="`official-skeleton-${n}`"
+            class="h-[234px] w-[188px] shrink-0 animate-pulse rounded-2xl bg-dark-700/70 sm:h-[276px] sm:w-[232px]"
+          ></div>
+        </div>
+
+        <div
+          v-else-if="officialProducts.length > 0"
+          class="official-carousel-wrap relative"
+        >
+          <div
+            ref="officialCarouselRef"
+            class="official-carousel flex gap-4 overflow-x-auto pb-2 pr-1 no-scrollbar snap-x snap-mandatory"
+            @scroll.passive="handleOfficialCarouselScroll"
+          >
+            <button
+              v-for="product in officialProducts"
+              :key="`official-${product.id}`"
+              type="button"
+              data-official-card
+              class="official-card group h-[234px] w-[188px] shrink-0 snap-start overflow-hidden rounded-2xl border border-white/12 bg-dark-900/90 text-left transition duration-200 hover:-translate-y-0.5 hover:border-blue-300/40 hover:bg-dark-900 sm:h-[276px] sm:w-[232px]"
+              @click="goToProductByModel(product)"
+            >
+              <div class="official-card__media relative h-[140px] w-full overflow-hidden sm:h-[170px]">
+                <img
+                  v-if="resolveProductImageUrl(product)"
+                  :src="resolveProductImageUrl(product)"
+                  :alt="product.title"
+                  class="h-full w-full object-cover object-center transition duration-300 group-hover:scale-[1.03]"
+                />
+                <div v-else class="flex h-full w-full items-center justify-center text-xs text-gray-300">
+                  {{ t('common.noImage') }}
+                </div>
+                <div class="official-card__overlay absolute inset-0"></div>
+              </div>
+              <div class="space-y-2 px-3.5 py-3">
+                <p class="official-card__price text-[1.3rem] font-bold leading-none tracking-tight text-blue-100 sm:text-[1.55rem]">
+                  {{ formatOfficialPrice(product.price) }}
+                </p>
+                <p class="official-card__title min-h-[2.5rem] text-[0.93rem] leading-5 text-white/95 sm:text-[1.03rem] sm:leading-6">
+                  {{ product.title }}
+                </p>
+              </div>
+            </button>
+          </div>
+
+          <div
+            class="official-carousel__edge official-carousel__edge--left"
+            :class="isOfficialCarouselAtStart ? 'opacity-0' : 'opacity-100'"
+          ></div>
+          <div
+            class="official-carousel__edge official-carousel__edge--right"
+            :class="isOfficialCarouselAtEnd ? 'opacity-0' : 'opacity-100'"
+          ></div>
+        </div>
+
+        <div v-else class="rounded-xl border border-white/10 bg-dark-800/50 px-4 py-3 text-sm text-gray-200">
+          Официальные товары появятся после добавления админом.
+        </div>
+
+        <div class="mt-3 sm:hidden">
+          <button
+            type="button"
+            class="official-showcase__ghost-btn w-full justify-center"
+            @click="openOfficialStorePage"
+          >
+            <span>Смотреть все товары</span>
+            <ChevronRight class="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <div id="category-products-section" class="mt-10">
         <Title :text="t('common.products')" />
         <div class="mt-4 space-y-3">
           <div
@@ -967,6 +1382,100 @@ onBeforeUnmount(() => {
 
 .products-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.official-showcase {
+  background:
+    radial-gradient(120% 130% at 0% 0%, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0) 54%),
+    linear-gradient(165deg, rgba(21, 23, 28, 0.94), rgba(14, 15, 19, 0.96));
+}
+
+.official-showcase__ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(219, 224, 232, 0.32);
+  background: rgba(56, 61, 73, 0.54);
+  padding: 0.42rem 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(229, 241, 255, 0.95);
+  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+}
+
+.official-showcase__ghost-btn:hover {
+  border-color: rgba(231, 235, 241, 0.55);
+  background: rgba(70, 76, 91, 0.78);
+  color: #fff;
+}
+
+.official-showcase__arrow-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 1.85rem;
+  width: 1.85rem;
+  border-radius: 9999px;
+  color: #e5f1ff;
+  background: rgba(96, 103, 120, 0.26);
+  border: 1px solid rgba(215, 222, 235, 0.24);
+  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.official-showcase__arrow-btn:hover:not(:disabled) {
+  color: #fff;
+  border-color: rgba(229, 235, 246, 0.54);
+  background: rgba(114, 123, 145, 0.42);
+}
+
+.official-showcase__arrow-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.official-carousel {
+  scroll-behavior: smooth;
+}
+
+.official-carousel__edge {
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  bottom: 0.5rem;
+  width: 2.3rem;
+  transition: opacity 180ms ease;
+}
+
+.official-carousel__edge--left {
+  left: 0;
+  background: linear-gradient(to right, rgba(30, 33, 40, 0.94), rgba(30, 33, 40, 0));
+}
+
+.official-carousel__edge--right {
+  right: 0;
+  background: linear-gradient(to left, rgba(30, 33, 40, 0.94), rgba(30, 33, 40, 0));
+}
+
+.official-card__overlay {
+  background: linear-gradient(
+    to top,
+    rgba(9, 15, 32, 0.24) 0%,
+    rgba(9, 15, 32, 0.02) 55%,
+    rgba(9, 15, 32, 0) 100%
+  );
+}
+
+.official-card__price {
+  white-space: nowrap;
+}
+
+.official-card__title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 @media (min-width: 680px) {
