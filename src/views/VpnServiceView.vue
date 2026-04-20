@@ -184,7 +184,31 @@ const selectedPlan = computed<VpnPlan>(() =>
   planOptions.value.find((plan) => plan.id === selectedPlanId.value) ?? planOptions.value[0]!,
 )
 
+<<<<<<< Updated upstream
 const selectedPlanPriceLabel = computed(() => selectedPlan.value.priceLabel)
+=======
+const selectedPlanPrice = computed(() => getPlanPrice(selectedMonths.value, selectedDevices.value))
+const selectedPlanPriceLabel = computed(() => formatPlanPrice(selectedPlanPrice.value))
+const selectedMonthlyPriceLabel = computed(() =>
+  formatPlanPrice(selectedPlanPrice.value / selectedMonths.value),
+)
+const deviceSliderProgress = computed(() =>
+  `${((selectedDevices.value - 1) / (VPN_DEVICES.length - 1)) * 100}%`,
+)
+const selectedDevicesLabel = computed(() =>
+  t('pages.vpn.devicesLabel', { count: selectedDevices.value }),
+)
+const selectedDevicesFullLabel = computed(() =>
+  t('pages.vpn.devicesFullLabel', { count: selectedDevices.value }),
+)
+const confirmMessage = computed(() =>
+  t('pages.vpn.confirm.message', {
+    duration: selectedPeriod.value.duration,
+    devices: selectedDevicesFullLabel.value,
+    price: selectedPlanPriceLabel.value,
+  }),
+)
+>>>>>>> Stashed changes
 
 const isTrialAvailable = computed(() => {
   if (!user.value) return false
@@ -472,6 +496,7 @@ onMounted(() => {
           </h2>
         </div>
 
+<<<<<<< Updated upstream
         <div class="mt-7 grid gap-3 lg:grid-cols-3">
           <button
             v-for="plan in planOptions"
@@ -485,12 +510,143 @@ onMounted(() => {
             @click="selectPlan(plan.id)"
           >
             <div class="flex items-start justify-between gap-3">
+=======
+        <div class="mt-7 grid items-stretch gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div class="flex flex-col gap-4">
+            <div class="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 sm:p-5">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <p class="text-xs uppercase tracking-[0.18em] text-blue-200">
+                    {{ t('pages.vpn.periodStep') }}
+                  </p>
+                  <h3 class="mt-1 text-lg font-semibold text-white">
+                    {{ t('pages.vpn.periodTitle') }}
+                  </h3>
+                </div>
+                <p class="text-right text-sm font-semibold text-blue-100">
+                  {{ selectedPeriod.duration }}
+                </p>
+              </div>
+
+              <div class="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                <button
+                  v-for="plan in periodOptions"
+                  :key="plan.months"
+                  type="button"
+                  class="group rounded-xl border p-4 text-left transition duration-200"
+                  :class="selectedMonths === plan.months
+                    ? 'border-blue-300/60 bg-blue-500/[0.14] text-white'
+                    : 'border-white/[0.08] bg-black/[0.12] text-gray-300 hover:border-white/[0.18] hover:bg-white/[0.05]'"
+                  :aria-pressed="selectedMonths === plan.months"
+                  @click="selectPeriod(plan.months)"
+                >
+                  <div class="flex items-start justify-between gap-2">
+                    <div>
+                      <p class="text-xl font-semibold leading-none text-white">{{ plan.duration }}</p>
+                      <p class="mt-2 text-sm font-semibold text-blue-200">
+                        {{ isPlansLoading ? t('common.loading') : plan.priceLabel }}
+                      </p>
+                    </div>
+                    <span
+                      class="flex h-6 w-6 items-center justify-center rounded-full border transition"
+                      :class="selectedMonths === plan.months
+                        ? 'border-blue-200 bg-blue-500 text-white'
+                        : 'border-white/[0.14] text-transparent group-hover:text-gray-500'"
+                    >
+                      <Check class="h-3.5 w-3.5" stroke-width="2" />
+                    </span>
+                  </div>
+                  <p class="mt-3 text-xs leading-5 text-gray-400">
+                    {{ plan.caption }}
+                  </p>
+                  <p
+                    v-if="plan.months > 1"
+                    class="mt-3 inline-flex rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-xs font-semibold text-gray-200"
+                  >
+                    {{ t('pages.vpn.pricePerMonth', { price: plan.monthlyLabel }) }}
+                  </p>
+                  <p v-else class="mt-3 text-xs font-semibold text-gray-500">
+                    {{ plan.badge || t('pages.vpn.plans.month.badge') }}
+                  </p>
+                </button>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 sm:p-5">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <p class="text-xs uppercase tracking-[0.18em] text-blue-200">
+                    {{ t('pages.vpn.devicesStep') }}
+                  </p>
+                  <h3 class="mt-1 text-lg font-semibold text-white">
+                    {{ t('pages.vpn.devicesTitle') }}
+                  </h3>
+                  <p class="mt-1 text-sm text-gray-400">{{ t('pages.vpn.devicesHint') }}</p>
+                </div>
+                <p class="text-right text-sm font-semibold text-blue-100">
+                  {{ selectedDevicesLabel }}
+                </p>
+              </div>
+
+              <div class="mt-6 rounded-2xl border border-white/[0.07] bg-black/[0.12] px-4 py-5">
+                <div class="flex items-end justify-between gap-4">
+                  <div>
+                    <p class="text-sm text-gray-400">{{ t('pages.vpn.devicesSelected') }}</p>
+                    <p class="mt-1 text-3xl font-semibold leading-none text-white">
+                      {{ selectedDevices }}
+                    </p>
+                  </div>
+                  <p class="pb-1 text-right text-sm font-semibold text-blue-100">
+                    {{ selectedPlanPriceLabel }}
+                  </p>
+                </div>
+
+                <div
+                  class="mt-6"
+                  :style="{ '--vpn-device-progress': deviceSliderProgress }"
+                >
+                  <input
+                    v-model.number="selectedDevices"
+                    type="range"
+                    min="1"
+                    max="10"
+                    step="1"
+                    class="vpn-device-slider w-full"
+                    :aria-label="t('pages.vpn.devicesTitle')"
+                  />
+
+                  <div class="mt-4 grid grid-cols-10 gap-1">
+                    <button
+                      v-for="devices in VPN_DEVICES"
+                      :key="devices"
+                      type="button"
+                      class="h-8 rounded-lg text-xs font-semibold transition"
+                      :class="selectedDevices === devices
+                        ? 'bg-blue-500 text-white'
+                        : 'text-gray-500 hover:bg-white/[0.05] hover:text-gray-300'"
+                      @click="selectDevices(devices)"
+                    >
+                      {{ devices }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <aside class="rounded-2xl border border-blue-300/15 bg-blue-500/[0.08] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] lg:self-start">
+            <p class="text-xs uppercase tracking-[0.18em] text-blue-200">
+              {{ t('pages.vpn.summaryEyebrow') }}
+            </p>
+            <div class="mt-4 flex items-end justify-between gap-4">
+>>>>>>> Stashed changes
               <div>
                 <h3 class="mt-2 text-3xl font-semibold text-white">{{ plan.duration }}</h3>
                 <p class="mt-2 text-sm font-semibold text-blue-200">
                   {{ isPlansLoading ? t('common.loading') : plan.priceLabel }}
                 </p>
               </div>
+<<<<<<< Updated upstream
               <span
                 class="flex h-7 w-7 items-center justify-center rounded-full border transition"
                 :class="selectedPlanId === plan.id
@@ -504,6 +660,28 @@ onMounted(() => {
             <p class="mt-4 min-h-12 text-sm leading-6 text-gray-300">{{ plan.caption }}</p>
           </button>
         </div>
+=======
+              <div class="pb-1 text-right text-xs leading-5 text-gray-400">
+                <p>{{ selectedPeriod.duration }}</p>
+                <p>{{ selectedDevicesFullLabel }}</p>
+              </div>
+            </div>
+
+            <div class="mt-5 space-y-3 border-t border-white/[0.08] pt-4 text-sm">
+              <div class="flex justify-between gap-4">
+                <span class="text-gray-400">{{ t('pages.vpn.summaryPeriod') }}</span>
+                <span class="font-medium text-white">{{ selectedPeriod.duration }}</span>
+              </div>
+              <div class="flex justify-between gap-4">
+                <span class="text-gray-400">{{ t('pages.vpn.summaryDevices') }}</span>
+                <span class="font-medium text-white">{{ selectedDevices }}</span>
+              </div>
+              <div class="flex justify-between gap-4">
+                <span class="text-gray-400">{{ t('pages.vpn.summaryMonthly') }}</span>
+                <span class="font-medium text-white">{{ selectedMonthlyPriceLabel }}</span>
+              </div>
+            </div>
+>>>>>>> Stashed changes
 
         <div class="mt-5 flex flex-col gap-3 rounded-lg border border-white/[0.08] bg-white/[0.03] p-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -701,6 +879,80 @@ onMounted(() => {
 
 .vpn-plan {
   box-shadow: inset 0 1px 0 rgb(var(--palette-white) / 0.04);
+}
+
+.vpn-device-slider {
+  height: 1.5rem;
+  cursor: pointer;
+  appearance: none;
+  background: transparent;
+}
+
+.vpn-device-slider::-webkit-slider-runnable-track {
+  height: 0.5rem;
+  border-radius: 9999px;
+  background:
+    linear-gradient(
+      to right,
+      rgb(59 130 246) 0%,
+      rgb(103 232 249) var(--vpn-device-progress),
+      rgb(var(--palette-white) / 0.1) var(--vpn-device-progress),
+      rgb(var(--palette-white) / 0.1) 100%
+    );
+}
+
+.vpn-device-slider::-moz-range-track {
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: rgb(var(--palette-white) / 0.1);
+}
+
+.vpn-device-slider::-moz-range-progress {
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: linear-gradient(to right, rgb(59 130 246), rgb(103 232 249));
+}
+
+.vpn-device-slider::-webkit-slider-thumb {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-top: -0.5rem;
+  appearance: none;
+  border: 3px solid rgb(var(--palette-navy-925));
+  border-radius: 9999px;
+  background: rgb(255 255 255);
+  box-shadow:
+    0 0 0 1px rgb(96 165 250 / 0.9),
+    0 10px 24px rgb(37 99 235 / 0.35);
+}
+
+.vpn-device-slider::-moz-range-thumb {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 3px solid rgb(var(--palette-navy-925));
+  border-radius: 9999px;
+  background: rgb(255 255 255);
+  box-shadow:
+    0 0 0 1px rgb(96 165 250 / 0.9),
+    0 10px 24px rgb(37 99 235 / 0.35);
+}
+
+.vpn-device-slider:focus-visible {
+  outline: none;
+}
+
+.vpn-device-slider:focus-visible::-webkit-slider-thumb {
+  box-shadow:
+    0 0 0 1px rgb(96 165 250 / 0.9),
+    0 0 0 5px rgb(59 130 246 / 0.2),
+    0 10px 24px rgb(37 99 235 / 0.35);
+}
+
+.vpn-device-slider:focus-visible::-moz-range-thumb {
+  box-shadow:
+    0 0 0 1px rgb(96 165 250 / 0.9),
+    0 0 0 5px rgb(59 130 246 / 0.2),
+    0 10px 24px rgb(37 99 235 / 0.35);
 }
 
 @keyframes vpn-enter {

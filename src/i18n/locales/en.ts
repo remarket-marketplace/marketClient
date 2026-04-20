@@ -857,7 +857,27 @@ const en = {
         incyText: "An alternative client for iOS, Android, Windows, and Linux.",
       },
       plansEyebrow: "Periods",
+<<<<<<< Updated upstream
       plansTitle: "Choose access period",
+=======
+      plansTitle: "Build your own plan",
+      plansSubtitle: "Choose the subscription period and device limit.",
+      periodStep: "Step 1",
+      periodTitle: "Subscription period",
+      devicesStep: "Step 2",
+      devicesTitle: "Number of devices",
+      devicesHint: "The device limit is attached to the generated VPN key.",
+      devicesSelected: "Selected devices",
+      deviceShort: "dev.",
+      devicesLabel: "{count} dev.",
+      devicesFullLabel: "{count} devices",
+      pricePerMonth: "{price} / mo.",
+      summaryEyebrow: "Summary",
+      total: "Total",
+      summaryPeriod: "Period",
+      summaryDevices: "Devices",
+      summaryMonthly: "Per month",
+>>>>>>> Stashed changes
       plans: {
         month: {
           duration: "1 month",

@@ -857,7 +857,27 @@ const ru = {
         incyText: "Альтернативный клиент для iOS, Android, Windows и Linux.",
       },
       plansEyebrow: "Периоды",
+<<<<<<< Updated upstream
       plansTitle: "Выберите срок доступа",
+=======
+      plansTitle: "Соберите тариф под себя",
+      plansSubtitle: "Выберите срок подписки и количество устройств.",
+      periodStep: "Шаг 1",
+      periodTitle: "Срок подписки",
+      devicesStep: "Шаг 2",
+      devicesTitle: "Количество устройств",
+      devicesHint: "Лимит привязывается к выданному VPN-ключу.",
+      devicesSelected: "Выбрано устройств",
+      deviceShort: "устр.",
+      devicesLabel: "{count} устр.",
+      devicesFullLabel: "{count} устройств",
+      pricePerMonth: "{price} / мес.",
+      summaryEyebrow: "Итог",
+      total: "К оплате",
+      summaryPeriod: "Срок",
+      summaryDevices: "Устройства",
+      summaryMonthly: "В месяц",
+>>>>>>> Stashed changes
       plans: {
         month: {
           duration: "1 месяц",
