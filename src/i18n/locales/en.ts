@@ -857,9 +857,6 @@ const en = {
         incyText: "An alternative client for iOS, Android, Windows, and Linux.",
       },
       plansEyebrow: "Periods",
-<<<<<<< Updated upstream
-      plansTitle: "Choose access period",
-=======
       plansTitle: "Build your own plan",
       plansSubtitle: "Choose the subscription period and device limit.",
       periodStep: "Step 1",
@@ -877,7 +874,6 @@ const en = {
       summaryPeriod: "Period",
       summaryDevices: "Devices",
       summaryMonthly: "Per month",
->>>>>>> Stashed changes
       plans: {
         month: {
           duration: "1 month",
