@@ -18,16 +18,15 @@ const router = useRouter()
 const API_HOST = import.meta.env.VITE_API_HOST
 
 const rootCategories = ref<Category[]>([])
-const subcategories = ref<Category[]>([])
 const selectedRootCategory = ref<Category | null>(null)
-const selectedSubcategory = ref<Category | null>(null)
 const officialProducts = ref<Product[]>([])
 const officialProductsTotal = ref(0)
+const officialProductsCountByCategoryId = ref<Record<string, number>>({})
+const officialStoreHeroImageUrl = ref<string | null>(null)
 const currentPage = ref(1)
 const totalPages = ref(1)
 const perPage = ref(24)
 const isCategoryLoading = ref(true)
-const isSubcategoriesLoading = ref(false)
 const isProductsLoading = ref(true)
 const isLoadingMore = ref(false)
 const isSyncingRouteQuery = ref(false)
@@ -47,6 +46,45 @@ function sortCategoriesByActiveProductsCount(categories: Category[]): Category[]
 function getCategoryFilterKey(category: Category | null | undefined): string {
   if (!category) return ''
   return buildCategoryKey(category) || category.id
+}
+
+async function getOfficialProductsCountForCategory(categoryValue: Category): Promise<number> {
+  const cachedCount = officialProductsCountByCategoryId.value[categoryValue.id]
+  if (cachedCount !== undefined) return cachedCount
+
+  const categoryFilterKey = getCategoryFilterKey(categoryValue)
+  if (!categoryFilterKey) return 0
+
+  const response = await productService.getProductsByCategory(
+    categoryFilterKey,
+    1,
+    1,
+    { isOfficialOnly: true },
+  )
+  const count = response.total > 0 ? response.total : response.products.length
+  officialProductsCountByCategoryId.value = {
+    ...officialProductsCountByCategoryId.value,
+    [categoryValue.id]: count,
+  }
+  return count
+}
+
+async function filterCategoriesWithOfficialProducts(categories: Category[]): Promise<Category[]> {
+  if (!categories.length) return []
+
+  const countsById = await Promise.all(
+    categories.map(async (category) => {
+      const count = await getOfficialProductsCountForCategory(category)
+      return [category.id, count] as const
+    }),
+  )
+
+  const hasOfficialById = countsById.reduce<Record<string, boolean>>((acc, [id, count]) => {
+    acc[id] = count > 0
+    return acc
+  }, {})
+
+  return categories.filter((category) => hasOfficialById[category.id])
 }
 
 function normalizeQueryValue(value: unknown): string {
@@ -86,11 +124,11 @@ function resolveCategoryBannerUrl(imageUrl: string | null | undefined): string {
 }
 
 const selectedCategoryForProducts = computed<Category | null>(() =>
-  selectedSubcategory.value ?? selectedRootCategory.value
+  selectedRootCategory.value
 )
 
 const selectedRootCategoryBannerUrl = computed(() =>
-  resolveCategoryBannerUrl(selectedRootCategory.value?.banner_url)
+  resolveCategoryBannerUrl(officialStoreHeroImageUrl.value ?? selectedRootCategory.value?.banner_url)
 )
 
 const officialProductsCountText = computed(() => {
@@ -122,14 +160,9 @@ function goHome() {
 
 async function syncRouteQueryWithSelection() {
   const nextGameCategoryId = getCategoryFilterKey(selectedRootCategory.value)
-  const nextSubcategoryId = getCategoryFilterKey(selectedSubcategory.value)
   const currentGameCategoryId = getQueryValue('gameCategoryId')
-  const currentSubcategoryId = getQueryValue('subcategoryId')
 
-  if (
-    currentGameCategoryId === nextGameCategoryId
-    && currentSubcategoryId === nextSubcategoryId
-  ) {
+  if (currentGameCategoryId === nextGameCategoryId) {
     return
   }
 
@@ -140,11 +173,7 @@ async function syncRouteQueryWithSelection() {
     delete nextQuery.gameCategoryId
   }
 
-  if (nextSubcategoryId) {
-    nextQuery.subcategoryId = nextSubcategoryId
-  } else {
-    delete nextQuery.subcategoryId
-  }
+  delete nextQuery.subcategoryId
 
   isSyncingRouteQuery.value = true
   try {
@@ -156,37 +185,16 @@ async function syncRouteQueryWithSelection() {
 
 async function loadRootCategories() {
   const categories = await categoryService.getAllCategoriesFlat(100, 30)
-  rootCategories.value = sortCategoriesByActiveProductsCount(
+  const visibleRootCategories = sortCategoriesByActiveProductsCount(
     categories.filter((item) => !item.parent_id && isVisibleCategory(item)),
   )
-}
-
-async function loadSubcategoriesForRootCategory() {
-  if (!selectedRootCategory.value) {
-    subcategories.value = []
-    return
-  }
-
-  isSubcategoriesLoading.value = true
-  try {
-    const response = await categoryService.getSubcategories(
-      getCategoryFilterKey(selectedRootCategory.value),
-      1,
-      100,
-    )
-    subcategories.value = sortCategoriesByActiveProductsCount(
-      response.categories.filter(isVisibleCategory),
-    )
-  } finally {
-    isSubcategoriesLoading.value = false
-  }
+  const officialRootCategories = await filterCategoriesWithOfficialProducts(visibleRootCategories)
+  rootCategories.value = sortCategoriesByActiveProductsCount(officialRootCategories)
 }
 
 async function applySelectionFromRouteQuery() {
   if (!rootCategories.value.length) {
     selectedRootCategory.value = null
-    selectedSubcategory.value = null
-    subcategories.value = []
     return
   }
 
@@ -194,11 +202,6 @@ async function applySelectionFromRouteQuery() {
   selectedRootCategory.value = findCategoryByQueryKey(rootCategories.value, gameCategoryQuery)
     ?? rootCategories.value[0]
     ?? null
-
-  await loadSubcategoriesForRootCategory()
-
-  const subcategoryQuery = getQueryValue('subcategoryId')
-  selectedSubcategory.value = findCategoryByQueryKey(subcategories.value, subcategoryQuery)
 }
 
 async function loadOfficialProducts(page = 1, append = false) {
@@ -237,7 +240,11 @@ async function loadOfficialProducts(page = 1, append = false) {
 
 async function loadOfficialStorePageData() {
   isCategoryLoading.value = true
-  await loadRootCategories()
+  const [officialStoreConfig] = await Promise.all([
+    productService.getOfficialStoreConfig(),
+    loadRootCategories(),
+  ])
+  officialStoreHeroImageUrl.value = officialStoreConfig?.hero_image_url ?? null
   await applySelectionFromRouteQuery()
   await syncRouteQueryWithSelection()
   isCategoryLoading.value = false
@@ -247,15 +254,6 @@ async function loadOfficialStorePageData() {
 async function onRootCategoryClick(category: Category) {
   if (selectedRootCategory.value?.id === category.id) return
   selectedRootCategory.value = category
-  selectedSubcategory.value = null
-  await loadSubcategoriesForRootCategory()
-  await syncRouteQueryWithSelection()
-  await loadOfficialProducts(1, false)
-}
-
-async function onSubcategoryClick(subcategory: Category | null) {
-  if (selectedSubcategory.value?.id === subcategory?.id) return
-  selectedSubcategory.value = subcategory
   await syncRouteQueryWithSelection()
   await loadOfficialProducts(1, false)
 }
@@ -266,7 +264,7 @@ async function loadMoreProducts() {
 }
 
 watch(
-  () => [route.query.gameCategoryId, route.query.subcategoryId],
+  () => route.query.gameCategoryId,
   async () => {
     if (isSyncingRouteQuery.value || !rootCategories.value.length) return
     await applySelectionFromRouteQuery()
@@ -339,47 +337,6 @@ onMounted(async () => {
           </button>
         </div>
 
-        <div
-          v-if="selectedRootCategory"
-          class="flex gap-2 overflow-x-auto pb-1 no-scrollbar"
-        >
-          <div
-            v-if="isSubcategoriesLoading"
-            class="flex gap-2"
-          >
-            <div
-              v-for="n in 4"
-              :key="`official-subcategory-skeleton-${n}`"
-              class="h-10 w-32 shrink-0 animate-pulse rounded-xl bg-dark-600/70"
-            ></div>
-          </div>
-
-          <template v-else>
-          <button
-            type="button"
-            class="inline-flex shrink-0 items-center rounded-xl border px-3.5 py-2 text-sm font-medium transition"
-            :class="!selectedSubcategory
-              ? 'border-blue-400/55 bg-blue-600/25 text-white'
-              : 'border-dark-600 bg-dark-700/35 text-gray-300 hover:border-dark-500 hover:bg-dark-700/55 hover:text-white'"
-            @click="onSubcategoryClick(null)"
-          >
-            Все разделы
-          </button>
-
-          <button
-            v-for="subcategory in subcategories"
-            :key="`official-subcategory-${subcategory.id}`"
-            type="button"
-            class="inline-flex shrink-0 items-center rounded-xl border px-3.5 py-2 text-sm font-medium transition"
-            :class="selectedSubcategory?.id === subcategory.id
-              ? 'border-blue-400/55 bg-blue-600/25 text-white'
-              : 'border-dark-600 bg-dark-700/35 text-gray-300 hover:border-dark-500 hover:bg-dark-700/55 hover:text-white'"
-            @click="onSubcategoryClick(subcategory)"
-          >
-            {{ subcategory.name }}
-          </button>
-          </template>
-        </div>
       </div>
 
       <div class="mt-8">
