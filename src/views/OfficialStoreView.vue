@@ -22,6 +22,7 @@ const selectedRootCategory = ref<Category | null>(null)
 const officialProducts = ref<Product[]>([])
 const officialProductsTotal = ref(0)
 const officialProductsCountByCategoryId = ref<Record<string, number>>({})
+const officialStoreHeroImageUrl = ref<string | null>(null)
 const currentPage = ref(1)
 const totalPages = ref(1)
 const perPage = ref(24)
@@ -127,7 +128,7 @@ const selectedCategoryForProducts = computed<Category | null>(() =>
 )
 
 const selectedRootCategoryBannerUrl = computed(() =>
-  resolveCategoryBannerUrl(selectedRootCategory.value?.banner_url)
+  resolveCategoryBannerUrl(officialStoreHeroImageUrl.value ?? selectedRootCategory.value?.banner_url)
 )
 
 const officialProductsCountText = computed(() => {
@@ -239,7 +240,11 @@ async function loadOfficialProducts(page = 1, append = false) {
 
 async function loadOfficialStorePageData() {
   isCategoryLoading.value = true
-  await loadRootCategories()
+  const [officialStoreConfig] = await Promise.all([
+    productService.getOfficialStoreConfig(),
+    loadRootCategories(),
+  ])
+  officialStoreHeroImageUrl.value = officialStoreConfig?.hero_image_url ?? null
   await applySelectionFromRouteQuery()
   await syncRouteQueryWithSelection()
   isCategoryLoading.value = false
