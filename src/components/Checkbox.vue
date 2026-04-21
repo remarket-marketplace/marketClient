@@ -62,7 +62,7 @@ const iconSizeClasses = {
       <Check 
         v-if="modelValue" 
         :class="iconSizeClasses[size]" 
-        class="text-[rgb(var(--palette-white))] stroke-[3]"
+        class="text-[var(--text-title)] stroke-[3]"
       />
     </span>
   </div>

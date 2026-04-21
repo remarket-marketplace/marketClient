@@ -48,7 +48,7 @@ function goToSeller() {
         class="h-full w-full object-cover"
         alt="product image"
       />
-      <div v-else class="flex h-full w-full items-center justify-center text-sm text-[rgb(var(--palette-gray-300))]">
+      <div v-else class="flex h-full w-full items-center justify-center text-sm text-[var(--text-body)]">
         {{ t('common.noImage') }}
       </div>
     </div>
@@ -58,7 +58,7 @@ function goToSeller() {
         {{ product.title }}
       </h3>
 
-      <p class="profile-product-description mb-2 min-w-0 w-full line-clamp-2 min-h-[2rem] text-xs text-[rgb(var(--palette-gray-400))]">
+      <p class="profile-product-description mb-2 min-w-0 w-full line-clamp-2 min-h-[2rem] text-xs text-[var(--text-muted)]">
         {{ product.description || t('common.noDescription') }}
       </p>
 
@@ -97,8 +97,8 @@ function goToSeller() {
         <button
           class="group relative w-full flex-shrink-0 cursor-pointer overflow-hidden whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-semibold transition sm:px-3 sm:py-2 sm:text-sm"
           :class="isOwner
-            ? 'border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.7)] text-[rgb(var(--palette-gray-100))] hover:bg-[rgb(var(--palette-dark-700))]'
-            : 'group market-primary-surface market-primary-hover text-[rgb(var(--palette-white))]'"
+            ? 'border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.7)] text-[var(--text-heading)] hover:bg-[rgb(var(--palette-dark-700))]'
+            : 'group market-primary-surface market-primary-hover text-[var(--text-title)]'"
           @click.stop="onClick"
         >
           <span

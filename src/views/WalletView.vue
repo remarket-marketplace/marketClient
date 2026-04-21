@@ -121,9 +121,9 @@ const depositProviderOptions = computed(() => {
       icon: Landmark,
       surfaceClass: 'bg-gradient-to-br from-[rgb(var(--palette-sky-400)/0.22)] via-[rgb(var(--palette-sky-400)/0.08)] to-[var(--transparent)]',
       activeClass: 'border-[rgb(var(--palette-sky-400)/0.6)] bg-[rgb(var(--palette-sky-500)/0.1)]',
-      activeIconClass: 'border-[rgb(var(--palette-sky-300)/0.35)] bg-[rgb(var(--palette-sky-400)/0.15)] text-[rgb(var(--palette-sky-50))]',
+      activeIconClass: 'border-[rgb(var(--palette-sky-300)/0.35)] bg-[rgb(var(--palette-sky-400)/0.15)] text-[var(--text-accent-strong)]',
       activeIndicatorClass: 'border-[rgb(var(--palette-sky-300)/0.7)] bg-[rgb(var(--palette-sky-300)/0.18)]',
-      activeCopyClass: 'text-[rgb(var(--palette-sky-100)/0.88)]',
+      activeCopyClass: 'text-[rgb(var(--text-accent-strong-rgb)/0.88)]',
     },
     {
       id: 'lava' as WalletTopUpProvider,
@@ -137,9 +137,9 @@ const depositProviderOptions = computed(() => {
       icon: Flame,
       surfaceClass: 'bg-gradient-to-br from-[rgb(var(--palette-orange-400)/0.22)] via-[rgb(var(--palette-amber-400)/0.08)] to-[var(--transparent)]',
       activeClass: 'border-[rgb(var(--palette-orange-400)/0.6)] bg-[rgb(var(--palette-orange-500)/0.1)]',
-      activeIconClass: 'border-[rgb(var(--palette-orange-300)/0.35)] bg-[rgb(var(--palette-orange-400)/0.15)] text-[rgb(var(--palette-orange-50))]',
+      activeIconClass: 'border-[rgb(var(--palette-orange-300)/0.35)] bg-[rgb(var(--palette-orange-400)/0.15)] text-[var(--text-warning)]',
       activeIndicatorClass: 'border-[rgb(var(--palette-orange-300)/0.7)] bg-[rgb(var(--palette-orange-300)/0.18)]',
-      activeCopyClass: 'text-[rgb(var(--palette-orange-100)/0.88)]',
+      activeCopyClass: 'text-[rgb(var(--text-warning-rgb)/0.88)]',
     },
   ]
 
@@ -574,17 +574,17 @@ const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
     case 'completed':
     case 'confirmed':
-      return 'text-[rgb(var(--palette-emerald-300))]'
+      return 'text-[var(--text-success)]'
     case 'pending':
-      return 'text-[rgb(var(--palette-amber-300))]'
+      return 'text-[var(--text-warning-strong)]'
     case 'rejected':
     case 'cancelled':
     case 'canceled':
-      return 'text-[rgb(var(--palette-rose-300))]'
+      return 'text-[var(--text-danger)]'
     case 'refunded':
-      return 'text-[rgb(var(--palette-sky-300))]'
+      return 'text-[var(--text-link)]'
     default:
-      return 'text-[rgb(var(--palette-gray-400))]'
+      return 'text-[var(--text-muted)]'
   }
 }
 
@@ -592,17 +592,17 @@ const getStatusBadgeClass = (status: string) => {
   switch (status.toLowerCase()) {
     case 'completed':
     case 'confirmed':
-      return 'border-[rgb(var(--palette-emerald-400)/0.25)] bg-[rgb(var(--palette-emerald-400)/0.12)] text-[rgb(var(--palette-emerald-200))]'
+      return 'border-[rgb(var(--palette-emerald-400)/0.25)] bg-[rgb(var(--palette-emerald-400)/0.12)] text-[var(--text-success)]'
     case 'pending':
-      return 'border-[rgb(var(--palette-amber-400)/0.25)] bg-[rgb(var(--palette-amber-400)/0.12)] text-[rgb(var(--palette-amber-200))]'
+      return 'border-[rgb(var(--palette-amber-400)/0.25)] bg-[rgb(var(--palette-amber-400)/0.12)] text-[var(--text-warning)]'
     case 'rejected':
     case 'cancelled':
     case 'canceled':
-      return 'border-[rgb(var(--palette-rose-400)/0.25)] bg-[rgb(var(--palette-rose-400)/0.12)] text-[rgb(var(--palette-rose-200))]'
+      return 'border-[rgb(var(--palette-rose-400)/0.25)] bg-[rgb(var(--palette-rose-400)/0.12)] text-[var(--text-danger-soft)]'
     case 'refunded':
-      return 'border-[rgb(var(--palette-sky-400)/0.25)] bg-[rgb(var(--palette-sky-400)/0.12)] text-[rgb(var(--palette-sky-200))]'
+      return 'border-[rgb(var(--palette-sky-400)/0.25)] bg-[rgb(var(--palette-sky-400)/0.12)] text-[var(--text-accent)]'
     default:
-      return 'border-[rgb(var(--palette-dark-500))] bg-[rgb(var(--palette-dark-700)/0.8)] text-[rgb(var(--palette-gray-200))]'
+      return 'border-[rgb(var(--palette-dark-500))] bg-[rgb(var(--palette-dark-700)/0.8)] text-[var(--text-body-strong)]'
   }
 }
 
@@ -629,27 +629,27 @@ const getTypeIcon = (item: WalletHistoryItem) => {
 
 const getTypeColor = (item: WalletHistoryItem) => {
   if (item.type === 'steam_top_up') {
-    return 'text-[rgb(var(--palette-sky-300))]'
+    return 'text-[var(--text-link)]'
   }
-  return (item.amount ?? 0) >= 0 ? 'text-[rgb(var(--palette-green-400))]' : 'text-[rgb(var(--palette-red-400))]'
+  return (item.amount ?? 0) >= 0 ? 'text-[var(--text-success-strong)]' : 'text-[var(--text-danger)]'
 }
 
 const getTypeBadgeClass = (type: string) => {
   const accentMap: Record<string, string> = {
-    top_up: 'text-[rgb(var(--palette-blue-100)/0.8)]',
-    steam_top_up: 'text-[rgb(var(--palette-sky-100))]',
-    purchase: 'text-[rgb(var(--palette-gray-300))]',
-    sale: 'text-[rgb(var(--palette-violet-200))]',
-    refund: 'text-[rgb(var(--palette-sky-200))]',
-    withdrawal: 'text-[rgb(var(--palette-orange-200))]',
-    adjustment: 'text-[rgb(var(--palette-gray-200))]',
+    top_up: 'text-[rgb(var(--text-accent-strong-rgb)/0.8)]',
+    steam_top_up: 'text-[var(--text-accent-strong)]',
+    purchase: 'text-[var(--text-body)]',
+    sale: 'text-[var(--text-accent)]',
+    refund: 'text-[var(--text-accent)]',
+    withdrawal: 'text-[var(--text-warning)]',
+    adjustment: 'text-[var(--text-body-strong)]',
   }
 
   if (type === 'steam_top_up') {
-    return 'border-[rgb(var(--palette-sky-400)/0.2)] bg-[rgb(var(--palette-sky-400)/0.1)] text-[rgb(var(--palette-sky-100))]'
+    return 'border-[rgb(var(--palette-sky-400)/0.2)] bg-[rgb(var(--palette-sky-400)/0.1)] text-[var(--text-accent-strong)]'
   }
 
-  return `border-[rgb(var(--palette-dark-600)/0.8)] bg-[rgb(var(--palette-dark-800)/0.85)] ${accentMap[type] ?? 'text-[rgb(var(--palette-gray-300))]'}`
+  return `border-[rgb(var(--palette-dark-600)/0.8)] bg-[rgb(var(--palette-dark-800)/0.85)] ${accentMap[type] ?? 'text-[var(--text-body)]'}`
 }
 
 const formatSigned = (amount: number) => {
@@ -949,7 +949,7 @@ const typeLabel = (type: string) => {
     <div class="mb-6 lg:hidden px-4 pt-4">
       <div class="flex gap-2">
         <BackButton />
-        <h1 class="text-2xl font-bold text-[rgb(var(--palette-white))]">
+        <h1 class="text-2xl font-bold text-[var(--text-title)]">
           {{ $t('pages.wallet.title') }}
         </h1>
       </div>
@@ -965,7 +965,7 @@ const typeLabel = (type: string) => {
             <div class="hidden lg:block">
               <div class="flex gap-2">
                 <BackButton />
-                <h1 class="text-2xl font-bold text-[rgb(var(--palette-white))]">
+                <h1 class="text-2xl font-bold text-[var(--text-title)]">
                   {{ $t('pages.wallet.title') }}
                 </h1>
               </div>
@@ -975,11 +975,11 @@ const typeLabel = (type: string) => {
             <div class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.4)] p-6 space-y-6">
               <div class="flex items-center justify-between">
                 <div class="space-y-1">
-                  <div class="text-sm text-[rgb(var(--palette-gray-300))] font-medium">{{ $t('pages.wallet.currentBalance') }}</div>
-                  <div class="text-3xl font-bold text-[rgb(var(--palette-blue-100))]">{{ formatCurrency(balance) }}</div>
+                  <div class="text-sm text-[var(--text-body)] font-medium">{{ $t('pages.wallet.currentBalance') }}</div>
+                  <div class="text-3xl font-bold text-[var(--text-accent-strong)]">{{ formatCurrency(balance) }}</div>
                 </div>
                 <div class="w-12 h-12 rounded-full border border-[rgb(var(--palette-dark-500))] bg-[rgb(var(--palette-dark-700)/0.7)] flex items-center justify-center">
-                  <WalletIcon class="w-6 h-6 text-[rgb(var(--palette-gray-200))]" />
+                  <WalletIcon class="w-6 h-6 text-[var(--text-body-strong)]" />
                 </div>
               </div>
 
@@ -990,9 +990,9 @@ const typeLabel = (type: string) => {
                   class="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.5)] hover:bg-[rgb(var(--palette-dark-700))] transition-all duration-200"
                 >
                   <div class="w-10 h-10 rounded-full border border-[rgb(var(--palette-dark-500))] bg-[rgb(var(--palette-dark-700)/0.7)] flex items-center justify-center">
-                    <ArrowDownToLine class="w-5 h-5 text-[rgb(var(--palette-gray-200))]" />
+                    <ArrowDownToLine class="w-5 h-5 text-[var(--text-body-strong)]" />
                   </div>
-                  <span class="text-sm font-medium text-[rgb(var(--palette-white))]">{{ $t('pages.wallet.deposit') }}</span>
+                  <span class="text-sm font-medium text-[var(--text-title)]">{{ $t('pages.wallet.deposit') }}</span>
                 </button>
 
                 <button 
@@ -1000,9 +1000,9 @@ const typeLabel = (type: string) => {
                   class="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.5)] hover:bg-[rgb(var(--palette-dark-700))] transition-all duration-200"
                 >
                   <div class="w-10 h-10 rounded-full border border-[rgb(var(--palette-dark-500))] bg-[rgb(var(--palette-dark-700)/0.7)] flex items-center justify-center">
-                    <ArrowUpFromLine class="w-5 h-5 text-[rgb(var(--palette-gray-200))]" />
+                    <ArrowUpFromLine class="w-5 h-5 text-[var(--text-body-strong)]" />
                   </div>
-                  <span class="text-sm font-medium text-[rgb(var(--palette-white))]">{{ $t('pages.wallet.withdraw') }}</span>
+                  <span class="text-sm font-medium text-[var(--text-title)]">{{ $t('pages.wallet.withdraw') }}</span>
                 </button>
               </div>
             </div>
@@ -1011,21 +1011,21 @@ const typeLabel = (type: string) => {
             <div class="space-y-3">
               <div class="flex items-center gap-3 p-4 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)]">
                 <div class="w-8 h-8 rounded-full border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.7)] flex items-center justify-center">
-                  <CreditCard class="w-4 h-4 text-[rgb(var(--palette-gray-300))]" />
+                  <CreditCard class="w-4 h-4 text-[var(--text-body)]" />
                 </div>
                 <div class="space-y-1">
-                  <div class="text-sm font-medium text-[rgb(var(--palette-gray-300))]">{{ $t('pages.wallet.instantDeposit') }}</div>
-                  <div class="text-xs text-[rgb(var(--palette-gray-400))]">{{ $t('pages.wallet.instantDepositHint') }}</div>
+                  <div class="text-sm font-medium text-[var(--text-body)]">{{ $t('pages.wallet.instantDeposit') }}</div>
+                  <div class="text-xs text-[var(--text-muted)]">{{ $t('pages.wallet.instantDepositHint') }}</div>
                 </div>
               </div>
 
               <div class="flex items-center gap-3 p-4 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)]">
                 <div class="w-8 h-8 rounded-full border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.7)] flex items-center justify-center">
-                  <Banknote class="w-4 h-4 text-[rgb(var(--palette-gray-300))]" />
+                  <Banknote class="w-4 h-4 text-[var(--text-body)]" />
                 </div>
                 <div class="space-y-1">
-                  <div class="text-sm font-medium text-[rgb(var(--palette-gray-300))]">{{ $t('pages.wallet.fastWithdrawal') }}</div>
-                  <div class="text-xs text-[rgb(var(--palette-gray-400))]">{{ $t('pages.wallet.fastWithdrawalHint') }}</div>
+                  <div class="text-sm font-medium text-[var(--text-body)]">{{ $t('pages.wallet.fastWithdrawal') }}</div>
+                  <div class="text-xs text-[var(--text-muted)]">{{ $t('pages.wallet.fastWithdrawalHint') }}</div>
                 </div>
               </div>
             </div>
@@ -1039,10 +1039,10 @@ const typeLabel = (type: string) => {
           <!-- Transactions header -->
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <History class="w-5 h-5 text-[rgb(var(--palette-gray-400))]" />
-              <h2 class="text-xl font-bold text-[rgb(var(--palette-white))]">{{ $t('pages.wallet.transactionHistory') }}</h2>
+              <History class="w-5 h-5 text-[var(--text-muted)]" />
+              <h2 class="text-xl font-bold text-[var(--text-title)]">{{ $t('pages.wallet.transactionHistory') }}</h2>
             </div>
-            <div class="text-sm text-[rgb(var(--palette-gray-400))]">
+            <div class="text-sm text-[var(--text-muted)]">
               {{ $t('pages.wallet.totalTransactions', { count: historyItems.length }) }}
             </div>
           </div>
@@ -1053,15 +1053,15 @@ const typeLabel = (type: string) => {
             @scroll.passive="handleScroll"
           >
             <div v-if="isLoading && historyItems.length === 0" class="flex items-center justify-center py-12">
-              <Loader2 class="w-6 h-6 animate-spin text-[rgb(var(--palette-blue-500))]" />
+              <Loader2 class="w-6 h-6 animate-spin text-[var(--text-link)]" />
             </div>
 
             <div v-else-if="historyItems.length === 0" class="text-center py-12">
               <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-[rgb(var(--palette-dark-700)/0.5)] border border-[rgb(var(--palette-dark-600))] flex items-center justify-center">
-                <History class="w-8 h-8 text-[rgb(var(--palette-gray-500))]" />
+                <History class="w-8 h-8 text-[var(--text-meta)]" />
               </div>
-              <h3 class="text-lg font-semibold text-[rgb(var(--palette-gray-300))] mb-2">{{ $t('pages.wallet.noTransactions') }}</h3>
-              <p class="text-sm text-[rgb(var(--palette-gray-400))] max-w-md mx-auto">
+              <h3 class="text-lg font-semibold text-[var(--text-body)] mb-2">{{ $t('pages.wallet.noTransactions') }}</h3>
+              <p class="text-sm text-[var(--text-muted)] max-w-md mx-auto">
                 {{ $t('pages.wallet.noTransactionsHint') }}
               </p>
             </div>
@@ -1098,10 +1098,10 @@ const typeLabel = (type: string) => {
 
                         <div class="min-w-0 flex-1 space-y-2">
                           <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-                            <div class="text-xl font-semibold tracking-tight text-[rgb(var(--palette-white))] sm:text-[1.65rem]">
+                            <div class="text-xl font-semibold tracking-tight text-[var(--text-title)] sm:text-[1.65rem]">
                               {{ formatSigned(tx.amount) }}
                             </div>
-                            <div class="inline-flex items-center gap-1.5 rounded-full border border-[rgb(var(--palette-dark-600)/0.8)] bg-[rgb(var(--palette-dark-800)/0.8)] px-2.5 py-1 text-xs font-medium text-[rgb(var(--palette-gray-300))]">
+                            <div class="inline-flex items-center gap-1.5 rounded-full border border-[rgb(var(--palette-dark-600)/0.8)] bg-[rgb(var(--palette-dark-800)/0.8)] px-2.5 py-1 text-xs font-medium text-[var(--text-body)]">
                               <component
                                 :is="getStatusIcon(tx.status)"
                                 :class="`h-3.5 w-3.5 ${getStatusColor(tx.status)}`"
@@ -1110,14 +1110,14 @@ const typeLabel = (type: string) => {
                             </div>
                             <div
                               v-if="tx.type === 'steam_top_up'"
-                              class="inline-flex items-center gap-1.5 rounded-full border border-[rgb(var(--palette-sky-400)/0.2)] bg-[rgb(var(--palette-sky-400)/0.1)] px-2.5 py-1 text-xs font-medium text-[rgb(var(--palette-sky-100))]"
+                              class="inline-flex items-center gap-1.5 rounded-full border border-[rgb(var(--palette-sky-400)/0.2)] bg-[rgb(var(--palette-sky-400)/0.1)] px-2.5 py-1 text-xs font-medium text-[var(--text-accent-strong)]"
                             >
                               <Gamepad2 class="h-3.5 w-3.5" />
                               <span>{{ $t('pages.wallet.historyDetails.steamBadge') }}</span>
                             </div>
                             <div
                               v-if="getSaleTimerForHistoryItem(tx)"
-                              class="inline-flex items-center gap-1.5 rounded-full border border-[rgb(var(--palette-amber-400)/0.3)] bg-[rgb(var(--palette-amber-500)/0.1)] px-2.5 py-1 text-xs font-semibold text-[rgb(var(--palette-amber-200))]"
+                              class="inline-flex items-center gap-1.5 rounded-full border border-[rgb(var(--palette-amber-400)/0.3)] bg-[rgb(var(--palette-amber-500)/0.1)] px-2.5 py-1 text-xs font-semibold text-[var(--text-warning)]"
                             >
                               <Clock class="h-3.5 w-3.5" />
                               <span class="tabular-nums">{{ formatDurationLeft(getSaleTimerForHistoryItem(tx)!.remainingMs) }}</span>
@@ -1126,13 +1126,13 @@ const typeLabel = (type: string) => {
 
                         <template v-if="tx.title">
                           <div
-                            class="max-w-2xl text-sm font-medium leading-5 text-[rgb(var(--palette-gray-200)/0.92)]"
+                            class="max-w-2xl text-sm font-medium leading-5 text-[rgb(var(--text-body-strong-rgb)/0.92)]"
                             style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"
                           >
                             <router-link
                               v-if="tx.product_id"
                               :to="`/product/${buildSlugKey(tx.title, tx.product_id, 'product')}`"
-                              class="inline transition-colors duration-200 hover:text-[rgb(var(--palette-blue-200))]"
+                              class="inline transition-colors duration-200 hover:text-[var(--text-accent)]"
                             >
                               {{ tx.title }}
                             </router-link>
@@ -1145,14 +1145,14 @@ const typeLabel = (type: string) => {
 
                           <div
                             v-if="tx.note"
-                            class="max-w-2xl text-sm leading-5 text-[rgb(var(--palette-gray-400)/0.9)]"
+                            class="max-w-2xl text-sm leading-5 text-[rgb(var(--text-muted-rgb)/0.9)]"
                             style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;"
                           >
                             {{ tx.note }}
                           </div>
                         </template>
 
-                          <div v-else class="text-sm text-[rgb(var(--palette-gray-500))]">
+                          <div v-else class="text-sm text-[var(--text-meta)]">
                             {{ typeLabel(tx.type) }}
                           </div>
                         </div>
@@ -1165,12 +1165,12 @@ const typeLabel = (type: string) => {
                       >
                         {{ typeLabel(tx.type) }}
                       </span>
-                      <span class="inline-flex min-h-9 items-center gap-2 rounded-full border border-[rgb(var(--palette-dark-600)/0.8)] bg-[rgb(var(--palette-dark-800)/0.8)] px-3 py-1.5 text-sm font-medium text-[rgb(var(--palette-gray-300))]">
+                      <span class="inline-flex min-h-9 items-center gap-2 rounded-full border border-[rgb(var(--palette-dark-600)/0.8)] bg-[rgb(var(--palette-dark-800)/0.8)] px-3 py-1.5 text-sm font-medium text-[var(--text-body)]">
                         {{ isHistoryItemExpanded(tx.id) ? $t('pages.wallet.historyDetails.hide') : $t('pages.wallet.historyDetails.show') }}
                         <ChevronDown
                           :class="[
                             'h-4 w-4 transition-transform duration-200',
-                            isHistoryItemExpanded(tx.id) ? 'rotate-180 text-[rgb(var(--palette-blue-200))]' : 'text-[rgb(var(--palette-gray-400))]',
+                            isHistoryItemExpanded(tx.id) ? 'rotate-180 text-[var(--text-accent)]' : 'text-[var(--text-muted)]',
                           ]"
                         />
                       </span>
@@ -1189,10 +1189,10 @@ const typeLabel = (type: string) => {
                         :key="`${detail.label}-${detail.value}`"
                         class="rounded-2xl border border-[rgb(var(--palette-dark-600)/0.8)] bg-[rgb(var(--palette-dark-800)/0.7)] px-4 py-3"
                       >
-                        <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-[rgb(var(--palette-gray-500))]">
+                        <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-meta)]">
                           {{ detail.label }}
                         </div>
-                        <div class="mt-2 break-all text-sm leading-6 text-[rgb(var(--palette-gray-100))]">
+                        <div class="mt-2 break-all text-sm leading-6 text-[var(--text-heading)]">
                           {{ detail.value }}
                         </div>
                       </div>
@@ -1206,8 +1206,8 @@ const typeLabel = (type: string) => {
               v-if="isFetchingTransactions"
               class="flex items-center justify-center py-4"
             >
-              <Loader2 class="w-5 h-5 animate-spin text-[rgb(var(--palette-blue-500))] mr-2" />
-              <span class="text-sm text-[rgb(var(--palette-gray-400))]">{{ $t('common.loading') }}</span>
+              <Loader2 class="w-5 h-5 animate-spin text-[var(--text-link)] mr-2" />
+              <span class="text-sm text-[var(--text-muted)]">{{ $t('common.loading') }}</span>
             </div>
           </div>
         </div>
@@ -1223,15 +1223,15 @@ const typeLabel = (type: string) => {
     >
       <div class="flex items-center gap-3">
         <div class="flex h-10 w-10 items-center justify-center rounded-2xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)]">
-          <ArrowDownToLine class="h-5 w-5 text-[rgb(var(--palette-gray-200))]" />
+          <ArrowDownToLine class="h-5 w-5 text-[var(--text-body-strong)]" />
         </div>
-        <p class="text-sm text-[rgb(var(--palette-gray-400))]">
+        <p class="text-sm text-[var(--text-muted)]">
           {{ $t('pages.wallet.depositMin', { amount: minimumDepositText }) }}
         </p>
       </div>
 
       <div class="space-y-2">
-        <label class="block text-sm font-medium text-[rgb(var(--palette-gray-300))]">
+        <label class="block text-sm font-medium text-[var(--text-body)]">
           {{ $t('pages.wallet.depositAmount') }}
         </label>
         <div class="relative">
@@ -1242,9 +1242,9 @@ const typeLabel = (type: string) => {
             :max="depositInputMax"
             :step="currencyInputStep"
             placeholder="0"
-            class="w-full rounded-xl border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.03)] px-4 py-3 text-lg font-semibold text-[rgb(var(--palette-white))] outline-none focus:border-[rgb(var(--palette-blue-500))] focus:ring-2 focus:ring-[rgb(var(--palette-blue-500)/0.3)]"
+            class="w-full rounded-xl border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.03)] px-4 py-3 text-lg font-semibold text-[var(--text-title)] outline-none focus:border-[rgb(var(--palette-blue-500))] focus:ring-2 focus:ring-[rgb(var(--palette-blue-500)/0.3)]"
           />
-          <div class="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-[rgb(var(--palette-gray-300))]">
+          <div class="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-[var(--text-body)]">
             {{ currencySymbol }}
           </div>
         </div>
@@ -1256,10 +1256,10 @@ const typeLabel = (type: string) => {
         :aria-label="$t('pages.wallet.paymentProvider')"
       >
         <div class="flex items-center justify-between gap-3">
-          <label class="block text-sm font-medium text-[rgb(var(--palette-gray-300))]">
+          <label class="block text-sm font-medium text-[var(--text-body)]">
             {{ $t('pages.wallet.paymentProvider') }}
           </label>
-          <span class="text-[10px] font-semibold uppercase tracking-[0.24em] text-[rgb(var(--palette-gray-500))]">
+          <span class="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--text-meta)]">
             {{ $t('pages.wallet.paymentProviderEyebrow') }}
           </span>
         </div>
@@ -1285,14 +1285,14 @@ const typeLabel = (type: string) => {
             <div class="relative flex items-start gap-4">
               <div
                 class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border transition-colors duration-200"
-                :class="selectedDepositProvider === option.id ? option.activeIconClass : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.75)] text-[rgb(var(--palette-gray-300))]'"
+                :class="selectedDepositProvider === option.id ? option.activeIconClass : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.75)] text-[var(--text-body)]'"
               >
                 <component :is="option.icon" class="h-5 w-5" />
               </div>
 
               <div class="min-w-0 flex-1">
                 <div class="flex items-center justify-between gap-3">
-                  <div class="text-base font-semibold text-[rgb(var(--palette-white))] sm:text-lg">
+                  <div class="text-base font-semibold text-[var(--text-title)] sm:text-lg">
                     {{ option.title }}
                   </div>
                   <span
@@ -1308,7 +1308,7 @@ const typeLabel = (type: string) => {
 
                 <p
                   class="mt-2 max-w-[20rem] text-sm leading-6 transition-colors duration-200"
-                  :class="selectedDepositProvider === option.id ? option.activeCopyClass : 'text-[rgb(var(--palette-gray-400))]'"
+                  :class="selectedDepositProvider === option.id ? option.activeCopyClass : 'text-[var(--text-muted)]'"
                 >
                   {{ option.description }}
                 </p>
@@ -1322,8 +1322,8 @@ const typeLabel = (type: string) => {
                     :key="badge"
                     class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-[0.02em] transition-colors duration-200"
                     :class="selectedDepositProvider === option.id
-                      ? 'border-[rgb(var(--palette-orange-300)/0.3)] bg-[rgb(var(--palette-orange-400)/0.12)] text-[rgb(var(--palette-orange-50))]'
-                      : 'border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[rgb(var(--palette-gray-300))]'"
+                      ? 'border-[rgb(var(--palette-orange-300)/0.3)] bg-[rgb(var(--palette-orange-400)/0.12)] text-[var(--text-warning)]'
+                      : 'border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body)]'"
                   >
                     {{ badge }}
                   </span>
@@ -1334,19 +1334,19 @@ const typeLabel = (type: string) => {
         </div>
         <div
           v-else
-          class="rounded-2xl border border-[rgb(var(--palette-rose-500)/0.2)] bg-[rgb(var(--palette-rose-500)/0.08)] px-4 py-3 text-sm text-[rgb(var(--palette-rose-200))]"
+          class="rounded-2xl border border-[rgb(var(--palette-rose-500)/0.2)] bg-[rgb(var(--palette-rose-500)/0.08)] px-4 py-3 text-sm text-[var(--text-danger-soft)]"
         >
           {{ $t('pages.wallet.paymentProvidersUnavailable') }}
         </div>
 
-        <p class="text-xs text-[rgb(var(--palette-gray-400))]">
+        <p class="text-xs text-[var(--text-muted)]">
           {{ $t('pages.wallet.paymentProviderHint') }}
         </p>
       </div>
 
       <div
         v-if="depositErrorMessage"
-        class="rounded-xl border border-[rgb(var(--palette-rose-500)/0.2)] bg-[rgb(var(--palette-rose-500)/0.08)] px-4 py-3 text-sm text-[rgb(var(--palette-rose-200))]"
+        class="rounded-xl border border-[rgb(var(--palette-rose-500)/0.2)] bg-[rgb(var(--palette-rose-500)/0.08)] px-4 py-3 text-sm text-[var(--text-danger-soft)]"
       >
         {{ depositErrorMessage }}
       </div>
@@ -1357,7 +1357,7 @@ const typeLabel = (type: string) => {
         class="market-btn market-btn-primary w-full rounded-xl py-3.5"
       >
         <span v-if="isLoading" class="flex items-center justify-center gap-2">
-          <Loader2 class="w-4 h-4 animate-spin text-[rgb(var(--palette-white))]" />
+          <Loader2 class="w-4 h-4 animate-spin text-[var(--text-title)]" />
           {{ $t('common.loading') }}
         </span>
         <span v-else>
@@ -1374,7 +1374,7 @@ const typeLabel = (type: string) => {
       @cancel="closeWithdrawModal"
     >
       <div class="space-y-2">
-        <label class="block text-sm font-medium text-[rgb(var(--palette-gray-300))]">
+        <label class="block text-sm font-medium text-[var(--text-body)]">
           {{ $t('pages.wallet.withdrawAmount') }}
         </label>
         <div class="relative">
@@ -1385,34 +1385,34 @@ const typeLabel = (type: string) => {
             :min="withdrawInputMin"
             :step="currencyInputStep"
             placeholder="0"
-            class="w-full rounded-xl border bg-[rgb(var(--palette-white)/0.03)] px-4 py-3 text-lg font-semibold text-[rgb(var(--palette-white))] outline-none focus:ring-2"
+            class="w-full rounded-xl border bg-[rgb(var(--palette-white)/0.03)] px-4 py-3 text-lg font-semibold text-[var(--text-title)] outline-none focus:ring-2"
             :class="withdrawAmountValidationMessage
               ? 'border-[rgb(var(--palette-rose-500)/0.4)] focus:border-[rgb(var(--palette-rose-500))] focus:ring-[rgb(var(--palette-rose-500)/0.3)]'
               : 'border-[rgb(var(--palette-white)/0.08)] focus:border-[rgb(var(--palette-blue-500))] focus:ring-[rgb(var(--palette-blue-500)/0.3)]'"
             @input="normalizeWithdrawAmountInput"
           />
-          <div class="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-[rgb(var(--palette-gray-300))]">
+          <div class="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-[var(--text-body)]">
             {{ currencySymbol }}
           </div>
         </div>
         <div class="mt-2 flex items-center justify-between text-xs">
-          <span class="text-[rgb(var(--palette-gray-400))]">
-            {{ $t('pages.wallet.available') }}: <span class="text-[rgb(var(--palette-blue-400))]">{{ formatCurrency(withdrawableBalanceRub) }}</span>
+          <span class="text-[var(--text-muted)]">
+            {{ $t('pages.wallet.available') }}: <span class="text-[var(--text-link)]">{{ formatCurrency(withdrawableBalanceRub) }}</span>
           </span>
           <button
             @click="withdrawAmount = availableBalanceForInput()"
-            class="text-[rgb(var(--palette-blue-400))] transition-colors hover:text-[rgb(var(--palette-blue-300))]"
+            class="text-[var(--text-link)] transition-colors hover:text-[var(--text-link)]"
           >
             {{ $t('pages.wallet.useAll') }}
           </button>
         </div>
-        <p v-if="withdrawAmountValidationMessage" class="text-xs text-[rgb(var(--palette-rose-300))]">
+        <p v-if="withdrawAmountValidationMessage" class="text-xs text-[var(--text-danger)]">
           {{ withdrawAmountValidationMessage }}
         </p>
       </div>
 
       <div class="space-y-2">
-        <label class="block text-sm font-medium text-[rgb(var(--palette-gray-300))]">
+        <label class="block text-sm font-medium text-[var(--text-body)]">
           {{ $t('pages.wallet.withdrawWalletAddress') }}
         </label>
         <input
@@ -1424,14 +1424,14 @@ const typeLabel = (type: string) => {
           autocapitalize="off"
           maxlength="34"
           :placeholder="$t('pages.wallet.withdrawWalletAddressPlaceholder')"
-          class="w-full rounded-xl border bg-[rgb(var(--palette-white)/0.03)] px-4 py-3 text-lg font-semibold text-[rgb(var(--palette-white))] outline-none focus:ring-2"
+          class="w-full rounded-xl border bg-[rgb(var(--palette-white)/0.03)] px-4 py-3 text-lg font-semibold text-[var(--text-title)] outline-none focus:ring-2"
           :class="withdrawWalletAddressValidationMessage
             ? 'border-[rgb(var(--palette-rose-500)/0.4)] focus:border-[rgb(var(--palette-rose-500))] focus:ring-[rgb(var(--palette-rose-500)/0.3)]'
             : 'border-[rgb(var(--palette-white)/0.08)] focus:border-[rgb(var(--palette-blue-500))] focus:ring-[rgb(var(--palette-blue-500)/0.3)]'"
           @input="normalizeWithdrawWalletAddressInput"
           @blur="handleWithdrawWalletAddressBlur"
         />
-        <p v-if="withdrawWalletAddressValidationMessage" class="text-xs text-[rgb(var(--palette-rose-300))]">
+        <p v-if="withdrawWalletAddressValidationMessage" class="text-xs text-[var(--text-danger)]">
           {{ withdrawWalletAddressValidationMessage }}
         </p>
       </div>
@@ -1440,27 +1440,27 @@ const typeLabel = (type: string) => {
         v-if="Number.isFinite(withdrawAmountInRub) && withdrawAmountInRub > 0"
         class="rounded-2xl border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.03)] px-4 py-3"
       >
-        <div class="grid gap-2 text-sm text-[rgb(var(--palette-gray-300))]">
+        <div class="grid gap-2 text-sm text-[var(--text-body)]">
           <div class="flex items-center justify-between gap-3">
-            <span class="text-[rgb(var(--palette-gray-400))]">{{ $t('pages.wallet.withdrawSummary.requestedAmount') }}</span>
-            <span class="font-medium text-[rgb(var(--palette-white))]">{{ formatCurrency(withdrawAmountInRub) }}</span>
+            <span class="text-[var(--text-muted)]">{{ $t('pages.wallet.withdrawSummary.requestedAmount') }}</span>
+            <span class="font-medium text-[var(--text-title)]">{{ formatCurrency(withdrawAmountInRub) }}</span>
           </div>
           <div class="flex items-center justify-between gap-3">
-            <span class="text-[rgb(var(--palette-gray-400))]">
+            <span class="text-[var(--text-muted)]">
               {{ $t('pages.wallet.withdrawSummary.commission', { percent: withdrawalCommissionPercent }) }}
             </span>
-            <span class="font-medium text-[rgb(var(--palette-amber-200))]">{{ formatCurrency(withdrawCommissionAmountRub) }}</span>
+            <span class="font-medium text-[var(--text-warning)]">{{ formatCurrency(withdrawCommissionAmountRub) }}</span>
           </div>
           <div class="flex items-center justify-between gap-3 border-t border-[rgb(var(--palette-white)/0.08)] pt-2">
-            <span class="text-[rgb(var(--palette-gray-400))]">{{ $t('pages.wallet.withdrawSummary.payoutAmount') }}</span>
-            <span class="text-base font-semibold text-[rgb(var(--palette-emerald-300))]">{{ formatCurrency(withdrawPayoutAmountRub) }}</span>
+            <span class="text-[var(--text-muted)]">{{ $t('pages.wallet.withdrawSummary.payoutAmount') }}</span>
+            <span class="text-base font-semibold text-[var(--text-success)]">{{ formatCurrency(withdrawPayoutAmountRub) }}</span>
           </div>
         </div>
       </div>
 
       <div
         v-if="withdrawSuccessMessage"
-        class="rounded-xl border border-[rgb(var(--palette-emerald-500)/0.2)] bg-[rgb(var(--palette-emerald-500)/0.08)] px-4 py-3 text-sm text-[rgb(var(--palette-emerald-200))]"
+        class="rounded-xl border border-[rgb(var(--palette-emerald-500)/0.2)] bg-[rgb(var(--palette-emerald-500)/0.08)] px-4 py-3 text-sm text-[var(--text-success)]"
       >
         {{ withdrawSuccessMessage }}
       </div>
@@ -1471,7 +1471,7 @@ const typeLabel = (type: string) => {
         class="market-btn market-btn-primary w-full rounded-xl py-3.5"
       >
         <span v-if="isLoading" class="flex items-center justify-center gap-2">
-          <Loader2 class="w-4 h-4 animate-spin text-[rgb(var(--palette-white))]" />
+          <Loader2 class="w-4 h-4 animate-spin text-[var(--text-title)]" />
           {{ $t('common.loading') }}
         </span>
         <span v-else>

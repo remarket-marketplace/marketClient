@@ -143,8 +143,8 @@ function handleImageTouchEnd(event: TouchEvent) {
           :class="index === activeImageIndex ? 'w-4 bg-[rgb(var(--palette-white)/0.95)]' : 'w-1.5 bg-[rgb(var(--palette-white)/0.55)]'"
         />
       </div>
-      <div v-else class="flex h-full w-full flex-col items-center justify-center gap-1.5 text-[rgb(var(--palette-gray-300))]">
-        <ImageOff class="h-6 w-6 text-[rgb(var(--palette-gray-500))] sm:h-7 sm:w-7" />
+      <div v-else class="flex h-full w-full flex-col items-center justify-center gap-1.5 text-[var(--text-body)]">
+        <ImageOff class="h-6 w-6 text-[var(--text-meta)] sm:h-7 sm:w-7" />
         <span class="text-xs sm:text-sm">{{ t('common.noImage') }}</span>
       </div>
     </div>
@@ -154,12 +154,12 @@ function handleImageTouchEnd(event: TouchEvent) {
         <h3 class="home-list-title min-w-0 text-sm font-semibold text-mainText sm:text-base">
           {{ product.title }}
         </h3>
-        <div class="shrink-0 rounded-lg bg-[rgb(var(--palette-blue-600))] px-2.5 py-1 text-xs font-semibold text-[rgb(var(--palette-white))] sm:text-sm">
+        <div class="shrink-0 rounded-lg bg-[rgb(var(--palette-blue-600))] px-2.5 py-1 text-xs font-semibold text-[var(--text-title)] sm:text-sm">
           {{ formattedPrice }}
         </div>
       </div>
 
-      <p class="home-list-description mt-1 min-w-0 text-xs text-[rgb(var(--palette-gray-400))] sm:text-sm">
+      <p class="home-list-description mt-1 min-w-0 text-xs text-[var(--text-muted)] sm:text-sm">
         {{ product.description || t('common.noDescription') }}
       </p>
 

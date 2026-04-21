@@ -1524,11 +1524,11 @@ async function sendMessage(payload: { files: File[] }) {
 
 <template>
   <div class="h-full w-full flex flex-col overflow-x-hidden overscroll-none md:pt-6">
-    <div v-if="isPageLoading" class="flex flex-1 items-center justify-center text-[rgb(var(--palette-gray-300))]">
+    <div v-if="isPageLoading" class="flex flex-1 items-center justify-center text-[var(--text-body)]">
       <Loader />
     </div>
 
-    <div v-else-if="pageErrorMessage" class="flex flex-1 items-center justify-center text-[rgb(var(--palette-red-500))]">
+    <div v-else-if="pageErrorMessage" class="flex flex-1 items-center justify-center text-[var(--text-danger)]">
       {{ pageErrorMessage }}
     </div>
 
@@ -1552,7 +1552,7 @@ async function sendMessage(payload: { files: File[] }) {
                 :show-support-as-user="false" @load-chat-messages="(n: string) => loadChatMessages(n)" />
             </div>
             <div v-else class="h-full w-full flex items-center justify-center">
-              <p class="text-sm text-[rgb(var(--palette-gray-400))] font-light">
+              <p class="text-sm text-[var(--text-muted)] font-light">
                 {{ $t('pages.chats.emptyChats') }}
               </p>
             </div>
@@ -1586,7 +1586,7 @@ async function sendMessage(payload: { files: File[] }) {
                   <!-- Для чата поддержки - иконка на синем фоне -->
                   <div v-if="isSupportChat"
                     class="h-7 w-7 lg:h-10 lg:w-10 flex items-center justify-center rounded-full bg-[rgb(var(--palette-blue-500)/0.2)] border-2 border-[rgb(var(--palette-blue-500)/0.3)]">
-                    <Headphones class="w-4 h-4 lg:w-5 lg:h-5 text-[rgb(var(--palette-blue-400))]" />
+                    <Headphones class="w-4 h-4 lg:w-5 lg:h-5 text-[var(--text-link)]" />
                   </div>
                   <!-- Для обычного чата - фото или инициалы -->
                   <UserAvatar v-else :avatar-url="chatDisplayAvatarUrl" :alt="chatDisplayName"
@@ -1596,7 +1596,7 @@ async function sendMessage(payload: { files: File[] }) {
                 <!-- Информация о чате -->
                 <div class="flex min-w-0 flex-col justify-center">
                   <!-- Имя чата -->
-                  <p v-if="isSupportChat" class="truncate font-semibold text-base text-[rgb(var(--palette-blue-500))] lg:text-lg">
+                  <p v-if="isSupportChat" class="truncate font-semibold text-base text-[var(--text-link)] lg:text-lg">
                     {{ chatDisplayName }}
                   </p>
                   <div v-else class="w-full min-w-0 truncate">
@@ -1604,7 +1604,7 @@ async function sendMessage(payload: { files: File[] }) {
                       class="text-base font-semibold leading-tight lg:text-lg" />
                   </div>
                   <p class="mt-0.5 text-[11px] leading-none"
-                    :class="isChatDisplayOnline ? 'text-[rgb(var(--palette-green-500))]' : 'text-[rgb(var(--palette-gray-500))]'">
+                    :class="isChatDisplayOnline ? 'text-[var(--text-success-strong)]' : 'text-[var(--text-meta)]'">
                     {{ chatDisplayStatus }}
                   </p>
                 </div>
@@ -1667,13 +1667,13 @@ async function sendMessage(payload: { files: File[] }) {
                         class="flex flex-col items-center justify-center gap-4 text-center px-4">
                         <div class="text-4xl">💬</div>
                         <p class="text-lg text-mainText font-semibold">{{ $t("pages.chats.emptySupport") }}</p>
-                        <p class="text-[rgb(var(--palette-gray-400))] text-sm">{{ $t("pages.chats.emptySupportDesc") }}</p>
+                        <p class="text-[var(--text-muted)] text-sm">{{ $t("pages.chats.emptySupportDesc") }}</p>
                       </div>
-                      <p v-else class="text-[rgb(var(--palette-gray-400))] font-light">{{ $t("pages.chats.emptyMessages") }}</p>
+                      <p v-else class="text-[var(--text-muted)] font-light">{{ $t("pages.chats.emptyMessages") }}</p>
                     </div>
 
                     <div v-else-if="selectedChatId === null" class="h-full w-full flex items-center justify-center">
-                      <p class="text-[rgb(var(--palette-gray-400))] font-light">{{ $t('pages.chats.selectChat') }}</p>
+                      <p class="text-[var(--text-muted)] font-light">{{ $t('pages.chats.selectChat') }}</p>
                     </div>
                   </div>
                 </template>
@@ -1685,12 +1685,12 @@ async function sendMessage(payload: { files: File[] }) {
                 class="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-[var(--transparent)] px-1 pb-1 pt-0 md:pb-2">
                 <div v-if="lockReminderText" class="pointer-events-auto mx-1 mb-2 rounded-xl border px-3 py-2 text-sm"
                   :class="lockReminderType === 'sender'
-                    ? 'border-[rgb(var(--palette-amber-400)/0.4)] bg-[rgb(var(--palette-amber-500)/0.1)] text-[rgb(var(--palette-amber-200))]'
-                    : 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-500)/0.1)] text-[rgb(var(--palette-blue-200))]'">
+                    ? 'border-[rgb(var(--palette-amber-400)/0.4)] bg-[rgb(var(--palette-amber-500)/0.1)] text-[var(--text-warning)]'
+                    : 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-500)/0.1)] text-[var(--text-accent)]'">
                   {{ lockReminderText }}
                 </div>
                 <div v-if="sendErrorMessage"
-                  class="pointer-events-auto mx-1 mb-2 rounded-xl border border-[rgb(var(--palette-red-500)/0.4)] bg-[rgb(var(--palette-red-500)/0.1)] px-3 py-2 text-sm text-[rgb(var(--palette-red-300))]">
+                  class="pointer-events-auto mx-1 mb-2 rounded-xl border border-[rgb(var(--palette-red-500)/0.4)] bg-[rgb(var(--palette-red-500)/0.1)] px-3 py-2 text-sm text-[var(--text-danger)]">
                   {{ sendErrorMessage }}
                 </div>
                 <div class="pointer-events-auto">

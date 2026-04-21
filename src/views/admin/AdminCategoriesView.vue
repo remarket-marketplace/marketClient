@@ -283,12 +283,12 @@ watch(selectedCategory, () => {
 
       <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div class="space-y-3">
-          <div class="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--palette-blue-500)/0.2)] bg-[rgb(var(--palette-blue-500)/0.1)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-[rgb(var(--palette-blue-200))]">
+          <div class="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--palette-blue-500)/0.2)] bg-[rgb(var(--palette-blue-500)/0.1)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--text-accent)]">
             <FolderOpen class="h-3.5 w-3.5" />
             <span>{{ t('pages.admin.categoriesPage.managementBadge') }}</span>
           </div>
           <div>
-            <h1 class="text-3xl font-semibold tracking-tight text-[rgb(var(--palette-white))]">
+            <h1 class="text-3xl font-semibold tracking-tight text-[var(--text-title)]">
               {{ t('pages.admin.categoriesPage.title') }}
             </h1>
             <p class="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">
@@ -348,7 +348,7 @@ watch(selectedCategory, () => {
                 :alt="category.name"
               />
               <div v-else class="admin-surface-soft flex h-10 w-10 items-center justify-center rounded-lg">
-                <Folder class="h-5 w-5 text-[rgb(var(--palette-gray-400))]" />
+                <Folder class="h-5 w-5 text-[var(--text-muted)]" />
               </div>
             </div>
 
@@ -363,7 +363,7 @@ watch(selectedCategory, () => {
             </div>
 
             <button
-              class="cursor-pointer text-[rgb(var(--palette-gray-300))] transition-colors hover:text-[rgb(var(--palette-white))]"
+              class="cursor-pointer text-[var(--text-body)] transition-colors hover:text-[var(--text-title)]"
               @click.stop="router.push(`/admin/categories/edit/${category.id}`)"
             >
               <EditIcon class="h-4 w-4" />
@@ -443,7 +443,7 @@ watch(selectedCategory, () => {
               </div>
 
               <button
-                class="cursor-pointer text-[rgb(var(--palette-gray-300))] transition-colors hover:text-[rgb(var(--palette-white))]"
+                class="cursor-pointer text-[var(--text-body)] transition-colors hover:text-[var(--text-title)]"
                 @click.stop="router.push(`/admin/categories/edit/${subcategory.id}`)"
               >
                 <EditIcon class="h-4 w-4" />

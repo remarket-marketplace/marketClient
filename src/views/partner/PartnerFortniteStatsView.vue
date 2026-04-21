@@ -87,11 +87,11 @@ onMounted(() => {
   <section class="w-full min-h-[calc(100vh-120px)] pb-10 pt-6">
     <div class="max-w-6xl mx-auto px-2 lg:px-0 flex flex-col gap-4">
       <div class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] p-5">
-        <p class="text-xs uppercase tracking-[0.2em] text-[rgb(var(--palette-gray-400))]">Partner Dashboard</p>
-        <h1 class="text-2xl font-semibold text-[rgb(var(--palette-white))] mt-1">Raika checker x Market</h1>
-        <p class="text-sm text-[rgb(var(--palette-gray-400))] mt-2">
+        <p class="text-xs uppercase tracking-[0.2em] text-[var(--text-muted)]">Partner Dashboard</p>
+        <h1 class="text-2xl font-semibold text-[var(--text-title)] mt-1">Raika checker x Market</h1>
+        <p class="text-sm text-[var(--text-muted)] mt-2">
           Прозрачная статистика продаж по категории
-          <span class="text-[rgb(var(--palette-white))] font-medium">{{ stats?.category_name ?? currentGameLabel }}</span>.
+          <span class="text-[var(--text-title)] font-medium">{{ stats?.category_name ?? currentGameLabel }}</span>.
         </p>
 
         <div class="mt-4 flex flex-wrap gap-2">
@@ -101,8 +101,8 @@ onMounted(() => {
             type="button"
             class="rounded-xl border px-4 py-2 text-sm font-medium transition-colors"
             :class="selectedGame === game.value
-              ? 'border-[rgb(var(--palette-cyan-400)/0.7)] bg-[rgb(var(--palette-cyan-500)/0.2)] text-[rgb(var(--palette-cyan-100))]'
-              : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700))] text-[rgb(var(--palette-gray-300))] hover:border-[rgb(var(--palette-dark-500))]'"
+              ? 'border-[rgb(var(--palette-cyan-400)/0.7)] bg-[rgb(var(--palette-cyan-500)/0.2)] text-[var(--text-accent-strong)]'
+              : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700))] text-[var(--text-body)] hover:border-[rgb(var(--palette-dark-500))]'"
             @click="selectGame(game.value)"
           >
             {{ game.label }}
@@ -116,7 +116,7 @@ onMounted(() => {
 
       <div
         v-else-if="isError"
-        class="rounded-2xl border border-[rgb(var(--palette-red-500)/0.4)] bg-[rgb(var(--palette-red-500)/0.1)] text-[rgb(var(--palette-red-200))] px-4 py-3 text-sm"
+        class="rounded-2xl border border-[rgb(var(--palette-red-500)/0.4)] bg-[rgb(var(--palette-red-500)/0.1)] text-[var(--text-danger-soft)] px-4 py-3 text-sm"
       >
         Не удалось загрузить статистику. Попробуйте обновить страницу.
       </div>
@@ -128,17 +128,17 @@ onMounted(() => {
             :key="card.key"
             class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] p-4 transition-colors hover:border-[rgb(var(--palette-dark-500))]"
           >
-            <p class="text-xs text-[rgb(var(--palette-gray-400))]">{{ card.label }}</p>
-            <p class="text-xl font-semibold text-[rgb(var(--palette-white))] mt-2">{{ card.value }}</p>
+            <p class="text-xs text-[var(--text-muted)]">{{ card.label }}</p>
+            <p class="text-xl font-semibold text-[var(--text-title)] mt-2">{{ card.value }}</p>
           </div>
         </div>
 
         <div class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] p-4">
-          <h2 class="text-lg font-semibold text-[rgb(var(--palette-white))] mb-3">Сделки по статусам</h2>
+          <h2 class="text-lg font-semibold text-[var(--text-title)] mb-3">Сделки по статусам</h2>
           <div v-if="statusRows.length" class="overflow-x-auto">
             <table class="w-full text-sm">
               <thead>
-                <tr class="text-left text-[rgb(var(--palette-gray-400))] border-b border-[rgb(var(--palette-dark-600))]">
+                <tr class="text-left text-[var(--text-muted)] border-b border-[rgb(var(--palette-dark-600))]">
                   <th class="py-2 pr-3 font-medium">Статус</th>
                   <th class="py-2 font-medium">Количество</th>
                 </tr>
@@ -149,13 +149,13 @@ onMounted(() => {
                   :key="item.status"
                   class="border-b border-[rgb(var(--palette-dark-700))] last:border-b-0"
                 >
-                  <td class="py-2 pr-3 text-[rgb(var(--palette-gray-200))]">{{ item.label }}</td>
-                  <td class="py-2 text-[rgb(var(--palette-white))] font-medium">{{ formatNumber(item.count) }}</td>
+                  <td class="py-2 pr-3 text-[var(--text-body-strong)]">{{ item.label }}</td>
+                  <td class="py-2 text-[var(--text-title)] font-medium">{{ formatNumber(item.count) }}</td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <p v-else class="text-sm text-[rgb(var(--palette-gray-400))]">В этой категории пока нет сделок.</p>
+          <p v-else class="text-sm text-[var(--text-muted)]">В этой категории пока нет сделок.</p>
         </div>
       </template>
     </div>

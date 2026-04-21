@@ -29,7 +29,7 @@ function handleViewProduct(product: Product | null) {
         <div class="flex items-center gap-3">
             <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
-                    <span class="text-[11px] font-semibold uppercase tracking-[0.14em] text-[rgb(var(--palette-blue-300)/0.9)]">
+                    <span class="text-[11px] font-semibold uppercase tracking-[0.14em] text-[rgb(var(--text-link-rgb)/0.9)]">
                         {{ $t('pages.chats.updateDealStatus') }}
                     </span>
                     <DealStatusTag :deal-status="message.new_status" />
@@ -48,8 +48,8 @@ function handleViewProduct(product: Product | null) {
                     />
 
                     <span class="min-w-0">
-                        <span class="block truncate text-sm font-medium text-[rgb(var(--palette-white))]">{{ product?.title }}</span>
-                        <span class="block text-xs text-[rgb(var(--palette-gray-400))]">
+                        <span class="block truncate text-sm font-medium text-[var(--text-title)]">{{ product?.title }}</span>
+                        <span class="block text-xs text-[var(--text-muted)]">
                             {{ t(`pages.chats.${message.new_status}`) }}
                         </span>
                     </span>
@@ -57,8 +57,8 @@ function handleViewProduct(product: Product | null) {
             </div>
 
             <div class="flex-shrink-0 text-right">
-                <p class="text-sm font-medium text-[rgb(var(--palette-gray-200))]">{{ product ? formatCurrencyAmount(product.price) : '-' }}</p>
-                <p class="mt-1 text-xs text-[rgb(var(--palette-gray-400))]">{{ formatDate(message.created_at) }}</p>
+                <p class="text-sm font-medium text-[var(--text-body-strong)]">{{ product ? formatCurrencyAmount(product.price) : '-' }}</p>
+                <p class="mt-1 text-xs text-[var(--text-muted)]">{{ formatDate(message.created_at) }}</p>
             </div>
         </div>
     </div>

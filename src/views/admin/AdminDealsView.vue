@@ -388,7 +388,7 @@ watch(statusFilter, async () => {
         <button
           type="button"
           class="admin-btn admin-btn-ghost w-full justify-center"
-          :class="{ 'border-[rgb(var(--palette-blue-500)/0.4)] text-[rgb(var(--palette-blue-300))]': isMobileFiltersOpen }"
+          :class="{ 'border-[rgb(var(--palette-blue-500)/0.4)] text-[var(--text-link)]': isMobileFiltersOpen }"
           @click="isMobileFiltersOpen = !isMobileFiltersOpen"
         >
           <SlidersHorizontal class="w-4 h-4" />
@@ -436,13 +436,13 @@ watch(statusFilter, async () => {
     <!-- Список сделок -->
     <div class="flex-1 overflow-hidden">
       <div v-if="isLoading" class="flex items-center justify-center h-32">
-        <Loader2 class="h-5 w-5 sm:h-8 sm:w-8 animate-spin text-[rgb(var(--palette-blue-500))]" />
-        <span class="ml-2 text-sm sm:text-lg text-[rgb(var(--palette-gray-400))]">{{ $t('common.loading') }}</span>
+        <Loader2 class="h-5 w-5 sm:h-8 sm:w-8 animate-spin text-[var(--text-link)]" />
+        <span class="ml-2 text-sm sm:text-lg text-[var(--text-muted)]">{{ $t('common.loading') }}</span>
       </div>
 
       <div v-else-if="sortedDeals.length === 0" class="flex items-center justify-center h-32">
         <div class="text-center">
-          <div class="h-6 w-6 sm:h-12 sm:w-12 text-[rgb(var(--palette-gray-500))] mx-auto mb-1 flex items-center justify-center">
+          <div class="h-6 w-6 sm:h-12 sm:w-12 text-[var(--text-meta)] mx-auto mb-1 flex items-center justify-center">
             <span class="text-2xl">🤝</span>
           </div>
           <p class="text-text-secondary text-xs sm:text-base">{{ $t('common.noData') }}</p>
@@ -458,7 +458,7 @@ watch(statusFilter, async () => {
             <div class="flex justify-between items-start">
               <div class="flex items-center gap-3">
                 <DealStatusTag :deal-status="deal.status" />
-                <span class="text-xl font-bold text-[rgb(var(--palette-green-400))]">{{ formatPrice(deal.price) }}</span>
+                <span class="text-xl font-bold text-[var(--text-success-strong)]">{{ formatPrice(deal.price) }}</span>
               </div>
               <div class="flex gap-2">
                 <button @click="goToChat(deal.chat_room_id)"
@@ -590,21 +590,21 @@ watch(statusFilter, async () => {
               </template>
 
               <template v-else-if="deal.status === 'completed'">
-                <div class="admin-surface-soft flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm text-[rgb(var(--palette-gray-300))]">
+                <div class="admin-surface-soft flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm text-[var(--text-body)]">
                   <CheckCircle class="w-4 h-4" />
                   <span>{{ $t('common.dealCompleted') }}</span>
                 </div>
               </template>
 
               <template v-else-if="deal.status === 'cancelled'">
-                <div class="admin-surface-soft flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm text-[rgb(var(--palette-gray-300))]">
+                <div class="admin-surface-soft flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm text-[var(--text-body)]">
                   <XCircle class="w-4 h-4" />
                   <span>{{ $t('common.dealCancelled') }}</span>
                 </div>
               </template>
 
               <template v-else-if="deal.status === 'refunded'">
-                <div class="flex flex-1 items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-purple-500)/0.25)] bg-[rgb(var(--palette-purple-500)/0.1)] px-4 py-2 text-sm text-[rgb(var(--palette-purple-300))]">
+                <div class="flex flex-1 items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-purple-500)/0.25)] bg-[rgb(var(--palette-purple-500)/0.1)] px-4 py-2 text-sm text-[var(--text-accent)]">
                   <Undo2 class="w-4 h-4" />
                   <span>{{ $t('common.refundCompleted') }}</span>
                 </div>
@@ -624,7 +624,7 @@ watch(statusFilter, async () => {
 
         <!-- Спиннер при подгрузке -->
         <div v-if="isFetchingMore" class="flex items-center justify-center py-4">
-          <Loader2 class="w-5 h-5 animate-spin text-[rgb(var(--palette-blue-500))]" />
+          <Loader2 class="w-5 h-5 animate-spin text-[var(--text-link)]" />
         </div>
       </div>
     </div>
@@ -641,15 +641,15 @@ watch(statusFilter, async () => {
   >
     <template #body>
       <div v-if="showReasonField" class="space-y-2">
-        <label class="block text-sm text-[rgb(var(--palette-gray-300))]">
+        <label class="block text-sm text-[var(--text-body)]">
           {{ $t('pages.admin.dealPage.disputeReasonLabel') }}
         </label>
         <textarea
           v-model="disputeReason"
-          class="admin-input-surface w-full rounded-lg text-[rgb(var(--palette-white))] px-3 py-2 resize-none min-h-[110px]"
+          class="admin-input-surface w-full rounded-lg text-[var(--text-title)] px-3 py-2 resize-none min-h-[110px]"
           :placeholder="$t('pages.admin.dealPage.disputeReasonPlaceholder')"
         />
-        <p v-if="reasonError" class="text-[rgb(var(--palette-red-400))] text-sm">
+        <p v-if="reasonError" class="text-[var(--text-danger)] text-sm">
           {{ reasonError }}
         </p>
       </div>

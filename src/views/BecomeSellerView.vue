@@ -23,7 +23,7 @@ function startSelling() {
       </div>
 
       <article class="mt-6 seller-copy">
-        <p class="seller-lead text-[rgb(var(--palette-gray-300))]">
+        <p class="seller-lead text-[var(--text-body)]">
           {{ $t('pages.becomeSeller.subtitle') }}
         </p>
 
@@ -174,7 +174,7 @@ function startSelling() {
         </section>
 
         <section class="seller-section pt-1">
-          <p class="seller-cta-text text-[rgb(var(--palette-blue-100))]">
+          <p class="seller-cta-text text-[var(--text-accent-strong)]">
             {{ $t('pages.becomeSeller.ctaHint') }}
           </p>
           <div class="mt-6 flex justify-center">

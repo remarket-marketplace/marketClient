@@ -50,26 +50,26 @@ const imagePreviewUrls = computed(() => (
         class="min-w-0 rounded-xl rounded-br-none bg-[rgb(var(--palette-blue-600))] px-4 py-2 break-words [overflow-wrap:anywhere]"
       >
         <p class="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{{ message.text }}</p>
-        <div class="mt-1 flex items-center justify-end gap-2 text-xs text-[rgb(var(--palette-gray-300))]">
+        <div class="mt-1 flex items-center justify-end gap-2 text-xs text-[var(--text-body)]">
           <span>{{ formatDate(message.created_at) }}</span>
         </div>
       </div>
 
       <div
         v-if="isImageMessage"
-        class="mt-1 flex w-full items-center justify-end gap-2 text-xs text-[rgb(var(--palette-gray-300))]"
+        class="mt-1 flex w-full items-center justify-end gap-2 text-xs text-[var(--text-body)]"
       >
         <span>{{ formatDate(message.created_at) }}</span>
       </div>
 
       <div
         v-if="isFailed"
-        class="mt-1 flex w-full items-center justify-end gap-2 text-xs text-[rgb(var(--palette-red-300))]"
+        class="mt-1 flex w-full items-center justify-end gap-2 text-xs text-[var(--text-danger)]"
       >
         <span>{{ t('pages.chats.messageSendFailed') }}</span>
         <button
           type="button"
-          class="rounded-full border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] px-2 py-0.5 text-[11px] font-medium text-[rgb(var(--palette-gray-200))] transition hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[rgb(var(--palette-white))]"
+          class="rounded-full border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-body-strong)] transition hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)]"
           @click="emit('retry', message.id)"
         >
           {{ $t('pages.chats.retrySend') }}

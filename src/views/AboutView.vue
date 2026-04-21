@@ -13,7 +13,7 @@ import BackButton from '@/components/navigation/BackButton.vue'
       </div>
 
       <article class="mt-6 about-copy">
-        <p class="about-lead text-[rgb(var(--palette-gray-300))]">
+        <p class="about-lead text-[var(--text-body)]">
           {{ $t('pages.about.subtitle') }}
         </p>
 
@@ -21,40 +21,40 @@ import BackButton from '@/components/navigation/BackButton.vue'
           <h2 class="about-heading text-mainText">
             {{ $t('pages.about.missionTitle') }}
           </h2>
-          <p class="about-paragraph text-[rgb(var(--palette-gray-200))]">{{ $t('pages.about.missionText1') }}</p>
-          <p class="about-paragraph text-[rgb(var(--palette-gray-200))]">{{ $t('pages.about.missionText2') }}</p>
+          <p class="about-paragraph text-[var(--text-body-strong)]">{{ $t('pages.about.missionText1') }}</p>
+          <p class="about-paragraph text-[var(--text-body-strong)]">{{ $t('pages.about.missionText2') }}</p>
         </section>
 
         <section class="about-section">
           <h2 class="about-heading text-mainText">
             {{ $t('pages.about.ideaTitle') }}
           </h2>
-          <p class="about-paragraph text-[rgb(var(--palette-gray-200))]">{{ $t('pages.about.ideaText1') }}</p>
-          <p class="about-paragraph text-[rgb(var(--palette-gray-200))]">{{ $t('pages.about.ideaText2') }}</p>
+          <p class="about-paragraph text-[var(--text-body-strong)]">{{ $t('pages.about.ideaText1') }}</p>
+          <p class="about-paragraph text-[var(--text-body-strong)]">{{ $t('pages.about.ideaText2') }}</p>
         </section>
 
         <section class="about-section">
           <h2 class="about-heading text-mainText">
             {{ $t('pages.about.securityTitle') }}
           </h2>
-          <p class="about-paragraph text-[rgb(var(--palette-gray-200))]">{{ $t('pages.about.securityText1') }}</p>
-          <p class="about-paragraph text-[rgb(var(--palette-gray-200))]">{{ $t('pages.about.securityText2') }}</p>
+          <p class="about-paragraph text-[var(--text-body-strong)]">{{ $t('pages.about.securityText1') }}</p>
+          <p class="about-paragraph text-[var(--text-body-strong)]">{{ $t('pages.about.securityText2') }}</p>
         </section>
 
         <section class="about-section">
           <h2 class="about-heading text-mainText">
             {{ $t('pages.about.valuesTitle') }}
           </h2>
-          <p class="about-paragraph text-[rgb(var(--palette-gray-200))]">{{ $t('pages.about.valuesText1') }}</p>
-          <p class="about-paragraph text-[rgb(var(--palette-gray-200))]">{{ $t('pages.about.valuesText2') }}</p>
+          <p class="about-paragraph text-[var(--text-body-strong)]">{{ $t('pages.about.valuesText1') }}</p>
+          <p class="about-paragraph text-[var(--text-body-strong)]">{{ $t('pages.about.valuesText2') }}</p>
         </section>
 
         <section class="about-section">
           <h2 class="about-heading text-mainText">
             {{ $t('pages.about.futureTitle') }}
           </h2>
-          <p class="about-paragraph text-[rgb(var(--palette-gray-200))]">{{ $t('pages.about.futureText1') }}</p>
-          <p class="about-paragraph text-[rgb(var(--palette-gray-200))]">{{ $t('pages.about.futureText2') }}</p>
+          <p class="about-paragraph text-[var(--text-body-strong)]">{{ $t('pages.about.futureText1') }}</p>
+          <p class="about-paragraph text-[var(--text-body-strong)]">{{ $t('pages.about.futureText2') }}</p>
         </section>
       </article>
     </div>

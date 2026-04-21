@@ -85,7 +85,7 @@ const lastSeenValue = computed(() => formatLastSeen(
           </div>
 
           <div class="min-w-0">
-            <p class="text-[9px] font-semibold uppercase tracking-[0.18em] text-[rgb(var(--palette-gray-500))]">
+            <p class="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--text-meta)]">
               {{ $t('pages.product.sellerTrust.eyebrow') }}
             </p>
             <div class="mt-0.5 min-w-0">
@@ -100,7 +100,7 @@ const lastSeenValue = computed(() => formatLastSeen(
 
         <router-link
           :to="sellerProfilePath"
-          class="inline-flex h-8 shrink-0 items-center gap-1 rounded-full border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.5)] px-2.5 text-[10px] font-medium text-[rgb(var(--palette-gray-300))] transition-colors hover:border-[rgb(var(--palette-dark-500))] hover:text-[rgb(var(--palette-white))]"
+          class="inline-flex h-8 shrink-0 items-center gap-1 rounded-full border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.5)] px-2.5 text-[10px] font-medium text-[var(--text-body)] transition-colors hover:border-[rgb(var(--palette-dark-500))] hover:text-[var(--text-title)]"
         >
           {{ $t('pages.product.sellerTrust.profileCta') }}
           <ArrowUpRight class="h-3.5 w-3.5" />
@@ -109,73 +109,73 @@ const lastSeenValue = computed(() => formatLastSeen(
 
       <div class="grid grid-cols-2 gap-2 xl:grid-cols-3">
         <div class="metric-card rounded-xl border border-[rgb(var(--palette-white)/0.05)] bg-[rgb(var(--palette-black)/0.1)] px-3 py-2">
-          <div class="metric-head flex items-center gap-1.5 text-[9px] uppercase tracking-[0.14em] text-[rgb(var(--palette-gray-500))]">
+          <div class="metric-head flex items-center gap-1.5 text-[9px] uppercase tracking-[0.14em] text-[var(--text-meta)]">
             <span class="metric-icon-slot">
-              <Star class="metric-icon text-[rgb(var(--palette-amber-400)/0.8)]" />
+              <Star class="metric-icon text-[rgb(var(--text-warning-strong-rgb)/0.8)]" />
             </span>
             {{ $t('pages.product.sellerTrust.ratingLabel') }}
           </div>
-          <p class="metric-value text-lg font-semibold text-[rgb(var(--palette-white))]">
+          <p class="metric-value text-lg font-semibold text-[var(--text-title)]">
             {{ ratingValue }}
           </p>
         </div>
 
         <div class="metric-card rounded-xl border border-[rgb(var(--palette-white)/0.05)] bg-[rgb(var(--palette-black)/0.1)] px-3 py-2">
-          <div class="metric-head flex items-center gap-1.5 text-[9px] uppercase tracking-[0.14em] text-[rgb(var(--palette-gray-500))]">
+          <div class="metric-head flex items-center gap-1.5 text-[9px] uppercase tracking-[0.14em] text-[var(--text-meta)]">
             <span class="metric-icon-slot">
-              <BadgeCheck class="metric-icon text-[rgb(var(--palette-emerald-400)/0.8)]" />
+              <BadgeCheck class="metric-icon text-[rgb(var(--text-success-strong-rgb)/0.8)]" />
             </span>
             {{ $t('pages.product.sellerTrust.successRateLabel') }}
           </div>
-          <p class="metric-value text-lg font-semibold text-[rgb(var(--palette-white))]">
+          <p class="metric-value text-lg font-semibold text-[var(--text-title)]">
             {{ successfulDealsValue }}
           </p>
         </div>
 
         <div class="metric-card rounded-xl border border-[rgb(var(--palette-white)/0.05)] bg-[rgb(var(--palette-black)/0.1)] px-3 py-2">
-          <div class="metric-head flex items-center gap-1.5 text-[9px] uppercase tracking-[0.14em] text-[rgb(var(--palette-gray-500))]">
+          <div class="metric-head flex items-center gap-1.5 text-[9px] uppercase tracking-[0.14em] text-[var(--text-meta)]">
             <span class="metric-icon-slot">
-              <ShoppingBag class="metric-icon text-[rgb(var(--palette-blue-400)/0.8)]" />
+              <ShoppingBag class="metric-icon text-[rgb(var(--text-link-rgb)/0.8)]" />
             </span>
             {{ $t('pages.product.sellerTrust.completedDealsLabel') }}
           </div>
-          <p class="metric-value text-lg font-semibold text-[rgb(var(--palette-white))]">
+          <p class="metric-value text-lg font-semibold text-[var(--text-title)]">
             {{ totalDealsValue }}
           </p>
         </div>
 
         <div class="metric-card rounded-xl border border-[rgb(var(--palette-white)/0.05)] bg-[rgb(var(--palette-black)/0.1)] px-3 py-2">
-          <div class="metric-head flex items-center gap-1.5 text-[9px] uppercase tracking-[0.14em] text-[rgb(var(--palette-gray-500))]">
+          <div class="metric-head flex items-center gap-1.5 text-[9px] uppercase tracking-[0.14em] text-[var(--text-meta)]">
             <span class="metric-icon-slot">
-              <Clock3 class="metric-icon text-[rgb(var(--palette-cyan-400)/0.8)]" />
+              <Clock3 class="metric-icon text-[rgb(var(--text-link-rgb)/0.8)]" />
             </span>
             {{ $t('common.avgResponseTime') }}
           </div>
-          <p class="metric-value text-sm font-semibold text-[rgb(var(--palette-white))] sm:text-base">
+          <p class="metric-value text-sm font-semibold text-[var(--text-title)] sm:text-base">
             {{ averageResponseTimeValue }}
           </p>
         </div>
 
         <div class="metric-card rounded-xl border border-[rgb(var(--palette-white)/0.05)] bg-[rgb(var(--palette-black)/0.1)] px-3 py-2">
-          <div class="metric-head flex items-center gap-1.5 text-[9px] uppercase tracking-[0.14em] text-[rgb(var(--palette-gray-500))]">
+          <div class="metric-head flex items-center gap-1.5 text-[9px] uppercase tracking-[0.14em] text-[var(--text-meta)]">
             <span class="metric-icon-slot">
-              <Clock3 class="metric-icon text-[rgb(var(--palette-emerald-400)/0.8)]" />
+              <Clock3 class="metric-icon text-[rgb(var(--text-success-strong-rgb)/0.8)]" />
             </span>
             {{ $t('common.lastSeen') }}
           </div>
-          <p class="metric-value text-sm font-semibold sm:text-base" :class="product.seller.is_active ? 'text-[rgb(var(--palette-emerald-300))]' : 'text-[rgb(var(--palette-white))]'">
+          <p class="metric-value text-sm font-semibold sm:text-base" :class="product.seller.is_active ? 'text-[var(--text-success)]' : 'text-[var(--text-title)]'">
             {{ lastSeenValue }}
           </p>
         </div>
 
         <div class="metric-card rounded-xl border border-[rgb(var(--palette-white)/0.05)] bg-[rgb(var(--palette-black)/0.1)] px-3 py-2">
-          <div class="metric-head flex items-center gap-1.5 text-[9px] uppercase tracking-[0.14em] text-[rgb(var(--palette-gray-500))]">
+          <div class="metric-head flex items-center gap-1.5 text-[9px] uppercase tracking-[0.14em] text-[var(--text-meta)]">
             <span class="metric-icon-slot">
-              <CalendarDays class="metric-icon text-[rgb(var(--palette-gray-400))]" />
+              <CalendarDays class="metric-icon text-[var(--text-muted)]" />
             </span>
             {{ $t('pages.product.sellerTrust.memberSinceLabel') }}
           </div>
-          <p class="metric-value whitespace-nowrap text-sm font-semibold text-[rgb(var(--palette-white))] sm:text-base">
+          <p class="metric-value whitespace-nowrap text-sm font-semibold text-[var(--text-title)] sm:text-base">
             {{ formattedRegistrationDate }}
           </p>
         </div>

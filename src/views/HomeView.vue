@@ -1117,7 +1117,7 @@ onBeforeUnmount(() => {
                         class="w-full h-full object-cover"
                         @error="markCategoryImageBroken(cat.id)"
                       />
-                      <Folder v-else class="h-6 w-6 text-[rgb(var(--palette-gray-400))] sm:h-8 sm:w-8" />
+                      <Folder v-else class="h-6 w-6 text-[var(--text-muted)] sm:h-8 sm:w-8" />
                     </div>
                     <span class="home-category-label mt-1.5 sm:mt-2">{{ cat.name }}</span>
                   </button>
@@ -1127,7 +1127,7 @@ onBeforeUnmount(() => {
               <button
                 v-if="shouldShowCategoryExpandButton && !areCategoriesExpanded"
                 type="button"
-                class="home-category-expand-btn market-primary-surface market-primary-hover absolute right-1 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[rgb(var(--palette-blue-400)/0.25)] text-[rgb(var(--palette-white))] ring-4 ring-[rgb(var(--palette-dark-800)/0.55)] transition disabled:cursor-default disabled:opacity-60 sm:h-12 sm:w-12"
+                class="home-category-expand-btn market-primary-surface market-primary-hover absolute right-1 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[rgb(var(--palette-blue-400)/0.25)] text-[var(--text-title)] ring-4 ring-[rgb(var(--palette-dark-800)/0.55)] transition disabled:cursor-default disabled:opacity-60 sm:h-12 sm:w-12"
                 :aria-expanded="areCategoriesExpanded"
                 :aria-label="areCategoriesExpanded ? t('pages.index.collapseCategories') : t('pages.index.expandCategories')"
                 :title="areCategoriesExpanded ? t('pages.index.collapseCategories') : t('pages.index.expandCategories')"
@@ -1159,7 +1159,7 @@ onBeforeUnmount(() => {
                     class="w-full h-full object-cover"
                     @error="markCategoryImageBroken(cat.id)"
                   />
-                  <Folder v-else class="h-6 w-6 text-[rgb(var(--palette-gray-400))] sm:h-8 sm:w-8" />
+                  <Folder v-else class="h-6 w-6 text-[var(--text-muted)] sm:h-8 sm:w-8" />
                 </div>
                 <span class="home-category-label mt-1.5 sm:mt-2">
                   {{ cat.name }}
@@ -1169,7 +1169,7 @@ onBeforeUnmount(() => {
               <button
                 v-if="shouldShowCategoryExpandButton"
                 type="button"
-                class="home-expanded-category-card flex w-full flex-col items-center rounded-lg p-1 text-[rgb(var(--palette-white))] transition disabled:cursor-default disabled:opacity-60 sm:p-1.5"
+                class="home-expanded-category-card flex w-full flex-col items-center rounded-lg p-1 text-[var(--text-title)] transition disabled:cursor-default disabled:opacity-60 sm:p-1.5"
                 :aria-expanded="areCategoriesExpanded"
                 :aria-label="t('pages.index.collapseCategories')"
                 :title="t('pages.index.collapseCategories')"
@@ -1187,7 +1187,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <Title class="mt-12 w-full" :text="t('common.products')" />
+        <Title class="mt-12 w-full check-text" :text="t('common.products')" />
 
         <div class="mt-4 w-full">
           <div class="flex flex-wrap items-center justify-between gap-2">
@@ -1195,8 +1195,8 @@ onBeforeUnmount(() => {
               type="button"
               class="inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-semibold transition"
               :class="isFiltersOpen
-                ? 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-500)/0.1)] text-[rgb(var(--palette-blue-200))]'
-                : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.4)] text-[rgb(var(--palette-gray-300))] hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-700)/0.55)]'"
+                ? 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-500)/0.1)] text-[var(--text-accent)]'
+                : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.4)] text-[var(--text-body)] hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-700)/0.55)]'"
               :aria-expanded="isFiltersOpen"
               :aria-label="t('pages.index.filtersTitle')"
               :title="t('pages.index.filtersTitle')"
@@ -1206,7 +1206,7 @@ onBeforeUnmount(() => {
               <span>{{ t('pages.index.filtersTitle') }}</span>
               <span
                 v-if="activeProductFiltersCount > 0"
-                class="inline-flex min-w-5 items-center justify-center rounded-full bg-[rgb(var(--palette-blue-600))] px-1.5 text-[11px] text-[rgb(var(--palette-white))]"
+                class="inline-flex min-w-5 items-center justify-center rounded-full bg-[rgb(var(--palette-blue-600))] px-1.5 text-[11px] text-[var(--text-title)]"
               >
                 {{ activeProductFiltersCount }}
               </span>
@@ -1221,8 +1221,8 @@ onBeforeUnmount(() => {
                 type="button"
                 class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
                 :class="productCardViewMode === 'grid'
-                  ? 'bg-[rgb(var(--palette-blue-600))] text-[rgb(var(--palette-white))]'
-                  : 'text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[rgb(var(--palette-white))]'"
+                  ? 'bg-[rgb(var(--palette-blue-600))] text-[var(--text-title)]'
+                  : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[var(--text-title)]'"
                 :title="t('pages.index.viewGrid')"
                 @click="setProductCardViewMode('grid')"
               >
@@ -1234,8 +1234,8 @@ onBeforeUnmount(() => {
                 type="button"
                 class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
                 :class="productCardViewMode === 'list'
-                  ? 'bg-[rgb(var(--palette-blue-600))] text-[rgb(var(--palette-white))]'
-                  : 'text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[rgb(var(--palette-white))]'"
+                  ? 'bg-[rgb(var(--palette-blue-600))] text-[var(--text-title)]'
+                  : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[var(--text-title)]'"
                 :title="t('pages.index.viewList')"
                 @click="setProductCardViewMode('list')"
               >
@@ -1262,8 +1262,8 @@ onBeforeUnmount(() => {
                     type="button"
                     class="rounded-full border px-3 py-1.5 text-xs font-semibold transition"
                     :class="isPricePresetActive(preset)
-                      ? 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-500)/0.1)] text-[rgb(var(--palette-blue-200))]'
-                      : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-700)/0.5)] hover:text-[rgb(var(--palette-white))]'"
+                      ? 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-500)/0.1)] text-[var(--text-accent)]'
+                      : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.5)] hover:text-[var(--text-title)]'"
                     @click="onPricePresetClick(preset)"
                   >
                     {{ preset.label }}
@@ -1273,7 +1273,7 @@ onBeforeUnmount(() => {
                 <button
                   v-if="activeProductFiltersCount > 0"
                   type="button"
-                  class="text-xs font-semibold text-[rgb(var(--palette-gray-400))] transition hover:text-[rgb(var(--palette-white))]"
+                  class="text-xs font-semibold text-[var(--text-muted)] transition hover:text-[var(--text-title)]"
                   @click="resetProductFilters"
                 >
                   {{ t('pages.index.resetFilters') }}
@@ -1285,8 +1285,8 @@ onBeforeUnmount(() => {
                   type="button"
                   class="rounded-full border px-3 py-2 text-xs font-semibold transition"
                   :class="onlineSellersOnly
-                    ? 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-500)/0.1)] text-[rgb(var(--palette-blue-200))]'
-                    : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-700)/0.5)] hover:text-[rgb(var(--palette-white))]'"
+                    ? 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-500)/0.1)] text-[var(--text-accent)]'
+                    : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.5)] hover:text-[var(--text-title)]'"
                   :aria-pressed="onlineSellersOnly"
                   @click="toggleOnlineSellersOnlyFilter"
                 >
@@ -1297,8 +1297,8 @@ onBeforeUnmount(() => {
                   type="button"
                   class="rounded-full border px-3 py-2 text-xs font-semibold transition"
                   :class="autoDeliveryOnly
-                    ? 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-500)/0.1)] text-[rgb(var(--palette-blue-200))]'
-                    : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-700)/0.5)] hover:text-[rgb(var(--palette-white))]'"
+                    ? 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-500)/0.1)] text-[var(--text-accent)]'
+                    : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.5)] hover:text-[var(--text-title)]'"
                   :aria-pressed="autoDeliveryOnly"
                   @click="toggleAutoDeliveryOnlyFilter"
                 >
@@ -1308,34 +1308,34 @@ onBeforeUnmount(() => {
 
               <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                 <label class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2.5 transition focus-within:border-[rgb(var(--palette-blue-400)/0.4)] focus-within:bg-[rgb(var(--palette-dark-700)/0.55)]">
-                  <span class="block text-xs text-[rgb(var(--palette-gray-400))]">{{ t('pages.index.priceFrom') }}</span>
+                  <span class="block text-xs text-[var(--text-muted)]">{{ t('pages.index.priceFrom') }}</span>
                   <div class="mt-1.5 flex items-center gap-2">
                     <input
                       v-model="minPriceFilter"
                       type="number"
                       min="0"
                       inputmode="decimal"
-                      class="w-full bg-[var(--transparent)] text-sm text-[rgb(var(--palette-white))] outline-none placeholder-[rgb(var(--palette-gray-500))]"
+                      class="w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none placeholder-[var(--text-placeholder)]"
                       :placeholder="t('pages.index.priceFrom')"
                       @input="debouncedApplyProductFilters"
                     />
-                    <span class="text-xs font-semibold text-[rgb(var(--palette-gray-400))]">{{ currencySymbol }}</span>
+                    <span class="text-xs font-semibold text-[var(--text-muted)]">{{ currencySymbol }}</span>
                   </div>
                 </label>
 
                 <label class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2.5 transition focus-within:border-[rgb(var(--palette-blue-400)/0.4)] focus-within:bg-[rgb(var(--palette-dark-700)/0.55)]">
-                  <span class="block text-xs text-[rgb(var(--palette-gray-400))]">{{ t('pages.index.priceTo') }}</span>
+                  <span class="block text-xs text-[var(--text-muted)]">{{ t('pages.index.priceTo') }}</span>
                   <div class="mt-1.5 flex items-center gap-2">
                     <input
                       v-model="maxPriceFilter"
                       type="number"
                       min="0"
                       inputmode="decimal"
-                      class="w-full bg-[var(--transparent)] text-sm text-[rgb(var(--palette-white))] outline-none placeholder-[rgb(var(--palette-gray-500))]"
+                      class="w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none placeholder-[var(--text-placeholder)]"
                       :placeholder="t('pages.index.priceTo')"
                       @input="debouncedApplyProductFilters"
                     />
-                    <span class="text-xs font-semibold text-[rgb(var(--palette-gray-400))]">{{ currencySymbol }}</span>
+                    <span class="text-xs font-semibold text-[var(--text-muted)]">{{ currencySymbol }}</span>
                   </div>
                 </label>
               </div>
@@ -1359,7 +1359,7 @@ onBeforeUnmount(() => {
           />
         </div>
 
-        <div v-else-if="products.length === 0" class="text-center text-[rgb(var(--palette-gray-400))] py-20">
+        <div v-else-if="products.length === 0" class="text-center text-[var(--text-muted)] py-20">
           {{ t('pages.index.noProducts') }}
         </div>
 
@@ -1395,14 +1395,14 @@ onBeforeUnmount(() => {
       class="home-category-search-dropdown fixed z-[180] overflow-y-auto rounded-2xl border border-[rgb(var(--palette-white)/0.1)] p-2 backdrop-blur-xl"
       :style="searchDropdownStyle"
     >
-      <p class="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[rgb(var(--palette-gray-400)/0.85)]">
+      <p class="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[rgb(var(--text-muted-rgb)/0.85)]">
         {{ t('pages.index.categoriesFound') }}
       </p>
       <button
         v-for="(category, index) in categorySearchResults"
         :key="`search-category-${category.id}`"
         type="button"
-        class="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm text-[rgb(var(--palette-white))] transition duration-200"
+        class="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm text-[var(--text-title)] transition duration-200"
         :class="{
           'bg-[rgb(var(--palette-white)/0.07)]': searchDropdownHighlightedIndex === index,
           'hover:bg-[rgb(var(--palette-white)/0.05)]': searchDropdownHighlightedIndex !== index,
@@ -1418,7 +1418,7 @@ onBeforeUnmount(() => {
             class="h-6 w-6 rounded-md object-cover"
             @error="markCategoryImageBroken(category.id)"
           />
-          <Folder v-else class="h-4 w-4 text-[rgb(var(--palette-gray-400))]" />
+          <Folder v-else class="h-4 w-4 text-[var(--text-muted)]" />
         </span>
         <span class="truncate text-sm leading-5">{{ category.name }}</span>
       </button>
@@ -1589,5 +1589,9 @@ onBeforeUnmount(() => {
   .home-expanded-category-card {
     max-width: 4.5rem;
   }
+}
+
+.check-text {
+  color: #E5E7EB
 }
 </style>

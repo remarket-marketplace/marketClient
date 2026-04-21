@@ -105,9 +105,9 @@ function getStatusLabel(status: WithdrawalOrderStatus): string {
 
 function getStatusBadgeClass(status: WithdrawalOrderStatus): string {
   const map: Record<WithdrawalOrderStatus, string> = {
-    pending: 'border-[rgb(var(--palette-amber-400)/0.25)] bg-[rgb(var(--palette-amber-400)/0.1)] text-[rgb(var(--palette-amber-100))]',
-    confirmed: 'border-[rgb(var(--palette-emerald-400)/0.25)] bg-[rgb(var(--palette-emerald-400)/0.1)] text-[rgb(var(--palette-emerald-100))]',
-    canceled: 'border-[rgb(var(--palette-rose-400)/0.25)] bg-[rgb(var(--palette-rose-400)/0.1)] text-[rgb(var(--palette-rose-100))]',
+    pending: 'border-[rgb(var(--palette-amber-400)/0.25)] bg-[rgb(var(--palette-amber-400)/0.1)] text-[var(--text-warning)]',
+    confirmed: 'border-[rgb(var(--palette-emerald-400)/0.25)] bg-[rgb(var(--palette-emerald-400)/0.1)] text-[var(--text-success)]',
+    canceled: 'border-[rgb(var(--palette-rose-400)/0.25)] bg-[rgb(var(--palette-rose-400)/0.1)] text-[var(--text-danger-soft)]',
   }
   return map[status]
 }
@@ -229,7 +229,7 @@ watch(
         <BackButton />
         <div>
           <h1 class="text-xl font-bold text-mainText sm:text-2xl">{{ $t('pages.admin.withdrawalsPage.title') }}</h1>
-          <p class="text-xs text-[rgb(var(--palette-gray-400))] sm:text-sm">{{ $t('pages.admin.withdrawalsPage.subtitle') }}</p>
+          <p class="text-xs text-[var(--text-muted)] sm:text-sm">{{ $t('pages.admin.withdrawalsPage.subtitle') }}</p>
         </div>
       </div>
 
@@ -238,7 +238,7 @@ watch(
           <ArrowUpFromLine class="h-4 w-4" />
           <span>{{ $t('common.total') }} {{ total }}</span>
         </div>
-        <span class="inline-flex items-center rounded-full border border-[rgb(var(--palette-amber-400)/0.2)] bg-[rgb(var(--palette-amber-400)/0.1)] px-2.5 py-1 text-xs font-medium text-[rgb(var(--palette-amber-100))]">
+        <span class="inline-flex items-center rounded-full border border-[rgb(var(--palette-amber-400)/0.2)] bg-[rgb(var(--palette-amber-400)/0.1)] px-2.5 py-1 text-xs font-medium text-[var(--text-warning)]">
           {{ $t('pages.admin.withdrawalsPage.statusPending') }}: {{ pendingCount }}
         </span>
       </div>
@@ -311,7 +311,7 @@ watch(
     </div>
 
     <div class="min-h-0 flex-1 overflow-hidden">
-      <div class="sticky top-0 z-10 grid grid-cols-[1.2fr_0.8fr_0.8fr_0.9fr_0.8fr_0.9fr] gap-4 border-b border-[rgb(var(--palette-white)/0.08)] bg-[var(--admin-table-sticky-bg)] px-5 py-4 text-[11px] uppercase tracking-[0.24em] text-[rgb(var(--palette-gray-500))] backdrop-blur max-lg:hidden">
+      <div class="sticky top-0 z-10 grid grid-cols-[1.2fr_0.8fr_0.8fr_0.9fr_0.8fr_0.9fr] gap-4 border-b border-[rgb(var(--palette-white)/0.08)] bg-[var(--admin-table-sticky-bg)] px-5 py-4 text-[11px] uppercase tracking-[0.24em] text-[var(--text-meta)] backdrop-blur max-lg:hidden">
         <span :class="['px-2 py-1 transition-colors', getColumnHighlightClass('user')]">{{ $t('common.username') }}</span>
         <span :class="['px-2 py-1 transition-colors', getColumnHighlightClass('amount')]">{{ $t('pages.admin.withdrawalsPage.amount') }}</span>
         <span :class="['px-2 py-1 transition-colors', getColumnHighlightClass('payout')]">{{ $t('pages.admin.withdrawalsPage.payoutAmount') }}</span>
@@ -321,14 +321,14 @@ watch(
       </div>
 
       <div v-if="isLoading" class="flex h-40 items-center justify-center">
-        <Loader2 class="h-6 w-6 animate-spin text-[rgb(var(--palette-blue-400))]" />
+        <Loader2 class="h-6 w-6 animate-spin text-[var(--text-link)]" />
       </div>
 
-      <div v-else-if="errorMessage" class="flex h-40 items-center justify-center px-6 text-sm text-[rgb(var(--palette-rose-300))]">
+      <div v-else-if="errorMessage" class="flex h-40 items-center justify-center px-6 text-sm text-[var(--text-danger)]">
         {{ errorMessage }}
       </div>
 
-      <div v-else-if="orders.length === 0" class="flex h-40 items-center justify-center px-6 text-sm text-[rgb(var(--palette-gray-400))]">
+      <div v-else-if="orders.length === 0" class="flex h-40 items-center justify-center px-6 text-sm text-[var(--text-muted)]">
         {{ $t('pages.admin.withdrawalsPage.empty') }}
       </div>
 
@@ -345,33 +345,33 @@ watch(
               @mouseenter="setHoveredColumn('user')"
             >
               <div class="flex items-center gap-3">
-                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[rgb(var(--palette-sky-400)/0.18)] bg-[rgb(var(--palette-sky-400)/0.1)] text-[rgb(var(--palette-sky-100))]">
+                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[rgb(var(--palette-sky-400)/0.18)] bg-[rgb(var(--palette-sky-400)/0.1)] text-[var(--text-accent-strong)]">
                   <ArrowUpFromLine class="h-4.5 w-4.5" />
                 </div>
                 <div class="min-w-0">
                   <button
                     type="button"
-                    class="truncate text-left text-sm font-semibold text-[rgb(var(--palette-white))] transition-colors hover:text-[rgb(var(--palette-sky-200))]"
+                    class="truncate text-left text-sm font-semibold text-[var(--text-title)] transition-colors hover:text-[var(--text-accent)]"
                     @click="openUserProfile(order.username)"
                   >
                     {{ order.username }}
                   </button>
-                  <div class="mt-1 flex items-center justify-between gap-2 text-xs text-[rgb(var(--palette-gray-500))]">
+                  <div class="mt-1 flex items-center justify-between gap-2 text-xs text-[var(--text-meta)]">
                     <span class="min-w-0 truncate" :title="order.id">ID {{ formatShortId(order.id) }}</span>
                     <button
                       type="button"
-                      class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[rgb(var(--palette-gray-300))] transition-colors hover:border-[rgb(var(--palette-white)/0.2)] hover:text-[rgb(var(--palette-white))]"
+                      class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body)] transition-colors hover:border-[rgb(var(--palette-white)/0.2)] hover:text-[var(--text-title)]"
                       @click="copyOrderId(order)"
                       :title="copiedOrderId === `id-${order.id}` ? $t('common.copied') : $t('common.copy')"
                     >
                       <component :is="copiedOrderId === `id-${order.id}` ? Check : Copy" class="h-3 w-3" />
                     </button>
                   </div>
-                  <div class="mt-1 flex items-center justify-between gap-2 text-xs text-[rgb(var(--palette-gray-500))]">
+                  <div class="mt-1 flex items-center justify-between gap-2 text-xs text-[var(--text-meta)]">
                     <span class="min-w-0 truncate">{{ order.masked_card_number }}</span>
                     <button
                       type="button"
-                      class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[rgb(var(--palette-gray-300))] transition-colors hover:border-[rgb(var(--palette-white)/0.2)] hover:text-[rgb(var(--palette-white))]"
+                      class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body)] transition-colors hover:border-[rgb(var(--palette-white)/0.2)] hover:text-[var(--text-title)]"
                       @click="copyCardNumber(order)"
                       :title="copiedOrderId === order.id ? $t('common.copied') : $t('common.copy')"
                     >
@@ -386,21 +386,21 @@ watch(
               :class="['px-2 py-1 transition-colors', getColumnHighlightClass('amount')]"
               @mouseenter="setHoveredColumn('amount')"
             >
-              <div class="text-xs uppercase tracking-[0.18em] text-[rgb(var(--palette-gray-500))] lg:hidden">{{ $t('pages.admin.withdrawalsPage.amount') }}</div>
-              <div class="text-base font-semibold text-[rgb(var(--palette-white))]">{{ formatMoney(order.amount) }}</div>
+              <div class="text-xs uppercase tracking-[0.18em] text-[var(--text-meta)] lg:hidden">{{ $t('pages.admin.withdrawalsPage.amount') }}</div>
+              <div class="text-base font-semibold text-[var(--text-title)]">{{ formatMoney(order.amount) }}</div>
             </div>
 
             <div
               :class="['px-2 py-1 transition-colors', getColumnHighlightClass('payout')]"
               @mouseenter="setHoveredColumn('payout')"
             >
-              <div class="text-xs uppercase tracking-[0.18em] text-[rgb(var(--palette-gray-500))] lg:hidden">{{ $t('pages.admin.withdrawalsPage.payoutAmount') }}</div>
-              <div class="text-base font-semibold text-[rgb(var(--palette-emerald-200))]">
+              <div class="text-xs uppercase tracking-[0.18em] text-[var(--text-meta)] lg:hidden">{{ $t('pages.admin.withdrawalsPage.payoutAmount') }}</div>
+              <div class="text-base font-semibold text-[var(--text-success)]">
                 {{ formatMoney(order.payout_amount ?? order.amount) }}
               </div>
               <div
                 v-if="typeof order.commission_amount === 'number' && order.commission_amount > 0"
-                class="mt-1 text-xs text-[rgb(var(--palette-gray-500))]"
+                class="mt-1 text-xs text-[var(--text-meta)]"
               >
                 {{ $t('pages.admin.withdrawalsPage.commissionShort', {
                   amount: formatMoney(order.commission_amount),
@@ -413,15 +413,15 @@ watch(
               :class="['px-2 py-1 transition-colors', getColumnHighlightClass('balance')]"
               @mouseenter="setHoveredColumn('balance')"
             >
-              <div class="text-xs uppercase tracking-[0.18em] text-[rgb(var(--palette-gray-500))] lg:hidden">{{ $t('pages.admin.withdrawalsPage.balance') }}</div>
-              <div class="text-base font-medium text-[rgb(var(--palette-gray-100))]">{{ formatMoney(order.current_balance) }}</div>
+              <div class="text-xs uppercase tracking-[0.18em] text-[var(--text-meta)] lg:hidden">{{ $t('pages.admin.withdrawalsPage.balance') }}</div>
+              <div class="text-base font-medium text-[var(--text-heading)]">{{ formatMoney(order.current_balance) }}</div>
             </div>
 
             <div
               :class="['px-2 py-1 transition-colors', getColumnHighlightClass('status')]"
               @mouseenter="setHoveredColumn('status')"
             >
-              <div class="text-xs uppercase tracking-[0.18em] text-[rgb(var(--palette-gray-500))] lg:hidden">{{ $t('common.status') }}</div>
+              <div class="text-xs uppercase tracking-[0.18em] text-[var(--text-meta)] lg:hidden">{{ $t('common.status') }}</div>
               <span :class="['inline-flex min-h-9 items-center rounded-full border px-3 py-1.5 text-sm font-medium', getStatusBadgeClass(order.status)]">
                 {{ getStatusLabel(order.status) }}
               </span>
@@ -431,8 +431,8 @@ watch(
               :class="['px-2 py-1 transition-colors', getColumnHighlightClass('created')]"
               @mouseenter="setHoveredColumn('created')"
             >
-              <div class="text-xs uppercase tracking-[0.18em] text-[rgb(var(--palette-gray-500))] lg:hidden">{{ $t('pages.admin.withdrawalsPage.createdAt') }}</div>
-              <div class="text-sm text-[rgb(var(--palette-gray-200))]">{{ formatDate(order.created_at) }}</div>
+              <div class="text-xs uppercase tracking-[0.18em] text-[var(--text-meta)] lg:hidden">{{ $t('pages.admin.withdrawalsPage.createdAt') }}</div>
+              <div class="text-sm text-[var(--text-body-strong)]">{{ formatDate(order.created_at) }}</div>
             </div>
           </div>
 
@@ -465,7 +465,7 @@ watch(
           </button>
 
           <div v-else-if="isLoadingMore" class="flex items-center justify-center py-2">
-            <Loader2 class="h-5 w-5 animate-spin text-[rgb(var(--palette-blue-500))]" />
+            <Loader2 class="h-5 w-5 animate-spin text-[var(--text-link)]" />
           </div>
         </div>
       </div>
@@ -484,9 +484,9 @@ watch(
   >
     <template #body>
       <div class="space-y-3">
-        <div class="rounded-2xl border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.03)] px-4 py-3 text-sm text-[rgb(var(--palette-gray-300))]">
+        <div class="rounded-2xl border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.03)] px-4 py-3 text-sm text-[var(--text-body)]">
           <div>{{ orderToModerate?.username }}</div>
-          <div class="mt-1 text-xs text-[rgb(var(--palette-gray-500))]">{{ orderToModerate?.masked_card_number }}</div>
+          <div class="mt-1 text-xs text-[var(--text-meta)]">{{ orderToModerate?.masked_card_number }}</div>
         </div>
         <textarea
           v-model="moderationReason"

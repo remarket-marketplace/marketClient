@@ -101,7 +101,7 @@ function selectLanguage(value: 'en' | 'ru') {
           :key="opt.value"
           class="cursor-pointer px-3 py-1.5 text-xs transition-colors first:rounded-t-md last:rounded-b-md"
           :class="selectedLanguage === opt.value
-            ? 'bg-[rgb(var(--palette-blue-500)/0.1)] text-[rgb(var(--palette-blue-400))] font-medium'
+            ? 'bg-[rgb(var(--palette-blue-500)/0.1)] text-[var(--text-link)] font-medium'
             : 'text-mainText hover:bg-[rgb(var(--palette-dark-700))]'"
           @click="selectLanguage(opt.value)"
         >

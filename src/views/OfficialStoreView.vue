@@ -304,7 +304,7 @@ onMounted(async () => {
           <BackButton />
         </div>
         <div class="mt-auto pb-4 sm:pb-5">
-          <h1 class="max-w-4xl text-3xl font-semibold leading-tight text-[rgb(var(--palette-white))] sm:text-5xl">
+          <h1 class="max-w-4xl text-3xl font-semibold leading-tight text-[var(--text-title)] sm:text-5xl">
             Официальный магазин remarket
           </h1>
         </div>
@@ -331,8 +331,8 @@ onMounted(async () => {
             type="button"
             class="inline-flex shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-medium transition"
             :class="selectedRootCategory?.id === rootCategory.id
-              ? 'border-[rgb(var(--palette-blue-400)/0.55)] bg-[rgb(var(--palette-blue-600)/0.25)] text-[rgb(var(--palette-white))]'
-              : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.35)] text-[rgb(var(--palette-gray-300))] hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-700)/0.55)] hover:text-[rgb(var(--palette-white))]'"
+              ? 'border-[rgb(var(--palette-blue-400)/0.55)] bg-[rgb(var(--palette-blue-600)/0.25)] text-[var(--text-title)]'
+              : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.35)] text-[var(--text-body)] hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-700)/0.55)] hover:text-[var(--text-title)]'"
             @click="onRootCategoryClick(rootCategory)"
           >
             <span>{{ rootCategory.name }}</span>
@@ -359,8 +359,8 @@ onMounted(async () => {
             type="button"
             class="inline-flex shrink-0 items-center rounded-xl border px-3.5 py-2 text-sm font-medium transition"
             :class="!selectedSubcategory
-              ? 'border-[rgb(var(--palette-blue-400)/0.55)] bg-[rgb(var(--palette-blue-600)/0.25)] text-[rgb(var(--palette-white))]'
-              : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.35)] text-[rgb(var(--palette-gray-300))] hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-700)/0.55)] hover:text-[rgb(var(--palette-white))]'"
+              ? 'border-[rgb(var(--palette-blue-400)/0.55)] bg-[rgb(var(--palette-blue-600)/0.25)] text-[var(--text-title)]'
+              : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.35)] text-[var(--text-body)] hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-700)/0.55)] hover:text-[var(--text-title)]'"
             @click="onSubcategoryClick(null)"
           >
             Все разделы
@@ -372,8 +372,8 @@ onMounted(async () => {
             type="button"
             class="inline-flex shrink-0 items-center rounded-xl border px-3.5 py-2 text-sm font-medium transition"
             :class="selectedSubcategory?.id === subcategory.id
-              ? 'border-[rgb(var(--palette-blue-400)/0.55)] bg-[rgb(var(--palette-blue-600)/0.25)] text-[rgb(var(--palette-white))]'
-              : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.35)] text-[rgb(var(--palette-gray-300))] hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-700)/0.55)] hover:text-[rgb(var(--palette-white))]'"
+              ? 'border-[rgb(var(--palette-blue-400)/0.55)] bg-[rgb(var(--palette-blue-600)/0.25)] text-[var(--text-title)]'
+              : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.35)] text-[var(--text-body)] hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-700)/0.55)] hover:text-[var(--text-title)]'"
             @click="onSubcategoryClick(subcategory)"
           >
             {{ subcategory.name }}
@@ -385,7 +385,7 @@ onMounted(async () => {
       <div class="mt-8">
         <div class="mb-4 flex items-center justify-between gap-3">
           <Title text="Официальные товары" />
-          <span class="text-sm text-[rgb(var(--palette-blue-100)/0.85)]">
+          <span class="text-sm text-[rgb(var(--text-accent-strong-rgb)/0.85)]">
             {{ officialProductsCountText }}
           </span>
         </div>
@@ -403,7 +403,7 @@ onMounted(async () => {
 
         <div
           v-else-if="officialProducts.length === 0"
-          class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.3)] px-4 py-6 text-center text-sm text-[rgb(var(--palette-gray-300))]"
+          class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.3)] px-4 py-6 text-center text-sm text-[var(--text-body)]"
         >
           По выбранным параметрам пока нет официальных товаров.
         </div>
@@ -423,14 +423,14 @@ onMounted(async () => {
         <div v-if="canLoadMore" class="mt-6 flex justify-center">
           <button
             type="button"
-            class="market-primary-surface market-primary-hover rounded-xl px-5 py-2.5 text-sm font-semibold text-[rgb(var(--palette-white))] transition"
+            class="market-primary-surface market-primary-hover rounded-xl px-5 py-2.5 text-sm font-semibold text-[var(--text-title)] transition"
             @click="loadMoreProducts"
           >
             Показать ещё
           </button>
         </div>
 
-        <div v-else-if="officialProducts.length > 0" class="mt-5 text-center text-xs text-[rgb(var(--palette-gray-400))]">
+        <div v-else-if="officialProducts.length > 0" class="mt-5 text-center text-xs text-[var(--text-muted)]">
           Показаны все товары в выбранном разделе.
         </div>
       </div>

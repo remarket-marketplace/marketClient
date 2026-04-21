@@ -348,14 +348,14 @@ watch(profileBackgroundUnlocked, (value) => {
         </div>
 
         <div v-if="isLoading" class="admin-surface-soft flex h-40 items-center justify-center rounded-xl">
-          <Loader2 class="h-7 w-7 animate-spin text-[rgb(var(--palette-blue-400))]" />
+          <Loader2 class="h-7 w-7 animate-spin text-[var(--text-link)]" />
           <span class="ml-3 text-text-secondary">{{ $t('common.loading') }}</span>
         </div>
 
         <form v-else class="space-y-8" @submit.prevent="saveUser">
           <div class="grid grid-cols-1 gap-8 lg:grid-cols-[300px,1fr]">
             <section class="admin-surface-panel space-y-4 rounded-2xl p-5">
-              <h2 class="text-sm font-semibold tracking-wide text-[rgb(var(--palette-gray-300))] uppercase">
+              <h2 class="text-sm font-semibold tracking-wide text-[var(--text-body)] uppercase">
                 {{ $t('pages.admin.editUser.avatarLabel') }}
               </h2>
               <div class="flex items-center gap-3">
@@ -392,7 +392,7 @@ watch(profileBackgroundUnlocked, (value) => {
                 :max-files="1"
                 :label="$t('pages.admin.editUser.newAvatarLabel')"
               />
-              <p v-if="removeAvatarAfterSave && avatarFiles.length === 0" class="text-xs text-[rgb(var(--palette-orange-300))]">
+              <p v-if="removeAvatarAfterSave && avatarFiles.length === 0" class="text-xs text-[var(--text-warning-strong)]">
                 {{ $t('pages.admin.editUser.avatarWillBeRemoved') }}
               </p>
 
@@ -410,7 +410,7 @@ watch(profileBackgroundUnlocked, (value) => {
 
             <section class="space-y-8">
               <div class="admin-surface-panel space-y-4 rounded-2xl p-5">
-                <h2 class="text-sm font-semibold tracking-wide text-[rgb(var(--palette-gray-300))] uppercase">
+                <h2 class="text-sm font-semibold tracking-wide text-[var(--text-body)] uppercase">
                   {{ $t('common.account') }}
                 </h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -461,7 +461,7 @@ watch(profileBackgroundUnlocked, (value) => {
               </div>
 
               <div class="admin-surface-panel space-y-4 rounded-2xl p-5">
-                <h2 class="text-sm font-semibold tracking-wide text-[rgb(var(--palette-gray-300))] uppercase">
+                <h2 class="text-sm font-semibold tracking-wide text-[var(--text-body)] uppercase">
                   {{ $t('common.settings') }}
                 </h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -503,8 +503,8 @@ watch(profileBackgroundUnlocked, (value) => {
                       <span
                         class="inline-flex rounded-full border px-2 py-1 text-xs font-medium"
                         :class="user?.is_active
-                          ? 'border-[rgb(var(--palette-green-500)/0.3)] bg-[rgb(var(--palette-green-500)/0.15)] text-[rgb(var(--palette-green-400))]'
-                          : 'border-[rgb(var(--palette-gray-500)/0.3)] bg-[rgb(var(--palette-gray-500)/0.15)] text-[rgb(var(--palette-gray-400))]'"
+                          ? 'border-[rgb(var(--palette-green-500)/0.3)] bg-[rgb(var(--palette-green-500)/0.15)] text-[var(--text-success-strong)]'
+                          : 'border-[rgb(var(--palette-gray-500)/0.3)] bg-[rgb(var(--palette-gray-500)/0.15)] text-[var(--text-muted)]'"
                       >
                         {{ user?.is_active ? $t('common.online') : $t('common.offline') }}
                       </span>
@@ -537,7 +537,7 @@ watch(profileBackgroundUnlocked, (value) => {
               </div>
 
               <div class="admin-surface-panel space-y-4 rounded-2xl p-5">
-                <h2 class="text-sm font-semibold tracking-wide text-[rgb(var(--palette-gray-300))] uppercase">
+                <h2 class="text-sm font-semibold tracking-wide text-[var(--text-body)] uppercase">
                   {{ $t('pages.admin.editUser.securityTitle') }}
                 </h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -603,7 +603,7 @@ watch(profileBackgroundUnlocked, (value) => {
                     />
                     <p
                       v-if="removeProfileBackgroundAfterSave && profileBackgroundFiles.length === 0"
-                      class="text-xs text-[rgb(var(--palette-orange-300))]"
+                      class="text-xs text-[var(--text-warning-strong)]"
                     >
                       {{ $t('pages.admin.editUser.backgroundWillBeRemoved') }}
                     </p>
@@ -612,7 +612,7 @@ watch(profileBackgroundUnlocked, (value) => {
               </div>
 
               <div class="admin-surface-panel space-y-4 rounded-2xl p-5">
-                <h2 class="text-sm font-semibold tracking-wide text-[rgb(var(--palette-gray-300))] uppercase">
+                <h2 class="text-sm font-semibold tracking-wide text-[var(--text-body)] uppercase">
                   {{ $t('pages.admin.editUser.passwordResetTitle') }}
                 </h2>
                 <p class="text-xs text-text-secondary">

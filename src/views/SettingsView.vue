@@ -1058,11 +1058,11 @@ onUnmounted(() => {
     <div class="mb-6 lg:hidden px-4 pt-4">
       <div class="flex gap-2">
         <BackButton />
-        <h1 class="text-2xl font-bold text-[rgb(var(--palette-white))]">
+        <h1 class="text-2xl font-bold text-[var(--text-title)]">
           {{ $t('pages.settingsPage.title') }}
         </h1>
       </div>
-      <p class="mt-2 text-sm text-[rgb(var(--palette-gray-400))]">
+      <p class="mt-2 text-sm text-[var(--text-muted)]">
         {{ $t('pages.settingsPage.subtitle') }}
       </p>
     </div>
@@ -1076,11 +1076,11 @@ onUnmounted(() => {
             <div class="hidden lg:block">
               <div class="flex gap-2">
                 <BackButton />
-                <h1 class="text-2xl font-bold text-[rgb(var(--palette-white))]">
+                <h1 class="text-2xl font-bold text-[var(--text-title)]">
                   {{ $t('pages.settingsPage.title') }}
                 </h1>
               </div>
-              <p class="mt-2 text-sm text-[rgb(var(--palette-gray-400))]">
+              <p class="mt-2 text-sm text-[var(--text-muted)]">
                 {{ $t('pages.settingsPage.subtitle') }}
               </p>
             </div>
@@ -1095,11 +1095,11 @@ onUnmounted(() => {
                 @click="switchSection('security')"
               >
                 <div class="mt-0.5 h-8 w-8 shrink-0 rounded-full bg-[rgb(var(--palette-dark-700))] flex items-center justify-center overflow-visible">
-                  <Shield class="h-4 w-4 shrink-0" :class="isSectionActive('security') ? 'text-[rgb(var(--palette-blue-300))]' : 'text-[rgb(var(--palette-gray-400))]'" />
+                  <Shield class="h-4 w-4 shrink-0" :class="isSectionActive('security') ? 'text-[var(--text-link)]' : 'text-[var(--text-muted)]'" />
                 </div>
                 <div class="min-w-0">
-                  <h3 class="font-semibold leading-5 text-[rgb(var(--palette-white))]">{{ $t('pages.settingsPage.security') }}</h3>
-                  <p class="mt-0.5 text-xs leading-4 text-[rgb(var(--palette-gray-300))]">{{ $t('pages.settingsPage.securityHint') }}</p>
+                  <h3 class="font-semibold leading-5 text-[var(--text-title)]">{{ $t('pages.settingsPage.security') }}</h3>
+                  <p class="mt-0.5 text-xs leading-4 text-[var(--text-body)]">{{ $t('pages.settingsPage.securityHint') }}</p>
                 </div>
               </button>
 
@@ -1112,11 +1112,11 @@ onUnmounted(() => {
                 @click="switchSection('nickname')"
               >
                 <div class="mt-0.5 h-8 w-8 shrink-0 rounded-full bg-[rgb(var(--palette-dark-700))] flex items-center justify-center overflow-visible">
-                  <AtSign class="h-4 w-4 shrink-0" :class="isSectionActive('nickname') ? 'text-[rgb(var(--palette-blue-300))]' : 'text-[rgb(var(--palette-gray-400))]'" />
+                  <AtSign class="h-4 w-4 shrink-0" :class="isSectionActive('nickname') ? 'text-[var(--text-link)]' : 'text-[var(--text-muted)]'" />
                 </div>
                 <div class="min-w-0">
-                  <h3 class="font-semibold leading-5 text-[rgb(var(--palette-white))]">{{ $t('pages.settingsPage.nicknameMenu') }}</h3>
-                  <p class="mt-0.5 text-xs leading-4 text-[rgb(var(--palette-gray-300))]">{{ $t('pages.settingsPage.nicknameHint') }}</p>
+                  <h3 class="font-semibold leading-5 text-[var(--text-title)]">{{ $t('pages.settingsPage.nicknameMenu') }}</h3>
+                  <p class="mt-0.5 text-xs leading-4 text-[var(--text-body)]">{{ $t('pages.settingsPage.nicknameHint') }}</p>
                 </div>
               </button>
 
@@ -1129,11 +1129,11 @@ onUnmounted(() => {
                 @click="switchSection('nickname-styles')"
               >
                 <div class="mt-0.5 h-8 w-8 shrink-0 rounded-full bg-[rgb(var(--palette-dark-700))] flex items-center justify-center overflow-visible">
-                  <Palette class="h-4 w-4 shrink-0" :class="isSectionActive('nickname-styles') ? 'text-[rgb(var(--palette-violet-300))]' : 'text-[rgb(var(--palette-gray-400))]'" />
+                  <Palette class="h-4 w-4 shrink-0" :class="isSectionActive('nickname-styles') ? 'text-[var(--text-accent)]' : 'text-[var(--text-muted)]'" />
                 </div>
                 <div class="min-w-0">
-                  <h3 class="font-semibold leading-5 text-[rgb(var(--palette-white))]">{{ $t('pages.settingsPage.nicknameStylesMenu') }}</h3>
-                  <p class="mt-0.5 text-xs leading-4 text-[rgb(var(--palette-gray-300))]">{{ $t('pages.settingsPage.nicknameStylesHint') }}</p>
+                  <h3 class="font-semibold leading-5 text-[var(--text-title)]">{{ $t('pages.settingsPage.nicknameStylesMenu') }}</h3>
+                  <p class="mt-0.5 text-xs leading-4 text-[var(--text-body)]">{{ $t('pages.settingsPage.nicknameStylesHint') }}</p>
                 </div>
               </button>
 
@@ -1146,11 +1146,11 @@ onUnmounted(() => {
                 @click="switchSection('notifications')"
               >
                 <div class="mt-0.5 h-8 w-8 shrink-0 rounded-full bg-[rgb(var(--palette-dark-700))] flex items-center justify-center overflow-visible">
-                  <Bell class="h-4 w-4 shrink-0" :class="isSectionActive('notifications') ? 'text-[rgb(var(--palette-amber-300))]' : 'text-[rgb(var(--palette-gray-400))]'" />
+                  <Bell class="h-4 w-4 shrink-0" :class="isSectionActive('notifications') ? 'text-[var(--text-warning-strong)]' : 'text-[var(--text-muted)]'" />
                 </div>
                 <div class="min-w-0">
-                  <h3 class="font-semibold leading-5 text-[rgb(var(--palette-white))]">{{ $t('pages.settingsPage.notificationsMenu') }}</h3>
-                  <p class="mt-0.5 text-xs leading-4 text-[rgb(var(--palette-gray-300))]">{{ $t('pages.settingsPage.notificationsHint') }}</p>
+                  <h3 class="font-semibold leading-5 text-[var(--text-title)]">{{ $t('pages.settingsPage.notificationsMenu') }}</h3>
+                  <p class="mt-0.5 text-xs leading-4 text-[var(--text-body)]">{{ $t('pages.settingsPage.notificationsHint') }}</p>
                 </div>
               </button>
             </div>
@@ -1159,8 +1159,8 @@ onUnmounted(() => {
               v-if="activeSection === 'security'"
               class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.4)] p-4 space-y-3"
             >
-              <h4 class="text-sm font-semibold text-[rgb(var(--palette-gray-300))]">{{ $t('pages.settingsPage.securityTips') }}</h4>
-              <ul class="space-y-2 text-xs text-[rgb(var(--palette-gray-400))]">
+              <h4 class="text-sm font-semibold text-[var(--text-body)]">{{ $t('pages.settingsPage.securityTips') }}</h4>
+              <ul class="space-y-2 text-xs text-[var(--text-muted)]">
                 <li class="flex items-start gap-2">
                   <div class="w-1.5 h-1.5 rounded-full bg-[rgb(var(--palette-green-500))] mt-1 flex-shrink-0"></div>
                   <span>{{ $t('pages.settingsPage.tip1') }}</span>
@@ -1183,18 +1183,18 @@ onUnmounted(() => {
         <div class="px-4 lg:px-0 lg:pb-6 space-y-6">
           <div v-if="activeSection === 'security'" class="space-y-6">
             <div>
-              <h2 class="text-xl font-bold text-[rgb(var(--palette-white))]">{{ $t('pages.settingsPage.changePassword') }}</h2>
-              <p class="text-sm text-[rgb(var(--palette-gray-400))]">{{ $t('pages.settingsPage.changePasswordHint') }}</p>
+              <h2 class="text-xl font-bold text-[var(--text-title)]">{{ $t('pages.settingsPage.changePassword') }}</h2>
+              <p class="text-sm text-[var(--text-muted)]">{{ $t('pages.settingsPage.changePasswordHint') }}</p>
             </div>
 
             <div class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.4)] p-6 space-y-4">
               <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div class="min-w-0">
-                  <div class="flex flex-wrap items-center gap-2 text-[rgb(var(--palette-white))] font-semibold">
-                    <Mail class="w-4 h-4 text-[rgb(var(--palette-blue-300))]" />
+                  <div class="flex flex-wrap items-center gap-2 text-[var(--text-title)] font-semibold">
+                    <Mail class="w-4 h-4 text-[var(--text-link)]" />
                     <span>{{ $t('pages.settingsPage.twoFactorTitle') }}</span>
                   </div>
-                  <p class="mt-1 text-xs text-[rgb(var(--palette-gray-300))]">{{ $t('pages.settingsPage.twoFactorHint') }}</p>
+                  <p class="mt-1 text-xs text-[var(--text-body)]">{{ $t('pages.settingsPage.twoFactorHint') }}</p>
                 </div>
                 <div
                   class="grid w-full grid-cols-2 rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.5)] p-1 sm:w-auto sm:min-w-[220px]"
@@ -1206,7 +1206,7 @@ onUnmounted(() => {
                     class="rounded-lg px-4 py-2 text-sm font-semibold transition"
                     :class="twoFactorEnabled
                       ? 'settings-toggle-option-active'
-                      : 'text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-600)/0.8)] hover:text-[rgb(var(--palette-white))] disabled:hover:bg-[var(--transparent)]'"
+                      : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-600)/0.8)] hover:text-[var(--text-title)] disabled:hover:bg-[var(--transparent)]'"
                     @click="!twoFactorEnabled && toggleTwoFactorSettings()"
                   >
                     {{ $t('pages.settingsPage.twoFactorEnabled') }}
@@ -1217,7 +1217,7 @@ onUnmounted(() => {
                     class="rounded-lg px-4 py-2 text-sm font-semibold transition"
                     :class="!twoFactorEnabled
                       ? 'settings-toggle-option-danger'
-                      : 'text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-600)/0.8)] hover:text-[rgb(var(--palette-white))] disabled:hover:bg-[var(--transparent)]'"
+                      : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-600)/0.8)] hover:text-[var(--text-title)] disabled:hover:bg-[var(--transparent)]'"
                     @click="twoFactorEnabled && toggleTwoFactorSettings()"
                   >
                     {{ $t('pages.settingsPage.twoFactorDisabled') }}
@@ -1225,7 +1225,7 @@ onUnmounted(() => {
                 </div>
               </div>
 
-              <div v-if="isTwoFactorLoading || isTwoFactorSaving" class="flex items-center gap-2 text-sm text-[rgb(var(--palette-gray-300))]">
+              <div v-if="isTwoFactorLoading || isTwoFactorSaving" class="flex items-center gap-2 text-sm text-[var(--text-body)]">
                 <Loader2 class="w-4 h-4 animate-spin" />
                 <span>{{ t('common.loading') }}</span>
               </div>
@@ -1242,12 +1242,12 @@ onUnmounted(() => {
 
             <div class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.4)] p-6 space-y-6">
               <div class="space-y-3">
-                <label class="block text-sm font-medium text-[rgb(var(--palette-gray-300))]">
+                <label class="block text-sm font-medium text-[var(--text-body)]">
                   {{ $t('pages.settingsPage.currentPassword') }}
-                  <span class="text-[rgb(var(--palette-red-400))] ml-1">*</span>
+                  <span class="text-[var(--text-danger)] ml-1">*</span>
                 </label>
                 <div class="flex items-center gap-3">
-                  <Lock class="w-5 h-5 text-[rgb(var(--palette-gray-400))]" />
+                  <Lock class="w-5 h-5 text-[var(--text-muted)]" />
                   <TheInput
                     v-model="changingPasswordCurrentPassword"
                     :placeholder="$t('pages.settingsPage.enterCurrentPassword')"
@@ -1258,12 +1258,12 @@ onUnmounted(() => {
               </div>
 
               <div class="space-y-3">
-                <label class="block text-sm font-medium text-[rgb(var(--palette-gray-300))]">
+                <label class="block text-sm font-medium text-[var(--text-body)]">
                   {{ $t('pages.settingsPage.newPassword') }}
-                  <span class="text-[rgb(var(--palette-red-400))] ml-1">*</span>
+                  <span class="text-[var(--text-danger)] ml-1">*</span>
                 </label>
                 <div class="flex items-center gap-3">
-                  <Key class="w-5 h-5 text-[rgb(var(--palette-gray-400))]" />
+                  <Key class="w-5 h-5 text-[var(--text-muted)]" />
                   <TheInput
                     v-model="changingPasswordNewPassword"
                     :placeholder="$t('pages.settingsPage.enterNewPassword')"
@@ -1272,7 +1272,7 @@ onUnmounted(() => {
                   />
                 </div>
                 <div v-if="changingPasswordNewPassword.length > 0 && activePasswordValidationHint" class="mt-2">
-                  <p class="flex items-center gap-2 text-xs leading-4 text-[rgb(var(--palette-gray-400))]">
+                  <p class="flex items-center gap-2 text-xs leading-4 text-[var(--text-muted)]">
                     <span class="inline-flex w-3 justify-center font-semibold">•</span>
                     <span>{{ activePasswordValidationHint.label }}</span>
                   </p>
@@ -1304,14 +1304,14 @@ onUnmounted(() => {
 
           <div v-else-if="activeSection === 'nickname'" class="space-y-6">
             <div>
-              <h2 class="text-xl font-bold text-[rgb(var(--palette-white))]">{{ $t('pages.settingsPage.nicknameSectionTitle') }}</h2>
-              <p class="text-sm text-[rgb(var(--palette-gray-400))]">{{ $t('pages.settingsPage.nicknameSectionHint') }}</p>
+              <h2 class="text-xl font-bold text-[var(--text-title)]">{{ $t('pages.settingsPage.nicknameSectionTitle') }}</h2>
+              <p class="text-sm text-[var(--text-muted)]">{{ $t('pages.settingsPage.nicknameSectionHint') }}</p>
             </div>
 
             <div class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.4)] p-6 space-y-6">
               <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div class="flex flex-col gap-3 md:min-h-[12.5rem]">
-                  <label class="block text-sm font-medium text-[rgb(var(--palette-gray-300))]">
+                  <label class="block text-sm font-medium text-[var(--text-body)]">
                     {{ $t('pages.settingsPage.currentNickname') }}
                   </label>
                   <div class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.4)] px-4 py-3">
@@ -1321,29 +1321,29 @@ onUnmounted(() => {
                       class="text-base font-semibold"
                     />
                   </div>
-                  <p class="hidden min-h-[1.25rem] text-xs leading-5 text-[rgb(var(--palette-gray-400))] opacity-0 select-none md:block">
+                  <p class="hidden min-h-[1.25rem] text-xs leading-5 text-[var(--text-muted)] opacity-0 select-none md:block">
                     {{ $t('pages.settingsPage.nicknameRequirements') }}
                   </p>
                 </div>
 
                 <div class="flex flex-col gap-3 md:min-h-[12.5rem]">
-                  <label class="block text-sm font-medium text-[rgb(var(--palette-gray-300))]">
+                  <label class="block text-sm font-medium text-[var(--text-body)]">
                     {{ $t('pages.settingsPage.newNickname') }}
-                    <span class="text-[rgb(var(--palette-red-400))] ml-1">*</span>
+                    <span class="text-[var(--text-danger)] ml-1">*</span>
                   </label>
                   <input
                     v-model="changingUsername"
                     :placeholder="$t('pages.settingsPage.enterNewNickname')"
                     type="text"
-                    class="w-full rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.4)] px-4 py-3 text-mainText transition-all duration-200 outline-none placeholder-[rgb(var(--palette-gray-400))]"
+                    class="w-full rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.4)] px-4 py-3 text-mainText transition-all duration-200 outline-none placeholder-[var(--text-placeholder)]"
                   >
-                  <p class="min-h-[1.25rem] text-xs leading-5 text-[rgb(var(--palette-gray-400))]">
+                  <p class="min-h-[1.25rem] text-xs leading-5 text-[var(--text-muted)]">
                     {{ $t('pages.settingsPage.nicknameRequirements') }}
                   </p>
                 </div>
               </div>
 
-              <div class="rounded-lg border border-[rgb(var(--palette-amber-500)/0.35)] bg-[rgb(var(--palette-amber-600)/0.15)] px-4 py-3 text-sm text-[rgb(var(--palette-amber-100))]">
+              <div class="rounded-lg border border-[rgb(var(--palette-amber-500)/0.35)] bg-[rgb(var(--palette-amber-600)/0.15)] px-4 py-3 text-sm text-[var(--text-warning)]">
                 {{ $t('pages.settingsPage.nicknameChangeFee', { price: nicknameChangePriceLabel }) }}
               </div>
 
@@ -1370,12 +1370,12 @@ onUnmounted(() => {
 
           <div v-else-if="activeSection === 'notifications'" class="space-y-6">
             <div>
-              <h2 class="text-xl font-bold text-[rgb(var(--palette-white))]">{{ $t('pages.settingsPage.notificationsSectionTitle') }}</h2>
-              <p class="text-sm text-[rgb(var(--palette-gray-400))]">{{ $t('pages.settingsPage.notificationsSectionHint') }}</p>
+              <h2 class="text-xl font-bold text-[var(--text-title)]">{{ $t('pages.settingsPage.notificationsSectionTitle') }}</h2>
+              <p class="text-sm text-[var(--text-muted)]">{{ $t('pages.settingsPage.notificationsSectionHint') }}</p>
             </div>
 
             <div v-if="isNotificationsLoading" class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.4)] p-6">
-              <div class="flex items-center gap-2 text-sm text-[rgb(var(--palette-gray-300))]">
+              <div class="flex items-center gap-2 text-sm text-[var(--text-body)]">
                 <Loader2 class="w-4 h-4 animate-spin" />
                 <span>{{ t('common.loading') }}</span>
               </div>
@@ -1384,11 +1384,11 @@ onUnmounted(() => {
             <div v-else class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.4)] p-6 space-y-5">
               <div class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.3)] p-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div class="min-w-0">
-                  <div class="flex items-center gap-2 text-[rgb(var(--palette-white))] font-semibold">
-                    <Bell class="w-4 h-4 text-[rgb(var(--palette-amber-300))]" />
+                  <div class="flex items-center gap-2 text-[var(--text-title)] font-semibold">
+                    <Bell class="w-4 h-4 text-[var(--text-warning-strong)]" />
                     <span>{{ $t('pages.settingsPage.notificationsMasterTitle') }}</span>
                   </div>
-                  <p class="mt-1 text-xs text-[rgb(var(--palette-gray-300))]">{{ $t('pages.settingsPage.notificationsMasterHint') }}</p>
+                  <p class="mt-1 text-xs text-[var(--text-body)]">{{ $t('pages.settingsPage.notificationsMasterHint') }}</p>
                 </div>
                 <div
                   class="grid w-full grid-cols-2 rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.5)] p-1 sm:w-auto sm:min-w-[220px]"
@@ -1400,7 +1400,7 @@ onUnmounted(() => {
                     class="rounded-lg px-4 py-2 text-sm font-semibold transition"
                     :class="anyNotificationsEnabled
                       ? 'settings-toggle-option-active'
-                      : 'text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-600)/0.8)] hover:text-[rgb(var(--palette-white))] disabled:hover:bg-[var(--transparent)]'"
+                      : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-600)/0.8)] hover:text-[var(--text-title)] disabled:hover:bg-[var(--transparent)]'"
                     @click="!anyNotificationsEnabled && setAllNotificationsEnabled(true)"
                   >
                     {{ $t('pages.settingsPage.twoFactorEnabled') }}
@@ -1411,7 +1411,7 @@ onUnmounted(() => {
                     class="rounded-lg px-4 py-2 text-sm font-semibold transition"
                     :class="!anyNotificationsEnabled
                       ? 'settings-toggle-option-danger'
-                      : 'text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-600)/0.8)] hover:text-[rgb(var(--palette-white))] disabled:hover:bg-[var(--transparent)]'"
+                      : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-600)/0.8)] hover:text-[var(--text-title)] disabled:hover:bg-[var(--transparent)]'"
                     @click="anyNotificationsEnabled && setAllNotificationsEnabled(false)"
                   >
                     {{ $t('pages.settingsPage.twoFactorDisabled') }}
@@ -1421,11 +1421,11 @@ onUnmounted(() => {
 
               <div class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.3)] p-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div class="min-w-0">
-                  <div class="flex items-center gap-2 text-[rgb(var(--palette-white))] font-semibold">
-                    <Mail class="w-4 h-4 text-[rgb(var(--palette-blue-300))]" />
+                  <div class="flex items-center gap-2 text-[var(--text-title)] font-semibold">
+                    <Mail class="w-4 h-4 text-[var(--text-link)]" />
                     <span>{{ $t('pages.settingsPage.notificationsEmailTitle') }}</span>
                   </div>
-                  <p class="mt-1 text-xs text-[rgb(var(--palette-gray-300))]">{{ $t('pages.settingsPage.notificationsEmailHint') }}</p>
+                  <p class="mt-1 text-xs text-[var(--text-body)]">{{ $t('pages.settingsPage.notificationsEmailHint') }}</p>
                 </div>
                 <div
                   class="grid w-full grid-cols-2 rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.5)] p-1 sm:w-auto sm:min-w-[220px]"
@@ -1437,7 +1437,7 @@ onUnmounted(() => {
                     class="rounded-lg px-4 py-2 text-sm font-semibold transition"
                     :class="emailNotificationsEnabled
                       ? 'settings-toggle-option-active'
-                      : 'text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-600)/0.8)] hover:text-[rgb(var(--palette-white))] disabled:hover:bg-[var(--transparent)]'"
+                      : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-600)/0.8)] hover:text-[var(--text-title)] disabled:hover:bg-[var(--transparent)]'"
                     @click="!emailNotificationsEnabled && toggleEmailNotifications()"
                   >
                     {{ $t('pages.settingsPage.twoFactorEnabled') }}
@@ -1448,7 +1448,7 @@ onUnmounted(() => {
                     class="rounded-lg px-4 py-2 text-sm font-semibold transition"
                     :class="!emailNotificationsEnabled
                       ? 'settings-toggle-option-danger'
-                      : 'text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-600)/0.8)] hover:text-[rgb(var(--palette-white))] disabled:hover:bg-[var(--transparent)]'"
+                      : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-600)/0.8)] hover:text-[var(--text-title)] disabled:hover:bg-[var(--transparent)]'"
                     @click="emailNotificationsEnabled && toggleEmailNotifications()"
                   >
                     {{ $t('pages.settingsPage.twoFactorDisabled') }}
@@ -1462,11 +1462,11 @@ onUnmounted(() => {
               >
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div class="min-w-0">
-                    <div class="flex items-center gap-2 text-[rgb(var(--palette-white))] font-semibold">
-                      <Send class="w-4 h-4 text-[rgb(var(--palette-emerald-300))]" />
+                    <div class="flex items-center gap-2 text-[var(--text-title)] font-semibold">
+                      <Send class="w-4 h-4 text-[var(--text-success)]" />
                       <span>{{ $t('pages.settingsPage.notificationsTelegramTitle') }}</span>
                     </div>
-                    <p class="mt-1 text-xs text-[rgb(var(--palette-gray-300))]">{{ $t('pages.settingsPage.notificationsTelegramHint') }}</p>
+                    <p class="mt-1 text-xs text-[var(--text-body)]">{{ $t('pages.settingsPage.notificationsTelegramHint') }}</p>
                   </div>
                   <div
                     class="grid w-full grid-cols-2 rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.5)] p-1 sm:w-auto sm:min-w-[220px]"
@@ -1478,7 +1478,7 @@ onUnmounted(() => {
                       class="rounded-lg px-4 py-2 text-sm font-semibold transition"
                       :class="telegramNotificationsEnabled
                         ? 'settings-toggle-option-active'
-                        : 'text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-600)/0.8)] hover:text-[rgb(var(--palette-white))] disabled:hover:bg-[var(--transparent)]'"
+                        : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-600)/0.8)] hover:text-[var(--text-title)] disabled:hover:bg-[var(--transparent)]'"
                       @click="!telegramNotificationsEnabled && toggleTelegramNotifications()"
                     >
                       {{ $t('pages.settingsPage.twoFactorEnabled') }}
@@ -1489,7 +1489,7 @@ onUnmounted(() => {
                     class="rounded-lg px-4 py-2 text-sm font-semibold transition"
                     :class="!telegramNotificationsEnabled
                       ? 'settings-toggle-option-danger'
-                      : 'text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-600)/0.8)] hover:text-[rgb(var(--palette-white))] disabled:hover:bg-[var(--transparent)]'"
+                      : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-600)/0.8)] hover:text-[var(--text-title)] disabled:hover:bg-[var(--transparent)]'"
                     @click="telegramNotificationsEnabled && toggleTelegramNotifications()"
                   >
                       {{ $t('pages.settingsPage.twoFactorDisabled') }}
@@ -1500,21 +1500,21 @@ onUnmounted(() => {
                 <div class="flex flex-wrap items-center gap-2 text-xs">
                   <span
                     class="inline-flex items-center rounded-full px-2.5 py-1 font-semibold"
-                    :class="telegramConnected ? 'bg-[rgb(var(--palette-emerald-500)/0.2)] text-[rgb(var(--palette-emerald-300))] border border-[rgb(var(--palette-emerald-500)/0.3)]' : 'bg-[rgb(var(--palette-amber-500)/0.15)] text-[rgb(var(--palette-amber-200))] border border-[rgb(var(--palette-amber-500)/0.3)]'"
+                    :class="telegramConnected ? 'bg-[rgb(var(--palette-emerald-500)/0.2)] text-[var(--text-success)] border border-[rgb(var(--palette-emerald-500)/0.3)]' : 'bg-[rgb(var(--palette-amber-500)/0.15)] text-[var(--text-warning)] border border-[rgb(var(--palette-amber-500)/0.3)]'"
                   >
                     {{ telegramConnected ? $t('pages.settingsPage.notificationsTelegramConnected') : $t('pages.settingsPage.notificationsTelegramNotConnected') }}
                   </span>
-                  <span v-if="telegramUsername" class="text-[rgb(var(--palette-gray-300))]">@{{ telegramUsername }}</span>
-                  <span v-if="telegramBotUsername" class="text-[rgb(var(--palette-gray-400))]">bot: @{{ telegramBotUsername }}</span>
+                  <span v-if="telegramUsername" class="text-[var(--text-body)]">@{{ telegramUsername }}</span>
+                  <span v-if="telegramBotUsername" class="text-[var(--text-muted)]">bot: @{{ telegramBotUsername }}</span>
                 </div>
 
-                <p class="text-xs text-[rgb(var(--palette-gray-400))]">{{ $t('pages.settingsPage.notificationsTelegramStartHint') }}</p>
+                <p class="text-xs text-[var(--text-muted)]">{{ $t('pages.settingsPage.notificationsTelegramStartHint') }}</p>
 
                 <div class="flex flex-wrap items-center gap-2">
                   <button
                     v-if="!telegramConnected"
                     type="button"
-                    class="market-primary-surface market-primary-hover inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[rgb(var(--palette-white))] transition disabled:cursor-not-allowed disabled:opacity-50"
+                    class="market-primary-surface market-primary-hover inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[var(--text-title)] transition disabled:cursor-not-allowed disabled:opacity-50"
                     :disabled="isTelegramConnectLoading"
                     @click="connectTelegram"
                   >
@@ -1525,7 +1525,7 @@ onUnmounted(() => {
                   <button
                     v-else
                     type="button"
-                    class="inline-flex items-center gap-2 rounded-lg border border-[rgb(var(--palette-dark-600))] px-3 py-2 text-sm font-semibold text-[rgb(var(--palette-gray-200))] hover:bg-[rgb(var(--palette-dark-700))] disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    class="inline-flex items-center gap-2 rounded-lg border border-[rgb(var(--palette-dark-600))] px-3 py-2 text-sm font-semibold text-[var(--text-body-strong)] hover:bg-[rgb(var(--palette-dark-700))] disabled:opacity-50 disabled:cursor-not-allowed transition"
                     :disabled="isTelegramDisconnectLoading"
                     @click="disconnectTelegram"
                   >
@@ -1539,7 +1539,7 @@ onUnmounted(() => {
                     :href="pendingTelegramConnectUrl"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="market-primary-surface market-primary-hover inline-flex items-center gap-2 rounded-lg border border-[rgb(var(--palette-blue-500)/0.4)] px-3 py-2 text-sm font-semibold text-[rgb(var(--palette-blue-200))] transition"
+                    class="market-primary-surface market-primary-hover inline-flex items-center gap-2 rounded-lg border border-[rgb(var(--palette-blue-500)/0.4)] px-3 py-2 text-sm font-semibold text-[var(--text-accent)] transition"
                   >
                     <Send class="w-4 h-4" />
                     <span>{{ $t('pages.settingsPage.notificationsTelegramOpenLink') }}</span>
@@ -1561,15 +1561,15 @@ onUnmounted(() => {
           <div v-else class="space-y-6">
             <div class="flex items-start justify-between gap-4">
               <div>
-                <h2 class="text-xl font-bold text-[rgb(var(--palette-white))]">{{ $t('pages.settingsPage.nicknameStylesSectionTitle') }}</h2>
-                <p class="text-sm text-[rgb(var(--palette-gray-400))]">{{ $t('pages.settingsPage.nicknameStylesSectionHint') }}</p>
+                <h2 class="text-xl font-bold text-[var(--text-title)]">{{ $t('pages.settingsPage.nicknameStylesSectionTitle') }}</h2>
+                <p class="text-sm text-[var(--text-muted)]">{{ $t('pages.settingsPage.nicknameStylesSectionHint') }}</p>
               </div>
               <div
                 v-if="stylesCatalog"
-                class="rounded-lg border border-[rgb(var(--palette-blue-500)/0.3)] bg-[rgb(var(--palette-blue-600)/0.15)] px-3 py-2 text-sm text-[rgb(var(--palette-blue-200))]"
+                class="rounded-lg border border-[rgb(var(--palette-blue-500)/0.3)] bg-[rgb(var(--palette-blue-600)/0.15)] px-3 py-2 text-sm text-[var(--text-accent)]"
               >
                 {{ $t('common.balance') }}:
-                <span class="font-semibold text-[rgb(var(--palette-white))]">
+                <span class="font-semibold text-[var(--text-title)]">
                   {{ formatCurrencyAmount(stylesCatalog.balance, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                 </span>
               </div>
@@ -1578,23 +1578,23 @@ onUnmounted(() => {
             <div class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.4)] p-6 space-y-4">
               <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h3 class="text-base font-semibold text-[rgb(var(--palette-white))]">
+                  <h3 class="text-base font-semibold text-[var(--text-title)]">
                     {{ $t('pages.settingsPage.profileBackgroundSectionTitle') }}
                   </h3>
-                  <p v-if="!profileBackgroundUnlocked" class="mt-1 text-xs text-[rgb(var(--palette-gray-300))]">
+                  <p v-if="!profileBackgroundUnlocked" class="mt-1 text-xs text-[var(--text-body)]">
                     {{ $t('pages.settingsPage.profileBackgroundSectionHint') }}
                   </p>
                 </div>
                 <span
                   v-if="!profileBackgroundUnlocked"
-                  class="rounded-md border border-[rgb(var(--palette-amber-500)/0.35)] bg-[rgb(var(--palette-amber-600)/0.15)] px-2.5 py-1 text-xs font-semibold text-[rgb(var(--palette-amber-100))]"
+                  class="rounded-md border border-[rgb(var(--palette-amber-500)/0.35)] bg-[rgb(var(--palette-amber-600)/0.15)] px-2.5 py-1 text-xs font-semibold text-[var(--text-warning)]"
                 >
                   {{ profileBackgroundUnlockPriceLabel }}
                 </span>
               </div>
 
               <div class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-800)/0.6)] p-3 space-y-3">
-                <div class="text-xs uppercase tracking-wide text-[rgb(var(--palette-gray-400))]">
+                <div class="text-xs uppercase tracking-wide text-[var(--text-muted)]">
                   {{ $t('pages.settingsPage.profileBackgroundPreview') }}
                 </div>
                 <div class="relative h-24 overflow-hidden rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.6)]">
@@ -1605,11 +1605,11 @@ onUnmounted(() => {
                       backgroundImage: `var(--profile-background-preview-overlay), url(${profileBackgroundPreviewUrl})`,
                     }"
                   />
-                  <div class="relative z-10 flex h-full w-full items-center justify-center text-xs text-[rgb(var(--palette-gray-200))]">
+                  <div class="relative z-10 flex h-full w-full items-center justify-center text-xs text-[var(--text-body-strong)]">
                     {{ $t('pages.settingsPage.profileBackgroundPreviewHint') }}
                   </div>
                 </div>
-                <div v-if="!profileBackgroundUnlocked" class="text-xs text-[rgb(var(--palette-gray-300))]">
+                <div v-if="!profileBackgroundUnlocked" class="text-xs text-[var(--text-body)]">
                   {{ $t('pages.settingsPage.profileBackgroundUnlockFee', { price: profileBackgroundUnlockPriceLabel }) }}
                 </div>
               </div>
@@ -1627,7 +1627,7 @@ onUnmounted(() => {
                 <button
                   v-if="!profileBackgroundUnlocked"
                   type="button"
-                  class="rounded-lg border border-[rgb(var(--palette-amber-500)/0.35)] bg-[rgb(var(--palette-amber-600)/0.15)] px-3 py-2 text-xs font-semibold text-[rgb(var(--palette-amber-100))] transition hover:bg-[rgb(var(--palette-amber-600)/0.25)] disabled:cursor-not-allowed disabled:opacity-60"
+                  class="rounded-lg border border-[rgb(var(--palette-amber-500)/0.35)] bg-[rgb(var(--palette-amber-600)/0.15)] px-3 py-2 text-xs font-semibold text-[var(--text-warning)] transition hover:bg-[rgb(var(--palette-amber-600)/0.25)] disabled:cursor-not-allowed disabled:opacity-60"
                   :disabled="isProfileBackgroundPurchasing"
                   @click="requestProfileBackgroundPurchase"
                 >
@@ -1642,7 +1642,7 @@ onUnmounted(() => {
                 <button
                   v-else
                   type="button"
-                  class="inline-flex items-center gap-2 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.7)] px-3 py-2 text-xs font-semibold text-[rgb(var(--palette-gray-100))] transition hover:bg-[rgb(var(--palette-dark-700))] disabled:cursor-not-allowed disabled:opacity-60"
+                  class="inline-flex items-center gap-2 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.7)] px-3 py-2 text-xs font-semibold text-[var(--text-heading)] transition hover:bg-[rgb(var(--palette-dark-700))] disabled:cursor-not-allowed disabled:opacity-60"
                   :disabled="isProfileBackgroundUploading || isProfileBackgroundRemoving"
                   @click="triggerProfileBackgroundFileInput"
                 >
@@ -1659,7 +1659,7 @@ onUnmounted(() => {
                 <button
                   v-if="profileBackgroundUnlocked && profileBackgroundPreviewUrl"
                   type="button"
-                  class="rounded-lg border border-[rgb(var(--palette-dark-500))] bg-[rgb(var(--palette-dark-700)/0.7)] px-3 py-2 text-xs font-semibold text-[rgb(var(--palette-gray-200))] transition hover:bg-[rgb(var(--palette-dark-700))] disabled:cursor-not-allowed disabled:opacity-60"
+                  class="rounded-lg border border-[rgb(var(--palette-dark-500))] bg-[rgb(var(--palette-dark-700)/0.7)] px-3 py-2 text-xs font-semibold text-[var(--text-body-strong)] transition hover:bg-[rgb(var(--palette-dark-700))] disabled:cursor-not-allowed disabled:opacity-60"
                   :disabled="isProfileBackgroundRemoving || isProfileBackgroundUploading"
                   @click="removeProfileBackground"
                 >
@@ -1682,7 +1682,7 @@ onUnmounted(() => {
             </div>
 
             <div class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.4)] p-6 space-y-4">
-              <div v-if="isStylesLoading" class="flex items-center justify-center py-8 text-sm text-[rgb(var(--palette-gray-400))]">
+              <div v-if="isStylesLoading" class="flex items-center justify-center py-8 text-sm text-[var(--text-muted)]">
                 <Loader2 class="mr-2 h-4 w-4 animate-spin" />
                 {{ $t('common.loading') }}
               </div>
@@ -1699,7 +1699,7 @@ onUnmounted(() => {
               <template v-if="stylesCatalog && stylesCatalog.styles.length">
                 <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
                   <div class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.6)] p-4">
-                    <div class="text-xs uppercase tracking-wide text-[rgb(var(--palette-gray-400))]">{{ $t('pages.settingsPage.previewPlain') }}</div>
+                    <div class="text-xs uppercase tracking-wide text-[var(--text-muted)]">{{ $t('pages.settingsPage.previewPlain') }}</div>
                     <div class="mt-3">
                       <StyledUsername
                         :username="currentUsername"
@@ -1712,8 +1712,8 @@ onUnmounted(() => {
                   <div
                     class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.6)] p-4"
                   >
-                    <div class="text-xs uppercase tracking-wide text-[rgb(var(--palette-gray-200)/0.8)]">{{ $t('pages.settingsPage.previewInCard') }}</div>
-                    <p class="mt-2 text-xs text-[rgb(var(--palette-gray-300))]">{{ $t('pages.settingsPage.productCardSample') }}</p>
+                    <div class="text-xs uppercase tracking-wide text-[rgb(var(--text-body-strong-rgb)/0.8)]">{{ $t('pages.settingsPage.previewInCard') }}</div>
+                    <p class="mt-2 text-xs text-[var(--text-body)]">{{ $t('pages.settingsPage.productCardSample') }}</p>
                     <div class="mt-3 flex items-center gap-2">
                       <StyledUsername
                         :username="currentUsername"
@@ -1721,9 +1721,9 @@ onUnmounted(() => {
                         class="text-sm font-semibold"
                       />
                       <span class="h-2 w-2 rounded-full bg-[rgb(var(--palette-green-500))]"></span>
-                      <span class="text-xs text-[rgb(var(--palette-gray-200))]">★ 4.9</span>
+                      <span class="text-xs text-[var(--text-body-strong)]">★ 4.9</span>
                     </div>
-                    <div class="mt-3 rounded-lg bg-[rgb(var(--palette-blue-600))] px-3 py-1.5 text-center text-xs font-semibold text-[rgb(var(--palette-white))]">
+                    <div class="mt-3 rounded-lg bg-[rgb(var(--palette-blue-600))] px-3 py-1.5 text-center text-xs font-semibold text-[var(--text-title)]">
                       {{ formatCurrencyAmount(1290, { fromCurrency: 'RUB' }) }}
                     </div>
                   </div>
@@ -1731,8 +1731,8 @@ onUnmounted(() => {
                   <div
                     class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.6)] p-4"
                   >
-                    <div class="text-xs uppercase tracking-wide text-[rgb(var(--palette-gray-200)/0.8)]">{{ $t('pages.settingsPage.previewInProfile') }}</div>
-                    <p class="mt-2 text-xs text-[rgb(var(--palette-gray-300))]">{{ $t('pages.settingsPage.profileSample') }}</p>
+                    <div class="text-xs uppercase tracking-wide text-[rgb(var(--text-body-strong-rgb)/0.8)]">{{ $t('pages.settingsPage.previewInProfile') }}</div>
+                    <p class="mt-2 text-xs text-[var(--text-body)]">{{ $t('pages.settingsPage.profileSample') }}</p>
                     <div class="mt-3 flex items-center gap-3 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-900)/0.4)] px-3 py-2">
                       <div class="h-8 w-8 rounded-full bg-[rgb(var(--palette-dark-600))]"></div>
                       <StyledUsername
@@ -1747,20 +1747,20 @@ onUnmounted(() => {
                 <div class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.5)] p-4 space-y-4">
                   <div class="flex items-start justify-between gap-3">
                     <div>
-                      <h3 class="text-sm font-semibold text-[rgb(var(--palette-white))]">
+                      <h3 class="text-sm font-semibold text-[var(--text-title)]">
                         {{ $t('pages.settingsPage.customStyleBuilderTitle') }}
                       </h3>
-                      <p class="mt-1 text-xs text-[rgb(var(--palette-gray-300))]">
+                      <p class="mt-1 text-xs text-[var(--text-body)]">
                         {{ $t('pages.settingsPage.customStyleBuilderHint') }}
                       </p>
                     </div>
-                    <div class="rounded-md border border-[rgb(var(--palette-amber-500)/0.35)] bg-[rgb(var(--palette-amber-600)/0.15)] px-2.5 py-1 text-xs font-semibold text-[rgb(var(--palette-amber-100))]">
+                    <div class="rounded-md border border-[rgb(var(--palette-amber-500)/0.35)] bg-[rgb(var(--palette-amber-600)/0.15)] px-2.5 py-1 text-xs font-semibold text-[var(--text-warning)]">
                       {{ customStylePriceLabel }}
                     </div>
                   </div>
 
                   <div class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-800)/0.7)] p-3">
-                    <div class="text-xs uppercase tracking-wide text-[rgb(var(--palette-gray-400))]">
+                    <div class="text-xs uppercase tracking-wide text-[var(--text-muted)]">
                       {{ $t('pages.settingsPage.customStylePreview') }}
                     </div>
                     <div class="mt-2">
@@ -1774,7 +1774,7 @@ onUnmounted(() => {
 
                   <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
                     <div class="rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-800)/0.6)] p-3">
-                      <div class="text-xs font-medium text-[rgb(var(--palette-gray-300))]">
+                      <div class="text-xs font-medium text-[var(--text-body)]">
                         {{ $t('pages.settingsPage.customPrimaryColor') }}
                       </div>
                       <div ref="customPrimaryPaletteRef" class="relative mt-2 inline-block">
@@ -1796,7 +1796,7 @@ onUnmounted(() => {
                     </div>
 
                     <div class="rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-800)/0.6)] p-3">
-                      <div class="text-xs font-medium text-[rgb(var(--palette-gray-300))]">
+                      <div class="text-xs font-medium text-[var(--text-body)]">
                         {{ $t('pages.settingsPage.customSecondaryColor') }}
                       </div>
                       <div ref="customSecondaryPaletteRef" class="relative mt-2 inline-block">
@@ -1818,7 +1818,7 @@ onUnmounted(() => {
                     </div>
 
                     <div class="rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-800)/0.6)] p-3">
-                      <div class="text-xs font-medium text-[rgb(var(--palette-gray-300))]">
+                      <div class="text-xs font-medium text-[var(--text-body)]">
                         {{ $t('pages.settingsPage.customGlowColor') }}
                       </div>
                       <div ref="customGlowPaletteRef" class="relative mt-2 inline-block">
@@ -1842,7 +1842,7 @@ onUnmounted(() => {
 
                   <div class="grid grid-cols-2 gap-3 lg:grid-cols-2">
                     <label class="rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-800)/0.6)] px-3 py-2">
-                      <div class="text-[11px] uppercase tracking-wide text-[rgb(var(--palette-gray-400))]">
+                      <div class="text-[11px] uppercase tracking-wide text-[var(--text-muted)]">
                         {{ $t('pages.settingsPage.customFontWeight') }}
                       </div>
                       <div class="mt-2 grid w-full grid-cols-3 rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.5)] p-1">
@@ -1853,7 +1853,7 @@ onUnmounted(() => {
                           class="rounded-lg px-3 py-2 text-xs font-semibold transition"
                           :class="customFontWeight === option.value
                             ? 'settings-toggle-option-active'
-                            : 'text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-600)/0.8)] hover:text-[rgb(var(--palette-white))]'"
+                            : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-600)/0.8)] hover:text-[var(--text-title)]'"
                           @click="customFontWeight = option.value"
                         >
                           {{ $t(option.labelKey) }}
@@ -1861,8 +1861,8 @@ onUnmounted(() => {
                       </div>
                     </label>
 
-                    <label class="rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-800)/0.6)] px-3 py-2 text-xs text-[rgb(var(--palette-gray-200))]">
-                      <div class="text-[11px] uppercase tracking-wide text-[rgb(var(--palette-gray-400))]">
+                    <label class="rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-800)/0.6)] px-3 py-2 text-xs text-[var(--text-body-strong)]">
+                      <div class="text-[11px] uppercase tracking-wide text-[var(--text-muted)]">
                         {{ $t('pages.settingsPage.customGlowEnabled') }}
                       </div>
                       <Checkbox
@@ -1905,7 +1905,7 @@ onUnmounted(() => {
                           :style-id="style.style_id"
                           class="text-base font-semibold"
                         />
-                        <p v-if="getStyleDescription(style.style_id)" class="mt-1 text-xs text-[rgb(var(--palette-gray-200)/0.8)]">
+                        <p v-if="getStyleDescription(style.style_id)" class="mt-1 text-xs text-[rgb(var(--text-body-strong-rgb)/0.8)]">
                           {{ getStyleDescription(style.style_id) }}
                         </p>
                       </div>
@@ -1913,7 +1913,7 @@ onUnmounted(() => {
                       <div class="flex flex-shrink-0 items-center gap-2">
                         <span
                           v-if="style.is_owned"
-                          class="rounded-md border border-[rgb(var(--palette-emerald-500)/0.35)] bg-[rgb(var(--palette-emerald-600)/0.15)] px-2 py-0.5 text-[11px] font-semibold text-[rgb(var(--palette-emerald-200))]"
+                          class="rounded-md border border-[rgb(var(--palette-emerald-500)/0.35)] bg-[rgb(var(--palette-emerald-600)/0.15)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-success)]"
                         >
                           {{ $t('pages.settingsPage.owned') }}
                         </span>
@@ -1921,17 +1921,17 @@ onUnmounted(() => {
                     </div>
 
                     <div class="mt-4 flex items-center justify-between gap-3">
-                      <div class="text-sm font-semibold text-[rgb(var(--palette-white))]">
+                      <div class="text-sm font-semibold text-[var(--text-title)]">
                         {{ getStylePriceLabel(style) }}
                       </div>
                       <button
                         type="button"
                         class="rounded-lg px-3 py-1.5 text-xs font-semibold transition"
                         :class="style.is_active
-                          ? 'cursor-default border border-[rgb(var(--palette-blue-500)/0.35)] bg-[rgb(var(--palette-blue-600)/0.2)] text-[rgb(var(--palette-blue-200))]'
+                          ? 'cursor-default border border-[rgb(var(--palette-blue-500)/0.35)] bg-[rgb(var(--palette-blue-600)/0.2)] text-[var(--text-accent)]'
                           : style.is_owned
-                            ? 'border border-[rgb(var(--palette-emerald-500)/0.35)] bg-[rgb(var(--palette-emerald-600)/0.15)] text-[rgb(var(--palette-emerald-200))] hover:bg-[rgb(var(--palette-emerald-600)/0.25)]'
-                            : 'border border-[rgb(var(--palette-amber-500)/0.35)] bg-[rgb(var(--palette-amber-600)/0.15)] text-[rgb(var(--palette-amber-100))] hover:bg-[rgb(var(--palette-amber-600)/0.25)]'"
+                            ? 'border border-[rgb(var(--palette-emerald-500)/0.35)] bg-[rgb(var(--palette-emerald-600)/0.15)] text-[var(--text-success)] hover:bg-[rgb(var(--palette-emerald-600)/0.25)]'
+                            : 'border border-[rgb(var(--palette-amber-500)/0.35)] bg-[rgb(var(--palette-amber-600)/0.15)] text-[var(--text-warning)] hover:bg-[rgb(var(--palette-amber-600)/0.25)]'"
                         :disabled="style.is_active || styleActionLoadingId === style.style_id"
                         @click.stop="requestStyleAction(style)"
                       >
@@ -1944,7 +1944,7 @@ onUnmounted(() => {
 
               <div
                 v-else-if="!isStylesLoading"
-                class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.4)] px-4 py-8 text-center text-sm text-[rgb(var(--palette-gray-400))]"
+                class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.4)] px-4 py-8 text-center text-sm text-[var(--text-muted)]"
               >
                 {{ $t('pages.settingsPage.noStyles') }}
               </div>

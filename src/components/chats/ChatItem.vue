@@ -110,7 +110,7 @@ const unreadCount = computed(() => props.chat.unread_count ?? 0)
 // Вычисляемое свойство для цвета имени
 const displayNameColor = computed(() => {
     if (isSupportChat.value && !props.showSupportAsUser) {
-        return 'text-[rgb(var(--palette-blue-500))]'
+        return 'text-[var(--text-link)]'
     }
     return 'text-mainText'
 })
@@ -195,7 +195,7 @@ onMounted(() => {
                     v-if="isSupportChat && !showSupportAsUser"
                     class="h-12 w-12 flex items-center justify-center rounded-full bg-[rgb(var(--palette-blue-500)/0.2)] border-2 border-[rgb(var(--palette-blue-500)/0.3)]"
                 >
-                    <Headphones class="w-6 h-6 text-[rgb(var(--palette-blue-400))]" />
+                    <Headphones class="w-6 h-6 text-[var(--text-link)]" />
                 </div>
                 <!-- Regular chat avatar (or support chat in admin mode) -->
                 <template v-else>
@@ -242,14 +242,14 @@ onMounted(() => {
                     </div>
                     <span
                         v-if="unreadCount > 0"
-                        class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-[rgb(var(--palette-red-500))] text-[rgb(var(--palette-white))] text-[11px] font-semibold"
+                        class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-[rgb(var(--palette-red-500))] text-[var(--text-title)] text-[11px] font-semibold"
                     >
                         {{ unreadCount > 99 ? '99+' : unreadCount }}
                     </span>
                 </div>
                 <span 
                     v-if="chat.last_message?.created_at" 
-                    class="flex-shrink-0 text-xs text-[rgb(var(--palette-gray-500))] whitespace-nowrap group-hover:text-[var(--text-hover-muted)]"
+                    class="flex-shrink-0 text-xs text-[var(--text-meta)] whitespace-nowrap group-hover:text-[var(--text-hover-muted)]"
                 >
                     {{ lastMessageDateLabel }}
                 </span>
@@ -259,13 +259,13 @@ onMounted(() => {
                 <p 
                     class="truncate text-sm flex-1 min-w-0"
                     :class="{
-                        'text-[rgb(var(--palette-blue-500))] font-light': chat.last_message?.message_type === 'purchase_message'
+                        'text-[var(--text-link)] font-light': chat.last_message?.message_type === 'purchase_message'
                         || chat.last_message?.message_type === 'price_offer_message'
                         || chat.last_message?.message_type === 'image_message'
                         || chat.last_message?.message_type === 'update_deal_status_message'
                         || chat.last_message?.message_type === 'review_message'
                         || isAdminMessage,
-                        'text-[rgb(var(--palette-gray-500))] group-hover:text-[var(--text-hover-muted)]': chat.last_message?.message_type === 'text_message' && !isAdminMessage
+                        'text-[var(--text-meta)] group-hover:text-[var(--text-hover-muted)]': chat.last_message?.message_type === 'text_message' && !isAdminMessage
                     }"
                 >
                     <!-- Message type icon -->

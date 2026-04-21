@@ -82,7 +82,7 @@ onUnmounted(() => {
   <div ref="rootRef" class="relative">
     <button
       type="button"
-      class="relative flex h-8 w-8 items-center justify-center rounded-full border border-[rgb(var(--palette-gray-700))] bg-[var(--transparent)] text-[rgb(var(--palette-gray-200))] transition-colors duration-200 hover:border-[rgb(var(--palette-gray-600))] hover:text-[rgb(var(--palette-white))] focus:outline-none"
+      class="relative flex h-8 w-8 items-center justify-center rounded-full border border-[rgb(var(--palette-gray-700))] bg-[var(--transparent)] text-[var(--text-body-strong)] transition-colors duration-200 hover:border-[rgb(var(--palette-gray-600))] hover:text-[var(--text-title)] focus:outline-none"
       :aria-expanded="isOpen"
       :aria-label="t('common.settings')"
       @click="toggleMenu"
@@ -104,11 +104,11 @@ onUnmounted(() => {
       >
         <div class="space-y-4">
           <div>
-            <p class="text-sm font-semibold text-[rgb(var(--palette-white))]">{{ t('common.settings') }}</p>
+            <p class="text-sm font-semibold text-[var(--text-title)]">{{ t('common.settings') }}</p>
           </div>
 
           <div class="space-y-2">
-            <div class="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[rgb(var(--palette-gray-500))]">
+            <div class="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-meta)]">
               <Languages class="h-3.5 w-3.5" />
               <span>{{ t('common.language') }}</span>
             </div>
@@ -119,8 +119,8 @@ onUnmounted(() => {
                 type="button"
                 class="inline-flex min-h-10 items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
                 :class="locale === option.value
-                  ? 'border-[rgb(var(--palette-blue-500)/0.5)] bg-[rgb(var(--palette-blue-600))] text-[rgb(var(--palette-white))]'
-                  : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.5)] text-[rgb(var(--palette-gray-300))] hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-700))]'"
+                  ? 'border-[rgb(var(--palette-blue-500)/0.5)] bg-[rgb(var(--palette-blue-600))] text-[var(--text-title)]'
+                  : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.5)] text-[var(--text-body)] hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-700))]'"
                 @click="selectLanguage(option.value)"
               >
                 {{ option.label }}
@@ -129,7 +129,7 @@ onUnmounted(() => {
           </div>
 
           <div class="space-y-2">
-            <div class="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[rgb(var(--palette-gray-500))]">
+            <div class="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-meta)]">
               <Coins class="h-3.5 w-3.5" />
               <span>{{ t('common.currency') }}</span>
             </div>
@@ -140,8 +140,8 @@ onUnmounted(() => {
                 type="button"
                 class="inline-flex min-h-10 items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
                 :class="preferredCurrency === option.value
-                  ? 'border-[rgb(var(--palette-blue-500)/0.5)] bg-[rgb(var(--palette-blue-600))] text-[rgb(var(--palette-white))]'
-                  : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.5)] text-[rgb(var(--palette-gray-300))] hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-700))]'"
+                  ? 'border-[rgb(var(--palette-blue-500)/0.5)] bg-[rgb(var(--palette-blue-600))] text-[var(--text-title)]'
+                  : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.5)] text-[var(--text-body)] hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-700))]'"
                 @click="selectCurrency(option.value)"
               >
                 {{ option.label }}

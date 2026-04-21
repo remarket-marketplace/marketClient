@@ -142,7 +142,7 @@ watch(isOpen, async (opened) => {
 
 <template>
   <div ref="wrapperRef" class="relative w-full">
-    <label v-if="label" class="mb-2 block text-sm text-[rgb(var(--palette-gray-300))]">{{ label }}</label>
+    <label v-if="label" class="mb-2 block text-sm text-[var(--text-body)]">{{ label }}</label>
     <button
       type="button"
       class="w-full flex items-center justify-between gap-3 bg-[rgb(var(--palette-dark-600))] border border-[rgb(var(--palette-dark-700))] rounded-lg px-4 py-2 text-mainText transition disabled:opacity-50 focus:outline-none"
@@ -162,7 +162,7 @@ watch(isOpen, async (opened) => {
           <span class="truncate">{{ selectedOption.label }}</span>
         </template>
         <template v-else>
-          <span class="text-[rgb(var(--palette-gray-400))] truncate">{{ placeholder ?? t('common.select') }}</span>
+          <span class="text-[var(--text-muted)] truncate">{{ placeholder ?? t('common.select') }}</span>
         </template>
       </span>
 
@@ -186,7 +186,7 @@ watch(isOpen, async (opened) => {
               ref="searchInputRef"
               v-model="searchQuery"
               type="text"
-              class="w-full rounded-md border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700))] px-3 py-2 text-sm text-mainText outline-none placeholder-[rgb(var(--palette-gray-400))]"
+              class="w-full rounded-md border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700))] px-3 py-2 text-sm text-mainText outline-none placeholder-[var(--text-placeholder)]"
               :placeholder="searchPlaceholder ?? t('common.search')"
               @click.stop
             />
@@ -194,7 +194,7 @@ watch(isOpen, async (opened) => {
 
           <li
             v-if="!filteredOptions.length"
-            class="select-none px-4 py-2 text-sm text-[rgb(var(--palette-gray-400))]"
+            class="select-none px-4 py-2 text-sm text-[var(--text-muted)]"
           >
             {{ $t('common.noOptions') }}
           </li>
@@ -216,7 +216,7 @@ watch(isOpen, async (opened) => {
               />
               <span class="truncate">{{ opt.label }}</span>
             </span>
-            <span v-if="modelValue === opt.value" class="text-xs text-[rgb(var(--palette-blue-400))] font-semibold">✓</span>
+            <span v-if="modelValue === opt.value" class="text-xs text-[var(--text-link)] font-semibold">✓</span>
           </li>
         </ul>
       </transition>

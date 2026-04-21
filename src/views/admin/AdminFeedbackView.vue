@@ -90,11 +90,11 @@ onMounted(async () => {
     </div>
 
     <div v-if="isLoading" class="flex items-center justify-center h-32">
-      <Loader2 class="h-6 w-6 animate-spin text-[rgb(var(--palette-blue-500))]" />
-      <span class="ml-2 text-[rgb(var(--palette-gray-400))]">{{ $t('common.loading') }}</span>
+      <Loader2 class="h-6 w-6 animate-spin text-[var(--text-link)]" />
+      <span class="ml-2 text-[var(--text-muted)]">{{ $t('common.loading') }}</span>
     </div>
 
-    <div v-else-if="errorMessage" class="bg-[rgb(var(--palette-red-500)/0.1)] border border-[rgb(var(--palette-red-500)/0.3)] rounded-xl p-4 text-[rgb(var(--palette-red-300))]">
+    <div v-else-if="errorMessage" class="bg-[rgb(var(--palette-red-500)/0.1)] border border-[rgb(var(--palette-red-500)/0.3)] rounded-xl p-4 text-[var(--text-danger)]">
       <p>{{ errorMessage }}</p>
     </div>
 
@@ -112,7 +112,7 @@ onMounted(async () => {
               <p class="text-base sm:text-lg text-mainText font-semibold truncate">
                 {{ feedback.user.username }}
               </p>
-              <p class="text-xs text-[rgb(var(--palette-gray-500))]">{{ formatDate(feedback.created_at) }}</p>
+              <p class="text-xs text-[var(--text-meta)]">{{ formatDate(feedback.created_at) }}</p>
             </div>
           </div>
 
@@ -145,21 +145,21 @@ onMounted(async () => {
 
       <article class="admin-surface-card rounded-[1.4rem] p-4">
         <h2 class="text-sm sm:text-base font-semibold text-mainText flex items-center gap-2 mb-3">
-          <MessageSquareText class="h-4 w-4 text-[rgb(var(--palette-blue-400))]" />
+          <MessageSquareText class="h-4 w-4 text-[var(--text-link)]" />
           {{ $t('pages.admin.feedbackPage.message') }}
         </h2>
-        <p class="text-sm text-[rgb(var(--palette-gray-200))] whitespace-pre-wrap break-words leading-relaxed">
+        <p class="text-sm text-[var(--text-body-strong)] whitespace-pre-wrap break-words leading-relaxed">
           {{ feedback.text }}
         </p>
       </article>
 
       <article class="admin-surface-card rounded-[1.4rem] p-4">
         <h2 class="text-sm sm:text-base font-semibold text-mainText flex items-center gap-2 mb-3">
-          <Paperclip class="h-4 w-4 text-[rgb(var(--palette-blue-400))]" />
+          <Paperclip class="h-4 w-4 text-[var(--text-link)]" />
           {{ $t('pages.admin.feedbackPage.attachments') }}
         </h2>
 
-        <div v-if="feedback.images.length === 0" class="text-sm text-[rgb(var(--palette-gray-400))]">
+        <div v-if="feedback.images.length === 0" class="text-sm text-[var(--text-muted)]">
           {{ $t('pages.admin.feedbackPage.noAttachments') }}
         </div>
 
@@ -177,7 +177,7 @@ onMounted(async () => {
               class="h-32 w-full object-cover"
             />
             <div class="absolute inset-0 bg-[rgb(var(--palette-black)/0)] group-hover:bg-[rgb(var(--palette-black)/0.35)] transition-colors flex items-center justify-center">
-              <ExternalLink class="h-4 w-4 text-[rgb(var(--palette-white))] opacity-0 group-hover:opacity-100 transition-opacity" />
+              <ExternalLink class="h-4 w-4 text-[var(--text-title)] opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
           </button>
         </div>
@@ -185,7 +185,7 @@ onMounted(async () => {
     </div>
 
     <div v-else class="admin-surface-card rounded-[1.4rem] p-4">
-      <p class="text-[rgb(var(--palette-gray-300))] mb-3">{{ $t('pages.admin.feedbackPage.loadError') }}</p>
+      <p class="text-[var(--text-body)] mb-3">{{ $t('pages.admin.feedbackPage.loadError') }}</p>
       <button
         type="button"
         class="admin-btn admin-btn-sm"

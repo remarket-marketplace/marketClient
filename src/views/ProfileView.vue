@@ -577,7 +577,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
       <div class="mb-6 lg:hidden px-4 pt-4">
         <div class="flex gap-2">
           <BackButton />
-          <h1 class="text-2xl font-bold text-[rgb(var(--palette-white))]">
+          <h1 class="text-2xl font-bold text-[var(--text-title)]">
             {{ $t('pages.profile.title') }}
           </h1>
         </div>
@@ -593,7 +593,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
             <div class="hidden lg:block">
               <div class="flex gap-2">
                 <BackButton />
-                <h1 class="text-2xl font-bold text-[rgb(var(--palette-white))]">
+                <h1 class="text-2xl font-bold text-[var(--text-title)]">
                   {{ $t('pages.profile.title') }}
                 </h1>
               </div>
@@ -624,7 +624,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 <div v-if="isOwner" class="relative" ref="menuContainerRef">
                   <button @click.stop="toggleMenu"
                     class="w-8 h-8 flex items-center justify-center rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.5)] hover:bg-[rgb(var(--palette-dark-700))] transition-colors">
-                    <svg class="w-5 h-5 text-[rgb(var(--palette-gray-300))]" fill="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5 text-[var(--text-body)]" fill="currentColor" viewBox="0 0 24 24">
                       <circle cx="12" cy="6" r="1.6" />
                       <circle cx="12" cy="12" r="1.6" />
                       <circle cx="12" cy="18" r="1.6" />
@@ -634,23 +634,23 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                   <div v-if="showMenu"
                     class="absolute right-0 z-10 mt-2 w-48 overflow-hidden rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-800)/0.8)] backdrop-blur-sm shadow-2xl">
                     <button @click="goToSettings"
-                      class="w-full rounded-t-xl flex items-center gap-3 px-4 py-3 text-left text-sm text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-700)/0.5)] transition-colors">
+                      class="w-full rounded-t-xl flex items-center gap-3 px-4 py-3 text-left text-sm text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.5)] transition-colors">
                       <Settings class="w-4 h-4" />
                       <span>{{ t('pages.profile.settings') }}</span>
                     </button>
                     <button @click="goToWallet"
-                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-700)/0.5)] transition-colors">
+                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.5)] transition-colors">
                       <Wallet class="w-4 h-4" />
                       <span>{{ t('pages.profile.wallet') }}</span>
                     </button>
                     <button @click.stop="openShareModal" type="button"
-                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-700)/0.5)] transition-colors">
+                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.5)] transition-colors">
                       <Share2 class="w-4 h-4" />
                       <span>{{ t('pages.profile.share') }}</span>
                     </button>
                     <hr class="border-[rgb(var(--palette-dark-200))]">
                     <button @click="logout"
-                      class="w-full rounded-b-xl flex items-center gap-3 px-4 py-3 text-left text-sm text-[rgb(var(--palette-gray-300))] transition-colors hover:bg-[rgb(var(--palette-dark-700)/0.5)] hover:text-[rgb(var(--palette-white))]">
+                      class="w-full rounded-b-xl flex items-center gap-3 px-4 py-3 text-left text-sm text-[var(--text-body)] transition-colors hover:bg-[rgb(var(--palette-dark-700)/0.5)] hover:text-[var(--text-title)]">
                       <LogOut class="w-4 h-4" />
                       <span>{{ t('pages.profile.logout') }}</span>
                     </button>
@@ -662,8 +662,8 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                     :disabled="isSubscriptionLoading"
                     class="h-8 px-3 flex items-center justify-center gap-1.5 rounded-lg border transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                     :class="isSubscribedToSeller
-                      ? 'border-[rgb(var(--palette-blue-500)/0.6)] market-primary-surface market-primary-hover text-[rgb(var(--palette-blue-100))]'
-                      : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.5)] text-[rgb(var(--palette-gray-200))] hover:bg-[rgb(var(--palette-dark-700))]'"
+                      ? 'border-[rgb(var(--palette-blue-500)/0.6)] market-primary-surface market-primary-hover text-[var(--text-accent-strong)]'
+                      : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.5)] text-[var(--text-body-strong)] hover:bg-[rgb(var(--palette-dark-700))]'"
                     :title="isSubscribedToSeller ? t('pages.profile.unsubscribe') : t('pages.profile.subscribe')">
                     <Loader2 v-if="isSubscriptionLoading" class="w-3.5 h-3.5 animate-spin" />
                     <UserCheck v-else-if="isSubscribedToSeller" class="w-3.5 h-3.5" />
@@ -675,7 +675,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                   <button @click.stop="openShareModal" type="button"
                     class="w-8 h-8 flex items-center justify-center rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.5)] hover:bg-[rgb(var(--palette-dark-700))] transition-colors"
                     :title="t('pages.profile.share')">
-                    <Share2 class="w-4 h-4 text-[rgb(var(--palette-gray-300))]" />
+                    <Share2 class="w-4 h-4 text-[var(--text-body)]" />
                   </button>
                 </div>
               </div>
@@ -696,8 +696,8 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                           class="absolute inset-0 flex items-center justify-center bg-[rgb(var(--palette-black)/0.6)] rounded-full cursor-pointer transition-all duration-300"
                           @click="triggerFileInput">
                           <div class="text-center p-4">
-                            <Edit class="w-6 h-6 text-[rgb(var(--palette-white))] mx-auto mb-2" />
-                            <span class="text-xs font-medium text-[rgb(var(--palette-white))] block">
+                            <Edit class="w-6 h-6 text-[var(--text-title)] mx-auto mb-2" />
+                            <span class="text-xs font-medium text-[var(--text-title)] block">
                               {{ t('pages.profile.changePhoto') }}
                             </span>
                           </div>
@@ -725,11 +725,11 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
               </div>
 
               <div v-if="currentProfileData.is_banned"
-                class="rounded-xl border border-[rgb(var(--palette-red-500)/0.35)] bg-[rgb(var(--palette-red-500)/0.1)] p-3 text-sm text-[rgb(var(--palette-red-100))]">
+                class="rounded-xl border border-[rgb(var(--palette-red-500)/0.35)] bg-[rgb(var(--palette-red-500)/0.1)] p-3 text-sm text-[var(--text-danger-soft)]">
                 <div class="font-semibold">
                   {{ t('pages.profile.bannedStatus') }}
                 </div>
-                <div class="mt-1 text-[rgb(var(--palette-red-200)/0.9)]">
+                <div class="mt-1 text-[rgb(var(--text-danger-soft-rgb)/0.9)]">
                   {{ t('pages.profile.banReasonTitle') }}: {{ profileBanReason }}
                 </div>
               </div>
@@ -741,29 +741,29 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                   <div v-if="isProfileStatsLoading" class="flex justify-center">
                     <span class="block h-7 w-12 animate-pulse rounded-md bg-[rgb(var(--palette-white)/0.1)] blur-[0.2px]" />
                   </div>
-                  <div v-else class="text-lg font-bold text-[rgb(var(--palette-white))]">{{ totalProducts }}</div>
-                  <div class="text-xs text-[rgb(var(--palette-gray-400))]">{{ t('common.products') }}</div>
+                  <div v-else class="text-lg font-bold text-[var(--text-title)]">{{ totalProducts }}</div>
+                  <div class="text-xs text-[var(--text-muted)]">{{ t('common.products') }}</div>
                 </button>
                 <button type="button" @click="openReviewsTab" :title="t('pages.profile.reviews')"
                   class="text-center p-3 rounded-lg bg-[rgb(var(--palette-dark-700)/0.5)] border border-[rgb(var(--palette-dark-600))] min-h-[76px] space-y-1">
                   <div v-if="isProfileStatsLoading" class="flex justify-center">
                     <span class="block h-7 w-12 animate-pulse rounded-md bg-[rgb(var(--palette-white)/0.1)] blur-[0.2px]" />
                   </div>
-                  <div v-else class="text-lg font-bold text-[rgb(var(--palette-white))]">{{ totalReviews }}</div>
-                  <div class="text-xs text-[rgb(var(--palette-gray-400))]">{{ t('pages.profile.reviews') }}</div>
+                  <div v-else class="text-lg font-bold text-[var(--text-title)]">{{ totalReviews }}</div>
+                  <div class="text-xs text-[var(--text-muted)]">{{ t('pages.profile.reviews') }}</div>
                 </button>
               </div>
 
               <div class="overflow-hidden rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)]">
                 <div class="grid grid-cols-1 divide-y divide-[rgb(var(--palette-white)/0.05)]">
                   <div class="flex items-center justify-between gap-4 px-3 py-3">
-                    <div class="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-[rgb(var(--palette-gray-400))]">
-                    <Calendar class="w-3.5 h-3.5 text-[rgb(var(--palette-emerald-400))]" />
+                    <div class="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                    <Calendar class="w-3.5 h-3.5 text-[var(--text-success-strong)]" />
                     <span>{{ t('common.lastSeen') }}</span>
                   </div>
                     <div
                     class="text-sm font-semibold text-right"
-                    :class="currentProfileData.is_active ? 'text-[rgb(var(--palette-emerald-300))]' : 'text-[rgb(var(--palette-white))]'"
+                    :class="currentProfileData.is_active ? 'text-[var(--text-success)]' : 'text-[var(--text-title)]'"
                   >
                     {{ profileLastSeenLabel }}
                     </div>
@@ -774,30 +774,30 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
               <!-- Description -->
               <div v-if="hasProfileDescription || isOwner" class="space-y-3">
                 <div class="flex items-center justify-between">
-                  <h3 class="text-sm font-semibold text-[rgb(var(--palette-gray-300))]">{{ t('common.description') }}</h3>
+                  <h3 class="text-sm font-semibold text-[var(--text-body)]">{{ t('common.description') }}</h3>
                   <button v-if="isOwner && !isEditingDescription" @click="isEditingDescription = true"
-                    class="text-xs text-[rgb(var(--palette-blue-400))] hover:text-[rgb(var(--palette-blue-300))] transition-colors flex items-center gap-1">
+                    class="text-xs text-[var(--text-link)] hover:text-[var(--text-link)] transition-colors flex items-center gap-1">
                     <Edit class="w-3 h-3" />
                     <span>{{ t('pages.profile.editDescription') }}</span>
                   </button>
                 </div>
 
-                <div v-if="!isEditingDescription" class="break-words text-sm leading-relaxed text-[rgb(var(--palette-gray-300))] [overflow-wrap:anywhere]">
+                <div v-if="!isEditingDescription" class="break-words text-sm leading-relaxed text-[var(--text-body)] [overflow-wrap:anywhere]">
                   <p>{{ currentProfileData.description?.trim() || t('pages.profile.descriptionMissing') }}</p>
                 </div>
 
                 <template v-else>
                   <textarea v-model="newDescription" rows="3" maxlength="200"
-                    class="w-full px-3 py-2 border border-[rgb(var(--palette-dark-600))] rounded-lg bg-[rgb(var(--palette-dark-700))] text-[rgb(var(--palette-white))] outline-none focus:border-[rgb(var(--palette-blue-500))] focus:ring-1 focus:ring-[rgb(var(--palette-blue-500)/0.3)] resize-none text-sm"
+                    class="w-full px-3 py-2 border border-[rgb(var(--palette-dark-600))] rounded-lg bg-[rgb(var(--palette-dark-700))] text-[var(--text-title)] outline-none focus:border-[rgb(var(--palette-blue-500))] focus:ring-1 focus:ring-[rgb(var(--palette-blue-500)/0.3)] resize-none text-sm"
                     :placeholder="t('pages.profile.descriptionPlaceholder')" />
                   <div class="flex justify-end gap-2 text-xs">
                     <button @click="isEditingDescription = false"
-                      class="px-3 py-1.5 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700))] text-[rgb(var(--palette-gray-300))] hover:text-[rgb(var(--palette-white))] hover:bg-[rgb(var(--palette-dark-600))] transition-colors">
+                      class="px-3 py-1.5 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700))] text-[var(--text-body)] hover:text-[var(--text-title)] hover:bg-[rgb(var(--palette-dark-600))] transition-colors">
                       {{ t('common.cancel') }}
                     </button>
                     <button @click="updateProfileDescription(newDescription)"
                       :disabled="newDescription.trim() === (currentProfileData.description ?? '').trim()"
-                      class="market-primary-surface market-primary-hover rounded-lg px-3 py-1.5 text-[rgb(var(--palette-white))] transition-colors disabled:cursor-not-allowed disabled:opacity-50">
+                      class="market-primary-surface market-primary-hover rounded-lg px-3 py-1.5 text-[var(--text-title)] transition-colors disabled:cursor-not-allowed disabled:opacity-50">
                       {{ t('common.save') }}
                     </button>
                   </div>
@@ -809,21 +809,21 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 class="relative overflow-hidden rounded-xl border-[0.5px] border-[rgb(var(--palette-white)/0.3)] p-4">
                 <div class="flex items-center justify-between gap-3">
                   <div class="space-y-1.5">
-                    <div class="text-xs font-medium uppercase tracking-[0.08em] text-[rgb(var(--palette-blue-200)/0.8)]">{{ t('common.balance')
+                    <div class="text-xs font-medium uppercase tracking-[0.08em] text-[rgb(var(--text-accent-rgb)/0.8)]">{{ t('common.balance')
                       }}</div>
-                    <div class="text-2xl font-semibold leading-none tracking-tight tabular-nums text-[rgb(var(--palette-gray-100))]">
+                    <div class="text-2xl font-semibold leading-none tracking-tight tabular-nums text-[var(--text-heading)]">
                       {{ formatPrice((currentProfileData as UserRead).balance) }}
                     </div>
                   </div>
                   <button @click="goToWallet"
                     class="market-primary-surface market-primary-hover flex h-10 w-10 items-center justify-center rounded-lg border border-[rgb(var(--palette-blue-400)/0.3)] transition-colors">
-                    <Wallet class="w-5 h-5 text-[rgb(var(--palette-blue-100))]" />
+                    <Wallet class="w-5 h-5 text-[var(--text-accent-strong)]" />
                   </button>
                 </div>
               </div>
 
               <!-- Member since -->
-              <div class="flex items-center gap-2 text-xs text-[rgb(var(--palette-gray-400))]">
+              <div class="flex items-center gap-2 text-xs text-[var(--text-muted)]">
                 <Calendar class="w-3 h-3" />
                 <span>{{ t('common.memberSince') }} {{ formatFullDate(currentProfileData.created_at.toString())
                   }}</span>
@@ -831,29 +831,29 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
               <div v-if="isOwner" class="grid w-full grid-cols-2 gap-2">
                 <button @click="router.push('/user/products/favorites')"
-                  class="w-full flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.5)] px-4 py-3 text-sm text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-700))] hover:text-[rgb(var(--palette-white))] transition-all duration-200">
-                  <Heart class="w-4 h-4 text-[rgb(var(--palette-red-400))]" />
+                  class="w-full flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.5)] px-4 py-3 text-sm text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700))] hover:text-[var(--text-title)] transition-all duration-200">
+                  <Heart class="w-4 h-4 text-[var(--text-danger)]" />
                   <span>{{ $t('pages.profile.favorites') }}</span>
                 </button>
 
                 <button @click="router.push('/user/products/archive')"
-                  class="w-full flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.5)] px-4 py-3 text-sm text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-700))] hover:text-[rgb(var(--palette-white))] transition-all duration-200">
-                  <Archive class="w-4 h-4 text-[rgb(var(--palette-gray-300))]" />
+                  class="w-full flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.5)] px-4 py-3 text-sm text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700))] hover:text-[var(--text-title)] transition-all duration-200">
+                  <Archive class="w-4 h-4 text-[var(--text-body)]" />
                   <span>{{ $t('pages.profile.archive') }}</span>
                 </button>
               </div>
 
               <button v-else-if="currentUser && !isProfileBanned" type="button" :disabled="isOpeningDirectChat"
                 @pointerdown.stop.prevent="openDirectChat" @click.stop.prevent="openDirectChat"
-                class="market-primary-surface market-primary-hover relative z-20 flex w-full items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-blue-400)/0.4)] px-4 py-3 text-sm text-[rgb(var(--palette-white))] transition-all duration-200 touch-manipulation disabled:cursor-not-allowed disabled:opacity-70">
+                class="market-primary-surface market-primary-hover relative z-20 flex w-full items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-blue-400)/0.4)] px-4 py-3 text-sm text-[var(--text-title)] transition-all duration-200 touch-manipulation disabled:cursor-not-allowed disabled:opacity-70">
                 <Loader2 v-if="isOpeningDirectChat" class="w-4 h-4 animate-spin" />
                 <MessageSquare v-else class="w-4 h-4" />
                 <span>{{ isOpeningDirectChat ? $t('common.loading') : $t('pages.profile.writeMessage') }}</span>
               </button>
-              <p v-else-if="currentUser && isProfileBanned" class="text-xs text-[rgb(var(--palette-red-400))] text-center">
+              <p v-else-if="currentUser && isProfileBanned" class="text-xs text-[var(--text-danger)] text-center">
                 {{ t('pages.profile.writeBlockedBanned') }}
               </p>
-              <p v-if="directChatError" class="text-xs text-[rgb(var(--palette-red-400))] text-center">{{ directChatError }}</p>
+              <p v-if="directChatError" class="text-xs text-[var(--text-danger)] text-center">{{ directChatError }}</p>
             </div>
           </div>
         </div>
@@ -868,7 +868,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 class="flex-1 min-w-0 px-2 sm:px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
                 :class="activeTab === 'products'
                   ? 'market-btn-tab-active'
-                  : 'text-[rgb(var(--palette-gray-400))] hover:text-[rgb(var(--palette-white))] hover:bg-[rgb(var(--palette-dark-700)/0.5)]'">
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-title)] hover:bg-[rgb(var(--palette-dark-700)/0.5)]'">
                 <div class="flex items-center justify-center gap-1 sm:gap-2 overflow-hidden">
                   <Package class="w-4 h-4 flex-shrink-0 hidden xs:block" />
                   <span class="truncate">
@@ -882,7 +882,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 class="flex-1 min-w-0 px-2 sm:px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
                 :class="activeTab === 'reviews'
                   ? 'market-btn-tab-active'
-                  : 'text-[rgb(var(--palette-gray-400))] hover:text-[rgb(var(--palette-white))] hover:bg-[rgb(var(--palette-dark-700)/0.5)]'">
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-title)] hover:bg-[rgb(var(--palette-dark-700)/0.5)]'">
                 <div class="flex items-center justify-center gap-1 sm:gap-2 overflow-hidden">
                   <MessageSquare class="w-4 h-4 flex-shrink-0 hidden xs:block" />
                   <span class="truncate">
@@ -896,7 +896,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 class="flex-1 min-w-0 px-2 sm:px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
                 :class="activeTab === 'purchases'
                   ? 'market-btn-tab-active'
-                  : 'text-[rgb(var(--palette-gray-400))] hover:text-[rgb(var(--palette-white))] hover:bg-[rgb(var(--palette-dark-700)/0.5)]'">
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-title)] hover:bg-[rgb(var(--palette-dark-700)/0.5)]'">
                 <div class="flex items-center justify-center gap-1 sm:gap-2 overflow-hidden">
                   <ShoppingBag class="w-4 h-4 flex-shrink-0 hidden xs:block" />
                   <span class="truncate">
@@ -910,7 +910,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 class="flex-1 min-w-0 px-2 sm:px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
                 :class="activeTab === 'subscriptions'
                   ? 'market-btn-tab-active'
-                  : 'text-[rgb(var(--palette-gray-400))] hover:text-[rgb(var(--palette-white))] hover:bg-[rgb(var(--palette-dark-700)/0.5)]'">
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-title)] hover:bg-[rgb(var(--palette-dark-700)/0.5)]'">
                 <div class="flex items-center justify-center gap-1 sm:gap-2 overflow-hidden">
                   <Users class="w-4 h-4 flex-shrink-0 hidden xs:block" />
                   <span class="truncate">
@@ -932,9 +932,9 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 <div v-else-if="products.length === 0" class="text-center py-12">
                   <div
                     class="w-16 h-16 mx-auto mb-4 rounded-full bg-[rgb(var(--palette-dark-700)/0.5)] border border-[rgb(var(--palette-dark-600))] flex items-center justify-center">
-                    <Package class="w-8 h-8 text-[rgb(var(--palette-gray-500))]" />
+                    <Package class="w-8 h-8 text-[var(--text-meta)]" />
                   </div>
-                  <h3 class="text-lg font-semibold text-[rgb(var(--palette-gray-300))] mb-2">{{ t('pages.profile.noProducts') }}</h3>
+                  <h3 class="text-lg font-semibold text-[var(--text-body)] mb-2">{{ t('pages.profile.noProducts') }}</h3>
                 </div>
 
                 <div v-else class="mt-4 flex justify-end">
@@ -944,8 +944,8 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                     <button type="button"
                       class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
                       :class="productCardViewMode === 'grid'
-                        ? 'bg-[rgb(var(--palette-blue-600))] text-[rgb(var(--palette-white))]'
-                        : 'text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[rgb(var(--palette-white))]'" :title="t('pages.index.viewGrid')"
+                        ? 'bg-[rgb(var(--palette-blue-600))] text-[var(--text-title)]'
+                        : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[var(--text-title)]'" :title="t('pages.index.viewGrid')"
                       @click="setProductCardViewMode('grid')">
                       <LayoutGrid class="h-3.5 w-3.5" />
                       <span class="hidden sm:inline">{{ t('pages.index.viewGrid') }}</span>
@@ -954,8 +954,8 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                     <button type="button"
                       class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
                       :class="productCardViewMode === 'list'
-                        ? 'bg-[rgb(var(--palette-blue-600))] text-[rgb(var(--palette-white))]'
-                        : 'text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[rgb(var(--palette-white))]'" :title="t('pages.index.viewList')"
+                        ? 'bg-[rgb(var(--palette-blue-600))] text-[var(--text-title)]'
+                        : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[var(--text-title)]'" :title="t('pages.index.viewList')"
                       @click="setProductCardViewMode('list')">
                       <Rows3 class="h-3.5 w-3.5" />
                       <span class="hidden sm:inline">{{ t('pages.index.viewList') }}</span>
@@ -996,9 +996,9 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 <div v-else-if="reviews.length === 0" class="text-center py-12">
                   <div
                     class="w-16 h-16 mx-auto mb-4 rounded-full bg-[rgb(var(--palette-dark-700)/0.5)] border border-[rgb(var(--palette-dark-600))] flex items-center justify-center">
-                    <MessageSquare class="w-8 h-8 text-[rgb(var(--palette-gray-500))]" />
+                    <MessageSquare class="w-8 h-8 text-[var(--text-meta)]" />
                   </div>
-                  <h3 class="text-lg font-semibold text-[rgb(var(--palette-gray-300))] mb-2">{{ t('pages.profile.noReviews') }}</h3>
+                  <h3 class="text-lg font-semibold text-[var(--text-body)] mb-2">{{ t('pages.profile.noReviews') }}</h3>
                 </div>
 
                 <div v-else class="space-y-4">
@@ -1013,17 +1013,17 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                             class="w-8 h-8 rounded-full object-cover border border-[rgb(var(--palette-dark-600))] flex-shrink-0" />
                           <StyledUsername :username="review.reviewer.username"
                             :style-id="review.reviewer.nickname_style_id"
-                            class="text-sm font-medium text-[rgb(var(--palette-gray-200))] group-hover:text-[rgb(var(--palette-white))] truncate" />
+                            class="text-sm font-medium text-[var(--text-body-strong)] group-hover:text-[var(--text-title)] truncate" />
                         </button>
 
                         <UserRating :rating="review.rating" />
                       </div>
 
-                      <span class="text-sm text-[rgb(var(--palette-gray-400))] whitespace-nowrap">{{ formatFullDate(review.created_at)
+                      <span class="text-sm text-[var(--text-muted)] whitespace-nowrap">{{ formatFullDate(review.created_at)
                         }}</span>
                     </div>
 
-                    <p v-if="review.body?.trim()" class="text-sm leading-relaxed text-[rgb(var(--palette-gray-300))]">{{ review.body }}</p>
+                    <p v-if="review.body?.trim()" class="text-sm leading-relaxed text-[var(--text-body)]">{{ review.body }}</p>
                   </div>
 
                   <div v-if="currentPageReviews < totalPagesReviews" class="flex justify-center mt-6">
@@ -1051,9 +1051,9 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 <div v-else-if="purchases.length === 0" class="text-center py-12">
                   <div
                     class="w-16 h-16 mx-auto mb-4 rounded-full bg-[rgb(var(--palette-dark-700)/0.5)] border border-[rgb(var(--palette-dark-600))] flex items-center justify-center">
-                    <ShoppingBag class="w-8 h-8 text-[rgb(var(--palette-gray-500))]" />
+                    <ShoppingBag class="w-8 h-8 text-[var(--text-meta)]" />
                   </div>
-                  <h3 class="text-lg font-semibold text-[rgb(var(--palette-gray-300))] mb-2">{{ t('pages.profile.noPurchases') }}</h3>
+                  <h3 class="text-lg font-semibold text-[var(--text-body)] mb-2">{{ t('pages.profile.noPurchases') }}</h3>
                 </div>
 
                 <div v-else class="space-y-4">
@@ -1062,21 +1062,21 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                     <!-- Верхняя строка: цена и дата -->
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div class="space-y-1">
-                        <div class="text-lg font-bold text-[rgb(var(--palette-green-400))] whitespace-nowrap">{{ formatPrice(deal.price) }}
+                        <div class="text-lg font-bold text-[var(--text-success-strong)] whitespace-nowrap">{{ formatPrice(deal.price) }}
                         </div>
-                        <div class="text-xs text-[rgb(var(--palette-gray-400))] whitespace-nowrap">{{ formatFullDate(deal.created_at) }}</div>
+                        <div class="text-xs text-[var(--text-muted)] whitespace-nowrap">{{ formatFullDate(deal.created_at) }}</div>
                       </div>
 
                       <!-- Продавец и покупатель - теперь в отдельной строке на мобильных -->
                       <div class="flex flex-col xs:flex-row gap-2">
                         <div @click="goToProfile(deal.seller.username)"
-                          class="market-primary-surface market-primary-hover cursor-pointer truncate rounded-lg px-2 py-1.5 text-center text-xs text-[rgb(var(--palette-blue-300))] transition-colors"
+                          class="market-primary-surface market-primary-hover cursor-pointer truncate rounded-lg px-2 py-1.5 text-center text-xs text-[var(--text-link)] transition-colors"
                           :title="`${t('common.seller')}: ${deal.seller.username}`">
                           <span class="hidden sm:inline">{{ t('common.seller') }}: </span>
                           <span class="truncate">{{ deal.seller.username }}</span>
                         </div>
                         <div @click="goToProfile(deal.buyer.username)"
-                          class="cursor-pointer truncate rounded-lg border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] px-2 py-1.5 text-center text-xs text-[rgb(var(--palette-gray-200))] transition-colors hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[rgb(var(--palette-white))]"
+                          class="cursor-pointer truncate rounded-lg border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] px-2 py-1.5 text-center text-xs text-[var(--text-body-strong)] transition-colors hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)]"
                           :title="`${t('common.buyer')}: ${deal.buyer.username}`">
                           <span class="hidden sm:inline">{{ t('common.buyer') }}: </span>
                           <span class="truncate">{{ deal.buyer.username }}</span>
@@ -1098,8 +1098,8 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                           class="w-16 h-16 rounded-lg object-cover" :alt="deal.product.title" />
                       </div>
                       <div class="flex-1 min-w-0">
-                        <h3 class="text-sm font-semibold text-[rgb(var(--palette-white))] truncate mb-1">{{ deal.product.title }}</h3>
-                        <p class="text-xs text-[rgb(var(--palette-gray-400))] line-clamp-2">{{ deal.product.description }}</p>
+                        <h3 class="text-sm font-semibold text-[var(--text-title)] truncate mb-1">{{ deal.product.title }}</h3>
+                        <p class="text-xs text-[var(--text-muted)] line-clamp-2">{{ deal.product.description }}</p>
                       </div>
                     </div>
                   </div>
@@ -1128,9 +1128,9 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 <div v-else-if="subscriptions.length === 0" class="text-center py-12">
                   <div
                     class="w-16 h-16 mx-auto mb-4 rounded-full bg-[rgb(var(--palette-dark-700)/0.5)] border border-[rgb(var(--palette-dark-600))] flex items-center justify-center">
-                    <Users class="w-8 h-8 text-[rgb(var(--palette-gray-500))]" />
+                    <Users class="w-8 h-8 text-[var(--text-meta)]" />
                   </div>
-                  <h3 class="text-lg font-semibold text-[rgb(var(--palette-gray-300))] mb-2">{{ t('pages.profile.noSubscriptions') }}</h3>
+                  <h3 class="text-lg font-semibold text-[var(--text-body)] mb-2">{{ t('pages.profile.noSubscriptions') }}</h3>
                 </div>
 
                 <div v-else class="space-y-3">
@@ -1142,13 +1142,13 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                         class="w-10 h-10 rounded-full object-cover border border-[rgb(var(--palette-dark-600))] flex-shrink-0" />
                       <div class="min-w-0 text-left">
                         <StyledUsername :username="seller.username" :style-id="seller.nickname_style_id"
-                          class="text-sm font-medium text-[rgb(var(--palette-gray-200))] truncate" />
-                        <div class="text-xs mt-1" :class="seller.is_active ? 'text-[rgb(var(--palette-emerald-400))]' : 'text-[rgb(var(--palette-gray-400))]'">
+                          class="text-sm font-medium text-[var(--text-body-strong)] truncate" />
+                        <div class="text-xs mt-1" :class="seller.is_active ? 'text-[var(--text-success-strong)]' : 'text-[var(--text-muted)]'">
                           {{ seller.is_active ? t('common.online') : t('common.offline') }}
                         </div>
                       </div>
                     </div>
-                    <Users class="w-4 h-4 text-[rgb(var(--palette-gray-500))] flex-shrink-0" />
+                    <Users class="w-4 h-4 text-[var(--text-meta)] flex-shrink-0" />
                   </button>
                 </div>
               </div>
@@ -1168,24 +1168,24 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
           <div class="profile-qr-card rounded-2xl bg-[rgb(var(--palette-white))] p-4">
             <QrcodeVue :value="profileUrl" :size="180" level="H" />
           </div>
-          <p class="text-center text-sm text-[rgb(var(--palette-gray-300))]">{{ t('pages.profile.scanQR') }}</p>
+          <p class="text-center text-sm text-[var(--text-body)]">{{ t('pages.profile.scanQR') }}</p>
         </div>
 
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-[rgb(var(--palette-gray-300))]">{{ t('pages.profile.profileLink') }}</label>
+          <label class="block text-sm font-medium text-[var(--text-body)]">{{ t('pages.profile.profileLink') }}</label>
           <div class="space-y-2">
             <div class="w-full min-w-0">
               <input
                 type="text"
                 :value="profileUrl"
                 readonly
-                class="w-full min-w-0 rounded-xl border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.03)] px-4 py-3 text-sm text-[rgb(var(--palette-white))] outline-none"
+                class="w-full min-w-0 rounded-xl border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.03)] px-4 py-3 text-sm text-[var(--text-title)] outline-none"
               />
             </div>
             <button
               @click="copyProfileLink"
               class="market-btn w-full rounded-xl px-4 py-3 text-sm"
-              :class="isCopied ? 'market-btn-secondary text-[rgb(var(--palette-white))]' : 'market-btn-primary text-mainText'"
+              :class="isCopied ? 'market-btn-secondary text-[var(--text-title)]' : 'market-btn-primary text-mainText'"
             >
               <Check v-if="isCopied" class="w-4 h-4" />
               <Copy v-else class="w-4 h-4" />

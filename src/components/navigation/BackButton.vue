@@ -1,6 +1,6 @@
 <template>
   <button @click="goBack" class="p-2 rounded-lg bg-[rgb(var(--palette-dark-700))] hover:bg-[rgb(var(--palette-dark-600))] transition-colors">
-    <ArrowLeft class="w-5 h-5 text-[rgb(var(--palette-white))]" />
+    <ArrowLeft class="w-5 h-5 text-[var(--text-title)]" />
   </button>
 </template>
 

@@ -71,20 +71,20 @@ function formatDate(dateInput: string | Date): string {
     <div v-if="textMessage.is_admin_message" class="w-full max-w-2xl px-4 py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--palette-blue-500)/0.1)] to-[rgb(var(--palette-cyan-500)/0.1)] border border-[rgb(var(--palette-blue-500)/0.3)] text-mainText text-sm break-words">
       <div class="flex items-start gap-2">
         <div class="flex-shrink-0 mt-0.5 p-1.5 rounded-full bg-[rgb(var(--palette-blue-500)/0.2)]">
-          <svg class="w-4 h-4 text-[rgb(var(--palette-blue-400))]" fill="currentColor" viewBox="0 0 20 20">
+          <svg class="w-4 h-4 text-[var(--text-link)]" fill="currentColor" viewBox="0 0 20 20">
             <path d="M18 9.5a1.5 1.5 0 11-3 0v-6a1.5 1.5 0 011.5-1.5h3V2a.5.5 0 00-.5-.5h-3A4.5 4.5 0 0010 5.5v6a4.5 4.5 0 004.5 4.5h3a.5.5 0 00.5-.5V15h-3a1.5 1.5 0 01-1.5-1.5z"></path>
           </svg>
         </div>
         <div class="flex-1">
-          <p class="text-[rgb(var(--palette-blue-200))] font-medium text-xs mb-1">{{ senderName }}</p>
-          <p class="text-[rgb(var(--palette-gray-100))]">{{ localizedText }}</p>
+          <p class="text-[var(--text-accent)] font-medium text-xs mb-1">{{ senderName }}</p>
+          <p class="text-[var(--text-heading)]">{{ localizedText }}</p>
           <div v-if="hasReason" class="mt-2 space-y-2">
-            <p class="font-semibold text-[rgb(var(--palette-gray-50))]">{{ t('common.reason') }}</p>
-            <div class="rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-900)/0.7)] px-3 py-2 text-[rgb(var(--palette-gray-100))]">
+            <p class="font-semibold text-[var(--text-title)]">{{ t('common.reason') }}</p>
+            <div class="rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-900)/0.7)] px-3 py-2 text-[var(--text-heading)]">
               <p class="whitespace-pre-line">{{ reasonText }}</p>
             </div>
           </div>
-          <p class="mt-2 text-right text-xs text-[rgb(var(--palette-gray-400))]">
+          <p class="mt-2 text-right text-xs text-[var(--text-muted)]">
             {{ formatDate(textMessage.created_at) }}
           </p>
         </div>
@@ -93,7 +93,7 @@ function formatDate(dateInput: string | Date): string {
 
     <!-- Regular messages with sender name -->
     <div v-else class="flex flex-col gap-1" :class="isCurrentUserMessage ? 'items-end' : 'items-start'">
-      <p class="text-xs text-[rgb(var(--palette-gray-400))] px-2">{{ senderName }}</p>
+      <p class="text-xs text-[var(--text-muted)] px-2">{{ senderName }}</p>
       <div class="max-w-[70%] min-w-4 rounded-xl px-4 py-2 text-sm break-words" :class="[
         isCurrentUserMessage
           ? 'bg-[rgb(var(--palette-blue-600))] text-mainText rounded-br-none'
@@ -101,12 +101,12 @@ function formatDate(dateInput: string | Date): string {
       ]">
         <p>{{ textMessage.data?.i18n_key ? localizedText : textMessage.text }}</p>
         <div v-if="hasReason" class="mt-2 space-y-2">
-          <p class="font-semibold text-[rgb(var(--palette-gray-50))]">{{ t('common.reason') }}</p>
-          <div class="rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900)/0.6)] px-3 py-2 text-[rgb(var(--palette-gray-100))]">
+          <p class="font-semibold text-[var(--text-title)]">{{ t('common.reason') }}</p>
+          <div class="rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900)/0.6)] px-3 py-2 text-[var(--text-heading)]">
             <p class="whitespace-pre-line">{{ reasonText }}</p>
           </div>
         </div>
-        <p class="mt-1 text-right text-xs text-[rgb(var(--palette-gray-300))]">
+        <p class="mt-1 text-right text-xs text-[var(--text-body)]">
           {{ formatDate(textMessage.created_at) }}
         </p>
       </div>

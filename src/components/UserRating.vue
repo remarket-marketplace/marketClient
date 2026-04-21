@@ -59,7 +59,7 @@ const ratingTone = computed(() => {
       />
     </span>
 
-    <span class="whitespace-nowrap font-semibold leading-none tabular-nums text-[rgb(var(--palette-white))]">
+    <span class="whitespace-nowrap font-semibold leading-none tabular-nums text-[var(--text-title)]">
       {{ formattedRating }}
     </span>
 

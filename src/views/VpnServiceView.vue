@@ -792,7 +792,7 @@ onMounted(() => {
           </button>
           <button
             type="button"
-            class="market-primary-surface market-primary-hover inline-flex h-11 items-center justify-center rounded-lg px-4 text-sm font-semibold text-[rgb(var(--palette-white))] transition-colors duration-200"
+            class="market-primary-surface market-primary-hover inline-flex h-11 items-center justify-center rounded-lg px-4 text-sm font-semibold text-[var(--text-title)] transition-colors duration-200"
             @click="openOrderChat"
           >
             {{ t('pages.vpn.modal.openChat') }}
@@ -822,7 +822,7 @@ onMounted(() => {
           </button>
           <button
             type="button"
-            class="market-primary-surface market-primary-hover inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-semibold text-[rgb(var(--palette-white))] transition-colors duration-200"
+            class="market-primary-surface market-primary-hover inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-semibold text-[var(--text-title)] transition-colors duration-200"
             :disabled="isTrialLoading"
             @click="confirmTrial"
           >

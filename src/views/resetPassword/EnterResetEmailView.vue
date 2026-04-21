@@ -95,7 +95,7 @@ onUnmounted(() => {
                 <div class="space-y-4">
                     <TheInput id="email" v-model="email" type="email" :placeholder="$t('common.emailPlaceholder')"
                         required autocomplete="email" :error="email.length > 0 && !emailValid" />
-                    <p v-if="email.length > 0 && !emailValid" class="mt-1 text-xs text-[rgb(var(--palette-red-400))]">
+                    <p v-if="email.length > 0 && !emailValid" class="mt-1 text-xs text-[var(--text-danger)]">
                         {{ $t('validation.invalidEmail') }}
                     </p>
 

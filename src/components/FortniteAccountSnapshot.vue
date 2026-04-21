@@ -133,7 +133,7 @@ const detailEntries = computed<SnapshotEntry[]>(() => (
       <span
         v-for="item in compactSummary"
         :key="item"
-        class="inline-flex rounded-full border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.6)] px-2 py-1 text-[10px] font-medium leading-none text-[rgb(var(--palette-gray-200))]"
+        class="inline-flex rounded-full border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.6)] px-2 py-1 text-[10px] font-medium leading-none text-[var(--text-body-strong)]"
       >
         {{ item }}
       </span>
@@ -146,17 +146,17 @@ const detailEntries = computed<SnapshotEntry[]>(() => (
           :key="entry.key"
           class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.3)] px-4 py-3"
         >
-          <p class="text-xs uppercase tracking-wide text-[rgb(var(--palette-gray-500))]">
+          <p class="text-xs uppercase tracking-wide text-[var(--text-meta)]">
             {{ entry.label }}
           </p>
-          <p class="mt-1 text-sm font-medium text-[rgb(var(--palette-white))] break-words">
+          <p class="mt-1 text-sm font-medium text-[var(--text-title)] break-words">
             {{ entry.value }}
           </p>
         </div>
       </div>
 
       <div v-if="countEntries.length" class="space-y-2">
-        <p class="text-sm font-semibold text-[rgb(var(--palette-white))]">
+        <p class="text-sm font-semibold text-[var(--text-title)]">
           {{ $t('common.fortniteAccount.sections.inventory') }}
         </p>
         <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -165,10 +165,10 @@ const detailEntries = computed<SnapshotEntry[]>(() => (
             :key="entry.key"
             class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.3)] px-4 py-3"
           >
-            <p class="text-xs uppercase tracking-wide text-[rgb(var(--palette-gray-500))]">
+            <p class="text-xs uppercase tracking-wide text-[var(--text-meta)]">
               {{ entry.label }}
             </p>
-            <p class="mt-1 text-base font-semibold text-[rgb(var(--palette-white))]">
+            <p class="mt-1 text-base font-semibold text-[var(--text-title)]">
               {{ entry.value }}
             </p>
           </div>

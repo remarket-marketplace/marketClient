@@ -39,13 +39,13 @@ const statusLabel = computed(() => {
 const statusClass = computed(() => {
   switch (props.message.offer_status) {
     case 'accepted':
-      return 'bg-[rgb(var(--palette-emerald-500)/0.2)] text-[rgb(var(--palette-emerald-300))] border-[rgb(var(--palette-emerald-500)/0.3)]'
+      return 'bg-[rgb(var(--palette-emerald-500)/0.2)] text-[var(--text-success)] border-[rgb(var(--palette-emerald-500)/0.3)]'
     case 'rejected':
-      return 'bg-[rgb(var(--palette-red-500)/0.2)] text-[rgb(var(--palette-red-300))] border-[rgb(var(--palette-red-500)/0.3)]'
+      return 'bg-[rgb(var(--palette-red-500)/0.2)] text-[var(--text-danger)] border-[rgb(var(--palette-red-500)/0.3)]'
     case 'expired':
-      return 'bg-[rgb(var(--palette-amber-500)/0.2)] text-[rgb(var(--palette-amber-300))] border-[rgb(var(--palette-amber-500)/0.3)]'
+      return 'bg-[rgb(var(--palette-amber-500)/0.2)] text-[var(--text-warning-strong)] border-[rgb(var(--palette-amber-500)/0.3)]'
     default:
-      return 'bg-[rgb(var(--palette-blue-500)/0.2)] text-[rgb(var(--palette-blue-300))] border-[rgb(var(--palette-blue-500)/0.3)]'
+      return 'bg-[rgb(var(--palette-blue-500)/0.2)] text-[var(--text-link)] border-[rgb(var(--palette-blue-500)/0.3)]'
   }
 })
 
@@ -125,8 +125,8 @@ function handleViewProduct() {
           />
         </div>
         <div class="min-w-0 flex-1">
-          <p class="truncate text-sm font-semibold text-[rgb(var(--palette-white))]">{{ message.product.title }}</p>
-          <p class="mt-0.5 text-xs text-[rgb(var(--palette-gray-400))]">{{ formatCurrencyAmount(message.product.price) }}</p>
+          <p class="truncate text-sm font-semibold text-[var(--text-title)]">{{ message.product.title }}</p>
+          <p class="mt-0.5 text-xs text-[var(--text-muted)]">{{ formatCurrencyAmount(message.product.price) }}</p>
         </div>
         <span class="inline-flex items-center rounded-md border px-2 py-1 text-[11px] font-medium" :class="statusClass">
           {{ statusLabel }}
@@ -134,56 +134,56 @@ function handleViewProduct() {
       </div>
 
       <div class="mt-3 flex items-center gap-3">
-        <p class="text-sm font-semibold text-[rgb(var(--palette-white))]">
+        <p class="text-sm font-semibold text-[var(--text-title)]">
           {{ t('pages.chats.priceOfferTitle') }}
         </p>
       </div>
 
       <div class="mt-2 flex flex-wrap items-center gap-2.5 text-sm">
         <div class="rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.45)] px-3 py-2">
-          <p class="text-[11px] text-[rgb(var(--palette-gray-400))]">{{ t('pages.chats.originalPrice') }}</p>
-          <p class="mt-0.5 font-semibold text-[rgb(var(--palette-gray-100))]">{{ formatCurrencyAmount(message.product.price) }}</p>
+          <p class="text-[11px] text-[var(--text-muted)]">{{ t('pages.chats.originalPrice') }}</p>
+          <p class="mt-0.5 font-semibold text-[var(--text-heading)]">{{ formatCurrencyAmount(message.product.price) }}</p>
         </div>
-        <span class="text-sm text-[rgb(var(--palette-gray-500))]">→</span>
+        <span class="text-sm text-[var(--text-meta)]">→</span>
         <div class="rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.45)] px-3 py-2">
           <div class="flex flex-wrap items-center gap-2">
-            <p class="text-[11px] text-[rgb(var(--palette-gray-400))]">{{ t('pages.chats.offeredPrice') }}</p>
+            <p class="text-[11px] text-[var(--text-muted)]">{{ t('pages.chats.offeredPrice') }}</p>
             <span
               v-if="offerDiscountPercent !== null"
-              class="inline-flex items-center rounded-full border border-[rgb(var(--palette-emerald-500)/0.3)] bg-[rgb(var(--palette-emerald-500)/0.15)] px-2 py-0.5 text-[11px] font-semibold text-[rgb(var(--palette-emerald-200))]"
+              class="inline-flex items-center rounded-full border border-[rgb(var(--palette-emerald-500)/0.3)] bg-[rgb(var(--palette-emerald-500)/0.15)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-success)]"
             >
               -{{ offerDiscountPercent }}%
             </span>
           </div>
-          <p class="mt-0.5 font-semibold text-[rgb(var(--palette-emerald-300))]">{{ formatCurrencyAmount(message.offered_price) }}</p>
+          <p class="mt-0.5 font-semibold text-[var(--text-success)]">{{ formatCurrencyAmount(message.offered_price) }}</p>
         </div>
       </div>
 
-      <p v-if="localizedOfferMessage" class="mt-3 whitespace-pre-line text-sm text-[rgb(var(--palette-gray-200))] break-words [overflow-wrap:anywhere]">
+      <p v-if="localizedOfferMessage" class="mt-3 whitespace-pre-line text-sm text-[var(--text-body-strong)] break-words [overflow-wrap:anywhere]">
         {{ localizedOfferMessage }}
       </p>
 
       <div class="mt-3 flex flex-wrap items-end justify-between gap-3">
         <div v-if="canProcess" class="flex flex-wrap gap-2">
           <button
-            class="market-primary-surface market-primary-hover rounded-lg border border-[rgb(var(--palette-blue-500))] px-3.5 py-2 text-sm font-semibold text-[rgb(var(--palette-white))] transition disabled:opacity-50"
+            class="market-primary-surface market-primary-hover rounded-lg border border-[rgb(var(--palette-blue-500))] px-3.5 py-2 text-sm font-semibold text-[var(--text-title)] transition disabled:opacity-50"
             :disabled="isProcessing"
             @click="acceptOffer"
           >
             {{ t('pages.chats.acceptOffer') }}
           </button>
           <button
-            class="rounded-lg border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] px-3.5 py-2 text-sm font-semibold text-[rgb(var(--palette-gray-200))] transition hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[rgb(var(--palette-white))] disabled:opacity-50"
+            class="rounded-lg border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] px-3.5 py-2 text-sm font-semibold text-[var(--text-body-strong)] transition hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)] disabled:opacity-50"
             :disabled="isProcessing"
             @click="rejectOffer"
           >
             {{ t('pages.chats.rejectOffer') }}
           </button>
         </div>
-        <p class="ml-auto text-xs text-[rgb(var(--palette-gray-500))]">{{ formatDate(message.created_at) }}</p>
+        <p class="ml-auto text-xs text-[var(--text-meta)]">{{ formatDate(message.created_at) }}</p>
       </div>
 
-      <p v-if="actionError" class="mt-2 text-xs text-[rgb(var(--palette-red-400))]">{{ actionError }}</p>
+      <p v-if="actionError" class="mt-2 text-xs text-[var(--text-danger)]">{{ actionError }}</p>
     </div>
   </div>
 </template>

@@ -76,14 +76,14 @@ const formatDate = (dateString: string) => {
           <div class="w-12 h-12 mx-auto mb-2 rounded-full bg-[rgb(var(--palette-dark-600))] flex items-center justify-center">
             <span class="text-2xl">📷</span>
           </div>
-          <span class="text-xs text-[rgb(var(--palette-gray-500))]">{{ $t('common.noImage') }}</span>
+          <span class="text-xs text-[var(--text-meta)]">{{ $t('common.noImage') }}</span>
         </div>
       </div>
 
       <!-- Status badge -->
       <div
         v-if="product.is_sold"
-        class="absolute top-2 left-2 px-2 py-1 rounded-md bg-[rgb(var(--palette-dark-900)/0.9)] backdrop-blur-sm text-xs font-medium text-[rgb(var(--palette-gray-300))]"
+        class="absolute top-2 left-2 px-2 py-1 rounded-md bg-[rgb(var(--palette-dark-900)/0.9)] backdrop-blur-sm text-xs font-medium text-[var(--text-body)]"
       >
         {{ $t('common.productStatuses.sold') }}
       </div>
@@ -95,7 +95,7 @@ const formatDate = (dateString: string) => {
         :title="$t('pages.favoriteProducts.remove')"
       >
         <Heart
-          class="w-5 h-5 text-[rgb(var(--palette-red-500))]"
+          class="w-5 h-5 text-[var(--text-danger)]"
           :style="{ fill: 'currentColor' }"
         />
       </button>
@@ -103,7 +103,7 @@ const formatDate = (dateString: string) => {
       <!-- Count badge -->
       <div
         v-if="product.count > 1"
-        class="absolute bottom-2 left-2 px-2 py-1 rounded-md bg-[rgb(var(--palette-blue-900)/0.9)] backdrop-blur-sm text-xs font-medium text-[rgb(var(--palette-blue-300))]"
+        class="absolute bottom-2 left-2 px-2 py-1 rounded-md bg-[rgb(var(--palette-blue-900)/0.9)] backdrop-blur-sm text-xs font-medium text-[var(--text-link)]"
       >
         ×{{ product.count }}
       </div>
@@ -112,19 +112,19 @@ const formatDate = (dateString: string) => {
     <!-- Product info -->
     <div class="flex flex-col flex-1 px-3 pb-3">
       <!-- Title -->
-      <h3 class="text-sm font-semibold text-[rgb(var(--palette-white))] line-clamp-2 mb-2 leading-tight">
+      <h3 class="text-sm font-semibold text-[var(--text-title)] line-clamp-2 mb-2 leading-tight">
         {{ product.title }}
       </h3>
 
       <!-- Category -->
       <div class="mb-2">
-        <span class="px-2 py-1 rounded text-xs bg-[rgb(var(--palette-dark-700))] text-[rgb(var(--palette-gray-400))]">
+        <span class="px-2 py-1 rounded text-xs bg-[rgb(var(--palette-dark-700))] text-[var(--text-muted)]">
           {{ product.category.name }}
         </span>
       </div>
 
       <!-- Description -->
-      <p class="text-xs text-[rgb(var(--palette-gray-400))] line-clamp-2 mb-3 flex-1">
+      <p class="text-xs text-[var(--text-muted)] line-clamp-2 mb-3 flex-1">
         {{ product.description }}
       </p>
 
@@ -152,8 +152,8 @@ const formatDate = (dateString: string) => {
               :style-id="product.seller.nickname_style_id"
               class="text-xs truncate transition-colors"
             />
-            <div class="flex items-center gap-1 text-xs text-[rgb(var(--palette-gray-500))]">
-              <Star class="w-3 h-3 text-[rgb(var(--palette-yellow-500))] fill-current" />
+            <div class="flex items-center gap-1 text-xs text-[var(--text-meta)]">
+              <Star class="w-3 h-3 text-[var(--text-warning-strong)] fill-current" />
               <span>{{ product.seller.rating.toFixed(1) }}</span>
             </div>
           </div>
@@ -161,10 +161,10 @@ const formatDate = (dateString: string) => {
 
         <!-- Price -->
         <div class="text-right flex-shrink-0">
-          <div class="text-base font-bold text-[rgb(var(--palette-white))]">
+          <div class="text-base font-bold text-[var(--text-title)]">
             {{ formatCurrencyAmount(product.price) }}
           </div>
-          <div class="text-xs text-[rgb(var(--palette-gray-500))]">
+          <div class="text-xs text-[var(--text-meta)]">
             {{ formatDate(product.created_at) }}
           </div>
         </div>

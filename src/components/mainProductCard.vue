@@ -148,8 +148,8 @@ function handleImageTouchEnd(event: TouchEvent) {
           :class="index === activeImageIndex ? 'w-4 bg-[rgb(var(--palette-white)/0.95)]' : 'w-1.5 bg-[rgb(var(--palette-white)/0.55)]'"
         />
       </div>
-      <div v-else class="flex h-full w-full flex-col items-center justify-center gap-2 text-[rgb(var(--palette-gray-300))]">
-        <ImageOff class="h-7 w-7 text-[rgb(var(--palette-gray-500))]" />
+      <div v-else class="flex h-full w-full flex-col items-center justify-center gap-2 text-[var(--text-body)]">
+        <ImageOff class="h-7 w-7 text-[var(--text-meta)]" />
         <span class="text-sm">{{ t('common.noImage') }}</span>
       </div>
       <div v-if="showStatusTag" class="pointer-events-none absolute right-2 top-2 z-10">
@@ -195,7 +195,7 @@ function handleImageTouchEnd(event: TouchEvent) {
 
         <!-- Buy button -->
         <button
-          class="market-primary-surface market-primary-hover group relative w-full flex-shrink-0 cursor-pointer overflow-hidden whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-semibold text-[rgb(var(--palette-white))] transition sm:px-3 sm:py-2 sm:text-sm"
+          class="market-primary-surface market-primary-hover group relative w-full flex-shrink-0 cursor-pointer overflow-hidden whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-semibold text-[var(--text-title)] transition sm:px-3 sm:py-2 sm:text-sm"
           @click="onClick">
           <span class="block text-center tabular-nums transition-all duration-200 group-hover:-translate-y-full group-hover:opacity-0">
             {{ formattedPrice }}

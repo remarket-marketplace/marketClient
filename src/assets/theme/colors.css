@@ -194,6 +194,43 @@
   --text-subtle: rgb(var(--palette-gray-500)); /* Lowest-priority labels and disabled-like text. */
   --text-tertiary: rgb(var(--palette-stone-400) / 0.82); /* Small tertiary rating/count text. */
   --text-transparent: transparent; /* Transparent icon placeholder state. */
+
+  /* Typography roles (use these for text color decisions) */
+  --text-title-rgb: var(--palette-white); /* Large page titles, primary names and strongest headings. */
+  --text-heading-rgb: var(--palette-gray-100); /* Section headings and important labels below title level. */
+  --text-body-strong-rgb: var(--palette-gray-200); /* Strong readable body copy and table values. */
+  --text-body-rgb: var(--palette-gray-300); /* Default paragraphs, descriptions and form labels. */
+  --text-muted-rgb: var(--palette-gray-400); /* Secondary descriptions and quiet labels. */
+  --text-meta-rgb: var(--palette-gray-500); /* Timestamps, counters, disabled-like helper text. */
+  --text-placeholder-rgb: var(--palette-gray-500); /* Input placeholders. */
+  --text-link-rgb: var(--palette-blue-300); /* Inline links and low-emphasis clickable text. */
+  --text-accent-rgb: var(--palette-blue-200); /* Accent copy, badges, selected labels and key UI hints. */
+  --text-accent-strong-rgb: var(--palette-blue-100); /* Strong accent text on dark/selected surfaces. */
+  --text-on-action-rgb: var(--palette-white); /* Text on solid primary/action surfaces. */
+  --text-danger-rgb: var(--palette-red-400); /* Errors, destructive states and validation copy. */
+  --text-danger-soft-rgb: var(--palette-red-200); /* Error copy on tinted danger surfaces. */
+  --text-success-rgb: var(--palette-emerald-300); /* Successful and positive status copy. */
+  --text-success-strong-rgb: var(--palette-green-400); /* Strong positive numbers/statuses. */
+  --text-warning-rgb: var(--palette-amber-200); /* Warning and attention copy. */
+  --text-warning-strong-rgb: var(--palette-orange-300); /* Strong warning/attention values. */
+  --text-title: rgb(var(--text-title-rgb));
+  --text-heading: rgb(var(--text-heading-rgb));
+  --text-body-strong: rgb(var(--text-body-strong-rgb));
+  --text-body: rgb(var(--text-body-rgb));
+  --text-muted-copy: rgb(var(--text-muted-rgb));
+  --text-meta: rgb(var(--text-meta-rgb));
+  --text-placeholder: rgb(var(--text-placeholder-rgb));
+  --text-link: rgb(var(--text-link-rgb));
+  --text-accent: rgb(var(--text-accent-rgb));
+  --text-accent-copy: rgb(var(--text-accent-rgb));
+  --text-accent-strong: rgb(var(--text-accent-strong-rgb));
+  --text-on-action: rgb(var(--text-on-action-rgb));
+  --text-danger: rgb(var(--text-danger-rgb));
+  --text-danger-soft: rgb(var(--text-danger-soft-rgb));
+  --text-success: rgb(var(--text-success-rgb));
+  --text-success-strong: rgb(var(--text-success-strong-rgb));
+  --text-warning: rgb(var(--text-warning-rgb));
+  --text-warning-strong: rgb(var(--text-warning-strong-rgb));
   --surface-panel-bg: var(--overlay-white-03); /* Main low-contrast card/container fill. */
   --surface-muted-bg: rgb(var(--palette-black) / 0.12); /* Inner dark muted surface inside panels. */
   --surface-ghost-bg: var(--overlay-white-04); /* Ghost buttons and small chips. */

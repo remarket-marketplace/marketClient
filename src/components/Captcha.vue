@@ -4,7 +4,7 @@
 
     <div
       v-if="isLoading"
-      class="absolute inset-0 flex items-center justify-center gap-2 rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.7)] text-sm text-[rgb(var(--palette-gray-300))] backdrop-blur-sm"
+      class="absolute inset-0 flex items-center justify-center gap-2 rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.7)] text-sm text-[var(--text-body)] backdrop-blur-sm"
       role="status"
       aria-live="polite"
     >
@@ -14,7 +14,7 @@
 
     <div
       v-else-if="hasError"
-      class="absolute inset-0 flex items-center justify-center rounded-xl border border-[rgb(var(--palette-red-500)/0.3)] bg-[rgb(var(--palette-red-500)/0.1)] px-3 text-center text-xs text-[rgb(var(--palette-red-200))]"
+      class="absolute inset-0 flex items-center justify-center rounded-xl border border-[rgb(var(--palette-red-500)/0.3)] bg-[rgb(var(--palette-red-500)/0.1)] px-3 text-center text-xs text-[var(--text-danger-soft)]"
       role="alert"
     >
       {{ t('common.captchaLoadFailed') }}

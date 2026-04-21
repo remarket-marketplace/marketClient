@@ -893,11 +893,11 @@ async function sendMessage(payload: { files: File[] }) {
 <template>
     <!-- Добавляем md:pt-6 обратно -->
     <div class="h-full w-full flex flex-col overscroll-none md:pt-6">
-        <div v-if="isLoading && chats.length === 0" class="flex flex-1 items-center justify-center text-[rgb(var(--palette-gray-300))]">
+        <div v-if="isLoading && chats.length === 0" class="flex flex-1 items-center justify-center text-[var(--text-body)]">
             <Loader />
         </div>
 
-        <div v-else-if="errorMessage" class="flex flex-1 items-center justify-center text-[rgb(var(--palette-red-500))]">
+        <div v-else-if="errorMessage" class="flex flex-1 items-center justify-center text-[var(--text-danger)]">
             {{ errorMessage }}
         </div>
 
@@ -913,7 +913,7 @@ async function sendMessage(payload: { files: File[] }) {
                     <div v-if="isMobile" class="px-4 pt-3">
                         <button
                             type="button"
-                            class="admin-surface-soft inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-[rgb(var(--palette-gray-200))]"
+                            class="admin-surface-soft inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-[var(--text-body-strong)]"
                             @click="goToAdminHome"
                         >
                             <ArrowLeft class="h-4 w-4" />
@@ -974,7 +974,7 @@ async function sendMessage(payload: { files: File[] }) {
                             </div>
                         </div>
                         <div v-else class="h-full w-full flex items-center justify-center">
-                            <p class="text-sm text-[rgb(var(--palette-gray-400))] font-light">
+                            <p class="text-sm text-[var(--text-muted)] font-light">
                                 {{ $t('pages.admin.noSupportChats') }}
                             </p>
                         </div>
@@ -1017,10 +1017,10 @@ async function sendMessage(payload: { files: File[] }) {
                                             class="text-lg font-semibold"
                                         />
                                     </div>
-                                    <p v-if="currentChat?.another_user.is_active" class="text-xs text-[rgb(var(--palette-green-500))]">
+                                    <p v-if="currentChat?.another_user.is_active" class="text-xs text-[var(--text-success-strong)]">
                                         {{ $t('common.online') }}
                                     </p>
-                                    <p v-else class="text-xs text-[rgb(var(--palette-gray-500))]">
+                                    <p v-else class="text-xs text-[var(--text-meta)]">
                                         {{ $t('common.offline') }}
                                     </p>
                                 </div>
@@ -1073,12 +1073,12 @@ async function sendMessage(payload: { files: File[] }) {
 
                                         <div v-else-if="selectedChatId != null && chatMessages.length === 0"
                                             class="h-full w-full flex items-center justify-center">
-                                            <p class="text-[rgb(var(--palette-gray-400))] font-light">{{ $t("pages.chats.emptyMessages") }}</p>
+                                            <p class="text-[var(--text-muted)] font-light">{{ $t("pages.chats.emptyMessages") }}</p>
                                         </div>
 
                                         <div v-else-if="selectedChatId === null"
                                             class="h-full w-full flex items-center justify-center">
-                                            <p class="text-[rgb(var(--palette-gray-400))] font-light">{{ $t('pages.admin.selectSupportChat') }}</p>
+                                            <p class="text-[var(--text-muted)] font-light">{{ $t('pages.admin.selectSupportChat') }}</p>
                                         </div>
                                     </div>
                                 </template>

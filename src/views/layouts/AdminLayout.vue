@@ -204,17 +204,17 @@ onUnmounted(() => {
               @click="router.push('/admin')"
             >
               <div class="flex items-center gap-2">
-                <Shield class="h-5 w-5 text-[rgb(var(--palette-blue-300))]" />
+                <Shield class="h-5 w-5 text-[var(--text-link)]" />
                 <div>
-                  <p class="text-sm font-semibold text-[rgb(var(--palette-white))]">remarket</p>
-                  <p class="text-xs text-[rgb(var(--palette-gray-400))]">Admin Panel</p>
+                  <p class="text-sm font-semibold text-[var(--text-title)]">remarket</p>
+                  <p class="text-xs text-[var(--text-muted)]">Admin Panel</p>
                 </div>
               </div>
             </button>
 
             <button
               type="button"
-              class="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.5)] px-3 py-2 text-xs text-[rgb(var(--palette-gray-300))] transition-colors hover:text-[rgb(var(--palette-white))] hover:bg-[rgb(var(--palette-dark-700))]"
+              class="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.5)] px-3 py-2 text-xs text-[var(--text-body)] transition-colors hover:text-[var(--text-title)] hover:bg-[rgb(var(--palette-dark-700))]"
               @click="router.push('/')"
             >
               <ArrowLeft class="h-4 w-4" />
@@ -228,7 +228,7 @@ onUnmounted(() => {
               :key="group.id"
               class="space-y-2"
             >
-              <p class="px-2 text-[11px] uppercase tracking-wide text-[rgb(var(--palette-gray-500))]">
+              <p class="px-2 text-[11px] uppercase tracking-wide text-[var(--text-meta)]">
                 {{ group.title }}
               </p>
 
@@ -239,13 +239,13 @@ onUnmounted(() => {
                   :to="item.to"
                   class="group flex items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors"
                   :class="isActiveRoute(item)
-                    ? 'border-[rgb(var(--palette-blue-500)/0.7)] bg-[rgb(var(--palette-blue-900)/0.2)] text-[rgb(var(--palette-white))]'
-                    : 'border-[color:var(--transparent)] text-[rgb(var(--palette-gray-300))] hover:border-[rgb(var(--palette-dark-600))] hover:bg-[rgb(var(--palette-dark-700)/0.45)] hover:text-[rgb(var(--palette-white))]'"
+                    ? 'border-[rgb(var(--palette-blue-500)/0.7)] bg-[rgb(var(--palette-blue-900)/0.2)] text-[var(--text-title)]'
+                    : 'border-[color:var(--transparent)] text-[var(--text-body)] hover:border-[rgb(var(--palette-dark-600))] hover:bg-[rgb(var(--palette-dark-700)/0.45)] hover:text-[var(--text-title)]'"
                 >
                   <component
                     :is="item.icon"
                     class="h-4.5 w-4.5 shrink-0"
-                    :class="isActiveRoute(item) ? 'text-[rgb(var(--palette-blue-200))]' : 'text-[rgb(var(--palette-gray-400))] group-hover:text-[rgb(var(--palette-gray-200))]'"
+                    :class="isActiveRoute(item) ? 'text-[var(--text-accent)]' : 'text-[var(--text-muted)] group-hover:text-[var(--text-body-strong)]'"
                   />
                   <span class="truncate">{{ item.title }}</span>
                 </router-link>
@@ -272,12 +272,12 @@ onUnmounted(() => {
           <div class="h-full flex flex-col">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
-                <Shield class="h-5 w-5 text-[rgb(var(--palette-blue-300))]" />
-                <p class="text-sm font-semibold text-[rgb(var(--palette-white))]">Admin Menu</p>
+                <Shield class="h-5 w-5 text-[var(--text-link)]" />
+                <p class="text-sm font-semibold text-[var(--text-title)]">Admin Menu</p>
               </div>
               <button
                 type="button"
-                class="rounded-md p-1.5 text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[rgb(var(--palette-white))]"
+                class="rounded-md p-1.5 text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[var(--text-title)]"
                 @click="closeMobileSidebar"
               >
                 <X class="h-5 w-5" />
@@ -286,7 +286,7 @@ onUnmounted(() => {
 
             <button
               type="button"
-              class="mt-3 inline-flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.5)] px-3 py-2 text-xs text-[rgb(var(--palette-gray-300))] transition-colors hover:text-[rgb(var(--palette-white))] hover:bg-[rgb(var(--palette-dark-700))]"
+              class="mt-3 inline-flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.5)] px-3 py-2 text-xs text-[var(--text-body)] transition-colors hover:text-[var(--text-title)] hover:bg-[rgb(var(--palette-dark-700))]"
               @click="router.push('/')"
             >
               <ArrowLeft class="h-4 w-4" />
@@ -299,7 +299,7 @@ onUnmounted(() => {
                 :key="group.id"
                 class="space-y-2"
               >
-                <p class="px-2 text-[11px] uppercase tracking-wide text-[rgb(var(--palette-gray-500))]">
+                <p class="px-2 text-[11px] uppercase tracking-wide text-[var(--text-meta)]">
                   {{ group.title }}
                 </p>
                 <nav class="space-y-1">
@@ -309,14 +309,14 @@ onUnmounted(() => {
                     :to="item.to"
                     class="group flex items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors"
                     :class="isActiveRoute(item)
-                      ? 'border-[rgb(var(--palette-blue-500)/0.7)] bg-[rgb(var(--palette-blue-900)/0.2)] text-[rgb(var(--palette-white))]'
-                      : 'border-[color:var(--transparent)] text-[rgb(var(--palette-gray-300))] hover:border-[rgb(var(--palette-dark-600))] hover:bg-[rgb(var(--palette-dark-700)/0.45)] hover:text-[rgb(var(--palette-white))]'"
+                      ? 'border-[rgb(var(--palette-blue-500)/0.7)] bg-[rgb(var(--palette-blue-900)/0.2)] text-[var(--text-title)]'
+                      : 'border-[color:var(--transparent)] text-[var(--text-body)] hover:border-[rgb(var(--palette-dark-600))] hover:bg-[rgb(var(--palette-dark-700)/0.45)] hover:text-[var(--text-title)]'"
                     @click="closeMobileSidebar"
                   >
                     <component
                       :is="item.icon"
                       class="h-4.5 w-4.5 shrink-0"
-                      :class="isActiveRoute(item) ? 'text-[rgb(var(--palette-blue-200))]' : 'text-[rgb(var(--palette-gray-400))] group-hover:text-[rgb(var(--palette-gray-200))]'"
+                      :class="isActiveRoute(item) ? 'text-[var(--text-accent)]' : 'text-[var(--text-muted)] group-hover:text-[var(--text-body-strong)]'"
                     />
                     <span class="truncate">{{ item.title }}</span>
                   </router-link>
@@ -334,12 +334,12 @@ onUnmounted(() => {
             <div class="flex items-center gap-3 min-w-0">
               <button
                 type="button"
-                class="inline-flex lg:hidden items-center justify-center rounded-md border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.4)] p-2 text-[rgb(var(--palette-gray-200))]"
+                class="inline-flex lg:hidden items-center justify-center rounded-md border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.4)] p-2 text-[var(--text-body-strong)]"
                 @click="toggleMobileSidebar"
               >
                 <Menu class="h-4.5 w-4.5" />
               </button>
-              <p class="truncate text-sm font-semibold text-[rgb(var(--palette-white))]">
+              <p class="truncate text-sm font-semibold text-[var(--text-title)]">
                 {{ currentNavTitle }}
               </p>
             </div>

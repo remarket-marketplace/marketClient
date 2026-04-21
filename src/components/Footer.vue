@@ -1,5 +1,5 @@
 <template>
-  <footer class="relative left-1/2 right-1/2 ml-[-50vw] mr-[-50vw] w-screen bg-[rgb(var(--palette-gray-900))] text-[rgb(var(--palette-gray-300))] py-6 mt-10">
+  <footer class="relative left-1/2 right-1/2 ml-[-50vw] mr-[-50vw] w-screen bg-[rgb(var(--palette-gray-900))] text-[var(--text-body)] py-6 mt-10">
     <div class="max-w-5xl w-full mx-auto px-4 flex flex-col md:flex-row justify-between gap-6">
       <div>
         <h3 class="font-semibold text-lg mb-2">ReMarket</h3>

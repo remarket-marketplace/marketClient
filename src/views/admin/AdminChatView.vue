@@ -727,11 +727,11 @@ async function sendMessage(payload: { files: File[] }) {
 
 <template>
     <div class="h-full w-full flex flex-col md:pt-6">
-        <div v-if="isLoading" class="flex flex-1 items-center justify-center text-[rgb(var(--palette-gray-300))]">
+        <div v-if="isLoading" class="flex flex-1 items-center justify-center text-[var(--text-body)]">
             <Loader />
         </div>
 
-        <div v-else-if="errorMessage" class="flex flex-1 items-center justify-center text-[rgb(var(--palette-red-500))]">
+        <div v-else-if="errorMessage" class="flex flex-1 items-center justify-center text-[var(--text-danger)]">
             {{ errorMessage }}
         </div>
 
@@ -756,10 +756,10 @@ async function sendMessage(payload: { files: File[] }) {
                                     <p class="truncate text-mainText font-semibold text-lg">
                                         {{ currentChatData.username }}
                                     </p>
-                                    <p v-if="currentChatData.is_active" class="text-xs text-[rgb(var(--palette-green-500))]">
+                                    <p v-if="currentChatData.is_active" class="text-xs text-[var(--text-success-strong)]">
                                         {{ $t('common.online') }}
                                     </p>
-                                    <p v-else class="text-xs text-[rgb(var(--palette-gray-500))]">
+                                    <p v-else class="text-xs text-[var(--text-meta)]">
                                         {{ $t('common.offline') }}
                                     </p>
                                 </div>
@@ -817,11 +817,11 @@ async function sendMessage(payload: { files: File[] }) {
 
                                         <div v-else-if="currentChatId != null && chatMessages.length === 0"
                                             class="h-full w-full flex items-center justify-center">
-                                            <p class="text-[rgb(var(--palette-gray-400))] font-light">{{ $t("pages.chats.emptyMessages") }}</p>
+                                            <p class="text-[var(--text-muted)] font-light">{{ $t("pages.chats.emptyMessages") }}</p>
                                         </div>
 
                                         <div v-else class="h-full w-full flex items-center justify-center">
-                                            <p class="text-[rgb(var(--palette-gray-400))] font-light">{{ $t('pages.chats.selectChat') }}</p>
+                                            <p class="text-[var(--text-muted)] font-light">{{ $t('pages.chats.selectChat') }}</p>
                                         </div>
 
                                         <div v-if="currentChatId" class="sticky bottom-0 z-20 mt-2 bg-[var(--transparent)] pb-1 pt-2">

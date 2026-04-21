@@ -209,7 +209,7 @@ onMounted(async () => {
           <h1 class="text-xl sm:text-2xl font-bold text-mainText">
             {{ $t('pages.admin.activityLogs.title') }}
           </h1>
-          <p class="text-xs sm:text-sm text-[rgb(var(--palette-gray-400))]">
+          <p class="text-xs sm:text-sm text-[var(--text-muted)]">
             {{ $t('pages.admin.activityLogs.subtitle') }}
           </p>
         </div>
@@ -285,16 +285,16 @@ onMounted(async () => {
 
     <div class="flex-1 overflow-hidden">
       <div v-if="isLoading" class="flex h-32 items-center justify-center">
-        <Loader2 class="h-6 w-6 animate-spin text-[rgb(var(--palette-blue-500))]" />
-        <span class="ml-2 text-[rgb(var(--palette-gray-400))]">{{ $t('common.loading') }}</span>
+        <Loader2 class="h-6 w-6 animate-spin text-[var(--text-link)]" />
+        <span class="ml-2 text-[var(--text-muted)]">{{ $t('common.loading') }}</span>
       </div>
 
       <div v-else-if="errorMessage" class="flex h-32 items-center justify-center">
-        <p class="text-[rgb(var(--palette-red-400))]">{{ errorMessage }}</p>
+        <p class="text-[var(--text-danger)]">{{ errorMessage }}</p>
       </div>
 
       <div v-else-if="logs.length === 0" class="flex h-32 items-center justify-center">
-        <p class="text-[rgb(var(--palette-gray-400))]">{{ $t('pages.admin.activityLogs.empty') }}</p>
+        <p class="text-[var(--text-muted)]">{{ $t('pages.admin.activityLogs.empty') }}</p>
       </div>
 
       <div v-else class="h-full overflow-y-auto space-y-3 pr-1 pb-4">
@@ -305,40 +305,40 @@ onMounted(async () => {
         >
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-center gap-2">
-              <span class="rounded-full border border-[rgb(var(--palette-blue-500)/0.3)] bg-[rgb(var(--palette-blue-500)/0.15)] px-2 py-1 text-xs text-[rgb(var(--palette-blue-200))]">
+              <span class="rounded-full border border-[rgb(var(--palette-blue-500)/0.3)] bg-[rgb(var(--palette-blue-500)/0.15)] px-2 py-1 text-xs text-[var(--text-accent)]">
                 {{ getActionLabel(log.action_type) }}
               </span>
-              <span class="text-xs text-[rgb(var(--palette-gray-400))]">{{ formatDate(log.created_at) }}</span>
+              <span class="text-xs text-[var(--text-muted)]">{{ formatDate(log.created_at) }}</span>
             </div>
-            <span class="text-[11px] text-[rgb(var(--palette-gray-500))]">{{ log.http_method }} {{ log.endpoint }}</span>
+            <span class="text-[11px] text-[var(--text-meta)]">{{ log.http_method }} {{ log.endpoint }}</span>
           </div>
 
-          <div class="mt-3 grid grid-cols-1 gap-2 text-sm text-[rgb(var(--palette-gray-200))] sm:grid-cols-2 lg:grid-cols-3">
+          <div class="mt-3 grid grid-cols-1 gap-2 text-sm text-[var(--text-body-strong)] sm:grid-cols-2 lg:grid-cols-3">
             <div>
-              <span class="text-[rgb(var(--palette-gray-400))]">{{ $t('common.username') }}:</span>
+              <span class="text-[var(--text-muted)]">{{ $t('common.username') }}:</span>
               <button
                 v-if="getUserProfileLink(log)"
                 type="button"
-                class="ml-1 font-medium text-[rgb(var(--palette-blue-300))] hover:text-[rgb(var(--palette-blue-200))] underline-offset-2 hover:underline"
+                class="ml-1 font-medium text-[var(--text-link)] hover:text-[var(--text-accent)] underline-offset-2 hover:underline"
                 @click="openLink(getUserProfileLink(log))"
               >
                 {{ getDisplayUsername(log) }}
               </button>
               <span v-else class="ml-1 font-medium">{{ getDisplayUsername(log) }}</span>
-              <div class="mt-1 text-[11px] text-[rgb(var(--palette-gray-500))]">
+              <div class="mt-1 text-[11px] text-[var(--text-meta)]">
                 {{ $t('common.userId') }}: {{ log.user_id || '-' }}
               </div>
             </div>
             <div>
-              <span class="text-[rgb(var(--palette-gray-400))]">{{ $t('pages.admin.activityLogs.ipAddress') }}:</span>
+              <span class="text-[var(--text-muted)]">{{ $t('pages.admin.activityLogs.ipAddress') }}:</span>
               <span class="ml-1 font-medium">{{ log.ip_address || '-' }}</span>
             </div>
             <div>
-              <span class="text-[rgb(var(--palette-gray-400))]">{{ $t('pages.admin.activityLogs.country') }}:</span>
+              <span class="text-[var(--text-muted)]">{{ $t('pages.admin.activityLogs.country') }}:</span>
               <span class="ml-1 font-medium">{{ log.country_name || log.country_code || '-' }}</span>
             </div>
             <div>
-              <span class="text-[rgb(var(--palette-gray-400))]">{{ $t('pages.admin.activityLogs.device') }}:</span>
+              <span class="text-[var(--text-muted)]">{{ $t('pages.admin.activityLogs.device') }}:</span>
               <span class="ml-1 font-medium">{{ log.device || '-' }}</span>
             </div>
           </div>
@@ -378,7 +378,7 @@ onMounted(async () => {
 
           <pre
             v-if="log.details"
-            class="admin-surface-soft mt-3 max-h-52 overflow-auto rounded-lg p-2 text-xs text-[rgb(var(--palette-gray-300))]"
+            class="admin-surface-soft mt-3 max-h-52 overflow-auto rounded-lg p-2 text-xs text-[var(--text-body)]"
           >{{ detailsPreview(log.details) }}</pre>
         </article>
 

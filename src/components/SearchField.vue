@@ -21,12 +21,12 @@ function onInput(event: Event) {
 <template>
   <div class="w-full rounded-lg">
     <div class="relative">
-      <Search class="absolute left-3 top-1/2 h-5 w-5 text-[rgb(var(--palette-gray-400))] -translate-y-1/2"/>
+      <Search class="absolute left-3 top-1/2 h-5 w-5 text-[var(--text-muted)] -translate-y-1/2"/>
 
       <input
         :value="modelValue"
         type="text"
-        class="w-full min-h-[44px] border border-[rgb(var(--palette-dark-200))] rounded-md bg-background py-2 pl-10 pr-3 text-sm text-mainText focus:outline-none placeholder-[rgb(var(--palette-gray-400))]"
+        class="w-full min-h-[44px] border border-[rgb(var(--palette-dark-200))] rounded-md bg-background py-2 pl-10 pr-3 text-sm text-mainText focus:outline-none placeholder-[var(--text-placeholder)]"
         :placeholder="placeholder"
         @input="onInput"
       >

@@ -160,22 +160,22 @@ function navigateToEditUser(userId: string) {
 
 function getStatusBadge(user: UserRead) {
   if (user.is_banned) {
-    return { text: 'common.banned', class: 'bg-[rgb(var(--palette-red-500)/0.2)] text-[rgb(var(--palette-red-400))] border-[rgb(var(--palette-red-500)/0.3)]' };
+    return { text: 'common.banned', class: 'bg-[rgb(var(--palette-red-500)/0.2)] text-[var(--text-danger)] border-[rgb(var(--palette-red-500)/0.3)]' };
   }
   if (user.is_active) {
-    return { text: 'common.online', class: 'bg-[rgb(var(--palette-green-500)/0.2)] text-[rgb(var(--palette-green-400))] border-[rgb(var(--palette-green-500)/0.3)]' };
+    return { text: 'common.online', class: 'bg-[rgb(var(--palette-green-500)/0.2)] text-[var(--text-success-strong)] border-[rgb(var(--palette-green-500)/0.3)]' };
   }
-  return { text: 'common.offline', class: 'bg-[rgb(var(--palette-gray-500)/0.2)] text-[rgb(var(--palette-gray-400))] border-[rgb(var(--palette-gray-500)/0.3)]' };
+  return { text: 'common.offline', class: 'bg-[rgb(var(--palette-gray-500)/0.2)] text-[var(--text-muted)] border-[rgb(var(--palette-gray-500)/0.3)]' };
 }
 
 function getRoleBadge(user: UserRead) {
   if (user.role === 'admin') {
-    return { text: 'common.admin', class: 'bg-[rgb(var(--palette-purple-500)/0.2)] text-[rgb(var(--palette-purple-400))] border-[rgb(var(--palette-purple-500)/0.3)]' };
+    return { text: 'common.admin', class: 'bg-[rgb(var(--palette-purple-500)/0.2)] text-[var(--text-link)] border-[rgb(var(--palette-purple-500)/0.3)]' };
   }
   if (user.role === 'partner') {
-    return { text: 'common.partner', class: 'bg-[rgb(var(--palette-cyan-500)/0.2)] text-[rgb(var(--palette-cyan-300))] border-[rgb(var(--palette-cyan-500)/0.3)]' };
+    return { text: 'common.partner', class: 'bg-[rgb(var(--palette-cyan-500)/0.2)] text-[var(--text-link)] border-[rgb(var(--palette-cyan-500)/0.3)]' };
   }
-  return { text: 'common.user', class: 'bg-[rgb(var(--palette-blue-500)/0.2)] text-[rgb(var(--palette-blue-400))] border-[rgb(var(--palette-blue-500)/0.3)]' };
+  return { text: 'common.user', class: 'bg-[rgb(var(--palette-blue-500)/0.2)] text-[var(--text-link)] border-[rgb(var(--palette-blue-500)/0.3)]' };
 }
 
 function showBanConfirm(userId: string) {
@@ -327,7 +327,7 @@ watch(sortedUsers, () => {
       <button
         type="button"
         class="admin-btn admin-btn-ghost w-full justify-center"
-        :class="{ 'border-[rgb(var(--palette-blue-500)/0.4)] text-[rgb(var(--palette-blue-300))]': isMobileFiltersOpen }"
+        :class="{ 'border-[rgb(var(--palette-blue-500)/0.4)] text-[var(--text-link)]': isMobileFiltersOpen }"
         @click="isMobileFiltersOpen = !isMobileFiltersOpen"
       >
         <SlidersHorizontal class="w-4 h-4" />
@@ -385,8 +385,8 @@ watch(sortedUsers, () => {
     <div class="flex-1 overflow-hidden">
 
       <div v-if="isLoading" class="flex items-center justify-center h-32">
-        <Loader2 class="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-[rgb(var(--palette-blue-500))]" />
-        <span class="ml-2 sm:ml-3 text-base sm:text-lg text-[rgb(var(--palette-gray-400))]">{{ $t('common.loading') }}</span>
+        <Loader2 class="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-[var(--text-link)]" />
+        <span class="ml-2 sm:ml-3 text-base sm:text-lg text-[var(--text-muted)]">{{ $t('common.loading') }}</span>
       </div>
 
       <div ref="listRef" v-else class="h-full overflow-y-auto space-y-3">
@@ -440,9 +440,9 @@ watch(sortedUsers, () => {
                       <span class="truncate text-xs">{{ user.email }}</span>
                     </div>
                     <div class="flex items-center gap-1">
-                      <span :class="user.has_frozen_balance ? 'text-[rgb(var(--palette-orange-400))]' : 'text-[rgb(var(--palette-green-400))]'">
+                      <span :class="user.has_frozen_balance ? 'text-[var(--text-warning-strong)]' : 'text-[var(--text-success-strong)]'">
                         {{ formatPrice(user.balance) }}
-                        <span v-if="user.has_frozen_balance" class="text-[rgb(var(--palette-orange-300))] text-xs">{{ $t('pages.admin.usersPage.freezedBalance') }}</span>
+                        <span v-if="user.has_frozen_balance" class="text-[var(--text-warning-strong)] text-xs">{{ $t('pages.admin.usersPage.freezedBalance') }}</span>
                       </span>
                     </div>
                   </div>
@@ -533,7 +533,7 @@ watch(sortedUsers, () => {
     >
       <template #body>
         <div v-if="isBanAction" class="space-y-3">
-          <label class="block text-sm text-[rgb(var(--palette-gray-300))]">
+          <label class="block text-sm text-[var(--text-body)]">
             {{ $t('pages.admin.usersPage.banReasonLabel') }}
           </label>
           <CustomSelect
@@ -544,11 +544,11 @@ watch(sortedUsers, () => {
           <div v-if="selectedBanReasonCode === 'otherReason'" class="space-y-2">
             <textarea
               v-model="customBanReason"
-              class="admin-input-surface w-full rounded-lg text-[rgb(var(--palette-white))] px-3 py-2 resize-none min-h-[110px]"
+              class="admin-input-surface w-full rounded-lg text-[var(--text-title)] px-3 py-2 resize-none min-h-[110px]"
               :placeholder="$t('pages.admin.usersPage.customBanReasonPlaceholder')"
             />
           </div>
-          <p v-if="banReasonError" class="text-[rgb(var(--palette-red-400))] text-sm">
+          <p v-if="banReasonError" class="text-[var(--text-danger)] text-sm">
             {{ banReasonError }}
           </p>
         </div>

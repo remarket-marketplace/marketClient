@@ -25,7 +25,7 @@ const sections = computed(() => tm('pages.termsOfServicePage.sections') as Legal
         </h1>
       </div>
 
-      <article class="mt-6 legal-copy text-[rgb(var(--palette-gray-200))]">
+      <article class="mt-6 legal-copy text-[var(--text-body-strong)]">
         <section
           v-for="(section, index) in sections"
           :key="`${index}-${section.title ?? section.accent ?? 'section'}`"
