@@ -101,12 +101,12 @@ const rootClass = computed(() => (
 const cardClass = computed(() => (
   isSummaryLayout.value
     ? 'w-full min-w-0'
-    : 'message-compose-shell mx-auto flex w-full max-w-2xl min-w-0 flex-col overflow-hidden rounded-[26px] border border-white/10 bg-background/85 px-4 py-3 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70'
+    : 'message-compose-shell mx-auto flex w-full max-w-2xl min-w-0 flex-col overflow-hidden rounded-[26px] border border-[rgb(var(--palette-white)/0.1)] bg-background/85 px-4 py-3 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70'
 ))
 const summaryHeaderClass = computed(() => (
   isSummaryLayout.value
     ? 'order-1 flex min-h-8 flex-wrap items-center justify-between gap-2'
-    : 'mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-white/8 pb-2.5'
+    : 'mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[rgb(var(--palette-white)/0.08)] pb-2.5'
 ))
 const contentClass = computed(() => (
   isSummaryLayout.value ? 'order-3 flex flex-col gap-2 sm:gap-2.5' : 'flex flex-col gap-3'
@@ -116,38 +116,38 @@ const topRowClass = computed(() => (
 ))
 const imageButtonClass = computed(() => (
   isSummaryLayout.value
-    ? 'h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg border border-white/10 bg-dark-700 sm:h-11 sm:w-11'
-    : 'h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl border border-dark-600 bg-dark-700'
+    ? 'h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-dark-700))] sm:h-11 sm:w-11'
+    : 'h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700))]'
 ))
 const actionsClass = computed(() => (
   isSummaryLayout.value
     ? 'order-4 mt-1 flex flex-wrap items-center gap-1.5 sm:gap-2'
-    : 'mt-1 flex flex-wrap items-center gap-2 border-t border-white/8 pt-3'
+    : 'mt-1 flex flex-wrap items-center gap-2 border-t border-[rgb(var(--palette-white)/0.08)] pt-3'
 ))
 const reviewActionClass = computed(() => (
   isSummaryLayout.value ? 'order-5 mt-0.5' : 'mt-3'
 ))
 const titleClass = computed(() => (
-  isSummaryLayout.value ? 'mt-0.5 block min-w-0 text-left text-xs font-semibold leading-tight text-white transition hover:text-blue-200 sm:text-[13px]' : 'mt-1 block min-w-0 text-left text-sm font-semibold text-white transition hover:text-blue-200'
+  isSummaryLayout.value ? 'mt-0.5 block min-w-0 text-left text-xs font-semibold leading-tight text-[rgb(var(--palette-white))] transition hover:text-[rgb(var(--palette-blue-200))] sm:text-[13px]' : 'mt-1 block min-w-0 text-left text-sm font-semibold text-[rgb(var(--palette-white))] transition hover:text-[rgb(var(--palette-blue-200))]'
 ))
 const priceClass = computed(() => (
-  isSummaryLayout.value ? 'text-[11px] font-semibold text-emerald-300 sm:text-xs' : 'text-sm font-semibold text-emerald-300'
+  isSummaryLayout.value ? 'text-[11px] font-semibold text-[rgb(var(--palette-emerald-300))] sm:text-xs' : 'text-sm font-semibold text-[rgb(var(--palette-emerald-300))]'
 ))
 const deliveryClass = computed(() => (
   isSummaryLayout.value
-    ? 'w-full rounded-lg border border-white/8 bg-white/[0.03] px-2.5 py-1.5'
-    : 'w-full rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2.5'
+    ? 'w-full rounded-lg border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.03)] px-2.5 py-1.5'
+    : 'w-full rounded-xl border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.03)] px-3 py-2.5'
 ))
 const helperClass = computed(() => (
   isSummaryLayout.value
-    ? 'w-full rounded-lg border border-white/8 bg-white/[0.03] px-2.5 py-1.5'
-    : 'w-full rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2.5'
+    ? 'w-full rounded-lg border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.03)] px-2.5 py-1.5'
+    : 'w-full rounded-xl border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.03)] px-3 py-2.5'
 ))
 const summaryPrimaryButtonClass = computed(() => (
-  'flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-white transition-all sm:px-4 sm:py-2.5 sm:text-sm'
+  'flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-[rgb(var(--palette-white))] transition-all sm:px-4 sm:py-2.5 sm:text-sm'
 ))
 const summaryStatusClass = computed(() => (
-  'flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-gray-200 sm:px-4 sm:py-2.5 sm:text-sm'
+  'flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-[rgb(var(--palette-gray-200))] sm:px-4 sm:py-2.5 sm:text-sm'
 ))
 const shouldShowSummaryToggle = computed(() => isSummaryLayout.value && props.collapsible === true)
 const showSummaryBody = computed(() => !isSummaryLayout.value || props.collapsed !== true)
@@ -458,7 +458,7 @@ onBeforeUnmount(() => {
     <div :class="cardClass" class="flex min-w-0 flex-col">
       <div :class="summaryHeaderClass">
         <div class="min-w-0">
-          <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-300/90 sm:text-xs sm:tracking-[0.14em]">
+          <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-[rgb(var(--palette-blue-300)/0.9)] sm:text-xs sm:tracking-[0.14em]">
             {{ $t(headerTitleKey) }}
           </p>
         </div>
@@ -466,7 +466,7 @@ onBeforeUnmount(() => {
         <div class="flex flex-wrap items-center gap-2">
           <span
             v-if="shouldShowAutoConfirmTimer && autoConfirmTimerLabel"
-            class="inline-flex items-center rounded-full border border-white/12 bg-white/[0.04] px-2 py-1 text-[10px] font-semibold tracking-[0.06em] text-gray-200 sm:text-[11px]"
+            class="inline-flex items-center rounded-full border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-white)/0.04)] px-2 py-1 text-[10px] font-semibold tracking-[0.06em] text-[rgb(var(--palette-gray-200))] sm:text-[11px]"
           >
             {{ $t('pages.chats.autoConfirmTimer', { value: autoConfirmTimerLabel }) }}
           </span>
@@ -474,7 +474,7 @@ onBeforeUnmount(() => {
           <button
             v-if="shouldShowSummaryToggle"
             type="button"
-            class="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-gray-300 transition hover:bg-white/[0.06] hover:text-white"
+            class="flex h-7 w-7 items-center justify-center rounded-full border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] text-[rgb(var(--palette-gray-300))] transition hover:bg-[rgb(var(--palette-white)/0.06)] hover:text-[rgb(var(--palette-white))]"
             @click="handleToggleSummaryCollapse"
           >
             <ChevronUp v-if="!props.collapsed" class="h-4 w-4" />
@@ -528,10 +528,10 @@ onBeforeUnmount(() => {
           v-if="!isSummaryLayout && deliverySummary"
           :class="deliveryClass"
         >
-          <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-400">
+          <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-[rgb(var(--palette-gray-400))]">
             {{ $t('pages.chats.productData') }}
           </p>
-          <p class="mt-1 line-clamp-3 break-words text-sm leading-relaxed text-gray-200 [overflow-wrap:anywhere]">
+          <p class="mt-1 line-clamp-3 break-words text-sm leading-relaxed text-[rgb(var(--palette-gray-200))] [overflow-wrap:anywhere]">
             {{ deliverySummary }}
           </p>
         </div>
@@ -540,10 +540,10 @@ onBeforeUnmount(() => {
           v-else-if="!isSummaryLayout && sellerActionTitle && sellerActionText"
           :class="helperClass"
         >
-          <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-blue-300/90">
+          <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-[rgb(var(--palette-blue-300)/0.9)]">
             {{ $t(sellerActionTitle) }}
           </p>
-          <p class="mt-1 text-sm leading-relaxed text-gray-200">
+          <p class="mt-1 text-sm leading-relaxed text-[rgb(var(--palette-gray-200))]">
             {{ $t(sellerActionText) }}
           </p>
         </div>
@@ -552,7 +552,7 @@ onBeforeUnmount(() => {
           v-else-if="!isSummaryLayout && buyerActionText"
           :class="helperClass"
         >
-          <p class="text-sm leading-relaxed text-gray-300">
+          <p class="text-sm leading-relaxed text-[rgb(var(--palette-gray-300))]">
             {{ $t(buyerActionText) }}
           </p>
         </div>
@@ -561,10 +561,10 @@ onBeforeUnmount(() => {
           v-if="isSummaryLayout && deliverySummary"
           :class="deliveryClass"
         >
-          <p class="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 sm:text-[11px]">
+          <p class="text-[10px] font-semibold uppercase tracking-[0.08em] text-[rgb(var(--palette-gray-400))] sm:text-[11px]">
             {{ $t('pages.chats.productData') }}
           </p>
-          <p class="mt-1 line-clamp-3 break-words text-xs leading-relaxed text-gray-200 sm:text-sm [overflow-wrap:anywhere]">
+          <p class="mt-1 line-clamp-3 break-words text-xs leading-relaxed text-[rgb(var(--palette-gray-200))] sm:text-sm [overflow-wrap:anywhere]">
             {{ deliverySummary }}
           </p>
         </div>
@@ -573,10 +573,10 @@ onBeforeUnmount(() => {
           v-else-if="isSummaryLayout && sellerActionTitle && sellerActionText"
           :class="helperClass"
         >
-          <p class="text-[10px] font-semibold uppercase tracking-[0.08em] text-blue-300/90 sm:text-[11px]">
+          <p class="text-[10px] font-semibold uppercase tracking-[0.08em] text-[rgb(var(--palette-blue-300)/0.9)] sm:text-[11px]">
             {{ $t(sellerActionTitle) }}
           </p>
-          <p class="mt-1 text-xs leading-relaxed text-gray-200 sm:text-sm">
+          <p class="mt-1 text-xs leading-relaxed text-[rgb(var(--palette-gray-200))] sm:text-sm">
             {{ $t(sellerActionText) }}
           </p>
         </div>
@@ -585,7 +585,7 @@ onBeforeUnmount(() => {
           v-else-if="isSummaryLayout && buyerActionText"
           :class="helperClass"
         >
-          <p class="text-xs leading-relaxed text-gray-300 sm:text-sm">
+          <p class="text-xs leading-relaxed text-[rgb(var(--palette-gray-300))] sm:text-sm">
             {{ $t(buyerActionText) }}
           </p>
         </div>
@@ -595,8 +595,8 @@ onBeforeUnmount(() => {
         <template v-if="canConfirmReceipt">
           <button
             :class="isSummaryLayout
-              ? `${summaryPrimaryButtonClass} market-primary-surface market-primary-hover border border-blue-500`
-              : 'market-primary-surface market-primary-hover flex items-center justify-center gap-2 rounded-lg border border-blue-500 px-4 py-2.5 text-sm font-semibold text-white transition-all'"
+              ? `${summaryPrimaryButtonClass} market-primary-surface market-primary-hover border border-[rgb(var(--palette-blue-500))]`
+              : 'market-primary-surface market-primary-hover flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-blue-500))] px-4 py-2.5 text-sm font-semibold text-[rgb(var(--palette-white))] transition-all'"
             @click="openConfirmReceiptModal()"
           >
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -609,8 +609,8 @@ onBeforeUnmount(() => {
         <template v-else-if="canConfirmFulfillment">
           <button
             :class="isSummaryLayout
-              ? `${summaryPrimaryButtonClass} market-primary-surface market-primary-hover border border-blue-500`
-              : 'market-primary-surface market-primary-hover flex items-center justify-center gap-2 rounded-lg border border-blue-500 px-4 py-2.5 text-sm font-semibold text-white transition-all'"
+              ? `${summaryPrimaryButtonClass} market-primary-surface market-primary-hover border border-[rgb(var(--palette-blue-500))]`
+              : 'market-primary-surface market-primary-hover flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-blue-500))] px-4 py-2.5 text-sm font-semibold text-[rgb(var(--palette-white))] transition-all'"
             @click="openConfirmFulfillmentModal()"
           >
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -624,8 +624,8 @@ onBeforeUnmount(() => {
           <template v-if="!isDealRefunded">
             <button
               :class="isSummaryLayout
-                ? `${summaryPrimaryButtonClass} border border-white/10 bg-white/[0.04] text-gray-200 hover:border-white/20 hover:bg-white/[0.08] hover:text-white`
-                : 'flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-gray-200 transition-all hover:border-white/20 hover:bg-white/[0.08] hover:text-white'"
+                ? `${summaryPrimaryButtonClass} border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[rgb(var(--palette-gray-200))] hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[rgb(var(--palette-white))]`
+                : 'flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] px-4 py-2.5 text-sm font-semibold text-[rgb(var(--palette-gray-200))] transition-all hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[rgb(var(--palette-white))]'"
               @click="openRefundModal"
             >
               <RefreshCcw class="h-4 w-4" />
@@ -633,8 +633,8 @@ onBeforeUnmount(() => {
             </button>
           </template>
           <template v-else>
-            <div :class="isSummaryLayout ? `${summaryStatusClass} border border-dark-600 bg-dark-700/70` : 'flex items-center justify-center gap-2 rounded-lg border border-dark-600 bg-dark-700/70 px-4 py-2.5 text-sm font-semibold text-gray-200'">
-              <svg class="h-4 w-4 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
+            <div :class="isSummaryLayout ? `${summaryStatusClass} border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.7)]` : 'flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.7)] px-4 py-2.5 text-sm font-semibold text-[rgb(var(--palette-gray-200))]'">
+              <svg class="h-4 w-4 text-[rgb(var(--palette-orange-400))]" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fill-rule="evenodd"
                   d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -650,8 +650,8 @@ onBeforeUnmount(() => {
           <div v-if="canSendReport" class="sm:ml-auto flex flex-col gap-2">
             <button
               :class="isSummaryLayout
-                ? `${summaryPrimaryButtonClass} border border-white/10 bg-white/[0.04] text-gray-200 hover:border-white/20 hover:bg-white/[0.08] hover:text-white`
-                : 'flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-gray-200 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white'"
+                ? `${summaryPrimaryButtonClass} border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[rgb(var(--palette-gray-200))] hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[rgb(var(--palette-white))]`
+                : 'flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] px-4 py-2.5 text-sm font-semibold text-[rgb(var(--palette-gray-200))] transition hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[rgb(var(--palette-white))]'"
               @click="openRefusalModal()"
             >
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -667,8 +667,8 @@ onBeforeUnmount(() => {
           </div>
 
           <div v-else-if="showReportedBadge" class="sm:ml-auto flex flex-col gap-2">
-            <div :class="isSummaryLayout ? `${summaryStatusClass} border border-dark-600 bg-dark-700/70` : 'flex items-center justify-center gap-2 rounded-lg border border-dark-600 bg-dark-700/70 px-4 py-2.5 text-sm font-semibold text-gray-200'">
-              <svg class="h-4 w-4 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+            <div :class="isSummaryLayout ? `${summaryStatusClass} border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.7)]` : 'flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.7)] px-4 py-2.5 text-sm font-semibold text-[rgb(var(--palette-gray-200))]'">
+              <svg class="h-4 w-4 text-[rgb(var(--palette-red-400))]" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fill-rule="evenodd"
                   d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
@@ -684,7 +684,7 @@ onBeforeUnmount(() => {
       <template v-if="showSummaryBody && isDealCompleted && !localHasReview && isBuyer">
         <div :class="reviewActionClass">
           <button
-            class="market-primary-surface market-primary-hover flex items-center justify-center gap-2 rounded-lg border border-blue-500 px-4 py-2.5 text-sm font-semibold text-white"
+            class="market-primary-surface market-primary-hover flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-blue-500))] px-4 py-2.5 text-sm font-semibold text-[rgb(var(--palette-white))]"
             @click="openReviewModal"
           >
             <Star class="h-4 w-4" />
@@ -693,7 +693,7 @@ onBeforeUnmount(() => {
         </div>
       </template>
 
-      <div v-if="timelineTimestamp" class="mt-1 flex items-center justify-end text-xs text-gray-300">
+      <div v-if="timelineTimestamp" class="mt-1 flex items-center justify-end text-xs text-[rgb(var(--palette-gray-300))]">
         <span>{{ timelineTimestamp }}</span>
       </div>
     </div>
@@ -719,7 +719,7 @@ onBeforeUnmount(() => {
       >
         <Star
           class="h-8 w-8"
-          :class="reviewStars >= n ? 'fill-blue-500 text-blue-500' : 'text-gray-600'"
+          :class="reviewStars >= n ? 'fill-[rgb(var(--palette-blue-500))] text-[rgb(var(--palette-blue-500))]' : 'text-[rgb(var(--palette-gray-600))]'"
         />
       </button>
     </div>
@@ -728,7 +728,7 @@ onBeforeUnmount(() => {
       v-model="reviewText"
       rows="5"
       maxlength="1000"
-      class="w-full resize-none rounded-2xl border border-dark-600 bg-dark-700/55 p-3 text-sm text-gray-100 outline-none transition placeholder:text-gray-500 focus:border-blue-500/60 focus:bg-dark-700/75"
+      class="w-full resize-none rounded-2xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.55)] p-3 text-sm text-[rgb(var(--palette-gray-100))] outline-none transition placeholder:text-[rgb(var(--palette-gray-500))] focus:border-[rgb(var(--palette-blue-500)/0.6)] focus:bg-[rgb(var(--palette-dark-700)/0.75)]"
       :placeholder="$t('pages.chats.writeReview')"
       :disabled="reviewSubmitting"
     ></textarea>
@@ -737,7 +737,7 @@ onBeforeUnmount(() => {
       <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <button
           type="button"
-          class="inline-flex min-h-11 items-center justify-center rounded-[1rem] border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-medium text-gray-200 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:px-6"
+          class="inline-flex min-h-11 items-center justify-center rounded-[1rem] border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] px-5 py-3 text-sm font-medium text-[rgb(var(--palette-gray-200))] transition hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[rgb(var(--palette-white))] disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:px-6"
           :disabled="reviewSubmitting"
           @click="closeReviewModal"
         >
@@ -745,7 +745,7 @@ onBeforeUnmount(() => {
         </button>
         <button
           type="button"
-          class="market-primary-surface market-primary-hover inline-flex min-h-11 items-center justify-center rounded-[1rem] border border-blue-500 px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:border-dark-600 disabled:bg-dark-700 disabled:text-gray-500 sm:min-h-12 sm:px-6"
+          class="market-primary-surface market-primary-hover inline-flex min-h-11 items-center justify-center rounded-[1rem] border border-[rgb(var(--palette-blue-500))] px-5 py-3 text-sm font-semibold text-[rgb(var(--palette-white))] transition disabled:cursor-not-allowed disabled:border-[rgb(var(--palette-dark-600))] disabled:bg-[rgb(var(--palette-dark-700))] disabled:text-[rgb(var(--palette-gray-500))] sm:min-h-12 sm:px-6"
           :disabled="reviewStars < 1 || reviewSubmitting"
           @click="handleSendReview()"
         >
@@ -768,8 +768,8 @@ onBeforeUnmount(() => {
         :key="reason.id"
         class="w-full rounded-2xl border px-4 py-3.5 text-left transition-colors duration-200"
         :class="selectedRefusalId === reason.id
-          ? 'border-blue-500/45 bg-dark-700/75 text-white'
-          : 'border-dark-600 bg-dark-700/40 text-gray-300 hover:border-dark-500 hover:bg-dark-700/55 hover:text-white'"
+          ? 'border-[rgb(var(--palette-blue-500)/0.45)] bg-[rgb(var(--palette-dark-700)/0.75)] text-[rgb(var(--palette-white))]'
+          : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.4)] text-[rgb(var(--palette-gray-300))] hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-700)/0.55)] hover:text-[rgb(var(--palette-white))]'"
         @click="selectedRefusalId = reason.id"
       >
         <div class="flex items-center">
@@ -777,12 +777,12 @@ onBeforeUnmount(() => {
             <div
               class="flex h-5 w-5 items-center justify-center rounded-full border transition-colors duration-200"
               :class="selectedRefusalId === reason.id
-                ? 'border-blue-400 bg-blue-500/15 ring-1 ring-blue-500/30'
-                : 'border-gray-500 bg-dark-900/90'"
+                ? 'border-[rgb(var(--palette-blue-400))] bg-[rgb(var(--palette-blue-500)/0.15)] ring-1 ring-[rgb(var(--palette-blue-500)/0.3)]'
+                : 'border-[rgb(var(--palette-gray-500))] bg-[rgb(var(--palette-dark-900)/0.9)]'"
             >
               <div
                 v-if="selectedRefusalId === reason.id"
-                class="h-2.5 w-2.5 rounded-full bg-blue-400"
+                class="h-2.5 w-2.5 rounded-full bg-[rgb(var(--palette-blue-400))]"
               ></div>
             </div>
           </div>
@@ -799,11 +799,11 @@ onBeforeUnmount(() => {
         v-model="customReasonText"
         :maxlength="MAX_CUSTOM_REASON_LENGTH"
         rows="4"
-        class="w-full rounded-2xl border border-dark-500 bg-dark-700/55 p-3 text-sm text-gray-100 outline-none transition-colors placeholder:text-gray-500 focus:border-blue-500/60 focus:bg-dark-700/75"
+        class="w-full rounded-2xl border border-[rgb(var(--palette-dark-500))] bg-[rgb(var(--palette-dark-700)/0.55)] p-3 text-sm text-[rgb(var(--palette-gray-100))] outline-none transition-colors placeholder:text-[rgb(var(--palette-gray-500))] focus:border-[rgb(var(--palette-blue-500)/0.6)] focus:bg-[rgb(var(--palette-dark-700)/0.75)]"
         :placeholder="$t('pages.chats.enterCustomReason')"
       ></textarea>
-      <div class="flex items-center justify-between text-xs text-gray-400">
-        <span v-if="customReasonText.length >= MAX_CUSTOM_REASON_LENGTH" class="text-red-400">
+      <div class="flex items-center justify-between text-xs text-[rgb(var(--palette-gray-400))]">
+        <span v-if="customReasonText.length >= MAX_CUSTOM_REASON_LENGTH" class="text-[rgb(var(--palette-red-400))]">
           {{ $t('pages.chats.maxCharactersReached') }}
         </span>
         <span class="ml-auto">
@@ -815,7 +815,7 @@ onBeforeUnmount(() => {
     <template #footer>
       <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <button
-          class="inline-flex min-h-11 items-center justify-center rounded-[1rem] border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-medium text-gray-200 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white sm:min-h-12 sm:px-6"
+          class="inline-flex min-h-11 items-center justify-center rounded-[1rem] border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] px-5 py-3 text-sm font-medium text-[rgb(var(--palette-gray-200))] transition hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[rgb(var(--palette-white))] sm:min-h-12 sm:px-6"
           @click="closeRefusalModal"
         >
           {{ $t('common.cancel') }}
@@ -823,8 +823,8 @@ onBeforeUnmount(() => {
         <button
           class="inline-flex min-h-11 items-center justify-center rounded-[1rem] px-5 py-3 text-sm font-semibold transition-colors sm:min-h-12 sm:px-6"
           :class="!selectedRefusalId || (isOtherReasonSelected && !customReasonText.trim())
-            ? 'cursor-not-allowed bg-gray-700 text-gray-500'
-            : 'market-primary-surface market-primary-hover text-white'"
+            ? 'cursor-not-allowed bg-[rgb(var(--palette-gray-700))] text-[rgb(var(--palette-gray-500))]'
+            : 'market-primary-surface market-primary-hover text-[rgb(var(--palette-white))]'"
           :disabled="!selectedRefusalId || (isOtherReasonSelected && !customReasonText.trim())"
           @click="handleReport(dealId)"
         >

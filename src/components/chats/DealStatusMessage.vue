@@ -25,11 +25,11 @@ function handleViewProduct(product: Product | null) {
 </script>
 
 <template>
-    <div class="mx-auto w-full max-w-2xl min-w-0 overflow-hidden rounded-2xl border border-dark-700 bg-dark-800/50 px-4 py-3">
+    <div class="mx-auto w-full max-w-2xl min-w-0 overflow-hidden rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-800)/0.5)] px-4 py-3">
         <div class="flex items-center gap-3">
             <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
-                    <span class="text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-300/90">
+                    <span class="text-[11px] font-semibold uppercase tracking-[0.14em] text-[rgb(var(--palette-blue-300)/0.9)]">
                         {{ $t('pages.chats.updateDealStatus') }}
                     </span>
                     <DealStatusTag :deal-status="message.new_status" />
@@ -48,8 +48,8 @@ function handleViewProduct(product: Product | null) {
                     />
 
                     <span class="min-w-0">
-                        <span class="block truncate text-sm font-medium text-white">{{ product?.title }}</span>
-                        <span class="block text-xs text-gray-400">
+                        <span class="block truncate text-sm font-medium text-[rgb(var(--palette-white))]">{{ product?.title }}</span>
+                        <span class="block text-xs text-[rgb(var(--palette-gray-400))]">
                             {{ t(`pages.chats.${message.new_status}`) }}
                         </span>
                     </span>
@@ -57,8 +57,8 @@ function handleViewProduct(product: Product | null) {
             </div>
 
             <div class="flex-shrink-0 text-right">
-                <p class="text-sm font-medium text-gray-200">{{ product ? formatCurrencyAmount(product.price) : '-' }}</p>
-                <p class="mt-1 text-xs text-gray-400">{{ formatDate(message.created_at) }}</p>
+                <p class="text-sm font-medium text-[rgb(var(--palette-gray-200))]">{{ product ? formatCurrencyAmount(product.price) : '-' }}</p>
+                <p class="mt-1 text-xs text-[rgb(var(--palette-gray-400))]">{{ formatDate(message.created_at) }}</p>
             </div>
         </div>
     </div>

@@ -73,17 +73,17 @@ const formatDate = (dateString: string) => {
         class="w-full h-full flex items-center justify-center"
       >
         <div class="text-center">
-          <div class="w-12 h-12 mx-auto mb-2 rounded-full bg-dark-600 flex items-center justify-center">
+          <div class="w-12 h-12 mx-auto mb-2 rounded-full bg-[rgb(var(--palette-dark-600))] flex items-center justify-center">
             <span class="text-2xl">📷</span>
           </div>
-          <span class="text-xs text-gray-500">{{ $t('common.noImage') }}</span>
+          <span class="text-xs text-[rgb(var(--palette-gray-500))]">{{ $t('common.noImage') }}</span>
         </div>
       </div>
 
       <!-- Status badge -->
       <div
         v-if="product.is_sold"
-        class="absolute top-2 left-2 px-2 py-1 rounded-md bg-dark-900/90 backdrop-blur-sm text-xs font-medium text-gray-300"
+        class="absolute top-2 left-2 px-2 py-1 rounded-md bg-[rgb(var(--palette-dark-900)/0.9)] backdrop-blur-sm text-xs font-medium text-[rgb(var(--palette-gray-300))]"
       >
         {{ $t('common.productStatuses.sold') }}
       </div>
@@ -91,11 +91,11 @@ const formatDate = (dateString: string) => {
       <!-- Heart button -->
       <button
         @click.stop="removeProductFromFavorites"
-        class="absolute top-2 right-2 rounded-full border border-white/10 bg-dark-900/90 p-2 backdrop-blur-sm transition-colors hover:border-white/20 hover:bg-dark-900"
+        class="absolute top-2 right-2 rounded-full border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-dark-900)/0.9)] p-2 backdrop-blur-sm transition-colors hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-dark-900))]"
         :title="$t('pages.favoriteProducts.remove')"
       >
         <Heart
-          class="w-5 h-5 text-red-500"
+          class="w-5 h-5 text-[rgb(var(--palette-red-500))]"
           :style="{ fill: 'currentColor' }"
         />
       </button>
@@ -103,7 +103,7 @@ const formatDate = (dateString: string) => {
       <!-- Count badge -->
       <div
         v-if="product.count > 1"
-        class="absolute bottom-2 left-2 px-2 py-1 rounded-md bg-blue-900/90 backdrop-blur-sm text-xs font-medium text-blue-300"
+        class="absolute bottom-2 left-2 px-2 py-1 rounded-md bg-[rgb(var(--palette-blue-900)/0.9)] backdrop-blur-sm text-xs font-medium text-[rgb(var(--palette-blue-300))]"
       >
         ×{{ product.count }}
       </div>
@@ -112,19 +112,19 @@ const formatDate = (dateString: string) => {
     <!-- Product info -->
     <div class="flex flex-col flex-1 px-3 pb-3">
       <!-- Title -->
-      <h3 class="text-sm font-semibold text-white line-clamp-2 mb-2 leading-tight">
+      <h3 class="text-sm font-semibold text-[rgb(var(--palette-white))] line-clamp-2 mb-2 leading-tight">
         {{ product.title }}
       </h3>
 
       <!-- Category -->
       <div class="mb-2">
-        <span class="px-2 py-1 rounded text-xs bg-dark-700 text-gray-400">
+        <span class="px-2 py-1 rounded text-xs bg-[rgb(var(--palette-dark-700))] text-[rgb(var(--palette-gray-400))]">
           {{ product.category.name }}
         </span>
       </div>
 
       <!-- Description -->
-      <p class="text-xs text-gray-400 line-clamp-2 mb-3 flex-1">
+      <p class="text-xs text-[rgb(var(--palette-gray-400))] line-clamp-2 mb-3 flex-1">
         {{ product.description }}
       </p>
 
@@ -139,11 +139,11 @@ const formatDate = (dateString: string) => {
             <UserAvatar
               :avatar-url="product.seller.avatar_url"
               :alt="product.seller.username"
-              class="w-6 h-6 rounded-full border border-dark-600 object-cover"
+              class="w-6 h-6 rounded-full border border-[rgb(var(--palette-dark-600))] object-cover"
             />
             <div
               v-if="product.seller.is_active"
-              class="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-green-500 border border-dark-700"
+              class="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-[rgb(var(--palette-green-500))] border border-[rgb(var(--palette-dark-700))]"
             />
           </div>
           <div class="min-w-0">
@@ -152,8 +152,8 @@ const formatDate = (dateString: string) => {
               :style-id="product.seller.nickname_style_id"
               class="text-xs truncate transition-colors"
             />
-            <div class="flex items-center gap-1 text-xs text-gray-500">
-              <Star class="w-3 h-3 text-yellow-500 fill-current" />
+            <div class="flex items-center gap-1 text-xs text-[rgb(var(--palette-gray-500))]">
+              <Star class="w-3 h-3 text-[rgb(var(--palette-yellow-500))] fill-current" />
               <span>{{ product.seller.rating.toFixed(1) }}</span>
             </div>
           </div>
@@ -161,10 +161,10 @@ const formatDate = (dateString: string) => {
 
         <!-- Price -->
         <div class="text-right flex-shrink-0">
-          <div class="text-base font-bold text-white">
+          <div class="text-base font-bold text-[rgb(var(--palette-white))]">
             {{ formatCurrencyAmount(product.price) }}
           </div>
-          <div class="text-xs text-gray-500">
+          <div class="text-xs text-[rgb(var(--palette-gray-500))]">
             {{ formatDate(product.created_at) }}
           </div>
         </div>

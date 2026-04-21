@@ -147,82 +147,82 @@ onMounted(async () => {
       </div>
 
       <div class="space-y-2">
-        <h1 class="text-3xl font-semibold tracking-tight text-white lg:text-4xl">
+        <h1 class="text-3xl font-semibold tracking-tight text-[rgb(var(--palette-white))] lg:text-4xl">
           {{ pageTitle }}
         </h1>
-        <p class="max-w-2xl text-sm leading-6 text-gray-400">
+        <p class="max-w-2xl text-sm leading-6 text-[rgb(var(--palette-gray-400))]">
           {{ pageSubtitle }}
         </p>
       </div>
 
       <div class="mt-8">
         <div class="space-y-6">
-          <section class="rounded-2xl border border-dark-700 bg-dark-600/30 p-4 lg:p-5">
+          <section class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.3)] p-4 lg:p-5">
             <div class="mb-5 flex items-start justify-between gap-4">
               <div>
-                <h2 class="text-lg font-semibold text-white">
+                <h2 class="text-lg font-semibold text-[rgb(var(--palette-white))]">
                   {{ t('pages.admin.categoryCreate.generalSection') }}
                 </h2>
-                <p class="mt-1 text-sm text-gray-400">
+                <p class="mt-1 text-sm text-[rgb(var(--palette-gray-400))]">
                   {{ t('pages.admin.categoryCreate.generalSectionHint') }}
                 </p>
               </div>
-              <Layers3 class="mt-1 h-5 w-5 text-blue-300" />
+              <Layers3 class="mt-1 h-5 w-5 text-[rgb(var(--palette-blue-300))]" />
             </div>
 
             <div
               v-if="isSubcategory"
-              class="mb-4 rounded-xl border border-dark-700 bg-dark-700/40 px-4 py-3"
+              class="mb-4 rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.4)] px-4 py-3"
             >
-              <div class="text-xs uppercase tracking-[0.16em] text-gray-500">
+              <div class="text-xs uppercase tracking-[0.16em] text-[rgb(var(--palette-gray-500))]">
                 {{ t('pages.admin.categoryCreate.parentCategory') }}
               </div>
-              <div v-if="isLoadingParent" class="mt-2 inline-flex items-center gap-2 text-sm text-gray-400">
+              <div v-if="isLoadingParent" class="mt-2 inline-flex items-center gap-2 text-sm text-[rgb(var(--palette-gray-400))]">
                 <Loader2 class="h-4 w-4 animate-spin" />
                 {{ t('common.loading') }}
               </div>
-              <div v-else class="mt-2 text-sm font-medium text-white">
+              <div v-else class="mt-2 text-sm font-medium text-[rgb(var(--palette-white))]">
                 {{ parentCategory?.name || t('common.notSpecified') }}
               </div>
             </div>
 
             <div class="grid gap-4 md:grid-cols-2">
               <label class="space-y-2">
-                <span class="text-sm font-medium text-gray-300">
+                <span class="text-sm font-medium text-[rgb(var(--palette-gray-300))]">
                   {{ t('common.nameRu') }}
                 </span>
                 <input
                   v-model="nameRu"
                   type="text"
                   :maxlength="CATEGORY_NAME_MAX_LENGTH"
-                  class="h-12 w-full rounded-lg border border-dark-700 bg-dark-600 px-4 text-sm text-white outline-none"
+                  class="h-12 w-full rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] px-4 text-sm text-[rgb(var(--palette-white))] outline-none"
                   :placeholder="t('pages.admin.categoriesPage.nameRuPlaceholder')"
                 />
               </label>
 
               <label class="space-y-2">
-                <span class="text-sm font-medium text-gray-300">
+                <span class="text-sm font-medium text-[rgb(var(--palette-gray-300))]">
                   {{ t('common.nameEn') }}
                 </span>
                 <input
                   v-model="nameEn"
                   type="text"
                   :maxlength="CATEGORY_NAME_MAX_LENGTH"
-                  class="h-12 w-full rounded-lg border border-dark-700 bg-dark-600 px-4 text-sm text-white outline-none"
+                  class="h-12 w-full rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] px-4 text-sm text-[rgb(var(--palette-white))] outline-none"
                   :placeholder="t('pages.admin.categoriesPage.nameEnPlaceholder')"
                 />
               </label>
             </div>
 
             <label class="mt-4 block space-y-2">
-              <span class="text-sm font-medium text-gray-300">
+              <span class="text-sm font-medium text-[rgb(var(--palette-gray-300))]">
                 {{ t('common.description') }}
               </span>
               <textarea
                 v-model="description"
                 rows="6"
                 :maxlength="CATEGORY_DESCRIPTION_MAX_LENGTH"
-                class="w-full rounded-lg border border-dark-700 bg-dark-600 px-4 py-3 text-sm text-white outline-none"
+                class="w-full rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] px-4 py-3 text-sm text-[rgb(var(--palette-white))] outline-none"
                 :placeholder="t('pages.admin.categoryCreate.descriptionPlaceholder')"
               />
             </label>
@@ -230,30 +230,30 @@ onMounted(async () => {
 
           <section
             v-if="!isSubcategory"
-            class="rounded-2xl border border-dark-700 bg-dark-600/30 p-4 lg:p-5"
+            class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.3)] p-4 lg:p-5"
           >
             <div class="mb-5 flex items-start justify-between gap-4">
               <div>
-                <h2 class="text-lg font-semibold text-white">
+                <h2 class="text-lg font-semibold text-[rgb(var(--palette-white))]">
                   {{ t('pages.admin.categoryCreate.mediaSection') }}
                 </h2>
-                <p class="mt-1 text-sm text-gray-400">
+                <p class="mt-1 text-sm text-[rgb(var(--palette-gray-400))]">
                   {{ t('pages.admin.categoryCreate.mediaSectionHint') }}
                 </p>
               </div>
-              <ImagePlus class="mt-1 h-5 w-5 text-blue-300" />
+              <ImagePlus class="mt-1 h-5 w-5 text-[rgb(var(--palette-blue-300))]" />
             </div>
 
             <div class="space-y-5">
               <div class="space-y-3">
                 <div class="flex items-center justify-between gap-3">
-                  <label class="text-sm font-medium text-gray-300">
+                  <label class="text-sm font-medium text-[rgb(var(--palette-gray-300))]">
                     {{ t('common.image') }}
-                    <span class="ml-1 text-xs text-red-400">*</span>
+                    <span class="ml-1 text-xs text-[rgb(var(--palette-red-400))]">*</span>
                   </label>
                   <span
                     class="text-xs"
-                    :class="hasImage ? 'text-gray-400' : 'text-red-400'"
+                    :class="hasImage ? 'text-[rgb(var(--palette-gray-400))]' : 'text-[rgb(var(--palette-red-400))]'"
                   >
                     {{ hasImage ? t('common.selected') : t('pages.admin.editCategory.imageRequired') }}
                   </span>
@@ -262,7 +262,7 @@ onMounted(async () => {
               </div>
 
               <div class="space-y-3">
-                <label class="text-sm font-medium text-gray-300">
+                <label class="text-sm font-medium text-[rgb(var(--palette-gray-300))]">
                   {{ t('common.banner') }}
                 </label>
                 <FileUploader v-model="newBanner" :max-files="1" />
@@ -270,8 +270,8 @@ onMounted(async () => {
             </div>
           </section>
 
-          <div class="rounded-2xl border border-dark-700 bg-dark-600/30 p-4 lg:p-5">
-            <div class="rounded-xl border border-dark-700 bg-dark-700/40 p-3 text-xs leading-5 text-gray-400">
+          <div class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.3)] p-4 lg:p-5">
+            <div class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.4)] p-3 text-xs leading-5 text-[rgb(var(--palette-gray-400))]">
               <p>{{ t('pages.admin.categoryCreate.rulesTitle') }}</p>
               <p class="mt-2">{{ t('pages.admin.categoryCreate.rulesBody') }}</p>
             </div>

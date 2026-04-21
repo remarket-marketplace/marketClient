@@ -69,34 +69,34 @@ function goHome() {
     </div>
 
     <div class="relative z-10 mx-auto flex h-full w-full max-w-2xl items-center">
-      <div class="banned-card w-full rounded-2xl border border-dark-600/90 bg-dark-800/80 p-6 backdrop-blur-sm sm:p-8">
+      <div class="banned-card w-full rounded-2xl border border-[rgb(var(--palette-dark-600)/0.9)] bg-[rgb(var(--palette-dark-800)/0.8)] p-6 backdrop-blur-sm sm:p-8">
         <div class="flex items-center gap-3">
-          <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-red-500/25 bg-red-500/10">
-            <ShieldAlert class="h-5 w-5 text-red-300/90" />
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-[rgb(var(--palette-red-500)/0.25)] bg-[rgb(var(--palette-red-500)/0.1)]">
+            <ShieldAlert class="h-5 w-5 text-[rgb(var(--palette-red-300)/0.9)]" />
           </div>
-          <h1 class="text-2xl font-semibold leading-tight text-white sm:text-3xl">
+          <h1 class="text-2xl font-semibold leading-tight text-[rgb(var(--palette-white))] sm:text-3xl">
             {{ $t('pages.bannedPage.title') }}
           </h1>
         </div>
 
-        <p class="mt-5 leading-relaxed text-gray-300/95 sm:text-lg">
+        <p class="mt-5 leading-relaxed text-[rgb(var(--palette-gray-300)/0.95)] sm:text-lg">
           {{ $t('pages.bannedPage.description') }}
         </p>
 
-        <div class="mt-6 rounded-xl border border-dark-600 bg-dark-900/70 p-4 sm:p-5">
-          <p class="text-xs uppercase tracking-[0.14em] text-gray-400/85">{{ $t('common.reason') }}</p>
-          <p class="mt-2 whitespace-pre-wrap break-words text-base leading-relaxed text-gray-100">
+        <div class="mt-6 rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-900)/0.7)] p-4 sm:p-5">
+          <p class="text-xs uppercase tracking-[0.14em] text-[rgb(var(--palette-gray-400)/0.85)]">{{ $t('common.reason') }}</p>
+          <p class="mt-2 whitespace-pre-wrap break-words text-base leading-relaxed text-[rgb(var(--palette-gray-100))]">
             {{ displayReason }}
           </p>
         </div>
 
-        <p class="mt-5 text-sm leading-relaxed text-gray-400">
+        <p class="mt-5 text-sm leading-relaxed text-[rgb(var(--palette-gray-400))]">
           {{ $t('pages.bannedPage.contactHint') }}
         </p>
 
         <div class="mt-6 flex">
           <button
-            class="market-primary-surface market-primary-hover inline-flex items-center justify-center rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-colors duration-200"
+            class="market-primary-surface market-primary-hover inline-flex items-center justify-center rounded-lg px-5 py-2.5 text-sm font-semibold text-[rgb(var(--palette-white))] transition-colors duration-200"
             @click="goHome"
           >
             {{ $t('pages.bannedPage.goHome') }}

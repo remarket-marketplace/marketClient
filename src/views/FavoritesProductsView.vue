@@ -82,41 +82,41 @@ watch(productCardViewMode, (mode) => {
     <div class="mb-6">
       <div class="flex gap-2 items-center mb-2">
         <BackButton />
-        <h1 class="text-2xl font-bold text-white">
+        <h1 class="text-2xl font-bold text-[rgb(var(--palette-white))]">
           {{ $t('pages.favoriteProducts.title') }}
         </h1>
       </div>
-      <p class="text-sm text-gray-400 mb-6">
+      <p class="text-sm text-[rgb(var(--palette-gray-400))] mb-6">
         {{ $t('pages.favoriteProducts.subtitle') }}
       </p>
       
       <!-- Search and stats -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div class="relative flex-1 max-w-md">
-          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[rgb(var(--palette-gray-500))]" />
           <input
             v-model="searchQuery"
             type="text"
             :placeholder="$t('pages.favoriteProducts.searchPlaceholder')"
-            class="w-full pl-10 pr-4 py-2.5 rounded-lg bg-dark-600 border border-dark-700 text-sm text-white outline-none placeholder-gray-500 focus:border-blue-500 transition-colors"
+            class="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[rgb(var(--palette-dark-600))] border border-[rgb(var(--palette-dark-700))] text-sm text-[rgb(var(--palette-white))] outline-none placeholder-[rgb(var(--palette-gray-500))] focus:border-[rgb(var(--palette-blue-500))] transition-colors"
           />
         </div>
         
         <div class="flex items-center gap-4">
-          <div class="flex items-center gap-2 text-sm text-gray-400">
-            <div class="px-3 py-1.5 rounded-lg bg-dark-700/50 border border-dark-600">
-              <span class="font-medium text-white">{{ filteredProducts.length }}</span>
+          <div class="flex items-center gap-2 text-sm text-[rgb(var(--palette-gray-400))]">
+            <div class="px-3 py-1.5 rounded-lg bg-[rgb(var(--palette-dark-700)/0.5)] border border-[rgb(var(--palette-dark-600))]">
+              <span class="font-medium text-[rgb(var(--palette-white))]">{{ filteredProducts.length }}</span>
               {{ $t('common.products') }}
             </div>
           </div>
           
-          <div class="flex items-center gap-2 text-pink-400">
+          <div class="flex items-center gap-2 text-[rgb(var(--palette-pink-400))]">
             <Heart class="w-4 h-4" />
             <span class="text-sm">{{ $t('pages.favoriteProducts.favorites') }}</span>
           </div>
 
           <div
-            class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-dark-600 bg-dark-700/40 p-0.5"
+            class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.4)] p-0.5"
             role="group"
             :aria-label="t('pages.index.viewSwitcherLabel')"
           >
@@ -124,8 +124,8 @@ watch(productCardViewMode, (mode) => {
               type="button"
               class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
               :class="productCardViewMode === 'grid'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+                ? 'bg-[rgb(var(--palette-blue-600))] text-[rgb(var(--palette-white))]'
+                : 'text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[rgb(var(--palette-white))]'"
               :title="t('pages.index.viewGrid')"
               @click="setProductCardViewMode('grid')"
             >
@@ -137,8 +137,8 @@ watch(productCardViewMode, (mode) => {
               type="button"
               class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
               :class="productCardViewMode === 'list'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+                ? 'bg-[rgb(var(--palette-blue-600))] text-[rgb(var(--palette-white))]'
+                : 'text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[rgb(var(--palette-white))]'"
               :title="t('pages.index.viewList')"
               @click="setProductCardViewMode('list')"
             >
@@ -161,7 +161,7 @@ watch(productCardViewMode, (mode) => {
       <div
         v-for="n in loadingSkeletonCount"
         :key="n"
-        class="animate-pulse rounded-xl border border-dark-700 bg-dark-600/70"
+        class="animate-pulse rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.7)]"
         :class="productCardViewMode === 'grid' ? 'h-64' : 'h-[118px] sm:h-[134px]'"
       ></div>
     </div>
@@ -170,19 +170,19 @@ watch(productCardViewMode, (mode) => {
     <div v-else-if="filteredProducts.length === 0" class="text-center py-16">
       <div class="max-w-md mx-auto space-y-4">
         <div class="relative">
-          <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-r from-pink-900/30 to-red-900/30 flex items-center justify-center">
-            <Heart class="w-10 h-10 text-pink-500" />
+          <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-r from-[rgb(var(--palette-pink-900)/0.3)] to-[rgb(var(--palette-red-900)/0.3)] flex items-center justify-center">
+            <Heart class="w-10 h-10 text-[rgb(var(--palette-pink-500))]" />
           </div>
         </div>
-        <h3 class="text-xl font-bold text-white">
+        <h3 class="text-xl font-bold text-[rgb(var(--palette-white))]">
           {{ searchQuery ? $t('pages.favoriteProducts.noResults') : $t('pages.favoriteProducts.emptyTitle') }}
         </h3>
-        <p class="text-sm text-gray-400">
+        <p class="text-sm text-[rgb(var(--palette-gray-400))]">
           {{ searchQuery ? $t('pages.favoriteProducts.tryDifferentQuery') : $t('pages.favoriteProducts.emptyDescription') }}
         </p>
         <router-link 
           to="/"
-          class="market-primary-surface market-primary-hover mt-4 inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-medium text-white transition-colors"
+          class="market-primary-surface market-primary-hover mt-4 inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-medium text-[rgb(var(--palette-white))] transition-colors"
         >
           {{ $t('pages.favoriteProducts.browseProducts') }}
         </router-link>
@@ -197,7 +197,7 @@ watch(productCardViewMode, (mode) => {
       <div
         v-for="product in filteredProducts"
         :key="product.id"
-        class="bg-dark-600 border border-dark-700 rounded-xl overflow-hidden hover:border-dark-500 transition-all duration-200"
+        class="bg-[rgb(var(--palette-dark-600))] border border-[rgb(var(--palette-dark-700))] rounded-xl overflow-hidden hover:border-[rgb(var(--palette-dark-500))] transition-all duration-200"
       >
         <FavoriteProductCard 
           :product="product" 

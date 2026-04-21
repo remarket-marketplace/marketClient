@@ -893,11 +893,11 @@ async function sendMessage(payload: { files: File[] }) {
 <template>
     <!-- Добавляем md:pt-6 обратно -->
     <div class="h-full w-full flex flex-col overscroll-none md:pt-6">
-        <div v-if="isLoading && chats.length === 0" class="flex flex-1 items-center justify-center text-gray-300">
+        <div v-if="isLoading && chats.length === 0" class="flex flex-1 items-center justify-center text-[rgb(var(--palette-gray-300))]">
             <Loader />
         </div>
 
-        <div v-else-if="errorMessage" class="flex flex-1 items-center justify-center text-red-500">
+        <div v-else-if="errorMessage" class="flex flex-1 items-center justify-center text-[rgb(var(--palette-red-500))]">
             {{ errorMessage }}
         </div>
 
@@ -913,7 +913,7 @@ async function sendMessage(payload: { files: File[] }) {
                     <div v-if="isMobile" class="px-4 pt-3">
                         <button
                             type="button"
-                            class="admin-surface-soft inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-gray-200"
+                            class="admin-surface-soft inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-[rgb(var(--palette-gray-200))]"
                             @click="goToAdminHome"
                         >
                             <ArrowLeft class="h-4 w-4" />
@@ -974,7 +974,7 @@ async function sendMessage(payload: { files: File[] }) {
                             </div>
                         </div>
                         <div v-else class="h-full w-full flex items-center justify-center">
-                            <p class="text-sm text-gray-400 font-light">
+                            <p class="text-sm text-[rgb(var(--palette-gray-400))] font-light">
                                 {{ $t('pages.admin.noSupportChats') }}
                             </p>
                         </div>
@@ -993,20 +993,20 @@ async function sendMessage(payload: { files: File[] }) {
                     <div class="flex flex-1 flex-col min-h-0 w-full">
                         <!-- chat title -->
                         <div v-if="currentChat"
-                            class="flex items-center gap-2 sticky top-0 bg-background px-2 py-2 lg:py-3 lg:px-3 z-10 lg:border-b border-white/8">
+                            class="flex items-center gap-2 sticky top-0 bg-background px-2 py-2 lg:py-3 lg:px-3 z-10 lg:border-b border-[rgb(var(--palette-white)/0.08)]">
                             <button v-if="isMobile" class="text-xl font-bold flex-shrink-0" @click="backToChats">
                                 <ArrowLeft />
                             </button>
                             <button
                                 type="button"
-                                class="flex items-center gap-3 flex-1 min-w-0 text-left rounded-lg transition cursor-pointer bg-transparent border-0 p-0 focus:outline-none"
+                                class="flex items-center gap-3 flex-1 min-w-0 text-left rounded-lg transition cursor-pointer bg-[var(--transparent)] border-0 p-0 focus:outline-none"
                                 @click="openChatProfile"
                             >
                                 <div class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
                                     <UserAvatar
                                         :avatar-url="currentChat?.another_user.avatar_url"
                                         :alt="currentChat?.another_user.username || ''"
-                                        class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-white/10 rounded-full object-cover"
+                                        class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-[rgb(var(--palette-white)/0.1)] rounded-full object-cover"
                                     />
                                 </div>
                                 <div class="flex min-w-0 flex-col">
@@ -1017,10 +1017,10 @@ async function sendMessage(payload: { files: File[] }) {
                                             class="text-lg font-semibold"
                                         />
                                     </div>
-                                    <p v-if="currentChat?.another_user.is_active" class="text-xs text-green-500">
+                                    <p v-if="currentChat?.another_user.is_active" class="text-xs text-[rgb(var(--palette-green-500))]">
                                         {{ $t('common.online') }}
                                     </p>
-                                    <p v-else class="text-xs text-gray-500">
+                                    <p v-else class="text-xs text-[rgb(var(--palette-gray-500))]">
                                         {{ $t('common.offline') }}
                                     </p>
                                 </div>
@@ -1073,12 +1073,12 @@ async function sendMessage(payload: { files: File[] }) {
 
                                         <div v-else-if="selectedChatId != null && chatMessages.length === 0"
                                             class="h-full w-full flex items-center justify-center">
-                                            <p class="text-gray-400 font-light">{{ $t("pages.chats.emptyMessages") }}</p>
+                                            <p class="text-[rgb(var(--palette-gray-400))] font-light">{{ $t("pages.chats.emptyMessages") }}</p>
                                         </div>
 
                                         <div v-else-if="selectedChatId === null"
                                             class="h-full w-full flex items-center justify-center">
-                                            <p class="text-gray-400 font-light">{{ $t('pages.admin.selectSupportChat') }}</p>
+                                            <p class="text-[rgb(var(--palette-gray-400))] font-light">{{ $t('pages.admin.selectSupportChat') }}</p>
                                         </div>
                                     </div>
                                 </template>
@@ -1093,7 +1093,7 @@ async function sendMessage(payload: { files: File[] }) {
 
                             <div
                                 v-if="selectedChatId"
-                                class="pointer-events-none absolute inset-x-0 z-20 bg-transparent px-1 pb-2 pt-0 md:bottom-0"
+                                class="pointer-events-none absolute inset-x-0 z-20 bg-[var(--transparent)] px-1 pb-2 pt-0 md:bottom-0"
                                 :class="isMobile ? 'bottom-14' : 'bottom-0'"
                             >
                                 <div class="pointer-events-auto">

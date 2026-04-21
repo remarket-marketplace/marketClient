@@ -135,55 +135,55 @@ type NicknameStyleTheme = {
 
 export const nicknameStyleThemes: Record<KnownNicknameStyleId, NicknameStyleTheme> = {
   default: {
-    cardClass: 'border-dark-600 bg-dark-700/60',
+    cardClass: 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.6)]',
     glowClass: 'shadow-none',
   },
   neon_pulse: {
-    cardClass: 'border-cyan-500/40 bg-cyan-900/20',
+    cardClass: 'border-[rgb(var(--palette-cyan-500)/0.4)] bg-[rgb(var(--palette-cyan-900)/0.2)]',
     glowClass: 'nickname-preview-glow-cyan',
   },
   gold_royal: {
-    cardClass: 'border-amber-400/40 bg-amber-900/20',
+    cardClass: 'border-[rgb(var(--palette-amber-400)/0.4)] bg-[rgb(var(--palette-amber-900)/0.2)]',
     glowClass: 'nickname-preview-glow-amber',
   },
   cyber_glitch: {
-    cardClass: 'border-fuchsia-500/40 bg-fuchsia-900/20',
+    cardClass: 'border-[rgb(var(--palette-fuchsia-500)/0.4)] bg-[rgb(var(--palette-fuchsia-900)/0.2)]',
     glowClass: 'nickname-preview-glow-fuchsia',
   },
   sunset_wave: {
-    cardClass: 'border-orange-400/40 bg-orange-900/20',
+    cardClass: 'border-[rgb(var(--palette-orange-400)/0.4)] bg-[rgb(var(--palette-orange-900)/0.2)]',
     glowClass: 'nickname-preview-glow-orange',
   },
   ice_frost: {
-    cardClass: 'border-sky-300/40 bg-sky-900/20',
+    cardClass: 'border-[rgb(var(--palette-sky-300)/0.4)] bg-[rgb(var(--palette-sky-900)/0.2)]',
     glowClass: 'nickname-preview-glow-sky',
   },
   emerald_glow: {
-    cardClass: 'border-emerald-400/40 bg-emerald-900/20',
+    cardClass: 'border-[rgb(var(--palette-emerald-400)/0.4)] bg-[rgb(var(--palette-emerald-900)/0.2)]',
     glowClass: 'nickname-preview-glow-emerald',
   },
   lava_burst: {
-    cardClass: 'border-red-500/40 bg-red-900/20',
+    cardClass: 'border-[rgb(var(--palette-red-500)/0.4)] bg-[rgb(var(--palette-red-900)/0.2)]',
     glowClass: 'nickname-preview-glow-red',
   },
   aurora_spectrum: {
-    cardClass: 'border-indigo-400/40 bg-indigo-900/20',
+    cardClass: 'border-[rgb(var(--palette-indigo-400)/0.4)] bg-[rgb(var(--palette-indigo-900)/0.2)]',
     glowClass: 'nickname-preview-glow-indigo',
   },
   candy_pop: {
-    cardClass: 'border-pink-400/40 bg-pink-900/20',
+    cardClass: 'border-[rgb(var(--palette-pink-400)/0.4)] bg-[rgb(var(--palette-pink-900)/0.2)]',
     glowClass: 'nickname-preview-glow-pink',
   },
   shadow_void: {
-    cardClass: 'border-violet-500/40 bg-violet-950/40',
+    cardClass: 'border-[rgb(var(--palette-violet-500)/0.4)] bg-[rgb(var(--palette-violet-950)/0.4)]',
     glowClass: 'nickname-preview-glow-violet',
   },
   sky_bolt: {
-    cardClass: 'border-blue-400/40 bg-blue-900/20',
+    cardClass: 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-900)/0.2)]',
     glowClass: 'nickname-preview-glow-blue',
   },
   matrix_code: {
-    cardClass: 'border-green-500/40 bg-green-950/30',
+    cardClass: 'border-[rgb(var(--palette-green-500)/0.4)] bg-[rgb(var(--palette-green-950)/0.3)]',
     glowClass: 'nickname-preview-glow-green',
   },
 }

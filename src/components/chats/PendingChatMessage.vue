@@ -32,7 +32,7 @@ const imagePreviewUrls = computed(() => (
             <div
               v-for="(previewUrl, index) in imagePreviewUrls"
               :key="`${previewUrl}_${index}`"
-              class="overflow-hidden rounded-lg border border-white/15 bg-dark-700/60"
+              class="overflow-hidden rounded-lg border border-[rgb(var(--palette-white)/0.15)] bg-[rgb(var(--palette-dark-700)/0.6)]"
               :class="imagePreviewUrls.length === 1 ? 'min-h-[120px]' : 'aspect-square'"
             >
               <img
@@ -47,29 +47,29 @@ const imagePreviewUrls = computed(() => (
 
       <div
         v-else
-        class="min-w-0 rounded-xl rounded-br-none bg-blue-600 px-4 py-2 break-words [overflow-wrap:anywhere]"
+        class="min-w-0 rounded-xl rounded-br-none bg-[rgb(var(--palette-blue-600))] px-4 py-2 break-words [overflow-wrap:anywhere]"
       >
         <p class="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{{ message.text }}</p>
-        <div class="mt-1 flex items-center justify-end gap-2 text-xs text-gray-300">
+        <div class="mt-1 flex items-center justify-end gap-2 text-xs text-[rgb(var(--palette-gray-300))]">
           <span>{{ formatDate(message.created_at) }}</span>
         </div>
       </div>
 
       <div
         v-if="isImageMessage"
-        class="mt-1 flex w-full items-center justify-end gap-2 text-xs text-gray-300"
+        class="mt-1 flex w-full items-center justify-end gap-2 text-xs text-[rgb(var(--palette-gray-300))]"
       >
         <span>{{ formatDate(message.created_at) }}</span>
       </div>
 
       <div
         v-if="isFailed"
-        class="mt-1 flex w-full items-center justify-end gap-2 text-xs text-red-300"
+        class="mt-1 flex w-full items-center justify-end gap-2 text-xs text-[rgb(var(--palette-red-300))]"
       >
         <span>{{ t('pages.chats.messageSendFailed') }}</span>
         <button
           type="button"
-          class="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-medium text-gray-200 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+          class="rounded-full border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] px-2 py-0.5 text-[11px] font-medium text-[rgb(var(--palette-gray-200))] transition hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[rgb(var(--palette-white))]"
           @click="emit('retry', message.id)"
         >
           {{ $t('pages.chats.retrySend') }}

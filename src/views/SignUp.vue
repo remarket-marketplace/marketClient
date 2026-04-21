@@ -5,14 +5,16 @@ import TheInput from '@/components/TheInput.vue'
 import { Eye, EyeOff } from 'lucide-vue-next'
 import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import TheButton from './forms/TheButton.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
 import Captcha from '@/components/Captcha.vue'
 import AuthWelcomeTyping from '@/components/AuthWelcomeTyping.vue'
+import { buildAuthRedirectQuery, getAuthRedirectFromRoute } from '@/utils/authRedirect'
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 
 // Данные регистрации
 const email = ref('')
@@ -35,6 +37,11 @@ const passwordHidden = ref(true)
 const passwordRepeatHidden = ref(true)
 const successShown = ref(false)
 const isWelcomeRedirecting = ref(false)
+const afterAuthRedirect = computed(() => getAuthRedirectFromRoute(route))
+const signInLocation = computed(() => ({
+  path: '/signin',
+  query: buildAuthRedirectQuery(afterAuthRedirect.value),
+}))
 
 // Ошибки валидации
 const usernameError = ref('')
@@ -405,7 +412,7 @@ function handleWelcomeFinished() {
   }
 
   isWelcomeRedirecting.value = true
-  router.push('/')
+  router.push(afterAuthRedirect.value)
 }
 </script>
 
@@ -424,7 +431,7 @@ function handleWelcomeFinished() {
       <div
         v-else
         key="form"
-        class="max-w-sm w-full border border-dark-700 rounded-2xl bg-background p-8 backdrop-blur-md space-y-6 my-auto"
+        class="max-w-sm w-full border border-[rgb(var(--palette-dark-700))] rounded-2xl bg-background p-8 backdrop-blur-md space-y-6 my-auto"
       >
         <h1 class="text-center text-3xl text-mainText font-bold">
           {{ $t('pages.auth.signUp.title') }}
@@ -438,7 +445,7 @@ function handleWelcomeFinished() {
             <TheInput id="username" v-model="username" type="text"
               placeholder="" required @blur="validateUsername"
               @input="clearUsernameError" :minlength="4" :maxlength="32" autocomplete="username" />
-            <p v-if="usernameError" class="mt-1 text-xs leading-4 text-red-300">{{ usernameError }}</p>
+            <p v-if="usernameError" class="mt-1 text-xs leading-4 text-[var(--danger-text-soft)]">{{ usernameError }}</p>
           </div>
 
           <!-- Email -->
@@ -446,7 +453,7 @@ function handleWelcomeFinished() {
             <label for="email" class="mb-1 block text-sm text-text-secondary">{{ $t('common.email') }}</label>
             <TheInput id="email" v-model="email" type="email" placeholder="" required
               @blur="validateEmail" @input="clearEmailError" :maxlength="64" autocomplete="email" />
-            <p v-if="emailError" class="mt-1 text-xs leading-4 text-red-300">{{ emailError }}</p>
+            <p v-if="emailError" class="mt-1 text-xs leading-4 text-[var(--danger-text-soft)]">{{ emailError }}</p>
           </div>
 
           <!-- Password с иконкой глаза -->
@@ -455,7 +462,7 @@ function handleWelcomeFinished() {
             <TheInput id="password" v-model="password" :type="passwordHidden ? 'password' : 'text'" placeholder="••••••••"
               required :minlength="8" @blur="validatePassword" @input="clearPasswordError" autocomplete="new-password">
               <template #append>
-                <button type="button" class="text-gray-400 hover:text-gray-300 transition-colors focus:outline-none p-1"
+                <button type="button" class="p-1 text-[var(--text-muted)] transition-colors hover:text-[var(--text-secondary)] focus:outline-none"
                   @click="switchPasswordVisibility">
                   <EyeOff v-if="passwordHidden" class="w-5 h-5" />
                   <Eye v-else class="w-5 h-5" />
@@ -463,7 +470,7 @@ function handleWelcomeFinished() {
               </template>
             </TheInput>
             <div v-if="password.length > 0 && activePasswordHint" class="mt-2">
-              <p class="flex items-center gap-2 text-xs leading-4 text-red-300">
+              <p class="flex items-center gap-2 text-xs leading-4 text-[var(--danger-text-soft)]">
                 <span class="inline-flex w-3 justify-center font-semibold">•</span>
                 <span>{{ activePasswordHint.label }}</span>
               </p>
@@ -478,24 +485,24 @@ function handleWelcomeFinished() {
             <TheInput id="passwordRepeat" v-model="passwordRepeat" :type="passwordRepeatHidden ? 'password' : 'text'" placeholder="••••••••" required
               :minlength="8" autocomplete="new-password" @input="clearPasswordRepeatError" @blur="clearPasswordRepeatError">
               <template #append>
-                <button type="button" class="text-gray-400 hover:text-gray-300 transition-colors focus:outline-none p-1"
+                <button type="button" class="p-1 text-[var(--text-muted)] transition-colors hover:text-[var(--text-secondary)] focus:outline-none"
                   @click="switchPasswordRepeatVisibility">
                   <EyeOff v-if="passwordRepeatHidden" class="w-5 h-5" />
                   <Eye v-else class="w-5 h-5" />
                 </button>
               </template>
             </TheInput>
-            <p v-if="passwordRepeatError" class="text-red-300 text-sm mt-1">{{ passwordRepeatError }}</p>
+            <p v-if="passwordRepeatError" class="mt-1 text-sm text-[var(--danger-text-soft)]">{{ passwordRepeatError }}</p>
           </div>
           <Captcha :key="captchaRenderKey" @verified="(token: string) => captchaToken = token" />
 
-          <p class="text-xs text-gray-400 leading-relaxed">
+          <p class="text-xs leading-relaxed text-[var(--text-muted)]">
             {{ $t('pages.auth.signUp.legalPrefix') }}
-            <router-link to="/terms" class="text-blue-400 hover:text-blue-300 hover:underline transition-colors">
+            <router-link to="/terms" class="text-[var(--link-text)] transition-colors hover:text-[var(--accent-text)] hover:underline">
               {{ $t('pages.auth.signUp.legalTerms') }}
             </router-link>
             {{ ' ' + $t('pages.auth.signUp.legalAnd') + ' ' }}
-            <router-link to="/privacy-policy" class="text-blue-400 hover:text-blue-300 hover:underline transition-colors">
+            <router-link to="/privacy-policy" class="text-[var(--link-text)] transition-colors hover:text-[var(--accent-text)] hover:underline">
               {{ $t('pages.auth.signUp.legalPrivacy') }}
             </router-link>.
           </p>
@@ -513,7 +520,7 @@ function handleWelcomeFinished() {
             <div class="grid grid-cols-6 gap-2">
               <input v-for="(digit, index) in 6" :key="index" :ref="el => codeInputs[index] = el as HTMLInputElement"
                 v-model="codeDigits[index]" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*"
-                class="flex-1 aspect-square min-w-0 border border-1 border-dark-700 rounded-lg bg-dark-600 text-center text-lg text-mainText font-bold transition-all focus:border-blue-500 focus:outline-none"
+                class="flex-1 aspect-square min-w-0 border border-1 border-[rgb(var(--palette-dark-700))] rounded-lg bg-[rgb(var(--palette-dark-600))] text-center text-lg text-mainText font-bold transition-all focus:border-[var(--accent-surface)] focus:outline-none"
                 @input="handleCodeInput($event, index)" @keydown="handleKeyDown($event, index)" @paste="handlePaste">
             </div>
           </div>
@@ -527,7 +534,7 @@ function handleWelcomeFinished() {
 
         <p class="text-center text-sm text-text-secondaryDark">
           {{ $t('pages.auth.signUp.haveAccount') }}
-          <router-link to="/signin" class="text-text-link hover:underline">
+          <router-link :to="signInLocation" class="text-text-link hover:underline">
             {{ $t('pages.auth.signUp.login') }}
           </router-link>
         </p>

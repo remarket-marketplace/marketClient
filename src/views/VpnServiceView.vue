@@ -443,7 +443,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="vpn-page relative left-1/2 right-1/2 -mt-14 ml-[-50vw] mr-[-50vw] min-h-[calc(100dvh-3.5rem)] w-screen overflow-hidden pt-14 text-white">
+  <section class="vpn-page relative left-1/2 right-1/2 -mt-14 ml-[-50vw] mr-[-50vw] min-h-[calc(100dvh-3.5rem)] w-screen overflow-hidden pt-14 text-[var(--text-primary-strong)]">
     <div class="vpn-page__grid pointer-events-none absolute inset-0"></div>
 
     <div class="vpn-page__inner relative mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-6xl flex-col px-4 pb-14 pt-6 sm:px-6 lg:px-8">
@@ -453,10 +453,10 @@ onMounted(() => {
 
       <div class="vpn-hero-grid grid flex-1 items-center gap-x-10 gap-y-7">
         <div class="vpn-page__copy vpn-hero-text max-w-3xl">
-          <h1 class="text-balance text-5xl font-semibold leading-none text-white sm:text-6xl lg:text-7xl">
+          <h1 class="text-balance text-5xl font-semibold leading-none text-[var(--text-primary-strong)] sm:text-6xl lg:text-7xl">
             {{ t('pages.vpn.title') }}
           </h1>
-          <p class="mt-5 max-w-2xl text-base leading-7 text-gray-300 sm:text-lg">
+          <p class="mt-5 max-w-2xl text-base leading-7 text-[var(--text-secondary)] sm:text-lg">
             {{ t('pages.vpn.subtitle') }}
           </p>
         </div>
@@ -464,7 +464,7 @@ onMounted(() => {
         <div class="vpn-hero-actions flex flex-col gap-3 sm:flex-row">
           <button
             type="button"
-            class="market-primary-surface market-primary-hover inline-flex h-12 items-center justify-center gap-2 rounded-lg px-5 text-sm font-semibold text-white transition-colors duration-200"
+            class="market-primary-surface market-primary-hover inline-flex h-12 items-center justify-center gap-2 rounded-lg px-5 text-sm font-semibold text-[var(--text-primary-strong)] transition-colors duration-200"
             @click="scrollToPlans"
           >
             <span>{{ t('pages.vpn.heroAction') }}</span>
@@ -473,10 +473,10 @@ onMounted(() => {
           <button
             v-if="isTrialAvailable"
             type="button"
-            class="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-white/[0.1] bg-white/[0.04] px-5 text-sm font-semibold text-gray-100 transition-colors duration-200 hover:bg-white/[0.08]"
+            class="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-[var(--surface-border-strong)] bg-[var(--surface-ghost-bg)] px-5 text-sm font-semibold text-[var(--text-primary-soft)] transition-colors duration-200 hover:bg-[var(--surface-ghost-hover-bg)]"
             @click="openTrialModal"
           >
-            <Clock class="h-4 w-4 text-blue-200" stroke-width="1.7" />
+            <Clock class="h-4 w-4 text-[var(--accent-text)]" stroke-width="1.7" />
             <span>{{ t('pages.vpn.trialAction') }}</span>
           </button>
         </div>
@@ -492,15 +492,15 @@ onMounted(() => {
           </div>
 
           <div class="vpn-node vpn-node--top">
-            <BrainCircuit class="h-4 w-4 text-blue-200" />
+            <BrainCircuit class="h-4 w-4 text-[var(--accent-text)]" />
             <span>{{ t('pages.vpn.visual.ai') }}</span>
           </div>
           <div class="vpn-node vpn-node--right">
-            <Globe class="h-4 w-4 text-blue-200" />
+            <Globe class="h-4 w-4 text-[var(--accent-text)]" />
             <span>{{ t('pages.vpn.visual.locations') }}</span>
           </div>
           <div class="vpn-node vpn-node--bottom">
-            <Smartphone class="h-4 w-4 text-blue-200" />
+            <Smartphone class="h-4 w-4 text-[var(--accent-text)]" />
             <span>{{ t('pages.vpn.visual.apps') }}</span>
           </div>
         </div>
@@ -510,8 +510,8 @@ onMounted(() => {
     <div class="relative mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">
       <section class="grid gap-6 py-10 lg:grid-cols-[0.85fr_1.15fr]">
         <div>
-          <p class="text-sm font-medium text-blue-200">{{ t('pages.vpn.featuresEyebrow') }}</p>
-          <h2 class="mt-3 text-3xl font-semibold leading-tight text-white sm:text-4xl">
+          <p class="text-sm font-medium text-[var(--accent-text)]">{{ t('pages.vpn.featuresEyebrow') }}</p>
+          <h2 class="mt-3 text-3xl font-semibold leading-tight text-[var(--text-primary-strong)] sm:text-4xl">
             {{ t('pages.vpn.featuresTitle') }}
           </h2>
         </div>
@@ -522,12 +522,12 @@ onMounted(() => {
             :key="feature.title"
             class="grid gap-3 py-5 first:pt-0 last:pb-0 sm:grid-cols-[44px_1fr]"
           >
-            <div class="flex h-11 w-11 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03]">
-              <component :is="feature.icon" class="h-5 w-5 text-blue-200" stroke-width="1.7" />
+            <div class="flex h-11 w-11 items-center justify-center rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel-bg)]">
+              <component :is="feature.icon" class="h-5 w-5 text-[var(--accent-text)]" stroke-width="1.7" />
             </div>
             <div>
-              <h3 class="text-base font-semibold text-white">{{ feature.title }}</h3>
-              <p class="mt-1 text-sm leading-6 text-gray-400">{{ feature.text }}</p>
+              <h3 class="text-base font-semibold text-[var(--text-primary-strong)]">{{ feature.title }}</h3>
+              <p class="mt-1 text-sm leading-6 text-[var(--text-muted)]">{{ feature.text }}</p>
             </div>
           </div>
         </div>
@@ -535,11 +535,11 @@ onMounted(() => {
 
       <section class="grid gap-6 py-10 lg:grid-cols-[0.85fr_1.15fr]">
         <div>
-          <p class="text-sm font-medium text-blue-200">{{ t('pages.vpn.appsEyebrow') }}</p>
-          <h2 class="mt-3 text-3xl font-semibold leading-tight text-white sm:text-4xl">
+          <p class="text-sm font-medium text-[var(--accent-text)]">{{ t('pages.vpn.appsEyebrow') }}</p>
+          <h2 class="mt-3 text-3xl font-semibold leading-tight text-[var(--text-primary-strong)] sm:text-4xl">
             {{ t('pages.vpn.appsTitle') }}
           </h2>
-          <p class="mt-3 max-w-md text-sm leading-6 text-gray-400">
+          <p class="mt-3 max-w-md text-sm leading-6 text-[var(--text-muted)]">
             {{ t('pages.vpn.appsSubtitle') }}
           </p>
         </div>
@@ -548,14 +548,14 @@ onMounted(() => {
           <div
             v-for="app in appItems"
             :key="app.name"
-            class="rounded-lg border border-white/[0.08] bg-white/[0.03] p-4"
+            class="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel-bg)] p-4"
           >
             <div class="flex items-start justify-between gap-3">
               <div>
-                <h3 class="text-lg font-semibold text-white">{{ app.name }}</h3>
-                <p class="mt-1 text-sm leading-6 text-gray-400">{{ app.text }}</p>
+                <h3 class="text-lg font-semibold text-[var(--text-primary-strong)]">{{ app.name }}</h3>
+                <p class="mt-1 text-sm leading-6 text-[var(--text-muted)]">{{ app.text }}</p>
               </div>
-              <MonitorDown class="mt-1 h-5 w-5 shrink-0 text-blue-200" stroke-width="1.7" />
+              <MonitorDown class="mt-1 h-5 w-5 shrink-0 text-[var(--accent-text)]" stroke-width="1.7" />
             </div>
 
             <div class="mt-4 flex flex-wrap gap-2">
@@ -565,11 +565,11 @@ onMounted(() => {
                 :href="link.href"
                 target="_blank"
                 rel="noreferrer"
-                class="inline-flex h-9 items-center gap-2 rounded-lg border border-white/[0.1] bg-white/[0.04] px-3 text-xs font-semibold text-gray-100 transition hover:bg-white/[0.08]"
+                class="inline-flex h-9 items-center gap-2 rounded-lg border border-[var(--surface-border-strong)] bg-[var(--surface-ghost-bg)] px-3 text-xs font-semibold text-[var(--text-primary-soft)] transition hover:bg-[var(--surface-ghost-hover-bg)]"
               >
-                <Icon :icon="link.icon" class="h-4 w-4 text-blue-100" />
+                <Icon :icon="link.icon" class="h-4 w-4 text-[var(--accent-text-soft)]" />
                 <span>{{ link.label }}</span>
-                <ExternalLink class="h-3.5 w-3.5 text-gray-500" stroke-width="1.7" />
+                <ExternalLink class="h-3.5 w-3.5 text-[var(--text-subtle)]" stroke-width="1.7" />
               </a>
             </div>
           </div>
@@ -578,28 +578,28 @@ onMounted(() => {
 
       <section id="vpn-plans" class="scroll-mt-24 py-12">
         <div class="max-w-3xl">
-          <p class="text-sm font-medium text-blue-200">{{ t('pages.vpn.plansEyebrow') }}</p>
-          <h2 class="mt-3 text-3xl font-semibold leading-tight text-white sm:text-4xl">
+          <p class="text-sm font-medium text-[var(--accent-text)]">{{ t('pages.vpn.plansEyebrow') }}</p>
+          <h2 class="mt-3 text-3xl font-semibold leading-tight text-[var(--text-primary-strong)] sm:text-4xl">
             {{ t('pages.vpn.plansTitle') }}
           </h2>
-          <p class="mt-3 text-sm leading-6 text-gray-400">
+          <p class="mt-3 text-sm leading-6 text-[var(--text-muted)]">
             {{ t('pages.vpn.plansSubtitle') }}
           </p>
         </div>
 
         <div class="mt-7 grid gap-4">
           <div class="space-y-4">
-            <div class="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 sm:p-5">
+            <div class="rounded-2xl border border-[var(--surface-border)] bg-[var(--surface-panel-bg)] p-4 sm:p-5">
               <div class="flex items-start justify-between gap-4">
                 <div>
-                  <p class="text-xs uppercase tracking-[0.18em] text-blue-200">
+                  <p class="text-xs uppercase tracking-[0.18em] text-[var(--accent-text)]">
                     {{ t('pages.vpn.periodStep') }}
                   </p>
-                  <h3 class="mt-1 text-lg font-semibold text-white">
+                  <h3 class="mt-1 text-lg font-semibold text-[var(--text-primary-strong)]">
                     {{ t('pages.vpn.periodTitle') }}
                   </h3>
                 </div>
-                <p class="text-right text-sm font-semibold text-blue-100">
+                <p class="text-right text-sm font-semibold text-[var(--accent-text-soft)]">
                   {{ selectedPeriod.duration }}
                 </p>
               </div>
@@ -611,68 +611,68 @@ onMounted(() => {
                   type="button"
                   class="group rounded-xl border p-4 text-left transition duration-200"
                   :class="selectedMonths === plan.months
-                    ? 'border-blue-300/60 bg-blue-500/[0.14] text-white'
-                    : 'border-white/[0.08] bg-black/[0.12] text-gray-300 hover:border-white/[0.18] hover:bg-white/[0.05]'"
+                    ? 'border-[var(--accent-border)] bg-[var(--accent-surface-soft)] text-[var(--text-primary-strong)]'
+                    : 'border-[var(--surface-border)] bg-[var(--surface-muted-bg)] text-[var(--text-secondary)] hover:border-[var(--surface-border-hover)] hover:bg-[var(--surface-ghost-soft-hover-bg)]'"
                   :aria-pressed="selectedMonths === plan.months"
                   @click="selectPeriod(plan.months)"
                 >
                   <div class="flex items-start justify-between gap-2">
                     <div>
-                      <p class="text-xl font-semibold leading-none text-white">{{ plan.duration }}</p>
-                      <p class="mt-2 text-sm font-semibold text-blue-200">
+                      <p class="text-xl font-semibold leading-none text-[var(--text-primary-strong)]">{{ plan.duration }}</p>
+                      <p class="mt-2 text-sm font-semibold text-[var(--accent-text)]">
                         {{ isPlansLoading ? t('common.loading') : plan.priceLabel }}
                       </p>
                     </div>
                     <span
                       class="flex h-6 w-6 items-center justify-center rounded-full border transition"
                       :class="selectedMonths === plan.months
-                        ? 'border-blue-200 bg-blue-500 text-white'
-                        : 'border-white/[0.14] text-transparent group-hover:text-gray-500'"
+                        ? 'border-[var(--accent-check-border)] bg-[var(--accent-surface)] text-[var(--text-primary-strong)]'
+                        : 'border-[var(--surface-border-muted)] text-[var(--text-transparent)] group-hover:text-[var(--text-subtle)]'"
                     >
                       <Check class="h-3.5 w-3.5" stroke-width="2" />
                     </span>
                   </div>
-                  <p class="mt-3 text-xs leading-5 text-gray-400">
+                  <p class="mt-3 text-xs leading-5 text-[var(--text-muted)]">
                     {{ plan.caption }}
                   </p>
                   <p
                     v-if="plan.months > 1"
-                    class="mt-3 inline-flex rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-xs font-semibold text-gray-200"
+                    class="mt-3 inline-flex rounded-full border border-[var(--surface-border)] bg-[var(--surface-ghost-bg)] px-2.5 py-1 text-xs font-semibold text-[var(--body-copy-strong)]"
                   >
                     {{ t('pages.vpn.pricePerMonth', { price: plan.monthlyLabel }) }}
                   </p>
-                  <p v-else class="mt-3 text-xs font-semibold text-gray-500">
+                  <p v-else class="mt-3 text-xs font-semibold text-[var(--text-subtle)]">
                     {{ plan.badge || t('pages.vpn.plans.month.badge') }}
                   </p>
                 </button>
               </div>
             </div>
 
-            <div class="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 sm:p-5">
+            <div class="rounded-2xl border border-[var(--surface-border)] bg-[var(--surface-panel-bg)] p-4 sm:p-5">
               <div class="flex items-start justify-between gap-4">
                 <div>
-                  <p class="text-xs uppercase tracking-[0.18em] text-blue-200">
+                  <p class="text-xs uppercase tracking-[0.18em] text-[var(--accent-text)]">
                     {{ t('pages.vpn.devicesStep') }}
                   </p>
-                  <h3 class="mt-1 text-lg font-semibold text-white">
+                  <h3 class="mt-1 text-lg font-semibold text-[var(--text-primary-strong)]">
                     {{ t('pages.vpn.devicesTitle') }}
                   </h3>
-                  <p class="mt-1 text-sm text-gray-400">{{ t('pages.vpn.devicesHint') }}</p>
+                  <p class="mt-1 text-sm text-[var(--text-muted)]">{{ t('pages.vpn.devicesHint') }}</p>
                 </div>
-                <p class="text-right text-sm font-semibold text-blue-100">
+                <p class="text-right text-sm font-semibold text-[var(--accent-text-soft)]">
                   {{ selectedDevicesLabel }}
                 </p>
               </div>
 
-              <div class="mt-6 rounded-2xl border border-white/[0.07] bg-black/[0.12] px-4 py-5">
+              <div class="mt-6 rounded-2xl border border-[var(--surface-border)] bg-[var(--surface-muted-bg)] px-4 py-5">
                 <div class="flex items-end justify-between gap-4">
                   <div>
-                    <p class="text-sm text-gray-400">{{ t('pages.vpn.devicesSelected') }}</p>
-                    <p class="mt-1 text-3xl font-semibold leading-none text-white">
+                    <p class="text-sm text-[var(--text-muted)]">{{ t('pages.vpn.devicesSelected') }}</p>
+                    <p class="mt-1 text-3xl font-semibold leading-none text-[var(--text-primary-strong)]">
                       {{ selectedDevices }}
                     </p>
                   </div>
-                  <p class="pb-1 text-right text-sm font-semibold text-blue-100">
+                  <p class="pb-1 text-right text-sm font-semibold text-[var(--accent-text-soft)]">
                     {{ selectedPlanPriceLabel }}
                   </p>
                 </div>
@@ -698,8 +698,8 @@ onMounted(() => {
                       type="button"
                       class="h-8 rounded-lg text-xs font-semibold transition"
                       :class="selectedDevices === devices
-                        ? 'bg-blue-500 text-white'
-                        : 'text-gray-500 hover:bg-white/[0.05] hover:text-gray-300'"
+                        ? 'bg-[var(--accent-surface)] text-[var(--text-primary-strong)]'
+                        : 'text-[var(--text-subtle)] hover:bg-[var(--surface-ghost-soft-hover-bg)] hover:text-[var(--text-secondary)]'"
                       @click="selectDevices(devices)"
                     >
                       {{ devices }}
@@ -710,40 +710,40 @@ onMounted(() => {
             </div>
           </div>
 
-          <aside class="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:px-5 sm:py-5">
+          <aside class="rounded-2xl border border-[var(--surface-border)] bg-[var(--surface-panel-bg)] px-4 py-4 [box-shadow:inset_0_1px_0_var(--surface-ghost-bg)] sm:px-5 sm:py-5">
             <div class="grid gap-4 lg:grid-cols-[240px_minmax(360px,1fr)_320px] lg:items-center">
               <div class="lg:pr-4">
-                <p class="text-xs uppercase tracking-[0.18em] text-blue-200">
+                <p class="text-xs uppercase tracking-[0.18em] text-[var(--accent-text)]">
                   {{ t('pages.vpn.summaryEyebrow') }}
                 </p>
-                <p class="mt-2 text-[2rem] font-semibold leading-none text-white sm:text-4xl">
+                <p class="mt-2 text-[2rem] font-semibold leading-none text-[var(--text-primary-strong)] sm:text-4xl">
                   {{ isPlansLoading ? t('common.loading') : selectedPlanPriceLabel }}
                 </p>
-                <div class="mt-3 text-xs leading-5 text-gray-400 sm:hidden">
+                <div class="mt-3 text-xs leading-5 text-[var(--text-muted)] sm:hidden">
                   <p>{{ selectedPeriod.duration }}</p>
                   <p>{{ selectedDevicesFullLabel }}</p>
                 </div>
               </div>
 
-              <div class="grid gap-3 border-t border-white/[0.08] pt-3 sm:grid-cols-3 lg:min-h-16 lg:border-l lg:border-t-0 lg:px-4 lg:pt-0">
+              <div class="grid gap-3 border-t border-[var(--surface-border)] pt-3 sm:grid-cols-3 lg:min-h-16 lg:border-l lg:border-t-0 lg:px-4 lg:pt-0">
                 <div class="flex justify-between gap-4 sm:flex-col sm:justify-center sm:gap-1">
-                  <span class="text-sm text-gray-400">{{ t('pages.vpn.summaryPeriod') }}</span>
-                  <p class="text-base font-semibold text-white">{{ selectedPeriod.duration }}</p>
+                  <span class="text-sm text-[var(--text-muted)]">{{ t('pages.vpn.summaryPeriod') }}</span>
+                  <p class="text-base font-semibold text-[var(--text-primary-strong)]">{{ selectedPeriod.duration }}</p>
                 </div>
                 <div class="flex justify-between gap-4 sm:flex-col sm:justify-center sm:gap-1">
-                  <span class="text-sm text-gray-400">{{ t('pages.vpn.summaryDevices') }}</span>
-                  <p class="text-base font-semibold text-white">{{ selectedDevices }}</p>
+                  <span class="text-sm text-[var(--text-muted)]">{{ t('pages.vpn.summaryDevices') }}</span>
+                  <p class="text-base font-semibold text-[var(--text-primary-strong)]">{{ selectedDevices }}</p>
                 </div>
                 <div class="flex justify-between gap-4 sm:flex-col sm:justify-center sm:gap-1">
-                  <span class="text-sm text-gray-400">{{ t('pages.vpn.summaryMonthly') }}</span>
-                  <p class="text-base font-semibold text-white">{{ selectedMonthlyPriceLabel }}</p>
+                  <span class="text-sm text-[var(--text-muted)]">{{ t('pages.vpn.summaryMonthly') }}</span>
+                  <p class="text-base font-semibold text-[var(--text-primary-strong)]">{{ selectedMonthlyPriceLabel }}</p>
                 </div>
               </div>
 
-              <div class="border-t border-white/[0.08] pt-3 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
+              <div class="border-t border-[var(--surface-border)] pt-3 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
                 <button
                   type="button"
-                  class="market-primary-surface market-primary-hover inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-white transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60"
+                  class="market-primary-surface market-primary-hover inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-[var(--text-primary-strong)] transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60"
                   :disabled="isPurchaseLoading || selectedPlanPrice <= 0"
                   @click="buySelectedPlan"
                 >
@@ -758,7 +758,7 @@ onMounted(() => {
                 </button>
               </div>
             </div>
-            <p v-if="actionError" class="mt-3 text-sm text-red-300">{{ actionError }}</p>
+            <p v-if="actionError" class="mt-3 text-sm text-[var(--danger-text-soft)]">{{ actionError }}</p>
           </aside>
         </div>
       </section>
@@ -773,18 +773,18 @@ onMounted(() => {
       @cancel="closeOrderModal"
     >
       <div v-if="orderResult" class="space-y-4">
-        <div class="rounded-lg border border-white/[0.08] bg-white/[0.03] p-3">
-          <p class="text-xs uppercase tracking-[0.16em] text-gray-500">
+        <div class="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel-bg)] p-3">
+          <p class="text-xs uppercase tracking-[0.16em] text-[var(--text-subtle)]">
             {{ t('pages.vpn.modal.subscriptionUrl') }}
           </p>
-          <p class="mt-2 break-all text-sm leading-6 text-gray-100">
+          <p class="mt-2 break-all text-sm leading-6 text-[var(--text-primary-soft)]">
             {{ orderResult.subscription_url }}
           </p>
         </div>
         <div class="grid gap-2 sm:grid-cols-2">
           <button
             type="button"
-            class="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-white/[0.1] bg-white/[0.04] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.08]"
+            class="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-[var(--surface-border-strong)] bg-[var(--surface-ghost-bg)] px-4 text-sm font-semibold text-[var(--text-primary-strong)] transition hover:bg-[var(--surface-ghost-hover-bg)]"
             @click="copySubscriptionUrl"
           >
             <Copy class="h-4 w-4" stroke-width="1.7" />
@@ -792,7 +792,7 @@ onMounted(() => {
           </button>
           <button
             type="button"
-            class="market-primary-surface market-primary-hover inline-flex h-11 items-center justify-center rounded-lg px-4 text-sm font-semibold text-white transition-colors duration-200"
+            class="market-primary-surface market-primary-hover inline-flex h-11 items-center justify-center rounded-lg px-4 text-sm font-semibold text-[rgb(var(--palette-white))] transition-colors duration-200"
             @click="openOrderChat"
           >
             {{ t('pages.vpn.modal.openChat') }}
@@ -801,20 +801,20 @@ onMounted(() => {
       </div>
 
       <div v-else class="space-y-4">
-        <div class="rounded-lg border border-white/[0.08] bg-white/[0.03] p-4">
-          <p class="text-sm font-semibold text-white">{{ t('pages.vpn.modal.trialSummaryTitle') }}</p>
-          <p class="mt-2 text-sm leading-6 text-gray-400">
+        <div class="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel-bg)] p-4">
+          <p class="text-sm font-semibold text-[var(--text-primary-strong)]">{{ t('pages.vpn.modal.trialSummaryTitle') }}</p>
+          <p class="mt-2 text-sm leading-6 text-[var(--text-muted)]">
             {{ t('pages.vpn.modal.trialSummaryText') }}
           </p>
         </div>
-        <p v-if="modalError" class="text-sm text-red-300">{{ modalError }}</p>
+        <p v-if="modalError" class="text-sm text-[var(--danger-text-soft)]">{{ modalError }}</p>
       </div>
 
       <template #footer>
         <div v-if="!orderResult" class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button
             type="button"
-            class="inline-flex h-10 items-center justify-center rounded-lg border border-white/[0.1] bg-white/[0.04] px-4 text-sm font-semibold text-gray-200 transition hover:bg-white/[0.08]"
+            class="inline-flex h-10 items-center justify-center rounded-lg border border-[var(--surface-border-strong)] bg-[var(--surface-ghost-bg)] px-4 text-sm font-semibold text-[var(--body-copy-strong)] transition hover:bg-[var(--surface-ghost-hover-bg)]"
             :disabled="isTrialLoading"
             @click="closeOrderModal"
           >
@@ -822,7 +822,7 @@ onMounted(() => {
           </button>
           <button
             type="button"
-            class="market-primary-surface market-primary-hover inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-semibold text-white transition-colors duration-200"
+            class="market-primary-surface market-primary-hover inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-semibold text-[rgb(var(--palette-white))] transition-colors duration-200"
             :disabled="isTrialLoading"
             @click="confirmTrial"
           >
@@ -947,7 +947,7 @@ onMounted(() => {
     linear-gradient(
       to right,
       rgb(59 130 246) 0%,
-      rgb(103 232 249) var(--vpn-device-progress),
+      var(--vpn-device-slider-fill) var(--vpn-device-progress),
       rgb(var(--palette-white) / 0.1) var(--vpn-device-progress),
       rgb(var(--palette-white) / 0.1) 100%
     );

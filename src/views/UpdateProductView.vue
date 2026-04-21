@@ -330,27 +330,27 @@ async function updateProduct() {
   <div v-else-if="productData" class="w-full h-full overflow-scroll no-scrollbar pb-16 md:pb-0">
     <div class="mx-auto w-full max-w-4xl px-4 lg:px-0 lg:pt-6 pb-24 lg:pb-8 space-y-6">
       <div>
-        <h1 class="text-2xl font-bold text-white">
+        <h1 class="text-2xl font-bold text-[rgb(var(--palette-white))]">
           {{ $t('pages.forms.editProduct.title') }}
         </h1>
-        <p class="mt-2 text-sm text-gray-400">
+        <p class="mt-2 text-sm text-[rgb(var(--palette-gray-400))]">
           {{ $t('pages.forms.editProduct.subtitle') }}
         </p>
         <div class="mt-3 flex flex-wrap items-center gap-3">
-          <span class="text-xs rounded-md border border-dark-600 bg-dark-700/40 px-2 py-1 text-gray-300">
+          <span class="text-xs rounded-md border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.4)] px-2 py-1 text-[rgb(var(--palette-gray-300))]">
             {{ productData.category.name }}
           </span>
           <ProductStatusTag :product-status="productData.status" />
         </div>
       </div>
 
-      <section class="rounded-xl border border-dark-700 bg-dark-600/30 p-4 lg:p-5 space-y-4">
+      <section class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.3)] p-4 lg:p-5 space-y-4">
         <div class="flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-300">
+          <label class="text-sm font-medium text-[rgb(var(--palette-gray-300))]">
             {{ $t('pages.forms.editProduct.currentImages') }}
-            <span class="text-xs text-red-400 ml-1">*</span>
+            <span class="text-xs text-[rgb(var(--palette-red-400))] ml-1">*</span>
           </label>
-          <span class="text-xs text-gray-400">
+          <span class="text-xs text-[rgb(var(--palette-gray-400))]">
             {{ totalImagesAfterUpdate }}/{{ PRODUCT_LIMITS.images.max }}
           </span>
         </div>
@@ -362,7 +362,7 @@ async function updateProduct() {
           <div
             v-for="image in existingImages"
             :key="image.id"
-            class="group relative aspect-square rounded-lg overflow-hidden border border-dark-700 bg-dark-600 transition-all duration-200 hover:border-blue-500/40"
+            class="group relative aspect-square rounded-lg overflow-hidden border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] transition-all duration-200 hover:border-[rgb(var(--palette-blue-500)/0.4)]"
           >
             <img
               :src="`${API_HOST}${image.image_url}`"
@@ -371,12 +371,12 @@ async function updateProduct() {
             />
 
             <div
-              class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200 flex items-center justify-center"
+              class="absolute inset-0 bg-[rgb(var(--palette-black)/0)] group-hover:bg-[rgb(var(--palette-black)/0.4)] transition-all duration-200 flex items-center justify-center"
             >
               <button
                 type="button"
                 @click="deleteExistingImage(image.id)"
-                class="rounded-full border border-white/10 bg-dark-900/90 p-2 text-gray-200 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:border-white/20 hover:bg-dark-900 hover:text-white"
+                class="rounded-full border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-dark-900)/0.9)] p-2 text-[rgb(var(--palette-gray-200))] opacity-0 transition-all duration-200 group-hover:opacity-100 hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-dark-900))] hover:text-[rgb(var(--palette-white))]"
                 :title="$t('common.delete')"
               >
                 <X class="w-4 h-4" />
@@ -385,8 +385,8 @@ async function updateProduct() {
           </div>
         </div>
 
-        <div v-else class="py-6 text-center border border-dashed border-dark-700 rounded-lg">
-          <p class="text-gray-400 text-sm">{{ $t('pages.forms.editProduct.noCurrentImages') }}</p>
+        <div v-else class="py-6 text-center border border-dashed border-[rgb(var(--palette-dark-700))] rounded-lg">
+          <p class="text-[rgb(var(--palette-gray-400))] text-sm">{{ $t('pages.forms.editProduct.noCurrentImages') }}</p>
         </div>
 
         <FileUploader
@@ -398,7 +398,7 @@ async function updateProduct() {
         <p
           v-if="showImagesError"
           class="text-xs"
-          :class="imagesCountValid ? 'text-gray-400' : 'text-red-400'"
+          :class="imagesCountValid ? 'text-[rgb(var(--palette-gray-400))]' : 'text-[rgb(var(--palette-red-400))]'"
         >
           {{
             $t('pages.forms.editProduct.validationImagesRange', {
@@ -409,11 +409,11 @@ async function updateProduct() {
         </p>
       </section>
 
-      <section class="rounded-xl border border-dark-700 bg-dark-600/30 p-4 lg:p-5 space-y-5">
+      <section class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.3)] p-4 lg:p-5 space-y-5">
         <div class="space-y-2">
-          <label for="title" class="text-sm font-medium text-gray-300">
+          <label for="title" class="text-sm font-medium text-[rgb(var(--palette-gray-300))]">
             {{ $t('pages.forms.createProduct.productName') }}
-            <span class="text-xs text-red-400 ml-1">*</span>
+            <span class="text-xs text-[rgb(var(--palette-red-400))] ml-1">*</span>
           </label>
           <input
             id="title"
@@ -422,13 +422,13 @@ async function updateProduct() {
             :maxlength="PRODUCT_LIMITS.title.max"
             :minlength="PRODUCT_LIMITS.title.min"
             :placeholder="$t('pages.forms.createProduct.productNamePlaceholder')"
-            class="w-full outline-none rounded-lg bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white placeholder-gray-500"
+            class="w-full outline-none rounded-lg bg-[rgb(var(--palette-dark-600))] border border-[rgb(var(--palette-dark-700))] px-4 py-3 text-sm text-[rgb(var(--palette-white))] placeholder-[rgb(var(--palette-gray-500))]"
           />
           <div class="flex items-center justify-between gap-3">
             <p
               v-if="showTitleError"
               class="text-xs"
-              :class="titleLengthValid ? 'text-gray-400' : 'text-red-400'"
+              :class="titleLengthValid ? 'text-[rgb(var(--palette-gray-400))]' : 'text-[rgb(var(--palette-red-400))]'"
             >
               {{
                 $t('pages.forms.editProduct.validationTitleLength', {
@@ -437,16 +437,16 @@ async function updateProduct() {
                 })
               }}
             </p>
-            <p class="text-xs text-gray-400 text-right ml-auto">
+            <p class="text-xs text-[rgb(var(--palette-gray-400))] text-right ml-auto">
               {{ title.length }}/{{ PRODUCT_LIMITS.title.max }}
             </p>
           </div>
         </div>
 
         <div class="space-y-2">
-          <label for="description" class="text-sm font-medium text-gray-300">
+          <label for="description" class="text-sm font-medium text-[rgb(var(--palette-gray-300))]">
             {{ $t('common.description') }}
-            <span class="text-xs text-red-400 ml-1">*</span>
+            <span class="text-xs text-[rgb(var(--palette-red-400))] ml-1">*</span>
           </label>
           <textarea
             id="description"
@@ -455,13 +455,13 @@ async function updateProduct() {
             :maxlength="PRODUCT_LIMITS.description.max"
             :minlength="PRODUCT_LIMITS.description.min"
             :placeholder="$t('pages.forms.createProduct.descriptionPlaceholder')"
-            class="w-full rounded-lg outline-none bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white placeholder-gray-500 resize-none"
+            class="w-full rounded-lg outline-none bg-[rgb(var(--palette-dark-600))] border border-[rgb(var(--palette-dark-700))] px-4 py-3 text-sm text-[rgb(var(--palette-white))] placeholder-[rgb(var(--palette-gray-500))] resize-none"
           ></textarea>
           <div class="flex items-center justify-between gap-3">
             <p
               v-if="showDescriptionError"
               class="text-xs"
-              :class="descriptionLengthValid ? 'text-gray-400' : 'text-red-400'"
+              :class="descriptionLengthValid ? 'text-[rgb(var(--palette-gray-400))]' : 'text-[rgb(var(--palette-red-400))]'"
             >
               {{
                 $t('pages.forms.editProduct.validationDescriptionLength', {
@@ -470,26 +470,26 @@ async function updateProduct() {
                 })
               }}
             </p>
-            <p class="text-xs text-gray-400 text-right ml-auto">
+            <p class="text-xs text-[rgb(var(--palette-gray-400))] text-right ml-auto">
               {{ normalizedDescriptionLength }}/{{ PRODUCT_LIMITS.description.max }}
             </p>
           </div>
         </div>
 
-        <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-4 space-y-3">
+        <div class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.4)] p-4 space-y-3">
           <div class="flex items-center justify-between">
             <div class="space-y-1">
-              <h4 class="text-sm font-semibold text-white">
+              <h4 class="text-sm font-semibold text-[rgb(var(--palette-white))]">
                 {{ $t('pages.forms.createProduct.autoDelivery') }}
               </h4>
-              <p class="text-xs text-gray-400 leading-relaxed">
+              <p class="text-xs text-[rgb(var(--palette-gray-400))] leading-relaxed">
                 {{ $t('pages.forms.createProduct.autoDeliveryHint') }}
               </p>
             </div>
             <Checkbox v-model="autoDelivery" size="lg" />
           </div>
-          <div v-if="autoDelivery" class="p-3 rounded-lg bg-blue-900/20 border border-blue-800/30">
-            <p class="text-xs text-blue-300 leading-relaxed flex items-start gap-2">
+          <div v-if="autoDelivery" class="p-3 rounded-lg bg-[rgb(var(--palette-blue-900)/0.2)] border border-[rgb(var(--palette-blue-800)/0.3)]">
+            <p class="text-xs text-[rgb(var(--palette-blue-300))] leading-relaxed flex items-start gap-2">
               <Info class="w-4 h-4 mt-0.5 flex-shrink-0" />
               {{ $t('pages.forms.createProduct.autoDeliveryEnabledHint') }}
             </p>
@@ -498,11 +498,11 @@ async function updateProduct() {
 
         <div v-if="autoDelivery" class="space-y-2">
           <div class="flex items-center gap-2">
-            <label for="productData" class="text-sm font-medium text-gray-300">
+            <label for="productData" class="text-sm font-medium text-[rgb(var(--palette-gray-300))]">
               {{ $t('pages.forms.createProduct.productData') }}
-              <span class="text-xs text-red-400 ml-1">*</span>
+              <span class="text-xs text-[rgb(var(--palette-red-400))] ml-1">*</span>
             </label>
-            <div class="flex items-center gap-1 text-xs text-blue-400">
+            <div class="flex items-center gap-1 text-xs text-[rgb(var(--palette-blue-400))]">
               <Info class="w-3 h-3" />
               <span>{{ $t('pages.forms.createProduct.productDataHint') }}</span>
             </div>
@@ -515,13 +515,13 @@ async function updateProduct() {
             :maxlength="PRODUCT_LIMITS.productData.max"
             :minlength="PRODUCT_LIMITS.productData.min"
             :placeholder="$t('pages.forms.createProduct.productDataPlaceholder')"
-            class="w-full rounded-lg outline-none bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white placeholder-gray-500 resize-none font-mono"
+            class="w-full rounded-lg outline-none bg-[rgb(var(--palette-dark-600))] border border-[rgb(var(--palette-dark-700))] px-4 py-3 text-sm text-[rgb(var(--palette-white))] placeholder-[rgb(var(--palette-gray-500))] resize-none font-mono"
           ></textarea>
           <div class="flex items-center justify-between gap-3">
             <p
               v-if="showProductDataError"
               class="text-xs"
-              :class="productDataLengthValid ? 'text-gray-400' : 'text-red-400'"
+              :class="productDataLengthValid ? 'text-[rgb(var(--palette-gray-400))]' : 'text-[rgb(var(--palette-red-400))]'"
             >
               {{
                 $t('pages.forms.editProduct.validationProductDataLength', {
@@ -530,24 +530,24 @@ async function updateProduct() {
                 })
               }}
             </p>
-            <p class="text-xs text-gray-400 text-right ml-auto">
+            <p class="text-xs text-[rgb(var(--palette-gray-400))] text-right ml-auto">
               {{ normalizedProductDataLength }}/{{ PRODUCT_LIMITS.productData.max }}
             </p>
           </div>
         </div>
       </section>
 
-      <section class="rounded-xl border border-dark-700 bg-dark-600/30 p-4 lg:p-5 space-y-5">
+      <section class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.3)] p-4 lg:p-5 space-y-5">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="space-y-3">
             <div class="flex h-6 items-center justify-between">
-              <label for="price" class="text-sm font-medium text-gray-300">
+              <label for="price" class="text-sm font-medium text-[rgb(var(--palette-gray-300))]">
                 {{ $t('common.price') }}
-                <span class="text-xs text-red-400 ml-1">*</span>
+                <span class="text-xs text-[rgb(var(--palette-red-400))] ml-1">*</span>
               </label>
               <div class="flex items-center gap-2">
-                <Calculator class="w-4 h-4 text-blue-400" />
-                <span class="text-xs text-gray-400">{{ currencySymbol }}</span>
+                <Calculator class="w-4 h-4 text-[rgb(var(--palette-blue-400))]" />
+                <span class="text-xs text-[rgb(var(--palette-gray-400))]">{{ currencySymbol }}</span>
               </div>
             </div>
             <div class="relative">
@@ -559,16 +559,16 @@ async function updateProduct() {
                 :max="priceInputMax"
                 :step="priceInputStep"
                 :placeholder="$t('pages.forms.createProduct.pricePlaceholder')"
-                class="h-12 w-full rounded-lg border border-dark-700 bg-dark-600 px-4 pr-16 text-base font-semibold text-white outline-none"
+                class="h-12 w-full rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] px-4 pr-16 text-base font-semibold text-[rgb(var(--palette-white))] outline-none"
               />
-              <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 text-sm font-medium">
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 text-[rgb(var(--palette-gray-300))] text-sm font-medium">
                 {{ currencySymbol }}
               </div>
             </div>
             <p
               v-if="showPriceError"
               class="text-xs"
-              :class="priceValid ? 'text-gray-400' : 'text-red-400'"
+              :class="priceValid ? 'text-[rgb(var(--palette-gray-400))]' : 'text-[rgb(var(--palette-red-400))]'"
             >
               {{
                 $t('pages.forms.editProduct.validationPriceRange', {
@@ -581,7 +581,7 @@ async function updateProduct() {
 
           <div class="space-y-3">
             <div class="flex h-6 items-center">
-              <label for="count" class="text-sm font-medium text-gray-300">
+              <label for="count" class="text-sm font-medium text-[rgb(var(--palette-gray-300))]">
                 {{ $t('pages.forms.createProduct.count') }}
               </label>
             </div>
@@ -592,16 +592,16 @@ async function updateProduct() {
                 type="number"
                 :min="PRODUCT_LIMITS.count.min"
                 :max="PRODUCT_LIMITS.count.max"
-                class="h-12 w-full rounded-lg border border-dark-700 bg-dark-600 px-4 pr-20 text-base font-semibold text-white outline-none"
+                class="h-12 w-full rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] px-4 pr-20 text-base font-semibold text-[rgb(var(--palette-white))] outline-none"
               />
-              <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 text-[rgb(var(--palette-gray-400))] text-sm">
                 {{ $t('common.items') }}
               </div>
             </div>
             <p
               v-if="showCountError"
               class="text-xs"
-              :class="countValid ? 'text-gray-400' : 'text-red-400'"
+              :class="countValid ? 'text-[rgb(var(--palette-gray-400))]' : 'text-[rgb(var(--palette-red-400))]'"
             >
               {{
                 $t('pages.forms.editProduct.validationCountRange', {
@@ -613,39 +613,39 @@ async function updateProduct() {
           </div>
         </div>
 
-        <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-5 space-y-4">
-          <h3 class="text-sm font-semibold text-white flex items-center gap-2">
-            <Percent class="w-4 h-4 text-blue-400" />
+        <div class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.4)] p-5 space-y-4">
+          <h3 class="text-sm font-semibold text-[rgb(var(--palette-white))] flex items-center gap-2">
+            <Percent class="w-4 h-4 text-[rgb(var(--palette-blue-400))]" />
             {{ $t('pages.forms.createProduct.calculations') }}
           </h3>
 
           <div class="space-y-3">
             <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-400">{{ $t('pages.forms.createProduct.totalPrice') }}:</span>
-              <span class="text-sm font-medium text-white">
+              <span class="text-sm text-[rgb(var(--palette-gray-400))]">{{ $t('pages.forms.createProduct.totalPrice') }}:</span>
+              <span class="text-sm font-medium text-[rgb(var(--palette-white))]">
                 {{ formatPrice(totalPriceInRub) }}
               </span>
             </div>
 
             <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-400">
+              <span class="text-sm text-[rgb(var(--palette-gray-400))]">
                 {{ $t('pages.forms.createProduct.commission') }}:
-                <span v-if="commissionInterest" class="text-blue-400 ml-1">
+                <span v-if="commissionInterest" class="text-[rgb(var(--palette-blue-400))] ml-1">
                   ({{ commissionInterest }}%)
                 </span>
               </span>
-              <span class="text-sm font-medium text-red-400">
+              <span class="text-sm font-medium text-[rgb(var(--palette-red-400))]">
                 -{{ formatPrice(commissionAmountInRub) }}
               </span>
             </div>
 
-            <div class="border-t border-dark-600 my-2"></div>
+            <div class="border-t border-[rgb(var(--palette-dark-600))] my-2"></div>
 
             <div class="flex items-center justify-between">
-              <span class="text-sm font-medium text-gray-300">
+              <span class="text-sm font-medium text-[rgb(var(--palette-gray-300))]">
                 {{ $t('pages.forms.createProduct.sellerReceives') }}:
               </span>
-              <span class="text-lg font-bold text-green-400">
+              <span class="text-lg font-bold text-[rgb(var(--palette-green-400))]">
                 {{ formatPrice(sellerAmount) }}
               </span>
             </div>
@@ -657,9 +657,9 @@ async function updateProduct() {
 
       <div
         v-if="submitAttempted && !isFormValid"
-        class="rounded-lg border border-amber-700/40 bg-amber-900/15 p-3"
+        class="rounded-lg border border-[rgb(var(--palette-amber-700)/0.4)] bg-[rgb(var(--palette-amber-900)/0.15)] p-3"
       >
-        <p class="text-xs text-amber-200 font-medium flex items-center gap-1.5">
+        <p class="text-xs text-[rgb(var(--palette-amber-200))] font-medium flex items-center gap-1.5">
           <AlertCircle class="h-4 w-4" />
           {{ t('pages.forms.editProduct.fixFormToSave') }}
           ({{ invalidFieldsCount }})
@@ -673,7 +673,7 @@ async function updateProduct() {
         @click="updateProduct"
       >
         <span v-if="sended" class="flex items-center justify-center gap-2">
-          <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <svg class="animate-spin h-4 w-4 text-[rgb(var(--palette-white))]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path
               class="opacity-75"
@@ -688,9 +688,9 @@ async function updateProduct() {
         </span>
       </button>
 
-      <div class="text-xs text-gray-400 space-y-2">
-        <div class="flex items-start gap-2 p-3 bg-dark-700/30 rounded-lg">
-          <AlertCircle class="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+      <div class="text-xs text-[rgb(var(--palette-gray-400))] space-y-2">
+        <div class="flex items-start gap-2 p-3 bg-[rgb(var(--palette-dark-700)/0.3)] rounded-lg">
+          <AlertCircle class="w-4 h-4 text-[rgb(var(--palette-yellow-400))] mt-0.5 flex-shrink-0" />
           <p>{{ $t('pages.forms.editProduct.saveNote') }}</p>
         </div>
       </div>

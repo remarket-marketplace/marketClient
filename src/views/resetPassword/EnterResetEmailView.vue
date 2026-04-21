@@ -81,7 +81,7 @@ onUnmounted(() => {
 
 <template>
     <div class="h-full w-full flex flex-col items-center overflow-scroll pb-36 pt-10">
-        <div class="max-w-sm w-full border border-dark-700 rounded-2xl bg-background p-8 backdrop-blur-md space-y-6 my-auto">
+        <div class="max-w-sm w-full border border-[rgb(var(--palette-dark-700))] rounded-2xl bg-background p-8 backdrop-blur-md space-y-6 my-auto">
             <h1 class="text-center text-3xl text-mainText font-bold">
                 {{ $t('pages.resetPassword.title') }}
             </h1>
@@ -95,7 +95,7 @@ onUnmounted(() => {
                 <div class="space-y-4">
                     <TheInput id="email" v-model="email" type="email" :placeholder="$t('common.emailPlaceholder')"
                         required autocomplete="email" :error="email.length > 0 && !emailValid" />
-                    <p v-if="email.length > 0 && !emailValid" class="mt-1 text-xs text-red-400">
+                    <p v-if="email.length > 0 && !emailValid" class="mt-1 text-xs text-[rgb(var(--palette-red-400))]">
                         {{ $t('validation.invalidEmail') }}
                     </p>
 

@@ -188,18 +188,18 @@ const readStatusTitle = computed(() => {
 
 const readStatusClass = computed(() => {
   if (!props.textMessage || !isOwnMessage.value) return ''
-  return props.textMessage.is_read ? 'text-sky-300' : 'text-gray-300/85'
+  return props.textMessage.is_read ? 'text-[rgb(var(--palette-sky-300))]' : 'text-[rgb(var(--palette-gray-300)/0.85)]'
 })
 
 const bubbleRoleClass = computed(() => {
   if (props.textMessage?.sender_id === props.user?.id) {
-    return 'bg-blue-600 text-mainText rounded-br-none self-end'
+    return 'bg-[rgb(var(--palette-blue-600))] text-mainText rounded-br-none self-end'
   }
 
-  return 'bg-dark-600 text-mainText rounded-bl-none'
+  return 'bg-[rgb(var(--palette-dark-600))] text-mainText rounded-bl-none'
 })
 
-const pillClasses = computed(() => 'text-gray-200 bg-dark-700/80 border border-dark-600')
+const pillClasses = computed(() => 'text-[rgb(var(--palette-gray-200))] bg-[rgb(var(--palette-dark-700)/0.8)] border border-[rgb(var(--palette-dark-600))]')
 
 const isAdminSenderParticipantInCurrentChat = computed(() => {
   if (!props.textMessage?.is_admin_message) return false
@@ -221,24 +221,24 @@ const shouldRenderAdminMessage = computed(() => {
 <template>
 	<!-- Admin message - centered, full width -->
 	<div v-if="shouldRenderAdminMessage" class="w-full min-w-0 flex justify-center">
-		<div class="w-full min-w-0 max-w-2xl overflow-hidden rounded-xl border border-blue-500/30 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 px-4 py-3 text-sm text-mainText break-words [overflow-wrap:anywhere]">
+		<div class="w-full min-w-0 max-w-2xl overflow-hidden rounded-xl border border-[rgb(var(--palette-blue-500)/0.3)] bg-gradient-to-r from-[rgb(var(--palette-blue-500)/0.1)] to-[rgb(var(--palette-cyan-500)/0.1)] px-4 py-3 text-sm text-mainText break-words [overflow-wrap:anywhere]">
 			<div class="flex items-start gap-2">
-				<div class="flex-shrink-0 mt-0.5 p-1.5 rounded-full bg-blue-500/20">
-					<svg class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+				<div class="flex-shrink-0 mt-0.5 p-1.5 rounded-full bg-[rgb(var(--palette-blue-500)/0.2)]">
+					<svg class="w-4 h-4 text-[rgb(var(--palette-blue-400))]" fill="currentColor" viewBox="0 0 20 20">
 						<path d="M18 9.5a1.5 1.5 0 11-3 0v-6a1.5 1.5 0 011.5-1.5h3V2a.5.5 0 00-.5-.5h-3A4.5 4.5 0 0010 5.5v6a4.5 4.5 0 004.5 4.5h3a.5.5 0 00.5-.5V15h-3a1.5 1.5 0 01-1.5-1.5z"></path>
 					</svg>
 				</div>
 				<div class="min-w-0 flex-1">
-					<p class="text-blue-200 font-medium text-xs mb-1">{{ $t('common.admin') }}</p>
-          <p v-if="senderLabel || forceShowSender" class="text-xs text-gray-400 mb-1">{{ senderLabel || $t('common.admin') }}</p>
-					<p class="whitespace-pre-wrap text-gray-100 break-words [overflow-wrap:anywhere]">
+					<p class="text-[rgb(var(--palette-blue-200))] font-medium text-xs mb-1">{{ $t('common.admin') }}</p>
+          <p v-if="senderLabel || forceShowSender" class="text-xs text-[rgb(var(--palette-gray-400))] mb-1">{{ senderLabel || $t('common.admin') }}</p>
+					<p class="whitespace-pre-wrap text-[rgb(var(--palette-gray-100))] break-words [overflow-wrap:anywhere]">
             <template v-for="(part, index) in adminContentParts" :key="`admin-${textMessage?.id}-${index}`">
               <br v-if="part.type === 'newline'" />
               <template v-else-if="part.type === 'text'">{{ part.value }}</template>
               <button
                 v-else
                 type="button"
-                class="inline-block max-w-full whitespace-normal break-all align-baseline rounded-sm text-left text-sky-300 underline decoration-sky-300/70 underline-offset-2 transition hover:text-sky-200"
+                class="inline-block max-w-full whitespace-normal break-all align-baseline rounded-sm text-left text-[rgb(var(--palette-sky-300))] underline decoration-[rgb(var(--palette-sky-300)/0.7)] underline-offset-2 transition hover:text-[rgb(var(--palette-sky-200))]"
                 :title="t('pages.chats.openLink')"
                 @click="requestOpenExternalLink(part.value)"
               >
@@ -247,8 +247,8 @@ const shouldRenderAdminMessage = computed(() => {
             </template>
           </p>
           <div v-if="hasReason" class="mt-2 space-y-2">
-            <p class="font-semibold text-gray-50">{{ $t('common.reason') }}</p>
-            <div class="rounded-lg border border-dark-600 bg-dark-900/70 px-3 py-2 text-gray-100">
+            <p class="font-semibold text-[rgb(var(--palette-gray-50))]">{{ $t('common.reason') }}</p>
+            <div class="rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-900)/0.7)] px-3 py-2 text-[rgb(var(--palette-gray-100))]">
               <p class="whitespace-pre-line break-words [overflow-wrap:anywhere]">
                 <template v-for="(part, index) in reasonTextParts" :key="`admin-reason-${textMessage?.id}-${index}`">
                   <br v-if="part.type === 'newline'" />
@@ -256,7 +256,7 @@ const shouldRenderAdminMessage = computed(() => {
                   <button
                     v-else
                     type="button"
-                    class="inline-block max-w-full whitespace-normal break-all align-baseline rounded-sm text-left text-sky-300 underline decoration-sky-300/70 underline-offset-2 transition hover:text-sky-200"
+                    class="inline-block max-w-full whitespace-normal break-all align-baseline rounded-sm text-left text-[rgb(var(--palette-sky-300))] underline decoration-[rgb(var(--palette-sky-300)/0.7)] underline-offset-2 transition hover:text-[rgb(var(--palette-sky-200))]"
                     :title="t('pages.chats.openLink')"
                     @click="requestOpenExternalLink(part.value)"
                   >
@@ -266,7 +266,7 @@ const shouldRenderAdminMessage = computed(() => {
               </p>
             </div>
           </div>
-          <div class="mt-2 flex items-center justify-end gap-2 text-xs text-gray-400">
+          <div class="mt-2 flex items-center justify-end gap-2 text-xs text-[rgb(var(--palette-gray-400))]">
             <span>{{ textMessage ? formatDate(textMessage.created_at) : '' }}</span>
             <span
               v-if="isOwnMessage"
@@ -295,7 +295,7 @@ const shouldRenderAdminMessage = computed(() => {
 	</div>
 
 	<!-- Regular messages -->
-	<div v-else-if="textMessage != null && scopeVpnData" class="min-w-0 max-w-[92%] rounded-2xl border border-dark-700 bg-dark-800/50 px-3.5 py-3 text-sm text-mainText md:max-w-md" :class="textMessage.sender_id === user?.id ? 'self-end' : 'self-start'">
+	<div v-else-if="textMessage != null && scopeVpnData" class="min-w-0 max-w-[92%] rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-800)/0.5)] px-3.5 py-3 text-sm text-mainText md:max-w-md" :class="textMessage.sender_id === user?.id ? 'self-end' : 'self-start'">
     <div v-if="senderLabel || forceShowSender" class="mb-2 flex items-center gap-2">
       <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full" :class="pillClasses">
         {{ senderLabel || $t('common.user') }}
@@ -303,15 +303,15 @@ const shouldRenderAdminMessage = computed(() => {
     </div>
 
     <div class="min-w-0">
-        <p class="text-sm font-semibold text-white">{{ scopeVpnTitle }}</p>
-        <p class="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-gray-400">
+        <p class="text-sm font-semibold text-[rgb(var(--palette-white))]">{{ scopeVpnTitle }}</p>
+        <p class="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-[rgb(var(--palette-gray-400))]">
           {{ t('pages.chats.scopeVpn.connectionLink') }}
         </p>
 
-        <div class="mt-2 flex w-full min-w-0 items-start gap-2 rounded-xl border border-dark-600 bg-dark-900/55 px-3 py-2">
+        <div class="mt-2 flex w-full min-w-0 items-start gap-2 rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-900)/0.55)] px-3 py-2">
           <button
             type="button"
-          class="min-w-0 flex-1 whitespace-normal break-all text-left text-xs leading-5 text-sky-300 underline decoration-sky-300/70 underline-offset-2 transition hover:text-sky-200"
+          class="min-w-0 flex-1 whitespace-normal break-all text-left text-xs leading-5 text-[rgb(var(--palette-sky-300))] underline decoration-[rgb(var(--palette-sky-300)/0.7)] underline-offset-2 transition hover:text-[rgb(var(--palette-sky-200))]"
             :title="t('pages.chats.openLink')"
             @click="requestOpenExternalLink(scopeVpnData.subscriptionUrl)"
           >
@@ -319,7 +319,7 @@ const shouldRenderAdminMessage = computed(() => {
           </button>
           <button
             type="button"
-            class="inline-flex shrink-0 items-center gap-1 rounded-full border border-dark-600 bg-dark-700/70 px-2 py-1 text-[11px] font-semibold text-gray-200 transition hover:border-dark-500 hover:text-white"
+            class="inline-flex shrink-0 items-center gap-1 rounded-full border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.7)] px-2 py-1 text-[11px] font-semibold text-[rgb(var(--palette-gray-200))] transition hover:border-[rgb(var(--palette-dark-500))] hover:text-[rgb(var(--palette-white))]"
             :title="t('pages.chats.scopeVpn.copyLink')"
             @click="copyScopeVpnLink"
           >
@@ -328,12 +328,12 @@ const shouldRenderAdminMessage = computed(() => {
           </button>
         </div>
 
-        <p v-if="scopeVpnTrafficLimit" class="mt-2 text-xs leading-5 text-gray-300">
+        <p v-if="scopeVpnTrafficLimit" class="mt-2 text-xs leading-5 text-[rgb(var(--palette-gray-300))]">
           {{ scopeVpnTrafficLimit }}
         </p>
     </div>
 
-    <div class="mt-2 flex items-center justify-end gap-2 text-xs text-gray-400">
+    <div class="mt-2 flex items-center justify-end gap-2 text-xs text-[rgb(var(--palette-gray-400))]">
       <span>{{ formatDate(textMessage.created_at) }}</span>
       <span
         v-if="isOwnMessage"
@@ -374,7 +374,7 @@ const shouldRenderAdminMessage = computed(() => {
         <button
           v-else
           type="button"
-          class="inline-block max-w-full whitespace-normal break-all align-baseline rounded-sm text-left text-sky-200 underline decoration-sky-200/70 underline-offset-2 transition hover:text-sky-100"
+          class="inline-block max-w-full whitespace-normal break-all align-baseline rounded-sm text-left text-[rgb(var(--palette-sky-200))] underline decoration-[rgb(var(--palette-sky-200)/0.7)] underline-offset-2 transition hover:text-[rgb(var(--palette-sky-100))]"
           :title="t('pages.chats.openLink')"
           @click="requestOpenExternalLink(part.value)"
         >
@@ -383,8 +383,8 @@ const shouldRenderAdminMessage = computed(() => {
       </template>
     </p>
     <div v-if="hasReason" class="mt-2 space-y-2">
-      <p class="font-semibold text-gray-50">{{ $t('common.reason') }}</p>
-      <div class="rounded-lg border border-dark-700 bg-dark-900/60 px-3 py-2 text-gray-100">
+      <p class="font-semibold text-[rgb(var(--palette-gray-50))]">{{ $t('common.reason') }}</p>
+      <div class="rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900)/0.6)] px-3 py-2 text-[rgb(var(--palette-gray-100))]">
         <p class="whitespace-pre-line break-words [overflow-wrap:anywhere]">
           <template v-for="(part, index) in reasonTextParts" :key="`regular-reason-${textMessage.id}-${index}`">
             <br v-if="part.type === 'newline'" />
@@ -392,7 +392,7 @@ const shouldRenderAdminMessage = computed(() => {
             <button
               v-else
               type="button"
-              class="inline-block max-w-full whitespace-normal break-all align-baseline rounded-sm text-left text-sky-200 underline decoration-sky-200/70 underline-offset-2 transition hover:text-sky-100"
+              class="inline-block max-w-full whitespace-normal break-all align-baseline rounded-sm text-left text-[rgb(var(--palette-sky-200))] underline decoration-[rgb(var(--palette-sky-200)/0.7)] underline-offset-2 transition hover:text-[rgb(var(--palette-sky-100))]"
               :title="t('pages.chats.openLink')"
               @click="requestOpenExternalLink(part.value)"
             >
@@ -402,7 +402,7 @@ const shouldRenderAdminMessage = computed(() => {
         </p>
       </div>
     </div>
-    <div class="mt-1 flex items-center justify-end gap-2 text-xs text-gray-300">
+    <div class="mt-1 flex items-center justify-end gap-2 text-xs text-[rgb(var(--palette-gray-300))]">
       <span>{{ formatDate(textMessage.created_at) }}</span>
       <span
         v-if="isOwnMessage"
@@ -434,8 +434,8 @@ const shouldRenderAdminMessage = computed(() => {
     size="sm"
     @cancel="closeExternalLinkModal"
   >
-    <div class="rounded-lg border border-white/[0.08] bg-white/[0.03] p-3">
-      <p class="break-all text-sm leading-6 text-gray-100">
+    <div class="rounded-lg border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.03)] p-3">
+      <p class="break-all text-sm leading-6 text-[rgb(var(--palette-gray-100))]">
         {{ pendingExternalUrl }}
       </p>
     </div>
@@ -444,14 +444,14 @@ const shouldRenderAdminMessage = computed(() => {
       <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <button
           type="button"
-          class="inline-flex h-10 items-center justify-center rounded-lg border border-white/[0.1] bg-white/[0.04] px-4 text-sm font-semibold text-gray-200 transition hover:bg-white/[0.08]"
+          class="inline-flex h-10 items-center justify-center rounded-lg border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] px-4 text-sm font-semibold text-[rgb(var(--palette-gray-200))] transition hover:bg-[rgb(var(--palette-white)/0.08)]"
           @click="closeExternalLinkModal"
         >
           {{ t('common.cancel') }}
         </button>
         <button
           type="button"
-          class="market-primary-surface market-primary-hover inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-semibold text-white transition-colors duration-200"
+          class="market-primary-surface market-primary-hover inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-semibold text-[rgb(var(--palette-white))] transition-colors duration-200"
           @click="confirmOpenExternalLink"
         >
           {{ t('pages.chats.openLink') }}

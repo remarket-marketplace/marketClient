@@ -160,22 +160,22 @@ function navigateToEditUser(userId: string) {
 
 function getStatusBadge(user: UserRead) {
   if (user.is_banned) {
-    return { text: 'common.banned', class: 'bg-red-500/20 text-red-400 border-red-500/30' };
+    return { text: 'common.banned', class: 'bg-[rgb(var(--palette-red-500)/0.2)] text-[rgb(var(--palette-red-400))] border-[rgb(var(--palette-red-500)/0.3)]' };
   }
   if (user.is_active) {
-    return { text: 'common.online', class: 'bg-green-500/20 text-green-400 border-green-500/30' };
+    return { text: 'common.online', class: 'bg-[rgb(var(--palette-green-500)/0.2)] text-[rgb(var(--palette-green-400))] border-[rgb(var(--palette-green-500)/0.3)]' };
   }
-  return { text: 'common.offline', class: 'bg-gray-500/20 text-gray-400 border-gray-500/30' };
+  return { text: 'common.offline', class: 'bg-[rgb(var(--palette-gray-500)/0.2)] text-[rgb(var(--palette-gray-400))] border-[rgb(var(--palette-gray-500)/0.3)]' };
 }
 
 function getRoleBadge(user: UserRead) {
   if (user.role === 'admin') {
-    return { text: 'common.admin', class: 'bg-purple-500/20 text-purple-400 border-purple-500/30' };
+    return { text: 'common.admin', class: 'bg-[rgb(var(--palette-purple-500)/0.2)] text-[rgb(var(--palette-purple-400))] border-[rgb(var(--palette-purple-500)/0.3)]' };
   }
   if (user.role === 'partner') {
-    return { text: 'common.partner', class: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' };
+    return { text: 'common.partner', class: 'bg-[rgb(var(--palette-cyan-500)/0.2)] text-[rgb(var(--palette-cyan-300))] border-[rgb(var(--palette-cyan-500)/0.3)]' };
   }
-  return { text: 'common.user', class: 'bg-blue-500/20 text-blue-400 border-blue-500/30' };
+  return { text: 'common.user', class: 'bg-[rgb(var(--palette-blue-500)/0.2)] text-[rgb(var(--palette-blue-400))] border-[rgb(var(--palette-blue-500)/0.3)]' };
 }
 
 function showBanConfirm(userId: string) {
@@ -327,7 +327,7 @@ watch(sortedUsers, () => {
       <button
         type="button"
         class="admin-btn admin-btn-ghost w-full justify-center"
-        :class="{ 'border-blue-500/40 text-blue-300': isMobileFiltersOpen }"
+        :class="{ 'border-[rgb(var(--palette-blue-500)/0.4)] text-[rgb(var(--palette-blue-300))]': isMobileFiltersOpen }"
         @click="isMobileFiltersOpen = !isMobileFiltersOpen"
       >
         <SlidersHorizontal class="w-4 h-4" />
@@ -385,8 +385,8 @@ watch(sortedUsers, () => {
     <div class="flex-1 overflow-hidden">
 
       <div v-if="isLoading" class="flex items-center justify-center h-32">
-        <Loader2 class="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-blue-500" />
-        <span class="ml-2 sm:ml-3 text-base sm:text-lg text-gray-400">{{ $t('common.loading') }}</span>
+        <Loader2 class="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-[rgb(var(--palette-blue-500))]" />
+        <span class="ml-2 sm:ml-3 text-base sm:text-lg text-[rgb(var(--palette-gray-400))]">{{ $t('common.loading') }}</span>
       </div>
 
       <div ref="listRef" v-else class="h-full overflow-y-auto space-y-3">
@@ -403,11 +403,11 @@ watch(sortedUsers, () => {
                   <UserAvatar
                     :avatar-url="user.avatar_url"
                     :alt="user.username"
-                    class="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-white/10"
+                    class="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-[rgb(var(--palette-white)/0.1)]"
                   />
                   <div
                     class="absolute -bottom-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 rounded-full border-2 border-background"
-                    :class="user.is_active && !user.is_banned ? 'bg-green-500' : 'bg-gray-500'"
+                    :class="user.is_active && !user.is_banned ? 'bg-[rgb(var(--palette-green-500))]' : 'bg-[rgb(var(--palette-gray-500))]'"
                   />
                 </div>
               </div>
@@ -440,9 +440,9 @@ watch(sortedUsers, () => {
                       <span class="truncate text-xs">{{ user.email }}</span>
                     </div>
                     <div class="flex items-center gap-1">
-                      <span :class="user.has_frozen_balance ? 'text-orange-400' : 'text-green-400'">
+                      <span :class="user.has_frozen_balance ? 'text-[rgb(var(--palette-orange-400))]' : 'text-[rgb(var(--palette-green-400))]'">
                         {{ formatPrice(user.balance) }}
-                        <span v-if="user.has_frozen_balance" class="text-orange-300 text-xs">{{ $t('pages.admin.usersPage.freezedBalance') }}</span>
+                        <span v-if="user.has_frozen_balance" class="text-[rgb(var(--palette-orange-300))] text-xs">{{ $t('pages.admin.usersPage.freezedBalance') }}</span>
                       </span>
                     </div>
                   </div>
@@ -493,7 +493,7 @@ watch(sortedUsers, () => {
                 >
                   <button
                     @click="navigateToEditUser(user.id)"
-                    class="flex items-center gap-2 w-full rounded-lg px-4 py-2 text-sm text-mainText transition-colors hover:bg-white/[0.04]"
+                    class="flex items-center gap-2 w-full rounded-lg px-4 py-2 text-sm text-mainText transition-colors hover:bg-[rgb(var(--palette-white)/0.04)]"
                   >
                     <Edit class="w-4 h-4" />
                     <span>{{ $t('common.edit') }}</span>
@@ -503,7 +503,7 @@ watch(sortedUsers, () => {
             </div>
           </div>
 
-          <div class="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-white/8 text-xs text-text-secondary">
+          <div class="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-[rgb(var(--palette-white)/0.08)] text-xs text-text-secondary">
             <div class="flex flex-col xs:flex-row gap-1 xs:gap-2 sm:gap-4">
               <div>{{ $t('common.memberSince') }} {{ new Date(user.created_at).toLocaleDateString('ru-RU') }}</div>
               <div v-if="user.description" class="truncate flex-1 hidden sm:block">
@@ -533,7 +533,7 @@ watch(sortedUsers, () => {
     >
       <template #body>
         <div v-if="isBanAction" class="space-y-3">
-          <label class="block text-sm text-gray-300">
+          <label class="block text-sm text-[rgb(var(--palette-gray-300))]">
             {{ $t('pages.admin.usersPage.banReasonLabel') }}
           </label>
           <CustomSelect
@@ -544,11 +544,11 @@ watch(sortedUsers, () => {
           <div v-if="selectedBanReasonCode === 'otherReason'" class="space-y-2">
             <textarea
               v-model="customBanReason"
-              class="admin-input-surface w-full rounded-lg text-white px-3 py-2 resize-none min-h-[110px]"
+              class="admin-input-surface w-full rounded-lg text-[rgb(var(--palette-white))] px-3 py-2 resize-none min-h-[110px]"
               :placeholder="$t('pages.admin.usersPage.customBanReasonPlaceholder')"
             />
           </div>
-          <p v-if="banReasonError" class="text-red-400 text-sm">
+          <p v-if="banReasonError" class="text-[rgb(var(--palette-red-400))] text-sm">
             {{ banReasonError }}
           </p>
         </div>

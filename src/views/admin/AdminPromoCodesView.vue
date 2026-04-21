@@ -438,14 +438,14 @@ onMounted(async () => {
       <BackButton />
       <div>
         <h1 class="text-xl sm:text-2xl font-bold text-mainText">{{ t('pages.admin.steamTopupsPage.title') }}</h1>
-        <p class="text-xs sm:text-sm text-gray-400">{{ t('pages.admin.steamTopupsPage.subtitle') }}</p>
+        <p class="text-xs sm:text-sm text-[rgb(var(--palette-gray-400))]">{{ t('pages.admin.steamTopupsPage.subtitle') }}</p>
       </div>
     </div>
 
     <div class="admin-surface-panel promo-create-panel rounded-[1.5rem] p-4 sm:p-5 space-y-4">
       <div class="flex flex-col gap-1">
         <h2 class="text-base font-semibold text-mainText">Создать промокод</h2>
-        <p class="text-xs text-gray-400">Поля, отмеченные <span class="text-red-300">*</span>, обязательны.</p>
+        <p class="text-xs text-[rgb(var(--palette-gray-400))]">Поля, отмеченные <span class="text-[rgb(var(--palette-red-300))]">*</span>, обязательны.</p>
       </div>
 
       <div
@@ -458,7 +458,7 @@ onMounted(async () => {
         </div>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div class="field space-y-1.5">
-            <label class="field__label text-xs font-medium text-gray-300">
+            <label class="field__label text-xs font-medium text-[rgb(var(--palette-gray-300))]">
               Код промокода <span class="field__required">*</span>
             </label>
             <input
@@ -469,27 +469,27 @@ onMounted(async () => {
               placeholder="Например, CODE2026"
             />
             <p v-if="requiredErrors.code" class="field__error">Введите код промокода.</p>
-            <p class="field__hint text-xs text-gray-500">Уникальный код без пробелов по краям.</p>
+            <p class="field__hint text-xs text-[rgb(var(--palette-gray-500))]">Уникальный код без пробелов по краям.</p>
           </div>
 
           <div class="field space-y-1.5">
-            <label class="field__label text-xs font-medium text-gray-300">
+            <label class="field__label text-xs font-medium text-[rgb(var(--palette-gray-300))]">
               Сценарий <span class="field__required">*</span>
             </label>
             <CustomSelect v-model="appliesTo" :options="createAppliesToOptions" />
-            <p class="field__hint text-xs text-gray-500">Где можно применить промокод.</p>
+            <p class="field__hint text-xs text-[rgb(var(--palette-gray-500))]">Где можно применить промокод.</p>
           </div>
 
           <div class="field space-y-1.5">
-            <label class="field__label text-xs font-medium text-gray-300">
+            <label class="field__label text-xs font-medium text-[rgb(var(--palette-gray-300))]">
               Тип скидки <span class="field__required">*</span>
             </label>
             <CustomSelect v-model="discountType" :options="discountTypeOptions" />
-            <p class="field__hint text-xs text-gray-500">Процент от суммы или фиксированная сумма.</p>
+            <p class="field__hint text-xs text-[rgb(var(--palette-gray-500))]">Процент от суммы или фиксированная сумма.</p>
           </div>
 
           <div class="field space-y-1.5">
-            <label class="field__label text-xs font-medium text-gray-300">
+            <label class="field__label text-xs font-medium text-[rgb(var(--palette-gray-300))]">
               Скидка <span class="field__required">*</span>
             </label>
             <input
@@ -503,7 +503,7 @@ onMounted(async () => {
               placeholder="Введите значение"
             />
             <p v-if="requiredErrors.discountValue" class="field__error">Укажите значение скидки больше 0.</p>
-            <p class="field__hint text-xs text-gray-500">Число больше 0.</p>
+            <p class="field__hint text-xs text-[rgb(var(--palette-gray-500))]">Число больше 0.</p>
           </div>
         </div>
       </div>
@@ -514,7 +514,7 @@ onMounted(async () => {
         </div>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div class="field space-y-1.5">
-            <label class="field__label text-xs font-medium text-gray-300">Минимальная сумма заказа</label>
+            <label class="field__label text-xs font-medium text-[rgb(var(--palette-gray-300))]">Минимальная сумма заказа</label>
             <input
               v-model.trim="minOrderAmount"
               type="number"
@@ -523,11 +523,11 @@ onMounted(async () => {
               class="form-control admin-input-surface h-10 w-full rounded-lg px-3 text-sm text-mainText"
               placeholder="Например, 500"
             />
-            <p class="field__hint text-xs text-gray-500">От какой суммы код будет работать.</p>
+            <p class="field__hint text-xs text-[rgb(var(--palette-gray-500))]">От какой суммы код будет работать.</p>
           </div>
 
           <div class="field space-y-1.5">
-            <label class="field__label text-xs font-medium text-gray-300">Всего использований</label>
+            <label class="field__label text-xs font-medium text-[rgb(var(--palette-gray-300))]">Всего использований</label>
             <input
               v-model.trim="totalUsageLimit"
               type="number"
@@ -536,11 +536,11 @@ onMounted(async () => {
               class="form-control admin-input-surface h-10 w-full rounded-lg px-3 text-sm text-mainText"
               placeholder="Оставьте пустым без лимита"
             />
-            <p class="field__hint text-xs text-gray-500">Общий лимит для всех пользователей.</p>
+            <p class="field__hint text-xs text-[rgb(var(--palette-gray-500))]">Общий лимит для всех пользователей.</p>
           </div>
 
           <div class="field space-y-1.5">
-            <label class="field__label text-xs font-medium text-gray-300">
+            <label class="field__label text-xs font-medium text-[rgb(var(--palette-gray-300))]">
               На 1 пользователя <span class="field__required">*</span>
             </label>
             <input
@@ -551,11 +551,11 @@ onMounted(async () => {
               class="form-control admin-input-surface h-10 w-full rounded-lg px-3 text-sm text-mainText"
               placeholder="Минимум 1"
             />
-            <p class="field__hint text-xs text-gray-500">Сколько раз один человек может применить код.</p>
+            <p class="field__hint text-xs text-[rgb(var(--palette-gray-500))]">Сколько раз один человек может применить код.</p>
           </div>
 
           <div v-if="showMaxDiscount" class="field space-y-1.5">
-            <label class="field__label text-xs font-medium text-gray-300">Максимальная скидка</label>
+            <label class="field__label text-xs font-medium text-[rgb(var(--palette-gray-300))]">Максимальная скидка</label>
             <input
               v-model.trim="maxDiscountAmount"
               type="number"
@@ -564,10 +564,10 @@ onMounted(async () => {
               class="form-control admin-input-surface h-10 w-full rounded-lg px-3 text-sm text-mainText"
               placeholder="Например, 300"
             />
-            <p class="field__hint text-xs text-gray-500">Потолок скидки при процентном типе.</p>
+            <p class="field__hint text-xs text-[rgb(var(--palette-gray-500))]">Потолок скидки при процентном типе.</p>
           </div>
         </div>
-        <p v-if="!showMaxDiscount" class="text-xs text-gray-500">
+        <p v-if="!showMaxDiscount" class="text-xs text-[rgb(var(--palette-gray-500))]">
           Для фиксированной скидки максимум не нужен.
         </p>
       </div>
@@ -581,7 +581,7 @@ onMounted(async () => {
           <h3 class="promo-section__title">3. Срок действия</h3>
           <span
             class="rounded-full border px-2 py-0.5 text-[11px]"
-            :class="hasLifetime ? 'border-blue-500/25 bg-blue-500/[0.08] text-blue-200' : 'border-white/10 bg-white/[0.03] text-gray-400'"
+            :class="hasLifetime ? 'border-[rgb(var(--palette-blue-500)/0.25)] bg-[rgb(var(--palette-blue-500)/0.08)] text-[rgb(var(--palette-blue-200))]' : 'border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] text-[rgb(var(--palette-gray-400))]'"
           >
             {{ hasLifetime ? 'Ограничен' : 'Бессрочный' }}
           </span>
@@ -591,7 +591,7 @@ onMounted(async () => {
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div class="space-y-0.5">
               <p class="text-sm text-mainText">Ограничить сроком</p>
-              <p class="text-xs text-gray-500">Промокод выключится автоматически после срока.</p>
+              <p class="text-xs text-[rgb(var(--palette-gray-500))]">Промокод выключится автоматически после срока.</p>
             </div>
             <div class="segmented-toggle segmented-toggle-blue" role="group" aria-label="Ограничение срока">
               <span class="segmented-toggle__thumb" :class="!hasLifetime ? 'segmented-toggle__thumb--right' : ''" />
@@ -620,7 +620,7 @@ onMounted(async () => {
         <div v-if="hasLifetime" class="space-y-3">
           <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div class="field space-y-1.5">
-              <label class="field__label text-xs font-medium text-gray-300">
+              <label class="field__label text-xs font-medium text-[rgb(var(--palette-gray-300))]">
                 Срок жизни <span class="field__required">*</span>
               </label>
               <input
@@ -634,26 +634,26 @@ onMounted(async () => {
                 placeholder="Например, 1"
               />
               <p v-if="requiredErrors.lifetimeValue" class="field__error">Укажите срок больше 0.</p>
-              <p class="field__hint text-xs text-gray-500">Целое число больше 0.</p>
+              <p class="field__hint text-xs text-[rgb(var(--palette-gray-500))]">Целое число больше 0.</p>
             </div>
 
             <div class="field space-y-1.5">
-              <label class="field__label text-xs font-medium text-gray-300">Единица срока</label>
+              <label class="field__label text-xs font-medium text-[rgb(var(--palette-gray-300))]">Единица срока</label>
               <CustomSelect v-model="lifetimeUnit" :options="lifetimeUnitOptions" />
-              <p class="field__hint text-xs text-gray-500">Минуты, часы или дни.</p>
+              <p class="field__hint text-xs text-[rgb(var(--palette-gray-500))]">Минуты, часы или дни.</p>
             </div>
           </div>
 
           <div class="space-y-1.5">
-            <p class="text-xs font-medium text-gray-300">Быстрый выбор</p>
+            <p class="text-xs font-medium text-[rgb(var(--palette-gray-300))]">Быстрый выбор</p>
             <div class="flex flex-wrap gap-2">
               <button
                 v-for="preset in lifetimePresets"
                 :key="preset.label"
                 type="button"
-                class="rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs text-gray-200 transition hover:border-blue-400/35 hover:bg-white/[0.05] hover:text-mainText"
+                class="rounded-md border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] px-2.5 py-1 text-xs text-[rgb(var(--palette-gray-200))] transition hover:border-[rgb(var(--palette-blue-400)/0.35)] hover:bg-[rgb(var(--palette-white)/0.05)] hover:text-mainText"
                 :class="Number(lifetimeValue) === preset.value && lifetimeUnit === preset.unit
-                  ? 'border-blue-500/60 bg-blue-500/12 text-blue-200'
+                  ? 'border-[rgb(var(--palette-blue-500)/0.6)] bg-[rgb(var(--palette-blue-500)/0.12)] text-[rgb(var(--palette-blue-200))]'
                   : ''"
                 @click="applyLifetimePreset(preset.value, preset.unit)"
               >
@@ -663,15 +663,15 @@ onMounted(async () => {
           </div>
 
           <div class="admin-surface-soft rounded-lg px-3 py-2">
-            <p class="text-xs text-gray-400">{{ lifetimeSummary }}</p>
+            <p class="text-xs text-[rgb(var(--palette-gray-400))]">{{ lifetimeSummary }}</p>
             <p class="text-sm text-mainText">
               Истечет:
-              <span class="font-medium text-blue-200">{{ lifetimeEndsPreview }}</span>
+              <span class="font-medium text-[rgb(var(--palette-blue-200))]">{{ lifetimeEndsPreview }}</span>
             </p>
           </div>
         </div>
 
-        <p v-else class="text-xs text-gray-500">
+        <p v-else class="text-xs text-[rgb(var(--palette-gray-500))]">
           Если не ограничивать сроком, промокод действует бессрочно.
         </p>
       </div>
@@ -681,7 +681,7 @@ onMounted(async () => {
           <h3 class="promo-section__title">4. Статус и создание</h3>
           <span
             class="rounded-full border px-2 py-0.5 text-[11px]"
-            :class="isActive ? 'border-emerald-500/25 bg-emerald-500/[0.08] text-emerald-200' : 'border-white/10 bg-white/[0.03] text-gray-400'"
+            :class="isActive ? 'border-[rgb(var(--palette-emerald-500)/0.25)] bg-[rgb(var(--palette-emerald-500)/0.08)] text-[rgb(var(--palette-emerald-200))]' : 'border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] text-[rgb(var(--palette-gray-400))]'"
           >
             {{ isActive ? 'Активен' : 'Выключен' }}
           </span>
@@ -691,7 +691,7 @@ onMounted(async () => {
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div class="space-y-0.5">
               <p class="text-sm text-mainText">Сделать промокод активным</p>
-              <p class="text-xs text-gray-500">{{ activationSummary }}</p>
+              <p class="text-xs text-[rgb(var(--palette-gray-500))]">{{ activationSummary }}</p>
             </div>
             <div class="segmented-toggle segmented-toggle-emerald" role="group" aria-label="Статус промокода">
               <span class="segmented-toggle__thumb" :class="!isActive ? 'segmented-toggle__thumb--right' : ''" />
@@ -719,12 +719,12 @@ onMounted(async () => {
 
         <div class="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_260px]">
           <div class="preview-card admin-surface-soft rounded-lg px-3 py-3">
-            <p class="preview-card__label text-[11px] uppercase tracking-wide text-blue-200/90">Предпросмотр</p>
+            <p class="preview-card__label text-[11px] uppercase tracking-wide text-[rgb(var(--palette-blue-200)/0.9)]">Предпросмотр</p>
             <p class="text-sm text-mainText">{{ promoPreview }}</p>
           </div>
 
           <div class="action-card admin-surface-soft rounded-lg p-3 space-y-2">
-            <p class="text-xs text-gray-400">Действие</p>
+            <p class="text-xs text-[rgb(var(--palette-gray-400))]">Действие</p>
             <button
               type="button"
               class="admin-btn admin-btn-primary admin-btn-sm w-full justify-center action-card__button"
@@ -733,7 +733,7 @@ onMounted(async () => {
             >
               {{ isSubmitting ? 'Создаем...' : 'Создать' }}
             </button>
-            <p class="text-[11px] text-gray-500">Обязательные поля: код, тип и значение скидки.</p>
+            <p class="text-[11px] text-[rgb(var(--palette-gray-500))]">Обязательные поля: код, тип и значение скидки.</p>
           </div>
         </div>
       </div>
@@ -743,7 +743,7 @@ onMounted(async () => {
       <div class="promo-list-panel__head">
         <div>
           <h2 class="text-sm font-semibold text-mainText">Список промокодов</h2>
-          <p class="text-xs text-gray-400">Поиск и фильтры</p>
+          <p class="text-xs text-[rgb(var(--palette-gray-400))]">Поиск и фильтры</p>
         </div>
         <button
           type="button"
@@ -756,36 +756,36 @@ onMounted(async () => {
       </div>
       <div class="admin-surface-soft rounded-lg p-3 space-y-3">
         <div class="field space-y-1.5">
-          <label class="field__label text-xs font-medium text-gray-300">Поиск по коду</label>
+          <label class="field__label text-xs font-medium text-[rgb(var(--palette-gray-300))]">Поиск по коду</label>
           <SearchField v-model="searchQuery" placeholder="Например, SPRING2026" />
-          <p class="field__hint text-xs text-gray-500">Поиск срабатывает по части кода.</p>
+          <p class="field__hint text-xs text-[rgb(var(--palette-gray-500))]">Поиск срабатывает по части кода.</p>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div class="field space-y-1.5">
-            <label class="field__label text-xs font-medium text-gray-300">Статус</label>
+            <label class="field__label text-xs font-medium text-[rgb(var(--palette-gray-300))]">Статус</label>
             <CustomSelect v-model="statusFilter" :options="statusOptions" />
           </div>
           <div class="field space-y-1.5">
-            <label class="field__label text-xs font-medium text-gray-300">Сценарий</label>
+            <label class="field__label text-xs font-medium text-[rgb(var(--palette-gray-300))]">Сценарий</label>
             <CustomSelect v-model="appliesToFilter" :options="appliesToOptions" />
           </div>
         </div>
       </div>
-      <div class="promo-filter-meta text-xs text-gray-400">
+      <div class="promo-filter-meta text-xs text-[rgb(var(--palette-gray-400))]">
         Активных фильтров: <span class="text-mainText">{{ activeFiltersCount }}</span>
       </div>
     </div>
 
     <Transition name="fade-slide">
-      <p v-if="errorMessage" class="state-banner state-banner--error rounded-lg border border-red-500/35 bg-red-500/10 px-3 py-2 text-sm text-red-300">{{ errorMessage }}</p>
+      <p v-if="errorMessage" class="state-banner state-banner--error rounded-lg border border-[rgb(var(--palette-red-500)/0.35)] bg-[rgb(var(--palette-red-500)/0.1)] px-3 py-2 text-sm text-[rgb(var(--palette-red-300))]">{{ errorMessage }}</p>
     </Transition>
     <Transition name="fade-slide">
-      <p v-if="!errorMessage && successMessage" class="state-banner state-banner--success rounded-lg border border-emerald-500/35 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">{{ successMessage }}</p>
+      <p v-if="!errorMessage && successMessage" class="state-banner state-banner--success rounded-lg border border-[rgb(var(--palette-emerald-500)/0.35)] bg-[rgb(var(--palette-emerald-500)/0.1)] px-3 py-2 text-sm text-[rgb(var(--palette-emerald-300))]">{{ successMessage }}</p>
     </Transition>
 
     <div class="space-y-3">
       <div v-if="isLoading" class="flex h-32 items-center justify-center">
-        <Loader2 class="h-6 w-6 animate-spin text-blue-500" />
+        <Loader2 class="h-6 w-6 animate-spin text-[rgb(var(--palette-blue-500))]" />
       </div>
       <article v-for="promo in promos" :key="promo.id" class="admin-surface-card rounded-[1.4rem] p-3 sm:p-4">
         <div class="flex items-center justify-between gap-2">
@@ -794,7 +794,7 @@ onMounted(async () => {
             {{ promo.is_active ? 'Деактивировать' : 'Активировать' }}
           </button>
         </div>
-        <div class="mt-2 text-sm text-gray-300 grid grid-cols-1 sm:grid-cols-2 gap-1">
+        <div class="mt-2 text-sm text-[rgb(var(--palette-gray-300))] grid grid-cols-1 sm:grid-cols-2 gap-1">
           <p>Тип: {{ formatDiscountType(promo.discount_type) }}</p>
           <p>Скидка: {{ formatDiscountValue(promo.discount_value, promo.discount_type) }}</p>
           <p>Сценарий: {{ formatScenario(promo.applies_to) }}</p>
@@ -804,7 +804,7 @@ onMounted(async () => {
           <p>Действует до: {{ formatPromoLifetime(promo.ends_at) }}</p>
         </div>
       </article>
-      <p class="text-xs text-gray-500">Всего: {{ total }} | Страниц: {{ totalPages }}</p>
+      <p class="text-xs text-[rgb(var(--palette-gray-500))]">Всего: {{ total }} | Страниц: {{ totalPages }}</p>
     </div>
   </section>
 </template>

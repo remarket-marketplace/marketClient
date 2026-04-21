@@ -613,7 +613,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
         <button
           type="button"
           class="admin-btn admin-btn-ghost w-full justify-center"
-          :class="{ 'border-blue-500/40 text-blue-300': isMobileFiltersOpen }"
+          :class="{ 'border-[rgb(var(--palette-blue-500)/0.4)] text-[rgb(var(--palette-blue-300))]': isMobileFiltersOpen }"
           @click="isMobileFiltersOpen = !isMobileFiltersOpen"
         >
           <SlidersHorizontal class="w-4 h-4" />
@@ -666,13 +666,13 @@ watch([searchQuery, sortBy, statusFilter], () => {
     <!-- Список товаров -->
     <div class="flex-1 overflow-hidden">
       <div v-if="isLoading" class="flex items-center justify-center h-32">
-        <Loader2 class="h-5 w-5 sm:h-8 sm:w-8 animate-spin text-blue-500" />
-        <span class="ml-2 text-sm sm:text-lg text-gray-400">{{ $t('common.loading') }}</span>
+        <Loader2 class="h-5 w-5 sm:h-8 sm:w-8 animate-spin text-[rgb(var(--palette-blue-500))]" />
+        <span class="ml-2 text-sm sm:text-lg text-[rgb(var(--palette-gray-400))]">{{ $t('common.loading') }}</span>
       </div>
 
       <div v-else-if="sortedProducts.length === 0" class="flex items-center justify-center h-32">
         <div class="text-center">
-          <Package class="h-6 w-6 sm:h-12 sm:w-12 text-gray-500 mx-auto mb-1" />
+          <Package class="h-6 w-6 sm:h-12 sm:w-12 text-[rgb(var(--palette-gray-500))] mx-auto mb-1" />
           <p class="text-text-secondary text-xs sm:text-base">{{ $t('common.noData') }}</p>
         </div>
       </div>
@@ -695,7 +695,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
                   <img
                     :src="`${API_HOST}${product.images[0]?.image_url}`"
                     :alt="product.title"
-                    class="w-12 h-12 sm:w-20 sm:h-20 rounded-lg object-cover border border-white/10 cursor-pointer"
+                    class="w-12 h-12 sm:w-20 sm:h-20 rounded-lg object-cover border border-[rgb(var(--palette-white)/0.1)] cursor-pointer"
                     @click="navigateToProduct(product.id, product.slug)"
                   />
                 </div>
@@ -716,7 +716,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
                       <ProductStatusTag :product-status="product.status" />
                       <span
                         v-if="product.status === 'moderation' && hasProductChanges(product.id)"
-                        class="inline-flex items-center gap-1 rounded-full border border-white/7 bg-transparent px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-gray-500"
+                        class="inline-flex items-center gap-1 rounded-full border border-[rgb(var(--palette-white)/0.07)] bg-[var(--transparent)] px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-[rgb(var(--palette-gray-500))]"
                       >
                         <Pencil class="h-2.5 w-2.5 opacity-70" />
                         {{ $t('pages.admin.productsPage.changedStatus') }}
@@ -726,7 +726,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
 
                   <!-- Цена и продавец -->
                   <div class="flex flex-col gap-0.5 text-xs sm:text-sm">
-                    <div class="flex items-center gap-1 text-green-400 font-semibold leading-none">
+                    <div class="flex items-center gap-1 text-[rgb(var(--palette-green-400))] font-semibold leading-none">
                       <span>{{ formatPrice(product.price) }}</span>
                     </div>
                     
@@ -751,7 +751,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
                 <div class="flex flex-wrap justify-end gap-1.5 admin-actions-group">
                   <button
                     @click="navigateToProduct(product.id, product.slug)"
-                    class="admin-btn admin-btn-ghost px-3.5 py-2.5 text-xs text-gray-200 border-white/12 hover:border-white/25 hover:bg-white/5 admin-action-btn"
+                    class="admin-btn admin-btn-ghost px-3.5 py-2.5 text-xs text-[rgb(var(--palette-gray-200))] border-[rgb(var(--palette-white)/0.12)] hover:border-[rgb(var(--palette-white)/0.25)] hover:bg-[rgb(var(--palette-white)/0.05)] admin-action-btn"
                   >
                     <Search class="w-4 h-4" />
                     <span>{{ $t('common.view') }}</span>
@@ -815,10 +815,10 @@ watch([searchQuery, sortBy, statusFilter], () => {
               >
                 <div class="flex min-w-0 items-center gap-2.5">
                   <div class="change-panel-dot">
-                    <Pencil class="h-3 w-3 text-slate-300" />
+                    <Pencil class="h-3 w-3 text-[rgb(var(--palette-slate-300))]" />
                   </div>
                   <div class="min-w-0">
-                    <p class="text-[10px] uppercase tracking-[0.16em] text-gray-400">
+                    <p class="text-[10px] uppercase tracking-[0.16em] text-[rgb(var(--palette-gray-400))]">
                       {{ $t('pages.admin.productsPage.changedStatus') }}
                     </p>
                     <p class="truncate text-xs sm:text-sm font-medium text-mainText">
@@ -831,7 +831,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
                     {{ getProductChanges(product.id).length }}
                   </span>
                   <ChevronDown
-                    class="h-4 w-4 text-gray-300 transition-transform duration-200"
+                    class="h-4 w-4 text-[rgb(var(--palette-gray-300))] transition-transform duration-200"
                     :class="{ 'rotate-180': isChangesExpanded(product.id) }"
                   />
                 </div>
@@ -839,10 +839,10 @@ watch([searchQuery, sortBy, statusFilter], () => {
               <div
                 v-if="isChangesExpanded(product.id)"
                 :id="getChangesPanelId(product.id)"
-                class="border-t border-white/10 px-3 py-2"
+                class="border-t border-[rgb(var(--palette-white)/0.1)] px-3 py-2"
               >
                 <div class="space-y-1.5">
-                  <div class="hidden sm:grid grid-cols-[170px_1fr_1fr] gap-1.5 px-2 text-[10px] uppercase tracking-[0.1em] text-gray-500">
+                  <div class="hidden sm:grid grid-cols-[170px_1fr_1fr] gap-1.5 px-2 text-[10px] uppercase tracking-[0.1em] text-[rgb(var(--palette-gray-500))]">
                     <span>{{ $t('pages.admin.productsPage.changeTableField') }}</span>
                     <span>{{ $t('pages.admin.productsPage.changeTableBefore') }}</span>
                     <span>{{ $t('pages.admin.productsPage.changeTableAfter') }}</span>
@@ -852,18 +852,18 @@ watch([searchQuery, sortBy, statusFilter], () => {
                     :key="`${product.id}-${change.field}`"
                     class="change-table-row grid grid-cols-1 sm:grid-cols-[170px_1fr_1fr] gap-1.5 rounded-lg px-2.5 py-1.5"
                   >
-                    <div class="change-cell change-cell-field text-[11px] sm:text-xs font-semibold text-gray-100">
+                    <div class="change-cell change-cell-field text-[11px] sm:text-xs font-semibold text-[rgb(var(--palette-gray-100))]">
                       {{ getChangeFieldLabel(change.field) }}
                     </div>
                     <div class="change-cell change-value change-value-before rounded-md px-2 py-1.5 text-text-secondary text-[11px] sm:text-xs">
-                      <span class="sm:hidden text-gray-500 mr-1">{{ $t('common.before') }}:</span>
+                      <span class="sm:hidden text-[rgb(var(--palette-gray-500))] mr-1">{{ $t('common.before') }}:</span>
                       <span :class="{ 'change-value-number': isNumericValue(change.before) }">
                         {{ formatChangeValue(change.before) }}
                       </span>
                     </div>
                     <div class="change-cell change-value change-value-after rounded-md px-2 py-1.5 text-mainText text-[11px] sm:text-xs">
-                      <span class="sm:hidden text-gray-500 mr-1">{{ $t('common.after') }}:</span>
-                      <span class="hidden sm:inline text-slate-500 mr-1">→</span>
+                      <span class="sm:hidden text-[rgb(var(--palette-gray-500))] mr-1">{{ $t('common.after') }}:</span>
+                      <span class="hidden sm:inline text-[rgb(var(--palette-slate-500))] mr-1">→</span>
                       <span :class="{ 'change-value-number': isNumericValue(change.after) }">
                         {{ formatChangeValue(change.after) }}
                       </span>
@@ -878,7 +878,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
               <!-- Кнопка просмотра -->
               <button
                 @click="navigateToProduct(product.id, product.slug)"
-                class="admin-btn admin-btn-ghost admin-btn-xs justify-center flex-1 text-gray-200 border-white/12 hover:border-white/25 hover:bg-white/5"
+                class="admin-btn admin-btn-ghost admin-btn-xs justify-center flex-1 text-[rgb(var(--palette-gray-200))] border-[rgb(var(--palette-white)/0.12)] hover:border-[rgb(var(--palette-white)/0.25)] hover:bg-[rgb(var(--palette-white)/0.05)]"
               >
                 <Search class="w-3 h-3" />
                 <span>{{ $t('common.view') }}</span>
@@ -916,20 +916,20 @@ watch([searchQuery, sortBy, statusFilter], () => {
           </div>
 
           <!-- Дополнительная информация -->
-          <div class="mt-1.5 pt-1.5 border-t border-white/8 text-[10px] sm:text-xs text-text-secondary/90 lg:hidden">
+          <div class="mt-1.5 pt-1.5 border-t border-[rgb(var(--palette-white)/0.08)] text-[10px] sm:text-xs text-text-secondary/90 lg:hidden">
             <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
               <span class="truncate">{{ $t('common.created') }}: {{ new Date(product.created_at).toLocaleDateString('ru-RU') }}</span>
-              <span class="text-white/20">•</span>
+              <span class="text-[rgb(var(--palette-white)/0.2)]">•</span>
               <span class="inline-flex items-center gap-1">
                 <Image class="w-2 h-2 sm:w-3 sm:h-3" />
                 {{ $t('common.images') }}: {{ product.images.length }}
               </span>
-              <span class="text-white/20">•</span>
+              <span class="text-[rgb(var(--palette-white)/0.2)]">•</span>
               <span class="inline-flex items-center gap-1">
                 <Package class="w-2 h-2 sm:w-3 sm:h-3" />
                 {{ $t('common.quantity') }}: {{ product.count }}
               </span>
-              <span class="text-white/20 sm:hidden">•</span>
+              <span class="text-[rgb(var(--palette-white)/0.2)] sm:hidden">•</span>
               <span class="inline-flex items-center gap-1 sm:hidden min-w-0">
                 <Folder class="w-2 h-2" />
                 <span class="truncate max-w-[220px]">{{ getProductCategoryTrail(product) }}</span>
@@ -944,7 +944,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
         </div>
 
         <div v-if="isLoadingMore" class="flex items-center justify-center py-4">
-          <Loader2 class="h-5 w-5 animate-spin text-blue-500" />
+          <Loader2 class="h-5 w-5 animate-spin text-[rgb(var(--palette-blue-500))]" />
         </div>
         <div ref="sentinelRef" class="h-4 w-full"></div>
       </div>
@@ -962,7 +962,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
     >
       <template #body>
         <div class="space-y-3">
-          <label class="block text-sm text-gray-300">
+          <label class="block text-sm text-[rgb(var(--palette-gray-300))]">
             {{ $t('pages.admin.productsPage.rejectReasonLabel') }}
           </label>
           <CustomSelect
@@ -973,11 +973,11 @@ watch([searchQuery, sortBy, statusFilter], () => {
           <div v-if="selectedRejectReasonCode === 'otherReason'" class="space-y-2">
             <textarea
               v-model="customRejectReason"
-              class="admin-input-surface w-full rounded-lg text-white px-3 py-2 resize-none min-h-[110px]"
+              class="admin-input-surface w-full rounded-lg text-[rgb(var(--palette-white))] px-3 py-2 resize-none min-h-[110px]"
               :placeholder="$t('pages.admin.productsPage.customRejectReasonPlaceholder')"
             />
           </div>
-          <p v-if="rejectReasonError" class="text-red-400 text-sm">
+          <p v-if="rejectReasonError" class="text-[rgb(var(--palette-red-400))] text-sm">
             {{ rejectReasonError }}
           </p>
         </div>
@@ -998,7 +998,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
       <template #body>
         <div class="space-y-4">
           <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-300">
+            <label class="block text-sm font-medium text-[rgb(var(--palette-gray-300))]">
               {{ $t('common.status') }}
             </label>
             <CustomSelect
@@ -1009,7 +1009,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
           </div>
           <template v-if="selectedProductStatus === 'rejected'">
             <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-300">
+              <label class="block text-sm font-medium text-[rgb(var(--palette-gray-300))]">
                 {{ $t('pages.admin.productsPage.rejectReasonLabel') }}
               </label>
               <CustomSelect
@@ -1021,12 +1021,12 @@ watch([searchQuery, sortBy, statusFilter], () => {
             <div v-if="selectedStatusReasonCode === 'otherReason'" class="space-y-2">
               <textarea
                 v-model="customStatusReason"
-                class="admin-input-surface w-full rounded-lg text-white px-3 py-2 resize-none min-h-[110px]"
+                class="admin-input-surface w-full rounded-lg text-[rgb(var(--palette-white))] px-3 py-2 resize-none min-h-[110px]"
                 :placeholder="$t('pages.admin.productsPage.customRejectReasonPlaceholder')"
               />
             </div>
           </template>
-          <p v-if="statusUpdateError" class="text-red-400 text-sm">
+          <p v-if="statusUpdateError" class="text-[rgb(var(--palette-red-400))] text-sm">
             {{ statusUpdateError }}
           </p>
         </div>

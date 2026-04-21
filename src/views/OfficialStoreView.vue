@@ -296,7 +296,7 @@ onMounted(async () => {
           />
         </template>
         <div v-else class="absolute inset-0 official-page-hero-fallback"></div>
-        <div class="absolute inset-0 bg-black/42"></div>
+        <div class="absolute inset-0 bg-[rgb(var(--palette-black)/0.42)]"></div>
         <div class="official-page-hero-bottom-fade"></div>
       </div>
       <div class="official-page-content-shell relative z-10 flex h-full flex-col">
@@ -304,7 +304,7 @@ onMounted(async () => {
           <BackButton />
         </div>
         <div class="mt-auto pb-4 sm:pb-5">
-          <h1 class="max-w-4xl text-3xl font-semibold leading-tight text-white sm:text-5xl">
+          <h1 class="max-w-4xl text-3xl font-semibold leading-tight text-[rgb(var(--palette-white))] sm:text-5xl">
             Официальный магазин remarket
           </h1>
         </div>
@@ -321,7 +321,7 @@ onMounted(async () => {
           <div
             v-for="n in 6"
             :key="`official-root-category-skeleton-${n}`"
-            class="h-11 w-40 shrink-0 animate-pulse rounded-xl bg-dark-600/70"
+            class="h-11 w-40 shrink-0 animate-pulse rounded-xl bg-[rgb(var(--palette-dark-600)/0.7)]"
           ></div>
         </div>
         <div v-else-if="rootCategories.length" class="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
@@ -331,8 +331,8 @@ onMounted(async () => {
             type="button"
             class="inline-flex shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-medium transition"
             :class="selectedRootCategory?.id === rootCategory.id
-              ? 'border-blue-400/55 bg-blue-600/25 text-white'
-              : 'border-dark-600 bg-dark-700/35 text-gray-300 hover:border-dark-500 hover:bg-dark-700/55 hover:text-white'"
+              ? 'border-[rgb(var(--palette-blue-400)/0.55)] bg-[rgb(var(--palette-blue-600)/0.25)] text-[rgb(var(--palette-white))]'
+              : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.35)] text-[rgb(var(--palette-gray-300))] hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-700)/0.55)] hover:text-[rgb(var(--palette-white))]'"
             @click="onRootCategoryClick(rootCategory)"
           >
             <span>{{ rootCategory.name }}</span>
@@ -350,7 +350,7 @@ onMounted(async () => {
             <div
               v-for="n in 4"
               :key="`official-subcategory-skeleton-${n}`"
-              class="h-10 w-32 shrink-0 animate-pulse rounded-xl bg-dark-600/70"
+              class="h-10 w-32 shrink-0 animate-pulse rounded-xl bg-[rgb(var(--palette-dark-600)/0.7)]"
             ></div>
           </div>
 
@@ -359,8 +359,8 @@ onMounted(async () => {
             type="button"
             class="inline-flex shrink-0 items-center rounded-xl border px-3.5 py-2 text-sm font-medium transition"
             :class="!selectedSubcategory
-              ? 'border-blue-400/55 bg-blue-600/25 text-white'
-              : 'border-dark-600 bg-dark-700/35 text-gray-300 hover:border-dark-500 hover:bg-dark-700/55 hover:text-white'"
+              ? 'border-[rgb(var(--palette-blue-400)/0.55)] bg-[rgb(var(--palette-blue-600)/0.25)] text-[rgb(var(--palette-white))]'
+              : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.35)] text-[rgb(var(--palette-gray-300))] hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-700)/0.55)] hover:text-[rgb(var(--palette-white))]'"
             @click="onSubcategoryClick(null)"
           >
             Все разделы
@@ -372,8 +372,8 @@ onMounted(async () => {
             type="button"
             class="inline-flex shrink-0 items-center rounded-xl border px-3.5 py-2 text-sm font-medium transition"
             :class="selectedSubcategory?.id === subcategory.id
-              ? 'border-blue-400/55 bg-blue-600/25 text-white'
-              : 'border-dark-600 bg-dark-700/35 text-gray-300 hover:border-dark-500 hover:bg-dark-700/55 hover:text-white'"
+              ? 'border-[rgb(var(--palette-blue-400)/0.55)] bg-[rgb(var(--palette-blue-600)/0.25)] text-[rgb(var(--palette-white))]'
+              : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.35)] text-[rgb(var(--palette-gray-300))] hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-700)/0.55)] hover:text-[rgb(var(--palette-white))]'"
             @click="onSubcategoryClick(subcategory)"
           >
             {{ subcategory.name }}
@@ -385,7 +385,7 @@ onMounted(async () => {
       <div class="mt-8">
         <div class="mb-4 flex items-center justify-between gap-3">
           <Title text="Официальные товары" />
-          <span class="text-sm text-blue-100/85">
+          <span class="text-sm text-[rgb(var(--palette-blue-100)/0.85)]">
             {{ officialProductsCountText }}
           </span>
         </div>
@@ -397,13 +397,13 @@ onMounted(async () => {
           <div
             v-for="n in perPage"
             :key="`official-product-skeleton-${n}`"
-            class="h-64 animate-pulse rounded-2xl bg-dark-600"
+            class="h-64 animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-600))]"
           ></div>
         </div>
 
         <div
           v-else-if="officialProducts.length === 0"
-          class="rounded-2xl border border-dark-700 bg-dark-700/30 px-4 py-6 text-center text-sm text-gray-300"
+          class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.3)] px-4 py-6 text-center text-sm text-[rgb(var(--palette-gray-300))]"
         >
           По выбранным параметрам пока нет официальных товаров.
         </div>
@@ -423,14 +423,14 @@ onMounted(async () => {
         <div v-if="canLoadMore" class="mt-6 flex justify-center">
           <button
             type="button"
-            class="market-primary-surface market-primary-hover rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition"
+            class="market-primary-surface market-primary-hover rounded-xl px-5 py-2.5 text-sm font-semibold text-[rgb(var(--palette-white))] transition"
             @click="loadMoreProducts"
           >
             Показать ещё
           </button>
         </div>
 
-        <div v-else-if="officialProducts.length > 0" class="mt-5 text-center text-xs text-gray-400">
+        <div v-else-if="officialProducts.length > 0" class="mt-5 text-center text-xs text-[rgb(var(--palette-gray-400))]">
           Показаны все товары в выбранном разделе.
         </div>
       </div>
@@ -454,9 +454,7 @@ onMounted(async () => {
 }
 
 .official-page-hero-fallback {
-  background:
-    radial-gradient(100% 120% at 0% 0%, rgba(56, 105, 255, 0.35) 0%, rgba(56, 105, 255, 0.03) 60%),
-    linear-gradient(135deg, rgba(18, 47, 116, 0.82), rgba(14, 33, 74, 0.8));
+  background: var(--official-page-hero-fallback);
 }
 
 .official-page-hero-bottom-fade {
@@ -466,11 +464,7 @@ onMounted(async () => {
   right: 0;
   bottom: -1px;
   height: 92px;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    var(--background-color) 90%
-  );
+  background: var(--official-page-hero-bottom-fade);
 }
 
 .official-products-grid {

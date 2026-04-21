@@ -117,11 +117,11 @@ function handleImageTouchEnd(event: TouchEvent) {
 
 <template>
   <div
-    class="flex flex-col cursor-pointer border border-dark-700 rounded-2xl hover:shadow-xl hover:border-dark-500 transition duration-200 bg-dark-900 h-full"
+    class="flex flex-col cursor-pointer border border-[rgb(var(--palette-dark-700))] rounded-2xl hover:shadow-xl hover:border-[rgb(var(--palette-dark-500))] transition duration-200 bg-[rgb(var(--palette-dark-900))] h-full"
     @click="onClick">
     <!-- Image -->
     <div
-      class="product-card-image-surface group relative m-1 mb-2 aspect-square w-auto overflow-hidden rounded-xl flex-shrink-0 border-[0.5px] border-dark-600/70"
+      class="product-card-image-surface group relative m-1 mb-2 aspect-square w-auto overflow-hidden rounded-xl flex-shrink-0 border-[0.5px] border-[rgb(var(--palette-dark-600)/0.7)]"
       @pointermove="handleImagePointerMove"
       @pointerleave="resetActiveImage"
       @touchstart="handleImageTouchStart"
@@ -145,11 +145,11 @@ function handleImageTouchEnd(event: TouchEvent) {
           v-for="(_, index) in product.images"
           :key="`dot-${product.id}-${index}`"
           class="h-1.5 rounded-full transition-all duration-150"
-          :class="index === activeImageIndex ? 'w-4 bg-white/95' : 'w-1.5 bg-white/55'"
+          :class="index === activeImageIndex ? 'w-4 bg-[rgb(var(--palette-white)/0.95)]' : 'w-1.5 bg-[rgb(var(--palette-white)/0.55)]'"
         />
       </div>
-      <div v-else class="flex h-full w-full flex-col items-center justify-center gap-2 text-gray-300">
-        <ImageOff class="h-7 w-7 text-gray-500" />
+      <div v-else class="flex h-full w-full flex-col items-center justify-center gap-2 text-[rgb(var(--palette-gray-300))]">
+        <ImageOff class="h-7 w-7 text-[rgb(var(--palette-gray-500))]" />
         <span class="text-sm">{{ t('common.noImage') }}</span>
       </div>
       <div v-if="showStatusTag" class="pointer-events-none absolute right-2 top-2 z-10">
@@ -163,7 +163,7 @@ function handleImageTouchEnd(event: TouchEvent) {
         {{ product.title }}
       </h3>
 
-      <hr class="border-dark-700 opacity-80 mb-2 flex-shrink-0" />
+      <hr class="border-[rgb(var(--palette-dark-700))] opacity-80 mb-2 flex-shrink-0" />
 
       <!-- Bottom section with seller and button -->
       <div class="mt-auto flex w-full flex-col gap-2">
@@ -181,7 +181,7 @@ function handleImageTouchEnd(event: TouchEvent) {
             />
           </button>
 
-          <span v-if="product.seller.is_active" class="w-2 h-2 rounded-full bg-green-500 flex-shrink-0 self-center" title="Online" />
+          <span v-if="product.seller.is_active" class="w-2 h-2 rounded-full bg-[rgb(var(--palette-green-500))] flex-shrink-0 self-center" title="Online" />
 
           <!-- Rating -->
           <div v-if="shouldShowSellerRating" class="inline-flex flex-shrink-0 items-center self-center">
@@ -195,7 +195,7 @@ function handleImageTouchEnd(event: TouchEvent) {
 
         <!-- Buy button -->
         <button
-          class="market-primary-surface market-primary-hover group relative w-full flex-shrink-0 cursor-pointer overflow-hidden whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-semibold text-white transition sm:px-3 sm:py-2 sm:text-sm"
+          class="market-primary-surface market-primary-hover group relative w-full flex-shrink-0 cursor-pointer overflow-hidden whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-semibold text-[rgb(var(--palette-white))] transition sm:px-3 sm:py-2 sm:text-sm"
           @click="onClick">
           <span class="block text-center tabular-nums transition-all duration-200 group-hover:-translate-y-full group-hover:opacity-0">
             {{ formattedPrice }}

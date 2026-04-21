@@ -122,40 +122,40 @@ onMounted(async () => {
     <div class="mb-6">
       <div class="flex gap-2 items-center mb-2">
         <BackButton />
-        <h1 class="text-2xl font-bold text-white">
+        <h1 class="text-2xl font-bold text-[rgb(var(--palette-white))]">
           {{ t('pages.archiveProducts.title') }}
         </h1>
       </div>
-      <p class="text-sm text-gray-400 mb-6">
+      <p class="text-sm text-[rgb(var(--palette-gray-400))] mb-6">
         {{ t('pages.archiveProducts.subtitle') }}
       </p>
 
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div class="relative flex-1 max-w-md">
-          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[rgb(var(--palette-gray-500))]" />
           <input
             v-model="searchQuery"
             type="text"
             :placeholder="t('pages.archiveProducts.searchPlaceholder')"
-            class="w-full pl-10 pr-4 py-2.5 rounded-lg bg-dark-600 border border-dark-700 text-sm text-white outline-none placeholder-gray-500 focus:border-blue-500 transition-colors"
+            class="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[rgb(var(--palette-dark-600))] border border-[rgb(var(--palette-dark-700))] text-sm text-[rgb(var(--palette-white))] outline-none placeholder-[rgb(var(--palette-gray-500))] focus:border-[rgb(var(--palette-blue-500))] transition-colors"
           />
         </div>
 
         <div class="flex items-center gap-4">
-          <div class="flex items-center gap-2 text-sm text-gray-400">
-            <div class="px-3 py-1.5 rounded-lg bg-dark-700/50 border border-dark-600">
-              <span class="font-medium text-white">{{ total }}</span>
+          <div class="flex items-center gap-2 text-sm text-[rgb(var(--palette-gray-400))]">
+            <div class="px-3 py-1.5 rounded-lg bg-[rgb(var(--palette-dark-700)/0.5)] border border-[rgb(var(--palette-dark-600))]">
+              <span class="font-medium text-[rgb(var(--palette-white))]">{{ total }}</span>
               {{ t('common.products') }}
             </div>
           </div>
 
-          <div class="flex items-center gap-2 text-gray-300">
+          <div class="flex items-center gap-2 text-[rgb(var(--palette-gray-300))]">
             <Archive class="w-4 h-4" />
             <span class="text-sm">{{ t('pages.archiveProducts.archive') }}</span>
           </div>
 
           <div
-            class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-dark-600 bg-dark-700/40 p-0.5"
+            class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.4)] p-0.5"
             role="group"
             :aria-label="t('pages.index.viewSwitcherLabel')"
           >
@@ -163,8 +163,8 @@ onMounted(async () => {
               type="button"
               class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
               :class="productCardViewMode === 'grid'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+                ? 'bg-[rgb(var(--palette-blue-600))] text-[rgb(var(--palette-white))]'
+                : 'text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[rgb(var(--palette-white))]'"
               :title="t('pages.index.viewGrid')"
               @click="setProductCardViewMode('grid')"
             >
@@ -176,8 +176,8 @@ onMounted(async () => {
               type="button"
               class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
               :class="productCardViewMode === 'list'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+                ? 'bg-[rgb(var(--palette-blue-600))] text-[rgb(var(--palette-white))]'
+                : 'text-[rgb(var(--palette-gray-300))] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[rgb(var(--palette-white))]'"
               :title="t('pages.index.viewList')"
               @click="setProductCardViewMode('list')"
             >
@@ -199,20 +199,20 @@ onMounted(async () => {
       <div
         v-for="n in loadingSkeletonCount"
         :key="n"
-        class="animate-pulse rounded-xl border border-dark-700 bg-dark-600/70"
+        class="animate-pulse rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.7)]"
         :class="productCardViewMode === 'grid' ? 'h-64' : 'h-[118px] sm:h-[134px]'"
       />
     </div>
 
     <div v-else-if="filteredProducts.length === 0" class="text-center py-16">
         <div class="max-w-md mx-auto space-y-4">
-        <div class="w-20 h-20 mx-auto rounded-full bg-dark-700/60 border border-dark-600 flex items-center justify-center">
-          <Archive class="w-10 h-10 text-gray-300" />
+        <div class="w-20 h-20 mx-auto rounded-full bg-[rgb(var(--palette-dark-700)/0.6)] border border-[rgb(var(--palette-dark-600))] flex items-center justify-center">
+          <Archive class="w-10 h-10 text-[rgb(var(--palette-gray-300))]" />
         </div>
-        <h3 class="text-xl font-bold text-white">
+        <h3 class="text-xl font-bold text-[rgb(var(--palette-white))]">
           {{ searchQuery ? t('pages.archiveProducts.noResults') : t('pages.archiveProducts.emptyTitle') }}
         </h3>
-        <p class="text-sm text-gray-400">
+        <p class="text-sm text-[rgb(var(--palette-gray-400))]">
           {{ searchQuery ? t('pages.archiveProducts.tryDifferentQuery') : t('pages.archiveProducts.emptyDescription') }}
         </p>
       </div>

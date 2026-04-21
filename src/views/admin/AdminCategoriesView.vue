@@ -283,12 +283,12 @@ watch(selectedCategory, () => {
 
       <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div class="space-y-3">
-          <div class="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-blue-200">
+          <div class="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--palette-blue-500)/0.2)] bg-[rgb(var(--palette-blue-500)/0.1)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-[rgb(var(--palette-blue-200))]">
             <FolderOpen class="h-3.5 w-3.5" />
             <span>{{ t('pages.admin.categoriesPage.managementBadge') }}</span>
           </div>
           <div>
-            <h1 class="text-3xl font-semibold tracking-tight text-white">
+            <h1 class="text-3xl font-semibold tracking-tight text-[rgb(var(--palette-white))]">
               {{ t('pages.admin.categoriesPage.title') }}
             </h1>
             <p class="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">
@@ -336,8 +336,8 @@ watch(selectedCategory, () => {
           <div
             v-for="category in sortedCategories"
             :key="category.id"
-            class="admin-surface-soft flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-all hover:border-white/12"
-            :class="{ 'border-blue-500/35 bg-blue-500/[0.08]': selectedCategory?.id === category.id }"
+            class="admin-surface-soft flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-all hover:border-[rgb(var(--palette-white)/0.12)]"
+            :class="{ 'border-[rgb(var(--palette-blue-500)/0.35)] bg-[rgb(var(--palette-blue-500)/0.08)]': selectedCategory?.id === category.id }"
             @click="selectCategory(category)"
           >
             <div class="relative flex-shrink-0">
@@ -348,7 +348,7 @@ watch(selectedCategory, () => {
                 :alt="category.name"
               />
               <div v-else class="admin-surface-soft flex h-10 w-10 items-center justify-center rounded-lg">
-                <Folder class="h-5 w-5 text-gray-400" />
+                <Folder class="h-5 w-5 text-[rgb(var(--palette-gray-400))]" />
               </div>
             </div>
 
@@ -363,7 +363,7 @@ watch(selectedCategory, () => {
             </div>
 
             <button
-              class="cursor-pointer text-gray-300 transition-colors hover:text-white"
+              class="cursor-pointer text-[rgb(var(--palette-gray-300))] transition-colors hover:text-[rgb(var(--palette-white))]"
               @click.stop="router.push(`/admin/categories/edit/${category.id}`)"
             >
               <EditIcon class="h-4 w-4" />
@@ -443,7 +443,7 @@ watch(selectedCategory, () => {
               </div>
 
               <button
-                class="cursor-pointer text-gray-300 transition-colors hover:text-white"
+                class="cursor-pointer text-[rgb(var(--palette-gray-300))] transition-colors hover:text-[rgb(var(--palette-white))]"
                 @click.stop="router.push(`/admin/categories/edit/${subcategory.id}`)"
               >
                 <EditIcon class="h-4 w-4" />

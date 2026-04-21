@@ -57,7 +57,7 @@ onMounted(async () => {
     <Loader v-if="tokenIsNotExpired === null" />
 
     <div v-if="tokenIsNotExpired === true"
-      class="max-w-sm w-full border border-dark-700 rounded-2xl bg-background p-8 backdrop-blur-md space-y-6">
+      class="max-w-sm w-full border border-[rgb(var(--palette-dark-700))] rounded-2xl bg-background p-8 backdrop-blur-md space-y-6">
       <h1 class="text-center text-3xl text-mainText font-bold">
         {{ $t('pages.resetPassword.enterNewPassword') }}
       </h1>
