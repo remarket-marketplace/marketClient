@@ -78,7 +78,14 @@ const steamCanCreateOrder = computed(() => {
 
 function resolveSteamErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
-    return getErrorMessage(error.response?.data?.detail ?? error.message, t)
+    const responseDetail = error.response?.data?.detail
+    if (responseDetail) {
+      return getErrorMessage(responseDetail, t)
+    }
+    if (error.response?.status === 503) {
+      return t('errors.STEAM_TOPUP_DISABLED')
+    }
+    return getErrorMessage(error.message, t)
   }
   return getErrorMessage(error, t)
 }
@@ -296,7 +303,7 @@ onBeforeUnmount(() => {
               {{ t('pages.index.steamTopUp.refreshingOrder') }}
             </p>
             <p
-              v-else-if="user && !selectedSteamService"
+              v-else-if="user && !selectedSteamService && !steamError"
               class="mb-5 rounded-lg border border-dark-600 bg-dark-700/50 px-4 py-3 text-sm text-gray-300"
             >
               {{ t('pages.index.steamTopUp.noServices') }}

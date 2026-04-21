@@ -587,7 +587,7 @@ onMounted(() => {
           </p>
         </div>
 
-        <div class="mt-7 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div class="mt-7 grid gap-4">
           <div class="space-y-4">
             <div class="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 sm:p-5">
               <div class="flex items-start justify-between gap-4">
@@ -710,58 +710,55 @@ onMounted(() => {
             </div>
           </div>
 
-          <aside class="rounded-2xl border border-blue-300/15 bg-blue-500/[0.08] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] lg:self-start">
-            <p class="text-xs uppercase tracking-[0.18em] text-blue-200">
-              {{ t('pages.vpn.summaryEyebrow') }}
-            </p>
-            <div class="mt-4 flex items-end justify-between gap-4">
-              <div>
-                <p class="text-sm text-gray-400">{{ t('pages.vpn.total') }}</p>
-                <p class="mt-1 text-4xl font-semibold leading-none text-white">
+          <aside class="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:px-5 sm:py-5">
+            <div class="grid gap-4 lg:grid-cols-[240px_minmax(360px,1fr)_320px] lg:items-center">
+              <div class="lg:pr-4">
+                <p class="text-xs uppercase tracking-[0.18em] text-blue-200">
+                  {{ t('pages.vpn.summaryEyebrow') }}
+                </p>
+                <p class="mt-2 text-[2rem] font-semibold leading-none text-white sm:text-4xl">
                   {{ isPlansLoading ? t('common.loading') : selectedPlanPriceLabel }}
                 </p>
+                <div class="mt-3 text-xs leading-5 text-gray-400 sm:hidden">
+                  <p>{{ selectedPeriod.duration }}</p>
+                  <p>{{ selectedDevicesFullLabel }}</p>
+                </div>
               </div>
-              <div class="pb-1 text-right text-xs leading-5 text-gray-400">
-                <p>{{ selectedPeriod.duration }}</p>
-                <p>{{ selectedDevicesFullLabel }}</p>
+
+              <div class="grid gap-3 border-t border-white/[0.08] pt-3 sm:grid-cols-3 lg:min-h-16 lg:border-l lg:border-t-0 lg:px-4 lg:pt-0">
+                <div class="flex justify-between gap-4 sm:flex-col sm:justify-center sm:gap-1">
+                  <span class="text-sm text-gray-400">{{ t('pages.vpn.summaryPeriod') }}</span>
+                  <p class="text-base font-semibold text-white">{{ selectedPeriod.duration }}</p>
+                </div>
+                <div class="flex justify-between gap-4 sm:flex-col sm:justify-center sm:gap-1">
+                  <span class="text-sm text-gray-400">{{ t('pages.vpn.summaryDevices') }}</span>
+                  <p class="text-base font-semibold text-white">{{ selectedDevices }}</p>
+                </div>
+                <div class="flex justify-between gap-4 sm:flex-col sm:justify-center sm:gap-1">
+                  <span class="text-sm text-gray-400">{{ t('pages.vpn.summaryMonthly') }}</span>
+                  <p class="text-base font-semibold text-white">{{ selectedMonthlyPriceLabel }}</p>
+                </div>
+              </div>
+
+              <div class="border-t border-white/[0.08] pt-3 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
+                <button
+                  type="button"
+                  class="market-primary-surface market-primary-hover inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-white transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60"
+                  :disabled="isPurchaseLoading || selectedPlanPrice <= 0"
+                  @click="buySelectedPlan"
+                >
+                  <span>
+                    {{
+                      isPurchaseLoading
+                        ? t('pages.vpn.processing')
+                        : t('pages.vpn.buySelected', { price: selectedPlanPriceLabel })
+                    }}
+                  </span>
+                  <ShoppingCart class="h-4 w-4" stroke-width="1.7" />
+                </button>
               </div>
             </div>
-
-            <div class="mt-5 space-y-3 border-t border-white/[0.08] pt-4 text-sm">
-              <div class="flex justify-between gap-4">
-                <span class="text-gray-400">{{ t('pages.vpn.summaryPeriod') }}</span>
-                <span class="font-medium text-white">{{ selectedPeriod.duration }}</span>
-              </div>
-              <div class="flex justify-between gap-4">
-                <span class="text-gray-400">{{ t('pages.vpn.summaryDevices') }}</span>
-                <span class="font-medium text-white">{{ selectedDevices }}</span>
-              </div>
-              <div class="flex justify-between gap-4">
-                <span class="text-gray-400">{{ t('pages.vpn.summaryMonthly') }}</span>
-                <span class="font-medium text-white">{{ selectedMonthlyPriceLabel }}</span>
-              </div>
-            </div>
-
-            <p class="mt-5 rounded-xl border border-white/[0.08] bg-black/[0.14] px-3 py-2 text-xs leading-5 text-gray-400">
-              {{ t('pages.vpn.selectedPlanHint', { price: selectedPlanPriceLabel }) }}
-            </p>
             <p v-if="actionError" class="mt-3 text-sm text-red-300">{{ actionError }}</p>
-
-            <button
-              type="button"
-              class="market-primary-surface market-primary-hover mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-white transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60"
-              :disabled="isPurchaseLoading || selectedPlanPrice <= 0"
-              @click="buySelectedPlan"
-            >
-              <span>
-                {{
-                  isPurchaseLoading
-                    ? t('pages.vpn.processing')
-                    : t('pages.vpn.buySelected', { price: selectedPlanPriceLabel })
-                }}
-              </span>
-              <ShoppingCart class="h-4 w-4" stroke-width="1.7" />
-            </button>
           </aside>
         </div>
       </section>
