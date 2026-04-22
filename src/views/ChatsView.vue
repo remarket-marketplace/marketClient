@@ -716,6 +716,15 @@ const latestDealHasReview = computed(() => {
   )
 })
 const isLatestDealSummaryCollapsible = computed(() => resolvedLatestDealMessage.value !== null)
+const floatingDateTopOffsetPx = computed(() => {
+  const baseTopPaddingPx = isMobile.value ? 6 : 12
+  const gapBelowDealPx = isMobile.value ? 8 : 10
+  if (!resolvedLatestDealMessage.value) {
+    return baseTopPaddingPx
+  }
+
+  return latestDealSummaryHeightPx.value + baseTopPaddingPx + gapBelowDealPx
+})
 const latestDealTimelinePaddingStyle = computed(() => {
   const baseTopPaddingPx = 8
   if (!resolvedLatestDealMessage.value) {
@@ -1612,7 +1621,10 @@ async function sendMessage(payload: { files: File[] }) {
             </div>
 
             <div class="relative flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden">
-              <FloatingDateHeader :label="isFloatingDateVisible ? floatingDateLabel : null" />
+              <FloatingDateHeader
+                :label="isFloatingDateVisible ? floatingDateLabel : null"
+                :top-offset-px="floatingDateTopOffsetPx"
+              />
               <div v-if="currentChat && resolvedLatestDealMessage"
                 class="pointer-events-none absolute inset-x-0 top-0 z-10 px-1.5 pt-1.5 lg:px-4 lg:pt-3">
                 <div ref="latestDealSummaryRef"
