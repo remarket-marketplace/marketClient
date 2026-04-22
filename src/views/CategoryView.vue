@@ -853,7 +853,7 @@ onBeforeUnmount(() => {
               <img
                 :src="categoryBannerUrl"
                 :alt="category.name"
-                class="absolute inset-0 h-full w-full object-cover object-[center_18%] px-0 sm:object-contain sm:object-[center_12%] sm:px-6"
+                class="absolute inset-0 h-full w-full object-cover object-center"
               />
             </template>
             <div v-else class="absolute inset-0 category-hero-fallback"></div>
