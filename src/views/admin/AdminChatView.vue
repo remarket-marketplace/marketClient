@@ -727,11 +727,11 @@ async function sendMessage(payload: { files: File[] }) {
 
 <template>
     <div class="h-full w-full flex flex-col md:pt-6">
-        <div v-if="isLoading" class="flex flex-1 items-center justify-center text-gray-300">
+        <div v-if="isLoading" class="flex flex-1 items-center justify-center text-[var(--text-body)]">
             <Loader />
         </div>
 
-        <div v-else-if="errorMessage" class="flex flex-1 items-center justify-center text-red-500">
+        <div v-else-if="errorMessage" class="flex flex-1 items-center justify-center text-[var(--text-danger)]">
             {{ errorMessage }}
         </div>
 
@@ -740,7 +740,7 @@ async function sendMessage(payload: { files: File[] }) {
                 <div class="flex flex-1 flex-col px-2 md:rounded-xl w-full min-h-0">
                     <div class="flex flex-grow flex-col overflow-hidden w-full">
                         <div v-if="currentChatData"
-                            class="flex items-center gap-2 sticky top-0 bg-background px-2 py-2 lg:py-3 lg:px-3 z-10 lg:border-b border-white/8">
+                            class="flex items-center gap-2 sticky top-0 bg-background px-2 py-2 lg:py-3 lg:px-3 z-10 lg:border-b border-[rgb(var(--palette-white)/0.08)]">
                             <button class="text-xl font-bold flex-shrink-0" @click="router.back()">
                                 <ArrowLeft />
                             </button>
@@ -749,17 +749,17 @@ async function sendMessage(payload: { files: File[] }) {
                                     <UserAvatar
                                         :avatar-url="currentChatData.avatar_url"
                                         :alt="currentChatData.username"
-                                        class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-white/10 rounded-full object-cover"
+                                        class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-[rgb(var(--palette-white)/0.1)] rounded-full object-cover"
                                     />
                                 </div>
                                 <div class="flex flex-col truncate flex-1">
                                     <p class="truncate text-mainText font-semibold text-lg">
                                         {{ currentChatData.username }}
                                     </p>
-                                    <p v-if="currentChatData.is_active" class="text-xs text-green-500">
+                                    <p v-if="currentChatData.is_active" class="text-xs text-[var(--text-success-strong)]">
                                         {{ $t('common.online') }}
                                     </p>
-                                    <p v-else class="text-xs text-gray-500">
+                                    <p v-else class="text-xs text-[var(--text-meta)]">
                                         {{ $t('common.offline') }}
                                     </p>
                                 </div>
@@ -817,14 +817,14 @@ async function sendMessage(payload: { files: File[] }) {
 
                                         <div v-else-if="currentChatId != null && chatMessages.length === 0"
                                             class="h-full w-full flex items-center justify-center">
-                                            <p class="text-gray-400 font-light">{{ $t("pages.chats.emptyMessages") }}</p>
+                                            <p class="text-[var(--text-muted)] font-light">{{ $t("pages.chats.emptyMessages") }}</p>
                                         </div>
 
                                         <div v-else class="h-full w-full flex items-center justify-center">
-                                            <p class="text-gray-400 font-light">{{ $t('pages.chats.selectChat') }}</p>
+                                            <p class="text-[var(--text-muted)] font-light">{{ $t('pages.chats.selectChat') }}</p>
                                         </div>
 
-                                        <div v-if="currentChatId" class="sticky bottom-0 z-20 mt-2 bg-transparent pb-1 pt-2">
+                                        <div v-if="currentChatId" class="sticky bottom-0 z-20 mt-2 bg-[var(--transparent)] pb-1 pt-2">
                                             <SendMessageBar
                                                 v-model:newMessage="newMessage"
                                                 @sendMessage="sendMessage"

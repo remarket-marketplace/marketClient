@@ -112,11 +112,11 @@ function handleImageTouchEnd(event: TouchEvent) {
 
 <template>
   <article
-    class="flex min-h-[112px] min-w-0 cursor-pointer overflow-hidden rounded-2xl border border-dark-700 bg-dark-900 transition duration-200 hover:border-dark-500 hover:shadow-xl sm:min-h-[128px]"
+    class="flex min-h-[112px] min-w-0 cursor-pointer overflow-hidden rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900))] transition duration-200 hover:border-[rgb(var(--palette-dark-500))] hover:shadow-xl sm:min-h-[128px]"
     @click="onClick"
   >
     <div
-      class="product-card-image-surface group relative m-2 aspect-square w-24 shrink-0 overflow-hidden rounded-xl border border-dark-600/70 sm:w-28 md:w-32"
+      class="product-card-image-surface group relative m-2 aspect-square w-24 shrink-0 overflow-hidden rounded-xl border border-[rgb(var(--palette-dark-600)/0.7)] sm:w-28 md:w-32"
       @pointermove="handleImagePointerMove"
       @pointerleave="resetActiveImage"
       @touchstart="handleImageTouchStart"
@@ -140,11 +140,11 @@ function handleImageTouchEnd(event: TouchEvent) {
           v-for="(_, index) in product.images"
           :key="`dot-${product.id}-${index}`"
           class="h-1.5 rounded-full transition-all duration-150"
-          :class="index === activeImageIndex ? 'w-4 bg-white/95' : 'w-1.5 bg-white/55'"
+          :class="index === activeImageIndex ? 'w-4 bg-[rgb(var(--palette-white)/0.95)]' : 'w-1.5 bg-[rgb(var(--palette-white)/0.55)]'"
         />
       </div>
-      <div v-else class="flex h-full w-full flex-col items-center justify-center gap-1.5 text-gray-300">
-        <ImageOff class="h-6 w-6 text-gray-500 sm:h-7 sm:w-7" />
+      <div v-else class="flex h-full w-full flex-col items-center justify-center gap-1.5 text-[var(--text-body)]">
+        <ImageOff class="h-6 w-6 text-[var(--text-meta)] sm:h-7 sm:w-7" />
         <span class="text-xs sm:text-sm">{{ t('common.noImage') }}</span>
       </div>
     </div>
@@ -154,12 +154,12 @@ function handleImageTouchEnd(event: TouchEvent) {
         <h3 class="home-list-title min-w-0 text-sm font-semibold text-mainText sm:text-base">
           {{ product.title }}
         </h3>
-        <div class="shrink-0 rounded-lg bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white sm:text-sm">
+        <div class="shrink-0 rounded-lg bg-[rgb(var(--palette-blue-600))] px-2.5 py-1 text-xs font-semibold text-[var(--text-title)] sm:text-sm">
           {{ formattedPrice }}
         </div>
       </div>
 
-      <p class="home-list-description mt-1 min-w-0 text-xs text-gray-400 sm:text-sm">
+      <p class="home-list-description mt-1 min-w-0 text-xs text-[var(--text-muted)] sm:text-sm">
         {{ product.description || t('common.noDescription') }}
       </p>
 
@@ -178,7 +178,7 @@ function handleImageTouchEnd(event: TouchEvent) {
 
         <span
           v-if="product.seller.is_active"
-          class="h-2 w-2 flex-shrink-0 self-center rounded-full bg-green-500"
+          class="h-2 w-2 flex-shrink-0 self-center rounded-full bg-[rgb(var(--palette-green-500))]"
           title="Online"
         />
 

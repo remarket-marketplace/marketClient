@@ -10,7 +10,7 @@ defineProps<{
       v-if="label"
       class="pointer-events-none absolute left-1/2 top-2 z-20 -translate-x-1/2"
     >
-      <div class="rounded-full border border-dark-600/80 bg-dark-900/85 px-3 py-1 text-xs font-medium text-mainText backdrop-blur">
+      <div class="rounded-full border border-[rgb(var(--palette-dark-600)/0.8)] bg-[rgb(var(--palette-dark-900)/0.85)] px-3 py-1 text-xs font-medium text-mainText backdrop-blur">
         {{ label }}
       </div>
     </div>

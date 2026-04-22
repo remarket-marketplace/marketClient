@@ -35,7 +35,7 @@ onBeforeUnmount(() => {
 
 <template>
   <span
-    class="group relative inline-flex h-5 w-5 items-center justify-center rounded-[7px] border border-blue-500/70 bg-blue-950/70 text-blue-100"
+    class="group relative inline-flex h-5 w-5 items-center justify-center rounded-[7px] border border-[rgb(var(--palette-blue-500)/0.7)] bg-[rgb(var(--palette-blue-950)/0.7)] text-[var(--text-accent-strong)]"
     role="button"
     tabindex="0"
     @touchstart="handleTouchStart"
@@ -50,14 +50,14 @@ onBeforeUnmount(() => {
       />
     </svg>
     <span
-      class="auto-delivery-tooltip pointer-events-none absolute right-0 top-6 z-20 hidden w-max max-w-[150px] whitespace-normal rounded-md border border-blue-400/35 px-2 py-1 text-center text-[10px] font-medium leading-tight text-blue-100 opacity-0 backdrop-blur-sm transition-opacity duration-150 group-hover:opacity-100 sm:block"
+      class="auto-delivery-tooltip pointer-events-none absolute right-0 top-6 z-20 hidden w-max max-w-[150px] whitespace-normal rounded-md border border-[rgb(var(--palette-blue-400)/0.35)] px-2 py-1 text-center text-[10px] font-medium leading-tight text-[var(--text-accent-strong)] opacity-0 backdrop-blur-sm transition-opacity duration-150 group-hover:opacity-100 sm:block"
     >
       Мгновенная выдача после покупки
     </span>
 
     <span
       v-if="isTouchTooltipVisible"
-      class="auto-delivery-tooltip auto-delivery-tooltip-mobile pointer-events-none fixed bottom-20 left-1/2 z-[70] w-[min(220px,calc(100vw-1rem))] -translate-x-1/2 rounded-md border border-blue-400/35 px-2.5 py-1.5 text-center text-[11px] font-medium leading-tight text-blue-100 backdrop-blur-sm sm:hidden"
+      class="auto-delivery-tooltip auto-delivery-tooltip-mobile pointer-events-none fixed bottom-20 left-1/2 z-[70] w-[min(220px,calc(100vw-1rem))] -translate-x-1/2 rounded-md border border-[rgb(var(--palette-blue-400)/0.35)] px-2.5 py-1.5 text-center text-[11px] font-medium leading-tight text-[var(--text-accent-strong)] backdrop-blur-sm sm:hidden"
     >
       Мгновенная выдача после покупки
     </span>

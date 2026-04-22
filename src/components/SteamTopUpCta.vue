@@ -27,7 +27,7 @@ const spacingClass = computed(() => (isCompactVariant.value ? 'mt-3' : ''))
     <RouterLink to="/steam-topup" class="steam-topup-entry__link">
       <span class="steam-topup-entry__logo-wrap" aria-hidden="true">
         <span class="steam-topup-entry__logo">
-          <Icon icon="mdi:steam" class="h-5 w-5 text-white" />
+          <Icon icon="mdi:steam" class="h-5 w-5 text-[var(--text-title)]" />
         </span>
       </span>
 

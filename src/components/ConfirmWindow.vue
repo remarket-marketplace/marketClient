@@ -47,14 +47,14 @@ function handleCancel() {
     <template #footer>
       <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <button
-          class="inline-flex min-h-11 items-center justify-center rounded-[1rem] border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-medium text-gray-200 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:px-6"
+          class="inline-flex min-h-11 items-center justify-center rounded-[1rem] border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] px-5 py-3 text-sm font-medium text-[var(--text-body-strong)] transition hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)] disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:px-6"
           :disabled="props.isLoading"
           @click="handleCancel"
         >
           {{ props.cancelText ?? t('common.cancel') }}
         </button>
         <button
-          class="market-primary-surface market-primary-hover inline-flex min-h-11 items-center justify-center gap-2 rounded-[1rem] px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:px-6"
+          class="market-primary-surface market-primary-hover inline-flex min-h-11 items-center justify-center gap-2 rounded-[1rem] px-5 py-3 text-sm font-semibold text-[var(--text-title)] transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:px-6"
           :disabled="props.isLoading"
           @click="handleConfirm"
         >

@@ -117,10 +117,10 @@ watch(
   <div class="z-10 flex flex-none flex-col gap-2">
     <div v-if="previewUrls.length > 0" class="px-1">
       <div class="mb-1 flex items-center justify-between">
-        <p class="text-xs text-gray-400">{{ previewUrls.length }}/{{ MAX_IMAGES_PER_MESSAGE }}</p>
+        <p class="text-xs text-[var(--text-muted)]">{{ previewUrls.length }}/{{ MAX_IMAGES_PER_MESSAGE }}</p>
         <button
           type="button"
-          class="text-xs text-gray-400 transition hover:text-white"
+          class="text-xs text-[var(--text-muted)] transition hover:text-[var(--text-title)]"
           :disabled="isDisabled"
           @click="clearSelectedImages"
         >
@@ -131,12 +131,12 @@ watch(
         <div
           v-for="(previewUrl, index) in previewUrls"
           :key="`${previewUrl}_${index}`"
-          class="relative h-16 w-16 flex-none overflow-hidden rounded-lg border border-white/10 bg-dark-700"
+          class="relative h-16 w-16 flex-none overflow-hidden rounded-lg border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-dark-700))]"
         >
           <img :src="previewUrl" alt="preview" class="h-full w-full object-cover">
           <button
             type="button"
-            class="message-preview-remove absolute right-0.5 top-0.5 rounded-full p-0.5 text-white transition"
+            class="message-preview-remove absolute right-0.5 top-0.5 rounded-full p-0.5 text-[var(--text-title)] transition"
             :disabled="isDisabled"
             @click="removeSelectedImage(index)"
           >
@@ -149,7 +149,7 @@ watch(
     <div class="flex flex-none items-end gap-2">
       <button
         type="button"
-        class="message-compose-trigger h-12 w-12 flex-none rounded-full border border-white/10 bg-background/80 text-gray-300 backdrop-blur-xl transition hover:border-white/15 hover:bg-background/90 hover:text-white supports-[backdrop-filter]:bg-background/55 supports-[backdrop-filter]:hover:bg-background/65 disabled:cursor-not-allowed disabled:opacity-60"
+        class="message-compose-trigger h-12 w-12 flex-none rounded-full border border-[rgb(var(--palette-white)/0.1)] bg-background/80 text-[var(--text-body)] backdrop-blur-xl transition hover:border-[rgb(var(--palette-white)/0.15)] hover:bg-background/90 hover:text-[var(--text-title)] supports-[backdrop-filter]:bg-background/55 supports-[backdrop-filter]:hover:bg-background/65 disabled:cursor-not-allowed disabled:opacity-60"
         :disabled="isDisabled || selectedFiles.length >= MAX_IMAGES_PER_MESSAGE"
         @click="openImagesPicker"
       >
@@ -168,8 +168,8 @@ watch(
       <div
         class="message-compose-shell flex flex-1 items-end rounded-[26px] border px-3 py-2 backdrop-blur-xl transition"
         :class="isDisabled
-          ? 'border-amber-400/30 bg-amber-500/10 opacity-60'
-          : 'border-white/10 bg-background/80 focus-within:border-white/15 focus-within:bg-background/90 supports-[backdrop-filter]:bg-background/55 supports-[backdrop-filter]:focus-within:bg-background/65'"
+          ? 'border-[rgb(var(--palette-amber-400)/0.3)] bg-[rgb(var(--palette-amber-500)/0.1)] opacity-60'
+          : 'border-[rgb(var(--palette-white)/0.1)] bg-background/80 focus-within:border-[rgb(var(--palette-white)/0.15)] focus-within:bg-background/90 supports-[backdrop-filter]:bg-background/55 supports-[backdrop-filter]:focus-within:bg-background/65'"
       >
         <textarea
           ref="messageInputRef"
@@ -177,13 +177,13 @@ watch(
           @input="updateMessage"
           @keydown="handleMessageKeydown"
           rows="1"
-          class="max-h-[140px] min-h-8 flex-1 resize-none border-0 bg-transparent py-1 text-white outline-none placeholder:text-gray-400 disabled:cursor-not-allowed disabled:placeholder:text-amber-200/70"
+          class="max-h-[140px] min-h-8 flex-1 resize-none border-0 bg-[var(--transparent)] py-1 text-[var(--text-title)] outline-none placeholder:text-[var(--text-muted)] disabled:cursor-not-allowed disabled:placeholder:text-[rgb(var(--text-warning-rgb)/0.7)]"
           :placeholder="$t('pages.chats.messagePlaceholder')"
           :disabled="isDisabled"
           maxlength="500"
         />
         <button
-          class="market-primary-surface market-primary-hover ml-2 flex h-8 w-8 flex-none items-center justify-center self-end rounded-full border border-blue-400/40 text-white transition disabled:cursor-not-allowed disabled:border-amber-400/40 disabled:bg-dark-500 disabled:opacity-60 disabled:hover:bg-dark-500"
+          class="market-primary-surface market-primary-hover ml-2 flex h-8 w-8 flex-none items-center justify-center self-end rounded-full border border-[rgb(var(--palette-blue-400)/0.4)] text-[var(--text-title)] transition disabled:cursor-not-allowed disabled:border-[rgb(var(--palette-amber-400)/0.4)] disabled:bg-[rgb(var(--palette-dark-500))] disabled:opacity-60 disabled:hover:bg-[rgb(var(--palette-dark-500))]"
           :disabled="isDisabled || !hasDraftToSend"
           @click="handleSendMessage"
         >

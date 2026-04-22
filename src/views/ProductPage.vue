@@ -28,6 +28,7 @@ import {
   type PriceOfferMessageTemplateKey,
 } from '@/utils/priceOfferMessageTemplate'
 import { hasFortniteAccountDetails } from '@/utils/fortniteAccount'
+import { buildAuthRedirectQuery } from '@/utils/authRedirect'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const NORMALIZED_API_HOST = String(API_HOST || '').replace(/\/$/, '')
@@ -548,6 +549,13 @@ function openBuyConfirm() {
   showBuyConfirm.value = true
 }
 
+function goToSignInFromProduct() {
+  router.push({
+    path: '/signin',
+    query: buildAuthRedirectQuery(route.fullPath),
+  })
+}
+
 function openOfferConfirm() {
   if (!product.value) return
   const productPrice = Number(product.value.price)
@@ -830,31 +838,31 @@ onUnmounted(() => {
     <!-- Image gallery -->
     <div class="w-full grid grid-cols-1 gap-5 lg:gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
       <div class="w-full min-w-0 space-y-4">
-        <div v-if="selectedImage" class="flex justify-center rounded-2xl border border-dark-700 bg-dark-700/40 overflow-hidden">
+        <div v-if="selectedImage" class="flex justify-center rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.4)] overflow-hidden">
           <div class="relative w-full aspect-[4/3] sm:aspect-[5/4] lg:aspect-[4/3] max-h-[640px] flex items-center justify-center">
             <template v-if="product.images && product.images.length > 1">
               <button
                 type="button"
-                class="absolute inset-y-0 left-0 z-20 w-12 md:w-16 bg-transparent"
+                class="absolute inset-y-0 left-0 z-20 w-12 md:w-16 bg-[var(--transparent)]"
                 :aria-label="t('common.previous')"
                 @click="prevImage"
               />
               <button
                 type="button"
-                class="absolute inset-y-0 right-0 z-20 w-12 md:w-16 bg-transparent"
+                class="absolute inset-y-0 right-0 z-20 w-12 md:w-16 bg-[var(--transparent)]"
                 :aria-label="t('common.next')"
                 @click="nextImage"
               />
               <button
                 type="button"
-                class="pointer-events-none absolute left-3 top-1/2 z-30 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-black/45 text-white/90"
+                class="pointer-events-none absolute left-3 top-1/2 z-30 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[rgb(var(--palette-white)/0.25)] bg-[rgb(var(--palette-black)/0.45)] text-[rgb(var(--text-title-rgb)/0.9)]"
                 :aria-label="t('common.previous')"
               >
                 <ChevronLeft class="h-5 w-5" />
               </button>
               <button
                 type="button"
-                class="pointer-events-none absolute right-3 top-1/2 z-30 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-black/45 text-white/90"
+                class="pointer-events-none absolute right-3 top-1/2 z-30 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[rgb(var(--palette-white)/0.25)] bg-[rgb(var(--palette-black)/0.45)] text-[rgb(var(--text-title-rgb)/0.9)]"
                 :aria-label="t('common.next')"
               >
                 <ChevronRight class="h-5 w-5" />
@@ -877,12 +885,12 @@ onUnmounted(() => {
           <img v-for="image in product.images" :key="image.id" :src="`${API_HOST}${image.image_url}`"
             class="h-20 w-20 flex-shrink-0 cursor-pointer border-2 rounded-lg object-cover transition-all duration-200 hover:opacity-80"
             :alt="`Product image: ${product.title}`" :class="{
-              'border-blue-500': image.image_url === selectedImage?.image_url,
-              'border-dark-700': image.image_url !== selectedImage?.image_url,
+              'border-[rgb(var(--palette-blue-500))]': image.image_url === selectedImage?.image_url,
+              'border-[rgb(var(--palette-dark-700))]': image.image_url !== selectedImage?.image_url,
             }" loading="lazy" @click="selectImage(image)">
         </div>
 
-        <div v-else-if="!selectedImage && product.images?.length" class="py-4 text-center text-gray-400">
+        <div v-else-if="!selectedImage && product.images?.length" class="py-4 text-center text-[var(--text-muted)]">
           {{ $t('pages.product.noImages') }}
         </div>
 
@@ -893,7 +901,7 @@ onUnmounted(() => {
         <!-- Title and price -->
         <div class="flex justify-between">
           <div class="space-y-4">
-            <h1 class="text-2xl lg:text-3xl font-bold text-white leading-tight break-words">
+            <h1 class="text-2xl lg:text-3xl font-bold text-[var(--text-title)] leading-tight break-words">
               {{ product.title }}
             </h1>
             <div class="flex flex-wrap items-center gap-3">
@@ -912,54 +920,54 @@ onUnmounted(() => {
         </div>
 
         <!-- Meta info -->
-        <div class="space-y-3 py-4 border-t border-dark-700">
+        <div class="space-y-3 py-4 border-t border-[rgb(var(--palette-dark-700))]">
           <div class="flex items-center gap-3">
-            <span class="text-gray-400 font-medium min-w-20">{{ $t('common.published') }}:</span>
-            <span class="text-white">{{ formatFullDate(product.created_at) }}</span>
+            <span class="text-[var(--text-muted)] font-medium min-w-20">{{ $t('common.published') }}:</span>
+            <span class="text-[var(--text-title)]">{{ formatFullDate(product.created_at) }}</span>
           </div>
           <div class="flex items-center gap-3">
-            <span class="text-gray-400 font-medium min-w-20">{{ $t('common.category') }}:</span>
+            <span class="text-[var(--text-muted)] font-medium min-w-20">{{ $t('common.category') }}:</span>
             <div
               v-if="displayedCategory"
-              class="min-w-0 flex items-center gap-1 text-white"
+              class="min-w-0 flex items-center gap-1 text-[var(--text-title)]"
             >
               <button
                 v-if="canNavigateToDisplayedCategory"
                 type="button"
-                class="truncate text-left text-white transition hover:text-blue-300 hover:underline"
+                class="truncate text-left text-[var(--text-title)] transition hover:text-[var(--text-link)] hover:underline"
                 @click="goToCategoryPage(displayedCategory)"
               >
                 {{ displayedCategory.name }}
               </button>
-              <span v-else class="truncate text-left text-white">
+              <span v-else class="truncate text-left text-[var(--text-title)]">
                 {{ displayedCategory.name }}
               </span>
               <template v-if="displayedSubcategory">
-                <span class="text-gray-500">/</span>
+                <span class="text-[var(--text-meta)]">/</span>
                 <button
                   v-if="canNavigateToDisplayedSubcategory"
                   type="button"
-                  class="truncate text-left text-white transition hover:text-blue-300 hover:underline"
+                  class="truncate text-left text-[var(--text-title)] transition hover:text-[var(--text-link)] hover:underline"
                   @click="goToCategoryPageWithSubcategory(displayedCategory, displayedSubcategory)"
                 >
                   {{ displayedSubcategory.name }}
                 </button>
-                <span v-else class="truncate text-left text-white">
+                <span v-else class="truncate text-left text-[var(--text-title)]">
                   {{ displayedSubcategory.name }}
                 </span>
               </template>
             </div>
-            <span v-else class="text-white">{{ $t('common.notSpecified') }}</span>
+            <span v-else class="text-[var(--text-title)]">{{ $t('common.notSpecified') }}</span>
           </div>
           <div class="flex items-center gap-3">
-            <span class="text-gray-400 font-medium min-w-20">{{ $t('pages.product.remainingQuantity') }}:</span>
-            <span class="text-white">{{ product.count }}</span>
+            <span class="text-[var(--text-muted)] font-medium min-w-20">{{ $t('pages.product.remainingQuantity') }}:</span>
+            <span class="text-[var(--text-title)]">{{ product.count }}</span>
           </div>
         </div>
 
         <div
           v-if="product.is_raika_verified"
-          class="rounded-lg border border-emerald-700/40 bg-emerald-900/20 p-3 text-xs text-emerald-200"
+          class="rounded-lg border border-[rgb(var(--palette-emerald-700)/0.4)] bg-[rgb(var(--palette-emerald-900)/0.2)] p-3 text-xs text-[var(--text-success)]"
         >
           <p class="flex flex-wrap items-center gap-1.5">
             <img
@@ -974,7 +982,7 @@ onUnmounted(() => {
                 :href="RAIKA_BOT_URL"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="underline decoration-emerald-300/60 underline-offset-2 hover:text-emerald-100 transition-colors"
+                class="underline decoration-[rgb(var(--palette-emerald-300)/0.6)] underline-offset-2 hover:text-[var(--text-success)] transition-colors"
               >
                 {{ $t('pages.product.raikaName') }}
               </a>
@@ -984,18 +992,18 @@ onUnmounted(() => {
 
         <div
           v-if="canSeeModerationRejectReason"
-          class="rounded-lg border border-red-800/40 bg-red-950/20 p-3 text-sm text-red-100"
+          class="rounded-lg border border-[rgb(var(--palette-red-800)/0.4)] bg-[rgb(var(--palette-red-950)/0.2)] p-3 text-sm text-[var(--text-danger-soft)]"
         >
-          <p class="text-red-300 font-semibold">
+          <p class="text-[var(--text-danger)] font-semibold">
             {{ $t('pages.product.moderationRejectedTitle') }}
           </p>
-          <p class="mt-2 text-red-100/90">
-            <span class="text-red-200">{{ $t('pages.product.moderationRejectReasonLabel') }}:</span>
+          <p class="mt-2 text-[rgb(var(--text-danger-soft-rgb)/0.9)]">
+            <span class="text-[var(--text-danger-soft)]">{{ $t('pages.product.moderationRejectReasonLabel') }}:</span>
             {{ moderationRejectReasonLabel ?? $t('common.notSpecified') }}
           </p>
           <p
             v-if="product.moderation_reject_reason_text"
-            class="mt-2 whitespace-pre-line text-red-100/80"
+            class="mt-2 whitespace-pre-line text-[rgb(var(--text-danger-soft-rgb)/0.8)]"
           >
             {{ product.moderation_reject_reason_text }}
           </p>
@@ -1004,12 +1012,12 @@ onUnmounted(() => {
         <TrustComponent :product="product" />
 
         <!-- Action buttons -->
-        <div class="pt-6 border-t border-dark-700">
+        <div class="pt-6 border-t border-[rgb(var(--palette-dark-700))]">
           <div v-if="!product.is_sold" class="flex flex-col gap-3 sm:flex-row justify-end">
             <div class="w-full flex gap-6 pr-4 items-center justify-end" v-if="product.is_owner">
               <button
                 type="button"
-                class="market-primary-surface market-primary-hover rounded-lg flex-1 px-4 py-4 text-sm font-semibold text-white transition lg:flex-none sm:px-6"
+                class="market-primary-surface market-primary-hover rounded-lg flex-1 px-4 py-4 text-sm font-semibold text-[var(--text-title)] transition lg:flex-none sm:px-6"
                 @click.stop="editProduct">
                 {{ $t('common.edit') }}
               </button>
@@ -1017,28 +1025,28 @@ onUnmounted(() => {
             </div>
 
             <div v-else class="w-full sm:pr-4">
-              <span v-if="user === null" class="mb-2 block text-sm text-gray-400 sm:text-right">
+              <span v-if="user === null" class="mb-2 block text-sm text-[var(--text-muted)] sm:text-right">
                 {{ $t('pages.product.authRequired') }}
               </span>
 
               <div v-if="product.status === 'active'" class="flex w-full items-center justify-end gap-3">
                 <div class="flex min-w-0 flex-1 flex-nowrap items-stretch gap-2">
-                  <button :disabled="user === null" @click="user !== null && openOfferConfirm()" class="inline-flex h-12 flex-1 items-center justify-center whitespace-nowrap rounded-lg px-4 text-sm font-semibold leading-none transition
-          border border-white/10 bg-white/[0.04] text-gray-200 hover:border-white/20 hover:bg-white/[0.08] hover:text-white
-          disabled:bg-white/[0.03]
-          disabled:text-white/45
+                  <button @click="user === null ? goToSignInFromProduct() : openOfferConfirm()" class="inline-flex h-12 flex-1 items-center justify-center whitespace-nowrap rounded-lg px-4 text-sm font-semibold leading-none transition
+          border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body-strong)] hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)]
+          disabled:bg-[rgb(var(--palette-white)/0.03)]
+          disabled:text-[rgb(var(--text-title-rgb)/0.45)]
           disabled:cursor-not-allowed
-          disabled:hover:bg-white/[0.03]">
+          disabled:hover:bg-[rgb(var(--palette-white)/0.03)]">
                     <span class="inline-flex items-center justify-center gap-2 leading-none">
                       <Percent class="h-4 w-4" />
                       {{ $t('pages.product.offerPrice') }}
                     </span>
                   </button>
-                  <button :disabled="user === null" @click="user !== null && openBuyConfirm()" class="market-primary-surface market-primary-hover inline-flex h-12 flex-1 items-center justify-center whitespace-nowrap rounded-lg px-4 text-sm font-semibold leading-none text-white transition
-          disabled:bg-blue-600/40
-          disabled:text-white/60
+                  <button @click="user === null ? goToSignInFromProduct() : openBuyConfirm()" class="market-primary-surface market-primary-hover inline-flex h-12 flex-1 items-center justify-center whitespace-nowrap rounded-lg px-4 text-sm font-semibold leading-none text-[var(--text-title)] transition
+          disabled:bg-[rgb(var(--palette-blue-600)/0.4)]
+          disabled:text-[rgb(var(--text-title-rgb)/0.6)]
           disabled:cursor-not-allowed
-          disabled:hover:bg-blue-600/40">
+          disabled:hover:bg-[rgb(var(--palette-blue-600)/0.4)]">
                     <span class="inline-flex items-center justify-center gap-2 leading-none">
                       <ShoppingBag class="h-4 w-4" />
                       {{ $t('pages.product.buy') }}
@@ -1051,31 +1059,31 @@ onUnmounted(() => {
                     v-if="product.is_liked"
                     @click="user !== null && removeProductLike()"
                     class="h-8 w-8"
-                    :class="user === null ? 'cursor-default text-gray-500' : 'cursor-pointer text-red-500'"
+                    :class="user === null ? 'cursor-default text-[var(--text-meta)]' : 'cursor-pointer text-[var(--text-danger)]'"
                     :style="user !== null ? { fill: 'currentColor' } : undefined"
                   />
                   <Heart
                     v-else
                     @click="user !== null && likeProduct()"
                     class="h-8 w-8"
-                    :class="user === null ? 'cursor-default text-gray-500' : 'cursor-pointer text-white'"
+                    :class="user === null ? 'cursor-default text-[var(--text-meta)]' : 'cursor-pointer text-[var(--text-title)]'"
                   />
                 </div>
               </div>
             </div>
 
-            <div v-if="buyError" class="mt-2 text-sm text-red-400">
+            <div v-if="buyError" class="mt-2 text-sm text-[var(--text-danger)]">
               {{ buyError }}
             </div>
           </div>
 
           <div v-else
-            class="w-full py-4 text-center bg-dark-600/40 border border-dark-700 text-gray-400 rounded-2xl font-semibold">
+            class="w-full py-4 text-center bg-[rgb(var(--palette-dark-600)/0.4)] border border-[rgb(var(--palette-dark-700))] text-[var(--text-muted)] rounded-2xl font-semibold">
             {{ $t('pages.product.sold') }}
           </div>
 
         </div>
-        <div v-if="product.is_owner" class="w-full flex justify-end gap-2 text-gray-400">
+        <div v-if="product.is_owner" class="w-full flex justify-end gap-2 text-[var(--text-muted)]">
           <Heart />
           <span>{{ product.likes }}</span>
         </div>
@@ -1087,9 +1095,9 @@ onUnmounted(() => {
     >
       <div
         v-if="shouldShowFortniteAccountDetails"
-        class="order-1 space-y-4 rounded-2xl border border-dark-700 bg-dark-700/20 p-4 lg:order-2"
+        class="order-1 space-y-4 rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.2)] p-4 lg:order-2"
       >
-        <h2 class="text-lg font-semibold text-white">
+        <h2 class="text-lg font-semibold text-[var(--text-title)]">
           {{ $t('pages.product.fortniteAccountDetails') }}
         </h2>
         <FortniteAccountSnapshot
@@ -1099,8 +1107,8 @@ onUnmounted(() => {
       </div>
 
       <div class="order-2 space-y-4 py-4 lg:order-1 lg:py-0">
-        <h1 class="text-xl font-bold text-white">{{ $t('pages.product.description') }}</h1>
-        <p class="text-gray-300 leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere] text-sm lg:text-base">
+        <h1 class="text-xl font-bold text-[var(--text-title)]">{{ $t('pages.product.description') }}</h1>
+        <p class="text-[var(--text-body)] leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere] text-sm lg:text-base">
           {{ product.description || $t('pages.product.descriptionMissing') }}
         </p>
       </div>
@@ -1110,10 +1118,10 @@ onUnmounted(() => {
       <p class="text-3xl font-bold">{{ $t('pages.product.reviews') }}</p>
       <div class="flex flex-col gap-2">
         <div v-for="review in product.reviews" :key="review.id"
-          class="p-4 rounded-lg bg-gray-800/20 border border-dark-700">
+          class="p-4 rounded-lg bg-[rgb(var(--palette-gray-800)/0.2)] border border-[rgb(var(--palette-dark-700))]">
           <div class="flex justify-between items-center">
             <span class="font-medium">{{ review.rating }} ⭐</span>
-            <span class="text-xs text-gray-400">{{ formatFullDate(review.created_at) }}</span>
+            <span class="text-xs text-[var(--text-muted)]">{{ formatFullDate(review.created_at) }}</span>
           </div>
           <p class="mt-2 text-sm">{{ review.body }}</p>
         </div>
@@ -1122,10 +1130,10 @@ onUnmounted(() => {
 
     <div
       v-if="shouldShowOfficialRemarketCarousel"
-      class="official-showcase mt-6 w-full rounded-3xl border border-white/12 p-4 sm:p-5"
+      class="official-showcase mt-6 w-full rounded-3xl border border-[rgb(var(--palette-white)/0.12)] p-4 sm:p-5"
     >
       <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div class="inline-flex items-center gap-2 rounded-full border border-blue-300/70 bg-blue-500/32 px-3 py-1.5 text-sm font-semibold tracking-wide text-blue-50 shadow-[0_0_0_1px_rgba(59,130,246,0.22)_inset]">
+        <div class="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--palette-blue-300)/0.7)] bg-[rgb(var(--palette-blue-500)/0.32)] px-3 py-1.5 text-sm font-semibold tracking-wide text-[var(--text-accent-strong)] shadow-[var(--official-showcase-badge-shadow)]">
           <BadgeCheck class="h-4 w-4" />
           <span>Официально от remarket</span>
         </div>
@@ -1140,7 +1148,7 @@ onUnmounted(() => {
             <ChevronRight class="h-4 w-4" />
           </button>
 
-          <div class="hidden items-center gap-1 rounded-full border border-[rgba(219,224,232,0.32)] bg-[rgba(56,61,73,0.54)] p-1 sm:inline-flex">
+          <div class="hidden items-center gap-1 rounded-full border border-[var(--official-showcase-control-border)] bg-[var(--official-showcase-control-bg)] p-1 sm:inline-flex">
             <button
               type="button"
               class="official-showcase__arrow-btn"
@@ -1163,7 +1171,7 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div class="mb-3 text-sm font-medium text-blue-100/85 sm:hidden">
+      <div class="mb-3 text-sm font-medium text-[rgb(var(--text-accent-strong-rgb)/0.85)] sm:hidden">
         {{ officialProductsCountText }}
       </div>
 
@@ -1171,7 +1179,7 @@ onUnmounted(() => {
         <div
           v-for="n in officialProductsLoadingSkeletonCount"
           :key="`official-skeleton-${n}`"
-          class="h-[234px] w-[188px] shrink-0 animate-pulse rounded-2xl bg-dark-700/70 sm:h-[276px] sm:w-[232px]"
+          class="h-[234px] w-[188px] shrink-0 animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-700)/0.7)] sm:h-[276px] sm:w-[232px]"
         ></div>
       </div>
 
@@ -1189,7 +1197,7 @@ onUnmounted(() => {
             :key="`official-${officialProduct.id}`"
             type="button"
             data-official-card
-            class="official-card group h-[234px] w-[188px] shrink-0 snap-start overflow-hidden rounded-2xl border border-white/12 bg-dark-900/90 text-left transition duration-200 hover:-translate-y-0.5 hover:border-blue-300/40 hover:bg-dark-900 sm:h-[276px] sm:w-[232px]"
+            class="official-card group h-[234px] w-[188px] shrink-0 snap-start overflow-hidden rounded-2xl border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-dark-900)/0.9)] text-left transition duration-200 hover:-translate-y-0.5 hover:border-[rgb(var(--palette-blue-300)/0.4)] hover:bg-[rgb(var(--palette-dark-900))] sm:h-[276px] sm:w-[232px]"
             @click="goToProductByModel(officialProduct)"
           >
             <div class="official-card__media relative h-[140px] w-full overflow-hidden sm:h-[170px]">
@@ -1199,16 +1207,16 @@ onUnmounted(() => {
                 :alt="officialProduct.title"
                 class="h-full w-full object-cover object-center transition duration-300 group-hover:scale-[1.03]"
               />
-              <div v-else class="flex h-full w-full items-center justify-center text-xs text-gray-300">
+              <div v-else class="flex h-full w-full items-center justify-center text-xs text-[var(--text-body)]">
                 {{ t('common.noImage') }}
               </div>
               <div class="official-card__overlay absolute inset-0"></div>
             </div>
             <div class="space-y-2 px-3.5 py-3">
-              <p class="official-card__price text-[1.3rem] font-bold leading-none tracking-tight text-blue-100 sm:text-[1.55rem]">
+              <p class="official-card__price text-[1.3rem] font-bold leading-none tracking-tight text-[var(--text-accent-strong)] sm:text-[1.55rem]">
                 {{ formatOfficialPrice(officialProduct.price) }}
               </p>
-              <p class="official-card__title min-h-[2.5rem] text-[0.93rem] leading-5 text-white/95 sm:text-[1.03rem] sm:leading-6">
+              <p class="official-card__title min-h-[2.5rem] text-[0.93rem] leading-5 text-[rgb(var(--text-title-rgb)/0.95)] sm:text-[1.03rem] sm:leading-6">
                 {{ officialProduct.title }}
               </p>
             </div>
@@ -1244,7 +1252,7 @@ onUnmounted(() => {
       <p class="text-xl sm:text-2xl font-bold">{{ $t('pages.product.similarProducts') }}</p>
       <div class="flex justify-end">
         <div
-          class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-dark-600 bg-dark-700/40 p-0.5"
+          class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.4)] p-0.5"
           role="group"
           :aria-label="t('pages.index.viewSwitcherLabel')"
         >
@@ -1252,8 +1260,8 @@ onUnmounted(() => {
             type="button"
             class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
             :class="productCardViewMode === 'grid'
-              ? 'bg-blue-600 text-white'
-              : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+              ? 'bg-[rgb(var(--palette-blue-600))] text-[var(--text-title)]'
+              : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[var(--text-title)]'"
             :title="t('pages.index.viewGrid')"
             @click="setProductCardViewMode('grid')"
           >
@@ -1265,8 +1273,8 @@ onUnmounted(() => {
             type="button"
             class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
             :class="productCardViewMode === 'list'
-              ? 'bg-blue-600 text-white'
-              : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+              ? 'bg-[rgb(var(--palette-blue-600))] text-[var(--text-title)]'
+              : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[var(--text-title)]'"
             :title="t('pages.index.viewList')"
             @click="setProductCardViewMode('list')"
           >
@@ -1286,7 +1294,7 @@ onUnmounted(() => {
         <div
           v-for="n in similarProductsLoadingSkeletonCount"
           :key="`similar-skeleton-${n}`"
-          class="bg-dark-600 animate-pulse rounded-2xl"
+          class="bg-[rgb(var(--palette-dark-600))] animate-pulse rounded-2xl"
           :class="productCardViewMode === 'grid' ? 'h-64' : 'h-[118px] sm:h-[134px]'"
         />
       </div>
@@ -1316,19 +1324,19 @@ onUnmounted(() => {
     <!-- Image modal -->
     <Teleport to="body">
       <div v-if="openImageModal && selectedImage"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 cursor-pointer"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-[rgb(var(--palette-black)/0.9)] backdrop-blur-sm p-4 cursor-pointer"
         @click.self="closeImageModal">
         <div class="relative w-full h-full flex items-center justify-center max-w-7xl mx-auto" @click.stop>
           <template v-if="product.images && product.images.length > 1">
             <button
               type="button"
-              class="absolute inset-y-0 left-0 z-20 w-14 md:w-20 bg-transparent"
+              class="absolute inset-y-0 left-0 z-20 w-14 md:w-20 bg-[var(--transparent)]"
               :aria-label="t('common.previous')"
               @click="prevImage"
             />
             <button
               type="button"
-              class="absolute inset-y-0 right-0 z-20 w-14 md:w-20 bg-transparent"
+              class="absolute inset-y-0 right-0 z-20 w-14 md:w-20 bg-[var(--transparent)]"
               :aria-label="t('common.next')"
               @click="nextImage"
             />
@@ -1339,27 +1347,27 @@ onUnmounted(() => {
 
           <button
             type="button"
-            class="absolute top-4 right-4 z-30 text-white hover:text-gray-300 transition-all duration-200 bg-black/50 rounded-full p-2 hover:bg-black/70"
+            class="absolute top-4 right-4 z-30 text-[var(--text-title)] hover:text-[var(--text-body)] transition-all duration-200 bg-[rgb(var(--palette-black)/0.5)] rounded-full p-2 hover:bg-[rgb(var(--palette-black)/0.7)]"
             @click.prevent.stop="closeImageModal">
             <X class="w-6 h-6" />
           </button>
 
           <button v-if="product.images && product.images.length > 1"
             type="button"
-            class="absolute left-4 text-white hover:text-gray-300 transition-all duration-200 bg-black/50 rounded-full p-3 hover:bg-black/70 disabled:opacity-30 disabled:cursor-not-allowed"
+            class="absolute left-4 text-[var(--text-title)] hover:text-[var(--text-body)] transition-all duration-200 bg-[rgb(var(--palette-black)/0.5)] rounded-full p-3 hover:bg-[rgb(var(--palette-black)/0.7)] disabled:opacity-30 disabled:cursor-not-allowed"
             @click="prevImage">
             <ChevronLeft class="w-6 h-6" />
           </button>
 
           <button v-if="product.images && product.images.length > 1"
             type="button"
-            class="absolute right-4 text-white hover:text-gray-300 transition-all duration-200 bg-black/50 rounded-full p-3 hover:bg-black/70 disabled:opacity-30 disabled:cursor-not-allowed"
+            class="absolute right-4 text-[var(--text-title)] hover:text-[var(--text-body)] transition-all duration-200 bg-[rgb(var(--palette-black)/0.5)] rounded-full p-3 hover:bg-[rgb(var(--palette-black)/0.7)] disabled:opacity-30 disabled:cursor-not-allowed"
             @click="nextImage">
             <ChevronRight class="w-6 h-6" />
           </button>
 
           <div v-if="product.images && product.images.length > 1"
-            class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 rounded-full px-3 py-1 text-white text-sm">
+            class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-[rgb(var(--palette-black)/0.5)] rounded-full px-3 py-1 text-[var(--text-title)] text-sm">
             {{product.images.findIndex(img => img.image_url === selectedImage?.image_url) + 1}} / {{
               product.images.length }}
           </div>
@@ -1389,7 +1397,7 @@ onUnmounted(() => {
       <template #body>
         <div class="space-y-3">
           <div>
-            <label class="text-xs text-gray-300">{{ $t('pages.product.offerPriceConfirm.offeredPriceLabel') }}</label>
+            <label class="text-xs text-[var(--text-body)]">{{ $t('pages.product.offerPriceConfirm.offeredPriceLabel') }}</label>
             <div class="mt-2 flex flex-wrap gap-2">
               <button
                 v-for="discount in OFFER_DISCOUNT_PRESETS"
@@ -1397,8 +1405,8 @@ onUnmounted(() => {
                 type="button"
                 class="rounded-md border px-2.5 py-1 text-xs font-medium transition-colors"
                 :class="isDiscountPresetActive(discount)
-                  ? 'border-blue-400 bg-blue-500/25 text-blue-100'
-                  : 'border-white/10 bg-white/[0.04] text-gray-300 hover:border-white/20 hover:bg-white/[0.08] hover:text-white'"
+                  ? 'border-[rgb(var(--palette-blue-400))] bg-[rgb(var(--palette-blue-500)/0.25)] text-[var(--text-accent-strong)]'
+                  : 'border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body)] hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)]'"
                 @click="applyOfferDiscount(discount)"
               >
                 -{{ discount }}%
@@ -1411,44 +1419,44 @@ onUnmounted(() => {
                 min="0.01"
                 :max="maxOfferedPrice ?? undefined"
                 step="0.01"
-                class="price-offer-input w-full rounded-lg border border-dark-700 bg-dark-700/60 px-3 py-2 pr-20 text-sm text-white outline-none focus:border-blue-500"
+                class="price-offer-input w-full rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.6)] px-3 py-2 pr-20 text-sm text-[var(--text-title)] outline-none focus:border-[rgb(var(--palette-blue-500))]"
                 @input="normalizeOfferedPrice"
                 @blur="normalizeOfferedPrice"
               />
-              <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 whitespace-nowrap text-xs text-gray-300">
+              <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 whitespace-nowrap text-xs text-[var(--text-body)]">
                 {{ offerCurrencySymbol }} {{ offerCurrencyCode }}
               </span>
             </div>
           </div>
           <div
             v-if="offerDiscountPercent !== null"
-            class="rounded-lg border border-blue-500/25 bg-blue-500/10 p-3"
+            class="rounded-lg border border-[rgb(var(--palette-blue-500)/0.25)] bg-[rgb(var(--palette-blue-500)/0.1)] p-3"
           >
-            <p class="text-xs text-gray-300">{{ $t('pages.product.offerPriceConfirm.previewLabel') }}</p>
+            <p class="text-xs text-[var(--text-body)]">{{ $t('pages.product.offerPriceConfirm.previewLabel') }}</p>
             <div class="mt-1 flex flex-wrap items-center gap-2">
-              <span class="text-xs text-gray-500 line-through">
+              <span class="text-xs text-[var(--text-meta)] line-through">
                 {{ formatCurrencyAmount(Number(product?.price ?? 0), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
               </span>
-              <span class="text-sm font-semibold text-blue-200">
+              <span class="text-sm font-semibold text-[var(--text-accent)]">
                 {{ formatCurrencyAmount(Number(offeredPrice ?? 0), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
               </span>
-              <span class="inline-flex items-center rounded-full border border-blue-400/30 bg-blue-500/15 px-2 py-0.5 text-[11px] font-semibold text-blue-200">
+              <span class="inline-flex items-center rounded-full border border-[rgb(var(--palette-blue-400)/0.3)] bg-[rgb(var(--palette-blue-500)/0.15)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-accent)]">
                 {{ $t('pages.product.offerPriceConfirm.discountBadge', { percent: offerDiscountPercent }) }}
               </span>
             </div>
           </div>
           <div>
-            <label class="text-xs text-gray-300">{{ $t('pages.product.offerPriceConfirm.messageLabel') }}</label>
+            <label class="text-xs text-[var(--text-body)]">{{ $t('pages.product.offerPriceConfirm.messageLabel') }}</label>
             <textarea
               v-model="offerMessage"
               rows="3"
               maxlength="500"
-              class="mt-1 w-full resize-none rounded-lg border border-dark-700 bg-dark-700/60 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500"
+              class="mt-1 w-full resize-none rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.6)] px-3 py-2 text-sm text-[var(--text-title)] outline-none focus:border-[rgb(var(--palette-emerald-500))]"
               :placeholder="$t('pages.product.offerPriceConfirm.messagePlaceholder')"
               @input="handleOfferMessageInput"
             />
             <div class="mt-2">
-              <p class="text-[11px] font-medium text-gray-400">
+              <p class="text-[11px] font-medium text-[var(--text-muted)]">
                 {{ $t('pages.product.offerPriceConfirm.messageTemplatesLabel') }}
               </p>
               <div class="mt-1.5 flex flex-wrap gap-1.5">
@@ -1458,8 +1466,8 @@ onUnmounted(() => {
                   type="button"
                   class="rounded-md border px-2.5 py-1 text-left text-[11px] leading-4 transition-colors"
                   :class="selectedOfferMessageTemplateKey === template.id
-                    ? 'border-blue-400 bg-blue-500/25 text-blue-100'
-                    : 'border-white/10 bg-white/[0.04] text-gray-300 hover:border-white/20 hover:bg-white/[0.08] hover:text-white'"
+                    ? 'border-[rgb(var(--palette-blue-400))] bg-[rgb(var(--palette-blue-500)/0.25)] text-[var(--text-accent-strong)]'
+                    : 'border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body)] hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)]'"
                   @click="applyOfferMessageTemplate(template.id)"
                 >
                   {{ template.text }}
@@ -1467,7 +1475,7 @@ onUnmounted(() => {
               </div>
             </div>
           </div>
-          <p v-if="offerError" class="text-xs text-red-400">{{ offerError }}</p>
+          <p v-if="offerError" class="text-xs text-[var(--text-danger)]">{{ offerError }}</p>
         </div>
       </template>
     </ConfirmWindow>
@@ -1483,31 +1491,31 @@ onUnmounted(() => {
     >
       <template #body>
         <div
-          class="rounded-xl border border-amber-700/40 bg-amber-900/15 p-4"
+          class="rounded-xl border border-[rgb(var(--palette-amber-700)/0.4)] bg-[rgb(var(--palette-amber-900)/0.15)] p-4"
         >
           <div class="space-y-2 text-sm">
             <div class="flex items-center justify-between gap-3">
-              <span class="text-gray-300">
+              <span class="text-[var(--text-body)]">
                 {{ $t('pages.product.insufficientBalance.balance') }}
               </span>
-              <span class="font-semibold text-white">
+              <span class="font-semibold text-[var(--text-title)]">
                 {{ formatCurrencyAmount(insufficientBalanceDetails?.balance ?? 0, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
               </span>
             </div>
             <div class="flex items-center justify-between gap-3">
-              <span class="text-gray-300">
+              <span class="text-[var(--text-body)]">
                 {{ $t('pages.product.insufficientBalance.price') }}
               </span>
-              <span class="font-semibold text-white">
+              <span class="font-semibold text-[var(--text-title)]">
                 {{ formatCurrencyAmount(insufficientBalanceDetails?.price ?? 0, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
               </span>
             </div>
-            <div class="h-px bg-dark-700"></div>
+            <div class="h-px bg-[rgb(var(--palette-dark-700))]"></div>
             <div class="flex items-center justify-between gap-3">
-              <span class="text-amber-200 font-medium">
+              <span class="text-[var(--text-warning)] font-medium">
                 {{ $t('pages.product.insufficientBalance.shortage') }}
               </span>
-              <span class="font-bold text-amber-300">
+              <span class="font-bold text-[var(--text-warning-strong)]">
                 {{ formatCurrencyAmount(insufficientBalanceDetails?.shortage ?? 0, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
               </span>
             </div>
@@ -1565,9 +1573,7 @@ onUnmounted(() => {
 }
 
 .official-showcase {
-  background:
-    radial-gradient(120% 130% at 0% 0%, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0) 54%),
-    linear-gradient(165deg, rgba(21, 23, 28, 0.94), rgba(14, 15, 19, 0.96));
+  background: var(--official-showcase-bg);
 }
 
 .official-showcase__ghost-btn {
@@ -1575,19 +1581,19 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.4rem;
   border-radius: 9999px;
-  border: 1px solid rgba(219, 224, 232, 0.32);
-  background: rgba(56, 61, 73, 0.54);
+  border: 1px solid var(--official-showcase-control-border);
+  background: var(--official-showcase-control-bg);
   padding: 0.42rem 0.8rem;
   font-size: 0.82rem;
   font-weight: 600;
-  color: rgba(229, 241, 255, 0.95);
+  color: var(--official-showcase-control-text);
   transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
 }
 
 .official-showcase__ghost-btn:hover {
-  border-color: rgba(231, 235, 241, 0.55);
-  background: rgba(70, 76, 91, 0.78);
-  color: #fff;
+  border-color: var(--official-showcase-control-border-hover);
+  background: var(--official-showcase-control-bg-hover);
+  color: var(--text-primary-strong);
 }
 
 .official-showcase__arrow-btn {
@@ -1597,16 +1603,16 @@ onUnmounted(() => {
   height: 1.85rem;
   width: 1.85rem;
   border-radius: 9999px;
-  color: #e5f1ff;
-  background: rgba(96, 103, 120, 0.26);
-  border: 1px solid rgba(215, 222, 235, 0.24);
+  color: var(--official-showcase-arrow-text);
+  background: var(--official-showcase-arrow-bg);
+  border: 1px solid var(--official-showcase-arrow-border);
   transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
 }
 
 .official-showcase__arrow-btn:hover:not(:disabled) {
-  color: #fff;
-  border-color: rgba(229, 235, 246, 0.54);
-  background: rgba(114, 123, 145, 0.42);
+  color: var(--text-primary-strong);
+  border-color: var(--official-showcase-arrow-border-hover);
+  background: var(--official-showcase-arrow-bg-hover);
 }
 
 .official-showcase__arrow-btn:disabled {
@@ -1629,21 +1635,16 @@ onUnmounted(() => {
 
 .official-carousel__edge--left {
   left: 0;
-  background: linear-gradient(to right, rgba(30, 33, 40, 0.94), rgba(30, 33, 40, 0));
+  background: var(--official-carousel-fade-left);
 }
 
 .official-carousel__edge--right {
   right: 0;
-  background: linear-gradient(to left, rgba(30, 33, 40, 0.94), rgba(30, 33, 40, 0));
+  background: var(--official-carousel-fade-right);
 }
 
 .official-card__overlay {
-  background: linear-gradient(
-    to top,
-    rgba(9, 15, 32, 0.24) 0%,
-    rgba(9, 15, 32, 0.02) 55%,
-    rgba(9, 15, 32, 0) 100%
-  );
+  background: var(--official-carousel-card-glow);
 }
 
 .official-card__price {

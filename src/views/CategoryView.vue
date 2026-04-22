@@ -836,7 +836,7 @@ onBeforeUnmount(() => {
       <div v-if="isCategoryLoading" class="relative h-[252px] sm:h-[320px]">
         <div class="category-content-shell relative z-10 h-full pt-3 sm:pt-4">
           <BackButton />
-          <div class="mt-3 h-[194px] animate-pulse rounded-2xl bg-dark-700/70 sm:mt-4 sm:h-[258px] sm:rounded-3xl"></div>
+          <div class="mt-3 h-[194px] animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-700)/0.7)] sm:mt-4 sm:h-[258px] sm:rounded-3xl"></div>
         </div>
       </div>
       <div v-else-if="category" class="relative h-[252px] sm:h-[320px]">
@@ -857,31 +857,31 @@ onBeforeUnmount(() => {
               />
             </template>
             <div v-else class="absolute inset-0 category-hero-fallback"></div>
-            <div class="absolute inset-0 bg-black/42"></div>
+            <div class="absolute inset-0 bg-[rgb(var(--palette-black)/0.42)]"></div>
             <div class="category-hero-bottom-fade"></div>
 
             <div class="relative z-10 flex h-full flex-col justify-end p-3 sm:p-5">
-              <h1 class="category-hero-title max-w-4xl text-3xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
+              <h1 class="category-hero-title max-w-4xl text-3xl font-semibold leading-tight text-[var(--text-title)] sm:text-5xl lg:text-6xl">
                 {{ category.name }}
               </h1>
 
               <div
                 v-if="breadcrumbItems.length"
-                class="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-gray-200/90 sm:text-sm"
+                class="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-[rgb(var(--text-body-strong-rgb)/0.9)] sm:text-sm"
               >
                 <button
                   type="button"
-                  class="rounded px-1 py-0.5 transition hover:text-white"
+                  class="rounded px-1 py-0.5 transition hover:text-[var(--text-title)]"
                   @click="goHome"
                 >
                   {{ t('common.home') }}
                 </button>
-                <ChevronRight class="h-3.5 w-3.5 text-gray-300/80" />
+                <ChevronRight class="h-3.5 w-3.5 text-[rgb(var(--text-body-rgb)/0.8)]" />
                 <template v-for="(breadcrumb, index) in breadcrumbItems" :key="`${breadcrumb.id}-${index}`">
                   <button
                     type="button"
                     class="rounded px-1 py-0.5 transition"
-                    :class="index === breadcrumbItems.length - 1 ? 'text-white cursor-default' : 'hover:text-white'"
+                    :class="index === breadcrumbItems.length - 1 ? 'text-[var(--text-title)] cursor-default' : 'hover:text-[var(--text-title)]'"
                     :disabled="index === breadcrumbItems.length - 1"
                     @click="onBreadcrumbClick(index)"
                   >
@@ -889,7 +889,7 @@ onBeforeUnmount(() => {
                   </button>
                   <ChevronRight
                     v-if="index < breadcrumbItems.length - 1"
-                    class="h-3.5 w-3.5 text-gray-300/80"
+                    class="h-3.5 w-3.5 text-[rgb(var(--text-body-rgb)/0.8)]"
                   />
                 </template>
               </div>
@@ -900,14 +900,14 @@ onBeforeUnmount(() => {
       <div v-else class="relative h-[252px] sm:h-[320px]">
         <div class="category-hero-bg-fullbleed absolute inset-y-0 overflow-hidden">
           <div class="absolute inset-0 category-hero-fallback"></div>
-          <div class="absolute inset-0 bg-black/55"></div>
+          <div class="absolute inset-0 bg-[rgb(var(--palette-black)/0.55)]"></div>
           <div class="category-hero-bottom-fade"></div>
         </div>
         <div class="category-content-shell relative z-10 h-full py-8">
           <div class="mb-3">
             <BackButton />
           </div>
-          <div class="text-sm text-gray-300">{{ t('pages.category.notFound') }}</div>
+          <div class="text-sm text-[var(--text-body)]">{{ t('pages.category.notFound') }}</div>
         </div>
       </div>
     </div>
@@ -915,21 +915,21 @@ onBeforeUnmount(() => {
     <div class="category-content-shell mt-0 sm:mt-1">
       <div
         v-if="breadcrumbItems.length && !category"
-        class="mb-3 flex flex-wrap items-center gap-1.5 text-xs text-gray-300 sm:text-sm"
+        class="mb-3 flex flex-wrap items-center gap-1.5 text-xs text-[var(--text-body)] sm:text-sm"
       >
         <button
           type="button"
-          class="rounded px-1 py-0.5 transition hover:text-white"
+          class="rounded px-1 py-0.5 transition hover:text-[var(--text-title)]"
           @click="goHome"
         >
           {{ t('common.home') }}
         </button>
-        <ChevronRight class="h-3.5 w-3.5 text-gray-500" />
+        <ChevronRight class="h-3.5 w-3.5 text-[var(--text-meta)]" />
         <template v-for="(breadcrumb, index) in breadcrumbItems" :key="`${breadcrumb.id}-${index}`">
           <button
             type="button"
             class="rounded px-1 py-0.5 transition"
-            :class="index === breadcrumbItems.length - 1 ? 'text-white cursor-default' : 'hover:text-white'"
+            :class="index === breadcrumbItems.length - 1 ? 'text-[var(--text-title)] cursor-default' : 'hover:text-[var(--text-title)]'"
             :disabled="index === breadcrumbItems.length - 1"
             @click="onBreadcrumbClick(index)"
           >
@@ -937,7 +937,7 @@ onBeforeUnmount(() => {
           </button>
           <ChevronRight
             v-if="index < breadcrumbItems.length - 1"
-            class="h-3.5 w-3.5 text-gray-500"
+            class="h-3.5 w-3.5 text-[var(--text-meta)]"
           />
         </template>
       </div>
@@ -947,35 +947,35 @@ onBeforeUnmount(() => {
       <div v-if="shouldShowSubcategoriesBlock">
         <Title :text="t('common.subcategories')" />
         <div v-if="isCategoryLoading || isSubcategoriesLoading" class="mt-3 flex gap-2">
-          <div v-for="n in 4" :key="n" class="h-10 w-28 animate-pulse rounded-lg bg-dark-600"></div>
+          <div v-for="n in 4" :key="n" class="h-10 w-28 animate-pulse rounded-lg bg-[rgb(var(--palette-dark-600))]"></div>
         </div>
         <div v-else-if="subcategories.length" class="mt-3 flex flex-wrap gap-2">
           <button
             v-for="subcategory in subcategories"
             :key="subcategory.id"
             type="button"
-            class="inline-flex rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2 text-sm text-white transition hover:bg-dark-700/50"
+            class="inline-flex rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2 text-sm text-[var(--text-title)] transition hover:bg-[rgb(var(--palette-dark-700)/0.5)]"
             @click="onSubcategoryClick(subcategory)"
           >
             <span>{{ subcategory.name }}</span>
           </button>
         </div>
-        <div v-else class="mt-3 text-sm text-gray-400">{{ t('pages.category.noSubcategories') }}</div>
+        <div v-else class="mt-3 text-sm text-[var(--text-muted)]">{{ t('pages.category.noSubcategories') }}</div>
       </div>
 
       <div
         v-if="shouldShowOfficialRemarketCarousel"
-        class="official-showcase mt-5 rounded-3xl border border-white/12 p-4 sm:mt-6 sm:p-5"
+        class="official-showcase mt-5 rounded-3xl border border-[rgb(var(--palette-white)/0.12)] p-4 sm:mt-6 sm:p-5"
       >
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center gap-2.5">
-            <div class="inline-flex items-center gap-2 rounded-full border border-blue-300/70 bg-blue-500/32 px-3 py-1.5 text-sm font-semibold tracking-wide text-blue-50 shadow-[0_0_0_1px_rgba(59,130,246,0.22)_inset]">
+            <div class="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--palette-blue-300)/0.7)] bg-[rgb(var(--palette-blue-500)/0.32)] px-3 py-1.5 text-sm font-semibold tracking-wide text-[var(--text-accent-strong)] shadow-[var(--official-showcase-badge-shadow)]">
               <BadgeCheck class="h-4 w-4" />
               <span>Официально от remarket</span>
             </div>
-            <span class="hidden text-sm font-medium text-blue-100/85 sm:inline-flex sm:items-center sm:gap-2">
+            <span class="hidden text-sm font-medium text-[rgb(var(--text-accent-strong-rgb)/0.85)] sm:inline-flex sm:items-center sm:gap-2">
               {{ officialProductsCountText }}
-              <span v-if="officialProductsSourceText" class="text-blue-200/85">{{ officialProductsSourceText }}</span>
+              <span v-if="officialProductsSourceText" class="text-[rgb(var(--text-accent-rgb)/0.85)]">{{ officialProductsSourceText }}</span>
             </span>
           </div>
 
@@ -989,7 +989,7 @@ onBeforeUnmount(() => {
               <ChevronRight class="h-4 w-4" />
             </button>
 
-            <div class="hidden items-center gap-1 rounded-full border border-[rgba(219,224,232,0.32)] bg-[rgba(56,61,73,0.54)] p-1 sm:inline-flex">
+            <div class="hidden items-center gap-1 rounded-full border border-[var(--official-showcase-control-border)] bg-[var(--official-showcase-control-bg)] p-1 sm:inline-flex">
               <button
                 type="button"
                 class="official-showcase__arrow-btn"
@@ -1012,16 +1012,16 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <div class="mb-3 text-sm font-medium text-blue-100/85 sm:hidden">
+        <div class="mb-3 text-sm font-medium text-[rgb(var(--text-accent-strong-rgb)/0.85)] sm:hidden">
           {{ officialProductsCountText }}
-          <span v-if="officialProductsSourceText" class="ml-1 text-blue-200/85">• {{ officialProductsSourceText }}</span>
+          <span v-if="officialProductsSourceText" class="ml-1 text-[rgb(var(--text-accent-rgb)/0.85)]">• {{ officialProductsSourceText }}</span>
         </div>
 
         <div v-if="isOfficialProductsLoading" class="official-carousel flex gap-4 overflow-x-auto pb-2 no-scrollbar">
           <div
             v-for="n in 7"
             :key="`official-skeleton-${n}`"
-            class="h-[234px] w-[188px] shrink-0 animate-pulse rounded-2xl bg-dark-700/70 sm:h-[276px] sm:w-[232px]"
+            class="h-[234px] w-[188px] shrink-0 animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-700)/0.7)] sm:h-[276px] sm:w-[232px]"
           ></div>
         </div>
 
@@ -1039,7 +1039,7 @@ onBeforeUnmount(() => {
               :key="`official-${product.id}`"
               type="button"
               data-official-card
-              class="official-card group h-[234px] w-[188px] shrink-0 snap-start overflow-hidden rounded-2xl border border-white/12 bg-dark-900/90 text-left transition duration-200 hover:-translate-y-0.5 hover:border-blue-300/40 hover:bg-dark-900 sm:h-[276px] sm:w-[232px]"
+              class="official-card group h-[234px] w-[188px] shrink-0 snap-start overflow-hidden rounded-2xl border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-dark-900)/0.9)] text-left transition duration-200 hover:-translate-y-0.5 hover:border-[rgb(var(--palette-blue-300)/0.4)] hover:bg-[rgb(var(--palette-dark-900))] sm:h-[276px] sm:w-[232px]"
               @click="goToProductByModel(product)"
             >
               <div class="official-card__media relative h-[140px] w-full overflow-hidden sm:h-[170px]">
@@ -1049,16 +1049,16 @@ onBeforeUnmount(() => {
                   :alt="product.title"
                   class="h-full w-full object-cover object-center transition duration-300 group-hover:scale-[1.03]"
                 />
-                <div v-else class="flex h-full w-full items-center justify-center text-xs text-gray-300">
+                <div v-else class="flex h-full w-full items-center justify-center text-xs text-[var(--text-body)]">
                   {{ t('common.noImage') }}
                 </div>
                 <div class="official-card__overlay absolute inset-0"></div>
               </div>
               <div class="space-y-2 px-3.5 py-3">
-                <p class="official-card__price text-[1.3rem] font-bold leading-none tracking-tight text-blue-100 sm:text-[1.55rem]">
+                <p class="official-card__price text-[1.3rem] font-bold leading-none tracking-tight text-[var(--text-accent-strong)] sm:text-[1.55rem]">
                   {{ formatOfficialPrice(product.price) }}
                 </p>
-                <p class="official-card__title min-h-[2.5rem] text-[0.93rem] leading-5 text-white/95 sm:text-[1.03rem] sm:leading-6">
+                <p class="official-card__title min-h-[2.5rem] text-[0.93rem] leading-5 text-[rgb(var(--text-title-rgb)/0.95)] sm:text-[1.03rem] sm:leading-6">
                   {{ product.title }}
                 </p>
               </div>
@@ -1075,7 +1075,7 @@ onBeforeUnmount(() => {
           ></div>
         </div>
 
-        <div v-else class="rounded-xl border border-white/10 bg-dark-800/50 px-4 py-3 text-sm text-gray-200">
+        <div v-else class="rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-dark-800)/0.5)] px-4 py-3 text-sm text-[var(--text-body-strong)]">
           Официальные товары появятся после добавления админом.
         </div>
 
@@ -1102,15 +1102,15 @@ onBeforeUnmount(() => {
               type="button"
               class="inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-semibold transition"
               :class="isFiltersOpen
-                ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
-                : 'border-dark-600 bg-dark-700/40 text-gray-300 hover:border-dark-500 hover:bg-dark-700/55'"
+                ? 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-500)/0.1)] text-[var(--text-accent)]'
+                : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.4)] text-[var(--text-body)] hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-700)/0.55)]'"
               @click="isFiltersOpen = !isFiltersOpen"
             >
               <SlidersHorizontal class="h-4 w-4" />
               <span>{{ t('pages.category.fortniteFiltersTitle') }}</span>
               <span
                 v-if="activeFortniteFiltersCount > 0"
-                class="inline-flex min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[11px] text-white"
+                class="inline-flex min-w-5 items-center justify-center rounded-full bg-[rgb(var(--palette-blue-600))] px-1.5 text-[11px] text-[var(--text-title)]"
               >
                 {{ activeFortniteFiltersCount }}
               </span>
@@ -1119,15 +1119,15 @@ onBeforeUnmount(() => {
 
           <div
             v-if="shouldShowFortniteAccountFilters && isFiltersOpen"
-            class="rounded-2xl border border-dark-700 bg-dark-600/25 p-4 md:p-5"
+            class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.25)] p-4 md:p-5"
           >
             <div class="space-y-5">
               <div class="grid gap-3 md:grid-cols-2">
-                <label class="rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2.5">
-                  <span class="block text-xs text-gray-400">{{ t('common.fortniteAccount.fields.country') }}</span>
+                <label class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2.5">
+                  <span class="block text-xs text-[var(--text-muted)]">{{ t('common.fortniteAccount.fields.country') }}</span>
                   <select
                     v-model="fortniteFilters.country"
-                    class="mt-1.5 w-full bg-transparent text-sm text-white outline-none"
+                    class="mt-1.5 w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
                   >
                     <option value="">{{ t('common.all') }}</option>
                     <option
@@ -1145,12 +1145,12 @@ onBeforeUnmount(() => {
                 <label
                   v-for="field in FORTNITE_ACCOUNT_BOOLEAN_FIELDS"
                   :key="field.key"
-                  class="rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2.5"
+                  class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2.5"
                 >
-                  <span class="block text-xs text-gray-400">{{ t(field.labelKey) }}</span>
+                  <span class="block text-xs text-[var(--text-muted)]">{{ t(field.labelKey) }}</span>
                   <select
                     v-model="fortniteFilters[field.key]"
-                    class="mt-1.5 w-full bg-transparent text-sm text-white outline-none"
+                    class="mt-1.5 w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
                   >
                     <option value="">{{ t('common.all') }}</option>
                     <option value="true">{{ t('common.fortniteAccount.booleanValues.true') }}</option>
@@ -1160,27 +1160,27 @@ onBeforeUnmount(() => {
               </div>
 
               <div class="space-y-3">
-                <p class="text-sm font-semibold text-white">
+                <p class="text-sm font-semibold text-[var(--text-title)]">
                   {{ t('common.fortniteAccount.sections.activity') }}
                 </p>
                 <div class="grid gap-3 md:grid-cols-2">
                   <div
                     v-for="field in FORTNITE_ACCOUNT_DATE_FIELDS"
                     :key="field.key"
-                    class="rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2.5"
+                    class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2.5"
                   >
-                    <span class="block text-xs text-gray-400">{{ t(field.labelKey) }}</span>
+                    <span class="block text-xs text-[var(--text-muted)]">{{ t(field.labelKey) }}</span>
                     <div class="mt-2 grid grid-cols-2 gap-2">
                       <input
                         :value="getFortniteDateFilterValue(field.key, 'from')"
                         type="date"
-                        class="w-full bg-transparent text-sm text-white outline-none"
+                        class="w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
                         @input="setFortniteDateFilterValue(field.key, 'from', ($event.target as HTMLInputElement).value)"
                       />
                       <input
                         :value="getFortniteDateFilterValue(field.key, 'to')"
                         type="date"
-                        class="w-full bg-transparent text-sm text-white outline-none"
+                        class="w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
                         @input="setFortniteDateFilterValue(field.key, 'to', ($event.target as HTMLInputElement).value)"
                       />
                     </div>
@@ -1189,16 +1189,16 @@ onBeforeUnmount(() => {
               </div>
 
               <div class="space-y-3">
-                <p class="text-sm font-semibold text-white">
+                <p class="text-sm font-semibold text-[var(--text-title)]">
                   {{ t('common.fortniteAccount.sections.inventory') }}
                 </p>
                 <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                   <div
                     v-for="field in FORTNITE_ACCOUNT_COUNT_FIELDS"
                     :key="field.key"
-                    class="rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2.5"
+                    class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2.5"
                   >
-                    <span class="block text-xs text-gray-400">{{ t(field.labelKey) }}</span>
+                    <span class="block text-xs text-[var(--text-muted)]">{{ t(field.labelKey) }}</span>
                     <div class="mt-2 grid grid-cols-2 gap-2">
                       <input
                         :value="getFortniteCountFilterValue(field.key, 'min')"
@@ -1206,7 +1206,7 @@ onBeforeUnmount(() => {
                         min="0"
                         step="1"
                         inputmode="numeric"
-                        class="w-full bg-transparent text-sm text-white outline-none"
+                        class="w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
                         :placeholder="t('pages.category.minValue')"
                         @input="setFortniteCountFilterValue(field.key, 'min', ($event.target as HTMLInputElement).value)"
                       />
@@ -1216,7 +1216,7 @@ onBeforeUnmount(() => {
                         min="0"
                         step="1"
                         inputmode="numeric"
-                        class="w-full bg-transparent text-sm text-white outline-none"
+                        class="w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
                         :placeholder="t('pages.category.maxValue')"
                         @input="setFortniteCountFilterValue(field.key, 'max', ($event.target as HTMLInputElement).value)"
                       />
@@ -1228,14 +1228,14 @@ onBeforeUnmount(() => {
               <div class="flex flex-wrap items-center justify-end gap-2">
                 <button
                   type="button"
-                  class="rounded-xl border border-dark-600 bg-dark-700/40 px-4 py-2 text-sm font-semibold text-gray-300 transition hover:border-dark-500 hover:bg-dark-700/60 hover:text-white"
+                  class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.4)] px-4 py-2 text-sm font-semibold text-[var(--text-body)] transition hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[var(--text-title)]"
                   @click="resetAndApplyFortniteFilters"
                 >
                   {{ t('pages.index.resetFilters') }}
                 </button>
                 <button
                   type="button"
-                  class="market-primary-surface market-primary-hover rounded-xl px-4 py-2 text-sm font-semibold text-white transition"
+                  class="market-primary-surface market-primary-hover rounded-xl px-4 py-2 text-sm font-semibold text-[var(--text-title)] transition"
                   @click="applyFortniteFilters"
                 >
                   {{ t('common.apply') }}
@@ -1246,7 +1246,7 @@ onBeforeUnmount(() => {
 
           <div class="flex justify-end">
           <div
-            class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-dark-600 bg-dark-700/40 p-0.5"
+            class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.4)] p-0.5"
             role="group"
             :aria-label="t('pages.index.viewSwitcherLabel')"
           >
@@ -1254,8 +1254,8 @@ onBeforeUnmount(() => {
               type="button"
               class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
               :class="productCardViewMode === 'grid'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+                ? 'bg-[rgb(var(--palette-blue-600))] text-[var(--text-title)]'
+                : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[var(--text-title)]'"
               :title="t('pages.index.viewGrid')"
               @click="setProductCardViewMode('grid')"
             >
@@ -1267,8 +1267,8 @@ onBeforeUnmount(() => {
               type="button"
               class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
               :class="productCardViewMode === 'list'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+                ? 'bg-[rgb(var(--palette-blue-600))] text-[var(--text-title)]'
+                : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[var(--text-title)]'"
               :title="t('pages.index.viewList')"
               @click="setProductCardViewMode('list')"
             >
@@ -1289,13 +1289,13 @@ onBeforeUnmount(() => {
           <div
             v-for="n in loadingSkeletonCount"
             :key="n"
-            class="animate-pulse rounded-2xl bg-dark-600"
+            class="animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-600))]"
             :class="productCardViewMode === 'grid' ? 'h-64' : 'h-[118px] sm:h-[134px]'"
           ></div>
         </div>
         <div
           v-else-if="products.length === 0"
-          class="mt-6 flex justify-center text-center text-sm text-gray-400"
+          class="mt-6 flex justify-center text-center text-sm text-[var(--text-muted)]"
         >
           {{
             shouldShowFortniteAccountFilters && activeFortniteFiltersCount > 0
@@ -1385,9 +1385,7 @@ onBeforeUnmount(() => {
 }
 
 .official-showcase {
-  background:
-    radial-gradient(120% 130% at 0% 0%, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0) 54%),
-    linear-gradient(165deg, rgba(21, 23, 28, 0.94), rgba(14, 15, 19, 0.96));
+  background: var(--official-showcase-bg);
 }
 
 .official-showcase__ghost-btn {
@@ -1395,19 +1393,19 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 0.4rem;
   border-radius: 9999px;
-  border: 1px solid rgba(219, 224, 232, 0.32);
-  background: rgba(56, 61, 73, 0.54);
+  border: 1px solid var(--official-showcase-control-border);
+  background: var(--official-showcase-control-bg);
   padding: 0.42rem 0.8rem;
   font-size: 0.82rem;
   font-weight: 600;
-  color: rgba(229, 241, 255, 0.95);
+  color: var(--official-showcase-control-text);
   transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
 }
 
 .official-showcase__ghost-btn:hover {
-  border-color: rgba(231, 235, 241, 0.55);
-  background: rgba(70, 76, 91, 0.78);
-  color: #fff;
+  border-color: var(--official-showcase-control-border-hover);
+  background: var(--official-showcase-control-bg-hover);
+  color: var(--text-primary-strong);
 }
 
 .official-showcase__arrow-btn {
@@ -1417,16 +1415,16 @@ onBeforeUnmount(() => {
   height: 1.85rem;
   width: 1.85rem;
   border-radius: 9999px;
-  color: #e5f1ff;
-  background: rgba(96, 103, 120, 0.26);
-  border: 1px solid rgba(215, 222, 235, 0.24);
+  color: var(--official-showcase-arrow-text);
+  background: var(--official-showcase-arrow-bg);
+  border: 1px solid var(--official-showcase-arrow-border);
   transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
 }
 
 .official-showcase__arrow-btn:hover:not(:disabled) {
-  color: #fff;
-  border-color: rgba(229, 235, 246, 0.54);
-  background: rgba(114, 123, 145, 0.42);
+  color: var(--text-primary-strong);
+  border-color: var(--official-showcase-arrow-border-hover);
+  background: var(--official-showcase-arrow-bg-hover);
 }
 
 .official-showcase__arrow-btn:disabled {
@@ -1449,21 +1447,16 @@ onBeforeUnmount(() => {
 
 .official-carousel__edge--left {
   left: 0;
-  background: linear-gradient(to right, rgba(30, 33, 40, 0.94), rgba(30, 33, 40, 0));
+  background: var(--official-carousel-fade-left);
 }
 
 .official-carousel__edge--right {
   right: 0;
-  background: linear-gradient(to left, rgba(30, 33, 40, 0.94), rgba(30, 33, 40, 0));
+  background: var(--official-carousel-fade-right);
 }
 
 .official-card__overlay {
-  background: linear-gradient(
-    to top,
-    rgba(9, 15, 32, 0.24) 0%,
-    rgba(9, 15, 32, 0.02) 55%,
-    rgba(9, 15, 32, 0) 100%
-  );
+  background: var(--official-carousel-card-glow);
 }
 
 .official-card__price {

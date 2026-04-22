@@ -142,10 +142,10 @@ watch(isOpen, async (opened) => {
 
 <template>
   <div ref="wrapperRef" class="relative w-full">
-    <label v-if="label" class="mb-2 block text-sm text-gray-300">{{ label }}</label>
+    <label v-if="label" class="mb-2 block text-sm text-[var(--text-body)]">{{ label }}</label>
     <button
       type="button"
-      class="w-full flex items-center justify-between gap-3 bg-dark-600 border border-dark-700 rounded-lg px-4 py-2 text-mainText transition disabled:opacity-50 focus:outline-none"
+      class="w-full flex items-center justify-between gap-3 bg-[rgb(var(--palette-dark-600))] border border-[rgb(var(--palette-dark-700))] rounded-lg px-4 py-2 text-mainText transition disabled:opacity-50 focus:outline-none"
       :aria-expanded="isOpen"
       :disabled="disabled"
       @click="toggle"
@@ -156,13 +156,13 @@ watch(isOpen, async (opened) => {
             v-if="selectedOption.imageUrl"
             :src="selectedOption.imageUrl"
             :alt="selectedOption.label"
-            class="h-5 w-5 rounded object-cover border border-dark-700/80 shrink-0"
+            class="h-5 w-5 rounded object-cover border border-[rgb(var(--palette-dark-700)/0.8)] shrink-0"
             loading="lazy"
           />
           <span class="truncate">{{ selectedOption.label }}</span>
         </template>
         <template v-else>
-          <span class="text-gray-400 truncate">{{ placeholder ?? t('common.select') }}</span>
+          <span class="text-[var(--text-muted)] truncate">{{ placeholder ?? t('common.select') }}</span>
         </template>
       </span>
 
@@ -175,7 +175,7 @@ watch(isOpen, async (opened) => {
         <ul
           v-show="isOpen"
           ref="dropdownRef"
-          class="custom-select-dropdown fixed z-[180] overflow-auto rounded-xl border border-white/10 bg-dark-800/96 py-1 backdrop-blur-xl"
+          class="custom-select-dropdown fixed z-[180] overflow-auto rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-dark-800)/0.96)] py-1 backdrop-blur-xl"
           :class="dropdownPlacement === 'top' ? 'origin-bottom' : 'origin-top'"
           :style="dropdownStyle"
           role="listbox"
@@ -186,7 +186,7 @@ watch(isOpen, async (opened) => {
               ref="searchInputRef"
               v-model="searchQuery"
               type="text"
-              class="w-full rounded-md border border-dark-700 bg-dark-700 px-3 py-2 text-sm text-mainText outline-none placeholder-gray-400"
+              class="w-full rounded-md border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700))] px-3 py-2 text-sm text-mainText outline-none placeholder-[var(--text-placeholder)]"
               :placeholder="searchPlaceholder ?? t('common.search')"
               @click.stop
             />
@@ -194,7 +194,7 @@ watch(isOpen, async (opened) => {
 
           <li
             v-if="!filteredOptions.length"
-            class="select-none px-4 py-2 text-sm text-gray-400"
+            class="select-none px-4 py-2 text-sm text-[var(--text-muted)]"
           >
             {{ $t('common.noOptions') }}
           </li>
@@ -202,8 +202,8 @@ watch(isOpen, async (opened) => {
           <li
             v-for="opt in filteredOptions"
             :key="opt.value"
-            class="flex cursor-pointer items-center justify-between px-4 py-2 text-sm text-mainText hover:bg-dark-700"
-            :class="{ 'bg-dark-700': modelValue === opt.value }"
+            class="flex cursor-pointer items-center justify-between px-4 py-2 text-sm text-mainText hover:bg-[rgb(var(--palette-dark-700))]"
+            :class="{ 'bg-[rgb(var(--palette-dark-700))]': modelValue === opt.value }"
             @click="selectOption(opt.value)"
           >
             <span class="min-w-0 flex-1 flex items-center gap-2">
@@ -211,12 +211,12 @@ watch(isOpen, async (opened) => {
                 v-if="opt.imageUrl"
                 :src="opt.imageUrl"
                 :alt="opt.label"
-                class="h-5 w-5 rounded object-cover border border-dark-700/80 shrink-0"
+                class="h-5 w-5 rounded object-cover border border-[rgb(var(--palette-dark-700)/0.8)] shrink-0"
                 loading="lazy"
               />
               <span class="truncate">{{ opt.label }}</span>
             </span>
-            <span v-if="modelValue === opt.value" class="text-xs text-blue-400 font-semibold">✓</span>
+            <span v-if="modelValue === opt.value" class="text-xs text-[var(--text-link)] font-semibold">✓</span>
           </li>
         </ul>
       </transition>

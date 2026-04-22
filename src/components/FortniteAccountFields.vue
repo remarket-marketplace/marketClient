@@ -62,8 +62,8 @@ const hasLegacyCountryCode = computed(() => (
   Boolean(normalizedCountryValue.value) && !isKnownCountryCode(normalizedCountryValue.value)
 ))
 const fieldClass = computed(() => [
-  'w-full rounded-lg border border-dark-700 bg-dark-600 px-4 py-3 text-sm text-white outline-none',
-  props.disabled ? 'cursor-not-allowed opacity-70' : 'placeholder-gray-500',
+  'w-full rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] px-4 py-3 text-sm text-[var(--text-title)] outline-none',
+  props.disabled ? 'cursor-not-allowed opacity-70' : 'placeholder-[var(--text-placeholder)]',
 ])
 
 function updateField<K extends keyof FortniteAccountFormState>(
@@ -116,7 +116,7 @@ function updateCountField(key: FortniteAccountCountFieldKey, value: string) {
 <template>
   <div class="space-y-6">
     <div v-if="textFields.length" class="space-y-3">
-      <h4 class="text-sm font-semibold text-white">
+      <h4 class="text-sm font-semibold text-[var(--text-title)]">
         {{ $t('common.fortniteAccount.sections.profile') }}
       </h4>
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -125,7 +125,7 @@ function updateCountField(key: FortniteAccountCountFieldKey, value: string) {
           :key="field.key"
           class="space-y-2"
         >
-          <span class="text-sm font-medium text-gray-300">
+          <span class="text-sm font-medium text-[var(--text-body)]">
             {{ $t(field.labelKey) }}
           </span>
           <input
@@ -139,7 +139,7 @@ function updateCountField(key: FortniteAccountCountFieldKey, value: string) {
         </label>
 
         <label class="space-y-2">
-          <span class="text-sm font-medium text-gray-300">
+          <span class="text-sm font-medium text-[var(--text-body)]">
             {{ $t('common.fortniteAccount.fields.country') }}
           </span>
           <select
@@ -167,7 +167,7 @@ function updateCountField(key: FortniteAccountCountFieldKey, value: string) {
           </select>
           <p
             v-if="hasLegacyCountryCode"
-            class="text-xs text-gray-500"
+            class="text-xs text-[var(--text-meta)]"
           >
             {{ formatCountryOptionLabel(normalizedCountryValue, locale) }}
           </p>
@@ -176,7 +176,7 @@ function updateCountField(key: FortniteAccountCountFieldKey, value: string) {
     </div>
 
     <div class="space-y-3">
-      <h4 class="text-sm font-semibold text-white">
+      <h4 class="text-sm font-semibold text-[var(--text-title)]">
         {{ $t('common.fortniteAccount.sections.security') }}
       </h4>
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -185,7 +185,7 @@ function updateCountField(key: FortniteAccountCountFieldKey, value: string) {
           :key="field.key"
           class="space-y-2"
         >
-          <span class="text-sm font-medium text-gray-300">
+          <span class="text-sm font-medium text-[var(--text-body)]">
             {{ $t(field.labelKey) }}
           </span>
           <select
@@ -209,7 +209,7 @@ function updateCountField(key: FortniteAccountCountFieldKey, value: string) {
     </div>
 
     <div v-if="dateFields.length" class="space-y-3">
-      <h4 class="text-sm font-semibold text-white">
+      <h4 class="text-sm font-semibold text-[var(--text-title)]">
         {{ $t('common.fortniteAccount.sections.activity') }}
       </h4>
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -218,7 +218,7 @@ function updateCountField(key: FortniteAccountCountFieldKey, value: string) {
           :key="field.key"
           class="space-y-2"
         >
-          <span class="text-sm font-medium text-gray-300">
+          <span class="text-sm font-medium text-[var(--text-body)]">
             {{ $t(field.labelKey) }}
           </span>
           <input
@@ -233,7 +233,7 @@ function updateCountField(key: FortniteAccountCountFieldKey, value: string) {
     </div>
 
     <div class="space-y-3">
-      <h4 class="text-sm font-semibold text-white">
+      <h4 class="text-sm font-semibold text-[var(--text-title)]">
         {{ $t('common.fortniteAccount.sections.inventory') }}
       </h4>
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -242,7 +242,7 @@ function updateCountField(key: FortniteAccountCountFieldKey, value: string) {
           :key="field.key"
           class="space-y-2"
         >
-          <span class="text-sm font-medium text-gray-300">
+          <span class="text-sm font-medium text-[var(--text-body)]">
             {{ $t(field.labelKey) }}
           </span>
           <input

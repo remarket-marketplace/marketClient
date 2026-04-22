@@ -259,18 +259,18 @@ onBeforeUnmount(() => {
     <div class="relative mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-5xl flex-col px-4 pb-14 pt-6 sm:px-6 lg:px-8">
       <div class="mb-10 flex items-center justify-between">
         <BackButton />
-        <div class="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5 text-xs font-medium tracking-[0.18em] text-gray-400 uppercase">
-          <Icon icon="mdi:steam" class="h-4 w-4 text-white/90" />
+        <div class="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.03)] px-3 py-1.5 text-xs font-medium tracking-[0.18em] text-[var(--text-muted)] uppercase">
+          <Icon icon="mdi:steam" class="h-4 w-4 text-[rgb(var(--text-title-rgb)/0.9)]" />
           Steam
         </div>
       </div>
 
       <div class="mx-auto flex w-full max-w-[680px] flex-1 flex-col justify-center">
         <div class="mx-auto mb-8 max-w-lg text-center">
-          <h1 class="text-balance text-3xl font-semibold tracking-tight text-white sm:text-[2.75rem]">
+          <h1 class="text-balance text-3xl font-semibold tracking-tight text-[var(--text-title)] sm:text-[2.75rem]">
             {{ t('pages.index.steamTopUp.title') }}
           </h1>
-          <p class="mt-3 text-sm text-gray-400 sm:text-base">
+          <p class="mt-3 text-sm text-[var(--text-muted)] sm:text-base">
             {{ t('pages.index.steamTopUp.subtitle') }}
           </p>
         </div>
@@ -278,7 +278,7 @@ onBeforeUnmount(() => {
         <div class="mx-auto w-full max-w-[680px]">
           <p
             v-if="!HOME_STEAM_TOPUP_ENABLED"
-            class="mb-5 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-100"
+            class="mb-5 rounded-lg border border-[rgb(var(--palette-yellow-500)/0.3)] bg-[rgb(var(--palette-yellow-500)/0.1)] px-4 py-3 text-sm text-[var(--text-warning)]"
           >
             {{ t('errors.STEAM_TOPUP_DISABLED') }}
           </p>
@@ -286,32 +286,32 @@ onBeforeUnmount(() => {
           <template v-else>
             <p
               v-if="steamError"
-              class="mb-5 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200"
+              class="mb-5 rounded-lg border border-[rgb(var(--palette-red-500)/0.3)] bg-[rgb(var(--palette-red-500)/0.1)] px-4 py-3 text-sm text-[var(--text-danger-soft)]"
             >
               {{ steamError }}
             </p>
             <p
               v-if="steamSuccess"
-              class="mb-5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200"
+              class="mb-5 rounded-lg border border-[rgb(var(--palette-emerald-500)/0.3)] bg-[rgb(var(--palette-emerald-500)/0.1)] px-4 py-3 text-sm text-[var(--text-success)]"
             >
               {{ steamSuccess }}
             </p>
             <p
               v-if="steamServicesLoading"
-              class="mb-5 rounded-lg border border-dark-600 bg-dark-700/50 px-4 py-3 text-sm text-gray-300"
+              class="mb-5 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.5)] px-4 py-3 text-sm text-[var(--text-body)]"
             >
               {{ t('pages.index.steamTopUp.refreshingOrder') }}
             </p>
             <p
               v-else-if="user && !selectedSteamService && !steamError"
-              class="mb-5 rounded-lg border border-dark-600 bg-dark-700/50 px-4 py-3 text-sm text-gray-300"
+              class="mb-5 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.5)] px-4 py-3 text-sm text-[var(--text-body)]"
             >
               {{ t('pages.index.steamTopUp.noServices') }}
             </p>
 
             <div class="space-y-5">
               <label class="block space-y-2">
-                <span class="block text-sm font-medium text-gray-300">
+                <span class="block text-sm font-medium text-[var(--text-body)]">
                   {{ t('pages.index.steamTopUp.account') }}
                 </span>
                 <TheInput
@@ -324,7 +324,7 @@ onBeforeUnmount(() => {
               </label>
 
               <label class="block space-y-2">
-                <span class="block text-sm font-medium text-gray-300">
+                <span class="block text-sm font-medium text-[var(--text-body)]">
                   {{ t('pages.index.steamTopUp.quantity') }}
                 </span>
                 <TheInput
@@ -337,13 +337,13 @@ onBeforeUnmount(() => {
                   :placeholder="t('pages.index.steamTopUp.quantityPlaceholder')"
                 >
                   <template #append>
-                    <span class="text-sm font-medium text-gray-400">{{ currencySymbol }}</span>
+                    <span class="text-sm font-medium text-[var(--text-muted)]">{{ currencySymbol }}</span>
                   </template>
                 </TheInput>
               </label>
 
               <label class="block space-y-2">
-                <span class="block text-sm font-medium text-gray-300">
+                <span class="block text-sm font-medium text-[var(--text-body)]">
                   {{ t('pages.index.steamTopUp.promoCode') }}
                 </span>
                 <TheInput
@@ -357,19 +357,19 @@ onBeforeUnmount(() => {
 
               <div
                 v-if="steamNormalizedPromoCode"
-                class="rounded-lg border border-blue-400/20 bg-blue-500/5 px-4 py-3 text-sm"
+                class="rounded-lg border border-[rgb(var(--palette-blue-400)/0.2)] bg-[rgb(var(--palette-blue-500)/0.05)] px-4 py-3 text-sm"
               >
-                <p v-if="steamPromoValidationLoading" class="text-blue-200">
+                <p v-if="steamPromoValidationLoading" class="text-[var(--text-accent)]">
                   Проверяем промокод...
                 </p>
-                <p v-else-if="steamPromoValidationError" class="text-red-200">
+                <p v-else-if="steamPromoValidationError" class="text-[var(--text-danger-soft)]">
                   {{ steamPromoValidationError }}
                 </p>
                 <template v-else-if="steamPromoValidationResult">
-                  <p class="text-emerald-200">
+                  <p class="text-[var(--text-success)]">
                     Промокод применится: скидка {{ formatRubAmount(steamPromoValidationResult.discount_amount) }}.
                   </p>
-                  <p class="mt-1 text-gray-300">
+                  <p class="mt-1 text-[var(--text-body)]">
                     К оплате: {{ formatRubAmount(steamPromoValidationResult.final_amount) }}.
                   </p>
                 </template>
@@ -382,8 +382,8 @@ onBeforeUnmount(() => {
                   type="button"
                   class="inline-flex h-10 items-center justify-center rounded-lg border px-4 text-sm font-semibold transition-all duration-200"
                   :class="isQuickAmountActive(amount)
-                    ? 'border-blue-500/45 bg-blue-500/15 text-white'
-                    : 'border-dark-700 bg-dark-600/60 text-gray-300 hover:border-dark-500 hover:bg-dark-600 hover:text-white'"
+                    ? 'border-[rgb(var(--palette-blue-500)/0.45)] bg-[rgb(var(--palette-blue-500)/0.15)] text-[var(--text-title)]'
+                    : 'border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.6)] text-[var(--text-body)] hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-600))] hover:text-[var(--text-title)]'"
                   @click="setQuickAmount(amount)"
                 >
                   {{ formatQuickAmount(amount) }}
@@ -393,7 +393,7 @@ onBeforeUnmount(() => {
               <div class="flex justify-end pt-1">
                 <button
                   type="button"
-                  class="market-primary-surface market-primary-hover inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg px-6 text-sm font-semibold text-white transition-colors duration-200 disabled:cursor-not-allowed disabled:bg-blue-600/45 disabled:text-white/75 sm:w-auto sm:min-w-[220px]"
+                  class="market-primary-surface market-primary-hover inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg px-6 text-sm font-semibold text-[var(--text-title)] transition-colors duration-200 disabled:cursor-not-allowed disabled:bg-[rgb(var(--palette-blue-600)/0.45)] disabled:text-[rgb(var(--text-title-rgb)/0.75)] sm:w-auto sm:min-w-[220px]"
                   :disabled="!steamCanCreateOrder || steamCheckoutSubmitting || steamServicesLoading"
                   @click="submitSteamTopUpPayment"
                 >

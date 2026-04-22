@@ -12,7 +12,7 @@ import BackButton from '@/components/navigation/BackButton.vue'
         </h1>
       </div>
 
-      <article class="mt-6 legal-copy text-gray-200">
+      <article class="mt-6 legal-copy text-[var(--text-body-strong)]">
         <section class="legal-section">
           <h2 class="legal-heading text-mainText">{{ $t('pages.marketRules.general.title') }}</h2>
           <p class="legal-paragraph">{{ $t('pages.marketRules.general.p1') }}</p>

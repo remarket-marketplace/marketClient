@@ -103,10 +103,10 @@ function getStatusLabel(status: PaymentStatus): string {
 
 function getStatusBadgeClass(status: PaymentStatus): string {
   const map: Record<PaymentStatus, string> = {
-    PENDING: 'border-amber-500/40 bg-amber-500/15 text-amber-200',
-    CONFIRMED: 'border-emerald-500/40 bg-emerald-500/15 text-emerald-200',
-    CANCELED: 'border-gray-500/40 bg-gray-500/15 text-gray-200',
-    CHARGEBACKED: 'border-rose-500/40 bg-rose-500/15 text-rose-200',
+    PENDING: 'border-[rgb(var(--palette-amber-500)/0.4)] bg-[rgb(var(--palette-amber-500)/0.15)] text-[var(--text-warning)]',
+    CONFIRMED: 'border-[rgb(var(--palette-emerald-500)/0.4)] bg-[rgb(var(--palette-emerald-500)/0.15)] text-[var(--text-success)]',
+    CANCELED: 'border-[rgb(var(--palette-gray-500)/0.4)] bg-[rgb(var(--palette-gray-500)/0.15)] text-[var(--text-body-strong)]',
+    CHARGEBACKED: 'border-[rgb(var(--palette-rose-500)/0.4)] bg-[rgb(var(--palette-rose-500)/0.15)] text-[var(--text-danger-soft)]',
   }
   return map[status]
 }
@@ -218,7 +218,7 @@ watch(watchedFilters, () => {
         <BackButton />
         <div>
           <h1 class="text-xl sm:text-2xl font-bold text-mainText">{{ $t('pages.admin.paymentsPage.title') }}</h1>
-          <p class="text-xs sm:text-sm text-gray-400">{{ $t('pages.admin.paymentsPage.subtitle') }}</p>
+          <p class="text-xs sm:text-sm text-[var(--text-muted)]">{{ $t('pages.admin.paymentsPage.subtitle') }}</p>
         </div>
       </div>
 
@@ -279,16 +279,16 @@ watch(watchedFilters, () => {
 
     <div class="flex-1 overflow-hidden">
       <div v-if="isLoading" class="flex h-32 items-center justify-center">
-        <Loader2 class="h-6 w-6 animate-spin text-blue-500" />
-        <span class="ml-2 text-gray-400">{{ $t('common.loading') }}</span>
+        <Loader2 class="h-6 w-6 animate-spin text-[var(--text-link)]" />
+        <span class="ml-2 text-[var(--text-muted)]">{{ $t('common.loading') }}</span>
       </div>
 
       <div v-else-if="errorMessage" class="flex h-32 items-center justify-center">
-        <p class="text-red-400">{{ errorMessage }}</p>
+        <p class="text-[var(--text-danger)]">{{ errorMessage }}</p>
       </div>
 
       <div v-else-if="payments.length === 0" class="flex h-32 items-center justify-center">
-        <p class="text-gray-400">{{ $t('pages.admin.paymentsPage.empty') }}</p>
+        <p class="text-[var(--text-muted)]">{{ $t('pages.admin.paymentsPage.empty') }}</p>
       </div>
 
       <div v-else class="h-full overflow-y-auto space-y-3 pr-1 pb-4">
@@ -302,7 +302,7 @@ watch(watchedFilters, () => {
               <span class="rounded-full border px-2 py-1 text-xs" :class="getStatusBadgeClass(payment.status)">
                 {{ getStatusLabel(payment.status) }}
               </span>
-              <span class="text-xs text-gray-500">{{ $t('pages.admin.paymentsPage.paymentId') }}: {{ payment.id }}</span>
+              <span class="text-xs text-[var(--text-meta)]">{{ $t('pages.admin.paymentsPage.paymentId') }}: {{ payment.id }}</span>
             </div>
 
             <div class="text-sm sm:text-base font-semibold text-mainText">
@@ -310,43 +310,43 @@ watch(watchedFilters, () => {
             </div>
           </div>
 
-          <div class="mt-3 grid grid-cols-1 gap-2 text-sm text-gray-200 sm:grid-cols-2 lg:grid-cols-3">
+          <div class="mt-3 grid grid-cols-1 gap-2 text-sm text-[var(--text-body-strong)] sm:grid-cols-2 lg:grid-cols-3">
             <div>
-              <span class="text-gray-400">{{ $t('common.username') }}:</span>
+              <span class="text-[var(--text-muted)]">{{ $t('common.username') }}:</span>
               <button
                 type="button"
-                class="ml-1 font-medium text-blue-300 hover:text-blue-200 underline-offset-2 hover:underline"
+                class="ml-1 font-medium text-[var(--text-link)] hover:text-[var(--text-accent)] underline-offset-2 hover:underline"
                 @click="openUserProfile(payment.username)"
               >
                 {{ payment.username }}
               </button>
-              <div class="mt-1 text-[11px] text-gray-500">
+              <div class="mt-1 text-[11px] text-[var(--text-meta)]">
                 {{ $t('pages.admin.paymentsPage.userId') }}: {{ payment.user_id }}
               </div>
             </div>
 
             <div>
-              <span class="text-gray-400">{{ $t('pages.admin.paymentsPage.createdAt') }}:</span>
+              <span class="text-[var(--text-muted)]">{{ $t('pages.admin.paymentsPage.createdAt') }}:</span>
               <span class="ml-1 font-medium">{{ formatDate(payment.created_at) }}</span>
             </div>
 
             <div>
-              <span class="text-gray-400">{{ $t('pages.admin.paymentsPage.confirmedAt') }}:</span>
+              <span class="text-[var(--text-muted)]">{{ $t('pages.admin.paymentsPage.confirmedAt') }}:</span>
               <span class="ml-1 font-medium">{{ formatDate(payment.confirmed_at) }}</span>
             </div>
 
             <div>
-              <span class="text-gray-400">{{ $t('pages.admin.paymentsPage.updatedAt') }}:</span>
+              <span class="text-[var(--text-muted)]">{{ $t('pages.admin.paymentsPage.updatedAt') }}:</span>
               <span class="ml-1 font-medium">{{ formatDate(payment.updated_at) }}</span>
             </div>
 
             <div>
-              <span class="text-gray-400">{{ $t('pages.admin.paymentsPage.provider') }}:</span>
+              <span class="text-[var(--text-muted)]">{{ $t('pages.admin.paymentsPage.provider') }}:</span>
               <span class="ml-1 font-medium">{{ payment.provider }}</span>
             </div>
 
             <div>
-              <span class="text-gray-400">{{ $t('pages.admin.paymentsPage.transactionId') }}:</span>
+              <span class="text-[var(--text-muted)]">{{ $t('pages.admin.paymentsPage.transactionId') }}:</span>
               <span class="ml-1 font-medium break-all">{{ payment.provider_tx_id || '-' }}</span>
             </div>
           </div>
@@ -384,7 +384,7 @@ watch(watchedFilters, () => {
           </button>
 
           <div v-else-if="isLoadingMore" class="flex items-center justify-center py-2">
-            <Loader2 class="h-5 w-5 animate-spin text-blue-500" />
+            <Loader2 class="h-5 w-5 animate-spin text-[var(--text-link)]" />
           </div>
         </div>
       </div>
@@ -403,11 +403,11 @@ watch(watchedFilters, () => {
   >
     <template #body>
       <div class="space-y-2">
-        <p class="text-xs text-gray-400">
+        <p class="text-xs text-[var(--text-muted)]">
           {{ paymentToModerate?.id }} ->
           {{ moderationTargetStatus ? getStatusLabel(moderationTargetStatus) : '' }}
         </p>
-        <label class="block text-sm text-gray-300">
+        <label class="block text-sm text-[var(--text-body)]">
           {{ $t('pages.admin.paymentsPage.moderationReasonLabel') }}
         </label>
         <textarea

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { Eye, EyeOff } from 'lucide-vue-next'
 import { authService } from '@/api/auth/AuthService'
 import ErrorBanner from '@/components/ErrorBanner.vue'
@@ -12,6 +12,7 @@ import { useUserStore } from '@/stores/user'
 import Captcha from '@/components/Captcha.vue'
 import Title from '@/components/Title.vue'
 import AuthWelcomeTyping from '@/components/AuthWelcomeTyping.vue'
+import { buildAuthRedirectQuery, getAuthRedirectFromRoute } from '@/utils/authRedirect'
 
 const sended = ref(false)
 const email = ref('')
@@ -34,7 +35,14 @@ let resendTimer: ReturnType<typeof window.setInterval> | null = null
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
+
+const afterAuthRedirect = computed(() => getAuthRedirectFromRoute(route))
+const signUpLocation = computed(() => ({
+  path: '/signup',
+  query: buildAuthRedirectQuery(afterAuthRedirect.value),
+}))
 
 const welcomeText = computed(() => {
   const safeUsername = welcomeUsername.value.trim() || t('common.user')
@@ -61,7 +69,7 @@ function handleWelcomeFinished() {
   }
 
   isWelcomeRedirecting.value = true
-  router.push('/')
+  router.push(afterAuthRedirect.value)
 }
 
 function refreshCaptcha() {
@@ -316,13 +324,13 @@ onUnmounted(() => {
       <div
         v-else
         key="form"
-        class="max-w-sm w-full border border-dark-700 rounded-2xl bg-background p-8 backdrop-blur-md space-y-6 my-auto"
+        class="max-w-sm w-full border border-[rgb(var(--palette-dark-700))] rounded-2xl bg-background p-8 backdrop-blur-md space-y-6 my-auto"
       >
         <Title :text="t('pages.auth.signIn.title')" class="text-center text-4xl" />
 
         <form v-if="authStage === 'credentials'" class="space-y-4" @submit.prevent>
           <div>
-            <label for="email" class="mb-1 block text-sm text-gray-300">
+            <label for="email" class="mb-1 block text-sm text-[var(--text-secondary)]">
               {{ $t('common.email') }}
             </label>
             <TheInput
@@ -335,7 +343,7 @@ onUnmounted(() => {
           </div>
 
           <div>
-            <label for="password" class="mb-1 block text-sm text-gray-300">
+            <label for="password" class="mb-1 block text-sm text-[var(--text-secondary)]">
               {{ $t('common.password') }}
             </label>
             <TheInput
@@ -349,7 +357,7 @@ onUnmounted(() => {
               <template #append>
                 <button
                   type="button"
-                  class="text-gray-400 hover:text-gray-300 transition-colors focus:outline-none p-1"
+                  class="p-1 text-[var(--text-muted)] transition-colors hover:text-[var(--text-secondary)] focus:outline-none"
                   @click="switchPasswordVisibility"
                 >
                   <EyeOff v-if="passwordHidden" class="w-5 h-5" />
@@ -375,7 +383,7 @@ onUnmounted(() => {
         <form v-else class="space-y-4" @submit.prevent="confirmTwoFactorSignIn">
           <div class="space-y-2">
             <label class="block text-sm text-text-secondary">{{ $t('pages.auth.signIn.twoFactor.title') }}</label>
-            <p class="text-xs text-gray-400">{{ $t('pages.auth.signIn.twoFactor.hint') }}</p>
+            <p class="text-xs text-[var(--text-muted)]">{{ $t('pages.auth.signIn.twoFactor.hint') }}</p>
             <div class="grid grid-cols-6 gap-2">
               <input
                 v-for="(_, index) in 6"
@@ -386,7 +394,7 @@ onUnmounted(() => {
                 maxlength="1"
                 inputmode="numeric"
                 pattern="[0-9]*"
-                class="flex-1 aspect-square min-w-0 border border-1 border-dark-700 rounded-lg bg-dark-600 text-center text-lg text-mainText font-bold transition-all focus:border-blue-500 focus:outline-none"
+                class="flex-1 aspect-square min-w-0 border border-1 border-[rgb(var(--palette-dark-700))] rounded-lg bg-[rgb(var(--palette-dark-600))] text-center text-lg text-mainText font-bold transition-all focus:border-[var(--accent-surface)] focus:outline-none"
                 @input="handleCodeInput($event, index)"
                 @keydown="handleCodeKeyDown($event, index)"
                 @paste="handleCodePaste"
@@ -430,7 +438,7 @@ onUnmounted(() => {
 
         <p v-if="authStage === 'credentials'" class="text-center text-sm text-text-secondaryDark">
           {{ $t('pages.auth.signIn.noAccount') }}
-          <router-link to="/signup" class="text-text-link hover:underline">
+          <router-link :to="signUpLocation" class="text-text-link hover:underline">
             {{ $t('pages.auth.signIn.register') }}
           </router-link>
         </p>

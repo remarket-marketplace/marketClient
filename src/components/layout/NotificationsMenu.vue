@@ -355,17 +355,17 @@ function getNotificationBadges(item: InboxNotification): NotificationBadge[] {
 function getBadgeClasses(tone: NotificationBadgeTone): string {
   switch (tone) {
     case 'success':
-      return 'border-emerald-400/35 bg-emerald-500/10 text-emerald-200'
+      return 'border-[rgb(var(--palette-emerald-400)/0.35)] bg-[rgb(var(--palette-emerald-500)/0.1)] text-[var(--text-success)]'
     case 'warning':
-      return 'border-amber-400/35 bg-amber-500/10 text-amber-200'
+      return 'border-[rgb(var(--palette-amber-400)/0.35)] bg-[rgb(var(--palette-amber-500)/0.1)] text-[var(--text-warning)]'
     case 'danger':
-      return 'border-red-400/35 bg-red-500/10 text-red-200'
+      return 'border-[rgb(var(--palette-red-400)/0.35)] bg-[rgb(var(--palette-red-500)/0.1)] text-[var(--text-danger-soft)]'
     case 'accent':
-      return 'border-purple-400/35 bg-purple-500/10 text-purple-200'
+      return 'border-[rgb(var(--palette-purple-400)/0.35)] bg-[rgb(var(--palette-purple-500)/0.1)] text-[var(--text-accent)]'
     case 'info':
-      return 'border-sky-400/35 bg-sky-500/10 text-sky-200'
+      return 'border-[rgb(var(--palette-sky-400)/0.35)] bg-[rgb(var(--palette-sky-500)/0.1)] text-[var(--text-accent)]'
     default:
-      return 'border-white/20 bg-white/[0.05] text-gray-200'
+      return 'border-[rgb(var(--palette-white)/0.2)] bg-[rgb(var(--palette-white)/0.05)] text-[var(--text-body-strong)]'
   }
 }
 
@@ -453,13 +453,13 @@ onUnmounted(() => {
   <div ref="rootRef" class="relative">
     <button
       type="button"
-      class="relative flex h-8 w-8 items-center justify-center rounded-full border border-gray-700 bg-transparent text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white focus:outline-none"
+      class="relative flex h-8 w-8 items-center justify-center rounded-full border border-[rgb(var(--palette-gray-700))] bg-[var(--transparent)] text-[var(--text-body-strong)] transition-colors duration-200 hover:border-[rgb(var(--palette-gray-600))] hover:text-[var(--text-title)] focus:outline-none"
       @click="toggleMenu"
     >
       <Bell class="h-3.5 w-3.5 text-current opacity-80" />
       <span
         v-if="unreadTotal > 0"
-        class="absolute -right-1 -top-1 inline-flex min-w-[17px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-4 text-white"
+        class="absolute -right-1 -top-1 inline-flex min-w-[17px] items-center justify-center rounded-full bg-[rgb(var(--palette-red-500))] px-1 text-[10px] font-semibold leading-4 text-[var(--text-title)]"
       >
         {{ unreadTotal > 99 ? '99+' : unreadTotal }}
       </span>
@@ -475,16 +475,16 @@ onUnmounted(() => {
     >
       <div
         v-if="isOpen"
-        class="fixed left-2 right-2 top-16 z-50 w-auto overflow-hidden rounded-2xl border border-dark-700 bg-dark-900/98 shadow-2xl backdrop-blur md:absolute md:left-auto md:right-0 md:top-11 md:w-[340px]"
+        class="fixed left-2 right-2 top-16 z-50 w-auto overflow-hidden rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900)/0.98)] shadow-2xl backdrop-blur md:absolute md:left-auto md:right-0 md:top-11 md:w-[340px]"
       >
-        <div class="flex items-center justify-between gap-3 border-b border-dark-700 px-4 py-3">
+        <div class="flex items-center justify-between gap-3 border-b border-[rgb(var(--palette-dark-700))] px-4 py-3">
           <div class="min-w-0">
-            <p class="text-sm font-semibold text-white">{{ t('common.notifications.title') }}</p>
+            <p class="text-sm font-semibold text-[var(--text-title)]">{{ t('common.notifications.title') }}</p>
           </div>
           <div class="flex shrink-0 items-center gap-1.5">
             <button
               type="button"
-              class="inline-flex items-center gap-1 rounded-md border border-dark-700/90 bg-dark-800/70 px-2 py-1 text-[11px] text-gray-300 transition hover:border-dark-500 hover:text-white disabled:opacity-60"
+              class="inline-flex items-center gap-1 rounded-md border border-[rgb(var(--palette-dark-700)/0.9)] bg-[rgb(var(--palette-dark-800)/0.7)] px-2 py-1 text-[11px] text-[var(--text-body)] transition hover:border-[rgb(var(--palette-dark-500))] hover:text-[var(--text-title)] disabled:opacity-60"
               :disabled="unreadTotal === 0"
               @click="markAllAsRead"
             >
@@ -495,7 +495,7 @@ onUnmounted(() => {
             <div class="relative">
               <button
                 type="button"
-                class="inline-flex h-7 w-7 items-center justify-center rounded-md border border-dark-700/90 bg-dark-800/70 text-gray-400 transition hover:border-dark-500 hover:text-white"
+                class="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[rgb(var(--palette-dark-700)/0.9)] bg-[rgb(var(--palette-dark-800)/0.7)] text-[var(--text-muted)] transition hover:border-[rgb(var(--palette-dark-500))] hover:text-[var(--text-title)]"
                 :aria-label="t('common.notifications.actions')"
                 :title="t('common.notifications.actions')"
                 @click.stop="toggleActionsMenu"
@@ -513,11 +513,11 @@ onUnmounted(() => {
               >
                 <div
                   v-if="isActionsMenuOpen"
-                  class="absolute right-0 top-9 z-20 w-[180px] overflow-hidden rounded-lg border border-dark-700 bg-dark-900/98 py-1 shadow-xl"
+                  class="absolute right-0 top-9 z-20 w-[180px] overflow-hidden rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900)/0.98)] py-1 shadow-xl"
                 >
                   <button
                     type="button"
-                    class="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-300 transition hover:bg-dark-800/80 hover:text-white"
+                    class="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-[var(--text-body)] transition hover:bg-[rgb(var(--palette-dark-800)/0.8)] hover:text-[var(--text-title)]"
                     @click="openNotificationsSettings"
                   >
                     <Settings class="h-3.5 w-3.5" />
@@ -525,7 +525,7 @@ onUnmounted(() => {
                   </button>
                   <button
                     type="button"
-                    class="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-300 transition hover:bg-dark-800/80 hover:text-white disabled:opacity-50"
+                    class="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-[var(--text-body)] transition hover:bg-[rgb(var(--palette-dark-800)/0.8)] hover:text-[var(--text-title)] disabled:opacity-50"
                     :disabled="notifications.length === 0"
                     @click="requestClearNotificationsList"
                   >
@@ -538,12 +538,12 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="border-b border-dark-800/80 px-4 py-2">
-          <div class="inline-flex rounded-lg border border-dark-700/80 bg-dark-800/55 p-0.5">
+        <div class="border-b border-[rgb(var(--palette-dark-800)/0.8)] px-4 py-2">
+          <div class="inline-flex rounded-lg border border-[rgb(var(--palette-dark-700)/0.8)] bg-[rgb(var(--palette-dark-800)/0.55)] p-0.5">
             <button
               type="button"
               class="rounded-md px-2 py-1 text-[11px] font-medium transition"
-              :class="showUnreadOnly ? 'text-gray-400 hover:text-gray-200' : 'bg-dark-700/80 text-white'"
+              :class="showUnreadOnly ? 'text-[var(--text-muted)] hover:text-[var(--text-body-strong)]' : 'bg-[rgb(var(--palette-dark-700)/0.8)] text-[var(--text-title)]'"
               @click="showUnreadOnly = false"
             >
               {{ t('common.all') }}
@@ -551,7 +551,7 @@ onUnmounted(() => {
             <button
               type="button"
               class="rounded-md px-2 py-1 text-[11px] font-medium transition"
-              :class="showUnreadOnly ? 'bg-dark-700/80 text-white' : 'text-gray-400 hover:text-gray-200'"
+              :class="showUnreadOnly ? 'bg-[rgb(var(--palette-dark-700)/0.8)] text-[var(--text-title)]' : 'text-[var(--text-muted)] hover:text-[var(--text-body-strong)]'"
               @click="showUnreadOnly = true"
             >
               {{ t('common.filters.unread') }}
@@ -560,15 +560,15 @@ onUnmounted(() => {
         </div>
 
         <div v-if="filteredNotifications.length === 0" class="px-4 py-8 text-center">
-          <p class="text-sm text-gray-300">
+          <p class="text-sm text-[var(--text-body)]">
             {{ showUnreadOnly ? t('common.notifications.emptyUnread') : t('common.notifications.empty') }}
           </p>
         </div>
 
         <div v-else class="max-h-[360px] overflow-y-auto">
           <template v-for="group in notificationGroups" :key="group.key">
-            <div class="border-b border-dark-800/70 bg-dark-900/85 px-4 py-1.5">
-              <p class="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-500">
+            <div class="border-b border-[rgb(var(--palette-dark-800)/0.7)] bg-[rgb(var(--palette-dark-900)/0.85)] px-4 py-1.5">
+              <p class="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-meta)]">
                 {{ group.label }}
               </p>
             </div>
@@ -577,22 +577,22 @@ onUnmounted(() => {
               v-for="item in group.items"
               :key="item.id"
               type="button"
-              class="group flex w-full items-start gap-3 border-b border-dark-800/75 px-4 py-3.5 text-left transition-colors hover:bg-dark-800/55"
+              class="group flex w-full items-start gap-3 border-b border-[rgb(var(--palette-dark-800)/0.75)] px-4 py-3.5 text-left transition-colors hover:bg-[rgb(var(--palette-dark-800)/0.55)]"
               @click="openNotification(item)"
             >
               <div
-                class="mt-0.5 inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-dark-700 bg-dark-800/85 text-gray-300 transition-colors group-hover:border-dark-500 group-hover:text-white"
+                class="mt-0.5 inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-800)/0.85)] text-[var(--text-body)] transition-colors group-hover:border-[rgb(var(--palette-dark-500))] group-hover:text-[var(--text-title)]"
               >
                 <component :is="getIconComponent(item)" class="h-4 w-4" />
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex items-start gap-2">
-                  <p class="truncate text-[15px] font-semibold leading-5 text-white">
+                  <p class="truncate text-[15px] font-semibold leading-5 text-[var(--text-title)]">
                     {{ getNotificationTitle(item) }}
                   </p>
                   <span
                     v-if="shouldShowUnreadDot(item)"
-                    class="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-blue-400"
+                    class="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[rgb(var(--palette-blue-400))]"
                   />
                 </div>
                 <div v-if="getNotificationBadges(item).length" class="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -607,13 +607,13 @@ onUnmounted(() => {
                 </div>
                 <p
                   v-if="getNotificationBody(item)"
-                  class="mt-1.5 line-clamp-2 break-all text-[13px] leading-[1.35] text-gray-300"
+                  class="mt-1.5 line-clamp-2 break-all text-[13px] leading-[1.35] text-[var(--text-body)]"
                 >
                   {{ getNotificationBody(item) }}
                 </p>
-                <div class="mt-1.5 flex items-center gap-1.5 text-[11px] text-gray-500">
+                <div class="mt-1.5 flex items-center gap-1.5 text-[11px] text-[var(--text-meta)]">
                   <span class="truncate max-w-[130px]">{{ getNotificationMeta(item) }}</span>
-                  <span class="text-gray-600">•</span>
+                  <span class="text-[var(--text-meta)]">•</span>
                   <span class="whitespace-nowrap">{{ formatDate(item.created_at) }}</span>
                 </div>
               </div>

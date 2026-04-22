@@ -505,7 +505,7 @@ const summaryCards = computed(() => {
       trend: revenueTrend.value,
       sublabel: t('pages.admin.mainPage.lastDays', { days: selectedRange.value }),
       icon: DollarSign,
-      tone: 'text-cyan-300',
+      tone: 'text-[var(--text-link)]',
     },
     {
       id: 'deals',
@@ -513,7 +513,7 @@ const summaryCards = computed(() => {
       value: formatNumber(data.count_of_deals),
       sublabel: t('pages.admin.mainPage.disputesActive', { count: formatNumber(data.active_disputes) }),
       icon: Activity,
-      tone: 'text-emerald-300',
+      tone: 'text-[var(--text-success)]',
     },
     {
       id: 'users',
@@ -522,7 +522,7 @@ const summaryCards = computed(() => {
       trend: usersTrend.value,
       sublabel: t('pages.admin.mainPage.lastDays', { days: selectedRange.value }),
       icon: Users,
-      tone: 'text-violet-300',
+      tone: 'text-[var(--text-accent)]',
     },
     {
       id: 'products',
@@ -530,7 +530,7 @@ const summaryCards = computed(() => {
       value: formatNumber(data.count_of_products),
       sublabel: t('pages.admin.mainPage.onModeration', { count: formatNumber(data.moderation_products) }),
       icon: Package,
-      tone: 'text-amber-300',
+      tone: 'text-[var(--text-warning-strong)]',
     },
     {
       id: 'avg-check',
@@ -538,7 +538,7 @@ const summaryCards = computed(() => {
       value: formatCurrency(avgCheck.value),
       sublabel: t('pages.admin.mainPage.perDeal'),
       icon: AlertTriangle,
-      tone: 'text-sky-300',
+      tone: 'text-[var(--text-link)]',
     },
   ]
 })
@@ -737,10 +737,10 @@ watch(selectedRange, loadDashboard)
   <section class="h-full w-full flex flex-col gap-4 overflow-hidden pb-6 pt-3 md:pt-4">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div class="space-y-1">
-        <p class="text-xs uppercase tracking-[0.2em] text-gray-400">
+        <p class="text-xs uppercase tracking-[0.2em] text-[var(--text-muted)]">
           {{ t('pages.admin.mainPage.title') }}
         </p>
-        <h1 class="text-2xl font-semibold text-white">
+        <h1 class="text-2xl font-semibold text-[var(--text-title)]">
           {{ t('pages.admin.mainPage.overview') }}
         </h1>
       </div>
@@ -764,7 +764,7 @@ watch(selectedRange, loadDashboard)
 
     <div
       v-else-if="isError"
-      class="rounded-2xl border border-red-500/40 bg-red-500/10 text-red-200 px-4 py-3 text-sm"
+      class="rounded-2xl border border-[rgb(var(--palette-red-500)/0.4)] bg-[rgb(var(--palette-red-500)/0.1)] text-[var(--text-danger-soft)] px-4 py-3 text-sm"
     >
       {{ t('pages.admin.mainPage.loadError') }}
     </div>
@@ -772,10 +772,10 @@ watch(selectedRange, loadDashboard)
     <div v-else class="flex flex-col gap-5 overflow-y-auto pb-8">
       <div class="admin-surface-panel rounded-2xl p-4">
         <div class="mb-3">
-          <p class="text-sm font-semibold text-gray-200">
+          <p class="text-sm font-semibold text-[var(--text-body-strong)]">
             {{ t('pages.admin.mainPage.platformSettingsTitle') }}
           </p>
-          <p class="mt-1 text-xs text-gray-400">
+          <p class="mt-1 text-xs text-[var(--text-muted)]">
             {{ t('pages.admin.mainPage.platformSettingsHint') }}
           </p>
         </div>
@@ -787,31 +787,31 @@ watch(selectedRange, loadDashboard)
         <template v-else>
           <div
             v-if="platformSettingsError"
-            class="mb-3 rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200"
+            class="mb-3 rounded-xl border border-[rgb(var(--palette-red-500)/0.4)] bg-[rgb(var(--palette-red-500)/0.1)] px-3 py-2 text-sm text-[var(--text-danger-soft)]"
           >
             {{ platformSettingsError }}
           </div>
 
           <div
             v-if="platformSettingsSuccess"
-            class="mb-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200"
+            class="mb-3 rounded-xl border border-[rgb(var(--palette-emerald-500)/0.3)] bg-[rgb(var(--palette-emerald-500)/0.1)] px-3 py-2 text-sm text-[var(--text-success)]"
           >
             {{ platformSettingsSuccess }}
           </div>
 
           <div v-if="platformSettings" class="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
             <div class="admin-surface-soft rounded-xl p-3">
-              <p class="text-sm text-gray-200 font-medium">
+              <p class="text-sm text-[var(--text-body-strong)] font-medium">
                 {{ t('pages.admin.mainPage.registrationToggleLabel') }}
               </p>
-              <p class="mt-1 text-xs text-gray-400">
+              <p class="mt-1 text-xs text-[var(--text-muted)]">
                 {{ t('pages.admin.mainPage.registrationToggleHint') }}
               </p>
               <button
                 class="mt-3 rounded-lg border px-3 py-2 text-xs font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
                 :class="platformSettings.registration_enabled
-                  ? 'border-blue-500/40 bg-blue-600/80 text-white hover:bg-blue-500'
-                  : 'border-white/10 bg-white/[0.04] text-gray-200 hover:border-white/20 hover:bg-white/[0.08] hover:text-white'"
+                  ? 'border-[rgb(var(--palette-blue-500)/0.4)] bg-[rgb(var(--palette-blue-600)/0.8)] text-[var(--text-title)] hover:bg-[rgb(var(--palette-blue-500))]'
+                  : 'border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body-strong)] hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)]'"
                 :disabled="isPlatformSettingsSaving"
                 @click="openRegistrationToggleConfirm"
               >
@@ -824,17 +824,17 @@ watch(selectedRange, loadDashboard)
             </div>
 
             <div class="admin-surface-soft rounded-xl p-3">
-              <p class="text-sm text-gray-200 font-medium">
+              <p class="text-sm text-[var(--text-body-strong)] font-medium">
                 {{ t('pages.admin.mainPage.productCreationToggleLabel') }}
               </p>
-              <p class="mt-1 text-xs text-gray-400">
+              <p class="mt-1 text-xs text-[var(--text-muted)]">
                 {{ t('pages.admin.mainPage.productCreationToggleHint') }}
               </p>
               <button
                 class="mt-3 rounded-lg border px-3 py-2 text-xs font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
                 :class="platformSettings.product_creation_enabled
-                  ? 'border-blue-500/40 bg-blue-600/80 text-white hover:bg-blue-500'
-                  : 'border-white/10 bg-white/[0.04] text-gray-200 hover:border-white/20 hover:bg-white/[0.08] hover:text-white'"
+                  ? 'border-[rgb(var(--palette-blue-500)/0.4)] bg-[rgb(var(--palette-blue-600)/0.8)] text-[var(--text-title)] hover:bg-[rgb(var(--palette-blue-500))]'
+                  : 'border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body-strong)] hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)]'"
                 :disabled="isPlatformSettingsSaving"
                 @click="openProductCreationToggleConfirm"
               >
@@ -847,17 +847,17 @@ watch(selectedRange, loadDashboard)
             </div>
 
             <div class="admin-surface-soft rounded-xl p-3">
-              <p class="text-sm text-gray-200 font-medium">
+              <p class="text-sm text-[var(--text-body-strong)] font-medium">
                 {{ t('pages.admin.mainPage.telegramIntegrationToggleLabel') }}
               </p>
-              <p class="mt-1 text-xs text-gray-400">
+              <p class="mt-1 text-xs text-[var(--text-muted)]">
                 {{ t('pages.admin.mainPage.telegramIntegrationToggleHint') }}
               </p>
               <button
                 class="mt-3 rounded-lg border px-3 py-2 text-xs font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
                 :class="platformSettings.telegram_integration_enabled
-                  ? 'border-blue-500/40 bg-blue-600/80 text-white hover:bg-blue-500'
-                  : 'border-white/10 bg-white/[0.04] text-gray-200 hover:border-white/20 hover:bg-white/[0.08] hover:text-white'"
+                  ? 'border-[rgb(var(--palette-blue-500)/0.4)] bg-[rgb(var(--palette-blue-600)/0.8)] text-[var(--text-title)] hover:bg-[rgb(var(--palette-blue-500))]'
+                  : 'border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body-strong)] hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)]'"
                 :disabled="isPlatformSettingsSaving"
                 @click="openTelegramIntegrationToggleConfirm"
               >
@@ -872,17 +872,17 @@ watch(selectedRange, loadDashboard)
             <div class="admin-surface-soft rounded-xl p-4 md:col-span-2 2xl:col-span-3">
               <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div class="max-w-2xl">
-                  <p class="text-sm text-gray-200 font-medium">
+                  <p class="text-sm text-[var(--text-body-strong)] font-medium">
                     Баннер официального магазина
                   </p>
-                  <p class="mt-1 text-xs text-gray-400">
+                  <p class="mt-1 text-xs text-[var(--text-muted)]">
                     Этот баннер показывается вверху страницы official store и не меняется при переключении категорий.
                   </p>
                 </div>
               </div>
 
               <div class="mt-4 grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-                <div class="h-40 overflow-hidden rounded-xl border border-white/10 bg-black/40">
+                <div class="h-40 overflow-hidden rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-black)/0.4)]">
                   <img
                     v-if="officialStoreHeroDisplayUrl"
                     :src="officialStoreHeroDisplayUrl"
@@ -891,7 +891,7 @@ watch(selectedRange, loadDashboard)
                   >
                   <div
                     v-else
-                    class="flex h-full w-full items-center justify-center text-xs text-gray-500"
+                    class="flex h-full w-full items-center justify-center text-xs text-[var(--text-muted)]"
                   >
                     Баннер не установлен
                   </div>
@@ -901,7 +901,7 @@ watch(selectedRange, loadDashboard)
                   <input
                     type="file"
                     accept="image/*"
-                    class="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-gray-200 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-600/80 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:file:bg-blue-500"
+                    class="w-full rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] px-3 py-2 text-sm text-[var(--text-body-strong)] file:mr-3 file:rounded-lg file:border-0 file:bg-[rgb(var(--palette-blue-600)/0.8)] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[var(--text-title)] hover:file:bg-[rgb(var(--palette-blue-500))]"
                     :disabled="isOfficialStoreHeroSaving"
                     @change="onOfficialStoreHeroFileChange"
                   >
@@ -932,10 +932,10 @@ watch(selectedRange, loadDashboard)
             <div class="admin-surface-soft rounded-xl p-4 md:col-span-2 2xl:col-span-3">
               <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div class="max-w-2xl">
-                  <p class="text-sm text-gray-200 font-medium">
+                  <p class="text-sm text-[var(--text-body-strong)] font-medium">
                     {{ t('pages.admin.mainPage.financeSettingsTitle') }}
                   </p>
-                  <p class="mt-1 text-xs text-gray-400">
+                  <p class="mt-1 text-xs text-[var(--text-muted)]">
                     {{ t('pages.admin.mainPage.financeSettingsHint') }}
                   </p>
                 </div>
@@ -952,7 +952,7 @@ watch(selectedRange, loadDashboard)
 
               <div class="mt-4 grid gap-3 md:grid-cols-2 2xl:grid-cols-5">
                 <label class="admin-surface-panel rounded-xl p-3">
-                  <span class="text-xs uppercase tracking-[0.18em] text-gray-500">
+                  <span class="text-xs uppercase tracking-[0.18em] text-[var(--text-meta)]">
                     {{ t('pages.admin.mainPage.dealCommissionLabel') }}
                   </span>
                   <input
@@ -961,15 +961,15 @@ watch(selectedRange, loadDashboard)
                     min="0"
                     max="100"
                     step="0.01"
-                    class="mt-3 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-lg font-semibold text-white outline-none transition focus:border-sky-400/45 focus:bg-sky-400/5"
+                    class="mt-3 w-full rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] px-4 py-3 text-lg font-semibold text-[var(--text-title)] outline-none transition focus:border-[rgb(var(--palette-sky-400)/0.45)] focus:bg-[rgb(var(--palette-sky-400)/0.05)]"
                   >
-                  <p class="mt-2 text-xs text-gray-400">
+                  <p class="mt-2 text-xs text-[var(--text-muted)]">
                     {{ t('pages.admin.mainPage.dealCommissionHint') }}
                   </p>
                 </label>
 
                 <label class="admin-surface-panel rounded-xl p-3">
-                  <span class="text-xs uppercase tracking-[0.18em] text-gray-500">
+                  <span class="text-xs uppercase tracking-[0.18em] text-[var(--text-meta)]">
                     {{ t('pages.admin.mainPage.withdrawalCommissionLabel') }}
                   </span>
                   <input
@@ -978,15 +978,15 @@ watch(selectedRange, loadDashboard)
                     min="0"
                     max="100"
                     step="0.01"
-                    class="mt-3 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-lg font-semibold text-white outline-none transition focus:border-sky-400/45 focus:bg-sky-400/5"
+                    class="mt-3 w-full rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] px-4 py-3 text-lg font-semibold text-[var(--text-title)] outline-none transition focus:border-[rgb(var(--palette-sky-400)/0.45)] focus:bg-[rgb(var(--palette-sky-400)/0.05)]"
                   >
-                  <p class="mt-2 text-xs text-gray-400">
+                  <p class="mt-2 text-xs text-[var(--text-muted)]">
                     {{ t('pages.admin.mainPage.withdrawalCommissionHint') }}
                   </p>
                 </label>
 
                 <label class="admin-surface-panel rounded-xl p-3">
-                  <span class="text-xs uppercase tracking-[0.18em] text-gray-500">
+                  <span class="text-xs uppercase tracking-[0.18em] text-[var(--text-meta)]">
                     {{ t('pages.admin.mainPage.vpnMonthPriceLabel') }}
                   </span>
                   <input
@@ -995,15 +995,15 @@ watch(selectedRange, loadDashboard)
                     min="0"
                     max="1000000"
                     step="0.01"
-                    class="mt-3 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-lg font-semibold text-white outline-none transition focus:border-sky-400/45 focus:bg-sky-400/5"
+                    class="mt-3 w-full rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] px-4 py-3 text-lg font-semibold text-[var(--text-title)] outline-none transition focus:border-[rgb(var(--palette-sky-400)/0.45)] focus:bg-[rgb(var(--palette-sky-400)/0.05)]"
                   >
-                  <p class="mt-2 text-xs text-gray-400">
+                  <p class="mt-2 text-xs text-[var(--text-muted)]">
                     {{ t('pages.admin.mainPage.vpnPriceHint') }}
                   </p>
                 </label>
 
                 <label class="admin-surface-panel rounded-xl p-3">
-                  <span class="text-xs uppercase tracking-[0.18em] text-gray-500">
+                  <span class="text-xs uppercase tracking-[0.18em] text-[var(--text-meta)]">
                     {{ t('pages.admin.mainPage.vpnQuarterPriceLabel') }}
                   </span>
                   <input
@@ -1012,15 +1012,15 @@ watch(selectedRange, loadDashboard)
                     min="0"
                     max="1000000"
                     step="0.01"
-                    class="mt-3 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-lg font-semibold text-white outline-none transition focus:border-sky-400/45 focus:bg-sky-400/5"
+                    class="mt-3 w-full rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] px-4 py-3 text-lg font-semibold text-[var(--text-title)] outline-none transition focus:border-[rgb(var(--palette-sky-400)/0.45)] focus:bg-[rgb(var(--palette-sky-400)/0.05)]"
                   >
-                  <p class="mt-2 text-xs text-gray-400">
+                  <p class="mt-2 text-xs text-[var(--text-muted)]">
                     {{ t('pages.admin.mainPage.vpnPriceHint') }}
                   </p>
                 </label>
 
                 <label class="admin-surface-panel rounded-xl p-3">
-                  <span class="text-xs uppercase tracking-[0.18em] text-gray-500">
+                  <span class="text-xs uppercase tracking-[0.18em] text-[var(--text-meta)]">
                     {{ t('pages.admin.mainPage.vpnHalfyearPriceLabel') }}
                   </span>
                   <input
@@ -1029,15 +1029,15 @@ watch(selectedRange, loadDashboard)
                     min="0"
                     max="1000000"
                     step="0.01"
-                    class="mt-3 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-lg font-semibold text-white outline-none transition focus:border-sky-400/45 focus:bg-sky-400/5"
+                    class="mt-3 w-full rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] px-4 py-3 text-lg font-semibold text-[var(--text-title)] outline-none transition focus:border-[rgb(var(--palette-sky-400)/0.45)] focus:bg-[rgb(var(--palette-sky-400)/0.05)]"
                   >
-                  <p class="mt-2 text-xs text-gray-400">
+                  <p class="mt-2 text-xs text-[var(--text-muted)]">
                     {{ t('pages.admin.mainPage.vpnPriceHint') }}
                   </p>
                 </label>
               </div>
 
-              <p class="mt-3 text-xs text-gray-500">
+              <p class="mt-3 text-xs text-[var(--text-meta)]">
                 {{ t('pages.admin.mainPage.financeSettingsSnapshotHint') }}
               </p>
             </div>
@@ -1053,8 +1053,8 @@ watch(selectedRange, loadDashboard)
         >
           <div class="flex items-center justify-between gap-3">
             <div class="space-y-1">
-              <p class="text-sm text-gray-400">{{ card.label }}</p>
-              <p class="text-2xl font-semibold text-white leading-tight">{{ card.value }}</p>
+              <p class="text-sm text-[var(--text-muted)]">{{ card.label }}</p>
+              <p class="text-2xl font-semibold text-[var(--text-title)] leading-tight">{{ card.value }}</p>
             </div>
             <div
               class="admin-surface-soft h-12 w-12 flex items-center justify-center rounded-xl"
@@ -1063,11 +1063,11 @@ watch(selectedRange, loadDashboard)
             </div>
           </div>
 
-          <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-gray-400">
+          <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
             <div
               v-if="card.trend"
               class="flex items-center gap-1 rounded-lg px-2 py-1"
-              :class="card.trend.isFlat ? 'bg-white/5 text-gray-300' : card.trend.isUp ? 'bg-emerald-500/10 text-emerald-300' : 'bg-red-500/10 text-red-300'"
+              :class="card.trend.isFlat ? 'bg-[rgb(var(--palette-white)/0.05)] text-[var(--text-body)]' : card.trend.isUp ? 'bg-[rgb(var(--palette-emerald-500)/0.1)] text-[var(--text-success)]' : 'bg-[rgb(var(--palette-red-500)/0.1)] text-[var(--text-danger)]'"
             >
               <component
                 :is="card.trend.isFlat ? Activity : card.trend.isUp ? ArrowUpRight : ArrowDownRight"
@@ -1075,7 +1075,7 @@ watch(selectedRange, loadDashboard)
               />
               <span>{{ card.trend.percent.toFixed(1) }}% {{ t('pages.admin.mainPage.vsPrevDay') }}</span>
             </div>
-            <span class="text-gray-400">{{ card.sublabel }}</span>
+            <span class="text-[var(--text-muted)]">{{ card.sublabel }}</span>
           </div>
         </div>
       </div>
@@ -1084,10 +1084,10 @@ watch(selectedRange, loadDashboard)
         <div class="admin-surface-panel rounded-2xl p-4 2xl:col-span-8">
           <div class="flex items-center justify-between mb-3">
             <div>
-              <p class="text-sm text-gray-300 font-semibold">
+              <p class="text-sm text-[var(--text-body)] font-semibold">
                 {{ t('pages.admin.mainPage.chartTitleRevenue') }}
               </p>
-              <p class="text-xs text-gray-500">{{ t('pages.admin.mainPage.lastDays', { days: selectedRange }) }}</p>
+              <p class="text-xs text-[var(--text-meta)]">{{ t('pages.admin.mainPage.lastDays', { days: selectedRange }) }}</p>
             </div>
           </div>
           <component
@@ -1098,14 +1098,14 @@ watch(selectedRange, loadDashboard)
             :options="revenueOptions"
             :series="revenueSeries"
           />
-          <div v-else class="flex h-[320px] items-center justify-center text-gray-500 text-sm">
+          <div v-else class="flex h-[320px] items-center justify-center text-[var(--text-meta)] text-sm">
             {{ t('pages.admin.mainPage.chartsLoading') }}
           </div>
         </div>
 
         <div class="admin-surface-panel rounded-2xl p-4 2xl:col-span-4">
           <div class="flex items-center justify-between mb-3">
-            <p class="text-sm text-gray-300 font-semibold">
+            <p class="text-sm text-[var(--text-body)] font-semibold">
               {{ t('pages.admin.mainPage.dealsByStatus') }}
             </p>
           </div>
@@ -1117,7 +1117,7 @@ watch(selectedRange, loadDashboard)
             :options="statusOptions"
             :series="statusSeries"
           />
-          <div v-else class="flex h-[320px] items-center justify-center text-gray-500 text-sm">
+          <div v-else class="flex h-[320px] items-center justify-center text-[var(--text-meta)] text-sm">
             {{ t('pages.admin.mainPage.chartsLoading') }}
           </div>
         </div>
@@ -1126,7 +1126,7 @@ watch(selectedRange, loadDashboard)
       <div class="grid grid-cols-1 gap-4 2xl:grid-cols-12">
         <div class="admin-surface-panel rounded-2xl p-4 2xl:col-span-7">
           <div class="flex items-center justify-between mb-3">
-            <p class="text-sm text-gray-300 font-semibold">
+            <p class="text-sm text-[var(--text-body)] font-semibold">
               {{ t('pages.admin.mainPage.topCategories') }}
             </p>
           </div>
@@ -1139,45 +1139,45 @@ watch(selectedRange, loadDashboard)
               :options="topCategoriesOptions"
               :series="topCategoriesSeries"
             />
-            <div v-else class="flex h-[320px] items-center justify-center text-gray-500 text-sm">
+            <div v-else class="flex h-[320px] items-center justify-center text-[var(--text-meta)] text-sm">
               {{ t('pages.admin.mainPage.chartsLoading') }}
             </div>
           </div>
-          <div v-else class="flex h-[320px] items-center justify-center text-gray-500 text-sm">
+          <div v-else class="flex h-[320px] items-center justify-center text-[var(--text-meta)] text-sm">
             {{ t('pages.admin.mainPage.noCategories') }}
           </div>
         </div>
 
         <div class="admin-surface-panel rounded-2xl p-4 2xl:col-span-5">
-          <p class="text-sm text-gray-300 font-semibold mb-3">
+          <p class="text-sm text-[var(--text-body)] font-semibold mb-3">
             {{ t('pages.admin.mainPage.quickStats') }}
           </p>
           <div class="grid grid-cols-2 gap-3 2xl:grid-cols-3">
             <div class="admin-surface-soft rounded-xl p-3">
-              <p class="text-xs text-gray-400 mb-1">{{ t('common.dealStatuses.pending') }}</p>
-              <p class="text-xl font-semibold text-white">{{ formatNumber(getStatusCount('pending')) }}</p>
+              <p class="text-xs text-[var(--text-muted)] mb-1">{{ t('common.dealStatuses.pending') }}</p>
+              <p class="text-xl font-semibold text-[var(--text-title)]">{{ formatNumber(getStatusCount('pending')) }}</p>
             </div>
             <div class="admin-surface-soft rounded-xl p-3">
-              <p class="text-xs text-gray-400 mb-1">{{ t('common.dealStatuses.completed') }}</p>
-              <p class="text-xl font-semibold text-white">{{ formatNumber(getStatusCount('completed')) }}</p>
+              <p class="text-xs text-[var(--text-muted)] mb-1">{{ t('common.dealStatuses.completed') }}</p>
+              <p class="text-xl font-semibold text-[var(--text-title)]">{{ formatNumber(getStatusCount('completed')) }}</p>
             </div>
             <div class="admin-surface-soft rounded-xl p-3">
-              <p class="text-xs text-gray-400 mb-1">{{ t('common.dealStatuses.refunded') }}</p>
-              <p class="text-xl font-semibold text-white">{{ formatNumber(getStatusCount('refunded')) }}</p>
+              <p class="text-xs text-[var(--text-muted)] mb-1">{{ t('common.dealStatuses.refunded') }}</p>
+              <p class="text-xl font-semibold text-[var(--text-title)]">{{ formatNumber(getStatusCount('refunded')) }}</p>
             </div>
             <div class="admin-surface-soft rounded-xl p-3">
-              <p class="text-xs text-gray-400 mb-1">{{ t('common.dealStatuses.disputed') }}</p>
-              <p class="text-xl font-semibold text-white">{{ formatNumber(getStatusCount('disputed')) }}</p>
+              <p class="text-xs text-[var(--text-muted)] mb-1">{{ t('common.dealStatuses.disputed') }}</p>
+              <p class="text-xl font-semibold text-[var(--text-title)]">{{ formatNumber(getStatusCount('disputed')) }}</p>
             </div>
           </div>
           <div class="mt-4 grid grid-cols-2 gap-3">
             <div class="admin-surface-soft rounded-xl p-3">
-              <p class="text-xs text-gray-400 mb-1">{{ t('pages.admin.mainPage.activeDisputes') }}</p>
-              <p class="text-xl font-semibold text-white">{{ formatNumber(dashboardData?.active_disputes ?? 0) }}</p>
+              <p class="text-xs text-[var(--text-muted)] mb-1">{{ t('pages.admin.mainPage.activeDisputes') }}</p>
+              <p class="text-xl font-semibold text-[var(--text-title)]">{{ formatNumber(dashboardData?.active_disputes ?? 0) }}</p>
             </div>
             <div class="admin-surface-soft rounded-xl p-3">
-              <p class="text-xs text-gray-400 mb-1">{{ t('pages.admin.mainPage.onModeration', { count: '' }) }}</p>
-              <p class="text-xl font-semibold text-white">{{ formatNumber(dashboardData?.moderation_products ?? 0) }}</p>
+              <p class="text-xs text-[var(--text-muted)] mb-1">{{ t('pages.admin.mainPage.onModeration', { count: '' }) }}</p>
+              <p class="text-xl font-semibold text-[var(--text-title)]">{{ formatNumber(dashboardData?.moderation_products ?? 0) }}</p>
             </div>
           </div>
         </div>

@@ -155,38 +155,38 @@ onMounted(loadCategory)
       </div>
 
       <div class="space-y-2">
-        <h1 class="text-3xl font-semibold tracking-tight text-white lg:text-4xl">
+        <h1 class="text-3xl font-semibold tracking-tight text-[var(--text-title)] lg:text-4xl">
           {{ $t('pages.admin.editCategory.title') }}
         </h1>
-        <p v-if="category" class="max-w-2xl text-sm leading-6 text-gray-400">
+        <p v-if="category" class="max-w-2xl text-sm leading-6 text-[var(--text-muted)]">
           {{ $t('pages.admin.editCategory.editing') }}: {{ category.name }}
         </p>
       </div>
 
       <div v-if="isLoading" class="flex min-h-[320px] items-center justify-center">
-        <div class="inline-flex items-center gap-3 text-gray-400">
+        <div class="inline-flex items-center gap-3 text-[var(--text-muted)]">
           <Loader2 class="h-5 w-5 animate-spin" />
           <span>{{ $t('common.loading') }}</span>
         </div>
       </div>
 
       <form v-else class="mt-8 space-y-6" @submit.prevent="saveCategory">
-        <section class="rounded-2xl border border-dark-700 bg-dark-600/30 p-4 lg:p-5">
+        <section class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.3)] p-4 lg:p-5">
           <div class="mb-5 flex items-start justify-between gap-4">
             <div>
-              <h2 class="text-lg font-semibold text-white">
+              <h2 class="text-lg font-semibold text-[var(--text-title)]">
                 {{ $t('pages.admin.categoryCreate.generalSection') }}
               </h2>
-              <p class="mt-1 text-sm text-gray-400">
+              <p class="mt-1 text-sm text-[var(--text-muted)]">
                 {{ $t('pages.admin.categoryCreate.generalSectionHint') }}
               </p>
             </div>
-            <Layers3 class="mt-1 h-5 w-5 text-blue-300" />
+            <Layers3 class="mt-1 h-5 w-5 text-[var(--text-link)]" />
           </div>
 
           <div class="grid gap-4 md:grid-cols-2">
             <label class="space-y-2">
-              <span class="text-sm font-medium text-gray-300">
+              <span class="text-sm font-medium text-[var(--text-body)]">
                 {{ $t('common.nameRu') }}
               </span>
               <input
@@ -194,13 +194,13 @@ onMounted(loadCategory)
                 type="text"
                 :maxlength="CATEGORY_NAME_MAX_LENGTH"
                 required
-                class="h-12 w-full rounded-lg border border-dark-700 bg-dark-600 px-4 text-sm text-white outline-none"
+                class="h-12 w-full rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] px-4 text-sm text-[var(--text-title)] outline-none"
                 :placeholder="$t('pages.admin.categoriesPage.nameRuPlaceholder')"
               />
             </label>
 
             <label class="space-y-2">
-              <span class="text-sm font-medium text-gray-300">
+              <span class="text-sm font-medium text-[var(--text-body)]">
                 {{ $t('common.nameEn') }}
               </span>
               <input
@@ -208,21 +208,21 @@ onMounted(loadCategory)
                 type="text"
                 :maxlength="CATEGORY_NAME_MAX_LENGTH"
                 required
-                class="h-12 w-full rounded-lg border border-dark-700 bg-dark-600 px-4 text-sm text-white outline-none"
+                class="h-12 w-full rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] px-4 text-sm text-[var(--text-title)] outline-none"
                 :placeholder="$t('pages.admin.categoriesPage.nameEnPlaceholder')"
               />
             </label>
           </div>
 
           <label class="mt-4 block space-y-2">
-            <span class="text-sm font-medium text-gray-300">
+            <span class="text-sm font-medium text-[var(--text-body)]">
               {{ $t('common.description') }}
             </span>
             <textarea
               v-model="description"
               rows="6"
               :maxlength="CATEGORY_DESCRIPTION_MAX_LENGTH"
-              class="w-full rounded-lg border border-dark-700 bg-dark-600 px-4 py-3 text-sm text-white outline-none"
+              class="w-full rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] px-4 py-3 text-sm text-[var(--text-title)] outline-none"
               :placeholder="$t('pages.admin.categoryCreate.descriptionPlaceholder')"
             />
           </label>
@@ -230,40 +230,40 @@ onMounted(loadCategory)
 
         <section
           v-if="!isSubcategory"
-          class="rounded-2xl border border-dark-700 bg-dark-600/30 p-4 lg:p-5"
+          class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.3)] p-4 lg:p-5"
         >
           <div class="mb-5 flex items-start justify-between gap-4">
             <div>
-              <h2 class="text-lg font-semibold text-white">
+              <h2 class="text-lg font-semibold text-[var(--text-title)]">
                 {{ $t('pages.admin.categoryCreate.mediaSection') }}
               </h2>
-              <p class="mt-1 text-sm text-gray-400">
+              <p class="mt-1 text-sm text-[var(--text-muted)]">
                 {{ $t('pages.admin.categoryCreate.mediaSectionHint') }}
               </p>
             </div>
-            <ImagePlus class="mt-1 h-5 w-5 text-blue-300" />
+            <ImagePlus class="mt-1 h-5 w-5 text-[var(--text-link)]" />
           </div>
 
           <div class="space-y-5">
             <div class="space-y-3">
               <div class="flex items-center justify-between gap-3">
-                <label class="text-sm font-medium text-gray-300">
+                <label class="text-sm font-medium text-[var(--text-body)]">
                   {{ $t('common.image') }}
-                  <span class="ml-1 text-xs text-red-400">*</span>
+                  <span class="ml-1 text-xs text-[var(--text-danger)]">*</span>
                 </label>
-                <span class="text-xs" :class="hasImage ? 'text-gray-400' : 'text-red-400'">
+                <span class="text-xs" :class="hasImage ? 'text-[var(--text-muted)]' : 'text-[var(--text-danger)]'">
                   {{ hasImage ? $t('common.selected') : $t('pages.admin.editCategory.imageRequired') }}
                 </span>
               </div>
 
               <div
                 v-if="existingImage"
-                class="relative overflow-hidden rounded-xl border border-dark-700 bg-dark-700/40"
+                class="relative overflow-hidden rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.4)]"
               >
                 <img :src="toAssetUrl(existingImage)" class="h-52 w-full object-cover" />
                 <button
                   type="button"
-                  class="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/65 text-white"
+                  class="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-[rgb(var(--palette-black)/0.65)] text-[var(--text-title)]"
                   @click="deleteImage"
                 >
                   <X class="h-4 w-4" />
@@ -278,13 +278,13 @@ onMounted(loadCategory)
             </div>
 
             <div class="space-y-3">
-              <label class="text-sm font-medium text-gray-300">
+              <label class="text-sm font-medium text-[var(--text-body)]">
                 {{ $t('common.banner') }}
               </label>
 
               <div
                 v-if="existingBanner"
-                class="overflow-hidden rounded-xl border border-dark-700 bg-dark-700/40"
+                class="overflow-hidden rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.4)]"
               >
                 <img :src="toAssetUrl(existingBanner)" class="h-44 w-full object-cover" />
               </div>
@@ -298,25 +298,25 @@ onMounted(loadCategory)
           </div>
         </section>
 
-        <section class="rounded-2xl border border-dark-700 bg-dark-600/30 p-4 lg:p-5">
+        <section class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.3)] p-4 lg:p-5">
           <div class="mb-5 flex items-start justify-between gap-4">
             <div>
-              <h2 class="text-lg font-semibold text-white">
+              <h2 class="text-lg font-semibold text-[var(--text-title)]">
                 {{ $t('pages.admin.categoryEdit.visibilitySection') }}
               </h2>
-              <p class="mt-1 text-sm text-gray-400">
+              <p class="mt-1 text-sm text-[var(--text-muted)]">
                 {{ $t('pages.admin.categoryEdit.visibilityHint') }}
               </p>
             </div>
-            <ShieldCheck class="mt-1 h-5 w-5 text-blue-300" />
+            <ShieldCheck class="mt-1 h-5 w-5 text-[var(--text-link)]" />
           </div>
 
-          <label class="flex items-center justify-between gap-4 rounded-xl border border-dark-700 bg-dark-700/40 px-4 py-3">
+          <label class="flex items-center justify-between gap-4 rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.4)] px-4 py-3">
             <div class="space-y-1">
-              <span class="block text-sm font-medium text-white">
+              <span class="block text-sm font-medium text-[var(--text-title)]">
                 {{ $t('common.isActive') }}
               </span>
-              <span class="block text-xs text-gray-400">
+              <span class="block text-xs text-[var(--text-muted)]">
                 {{ $t('pages.admin.categoryEdit.visibilityToggleHint') }}
               </span>
             </div>

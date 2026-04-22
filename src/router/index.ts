@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, createMemoryHistory } from "vue-router";
 import { useNavigationStore } from "@/stores/navigation";
 import { useUserStore } from "@/stores/user";
+import { buildAuthRedirectQuery, getAuthRedirectFromRoute } from "@/utils/authRedirect";
 
 const YANDEX_METRIKA_COUNTER_ID = 106828907;
 
@@ -328,16 +329,30 @@ export function createAppRouter(isSSR = false) {
     const user = userStore.user
 
     if (requiredAdmin) {
-      return user?.role === 'admin' ? true : '/not-access'
+      if (!user) {
+        return {
+          path: '/signin',
+          query: buildAuthRedirectQuery(to.fullPath),
+        }
+      }
+
+      return user.role === 'admin' ? true : '/not-access'
     }
 
     if (requiredPartner) {
+      if (!user) {
+        return {
+          path: '/signin',
+          query: buildAuthRedirectQuery(to.fullPath),
+        }
+      }
+
       // Admins always have access
-      if (user?.role === 'admin') {
+      if (user.role === 'admin') {
         return true
       }
       // Check if user is partner and has correct partner type
-      if (user?.role === 'partner') {
+      if (user.role === 'partner') {
         const actualPartnerType = getPartnerType(user)
         
         if (partnerType && actualPartnerType !== partnerType) {
@@ -351,11 +366,16 @@ export function createAppRouter(isSSR = false) {
     }
 
     if (requiredAuthorized) {
-      return user ? true : '/signin'
+      return user
+        ? true
+        : {
+          path: '/signin',
+          query: buildAuthRedirectQuery(to.fullPath),
+        }
     }
 
     if (requiredGuest) {
-      return user ? '/' : true
+      return user ? getAuthRedirectFromRoute(to) : true
     }
 
     return true

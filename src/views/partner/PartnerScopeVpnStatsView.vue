@@ -250,38 +250,38 @@ onMounted(() => {
 <template>
   <section class="w-full min-h-[calc(100vh-120px)] pb-10 pt-6">
     <div class="max-w-6xl mx-auto px-2 lg:px-0 flex flex-col gap-4">
-      <div class="rounded-2xl border border-dark-700 bg-dark-600 p-5">
-        <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Partner Dashboard</p>
-        <h1 class="mt-1 text-2xl font-semibold text-white">Scope VPN x Market</h1>
-        <p class="mt-2 text-sm text-gray-400">
+      <div class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] p-5">
+        <p class="text-xs uppercase tracking-[0.2em] text-[var(--text-muted)]">Partner Dashboard</p>
+        <h1 class="mt-1 text-2xl font-semibold text-[var(--text-title)]">Scope VPN x Market</h1>
+        <p class="mt-2 text-sm text-[var(--text-muted)]">
           Продажи, пробные периоды и выручка по интеграции Scope VPN.
         </p>
       </div>
 
-      <div v-if="isLoading" class="rounded-2xl border border-dark-700 bg-dark-600 p-10 flex justify-center">
+      <div v-if="isLoading" class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] p-10 flex justify-center">
         <Loader />
       </div>
 
       <div
         v-else-if="isError"
-        class="rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200"
+        class="rounded-2xl border border-[rgb(var(--palette-red-500)/0.4)] bg-[rgb(var(--palette-red-500)/0.1)] px-4 py-3 text-sm text-[var(--text-danger-soft)]"
       >
         Не удалось загрузить статистику. Попробуйте обновить страницу.
       </div>
 
       <template v-else>
-        <div class="rounded-2xl border border-dark-700 bg-dark-600 p-5">
+        <div class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] p-5">
           <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div class="max-w-2xl">
-              <h2 class="text-lg font-semibold text-white">Тарифная сетка Scope VPN</h2>
-              <p class="mt-2 text-sm leading-6 text-gray-400">
+              <h2 class="text-lg font-semibold text-[var(--text-title)]">Тарифная сетка Scope VPN</h2>
+              <p class="mt-2 text-sm leading-6 text-[var(--text-muted)]">
                 Цены настраиваются отдельно для каждого срока и количества устройств. Покупатель увидит итоговую цену сразу в конфигураторе.
               </p>
             </div>
 
             <button
               type="button"
-              class="inline-flex h-11 items-center justify-center rounded-xl border border-blue-500/30 bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+              class="inline-flex h-11 items-center justify-center rounded-xl border border-[rgb(var(--palette-blue-500)/0.3)] bg-[rgb(var(--palette-blue-600))] px-5 text-sm font-semibold text-[var(--text-title)] transition hover:bg-[rgb(var(--palette-blue-500))] disabled:cursor-not-allowed disabled:opacity-60"
               :disabled="isPricingLoading || isPricingSaving || !pricingDirty || !pricingValid"
               @click="savePricing"
             >
@@ -289,7 +289,7 @@ onMounted(() => {
             </button>
           </div>
 
-          <div v-if="isPricingLoading" class="mt-5 flex justify-center rounded-2xl border border-dark-700 bg-dark-700/40 p-8">
+          <div v-if="isPricingLoading" class="mt-5 flex justify-center rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.4)] p-8">
             <Loader />
           </div>
 
@@ -301,12 +301,12 @@ onMounted(() => {
                 type="button"
                 class="rounded-2xl border px-4 py-3 text-left transition"
                 :class="selectedPricingPeriod === period.months
-                  ? 'border-blue-400/50 bg-blue-500/15'
-                  : 'border-dark-700 bg-dark-700/40 hover:border-dark-500'"
+                  ? 'border-[rgb(var(--palette-blue-400)/0.5)] bg-[rgb(var(--palette-blue-500)/0.15)]'
+                  : 'border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.4)] hover:border-[rgb(var(--palette-dark-500))]'"
                 @click="selectedPricingPeriod = period.months"
               >
-                <p class="text-sm font-semibold text-white">{{ period.label }}</p>
-                <p class="mt-1 text-xs text-gray-400">{{ period.hint }}</p>
+                <p class="text-sm font-semibold text-[var(--text-title)]">{{ period.label }}</p>
+                <p class="mt-1 text-xs text-[var(--text-muted)]">{{ period.hint }}</p>
               </button>
             </div>
 
@@ -314,42 +314,42 @@ onMounted(() => {
               <label
                 v-for="row in pricingRows"
                 :key="`${selectedPricingPeriod}-${row.devices}`"
-                class="rounded-2xl border border-dark-700 bg-dark-700/40 p-3"
+                class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.4)] p-3"
               >
-                <span class="text-xs uppercase tracking-[0.16em] text-gray-500">
+                <span class="text-xs uppercase tracking-[0.16em] text-[var(--text-meta)]">
                   {{ row.devices }} устр.
                 </span>
-                <div class="mt-2 flex items-center rounded-xl border border-dark-600 bg-dark-800/70 px-3 focus-within:border-blue-400/60">
+                <div class="mt-2 flex items-center rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-800)/0.7)] px-3 focus-within:border-[rgb(var(--palette-blue-400)/0.6)]">
                   <input
                     v-model.number="pricingMatrix[selectedPricingPeriod][row.devices]"
                     type="number"
                     min="0"
                     max="1000000"
                     step="1"
-                    class="h-11 min-w-0 flex-1 bg-transparent text-sm font-semibold text-white outline-none placeholder:text-gray-600"
+                    class="h-11 min-w-0 flex-1 bg-[var(--transparent)] text-sm font-semibold text-[var(--text-title)] outline-none placeholder:text-[var(--text-meta)]"
                   />
-                  <span class="text-sm font-semibold text-gray-500">₽</span>
+                  <span class="text-sm font-semibold text-[var(--text-meta)]">₽</span>
                 </div>
               </label>
             </div>
           </div>
 
-          <p v-if="pricingError" class="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+          <p v-if="pricingError" class="mt-4 rounded-xl border border-[rgb(var(--palette-red-500)/0.3)] bg-[rgb(var(--palette-red-500)/0.1)] px-4 py-3 text-sm text-[var(--text-danger-soft)]">
             {{ pricingError }}
           </p>
-          <p v-else-if="pricingSuccess" class="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+          <p v-else-if="pricingSuccess" class="mt-4 rounded-xl border border-[rgb(var(--palette-emerald-500)/0.3)] bg-[rgb(var(--palette-emerald-500)/0.1)] px-4 py-3 text-sm text-[var(--text-success)]">
             {{ pricingSuccess }}
           </p>
-          <p v-else-if="!pricingValid" class="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          <p v-else-if="!pricingValid" class="mt-4 rounded-xl border border-[rgb(var(--palette-amber-500)/0.3)] bg-[rgb(var(--palette-amber-500)/0.1)] px-4 py-3 text-sm text-[var(--text-warning)]">
             Проверьте цены: допустимы значения от 0 до 1 000 000 ₽.
           </p>
         </div>
 
-        <div class="rounded-2xl border border-dark-700 bg-dark-600 p-5">
+        <div class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] p-5">
           <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div class="max-w-2xl">
-              <h2 class="text-lg font-semibold text-white">Сообщение при покупке VPN</h2>
-              <p class="mt-2 text-sm leading-6 text-gray-400">
+              <h2 class="text-lg font-semibold text-[var(--text-title)]">Сообщение при покупке VPN</h2>
+              <p class="mt-2 text-sm leading-6 text-[var(--text-muted)]">
                 Этот текст будет уходить покупателю в чат сделки вместе со ссылкой на подключение.
                 Русская версия показывается для `ru`, английская для `en`.
               </p>
@@ -357,7 +357,7 @@ onMounted(() => {
 
             <button
               type="button"
-              class="inline-flex h-11 items-center justify-center rounded-xl border border-blue-500/30 bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+              class="inline-flex h-11 items-center justify-center rounded-xl border border-[rgb(var(--palette-blue-500)/0.3)] bg-[rgb(var(--palette-blue-600))] px-5 text-sm font-semibold text-[var(--text-title)] transition hover:bg-[rgb(var(--palette-blue-500))] disabled:cursor-not-allowed disabled:opacity-60"
               :disabled="isSettingsLoading || isSettingsSaving || !messageSettingsDirty"
               @click="saveMessageSettings"
             >
@@ -365,36 +365,36 @@ onMounted(() => {
             </button>
           </div>
 
-          <div v-if="isSettingsLoading" class="mt-5 flex justify-center rounded-2xl border border-dark-700 bg-dark-700/40 p-8">
+          <div v-if="isSettingsLoading" class="mt-5 flex justify-center rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.4)] p-8">
             <Loader />
           </div>
 
           <div v-else class="mt-5 grid gap-4 lg:grid-cols-2">
             <label class="flex flex-col gap-2">
-              <span class="text-sm font-medium text-white">Русская версия</span>
+              <span class="text-sm font-medium text-[var(--text-title)]">Русская версия</span>
               <textarea
                 v-model="messageSettings.partner_message_ru"
-                class="min-h-[180px] rounded-2xl border border-dark-700 bg-dark-700/50 px-4 py-3 text-sm leading-6 text-gray-100 outline-none transition placeholder:text-gray-500 focus:border-dark-500"
+                class="min-h-[180px] rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.5)] px-4 py-3 text-sm leading-6 text-[var(--text-heading)] outline-none transition placeholder:text-[var(--text-meta)] focus:border-[rgb(var(--palette-dark-500))]"
                 placeholder="Например: Если появятся вопросы по подключению или скорости, напишите в этот чат."
                 maxlength="4000"
               />
             </label>
 
             <label class="flex flex-col gap-2">
-              <span class="text-sm font-medium text-white">English version</span>
+              <span class="text-sm font-medium text-[var(--text-title)]">English version</span>
               <textarea
                 v-model="messageSettings.partner_message_en"
-                class="min-h-[180px] rounded-2xl border border-dark-700 bg-dark-700/50 px-4 py-3 text-sm leading-6 text-gray-100 outline-none transition placeholder:text-gray-500 focus:border-dark-500"
+                class="min-h-[180px] rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.5)] px-4 py-3 text-sm leading-6 text-[var(--text-heading)] outline-none transition placeholder:text-[var(--text-meta)] focus:border-[rgb(var(--palette-dark-500))]"
                 placeholder="For example: If you need help with setup or connection quality, reply in this chat."
                 maxlength="4000"
               />
             </label>
           </div>
 
-          <p v-if="settingsError" class="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+          <p v-if="settingsError" class="mt-4 rounded-xl border border-[rgb(var(--palette-red-500)/0.3)] bg-[rgb(var(--palette-red-500)/0.1)] px-4 py-3 text-sm text-[var(--text-danger-soft)]">
             {{ settingsError }}
           </p>
-          <p v-else-if="settingsSuccess" class="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+          <p v-else-if="settingsSuccess" class="mt-4 rounded-xl border border-[rgb(var(--palette-emerald-500)/0.3)] bg-[rgb(var(--palette-emerald-500)/0.1)] px-4 py-3 text-sm text-[var(--text-success)]">
             {{ settingsSuccess }}
           </p>
         </div>
@@ -403,56 +403,56 @@ onMounted(() => {
           <div
             v-for="card in metricCards"
             :key="card.key"
-            class="rounded-2xl border border-dark-700 bg-dark-600 p-4 transition-colors hover:border-dark-500"
+            class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] p-4 transition-colors hover:border-[rgb(var(--palette-dark-500))]"
           >
-            <p class="text-xs text-gray-400">{{ card.label }}</p>
-            <p class="mt-2 text-xl font-semibold text-white">{{ card.value }}</p>
+            <p class="text-xs text-[var(--text-muted)]">{{ card.label }}</p>
+            <p class="mt-2 text-xl font-semibold text-[var(--text-title)]">{{ card.value }}</p>
           </div>
         </div>
 
         <div class="grid gap-4 lg:grid-cols-2">
-          <div class="rounded-2xl border border-dark-700 bg-dark-600 p-4">
-            <h2 class="mb-3 text-lg font-semibold text-white">Выдачи по периодам</h2>
+          <div class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] p-4">
+            <h2 class="mb-3 text-lg font-semibold text-[var(--text-title)]">Выдачи по периодам</h2>
             <div v-if="planRows.length" class="overflow-x-auto">
               <table class="w-full text-sm">
                 <thead>
-                  <tr class="border-b border-dark-600 text-left text-gray-400">
+                  <tr class="border-b border-[rgb(var(--palette-dark-600))] text-left text-[var(--text-muted)]">
                     <th class="py-2 pr-3 font-medium">Период</th>
                     <th class="py-2 pr-3 font-medium">Количество</th>
                     <th class="py-2 font-medium">Сумма</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="row in planRows" :key="row.plan" class="border-b border-dark-700 last:border-b-0">
-                    <td class="py-2 pr-3 text-gray-200">{{ row.label }}</td>
-                    <td class="py-2 pr-3 font-medium text-white">{{ formatNumber(row.count) }}</td>
-                    <td class="py-2 font-medium text-white">{{ formatCurrency(row.revenue) }}</td>
+                  <tr v-for="row in planRows" :key="row.plan" class="border-b border-[rgb(var(--palette-dark-700))] last:border-b-0">
+                    <td class="py-2 pr-3 text-[var(--text-body-strong)]">{{ row.label }}</td>
+                    <td class="py-2 pr-3 font-medium text-[var(--text-title)]">{{ formatNumber(row.count) }}</td>
+                    <td class="py-2 font-medium text-[var(--text-title)]">{{ formatCurrency(row.revenue) }}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
-            <p v-else class="text-sm text-gray-400">Пока нет выдач.</p>
+            <p v-else class="text-sm text-[var(--text-muted)]">Пока нет выдач.</p>
           </div>
 
-          <div class="rounded-2xl border border-dark-700 bg-dark-600 p-4">
-            <h2 class="mb-3 text-lg font-semibold text-white">Статусы</h2>
+          <div class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] p-4">
+            <h2 class="mb-3 text-lg font-semibold text-[var(--text-title)]">Статусы</h2>
             <div v-if="statusRows.length" class="overflow-x-auto">
               <table class="w-full text-sm">
                 <thead>
-                  <tr class="border-b border-dark-600 text-left text-gray-400">
+                  <tr class="border-b border-[rgb(var(--palette-dark-600))] text-left text-[var(--text-muted)]">
                     <th class="py-2 pr-3 font-medium">Статус</th>
                     <th class="py-2 font-medium">Количество</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="row in statusRows" :key="row.status" class="border-b border-dark-700 last:border-b-0">
-                    <td class="py-2 pr-3 text-gray-200">{{ row.label }}</td>
-                    <td class="py-2 font-medium text-white">{{ formatNumber(row.count) }}</td>
+                  <tr v-for="row in statusRows" :key="row.status" class="border-b border-[rgb(var(--palette-dark-700))] last:border-b-0">
+                    <td class="py-2 pr-3 text-[var(--text-body-strong)]">{{ row.label }}</td>
+                    <td class="py-2 font-medium text-[var(--text-title)]">{{ formatNumber(row.count) }}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
-            <p v-else class="text-sm text-gray-400">Пока нет статусов.</p>
+            <p v-else class="text-sm text-[var(--text-muted)]">Пока нет статусов.</p>
           </div>
         </div>
       </template>

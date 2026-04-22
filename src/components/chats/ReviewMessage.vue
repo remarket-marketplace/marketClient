@@ -41,13 +41,13 @@ function handleViewProduct() {
 
 <template>
   <div class="my-2 flex w-full justify-center">
-    <div class="message-compose-shell mx-auto flex w-full max-w-2xl min-w-0 flex-col overflow-hidden rounded-[26px] border border-white/10 bg-background/85 px-4 py-3 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70">
-      <div class="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-white/8 pb-2.5">
+    <div class="message-compose-shell mx-auto flex w-full max-w-2xl min-w-0 flex-col overflow-hidden rounded-[26px] border border-[rgb(var(--palette-white)/0.1)] bg-background/85 px-4 py-3 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70">
+      <div class="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[rgb(var(--palette-white)/0.08)] pb-2.5">
         <div class="min-w-0">
-          <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-300/90">
+          <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-[rgb(var(--text-link-rgb)/0.9)]">
             {{ $t('pages.chats.newReview') }}
           </p>
-          <p class="mt-1 text-sm font-medium text-white break-words [overflow-wrap:anywhere]">
+          <p class="mt-1 text-sm font-medium text-[var(--text-title)] break-words [overflow-wrap:anywhere]">
             {{ $t('pages.chats.buyerLeftReview') }}
           </p>
         </div>
@@ -57,7 +57,7 @@ function handleViewProduct() {
         <div class="flex items-start gap-3">
           <button
             type="button"
-            class="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl border border-dark-600 bg-dark-700"
+            class="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700))]"
             @click="handleViewProduct"
           >
             <img
@@ -74,21 +74,21 @@ function handleViewProduct() {
               <div class="min-w-0 flex-1">
                 <button
                   type="button"
-                  class="mt-1 block min-w-0 text-left text-sm font-semibold text-white transition hover:text-blue-200"
+                  class="mt-1 block min-w-0 text-left text-sm font-semibold text-[var(--text-title)] transition hover:text-[var(--text-accent)]"
                   @click="handleViewProduct"
                 >
                   <span class="line-clamp-2">{{ message.product.title }}</span>
                 </button>
               </div>
 
-              <p class="text-sm font-semibold text-emerald-300">
+              <p class="text-sm font-semibold text-[var(--text-success)]">
                 {{ formatCurrencyAmount(message.product.price) }}
               </p>
             </div>
           </div>
         </div>
 
-        <div class="border-t border-white/8"></div>
+        <div class="border-t border-[rgb(var(--palette-white)/0.08)]"></div>
 
         <div>
         <div class="flex items-center gap-1">
@@ -96,7 +96,7 @@ function handleViewProduct() {
             v-for="(isActive, index) in reviewStars"
             :key="index"
             class="text-base"
-            :class="isActive ? 'text-blue-500' : 'text-white/15'"
+            :class="isActive ? 'text-[var(--text-link)]' : 'text-[rgb(var(--text-title-rgb)/0.15)]'"
           >
             ★
           </span>
@@ -104,12 +104,12 @@ function handleViewProduct() {
 
         <p
           class="mt-2 text-sm leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere]"
-          :class="message.review.body ? 'text-gray-200' : 'text-gray-400'"
+          :class="message.review.body ? 'text-[var(--text-body-strong)]' : 'text-[var(--text-muted)]'"
         >
           {{ message.review.body || $t('pages.chats.withoutReviewText') }}
         </p>
 
-        <div v-if="timelineTimestamp" class="mt-3 flex items-center justify-end text-xs text-gray-300">
+        <div v-if="timelineTimestamp" class="mt-3 flex items-center justify-end text-xs text-[var(--text-body)]">
           <span>{{ timelineTimestamp }}</span>
         </div>
         </div>

@@ -21,12 +21,14 @@ import NotificationsMenu from '@/components/layout/NotificationsMenu.vue'
 import MobileHeaderSettingsMenu from '@/components/layout/MobileHeaderSettingsMenu.vue'
 import type { FunctionalComponent } from 'vue'
 import type { LucideProps } from 'lucide-vue-next'
+import type { RouteLocationRaw } from 'vue-router'
+import { buildAuthRedirectQuery } from '@/utils/authRedirect'
 
 interface NavItem {
   id: string;
   title: string;
   icon: FunctionalComponent<LucideProps, {}, any, {}>;
-  to: string;
+  to: RouteLocationRaw;
   sell?: boolean;
   admin?: boolean;
   partner?: boolean;
@@ -42,6 +44,10 @@ const HOME_STEAM_TOPUP_ENABLED = import.meta.env.VITE_STEAM_TOPUP_ENABLED !== 'f
 const isDesktop = ref(true)
 const { user } = storeToRefs(store)
 const { unreadTotal } = storeToRefs(chatStore)
+const signInFromCurrentLocation = computed(() => ({
+  path: '/signin',
+  query: buildAuthRedirectQuery(route.fullPath),
+}))
 
 const getPartnerType = () => {
   if (user.value?.partner_type) return user.value.partner_type
@@ -52,8 +58,17 @@ function checkDesktop() {
   isDesktop.value = window.innerWidth >= 768
 }
 
+function getNavItemPath(item: NavItem): string {
+  if (typeof item.to === 'string') {
+    return item.to
+  }
+
+  return typeof item.to.path === 'string' ? item.to.path : ''
+}
+
 const isActiveRoute = (item: NavItem) => {
   const currentPath = route.path
+  const itemPath = getNavItemPath(item)
 
   // If we are on the authorization page, do not highlight menu items
   if (currentPath === '/signin' || currentPath === '/signup') {
@@ -61,40 +76,40 @@ const isActiveRoute = (item: NavItem) => {
   }
 
   // For the home page - exact match
-  if (item.to === '/') {
+  if (itemPath === '/') {
     return currentPath === '/'
   }
 
   // For chats - starts with /chats
-  if (item.to === '/chats') {
+  if (itemPath === '/chats') {
     return currentPath.startsWith('/chats')
   }
 
   // For creating a product - exact match
-  if (item.to === '/product/create') {
+  if (itemPath === '/product/create') {
     return currentPath === '/product/create'
   }
 
   // For profile - starts with /user
-  if (item.to.startsWith('/user')) {
+  if (itemPath.startsWith('/user')) {
     return currentPath.startsWith('/user')
   }
 
   // For product view - starts with /product (but not creation)
-  if (item.to.startsWith('/product/') && item.to !== '/product/create') {
+  if (itemPath.startsWith('/product/') && itemPath !== '/product/create') {
     return currentPath.startsWith('/product/') && currentPath !== '/product/create'
   }
 
   // For admin - starts with /admin
-  if (item.to === '/admin') {
+  if (itemPath === '/admin') {
     return currentPath.startsWith('/admin')
   }
 
-  if (item.to.startsWith('/partner/')) {
+  if (itemPath.startsWith('/partner/')) {
     return currentPath.startsWith('/partner/')
   }
 
-  return currentPath === item.to
+  return currentPath === itemPath
 }
 
 // For mobile version, use the same logic
@@ -119,20 +134,20 @@ const navItems = computed(() => {
       id: 'sell',
       title: t('navigation.market.sell'),
       icon: PlusCircle,
-      to: user && user.value?.username ? '/product/create' : '/signin',
+      to: '/product/create',
       sell: true
     },
     {
       id: 'chats',
       title: t('navigation.market.chats'),
       icon: MessageCircle,
-      to: user && user.value?.username ? '/chats' : '/signin',
+      to: '/chats',
     },
     {
       id: 'profile',
       title: user && user.value?.username ? t('navigation.market.profile') : t('navigation.market.login'),
       icon: User,
-      to: user && user.value?.username ? `/user/${user.value.username}` : '/signin',
+      to: user && user.value?.username ? `/user/${user.value.username}` : signInFromCurrentLocation.value,
     },
   ]
 
@@ -175,20 +190,20 @@ const mobileNavItems = computed(() => {
       id: 'sell',
       title: t('navigation.market.sell'),
       icon: PlusCircle,
-      to: user && user.value?.username ? '/product/create' : '/signin',
+      to: '/product/create',
       sell: true
     },
     {
       id: 'chats',
       title: t('navigation.market.chats'),
       icon: MessageCircle,
-      to: user && user.value?.username ? '/chats' : '/signin',
+      to: '/chats',
     },
     {
       id: 'profile',
       title: user && user.value?.username ? t('navigation.market.profile') : t('navigation.market.login'),
       icon: User,
-      to: user && user.value?.username ? `/user/${user.value.username}` : '/signin',
+      to: user && user.value?.username ? `/user/${user.value.username}` : signInFromCurrentLocation.value,
     },
   ]
 
@@ -244,7 +259,10 @@ const walletTitle = computed(() =>
 
 function goToWallet() {
   if (!user.value) {
-    router.push('/signin')
+    router.push({
+      path: '/signin',
+      query: buildAuthRedirectQuery('/wallet'),
+    })
     return
   }
   router.push('/wallet')
@@ -277,11 +295,11 @@ const mobileNavGridStyle = computed(() => ({
             <button
               v-if="HOME_STEAM_TOPUP_ENABLED"
               type="button"
-              class="inline-flex h-9 min-w-0 max-w-[7.75rem] shrink items-center gap-1 rounded-full border border-gray-700 bg-transparent pl-2 pr-2 text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white md:hidden"
+              class="inline-flex h-9 min-w-0 max-w-[7.75rem] shrink items-center gap-1 rounded-full border border-[var(--nav-chip-border)] bg-[var(--transparent)] pl-2 pr-2 text-[var(--body-copy-strong)] transition-colors duration-200 hover:border-[var(--nav-chip-hover-border)] hover:text-[var(--text-primary-strong)] md:hidden"
               :title="t('pages.index.steamTopUp.navLabel')"
               @click="goToSteamTopUp"
             >
-              <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-gray-700 text-gray-300">
+              <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--nav-chip-border)] text-[var(--text-secondary)]">
                 <Icon icon="mdi:steam" class="h-3.5 w-3.5" />
               </span>
               <span class="min-w-0 flex-1 truncate text-left text-[10px] font-medium leading-none sm:text-[11px]">
@@ -291,11 +309,11 @@ const mobileNavGridStyle = computed(() => ({
             <button
               v-if="HOME_STEAM_TOPUP_ENABLED"
               type="button"
-              class="hidden h-9 min-w-0 max-w-[9.5rem] shrink items-center gap-1.5 rounded-full border border-gray-700 bg-transparent px-2.5 text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white lg:max-w-[8.75rem] xl:max-w-[10rem] min-[2000px]:max-w-none min-[2000px]:px-3 md:inline-flex"
+              class="hidden h-9 min-w-0 max-w-[9.5rem] shrink items-center gap-1.5 rounded-full border border-[var(--nav-chip-border)] bg-[var(--transparent)] px-2.5 text-[var(--body-copy-strong)] transition-colors duration-200 hover:border-[var(--nav-chip-hover-border)] hover:text-[var(--text-primary-strong)] lg:max-w-[8.75rem] xl:max-w-[10rem] min-[2000px]:max-w-none min-[2000px]:px-3 md:inline-flex"
               :title="t('pages.index.steamTopUp.navLabel')"
               @click="goToSteamTopUp"
             >
-              <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-gray-700 text-gray-300 transition-colors duration-200 lg:h-5 lg:w-5 xl:h-6 xl:w-6">
+              <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--nav-chip-border)] text-[var(--text-secondary)] transition-colors duration-200 lg:h-5 lg:w-5 xl:h-6 xl:w-6">
                 <Icon icon="mdi:steam" class="h-4 w-4" />
               </span>
               <span class="min-w-0 truncate text-xs font-medium leading-none lg:text-[13px] xl:text-sm">
@@ -307,55 +325,55 @@ const mobileNavGridStyle = computed(() => ({
           <div class="flex min-w-0 items-center gap-2 md:gap-3">
             <nav class="hidden items-center gap-6 md:flex">
               <router-link v-for="item in primaryNavItems" :key="item.id" :to="item.to"
-                class="flex items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"
+                class="flex items-center gap-1 text-sm text-mainText transition-all duration-300 hover:text-[var(--nav-link-hover)] relative group"
                 :class="{
-                  'text-white': isActiveRoute(item),
-                  'text-gray-400': !isActiveRoute(item)
+                  'text-[var(--nav-link-active)]': isActiveRoute(item),
+                  'text-[var(--nav-link-muted)]': !isActiveRoute(item)
                 }">
                 <div class="relative">
                   <component :is="item.icon" :class="[
                     item.sell ? 'text-2xl' : 'text-xl',
-                    item.admin ? 'text-purple-400' : '',
-                    item.partner ? 'text-cyan-300' : '',
-                    isActiveRoute(item) ? 'text-white' : 'text-gray-400',
-                    'transition-colors duration-300 group-hover:text-white'
+                    item.admin ? 'text-[var(--nav-admin-text)]' : '',
+                    item.partner ? 'text-[var(--nav-partner-text)]' : '',
+                    isActiveRoute(item) ? 'text-[var(--nav-link-active)]' : 'text-[var(--nav-link-muted)]',
+                    'transition-colors duration-300 group-hover:text-[var(--nav-link-active)]'
                   ]" :size="item.sell ? 24 : 20" stroke-width="1.5" />
                   <span
                     v-if="item.id === 'chats' && unreadTotal > 0"
-                    class="absolute -top-1 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-[10px] text-white font-semibold flex items-center justify-center shadow-lg"
+                    class="absolute -top-1 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--nav-notification-bg)] text-[10px] text-[var(--text-primary-strong)] font-semibold flex items-center justify-center shadow-lg"
                   >
                     {{ unreadTotal > 99 ? '99+' : unreadTotal }}
                   </span>
                 </div>
-                <span class="ml-1 transition-colors duration-300 group-hover:text-white"
-                  :class="{ 'text-purple-300': item.admin, 'text-cyan-200': item.partner }">
+                <span class="ml-1 transition-colors duration-300 group-hover:text-[var(--nav-link-active)]"
+                  :class="{ 'text-[var(--nav-admin-text-soft)]': item.admin, 'text-[var(--nav-partner-text-soft)]': item.partner }">
                   {{ item.title }}
                 </span>
               </router-link>
 
               <router-link v-for="item in roleNavItems" :key="item.id" :to="item.to"
-                class="flex items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"
+                class="flex items-center gap-1 text-sm text-mainText transition-all duration-300 hover:text-[var(--nav-link-hover)] relative group"
                 :class="{
-                  'text-white': isActiveRoute(item),
-                  'text-gray-400': !isActiveRoute(item)
+                  'text-[var(--nav-link-active)]': isActiveRoute(item),
+                  'text-[var(--nav-link-muted)]': !isActiveRoute(item)
                 }">
                 <div class="relative">
                   <component :is="item.icon" :class="[
                     item.sell ? 'text-2xl' : 'text-xl',
-                    item.admin ? 'text-purple-400' : '',
-                    item.partner ? 'text-cyan-300' : '',
-                    isActiveRoute(item) ? 'text-white' : 'text-gray-400',
-                    'transition-colors duration-300 group-hover:text-white'
+                    item.admin ? 'text-[var(--nav-admin-text)]' : '',
+                    item.partner ? 'text-[var(--nav-partner-text)]' : '',
+                    isActiveRoute(item) ? 'text-[var(--nav-link-active)]' : 'text-[var(--nav-link-muted)]',
+                    'transition-colors duration-300 group-hover:text-[var(--nav-link-active)]'
                   ]" :size="item.sell ? 24 : 20" stroke-width="1.5" />
                   <span
                     v-if="item.id === 'chats' && unreadTotal > 0"
-                    class="absolute -top-1 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-[10px] text-white font-semibold flex items-center justify-center shadow-lg"
+                    class="absolute -top-1 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--nav-notification-bg)] text-[10px] text-[var(--text-primary-strong)] font-semibold flex items-center justify-center shadow-lg"
                   >
                     {{ unreadTotal > 99 ? '99+' : unreadTotal }}
                   </span>
                 </div>
-                <span class="ml-1 transition-colors duration-300 group-hover:text-white"
-                  :class="{ 'text-purple-300': item.admin, 'text-cyan-200': item.partner }">
+                <span class="ml-1 transition-colors duration-300 group-hover:text-[var(--nav-link-active)]"
+                  :class="{ 'text-[var(--nav-admin-text-soft)]': item.admin, 'text-[var(--nav-partner-text-soft)]': item.partner }">
                   {{ item.title }}
                 </span>
               </router-link>
@@ -363,22 +381,22 @@ const mobileNavGridStyle = computed(() => ({
               <button
                 v-if="user && user.role !== 'admin'"
                 type="button"
-                class="inline-flex h-9 items-center gap-1.5 rounded-full border border-gray-700 bg-transparent px-2.5 text-xs text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white focus:outline-none"
+                class="inline-flex h-9 items-center gap-1.5 rounded-full border border-[var(--nav-chip-border)] bg-[var(--transparent)] px-2.5 text-xs text-[var(--body-copy-strong)] transition-colors duration-200 hover:border-[var(--nav-chip-hover-border)] hover:text-[var(--text-primary-strong)] focus:outline-none"
                 :title="walletTitle"
                 @click="goToWallet"
               >
-                <Wallet class="h-3.5 w-3.5 text-blue-400" />
+                <Wallet class="h-3.5 w-3.5 text-[var(--nav-wallet-icon)]" />
                 <span class="font-medium">{{ walletBalanceLabel }}</span>
               </button>
 
               <button
                 v-if="user && user.role === 'admin'"
                 type="button"
-                class="inline-flex h-9 items-center gap-1.5 rounded-full border border-gray-700 bg-transparent px-2.5 text-xs text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white focus:outline-none"
+                class="inline-flex h-9 items-center gap-1.5 rounded-full border border-[var(--nav-chip-border)] bg-[var(--transparent)] px-2.5 text-xs text-[var(--body-copy-strong)] transition-colors duration-200 hover:border-[var(--nav-chip-hover-border)] hover:text-[var(--text-primary-strong)] focus:outline-none"
                 :title="walletTitle"
                 @click="goToWallet"
               >
-                <Wallet class="h-3.5 w-3.5 text-blue-400" />
+                <Wallet class="h-3.5 w-3.5 text-[var(--nav-wallet-icon)]" />
                 <span class="font-medium">{{ walletBalanceLabel }}</span>
               </button>
             </nav>
@@ -386,11 +404,11 @@ const mobileNavGridStyle = computed(() => ({
             <button
               v-if="user"
               type="button"
-              class="inline-flex h-9 items-center gap-1 rounded-full border border-gray-700 bg-transparent px-2 text-[10px] text-gray-200 transition-colors duration-200 hover:border-gray-600 hover:text-white focus:outline-none md:hidden"
+              class="inline-flex h-9 items-center gap-1 rounded-full border border-[var(--nav-chip-border)] bg-[var(--transparent)] px-2 text-[10px] text-[var(--body-copy-strong)] transition-colors duration-200 hover:border-[var(--nav-chip-hover-border)] hover:text-[var(--text-primary-strong)] focus:outline-none md:hidden"
               :title="walletTitle"
               @click="goToWallet"
             >
-              <Wallet class="h-3.5 w-3.5 text-blue-400" />
+              <Wallet class="h-3.5 w-3.5 text-[var(--nav-wallet-icon)]" />
               <span class="block max-w-[64px] truncate font-medium">{{ walletBalanceCompactLabel }}</span>
             </button>
             <MobileHeaderSettingsMenu />
@@ -400,7 +418,7 @@ const mobileNavGridStyle = computed(() => ({
       </div>
       <div
         aria-hidden="true"
-        class="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-dark-700/25 via-dark-700/95 to-dark-700/25"
+        class="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-[rgb(var(--palette-dark-700)/0.25)] via-[rgb(var(--palette-dark-700)/0.95)] to-[rgb(var(--palette-dark-700)/0.25)]"
       />
     </header>
 
@@ -414,33 +432,33 @@ const mobileNavGridStyle = computed(() => ({
         </div>
       </main>
   
-      <nav class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-30 h-14 border-t border-gray-700 md:hidden">
+      <nav class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-30 h-14 border-t border-[var(--mobile-nav-border)] md:hidden">
         <div class="mx-auto grid h-full w-full items-center" :style="mobileNavGridStyle">
           <router-link v-for="item in mobileNavItems" :key="item.id" :to="item.to"
             class="relative flex min-w-0 flex-col items-center justify-center px-0.5 transition-all duration-300 group" :class="{
               'opacity-100': isActiveRouteMobile(item),
               'opacity-70': !isActiveRouteMobile(item)
             }">
-            <div class="icon-box flex items-center justify-center transition-colors duration-300 group-hover:text-white relative"
+            <div class="icon-box flex items-center justify-center transition-colors duration-300 group-hover:text-[var(--nav-link-active)] relative"
               :class="[
-                isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400',
-                item.admin ? 'text-purple-400' : '',
-                item.partner ? 'text-cyan-300' : ''
+                isActiveRouteMobile(item) ? 'text-[var(--nav-link-active)]' : 'text-[var(--nav-link-muted)]',
+                item.admin ? 'text-[var(--nav-admin-text)]' : '',
+                item.partner ? 'text-[var(--nav-partner-text)]' : ''
               ]">
               <component :is="item.icon" :size="22" stroke-width="1.5" />
               <span
                 v-if="item.id === 'chats' && unreadTotal > 0"
-                class="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-[10px] text-white font-semibold flex items-center justify-center shadow-md"
+                class="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--nav-notification-bg)] text-[10px] text-[var(--text-primary-strong)] font-semibold flex items-center justify-center shadow-md"
               >
                 {{ unreadTotal > 99 ? '99+' : unreadTotal }}
               </span>
             </div>
             <span
-              class="menu-label mt-1 max-w-full truncate px-0.5 text-center text-[10px] font-light leading-none transition-colors duration-300 group-hover:text-white"
+              class="menu-label mt-1 max-w-full truncate px-0.5 text-center text-[10px] font-light leading-none transition-colors duration-300 group-hover:text-[var(--nav-link-active)]"
               :class="[
-                isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400',
-                item.admin ? 'text-purple-300' : '',
-                item.partner ? 'text-cyan-200' : ''
+                isActiveRouteMobile(item) ? 'text-[var(--nav-link-active)]' : 'text-[var(--nav-link-muted)]',
+                item.admin ? 'text-[var(--nav-admin-text-soft)]' : '',
+                item.partner ? 'text-[var(--nav-partner-text-soft)]' : ''
               ]">
               {{ item.title }}
             </span>

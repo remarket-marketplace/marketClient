@@ -140,7 +140,7 @@ watch(
           <h1 class="text-lg sm:text-2xl font-bold text-mainText">
             {{ $t('pages.admin.feedbackPage.title') }}
           </h1>
-          <p class="text-xs sm:text-sm text-gray-400">
+          <p class="text-xs sm:text-sm text-[var(--text-muted)]">
             {{ $t('pages.admin.feedbackPage.subtitle') }}
           </p>
         </div>
@@ -154,19 +154,19 @@ watch(
 
     <div class="flex-1 overflow-hidden">
       <div v-if="isLoading" class="flex items-center justify-center h-32">
-        <Loader2 class="h-5 w-5 sm:h-8 sm:w-8 animate-spin text-blue-500" />
-        <span class="ml-2 text-sm sm:text-lg text-gray-400">{{ $t('common.loading') }}</span>
+        <Loader2 class="h-5 w-5 sm:h-8 sm:w-8 animate-spin text-[var(--text-link)]" />
+        <span class="ml-2 text-sm sm:text-lg text-[var(--text-muted)]">{{ $t('common.loading') }}</span>
       </div>
 
       <div v-else-if="errorMessage" class="flex items-center justify-center h-32">
-        <p class="text-red-400 text-sm sm:text-base">{{ errorMessage }}</p>
+        <p class="text-[var(--text-danger)] text-sm sm:text-base">{{ errorMessage }}</p>
       </div>
 
       <div v-else-if="feedbacks.length === 0" class="h-full w-full flex items-center justify-center">
         <div class="text-center px-4">
-          <MessageSquareText class="h-8 w-8 text-gray-500 mx-auto mb-3" />
+          <MessageSquareText class="h-8 w-8 text-[var(--text-meta)] mx-auto mb-3" />
           <p class="text-mainText font-semibold">{{ $t('pages.admin.feedbackPage.emptyTitle') }}</p>
-          <p class="text-sm text-gray-400 mt-2">{{ $t('pages.admin.feedbackPage.emptyHint') }}</p>
+          <p class="text-sm text-[var(--text-muted)] mt-2">{{ $t('pages.admin.feedbackPage.emptyHint') }}</p>
         </div>
       </div>
 
@@ -181,30 +181,30 @@ watch(
               <UserAvatar
                 :avatar-url="feedback.user.avatar_url"
                 :alt="feedback.user.username"
-                class="h-10 w-10 rounded-full object-cover border border-dark-500"
+                class="h-10 w-10 rounded-full object-cover border border-[rgb(var(--palette-dark-500))]"
               />
 
               <div class="min-w-0">
                 <button
                   type="button"
-                  class="text-sm sm:text-base font-semibold text-mainText hover:text-blue-400 truncate max-w-[220px] text-left"
+                  class="text-sm sm:text-base font-semibold text-mainText hover:text-[var(--text-link)] truncate max-w-[220px] text-left"
                   @click="openProfile(feedback.user.username)"
                 >
                   {{ feedback.user.username }}
                 </button>
-                <p class="text-xs text-gray-500 mt-0.5">
+                <p class="text-xs text-[var(--text-meta)] mt-0.5">
                   {{ formatDate(feedback.created_at) }}
                 </p>
               </div>
             </div>
 
-            <div class="inline-flex items-center gap-1 text-xs text-gray-400">
+            <div class="inline-flex items-center gap-1 text-xs text-[var(--text-muted)]">
               <Images class="h-3.5 w-3.5" />
               <span>{{ $t('pages.admin.feedbackPage.imagesCount', { count: feedback.images_count }) }}</span>
             </div>
           </div>
 
-          <p class="mt-3 text-sm text-gray-200 whitespace-pre-wrap break-words line-clamp-4">
+          <p class="mt-3 text-sm text-[var(--text-body-strong)] whitespace-pre-wrap break-words line-clamp-4">
             {{ feedback.text_preview }}
           </p>
 
@@ -238,7 +238,7 @@ watch(
         <div ref="sentinelRef" class="h-1"></div>
 
         <div v-if="isLoadingMore" class="flex justify-center py-2">
-          <Loader2 class="h-5 w-5 animate-spin text-blue-500" />
+          <Loader2 class="h-5 w-5 animate-spin text-[var(--text-link)]" />
         </div>
       </div>
     </div>

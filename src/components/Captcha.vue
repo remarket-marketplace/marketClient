@@ -4,17 +4,17 @@
 
     <div
       v-if="isLoading"
-      class="absolute inset-0 flex items-center justify-center gap-2 rounded-xl border border-dark-700 bg-dark-600/70 text-sm text-gray-300 backdrop-blur-sm"
+      class="absolute inset-0 flex items-center justify-center gap-2 rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.7)] text-sm text-[var(--text-body)] backdrop-blur-sm"
       role="status"
       aria-live="polite"
     >
-      <span class="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
+      <span class="h-4 w-4 animate-spin rounded-full border-2 border-[rgb(var(--palette-gray-400))] border-t-transparent" />
       <span>{{ t('common.captchaLoading') }}</span>
     </div>
 
     <div
       v-else-if="hasError"
-      class="absolute inset-0 flex items-center justify-center rounded-xl border border-red-500/30 bg-red-500/10 px-3 text-center text-xs text-red-200"
+      class="absolute inset-0 flex items-center justify-center rounded-xl border border-[rgb(var(--palette-red-500)/0.3)] bg-[rgb(var(--palette-red-500)/0.1)] px-3 text-center text-xs text-[var(--text-danger-soft)]"
       role="alert"
     >
       {{ t('common.captchaLoadFailed') }}
