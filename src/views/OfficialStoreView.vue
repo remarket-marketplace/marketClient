@@ -327,9 +327,9 @@ onMounted(async () => {
             v-for="rootCategory in rootCategories"
             :key="`official-root-category-${rootCategory.id}`"
             type="button"
-            class="inline-flex shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-medium transition"
+            class="official-category-pill inline-flex shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-medium transition"
             :class="selectedRootCategory?.id === rootCategory.id
-              ? 'border-[rgb(var(--palette-blue-400)/0.55)] bg-[rgb(var(--palette-blue-600)/0.25)] text-[var(--text-title)]'
+              ? 'official-category-pill--active border-[rgb(var(--palette-blue-400)/0.55)] bg-[rgb(var(--palette-blue-600)/0.25)] text-[var(--text-title)]'
               : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.35)] text-[var(--text-body)] hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-700)/0.55)] hover:text-[var(--text-title)]'"
             @click="onRootCategoryClick(rootCategory)"
           >
@@ -422,6 +422,20 @@ onMounted(async () => {
   bottom: -1px;
   height: 92px;
   background: var(--official-page-hero-bottom-fade);
+}
+
+.official-category-pill {
+  transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease, color 180ms ease;
+}
+
+.official-category-pill:hover,
+.official-category-pill:focus-visible {
+  border-color: rgb(var(--palette-blue-400) / 0.58);
+  box-shadow: inset 0 0 0 1px rgb(var(--palette-blue-400) / 0.2), inset 0 0 14px rgb(var(--palette-blue-500) / 0.2);
+}
+
+.official-category-pill--active {
+  box-shadow: inset 0 0 0 1px rgb(var(--palette-blue-400) / 0.2), inset 0 0 12px rgb(var(--palette-blue-500) / 0.16);
 }
 
 .official-products-grid {

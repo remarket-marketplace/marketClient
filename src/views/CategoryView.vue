@@ -954,7 +954,7 @@ onBeforeUnmount(() => {
             v-for="subcategory in subcategories"
             :key="subcategory.id"
             type="button"
-            class="inline-flex rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2 text-sm text-[var(--text-title)] transition hover:bg-[rgb(var(--palette-dark-700)/0.5)]"
+            class="subcategory-pill inline-flex rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2 text-sm text-[var(--text-title)] transition hover:bg-[rgb(var(--palette-dark-700)/0.5)]"
             @click="onSubcategoryClick(subcategory)"
           >
             <span>{{ subcategory.name }}</span>
@@ -1378,6 +1378,16 @@ onBeforeUnmount(() => {
 
 .category-hero-title {
   filter: drop-shadow(var(--category-hero-title-shadow));
+}
+
+.subcategory-pill {
+  transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+.subcategory-pill:hover,
+.subcategory-pill:focus-visible {
+  border-color: rgb(var(--palette-blue-400) / 0.58);
+  box-shadow: inset 0 0 0 1px rgb(var(--palette-blue-400) / 0.2), inset 0 0 14px rgb(var(--palette-blue-500) / 0.2);
 }
 
 .products-grid {
