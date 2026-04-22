@@ -358,7 +358,7 @@ const shouldRenderAdminMessage = computed(() => {
     </div>
 	</div>
 
-		<div v-else-if="textMessage != null" class="min-w-0 max-w-[70%] rounded-xl py-2 pl-2 pr-1 text-sm break-words [overflow-wrap:anywhere] md:max-w-[40%]" :class="[
+		<div v-else-if="textMessage != null" class="min-w-0 max-w-[82%] rounded-2xl px-3 py-2 text-sm leading-[1.42] break-words [overflow-wrap:anywhere] sm:max-w-[74%] md:max-w-[34rem]" :class="[
     bubbleRoleClass,
     textMessage.sender_id === user?.id ? 'self-end' : 'self-start'
 	]">
@@ -381,11 +381,11 @@ const shouldRenderAdminMessage = computed(() => {
 	          {{ part.value }}
 	        </button>
 	      </template>
-	      <span class="ml-2 inline-flex min-w-[58px] translate-y-[1px] items-center justify-end gap-1 align-baseline text-[11px] leading-none text-[rgb(var(--text-body-rgb)/0.78)] tabular-nums">
+	      <span class="ml-1.5 inline-flex shrink-0 translate-y-[1px] items-center justify-end gap-0.5 whitespace-nowrap align-baseline text-[10.5px] leading-none text-[rgb(var(--text-body-rgb)/0.72)] tabular-nums">
 	        <span>{{ formatDate(textMessage.created_at) }}</span>
 	        <span
 	          v-if="isOwnMessage"
-	          class="inline-flex h-3.5 w-[18px] shrink-0 items-center justify-center leading-none select-none transition-colors duration-200"
+	          class="inline-flex h-3.5 w-4 shrink-0 items-center justify-center leading-none select-none transition-colors duration-200"
 	          :class="readStatusClass"
 	          :title="readStatusTitle"
 	          :aria-label="readStatusTitle"

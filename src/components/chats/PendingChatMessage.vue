@@ -25,7 +25,7 @@ const imagePreviewUrls = computed(() => (
 <template>
   <div class="flex justify-end">
     <div
-      class="min-w-0 max-w-[70%] text-sm text-mainText md:max-w-[40%] flex flex-col self-end items-end"
+      class="min-w-0 max-w-[82%] text-sm text-mainText sm:max-w-[74%] md:max-w-[34rem] flex flex-col self-end items-end"
     >
       <template v-if="isImageMessage">
         <div class="w-full pb-1">
@@ -48,11 +48,11 @@ const imagePreviewUrls = computed(() => (
 
       <div
         v-else
-        class="min-w-0 rounded-xl rounded-br-none bg-[rgb(var(--palette-blue-600))] py-2 pl-4 pr-2.5 break-words [overflow-wrap:anywhere]"
+        class="min-w-0 rounded-2xl rounded-br-none bg-[rgb(var(--palette-blue-600))] px-3 py-2 leading-[1.42] break-words [overflow-wrap:anywhere]"
       >
-        <p class="whitespace-pre-wrap break-words [overflow-wrap:anywhere]"><template>{{ message.text }}</template><span class="ml-2 inline-flex min-w-[58px] translate-y-[1px] items-center justify-end gap-1 align-baseline text-[11px] leading-none text-[rgb(var(--text-body-rgb)/0.78)] tabular-nums">
+        <p class="whitespace-pre-wrap break-words [overflow-wrap:anywhere]"><template>{{ message.text }}</template><span class="ml-1.5 inline-flex shrink-0 translate-y-[1px] items-center justify-end gap-0.5 whitespace-nowrap align-baseline text-[10.5px] leading-none text-[rgb(var(--text-body-rgb)/0.72)] tabular-nums">
             <span>{{ formatDate(message.created_at) }}</span>
-            <span class="inline-flex h-3.5 w-[18px] shrink-0 items-center justify-center leading-none">
+            <span class="inline-flex h-3.5 w-4 shrink-0 items-center justify-center leading-none">
               <Clock3
                 v-if="!isFailed"
                 class="h-3.5 w-3.5 translate-y-[0.25px]"

@@ -2273,14 +2273,14 @@ const en = {
   },
 
   hero: {
-    badge: "Safe digital purchases",
-    titleLead: "Steam, VPN,",
-    titleAccent: "and digital goods without extra steps",
-    description: "Steam top-ups, Scope VPN, accounts, keys, and services are gathered in one catalog. Clear navigation, verified sellers, and deal protection help people find what they need quickly and buy with confidence.",
+    badge: "Digital goods marketplace",
+    titleLead: "Digital goods,",
+    titleAccent: "with the deal in plain sight",
+    description: "Accounts, keys, subscriptions, and services live in one catalog: buyers see the terms and seller reputation before paying, then keep delivery and chat inside the order.",
     routesLabel: "Quick access to key journeys",
     highlights: {
-      protection: "Deal protection until delivery is confirmed",
-      sellers: "Verified sellers, reviews, and moderation",
+      protection: "The seller is paid after delivery is confirmed",
+      sellers: "Ratings, reviews, chat, and moderation in one flow",
     },
     routes: {
       steam: {
