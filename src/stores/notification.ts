@@ -4,6 +4,11 @@ import { defineStore } from "pinia"
 
 const INBOX_PAGE_SIZE = 60
 const INBOX_CLEARED_BEFORE_STORAGE_KEY = "remarket_inbox_cleared_before_v1"
+const CHAT_MESSAGE_NOTIFICATION_EVENT_TYPES = new Set([
+  "new_chat_message",
+  "new_support_message",
+  "new_image_message",
+])
 
 function toTimestamp(value: string | undefined): number {
   if (!value) return 0
@@ -13,6 +18,10 @@ function toTimestamp(value: string | undefined): number {
 
 function countUnread(items: InboxNotification[]): number {
   return items.reduce((total, item) => total + (item.is_read ? 0 : 1), 0)
+}
+
+function shouldShowInNotificationsInbox(item: InboxNotification): boolean {
+  return !CHAT_MESSAGE_NOTIFICATION_EVENT_TYPES.has(item.event_type)
 }
 
 function readClearedBeforeMap(): Record<string, string> {
@@ -49,8 +58,10 @@ function filterNotificationsByClearedBefore(
   items: InboxNotification[],
   clearedBeforeTimestamp: number,
 ): InboxNotification[] {
-  if (!clearedBeforeTimestamp) return items
-  return items.filter((item) => toTimestamp(item.created_at) > clearedBeforeTimestamp)
+  return items.filter((item) => (
+    shouldShowInNotificationsInbox(item)
+    && (!clearedBeforeTimestamp || toTimestamp(item.created_at) > clearedBeforeTimestamp)
+  ))
 }
 
 export const useNotificationStore = defineStore("notification", {
@@ -120,6 +131,7 @@ export const useNotificationStore = defineStore("notification", {
     pushRealtimeNotification(payload: unknown) {
       const parsed = notificationsService.parseNotificationPayload(payload)
       if (!parsed) return
+      if (!shouldShowInNotificationsInbox(parsed)) return
       if (
         this.clearedBeforeTimestamp
         && toTimestamp(parsed.created_at) <= this.clearedBeforeTimestamp
