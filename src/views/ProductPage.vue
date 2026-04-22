@@ -13,7 +13,7 @@ import type { Category } from '@/validation/category/category'
 import { onMounted, ref, onUnmounted, computed, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { BadgeCheck, ChevronLeft, ChevronRight, X, Heart, Trash2, Percent, ShoppingBag, LayoutGrid, Rows3 } from 'lucide-vue-next'
+import { BadgeCheck, ChevronLeft, ChevronRight, X, Heart, Trash2, Percent, ShoppingBag, LayoutGrid, Rows3, Flag, HelpCircle, ChevronRightCircle } from 'lucide-vue-next'
 import TrustComponent from './TrustComponent.vue'
 import { useUserStore } from '@/stores/user'
 import BackButton from '@/components/navigation/BackButton.vue'
@@ -108,6 +108,24 @@ const similarProductsLoadingSkeletonCount = computed(() => (
     : 3
 ))
 const officialProductsLoadingSkeletonCount = 7
+const productFaqLinks = computed(() => [
+  {
+    label: t('pages.product.faq.dealFlow'),
+    to: '/rules#marketplace-deals',
+  },
+  {
+    label: t('pages.product.faq.refunds'),
+    to: '/rules#marketplace-refunds',
+  },
+  {
+    label: t('pages.product.faq.delivery'),
+    to: '/rules#marketplace-deals',
+  },
+  {
+    label: t('pages.product.faq.support'),
+    to: '/feedback#feedback-text',
+  },
+])
 
 const shouldShowOfficialRemarketCarousel = computed(() =>
   isOfficialProductsLoading.value || officialProducts.value.length > 0
@@ -734,6 +752,20 @@ function goToWalletTopUp() {
   })
 }
 
+function openProductReport() {
+  if (!product.value) return
+
+  router.push({
+    path: '/feedback',
+    query: {
+      report_product: '1',
+      product_id: product.value.id,
+      product_title: product.value.title,
+      product_url: route.fullPath,
+    },
+  })
+}
+
 function nextImage() {
   if (!product.value?.images || product.value.images.length === 0 || !selectedImage.value) return
 
@@ -897,7 +929,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Product details -->
-      <div class="w-full min-w-0 space-y-6 pt-4 lg:pt-0">
+      <div class="w-full min-w-0 space-y-5 pt-4 lg:pt-0">
         <!-- Title and price -->
         <div class="flex justify-between">
           <div class="space-y-4">
@@ -963,6 +995,13 @@ onUnmounted(() => {
             <span class="text-[var(--text-muted)] font-medium min-w-20">{{ $t('pages.product.remainingQuantity') }}:</span>
             <span class="text-[var(--text-title)]">{{ product.count }}</span>
           </div>
+          <div v-if="product.is_owner" class="flex items-center gap-3">
+            <span class="text-[var(--text-muted)] font-medium min-w-20">{{ $t('pages.product.favoritesCount') }}:</span>
+            <span class="inline-flex items-center gap-1.5 text-[var(--text-title)]">
+              <Heart class="h-4 w-4 text-[var(--text-muted)]" />
+              <span>{{ product.likes ?? 0 }}</span>
+            </span>
+          </div>
         </div>
 
         <div
@@ -1012,19 +1051,26 @@ onUnmounted(() => {
         <TrustComponent :product="product" />
 
         <!-- Action buttons -->
-        <div class="pt-6 border-t border-[rgb(var(--palette-dark-700))]">
+        <div class="pt-4 border-t border-[rgb(var(--palette-dark-700))]">
           <div v-if="!product.is_sold" class="flex flex-col gap-3 sm:flex-row justify-end">
-            <div class="w-full flex gap-6 pr-4 items-center justify-end" v-if="product.is_owner">
+            <div class="w-full flex items-center justify-end gap-3" v-if="product.is_owner">
               <button
                 type="button"
-                class="market-primary-surface market-primary-hover rounded-lg flex-1 px-4 py-4 text-sm font-semibold text-[var(--text-title)] transition lg:flex-none sm:px-6"
+                class="market-primary-surface market-primary-hover inline-flex h-12 min-w-[160px] items-center justify-center rounded-lg px-5 text-sm font-semibold text-[var(--text-title)] transition"
                 @click.stop="editProduct">
                 {{ $t('common.edit') }}
               </button>
-              <Trash2 @click="openDeleteConfirm" class="cursor-pointer w-6 h-6" />
+              <button
+                type="button"
+                class="inline-flex h-12 w-12 items-center justify-center rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.22)] text-[var(--text-body)] transition hover:border-[rgb(var(--palette-red-700)/0.45)] hover:bg-[rgb(var(--palette-red-950)/0.16)] hover:text-[var(--text-danger-soft)]"
+                :aria-label="$t('common.delete')"
+                @click="openDeleteConfirm"
+              >
+                <Trash2 class="h-5 w-5" />
+              </button>
             </div>
 
-            <div v-else class="w-full sm:pr-4">
+            <div v-else class="w-full">
               <span v-if="user === null" class="mb-2 block text-sm text-[var(--text-muted)] sm:text-right">
                 {{ $t('pages.product.authRequired') }}
               </span>
@@ -1083,47 +1129,82 @@ onUnmounted(() => {
           </div>
 
         </div>
-        <div v-if="product.is_owner" class="w-full flex justify-end gap-2 text-[var(--text-muted)]">
-          <Heart />
-          <span>{{ product.likes }}</span>
-        </div>
+        <button
+          v-if="!product.is_owner"
+          type="button"
+          class="group inline-flex w-full items-center justify-between gap-3 rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.22)] px-4 py-3 text-sm font-semibold text-[var(--text-body)] transition hover:border-[rgb(var(--palette-red-700)/0.45)] hover:bg-[rgb(var(--palette-red-950)/0.16)] hover:text-[var(--text-danger-soft)]"
+          @click="openProductReport"
+        >
+          <span class="inline-flex min-w-0 items-center gap-2">
+            <Flag class="h-4 w-4 shrink-0 text-[var(--text-muted)] transition group-hover:text-[var(--text-danger-soft)]" />
+            <span class="truncate">{{ $t('pages.product.reportProduct') }}</span>
+          </span>
+          <ChevronRightCircle class="h-4 w-4 shrink-0 text-[var(--text-meta)] transition group-hover:text-[var(--text-danger-soft)]" />
+        </button>
       </div>
     </div>
 
     <div
       class="w-full gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] lg:items-start lg:gap-8"
     >
-      <div
-        v-if="shouldShowFortniteAccountDetails"
-        class="order-1 space-y-4 rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.2)] p-4 lg:order-2"
-      >
-        <h2 class="text-lg font-semibold text-[var(--text-title)]">
-          {{ $t('pages.product.fortniteAccountDetails') }}
-        </h2>
-        <FortniteAccountSnapshot
-          :details="product.fortnite_account_details"
-          variant="full"
-        />
-      </div>
-
       <div class="order-2 space-y-4 py-4 lg:order-1 lg:py-0">
         <h1 class="text-xl font-bold text-[var(--text-title)]">{{ $t('pages.product.description') }}</h1>
         <p class="text-[var(--text-body)] leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere] text-sm lg:text-base">
           {{ product.description || $t('pages.product.descriptionMissing') }}
         </p>
       </div>
+
+      <aside class="order-1 space-y-4 lg:order-2">
+        <div
+          v-if="shouldShowFortniteAccountDetails"
+          class="space-y-4 rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.2)] p-4"
+        >
+          <h2 class="text-lg font-semibold text-[var(--text-title)]">
+            {{ $t('pages.product.fortniteAccountDetails') }}
+          </h2>
+          <FortniteAccountSnapshot
+            :details="product.fortnite_account_details"
+            variant="full"
+          />
+        </div>
+
+        <div
+          class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.18)] p-4"
+        >
+          <div class="mb-3 flex items-center gap-2">
+            <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[rgb(var(--palette-blue-400)/0.22)] bg-[rgb(var(--palette-blue-600)/0.12)] text-[var(--text-link)]">
+              <HelpCircle class="h-4 w-4" />
+            </span>
+            <h2 class="text-base font-semibold text-[var(--text-title)]">
+              {{ $t('pages.product.faq.title') }}
+            </h2>
+          </div>
+
+          <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+            <router-link
+              v-for="faqLink in productFaqLinks"
+              :key="faqLink.label"
+              :to="faqLink.to"
+              class="group inline-flex min-h-11 items-center justify-between gap-3 rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900)/0.25)] px-3 py-2 text-sm font-medium text-[var(--text-body)] transition hover:border-[rgb(var(--palette-blue-400)/0.35)] hover:bg-[rgb(var(--palette-blue-600)/0.08)] hover:text-[var(--text-title)]"
+            >
+              <span class="min-w-0 truncate">{{ faqLink.label }}</span>
+              <ChevronRight class="h-4 w-4 shrink-0 text-[var(--text-meta)] transition group-hover:text-[var(--text-link)]" />
+            </router-link>
+          </div>
+        </div>
+      </aside>
     </div>
 
     <div v-if="product.reviews" class="w-full flex flex-col gap-4">
       <p class="text-3xl font-bold">{{ $t('pages.product.reviews') }}</p>
       <div class="flex flex-col gap-2">
         <div v-for="review in product.reviews" :key="review.id"
-          class="p-4 rounded-lg bg-[rgb(var(--palette-gray-800)/0.2)] border border-[rgb(var(--palette-dark-700))]">
+          class="border border-[rgb(var(--palette-dark-700))] rounded-xl bg-[rgb(var(--palette-dark-600)/0.4)] p-4 space-y-3">
           <div class="flex justify-between items-center">
             <span class="font-medium">{{ review.rating }} ⭐</span>
             <span class="text-xs text-[var(--text-muted)]">{{ formatFullDate(review.created_at) }}</span>
           </div>
-          <p class="mt-2 text-sm">{{ review.body }}</p>
+          <p class="text-sm">{{ review.body }}</p>
         </div>
       </div>
     </div>

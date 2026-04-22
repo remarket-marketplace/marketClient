@@ -6,11 +6,12 @@ import SuccessMessage from "@/components/SuccessMessage.vue";
 import BackButton from "@/components/navigation/BackButton.vue";
 import Captcha from "@/components/Captcha.vue";
 import { MessageSquareText, ImagePlus, Lightbulb, SendHorizontal } from "lucide-vue-next";
-import { computed, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 const { t } = useI18n();
+const route = useRoute();
 const router = useRouter();
 
 const FEEDBACK_LIMITS = {
@@ -25,6 +26,26 @@ const isSending = ref(false);
 const errorMessage = ref("");
 const successMessage = ref("");
 const redirectTimeoutId = ref<ReturnType<typeof setTimeout> | null>(null);
+
+onMounted(() => {
+  if (route.query.report_product !== "1") return;
+
+  const productTitle = typeof route.query.product_title === "string"
+    ? route.query.product_title
+    : "";
+  const productId = typeof route.query.product_id === "string"
+    ? route.query.product_id
+    : "";
+  const productUrl = typeof route.query.product_url === "string"
+    ? route.query.product_url
+    : "";
+
+  feedbackText.value = t("pages.feedback.productReportTemplate", {
+    title: productTitle || t("common.notSpecified"),
+    id: productId || t("common.notSpecified"),
+    url: productUrl || t("common.notSpecified"),
+  });
+});
 
 onUnmounted(() => {
   if (redirectTimeoutId.value) {

@@ -960,6 +960,7 @@ const en = {
       textMinError: "Please enter at least {min} characters.",
       imagesMaxError: "You can upload no more than {max} images.",
       footerHint: "By clicking Send, you confirm that the message does not contain third-party personal data.",
+      productReportTemplate: "Product report\n\nProduct: {title}\nID: {id}\nLink: {url}\n\nDescribe what violates the rules or looks suspicious:",
     },
 
     becomeSeller: {
@@ -1208,12 +1209,21 @@ const en = {
       similarProducts: "Similar products",
       noSimilarProducts: "No similar products found",
       likesCount: "Likes",
+      favoritesCount: "In favorites",
       description: "Description",
       raikaVerifiedPrefix: "This product was verified using the ",
       raikaName: "raika",
       moderationRejectedTitle: "Product did not pass moderation",
       moderationRejectReasonLabel: "Rejection reason",
       remainingQuantity: "Remaining",
+      reportProduct: "Report product",
+      faq: {
+        title: "Frequently asked questions",
+        dealFlow: "How the deal works",
+        refunds: "Refunds",
+        delivery: "Product delivery",
+        support: "Contact support",
+      },
       sellerTrust: {
         eyebrow: "Seller trust",
         title: "Seller trust snapshot",

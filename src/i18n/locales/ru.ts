@@ -960,6 +960,7 @@ const ru = {
       textMinError: "Введите минимум {min} символов.",
       imagesMaxError: "Можно загрузить не более {max} изображений.",
       footerHint: "Нажимая «Отправить», вы подтверждаете, что информация не содержит персональных данных третьих лиц.",
+      productReportTemplate: "Жалоба на товар\n\nТовар: {title}\nID: {id}\nСсылка: {url}\n\nОпишите, что именно нарушает правила или вызывает сомнения:",
     },
 
     becomeSeller: {
@@ -1207,12 +1208,21 @@ const ru = {
       similarProducts: "Похожие товары",
       noSimilarProducts: "Похожие товары не найдены",
       likesCount: "Лайки",
+      favoritesCount: "В избранном",
       description: "Описание",
       raikaVerifiedPrefix: "Товар проверен с помощью ",
       raikaName: "raika",
       moderationRejectedTitle: "Товар не прошел модерацию",
       moderationRejectReasonLabel: "Причина отклонения",
       remainingQuantity: "Осталось",
+      reportProduct: "Пожаловаться на товар",
+      faq: {
+        title: "Часто задаваемые вопросы",
+        dealFlow: "Как работает сделка",
+        refunds: "Возврат средств",
+        delivery: "Получение товара",
+        support: "Связаться с поддержкой",
+      },
       sellerTrust: {
         eyebrow: "Проверка продавца",
         title: "Надежность продавца",
