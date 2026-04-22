@@ -626,6 +626,16 @@ export const productService = {
     }
   },
 
+  async getDealAutoCompleteDelaySeconds(): Promise<number | null> {
+    try {
+      const response = await httpClient.get(`/deal/auto-complete-delay`);
+      const delaySeconds = Number(response.data?.delay_seconds);
+      return Number.isFinite(delaySeconds) && delaySeconds > 0 ? delaySeconds : null;
+    } catch {
+      return null;
+    }
+  },
+
   async sendReport(
     dealId: string,
     reportReasonId: string,

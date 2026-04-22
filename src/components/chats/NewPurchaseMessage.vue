@@ -6,7 +6,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import type { Product } from '@/validation/product/product'
 import type { RefusalReasonsList } from '@/validation/deal/deal'
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ChevronDown, ChevronUp, RefreshCcw, Star } from 'lucide-vue-next'
 import AppModal from '@/components/AppModal.vue'
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
@@ -156,7 +156,9 @@ const timelineTimestamp = computed(() => {
   return formatChatTime(props.createdAt, locale.value) || null
 })
 
-const DEAL_AUTO_CONFIRM_WINDOW_MS = 24 * 60 * 60 * 1000
+const DEAL_AUTO_CONFIRM_FALLBACK_WINDOW_MS = 48 * 60 * 60 * 1000
+let cachedDealAutoConfirmWindowMs: number | null = null
+const dealAutoConfirmWindowMs = ref(DEAL_AUTO_CONFIRM_FALLBACK_WINDOW_MS)
 const dealTimerNowTs = ref(Date.now())
 let dealTimerIntervalId: ReturnType<typeof setInterval> | null = null
 
@@ -227,7 +229,7 @@ const autoConfirmRemainingMs = computed<number | null>(() => {
 
   const pausedDurationMs = calculatePausedDurationMs(dealTimerNowTs.value, startTs)
   const elapsedMs = Math.max(0, dealTimerNowTs.value - startTs - pausedDurationMs)
-  return Math.max(0, DEAL_AUTO_CONFIRM_WINDOW_MS - elapsedMs)
+  return Math.max(0, dealAutoConfirmWindowMs.value - elapsedMs)
 })
 
 const autoConfirmTimerLabel = computed(() => {
@@ -269,6 +271,19 @@ function stopDealTimerInterval() {
   dealTimerIntervalId = null
 }
 
+async function loadDealAutoConfirmWindow() {
+  if (cachedDealAutoConfirmWindowMs !== null) {
+    dealAutoConfirmWindowMs.value = cachedDealAutoConfirmWindowMs
+    return
+  }
+
+  const delaySeconds = await productService.getDealAutoCompleteDelaySeconds()
+  if (delaySeconds === null) return
+
+  cachedDealAutoConfirmWindowMs = delaySeconds * 1000
+  dealAutoConfirmWindowMs.value = cachedDealAutoConfirmWindowMs
+}
+
 watch(
   shouldShowAutoConfirmTimer,
   (shouldShow) => {
@@ -281,6 +296,10 @@ watch(
   },
   { immediate: true },
 )
+
+onMounted(() => {
+  void loadDealAutoConfirmWindow()
+})
 
 
 const deliverySummary = computed(() => (
