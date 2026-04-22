@@ -2,6 +2,7 @@
 import type { LocalPendingChatMessage } from '@/validation/chat/localPendingMessage'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Clock3 } from 'lucide-vue-next'
 
 const props = defineProps<{
   message: LocalPendingChatMessage
@@ -47,12 +48,20 @@ const imagePreviewUrls = computed(() => (
 
       <div
         v-else
-        class="min-w-0 rounded-xl rounded-br-none bg-[rgb(var(--palette-blue-600))] px-4 py-2 break-words [overflow-wrap:anywhere]"
+        class="min-w-0 rounded-xl rounded-br-none bg-[rgb(var(--palette-blue-600))] py-2 pl-4 pr-2.5 break-words [overflow-wrap:anywhere]"
       >
-        <p class="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{{ message.text }}</p>
-        <div class="mt-1 flex items-center justify-end gap-2 text-xs text-[var(--text-body)]">
-          <span>{{ formatDate(message.created_at) }}</span>
-        </div>
+        <p class="whitespace-pre-wrap break-words [overflow-wrap:anywhere]"><template>{{ message.text }}</template><span class="ml-2 inline-flex min-w-[58px] translate-y-[1px] items-center justify-end gap-1 align-baseline text-[11px] leading-none text-[rgb(var(--text-body-rgb)/0.78)] tabular-nums">
+            <span>{{ formatDate(message.created_at) }}</span>
+            <span class="inline-flex h-3.5 w-[18px] shrink-0 items-center justify-center leading-none">
+              <Clock3
+                v-if="!isFailed"
+                class="h-3.5 w-3.5 translate-y-[0.25px]"
+                :stroke-width="2.15"
+                aria-hidden="true"
+              />
+            </span>
+          </span>
+        </p>
       </div>
 
       <div

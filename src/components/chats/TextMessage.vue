@@ -358,7 +358,7 @@ const shouldRenderAdminMessage = computed(() => {
     </div>
 	</div>
 
-	<div v-else-if="textMessage != null" class="min-w-0 max-w-[70%] rounded-xl px-4 py-2 text-sm break-words [overflow-wrap:anywhere] md:max-w-[40%]" :class="[
+		<div v-else-if="textMessage != null" class="min-w-0 max-w-[70%] rounded-xl py-2 pl-2 pr-1 text-sm break-words [overflow-wrap:anywhere] md:max-w-[40%]" :class="[
     bubbleRoleClass,
     textMessage.sender_id === user?.id ? 'self-end' : 'self-start'
 	]">
@@ -367,22 +367,45 @@ const shouldRenderAdminMessage = computed(() => {
         {{ senderLabel || $t('common.user') }}
       </span>
     </div>
-		<p class="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
-      <template v-for="(part, index) in regularContentParts" :key="`regular-${textMessage.id}-${index}`">
-        <br v-if="part.type === 'newline'" />
-        <template v-else-if="part.type === 'text'">{{ part.value }}</template>
+			<p class="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+	      <template v-for="(part, index) in regularContentParts" :key="`regular-${textMessage.id}-${index}`">
+	        <br v-if="part.type === 'newline'" />
+	        <template v-else-if="part.type === 'text'">{{ part.value }}</template>
         <button
           v-else
           type="button"
           class="inline-block max-w-full whitespace-normal break-all align-baseline rounded-sm text-left text-[var(--text-accent)] underline decoration-[rgb(var(--palette-sky-200)/0.7)] underline-offset-2 transition hover:text-[var(--text-accent-strong)]"
           :title="t('pages.chats.openLink')"
           @click="requestOpenExternalLink(part.value)"
-        >
-          {{ part.value }}
-        </button>
-      </template>
-    </p>
-    <div v-if="hasReason" class="mt-2 space-y-2">
+	        >
+	          {{ part.value }}
+	        </button>
+	      </template>
+	      <span class="ml-2 inline-flex min-w-[58px] translate-y-[1px] items-center justify-end gap-1 align-baseline text-[11px] leading-none text-[rgb(var(--text-body-rgb)/0.78)] tabular-nums">
+	        <span>{{ formatDate(textMessage.created_at) }}</span>
+	        <span
+	          v-if="isOwnMessage"
+	          class="inline-flex h-3.5 w-[18px] shrink-0 items-center justify-center leading-none select-none transition-colors duration-200"
+	          :class="readStatusClass"
+	          :title="readStatusTitle"
+	          :aria-label="readStatusTitle"
+	        >
+	          <Check
+	            v-if="!textMessage.is_read"
+	            class="h-3.5 w-3.5 translate-y-[0.25px]"
+	            :stroke-width="2.35"
+	            aria-hidden="true"
+	          />
+	          <CheckCheck
+	            v-else
+	            class="h-3.5 w-3.5 -translate-x-[0.5px] translate-y-[0.25px]"
+	            :stroke-width="2.35"
+	            aria-hidden="true"
+	          />
+	        </span>
+	      </span>
+	    </p>
+	    <div v-if="hasReason" class="mt-2 space-y-2">
       <p class="font-semibold text-[var(--text-title)]">{{ $t('common.reason') }}</p>
       <div class="rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900)/0.6)] px-3 py-2 text-[var(--text-heading)]">
         <p class="whitespace-pre-line break-words [overflow-wrap:anywhere]">
@@ -402,30 +425,7 @@ const shouldRenderAdminMessage = computed(() => {
         </p>
       </div>
     </div>
-    <div class="mt-1 flex items-center justify-end gap-2 text-xs text-[var(--text-body)]">
-      <span>{{ formatDate(textMessage.created_at) }}</span>
-      <span
-        v-if="isOwnMessage"
-        class="inline-flex items-center leading-none select-none transition-colors duration-200"
-        :class="readStatusClass"
-        :title="readStatusTitle"
-        :aria-label="readStatusTitle"
-      >
-        <Check
-          v-if="!textMessage.is_read"
-          class="h-3.5 w-3.5 translate-y-[0.25px]"
-          :stroke-width="2.35"
-          aria-hidden="true"
-        />
-        <CheckCheck
-          v-else
-          class="h-3.5 w-3.5 -translate-x-[0.5px] translate-y-[0.25px]"
-          :stroke-width="2.35"
-          aria-hidden="true"
-        />
-      </span>
-    </div>
-	</div>
+		</div>
 
   <AppModal
     :is-open="Boolean(pendingExternalUrl)"
