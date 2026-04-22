@@ -297,6 +297,49 @@ export function createAppRouter(isSSR = false) {
     && to.query.tab !== from.query.tab
   )
 
+  const getHashScrollContainer = (target: HTMLElement): HTMLElement | null => {
+    let current = target.parentElement
+
+    while (current && current !== document.body) {
+      const styles = window.getComputedStyle(current)
+      const canScrollY = ['auto', 'scroll', 'overlay'].includes(styles.overflowY)
+
+      if (canScrollY && current.scrollHeight > current.clientHeight) {
+        return current
+      }
+
+      current = current.parentElement
+    }
+
+    return null
+  }
+
+  const scrollToHashTarget = (hash: string) => {
+    if (!hash) return
+
+    const targetId = decodeURIComponent(hash.slice(1))
+    const target = document.getElementById(targetId)
+    if (!target) return
+
+    const scrollContainer = getHashScrollContainer(target)
+    if (scrollContainer) {
+      const containerRect = scrollContainer.getBoundingClientRect()
+      const targetRect = target.getBoundingClientRect()
+      scrollContainer.scrollTo({
+        top: scrollContainer.scrollTop + targetRect.top - containerRect.top - 16,
+        left: 0,
+        behavior: 'auto',
+      })
+      return
+    }
+
+    window.scrollTo({
+      left: 0,
+      top: window.scrollY + target.getBoundingClientRect().top - 96,
+      behavior: 'auto',
+    })
+  }
+
   const router = createRouter({
     history,
     routes,
@@ -389,6 +432,18 @@ export function createAppRouter(isSSR = false) {
     }
 
     if (isProfileTabSwitch(to, from)) {
+      return
+    }
+
+    if (to.hash) {
+      const runHashScrollSequence = () => {
+        scrollToHashTarget(to.hash)
+        window.requestAnimationFrame(() => scrollToHashTarget(to.hash))
+      }
+
+      window.requestAnimationFrame(runHashScrollSequence)
+      window.setTimeout(runHashScrollSequence, 80)
+      window.setTimeout(runHashScrollSequence, 180)
       return
     }
 
