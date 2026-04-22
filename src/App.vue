@@ -27,10 +27,10 @@ let notificationsSyncIntervalHandle: number | null = null
 let chatSyncVersion = 0
 let isResyncingChats = false
 let needResyncChats = false
-const onlinePingIntervalMs = Number(import.meta.env.VITE_ONLINE_PING_INTERVAL_MS ?? 4000)
+const onlinePingIntervalMs = Number(import.meta.env.VITE_ONLINE_PING_INTERVAL_MS ?? 30000)
 const resolvedOnlinePingIntervalMs = Number.isFinite(onlinePingIntervalMs)
-  ? Math.max(1000, Math.floor(onlinePingIntervalMs))
-  : 4000
+  ? Math.max(30000, Math.floor(onlinePingIntervalMs))
+  : 30000
 const notificationsSyncIntervalMs = Number(import.meta.env.VITE_NOTIFICATIONS_SYNC_INTERVAL_MS ?? 15000)
 const resolvedNotificationsSyncIntervalMs = Number.isFinite(notificationsSyncIntervalMs)
   ? Math.max(5000, Math.floor(notificationsSyncIntervalMs))
