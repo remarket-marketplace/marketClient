@@ -86,6 +86,10 @@ export interface ProductCurrencyConfig {
   max_price_rub: number;
 }
 
+export interface OfficialStoreConfig {
+  hero_image_url: string | null;
+}
+
 function buildProductsFilterParams(filters?: ProductsFilterParams) {
   if (!filters) return {};
 
@@ -144,6 +148,16 @@ export const productService = {
       return response.data as ProductCurrencyConfig;
     } catch (e) {
       console.error("Failed to load currency config:", e);
+      return null;
+    }
+  },
+
+  async getOfficialStoreConfig(): Promise<OfficialStoreConfig | null> {
+    try {
+      const response = await httpClient.get("/products/official-store/config");
+      return response.data as OfficialStoreConfig;
+    } catch (e) {
+      console.error("Failed to load official store config:", e);
       return null;
     }
   },

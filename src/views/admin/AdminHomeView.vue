@@ -16,7 +16,7 @@ import {
   Users,
 } from 'lucide-vue-next'
 import type { ApexOptions } from 'apexcharts'
-import { computed, onMounted, ref, shallowRef, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatCurrencyAmount } from '@/utils/currency'
 
@@ -37,6 +37,9 @@ const isPlatformSettingsLoading = ref(true)
 const isPlatformSettingsSaving = ref(false)
 const platformSettingsError = ref('')
 const platformSettingsSuccess = ref('')
+const officialStoreHeroFile = ref<File | null>(null)
+const officialStoreHeroPreviewUrl = ref<string>('')
+const isOfficialStoreHeroSaving = ref(false)
 const pendingPlatformToggle = ref<{
   key: 'registration_enabled' | 'product_creation_enabled' | 'telegram_integration_enabled'
   nextValue: boolean
@@ -203,6 +206,19 @@ const getEffectiveCommissionPayload = () => {
     vpn_halfyear_price: Number(source.vpn_halfyear_price),
   }
 }
+
+const getAbsoluteImageUrl = (imageUrl: string | null | undefined): string => {
+  const normalized = String(imageUrl ?? '').trim()
+  if (!normalized) return ''
+  if (normalized.startsWith('http://') || normalized.startsWith('https://')) return normalized
+  const apiHost = (import.meta.env.VITE_API_HOST || '').replace(/\/$/, '')
+  return apiHost ? `${apiHost}${normalized.startsWith('/') ? '' : '/'}${normalized}` : normalized
+}
+
+const officialStoreHeroDisplayUrl = computed(() => {
+  if (officialStoreHeroPreviewUrl.value) return officialStoreHeroPreviewUrl.value
+  return getAbsoluteImageUrl(platformSettings.value?.official_store_hero_image_url ?? '')
+})
 
 const revenueTrend = computed(() => calcTrend(dashboardData.value?.revenue_by_day))
 const usersTrend = computed(() => calcTrend(dashboardData.value?.new_users_by_day))
@@ -548,6 +564,8 @@ const loadPlatformSettings = async () => {
   } else {
     platformSettings.value = clonePlatformSettings(data)
     persistedPlatformSettings.value = clonePlatformSettings(data)
+    officialStoreHeroPreviewUrl.value = ''
+    officialStoreHeroFile.value = null
   }
   isPlatformSettingsLoading.value = false
 }
@@ -642,12 +660,75 @@ const saveCommissionSettings = async () => {
   })
 }
 
+const resetOfficialStoreHeroPicker = () => {
+  officialStoreHeroFile.value = null
+  officialStoreHeroPreviewUrl.value = ''
+}
+
+const onOfficialStoreHeroFileChange = (event: Event) => {
+  const input = event.target as HTMLInputElement | null
+  const file = input?.files?.[0] ?? null
+  if (!file) {
+    resetOfficialStoreHeroPicker()
+    return
+  }
+  if (officialStoreHeroPreviewUrl.value.startsWith('blob:')) {
+    URL.revokeObjectURL(officialStoreHeroPreviewUrl.value)
+  }
+  officialStoreHeroFile.value = file
+  officialStoreHeroPreviewUrl.value = URL.createObjectURL(file)
+}
+
+const saveOfficialStoreHeroImage = async () => {
+  if (!officialStoreHeroFile.value || isOfficialStoreHeroSaving.value) return
+  isOfficialStoreHeroSaving.value = true
+  platformSettingsError.value = ''
+  platformSettingsSuccess.value = ''
+
+  const updated = await adminService.uploadOfficialStoreHeroImage(officialStoreHeroFile.value)
+  if (!updated) {
+    platformSettingsError.value = t('pages.admin.mainPage.platformSettingsSaveError')
+  } else {
+    platformSettings.value = clonePlatformSettings(updated)
+    persistedPlatformSettings.value = clonePlatformSettings(updated)
+    platformSettingsSuccess.value = t('pages.admin.mainPage.platformSettingsSaved')
+    resetOfficialStoreHeroPicker()
+  }
+
+  isOfficialStoreHeroSaving.value = false
+}
+
+const deleteOfficialStoreHeroImage = async () => {
+  if (isOfficialStoreHeroSaving.value) return
+  isOfficialStoreHeroSaving.value = true
+  platformSettingsError.value = ''
+  platformSettingsSuccess.value = ''
+
+  const updated = await adminService.deleteOfficialStoreHeroImage()
+  if (!updated) {
+    platformSettingsError.value = t('pages.admin.mainPage.platformSettingsSaveError')
+  } else {
+    platformSettings.value = clonePlatformSettings(updated)
+    persistedPlatformSettings.value = clonePlatformSettings(updated)
+    platformSettingsSuccess.value = t('pages.admin.mainPage.platformSettingsSaved')
+    resetOfficialStoreHeroPicker()
+  }
+
+  isOfficialStoreHeroSaving.value = false
+}
+
 onMounted(async () => {
   if (!ApexChart.value) {
     const mod = await import('vue3-apexcharts')
     ApexChart.value = mod.default
   }
   await Promise.all([loadDashboard(), loadPlatformSettings()])
+})
+
+onBeforeUnmount(() => {
+  if (officialStoreHeroPreviewUrl.value.startsWith('blob:')) {
+    URL.revokeObjectURL(officialStoreHeroPreviewUrl.value)
+  }
 })
 watch(selectedRange, loadDashboard)
 </script>
@@ -786,6 +867,66 @@ watch(selectedRange, loadDashboard)
                     : t('pages.admin.mainPage.disabled')
                 }}
               </button>
+            </div>
+
+            <div class="admin-surface-soft rounded-xl p-4 md:col-span-2 2xl:col-span-3">
+              <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div class="max-w-2xl">
+                  <p class="text-sm text-[var(--text-body-strong)] font-medium">
+                    Баннер официального магазина
+                  </p>
+                  <p class="mt-1 text-xs text-[var(--text-muted)]">
+                    Этот баннер показывается вверху страницы official store и не меняется при переключении категорий.
+                  </p>
+                </div>
+              </div>
+
+              <div class="mt-4 grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+                <div class="h-40 overflow-hidden rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-black)/0.4)]">
+                  <img
+                    v-if="officialStoreHeroDisplayUrl"
+                    :src="officialStoreHeroDisplayUrl"
+                    alt="Official store hero"
+                    class="h-full w-full object-cover"
+                  >
+                  <div
+                    v-else
+                    class="flex h-full w-full items-center justify-center text-xs text-[var(--text-muted)]"
+                  >
+                    Баннер не установлен
+                  </div>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    class="w-full rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] px-3 py-2 text-sm text-[var(--text-body-strong)] file:mr-3 file:rounded-lg file:border-0 file:bg-[rgb(var(--palette-blue-600)/0.8)] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[var(--text-title)] hover:file:bg-[rgb(var(--palette-blue-500))]"
+                    :disabled="isOfficialStoreHeroSaving"
+                    @change="onOfficialStoreHeroFileChange"
+                  >
+
+                  <div class="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      class="admin-btn admin-btn-primary"
+                      :disabled="!officialStoreHeroFile || isOfficialStoreHeroSaving"
+                      @click="saveOfficialStoreHeroImage"
+                    >
+                      {{ isOfficialStoreHeroSaving ? 'Сохраняем...' : 'Сохранить баннер' }}
+                    </button>
+
+                    <button
+                      type="button"
+                      class="admin-btn"
+                      :disabled="!platformSettings?.official_store_hero_image_url || isOfficialStoreHeroSaving"
+                      @click="deleteOfficialStoreHeroImage"
+                    >
+                      Удалить баннер
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="admin-surface-soft rounded-xl p-4 md:col-span-2 2xl:col-span-3">

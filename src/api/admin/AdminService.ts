@@ -127,6 +127,7 @@ export type PlatformSettings = {
   vpn_month_price: number
   vpn_quarter_price: number
   vpn_halfyear_price: number
+  official_store_hero_image_url?: string | null
 }
 
 export type AdminUpdateUserPayload = {
@@ -203,6 +204,36 @@ export const adminService = {
       return response.data as PlatformSettings;
     } catch (e) {
       console.error("Failed to update platform settings", e);
+      return null;
+    }
+  },
+
+  async uploadOfficialStoreHeroImage(file: File): Promise<PlatformSettings | null> {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await httpClient.patch(
+        "/admin/platform-settings/official-store-hero",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+      return response.data as PlatformSettings;
+    } catch (e) {
+      console.error("Failed to upload official store hero image", e);
+      return null;
+    }
+  },
+
+  async deleteOfficialStoreHeroImage(): Promise<PlatformSettings | null> {
+    try {
+      const response = await httpClient.delete("/admin/platform-settings/official-store-hero");
+      return response.data as PlatformSettings;
+    } catch (e) {
+      console.error("Failed to delete official store hero image", e);
       return null;
     }
   },
