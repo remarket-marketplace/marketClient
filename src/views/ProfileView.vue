@@ -179,9 +179,12 @@ const currentPagePurchases = ref(1)
 const totalPagesPurchases = ref(1)
 const isLoadingPurchases = ref(false)
 const isLoadingMorePurchases = ref(false)
+const hasLoadedPurchasesData = ref(false)
 const subscriptions = ref<SubscriptionSeller[]>([])
 const isLoadingSubscriptions = ref(false)
-const isProfileStatsLoading = computed(() => !hasLoadedProductsSummary.value || !hasLoadedReviewsSummary.value)
+const hasLoadedSubscriptionsData = ref(false)
+const isProductsSummaryLoading = computed(() => !hasLoadedProductsSummary.value)
+const isReviewsSummaryLoading = computed(() => !hasLoadedReviewsSummary.value)
 
 function formatFullDate(dateStr: string): string {
   return new Date(dateStr).toLocaleString(useI18n().locale.value, { year: 'numeric', month: 'long', day: 'numeric' })
@@ -284,6 +287,15 @@ async function loadReviews(page = 1, append = false) {
   }
 }
 
+async function loadReviewsCount() {
+  try {
+    totalReviews.value = await reviewService.getUserReviewsCount(username.value)
+    hasLoadedReviewsSummary.value = true
+  } catch (error) {
+    console.error('Failed to load reviews count:', error)
+  }
+}
+
 async function loadPurchases(page = 1, append = false) {
   if (!isOwner.value) return
   if (isLoadingMorePurchases.value) return
@@ -303,6 +315,7 @@ async function loadPurchases(page = 1, append = false) {
 
     currentPagePurchases.value = page
     totalPagesPurchases.value = res.totalPages
+    hasLoadedPurchasesData.value = true
   } catch (error) {
     console.error('Failed to load purchases:', error)
   } finally {
@@ -313,10 +326,12 @@ async function loadPurchases(page = 1, append = false) {
 
 async function loadSubscriptions() {
   if (!isOwner.value) return
+  if (isLoadingSubscriptions.value) return
   isLoadingSubscriptions.value = true
   try {
     const res = await profileService.getMySubscriptions()
     subscriptions.value = res.subscriptions
+    hasLoadedSubscriptionsData.value = true
   } catch (error) {
     console.error('Failed to load subscriptions:', error)
   } finally {
@@ -324,21 +339,24 @@ async function loadSubscriptions() {
   }
 }
 
-function ensureTabDataLoaded(tab: ProfileTab): void {
+async function ensureTabDataLoaded(tab: ProfileTab): Promise<void> {
   if (tab === 'products' && products.value.length === 0) {
-    void loadUserProducts()
+    await loadUserProducts()
+    return
   }
 
   if (tab === 'reviews' && reviews.value.length === 0) {
-    void loadReviews()
+    await loadReviews()
+    return
   }
 
-  if (tab === 'purchases' && purchases.value.length === 0) {
-    void loadPurchases()
+  if (tab === 'purchases' && !hasLoadedPurchasesData.value) {
+    await loadPurchases()
+    return
   }
 
-  if (tab === 'subscriptions' && subscriptions.value.length === 0) {
-    void loadSubscriptions()
+  if (tab === 'subscriptions' && !hasLoadedSubscriptionsData.value) {
+    await loadSubscriptions()
   }
 }
 
@@ -490,14 +508,14 @@ async function switchTab(tab: ProfileTab) {
   }
 
   activeTab.value = tab
-  ensureTabDataLoaded(tab)
+  await ensureTabDataLoaded(tab)
   await syncRouteTab(tab)
 }
 
 async function applyTabFromRoute(replaceInvalidQuery = false): Promise<void> {
   const tab = resolveProfileTab(route.query.tab)
   activeTab.value = tab
-  ensureTabDataLoaded(tab)
+  await ensureTabDataLoaded(tab)
 
   if (replaceInvalidQuery) {
     const requestedTab = getRequestedTab(route.query.tab)
@@ -546,8 +564,12 @@ onMounted(async () => {
   restoreProductCardViewModeFromStorage()
   const profileLoaded = await loadProfileData()
   if (profileLoaded) {
-    await Promise.all([loadUserProducts(), loadReviews()])
-    await applyTabFromRoute(true)
+    const initialTab = resolveProfileTab(route.query.tab)
+    const tasks: Promise<void>[] = [applyTabFromRoute(true)]
+    if (initialTab !== 'reviews') {
+      tasks.push(loadReviewsCount())
+    }
+    await Promise.all(tasks)
   }
 })
 
@@ -738,7 +760,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
               <div class="grid grid-cols-2 gap-3">
                 <button type="button" @click="openProductsTab" :title="t('common.products')"
                   class="text-center p-3 rounded-lg bg-[rgb(var(--palette-dark-700)/0.5)] border border-[rgb(var(--palette-dark-600))] min-h-[76px] space-y-1">
-                  <div v-if="isProfileStatsLoading" class="flex justify-center">
+                  <div v-if="isProductsSummaryLoading" class="flex justify-center">
                     <span class="block h-7 w-12 animate-pulse rounded-md bg-[rgb(var(--palette-white)/0.1)] blur-[0.2px]" />
                   </div>
                   <div v-else class="text-lg font-bold text-[var(--text-title)]">{{ totalProducts }}</div>
@@ -746,7 +768,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 </button>
                 <button type="button" @click="openReviewsTab" :title="t('pages.profile.reviews')"
                   class="text-center p-3 rounded-lg bg-[rgb(var(--palette-dark-700)/0.5)] border border-[rgb(var(--palette-dark-600))] min-h-[76px] space-y-1">
-                  <div v-if="isProfileStatsLoading" class="flex justify-center">
+                  <div v-if="isReviewsSummaryLoading" class="flex justify-center">
                     <span class="block h-7 w-12 animate-pulse rounded-md bg-[rgb(var(--palette-white)/0.1)] blur-[0.2px]" />
                   </div>
                   <div v-else class="text-lg font-bold text-[var(--text-title)]">{{ totalReviews }}</div>

@@ -96,4 +96,14 @@ export const reviewService = {
       };
     }
   },
+
+  async getUserReviewsCount(username: string): Promise<number> {
+    try {
+      const response = await httpClient.get(`/reviews/${username}/count`);
+      return Number(response.data?.total ?? 0);
+    } catch (error) {
+      console.error("Ошибка при загрузке количества отзывов:", error);
+      return 0;
+    }
+  },
 };
