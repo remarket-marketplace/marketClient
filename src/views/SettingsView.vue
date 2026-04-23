@@ -1845,18 +1845,18 @@ onUnmounted(() => {
                       <div class="text-[11px] uppercase tracking-wide text-[var(--text-muted)]">
                         {{ $t('pages.settingsPage.customFontWeight') }}
                       </div>
-                      <div class="mt-2 grid w-full grid-cols-3 rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.5)] p-1">
+                      <div class="mt-2 grid w-full grid-cols-3 overflow-hidden rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.5)] p-1">
                         <button
                           v-for="option in customFontWeightOptions"
                           :key="option.value"
                           type="button"
-                          class="min-w-0 rounded-lg px-2 py-2 text-center text-xs font-semibold leading-none transition"
+                          class="min-w-0 overflow-hidden rounded-lg px-1 py-2 text-center text-[11px] font-semibold leading-none transition sm:px-2 sm:text-xs"
                           :class="customFontWeight === option.value
                             ? 'settings-toggle-option-active'
                             : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-600)/0.8)] hover:text-[var(--text-title)]'"
                           @click="customFontWeight = option.value"
                         >
-                          <span class="block truncate">{{ $t(option.labelKey) }}</span>
+                          <span class="block w-full truncate">{{ $t(option.labelKey) }}</span>
                         </button>
                       </div>
                     </label>
