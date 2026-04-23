@@ -165,6 +165,8 @@ const timelineTimestamp = computed(() => {
 
 const DEAL_AUTO_CONFIRM_FALLBACK_WINDOW_MS = 48 * 60 * 60 * 1000
 let cachedDealAutoConfirmWindowMs: number | null = null
+let hasLoadedDealAutoConfirmWindow = false
+let pendingDealAutoConfirmWindowPromise: Promise<number | null> | null = null
 const dealAutoConfirmWindowMs = ref(DEAL_AUTO_CONFIRM_FALLBACK_WINDOW_MS)
 const dealTimerNowTs = ref(Date.now())
 let dealTimerIntervalId: ReturnType<typeof setInterval> | null = null
@@ -279,12 +281,26 @@ function stopDealTimerInterval() {
 }
 
 async function loadDealAutoConfirmWindow() {
+  if (hasLoadedDealAutoConfirmWindow) {
+    if (cachedDealAutoConfirmWindowMs !== null) {
+      dealAutoConfirmWindowMs.value = cachedDealAutoConfirmWindowMs
+    }
+    return
+  }
+
   if (cachedDealAutoConfirmWindowMs !== null) {
     dealAutoConfirmWindowMs.value = cachedDealAutoConfirmWindowMs
     return
   }
 
-  const delaySeconds = await productService.getDealAutoCompleteDelaySeconds()
+  pendingDealAutoConfirmWindowPromise ??= productService
+    .getDealAutoCompleteDelaySeconds()
+    .finally(() => {
+      pendingDealAutoConfirmWindowPromise = null
+    })
+
+  const delaySeconds = await pendingDealAutoConfirmWindowPromise
+  hasLoadedDealAutoConfirmWindow = true
   if (delaySeconds === null) return
 
   cachedDealAutoConfirmWindowMs = delaySeconds * 1000

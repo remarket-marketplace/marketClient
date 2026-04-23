@@ -45,6 +45,34 @@ let heartbeatIntervalHandle: number | null = null;
 let onlineHandlerRegistered = false;
 let visibilityHandlerRegistered = false;
 
+function parseChatUpdatePayload(data: any): ChatUpdateSchema | null {
+  const chatId = typeof data?.chat_id === "string" ? data.chat_id : null;
+  const unreadCount = typeof data?.unread_count === "number" ? data.unread_count : 0;
+
+  if (!chatId) {
+    return null;
+  }
+
+  const rawLastMessage = data?.last_message
+    ? data.last_message.message ?? data.last_message
+    : undefined;
+
+  let lastMessage: ChatMessageUnion | undefined;
+  if (rawLastMessage) {
+    try {
+      lastMessage = ChatMessageUnionSchema.parse(rawLastMessage);
+    } catch (error) {
+      console.warn("Skipping invalid chat_updated last_message payload", error, rawLastMessage);
+    }
+  }
+
+  return {
+    chat_id: chatId,
+    last_message: lastMessage,
+    unread_count: unreadCount,
+  };
+}
+
 export const chatsService = {
   async getChats() {
     try {
@@ -143,39 +171,21 @@ export const chatsService = {
       });
 
       socket.on("chat_updated", (data: any) => {
-        try {
-          const lastMsg = data.last_message
-            ? data.last_message.message ?? data.last_message
-            : undefined;
-          const validated: ChatUpdateSchema = {
-            chat_id: data.chat_id,
-            last_message: lastMsg
-              ? ChatMessageUnionSchema.parse(lastMsg)
-              : undefined,
-            unread_count: data.unread_count || 0,
-          };
-          chatUpdatedCallbacks.forEach((cb) => cb(validated));
-        } catch (e) {
-          console.error("Error validating chat update:", e);
+        const validated = parseChatUpdatePayload(data);
+        if (!validated) {
+          console.error("Error validating chat update:", data);
+          return;
         }
+        chatUpdatedCallbacks.forEach((cb) => cb(validated));
       });
 
       socket.on("chat_notification", (data: any) => {
-        try {
-          const lastMsg = data.last_message
-            ? data.last_message.message ?? data.last_message
-            : undefined;
-          const validated: ChatUpdateSchema = {
-            chat_id: data.chat_id,
-            last_message: lastMsg
-              ? ChatMessageUnionSchema.parse(lastMsg)
-              : undefined,
-            unread_count: data.unread_count || 0,
-          };
-          chatNotificationCallbacks.forEach((cb) => cb(validated));
-        } catch (e) {
-          console.error("Error validating chat notification:", e);
+        const validated = parseChatUpdatePayload(data);
+        if (!validated) {
+          console.error("Error validating chat notification:", data);
+          return;
         }
+        chatNotificationCallbacks.forEach((cb) => cb(validated));
       });
 
       socket.on("messages_read", (data: any) => {

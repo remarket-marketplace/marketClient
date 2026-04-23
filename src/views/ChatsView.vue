@@ -90,6 +90,14 @@ const routeChatId = computed(() => {
   return null
 })
 
+watch(
+  () => chatStore.chats,
+  (nextChats) => {
+    chats.value = nextChats.slice()
+  },
+  { immediate: true },
+)
+
 function getLastMessageTimestamp(chat: ChatListItem): number {
   return getChatTimestamp(chat.last_message?.created_at)
 }
@@ -955,8 +963,6 @@ let unsubscribeDealStatusUpdate: (() => void) | null = null
 let unsubscribeChatUpdated: (() => void) | null = null
 let unsubscribeChatNotification: (() => void) | null = null
 let unsubscribeMessagesRead: (() => void) | null = null
-let chatListRefreshTimeoutId: number | null = null
-let isChatListRefreshInFlight = false
 
 function applyMessagesReadUpdate(update: MessagesReadPayload) {
   if (update.chat_id === selectedChatId.value && update.message_ids.length > 0) {
@@ -1101,8 +1107,6 @@ onMounted(async () => {
     })
     unsubscribeMessagesRead = chatsService.onMessagesRead(applyMessagesReadUpdate)
 
-    await loadChats()
-
     const initialRouteChatId = routeChatId.value
     if (initialRouteChatId) {
       await ensureChatAvailableForRoute(initialRouteChatId)
@@ -1145,10 +1149,6 @@ onUnmounted(() => {
     clearTimeout(floatingDateHideTimerId)
     floatingDateHideTimerId = null
   }
-  if (chatListRefreshTimeoutId !== null) {
-    clearTimeout(chatListRefreshTimeoutId)
-    chatListRefreshTimeoutId = null
-  }
   window.removeEventListener('resize', checkMobile)
 })
 
@@ -1157,29 +1157,9 @@ async function loadChats() {
   chatStore.setChats(chats.value)
 }
 
-async function refreshChatsFromSocketEvent() {
-  if (isChatListRefreshInFlight) return
-  isChatListRefreshInFlight = true
-  try {
-    await loadChats()
-  } finally {
-    isChatListRefreshInFlight = false
-  }
-}
-
-function scheduleChatsRefreshFromSocketEvent() {
-  if (chatListRefreshTimeoutId !== null) return
-
-  chatListRefreshTimeoutId = window.setTimeout(() => {
-    chatListRefreshTimeoutId = null
-    void refreshChatsFromSocketEvent()
-  }, 120)
-}
-
 function applyIncomingChatUpdate(update: ChatUpdateSchema) {
   const chatIndex = chats.value.findIndex((chat) => chat.id === update.chat_id)
   if (chatIndex === -1) {
-    scheduleChatsRefreshFromSocketEvent()
     return
   }
 
