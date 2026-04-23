@@ -89,6 +89,11 @@ const FORTNITE_RELATIVE_DAYS_DATE_FIELDS: FortniteAccountDateFieldKey[] = [
   'last_login',
   'last_match_date',
 ]
+const fortniteActivityDateFields = computed(() => (
+  FORTNITE_ACCOUNT_DATE_FIELDS.filter(field => (
+    FORTNITE_RELATIVE_DAYS_DATE_FIELDS.includes(field.key)
+  ))
+))
 
 const categoryKey = computed(() => String(route.params.categoryId ?? ''))
 const requestedPathRaw = computed(() => {
@@ -1263,7 +1268,7 @@ onBeforeUnmount(() => {
                 </p>
                 <div class="grid gap-3 md:grid-cols-2">
                   <div
-                    v-for="field in FORTNITE_ACCOUNT_DATE_FIELDS"
+                    v-for="field in fortniteActivityDateFields"
                     :key="field.key"
                     class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2.5"
                   >
