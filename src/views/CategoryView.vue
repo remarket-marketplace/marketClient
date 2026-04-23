@@ -7,6 +7,7 @@ import HomeProductListCard from '@/components/HomeProductListCard.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
 import Title from '@/components/Title.vue'
 import ScopeVpnCta from '@/components/ScopeVpnCta.vue'
+import CustomSelect from '@/components/CustomSelect.vue'
 import type { Category } from '@/validation/category/category'
 import type { Product } from '@/validation/product/product'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
@@ -72,6 +73,18 @@ const loadMoreTrigger = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 const fortniteFilters = reactive(createEmptyFortniteAccountFilters())
 const fortniteCountryOptions = computed(() => getCountryOptions(locale.value))
+const fortniteCountrySelectOptions = computed(() => ([
+  { value: '', label: t('common.all') },
+  ...fortniteCountryOptions.value.map(option => ({
+    value: option.code,
+    label: option.label,
+  })),
+]))
+const fortniteBooleanSelectOptions = computed(() => ([
+  { value: '', label: t('common.all') },
+  { value: 'true', label: t('common.fortniteAccount.booleanValues.true') },
+  { value: 'false', label: t('common.fortniteAccount.booleanValues.false') },
+]))
 
 const categoryKey = computed(() => String(route.params.categoryId ?? ''))
 const requestedPathRaw = computed(() => {
@@ -1125,19 +1138,12 @@ onBeforeUnmount(() => {
               <div class="grid gap-3 md:grid-cols-2">
                 <label class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2.5">
                   <span class="block text-xs text-[var(--text-muted)]">{{ t('common.fortniteAccount.fields.country') }}</span>
-                  <select
-                    v-model="fortniteFilters.country"
-                    class="mt-1.5 w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
-                  >
-                    <option value="">{{ t('common.all') }}</option>
-                    <option
-                      v-for="option in fortniteCountryOptions"
-                      :key="option.code"
-                      :value="option.code"
-                    >
-                      {{ option.label }}
-                    </option>
-                  </select>
+                  <div class="mt-1.5">
+                    <CustomSelect
+                      v-model="fortniteFilters.country"
+                      :options="fortniteCountrySelectOptions"
+                    />
+                  </div>
                 </label>
               </div>
 
@@ -1148,14 +1154,12 @@ onBeforeUnmount(() => {
                   class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2.5"
                 >
                   <span class="block text-xs text-[var(--text-muted)]">{{ t(field.labelKey) }}</span>
-                  <select
-                    v-model="fortniteFilters[field.key]"
-                    class="mt-1.5 w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
-                  >
-                    <option value="">{{ t('common.all') }}</option>
-                    <option value="true">{{ t('common.fortniteAccount.booleanValues.true') }}</option>
-                    <option value="false">{{ t('common.fortniteAccount.booleanValues.false') }}</option>
-                  </select>
+                  <div class="mt-1.5">
+                    <CustomSelect
+                      v-model="fortniteFilters[field.key]"
+                      :options="fortniteBooleanSelectOptions"
+                    />
+                  </div>
                 </label>
               </div>
 
