@@ -26,6 +26,7 @@ import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import CustomSelect from '@/components/CustomSelect.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
+import { getShortDealId } from '@/utils/dealId'
 import { buildSlugKey } from '@/utils/urlKeys'
 
 const { t } = useI18n()
@@ -44,6 +45,7 @@ const isLoading = ref(true)
 const processingDealId = ref<string | null>(null)
 const isMobile = ref(false)
 const isFetchingMore = ref(false)
+const isLoadingAllDealsForSearch = ref(false)
 const totalCount = ref(0)
 const listRef = ref<HTMLElement | null>(null)
 
@@ -80,7 +82,11 @@ function goToProduct(productId: string, productSlug?: string | null) {
   router.push(`/product/${productKey}`)
 }
 
-const normalizedQuery = computed(() => searchQuery.value.trim().toLowerCase())
+function normalizeSearchInput(value: string): string {
+  return value.trim().toLowerCase().replace(/^#/, '')
+}
+
+const normalizedQuery = computed(() => normalizeSearchInput(searchQuery.value))
 
 const filteredDeals = computed(() => {
   return deals.value.filter(deal => {
@@ -91,7 +97,9 @@ const filteredDeals = computed(() => {
           deal.product.category.name,
           deal.seller.username,
           deal.buyer.username,
-          deal.id,
+          deal.id.toLowerCase(),
+          deal.id.replace(/-/g, '').toLowerCase(),
+          getShortDealId(deal.id),
         ]
           .join(' ')
           .toLowerCase()
@@ -180,6 +188,51 @@ async function loadDeals(reset = false) {
   } finally {
     isLoading.value = false
     isFetchingMore.value = false
+    if (normalizedQuery.value) {
+      void ensureAllDealsLoadedForSearch()
+    }
+  }
+}
+
+async function ensureAllDealsLoadedForSearch() {
+  if (!normalizedQuery.value || isLoadingAllDealsForSearch.value) return
+  if (currentPage.value >= totalPages.value) return
+
+  isLoadingAllDealsForSearch.value = true
+  const querySnapshot = normalizedQuery.value
+  const statusSnapshot = statusFilter.value
+
+  try {
+    while (
+      normalizedQuery.value === querySnapshot
+      && statusFilter.value === statusSnapshot
+      && currentPage.value < totalPages.value
+    ) {
+      const nextPage = currentPage.value + 1
+      const response: DealsList | false = await adminService.getAllDeals(
+        nextPage,
+        perPage.value,
+        statusSnapshot === 'all' ? undefined : statusSnapshot,
+      )
+
+      if (response === false) {
+        break
+      }
+
+      const nextDeals = response.deals || []
+      deals.value = [...deals.value, ...nextDeals]
+      currentPage.value = nextPage
+      totalPages.value = response.total_pages || Math.ceil((response.total || 0) / perPage.value)
+      totalCount.value = response.total ?? totalCount.value
+
+      if (!nextDeals.length) {
+        break
+      }
+    }
+  } catch (error) {
+    console.error('Ошибка при догрузке сделок для поиска:', error)
+  } finally {
+    isLoadingAllDealsForSearch.value = false
   }
 }
 
@@ -362,6 +415,11 @@ onUnmounted(() => {
 
 watch([searchQuery, sortBy, statusFilter], () => {
   if (listRef.value) listRef.value.scrollTop = 0
+})
+
+watch(normalizedQuery, async (value) => {
+  if (!value) return
+  await ensureAllDealsLoadedForSearch()
 })
 
 watch(statusFilter, async () => {
@@ -549,7 +607,7 @@ watch(statusFilter, async () => {
                 </div>
               </div>
               <div class="flex items-center gap-1">
-                <span>ID: {{ deal.id }}</span>
+                <span>ID: {{ getShortDealId(deal.id) }}</span>
               </div>
             </div>
 

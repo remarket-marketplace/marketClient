@@ -27,6 +27,7 @@ import ProductStatusTag from '@/components/ProductStatusTag.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import CustomSelect from '@/components/CustomSelect.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
+import { getShortDealId } from '@/utils/dealId'
 import { buildSlugKey } from '@/utils/urlKeys'
 
 const { t } = useI18n()
@@ -329,7 +330,7 @@ onMounted(async () => {
                   {{ $t('pages.admin.dealPage.title') }}
                 </h1>
                 <p class="mt-1 text-sm text-[var(--text-muted)]">
-                  ID: {{ deal?.id }}
+                  ID: {{ getShortDealId(deal?.id) }}
                 </p>
               </div>
             </div>
@@ -551,7 +552,7 @@ onMounted(async () => {
                 <div class="pt-4 border-t border-[rgb(var(--palette-white)/0.08)]">
                   <div class="flex items-center gap-2 text-sm text-[var(--text-muted)]">
                     <MessageSquare class="w-4 h-4" />
-                    <span>{{ $t('pages.admin.dealPage.reportId') }}: {{ deal.id }}</span>
+                    <span>{{ $t('pages.admin.dealPage.reportId') }}: {{ getShortDealId(deal.id) }}</span>
                   </div>
                 </div>
               </div>
