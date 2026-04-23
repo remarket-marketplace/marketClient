@@ -85,6 +85,10 @@ const fortniteBooleanSelectOptions = computed(() => ([
   { value: 'true', label: t('common.fortniteAccount.booleanValues.true') },
   { value: 'false', label: t('common.fortniteAccount.booleanValues.false') },
 ]))
+const FORTNITE_RELATIVE_DAYS_DATE_FIELDS: FortniteAccountDateFieldKey[] = [
+  'last_login',
+  'last_match_date',
+]
 
 const categoryKey = computed(() => String(route.params.categoryId ?? ''))
 const requestedPathRaw = computed(() => {
@@ -642,11 +646,15 @@ function getProductFiltersParams(): ProductsFilterParams | undefined {
   if (fortniteFilters.last_email_change_to) {
     filters.fortniteLastEmailChangeTo = fortniteFilters.last_email_change_to
   }
-  if (fortniteFilters.last_login_from) {
-    filters.fortniteLastLoginFrom = fortniteFilters.last_login_from
+  const lastLoginRange = buildRelativeDaysDateRange(
+    fortniteFilters.last_login_from,
+    fortniteFilters.last_login_to,
+  )
+  if (lastLoginRange.from) {
+    filters.fortniteLastLoginFrom = lastLoginRange.from
   }
-  if (fortniteFilters.last_login_to) {
-    filters.fortniteLastLoginTo = fortniteFilters.last_login_to
+  if (lastLoginRange.to) {
+    filters.fortniteLastLoginTo = lastLoginRange.to
   }
   if (fortniteFilters.last_display_name_change_from) {
     filters.fortniteLastDisplayNameChangeFrom = fortniteFilters.last_display_name_change_from
@@ -654,11 +662,15 @@ function getProductFiltersParams(): ProductsFilterParams | undefined {
   if (fortniteFilters.last_display_name_change_to) {
     filters.fortniteLastDisplayNameChangeTo = fortniteFilters.last_display_name_change_to
   }
-  if (fortniteFilters.last_match_date_from) {
-    filters.fortniteLastMatchDateFrom = fortniteFilters.last_match_date_from
+  const lastMatchRange = buildRelativeDaysDateRange(
+    fortniteFilters.last_match_date_from,
+    fortniteFilters.last_match_date_to,
+  )
+  if (lastMatchRange.from) {
+    filters.fortniteLastMatchDateFrom = lastMatchRange.from
   }
-  if (fortniteFilters.last_match_date_to) {
-    filters.fortniteLastMatchDateTo = fortniteFilters.last_match_date_to
+  if (lastMatchRange.to) {
+    filters.fortniteLastMatchDateTo = lastMatchRange.to
   }
   if (fortniteFilters.skins_count_min !== '') {
     filters.fortniteSkinsCountMin = Number(fortniteFilters.skins_count_min)
@@ -743,6 +755,88 @@ function setFortniteDateFilterValue(
 ) {
   const filterKey = `${key}_${bound}` as keyof typeof fortniteFilters
   fortniteFilters[filterKey] = value as never
+}
+
+function isRelativeDaysDateField(key: FortniteAccountDateFieldKey): boolean {
+  return FORTNITE_RELATIVE_DAYS_DATE_FIELDS.includes(key)
+}
+
+function getFortniteRelativeDaysFilterValue(
+  key: FortniteAccountDateFieldKey,
+  bound: 'from' | 'to',
+): number | '' {
+  if (!isRelativeDaysDateField(key)) return ''
+  const filterKey = `${key}_${bound}` as keyof typeof fortniteFilters
+  const value = fortniteFilters[filterKey]
+  if (typeof value !== 'string' || !value.trim()) return ''
+  const parsedValue = Number(value)
+  if (!Number.isFinite(parsedValue)) return ''
+  return Math.max(0, Math.trunc(parsedValue))
+}
+
+function setFortniteRelativeDaysFilterValue(
+  key: FortniteAccountDateFieldKey,
+  bound: 'from' | 'to',
+  value: string,
+) {
+  if (!isRelativeDaysDateField(key)) return
+  const filterKey = `${key}_${bound}` as keyof typeof fortniteFilters
+  if (!value.trim()) {
+    fortniteFilters[filterKey] = '' as never
+    return
+  }
+
+  const parsedValue = Number(value)
+  if (!Number.isFinite(parsedValue)) return
+  fortniteFilters[filterKey] = String(Math.max(0, Math.trunc(parsedValue))) as never
+}
+
+function parseNonNegativeInteger(value: string): number | null {
+  if (!value.trim()) return null
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return null
+  return Math.max(0, Math.trunc(parsed))
+}
+
+function toApiDateString(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function dateMinusDays(days: number): Date {
+  const result = new Date()
+  result.setHours(0, 0, 0, 0)
+  result.setDate(result.getDate() - days)
+  return result
+}
+
+function buildRelativeDaysDateRange(
+  fromValue: string,
+  toValue: string,
+): { from?: string, to?: string } {
+  let minDays = parseNonNegativeInteger(fromValue)
+  let maxDays = parseNonNegativeInteger(toValue)
+
+  if (minDays === null && maxDays === null) {
+    return {}
+  }
+
+  if (minDays !== null && maxDays !== null && minDays > maxDays) {
+    [minDays, maxDays] = [maxDays, minDays]
+  }
+
+  const range: { from?: string, to?: string } = {}
+
+  if (maxDays !== null) {
+    range.from = toApiDateString(dateMinusDays(maxDays))
+  }
+  if (minDays !== null) {
+    range.to = toApiDateString(dateMinusDays(minDays))
+  }
+
+  return range
 }
 
 function getFortniteCountFilterValue(
@@ -1175,18 +1269,42 @@ onBeforeUnmount(() => {
                   >
                     <span class="block text-xs text-[var(--text-muted)]">{{ t(field.labelKey) }}</span>
                     <div class="mt-2 grid grid-cols-2 gap-2">
-                      <input
-                        :value="getFortniteDateFilterValue(field.key, 'from')"
-                        type="date"
-                        class="w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
-                        @input="setFortniteDateFilterValue(field.key, 'from', ($event.target as HTMLInputElement).value)"
-                      />
-                      <input
-                        :value="getFortniteDateFilterValue(field.key, 'to')"
-                        type="date"
-                        class="w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
-                        @input="setFortniteDateFilterValue(field.key, 'to', ($event.target as HTMLInputElement).value)"
-                      />
+                      <template v-if="isRelativeDaysDateField(field.key)">
+                        <input
+                          :value="getFortniteRelativeDaysFilterValue(field.key, 'from')"
+                          type="number"
+                          min="0"
+                          step="1"
+                          inputmode="numeric"
+                          class="w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
+                          :placeholder="t('pages.category.minValue')"
+                          @input="setFortniteRelativeDaysFilterValue(field.key, 'from', ($event.target as HTMLInputElement).value)"
+                        />
+                        <input
+                          :value="getFortniteRelativeDaysFilterValue(field.key, 'to')"
+                          type="number"
+                          min="0"
+                          step="1"
+                          inputmode="numeric"
+                          class="w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
+                          :placeholder="t('pages.category.maxValue')"
+                          @input="setFortniteRelativeDaysFilterValue(field.key, 'to', ($event.target as HTMLInputElement).value)"
+                        />
+                      </template>
+                      <template v-else>
+                        <input
+                          :value="getFortniteDateFilterValue(field.key, 'from')"
+                          type="date"
+                          class="w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
+                          @input="setFortniteDateFilterValue(field.key, 'from', ($event.target as HTMLInputElement).value)"
+                        />
+                        <input
+                          :value="getFortniteDateFilterValue(field.key, 'to')"
+                          type="date"
+                          class="w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
+                          @input="setFortniteDateFilterValue(field.key, 'to', ($event.target as HTMLInputElement).value)"
+                        />
+                      </template>
                     </div>
                   </div>
                 </div>
