@@ -1343,6 +1343,7 @@ const ru = {
       },
       newPurchase: "Прошедшая сделка",
       currentDeal: "Текущая сделка",
+      orderNumber: "Заказ #{id}",
       newPriceOffer: "Новое предложение цены",
       imageMessage: "Фото",
       newAdminMessage: "Новое сообщение от поддержки",

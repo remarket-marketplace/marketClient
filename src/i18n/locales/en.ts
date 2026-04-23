@@ -1344,6 +1344,7 @@ const en = {
       },
       newPurchase: "New purchase",
       currentDeal: "Current deal",
+      orderNumber: "Order #{id}",
       newPriceOffer: "New price offer",
       imageMessage: "Photo",
       newAdminMessage: "New message from support",

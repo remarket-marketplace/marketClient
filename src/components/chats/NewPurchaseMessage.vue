@@ -12,6 +12,7 @@ import AppModal from '@/components/AppModal.vue'
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
 import { formatChatTime, getChatTimestamp } from '@/utils/chatDate'
+import { getShortDealId } from '@/utils/dealId'
 import { buildProductKey } from '@/utils/urlKeys'
 import DealStatusTag from '@/components/DealStatusTag.vue'
 
@@ -38,7 +39,7 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
-const { locale } = useI18n()
+const { locale, t } = useI18n()
 
 const localDealStatus = ref<string | null>(null)
 const localHasReview = ref(false)
@@ -151,6 +152,12 @@ const summaryStatusClass = computed(() => (
 ))
 const shouldShowSummaryToggle = computed(() => isSummaryLayout.value && props.collapsible === true)
 const showSummaryBody = computed(() => !isSummaryLayout.value || props.collapsed !== true)
+const shortDealId = computed(() => getShortDealId(props.dealId))
+const orderLabel = computed(() => (
+  shortDealId.value
+    ? t('pages.chats.orderNumber', { id: shortDealId.value })
+    : ''
+))
 const timelineTimestamp = computed(() => {
   if (isSummaryLayout.value || !props.createdAt) return null
   return formatChatTime(props.createdAt, locale.value) || null
@@ -483,6 +490,12 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
+          <span
+            v-if="orderLabel"
+            class="inline-flex items-center rounded-full border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-white)/0.04)] px-2 py-1 text-[10px] font-semibold tracking-[0.06em] text-[var(--text-body-strong)] sm:text-[11px]"
+          >
+            {{ orderLabel }}
+          </span>
           <span
             v-if="shouldShowAutoConfirmTimer && autoConfirmTimerLabel"
             class="inline-flex items-center rounded-full border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-white)/0.04)] px-2 py-1 text-[10px] font-semibold tracking-[0.06em] text-[var(--text-body-strong)] sm:text-[11px]"
