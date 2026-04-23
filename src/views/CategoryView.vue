@@ -37,8 +37,6 @@ const selectedCategoryPath = ref<Category[]>([])
 const products = ref<Product[]>([])
 const officialProducts = ref<Product[]>([])
 const officialProductsSourceCategory = ref<Category | null>(null)
-const officialSubcategoryCounts = ref<Record<string, number>>({})
-const isOfficialSubcategoryCountsLoading = ref(false)
 const officialCarouselRef = ref<HTMLElement | null>(null)
 const isOfficialCarouselAtStart = ref(true)
 const isOfficialCarouselAtEnd = ref(false)
@@ -384,49 +382,8 @@ async function loadSubcategoriesForActiveCategory() {
   try {
     const response = await categoryService.getSubcategories(getActiveCategoryFilterKey(), 1, 100)
     subcategories.value = sortCategoriesByActiveProductsCount(response.categories)
-    if (selectedCategoryPath.value.length === 0) {
-      await loadOfficialCountsForSubcategories(subcategories.value)
-      return
-    }
   } finally {
     isSubcategoriesLoading.value = false
-  }
-}
-
-async function getOfficialProductsCountForCategory(categoryValue: Category): Promise<number> {
-  const categoryFilterKey = buildCategoryKey(categoryValue) || categoryValue.id
-  if (!categoryFilterKey) return 0
-
-  const response = await productService.getProductsByCategory(
-    categoryFilterKey,
-    1,
-    1,
-    { isOfficialOnly: true },
-  )
-  return response.total > 0 ? response.total : response.products.length
-}
-
-async function loadOfficialCountsForSubcategories(subcategoriesList: Category[]) {
-  if (!subcategoriesList.length) {
-    officialSubcategoryCounts.value = {}
-    return
-  }
-
-  isOfficialSubcategoryCountsLoading.value = true
-  try {
-    const countsEntries = await Promise.all(
-      subcategoriesList.map(async (subcategory) => {
-        const count = await getOfficialProductsCountForCategory(subcategory)
-        return [subcategory.id, count] as const
-      }),
-    )
-
-    officialSubcategoryCounts.value = countsEntries.reduce<Record<string, number>>((acc, [id, count]) => {
-      acc[id] = count
-      return acc
-    }, {})
-  } finally {
-    isOfficialSubcategoryCountsLoading.value = false
   }
 }
 
@@ -524,37 +481,7 @@ async function loadOfficialProductsForCarousel() {
     return
   }
 
-  let sourceCategory: Category | null = null
-  if (currentActiveCategory.parent_id !== null) {
-    const knownOfficialCount = officialSubcategoryCounts.value[currentActiveCategory.id]
-    if (knownOfficialCount === 0) {
-      officialProducts.value = []
-      officialProductsSourceCategory.value = null
-      isOfficialProductsLoading.value = false
-      updateOfficialCarouselState()
-      return
-    }
-    sourceCategory = currentActiveCategory
-  } else {
-    const knownCounts = officialSubcategoryCounts.value
-    const missingCounts = subcategories.value.some((subcategory) => knownCounts[subcategory.id] === undefined)
-    if ((Object.keys(knownCounts).length === 0 || missingCounts) && subcategories.value.length > 0) {
-      await loadOfficialCountsForSubcategories(subcategories.value)
-    }
-
-    sourceCategory = subcategories.value.find((subcategory) =>
-      (officialSubcategoryCounts.value[subcategory.id] ?? 0) > 0
-    ) ?? null
-  }
-
-  if (!sourceCategory) {
-    officialProducts.value = []
-    officialProductsSourceCategory.value = null
-    isOfficialProductsLoading.value = false
-    updateOfficialCarouselState()
-    return
-  }
-
+  const sourceCategory = currentActiveCategory
   isOfficialProductsLoading.value = true
   try {
     const sourceCategoryKey = buildCategoryKey(sourceCategory) || sourceCategory.id
@@ -564,9 +491,8 @@ async function loadOfficialProductsForCarousel() {
       officialProductsPerPage.value,
       { isOfficialOnly: true },
     )
-    officialSubcategoryCounts.value[sourceCategory.id] = response.total
     officialProducts.value = response.products
-    officialProductsSourceCategory.value = sourceCategory
+    officialProductsSourceCategory.value = response.total > 0 ? sourceCategory : null
     await nextTick()
     updateOfficialCarouselState()
   } finally {

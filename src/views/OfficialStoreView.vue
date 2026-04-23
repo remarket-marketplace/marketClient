@@ -21,7 +21,6 @@ const rootCategories = ref<Category[]>([])
 const selectedRootCategory = ref<Category | null>(null)
 const officialProducts = ref<Product[]>([])
 const officialProductsTotal = ref(0)
-const officialProductsCountByCategoryId = ref<Record<string, number>>({})
 const officialStoreHeroImageUrl = ref<string | null>(null)
 const currentPage = ref(1)
 const totalPages = ref(1)
@@ -46,45 +45,6 @@ function sortCategoriesByActiveProductsCount(categories: Category[]): Category[]
 function getCategoryFilterKey(category: Category | null | undefined): string {
   if (!category) return ''
   return buildCategoryKey(category) || category.id
-}
-
-async function getOfficialProductsCountForCategory(categoryValue: Category): Promise<number> {
-  const cachedCount = officialProductsCountByCategoryId.value[categoryValue.id]
-  if (cachedCount !== undefined) return cachedCount
-
-  const categoryFilterKey = getCategoryFilterKey(categoryValue)
-  if (!categoryFilterKey) return 0
-
-  const response = await productService.getProductsByCategory(
-    categoryFilterKey,
-    1,
-    1,
-    { isOfficialOnly: true },
-  )
-  const count = response.total > 0 ? response.total : response.products.length
-  officialProductsCountByCategoryId.value = {
-    ...officialProductsCountByCategoryId.value,
-    [categoryValue.id]: count,
-  }
-  return count
-}
-
-async function filterCategoriesWithOfficialProducts(categories: Category[]): Promise<Category[]> {
-  if (!categories.length) return []
-
-  const countsById = await Promise.all(
-    categories.map(async (category) => {
-      const count = await getOfficialProductsCountForCategory(category)
-      return [category.id, count] as const
-    }),
-  )
-
-  const hasOfficialById = countsById.reduce<Record<string, boolean>>((acc, [id, count]) => {
-    acc[id] = count > 0
-    return acc
-  }, {})
-
-  return categories.filter((category) => hasOfficialById[category.id])
 }
 
 function normalizeQueryValue(value: unknown): string {
@@ -185,11 +145,9 @@ async function syncRouteQueryWithSelection() {
 
 async function loadRootCategories() {
   const categories = await categoryService.getAllCategoriesFlat(100, 30)
-  const visibleRootCategories = sortCategoriesByActiveProductsCount(
+  rootCategories.value = sortCategoriesByActiveProductsCount(
     categories.filter((item) => !item.parent_id && isVisibleCategory(item)),
   )
-  const officialRootCategories = await filterCategoriesWithOfficialProducts(visibleRootCategories)
-  rootCategories.value = sortCategoriesByActiveProductsCount(officialRootCategories)
 }
 
 async function applySelectionFromRouteQuery() {

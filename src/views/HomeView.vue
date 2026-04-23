@@ -61,6 +61,8 @@ const subCategoryTotalPages = ref(1)
 const categoriesPerPage = ref(30)
 const searchQuery = ref('')
 const searchableCategories = ref<Category[]>([])
+const hasLoadedSearchableCategories = ref(false)
+const isSearchableCategoriesLoading = ref(false)
 const isSearchDropdownOpen = ref(false)
 const searchDropdownHighlightedIndex = ref(-1)
 const searchDropdownRef = ref<HTMLElement | null>(null)
@@ -76,6 +78,7 @@ const isLoadingMoreCategories = ref(false)
 const isLoadingMoreSubCategories = ref(false)
 const isExpandingCategories = ref(false)
 const isSearchPagination = ref(false)
+const hasUserScrolledPage = ref(false)
 const minPriceFilter = ref('')
 const maxPriceFilter = ref('')
 const onlineSellersOnly = ref(false)
@@ -348,6 +351,7 @@ const loadMoreTrigger = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 let onDocumentClickForSearchDropdown: ((event: MouseEvent) => void) | null = null
 let onWindowChangeForSearchDropdown: (() => void) | null = null
+let onWindowScrollForLoadMore: (() => void) | null = null
 
 function goToProduct(productKey: string) {
   if (!productKey) return
@@ -741,6 +745,7 @@ async function loadCategoryProducts(categoryId: string, page = 1, append = false
 }
 
 async function loadMoreProducts() {
+  if (!hasUserScrolledPage.value) return
   if (currentPage.value >= totalPages.value) return
   const nextPage = currentPage.value + 1
   if (isSearchPagination.value) {
@@ -780,6 +785,17 @@ async function loadMainCategories(page = 1, append = false) {
 async function loadSearchableCategories() {
   const categories = await categoryService.getAllCategoriesFlat(100, 20)
   searchableCategories.value = filterVisibleCategories(categories)
+  hasLoadedSearchableCategories.value = true
+}
+
+async function ensureSearchableCategoriesLoaded() {
+  if (hasLoadedSearchableCategories.value || isSearchableCategoriesLoading.value) return
+  isSearchableCategoriesLoading.value = true
+  try {
+    await loadSearchableCategories()
+  } finally {
+    isSearchableCategoriesLoading.value = false
+  }
 }
 
 async function loadMoreMainCategories() {
@@ -989,6 +1005,9 @@ watch(productCardViewMode, (mode) => {
 })
 
 watch([normalizedSearchQuery, hasCategorySearchResults], ([query, hasResults]) => {
+  if (query) {
+    void ensureSearchableCategoriesLoaded()
+  }
   if (!query || !hasResults) {
     closeSearchDropdown()
     return
@@ -1014,7 +1033,6 @@ onMounted(async () => {
   await Promise.all([
     loadProducts(),
     loadMainCategories(),
-    loadSearchableCategories(),
   ])
   observer = new IntersectionObserver((entries) => { if (entries[0]!.isIntersecting) loadMoreProducts() }, { rootMargin: '300px' })
   if (loadMoreTrigger.value) observer.observe(loadMoreTrigger.value)
@@ -1030,8 +1048,16 @@ onMounted(async () => {
     if (!isSearchDropdownOpen.value) return
     updateSearchDropdownPosition()
   }
+  onWindowScrollForLoadMore = () => {
+    if (hasUserScrolledPage.value) return
+    const scrollTop = window.scrollY || document.documentElement.scrollTop || 0
+    if (scrollTop > 0) {
+      hasUserScrolledPage.value = true
+    }
+  }
   window.addEventListener('resize', onWindowChangeForSearchDropdown)
   window.addEventListener('scroll', onWindowChangeForSearchDropdown, true)
+  window.addEventListener('scroll', onWindowScrollForLoadMore, { passive: true })
 })
 
 onBeforeUnmount(() => {
@@ -1046,6 +1072,10 @@ onBeforeUnmount(() => {
     window.removeEventListener('resize', onWindowChangeForSearchDropdown)
     window.removeEventListener('scroll', onWindowChangeForSearchDropdown, true)
     onWindowChangeForSearchDropdown = null
+  }
+  if (onWindowScrollForLoadMore) {
+    window.removeEventListener('scroll', onWindowScrollForLoadMore)
+    onWindowScrollForLoadMore = null
   }
 })
 
