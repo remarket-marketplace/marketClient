@@ -51,8 +51,9 @@ const isProductsLoading = ref(true)
 const isOfficialProductsLoading = ref(false)
 const isLoadingMore = ref(false)
 const isFiltersOpen = ref(false)
-type ProductSortMode = 'price_desc' | 'price_asc' | 'seller_rating_desc' | 'created_at_desc' | 'seller_reviews_desc'
-const priceSortOrder = ref<'desc' | 'asc' | null>(null)
+type ProductSortMode = 'seller_rating_desc' | 'created_at_desc' | 'seller_reviews_desc'
+const minPriceFilter = ref('')
+const maxPriceFilter = ref('')
 const sellerRatingSortEnabled = ref(false)
 const createdAtSortEnabled = ref(false)
 const sellerReviewsSortEnabled = ref(false)
@@ -146,8 +147,12 @@ const activeFortniteFiltersCount = computed<number>(() => (
     return count + 1
   }, 0)
 ))
+const hasPriceFilter = computed(() =>
+  parseFilterNumber(minPriceFilter.value) !== undefined
+  || parseFilterNumber(maxPriceFilter.value) !== undefined,
+)
 const activeSortingCount = computed(() => (
-  Number(priceSortOrder.value !== null)
+  Number(hasPriceFilter.value)
   + Number(sellerRatingSortEnabled.value)
   + Number(createdAtSortEnabled.value)
   + Number(sellerReviewsSortEnabled.value)
@@ -218,12 +223,19 @@ function formatOfficialPrice(price: number): string {
   })
 }
 
+function parseFilterNumber(value: string | number | null | undefined): number | undefined {
+  if (value === null || value === undefined) return undefined
+  if (typeof value === 'number') {
+    return Number.isNaN(value) ? undefined : value
+  }
+  const normalizedValue = value.trim()
+  if (normalizedValue === '') return undefined
+  const parsedValue = Number(normalizedValue)
+  return Number.isNaN(parsedValue) ? undefined : parsedValue
+}
+
 function toggleAndApplyProductSort(mode: ProductSortMode) {
-  if (mode === 'price_desc') {
-    priceSortOrder.value = priceSortOrder.value === 'desc' ? null : 'desc'
-  } else if (mode === 'price_asc') {
-    priceSortOrder.value = priceSortOrder.value === 'asc' ? null : 'asc'
-  } else if (mode === 'seller_rating_desc') {
+  if (mode === 'seller_rating_desc') {
     sellerRatingSortEnabled.value = !sellerRatingSortEnabled.value
   } else if (mode === 'created_at_desc') {
     createdAtSortEnabled.value = !createdAtSortEnabled.value
@@ -235,12 +247,6 @@ function toggleAndApplyProductSort(mode: ProductSortMode) {
 }
 
 function isProductSortModeActive(mode: ProductSortMode): boolean {
-  if (mode === 'price_desc') {
-    return priceSortOrder.value === 'desc'
-  }
-  if (mode === 'price_asc') {
-    return priceSortOrder.value === 'asc'
-  }
   if (mode === 'seller_rating_desc') {
     return sellerRatingSortEnabled.value
   }
@@ -603,11 +609,23 @@ async function loadMoreProducts() {
 function getProductFiltersParams(): ProductsFilterParams | undefined {
   const filters: ProductsFilterParams = {}
   const sortStack: NonNullable<ProductsFilterParams['sortStack']> = []
+  const minPriceRaw = parseFilterNumber(minPriceFilter.value)
+  const maxPriceRaw = parseFilterNumber(maxPriceFilter.value)
 
-  if (priceSortOrder.value === 'desc') {
-    sortStack.push('price_desc')
-  } else if (priceSortOrder.value === 'asc') {
-    sortStack.push('price_asc')
+  const minPrice =
+    minPriceRaw !== undefined && maxPriceRaw !== undefined && minPriceRaw > maxPriceRaw
+      ? maxPriceRaw
+      : minPriceRaw
+  const maxPrice =
+    minPriceRaw !== undefined && maxPriceRaw !== undefined && minPriceRaw > maxPriceRaw
+      ? minPriceRaw
+      : maxPriceRaw
+
+  if (minPrice !== undefined) {
+    filters.minPrice = minPrice
+  }
+  if (maxPrice !== undefined) {
+    filters.maxPrice = maxPrice
   }
   if (sellerRatingSortEnabled.value) {
     sortStack.push('seller_rating_desc')
@@ -1239,29 +1257,31 @@ onBeforeUnmount(() => {
           >
             <div class="space-y-5">
               <div class="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-semibold transition"
-                  :class="isProductSortModeActive('price_desc')
-                    ? 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-500)/0.1)] text-[var(--text-accent)]'
-                    : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.5)] hover:text-[var(--text-title)]'"
-                  @click="toggleAndApplyProductSort('price_desc')"
-                >
-                  <span>{{ t('common.price') }}</span>
-                  <ArrowDown class="h-3.5 w-3.5" />
-                </button>
+                <label class="rounded-full border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2 text-xs font-semibold text-[var(--text-body)] transition focus-within:border-[rgb(var(--palette-blue-400)/0.4)] focus-within:bg-[rgb(var(--palette-dark-700)/0.5)] focus-within:text-[var(--text-title)]">
+                  <span class="block text-[11px] text-[var(--text-muted)]">{{ t('pages.index.priceFrom') }}</span>
+                  <input
+                    v-model="minPriceFilter"
+                    type="number"
+                    min="0"
+                    inputmode="decimal"
+                    class="mt-1 w-24 bg-[var(--transparent)] text-xs text-[var(--text-title)] outline-none placeholder-[var(--text-placeholder)]"
+                    :placeholder="t('pages.index.priceFrom')"
+                    @input="scheduleApplyProductFilters()"
+                  />
+                </label>
 
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-semibold transition"
-                  :class="isProductSortModeActive('price_asc')
-                    ? 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-500)/0.1)] text-[var(--text-accent)]'
-                    : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.5)] hover:text-[var(--text-title)]'"
-                  @click="toggleAndApplyProductSort('price_asc')"
-                >
-                  <span>{{ t('common.price') }}</span>
-                  <ArrowUp class="h-3.5 w-3.5" />
-                </button>
+                <label class="rounded-full border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2 text-xs font-semibold text-[var(--text-body)] transition focus-within:border-[rgb(var(--palette-blue-400)/0.4)] focus-within:bg-[rgb(var(--palette-dark-700)/0.5)] focus-within:text-[var(--text-title)]">
+                  <span class="block text-[11px] text-[var(--text-muted)]">{{ t('pages.index.priceTo') }}</span>
+                  <input
+                    v-model="maxPriceFilter"
+                    type="number"
+                    min="0"
+                    inputmode="decimal"
+                    class="mt-1 w-24 bg-[var(--transparent)] text-xs text-[var(--text-title)] outline-none placeholder-[var(--text-placeholder)]"
+                    :placeholder="t('pages.index.priceTo')"
+                    @input="scheduleApplyProductFilters()"
+                  />
+                </label>
 
                 <button
                   type="button"
