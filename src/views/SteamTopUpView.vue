@@ -108,11 +108,7 @@ const selectedSteamService = computed(() => findSteamTopUpServiceByCurrency(stea
 const steamAmountRub = computed(() => toSteamPromoAmountRub(parsedSteamQuantity.value, steamSelectedCurrency.value))
 const steamNormalizedPromoCode = computed(() => steamPromoCode.value.trim().toUpperCase())
 const canRunSteamPrecheck = computed(() => (
-  steamIsAccountValid.value
-  && !!selectedSteamService.value
-  && !!steamSelectedCurrency.value
-  && Number.isFinite(parsedSteamQuantity.value)
-  && parsedSteamQuantity.value > 0
+  false
 ))
 const canValidateSteamPromo = computed(() => (
   steamNormalizedPromoCode.value.length >= 3
@@ -322,7 +318,12 @@ async function submitSteamTopUpPayment() {
 
   try {
     const response = await steamTopupService.createPayment(payload)
-    window.location.href = response.payment_url
+    if (response.payment_url) {
+      window.location.href = response.payment_url
+      return
+    }
+    await userStore.fetchUser()
+    steamSuccess.value = t('pages.index.steamTopUp.orderPaid')
   } catch (error) {
     steamError.value = resolveSteamErrorMessage(error)
     steamSuccess.value = ''

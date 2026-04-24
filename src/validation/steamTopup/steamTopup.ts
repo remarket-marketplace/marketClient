@@ -93,7 +93,11 @@ export const steamTopUpPayOrderInputSchema = z.object({
 export const steamTopUpCreatePaymentSchema = z.object({
   account: z.string(),
   charged_amount_rub: z.number(),
-  payment_url: z.string().url(),
+  user_balance_after_rub: z.number().nullable().optional(),
+  discount_amount_rub: z.number().optional(),
+  applied_promo_code: z.string().nullable().optional(),
+  promo_discount_percent: z.number().nullable().optional(),
+  payment_url: z.string().url().nullable().optional(),
   payment_status: z.string(),
   provider: z.string(),
   provider_tx_id: z.string(),
