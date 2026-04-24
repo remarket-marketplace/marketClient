@@ -545,15 +545,12 @@ function openDeleteConfirm() {
 }
 
 async function handleDeleteConfirm() {
-  if (product.value) {
-    const success = await productService.deleteProduct(product.value.id)
+  const deletedProduct = product.value
+  if (deletedProduct) {
+    const success = await productService.deleteProduct(deletedProduct.id)
     if (success) {
-      if (window.history.length > 1) {
-        router.back()
-      } else {
-        const username = user.value?.username
-        router.push(username ? `/user/${username}` : '/')
-      }
+      const username = deletedProduct.seller?.username || user.value?.username
+      await router.replace(username ? `/user/${username}` : '/')
     }
   }
   showDeleteConfirm.value = false

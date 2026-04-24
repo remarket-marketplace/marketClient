@@ -15,6 +15,7 @@ const router = useRouter()
 
 const props = defineProps<{
   product: Product
+  hideDescription?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -159,11 +160,14 @@ function handleImageTouchEnd(event: TouchEvent) {
         </div>
       </div>
 
-      <p class="home-list-description mt-1 min-w-0 text-xs text-[var(--text-muted)] sm:text-sm">
+      <p
+        v-if="!hideDescription"
+        class="home-list-description mt-1 min-w-0 text-xs text-[var(--text-muted)] sm:text-sm"
+      >
         {{ product.description || t('common.noDescription') }}
       </p>
 
-      <div class="mt-auto flex w-full min-w-0 items-center gap-1.5 sm:gap-2 min-h-6">
+      <div class="flex w-full min-w-0 items-center gap-1.5 sm:gap-2 min-h-6" :class="hideDescription ? 'mt-3' : 'mt-auto'">
         <button
           type="button"
           class="inline-flex min-h-6 min-w-0 shrink items-center text-left text-xs sm:text-sm"

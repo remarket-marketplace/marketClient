@@ -482,11 +482,12 @@ function buildSteamPayOrderPayload(): SteamTopUpPayOrderPayload {
 
 function buildSteamCreatePaymentPayload(): SteamTopUpCreatePaymentPayload | null {
   if (!steamIsAccountValid.value) return null
-  const amountRub = Number.parseFloat(steamQuantity.value)
-  if (!Number.isFinite(amountRub) || amountRub <= 0) return null
+  const amount = Number.parseFloat(steamQuantity.value)
+  if (!Number.isFinite(amount) || amount <= 0) return null
   return {
     account: steamNormalizedAccount.value,
-    amount_rub: amountRub,
+    amount,
+    currency: steamCheckoutCurrency.value,
   }
 }
 

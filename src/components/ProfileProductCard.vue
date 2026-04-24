@@ -16,6 +16,7 @@ const router = useRouter()
 const props = defineProps<{
   product: Product
   isOwner: boolean
+  hideDescription?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -58,11 +59,14 @@ function goToSeller() {
         {{ product.title }}
       </h3>
 
-      <p class="profile-product-description mb-2 min-w-0 w-full line-clamp-2 min-h-[2rem] text-xs text-[var(--text-muted)]">
+      <p
+        v-if="!hideDescription"
+        class="profile-product-description mb-2 min-w-0 w-full line-clamp-2 min-h-[2rem] text-xs text-[var(--text-muted)]"
+      >
         {{ product.description || t('common.noDescription') }}
       </p>
 
-      <hr class="mb-2 border-[rgb(var(--palette-dark-700))] opacity-80" />
+      <hr class="border-[rgb(var(--palette-dark-700))] opacity-80" :class="hideDescription ? 'mb-3 mt-1' : 'mb-2'" />
 
       <div class="mt-auto flex w-full flex-col gap-2">
         <div v-if="!isOwner" class="flex w-full min-w-0 items-center gap-1.5 sm:gap-2 min-h-6">

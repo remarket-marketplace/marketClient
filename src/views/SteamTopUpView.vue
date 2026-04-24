@@ -4,7 +4,7 @@ import { promoCodeService } from '@/api/promoCode/promoCodeService'
 import BackButton from '@/components/navigation/BackButton.vue'
 import TheInput from '@/components/TheInput.vue'
 import { useUserStore } from '@/stores/user'
-import { convertCurrencyAmount, getCurrencySymbol, preferredCurrency } from '@/utils/currency'
+import { convertCurrencyAmount, preferredCurrency } from '@/utils/currency'
 import { getErrorMessage } from '@/utils/errorsMap'
 import type { PromoCodeValidationResponse } from '@/validation/promoCode/promoCode'
 import {
@@ -12,8 +12,8 @@ import {
   isValidSteamTopUpAccount,
   normalizeSteamTopUpAccount,
   type SteamTopUpCreatePaymentPayload,
+  type SteamTopUpPrecheckResponse,
   type SteamTopUpService,
-  type SteamTopUpServiceCurrency,
 } from '@/validation/steamTopup/steamTopup'
 import { Icon } from '@iconify/vue'
 import axios from 'axios'
@@ -26,8 +26,14 @@ const { t } = useI18n()
 const userStore = useUserStore()
 const { user } = storeToRefs(userStore)
 const HOME_STEAM_TOPUP_ENABLED = import.meta.env.VITE_STEAM_TOPUP_ENABLED !== 'false'
-const QUICK_AMOUNTS_RUB = [100, 500, 1000, 2000, 5000] as const
-const QUICK_AMOUNTS_USD = [1, 5, 10, 25, 50] as const
+const QUICK_AMOUNTS_BY_CURRENCY: Record<string, readonly number[]> = {
+  RUB: [100, 500, 1000, 2000, 5000],
+  USD: [1, 5, 10, 25, 50],
+  EUR: [1, 5, 10, 25, 50],
+  KZT: [500, 2500, 5000, 10000, 25000],
+  UAH: [50, 200, 500, 1000, 2000],
+}
+const ZERO_FRACTION_STEAM_CURRENCIES = new Set(['RUB', 'KZT', 'JPY'])
 
 const steamAccount = ref('')
 const steamQuantity = ref('')
@@ -37,42 +43,89 @@ const steamSuccess = ref('')
 const steamCheckoutSubmitting = ref(false)
 const steamServices = ref<SteamTopUpService[]>([])
 const steamServicesLoading = ref(false)
+const steamSelectedCurrency = ref('')
 const steamPromoValidationLoading = ref(false)
 const steamPromoValidationError = ref('')
 const steamPromoValidationResult = ref<PromoCodeValidationResponse | null>(null)
+const steamPrecheckLoading = ref(false)
+const steamPrecheckError = ref('')
+const steamPrecheckResult = ref<SteamTopUpPrecheckResponse | null>(null)
 let steamPromoValidationTimer: ReturnType<typeof setTimeout> | null = null
+let steamPrecheckTimer: ReturnType<typeof setTimeout> | null = null
 let steamPromoValidationRequestId = 0
+let steamPrecheckRequestId = 0
 
-const selectedCurrency = computed<SteamTopUpServiceCurrency>(() => (
-  preferredCurrency.value === 'USD' ? 'USD' : 'RUB'
-))
-const currencySymbol = computed(() => getCurrencySymbol(selectedCurrency.value))
-const currencyInputStep = computed(() => (selectedCurrency.value === 'USD' ? 0.01 : 1))
+function getSteamCurrencySymbol(currency: string): string {
+  const normalizedCurrency = currency.trim().toUpperCase()
+  if (!normalizedCurrency) return ''
+
+  try {
+    const formattedParts = new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: normalizedCurrency,
+      currencyDisplay: 'symbol',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).formatToParts(1)
+    return formattedParts.find((part) => part.type === 'currency')?.value ?? normalizedCurrency
+  } catch {
+    return normalizedCurrency
+  }
+}
+
+function getSteamCurrencyStep(currency: string): number {
+  return ZERO_FRACTION_STEAM_CURRENCIES.has(currency.trim().toUpperCase()) ? 1 : 0.01
+}
+
+function toSteamPromoAmountRub(amount: number, currency: string): number | null {
+  if (!Number.isFinite(amount) || amount <= 0) return null
+
+  const normalizedCurrency = currency.trim().toUpperCase()
+  if (normalizedCurrency === 'RUB') return Number(amount.toFixed(2))
+  if (normalizedCurrency === 'USD') {
+    return Number(convertCurrencyAmount(amount, 'USD', 'RUB').toFixed(2))
+  }
+
+  return null
+}
+
+const availableSteamCurrencies = computed<string[]>(() => {
+  const uniqueCurrencies = new Set<string>()
+  for (const service of steamServices.value) {
+    const normalizedCurrency = (service.currency || '').trim().toUpperCase()
+    if (normalizedCurrency) {
+      uniqueCurrencies.add(normalizedCurrency)
+    }
+  }
+  return Array.from(uniqueCurrencies.values())
+})
+const currencySymbol = computed(() => getSteamCurrencySymbol(steamSelectedCurrency.value))
+const currencyInputStep = computed(() => getSteamCurrencyStep(steamSelectedCurrency.value))
 const steamNormalizedAccount = computed(() => normalizeSteamTopUpAccount(steamAccount.value))
 const steamIsAccountValid = computed(() => isValidSteamTopUpAccount(steamAccount.value))
 const parsedSteamQuantity = computed(() => Number.parseFloat(steamQuantity.value))
-const selectedSteamService = computed(() => findSteamTopUpServiceByCurrency(steamServices.value, selectedCurrency.value))
-const steamQuantityRub = computed(() => (
-  convertCurrencyAmount(parsedSteamQuantity.value, selectedCurrency.value, 'RUB')
-))
-const steamAmountRub = computed(() => Number(steamQuantityRub.value.toFixed(2)))
+const selectedSteamService = computed(() => findSteamTopUpServiceByCurrency(steamServices.value, steamSelectedCurrency.value))
+const steamAmountRub = computed(() => toSteamPromoAmountRub(parsedSteamQuantity.value, steamSelectedCurrency.value))
 const steamNormalizedPromoCode = computed(() => steamPromoCode.value.trim().toUpperCase())
+const canRunSteamPrecheck = computed(() => (
+  steamIsAccountValid.value
+  && !!selectedSteamService.value
+  && !!steamSelectedCurrency.value
+))
 const canValidateSteamPromo = computed(() => (
   steamNormalizedPromoCode.value.length >= 3
   && steamIsAccountValid.value
   && !!selectedSteamService.value
-  && Number.isFinite(steamAmountRub.value)
+  && steamAmountRub.value !== null
   && steamAmountRub.value > 0
 ))
-const quickAmounts = computed(() => {
-  return selectedCurrency.value === 'USD'
-    ? [...QUICK_AMOUNTS_USD]
-    : [...QUICK_AMOUNTS_RUB]
-})
+const quickAmounts = computed(() => [...(QUICK_AMOUNTS_BY_CURRENCY[steamSelectedCurrency.value] ?? [])])
 const steamCanCreateOrder = computed(() => {
   if (!user.value) return false
   if (!selectedSteamService.value) return false
   if (!steamIsAccountValid.value) return false
+  if (steamPrecheckLoading.value) return false
+  if (!steamPrecheckResult.value?.is_match) return false
   return Number.isFinite(parsedSteamQuantity.value) && parsedSteamQuantity.value > 0
 })
 
@@ -105,6 +158,12 @@ function clearSteamPromoValidation(): void {
   steamPromoValidationResult.value = null
 }
 
+function clearSteamPrecheck(): void {
+  steamPrecheckLoading.value = false
+  steamPrecheckError.value = ''
+  steamPrecheckResult.value = null
+}
+
 async function loadSteamServices(): Promise<void> {
   if (!HOME_STEAM_TOPUP_ENABLED || !user.value) return
 
@@ -113,11 +172,44 @@ async function loadSteamServices(): Promise<void> {
   try {
     const response = await steamTopupService.getServices()
     steamServices.value = response.services
+    const currencies = availableSteamCurrencies.value
+    const preferredSteamCurrency = preferredCurrency.value === 'USD' ? 'USD' : 'RUB'
+    steamSelectedCurrency.value = currencies.includes(preferredSteamCurrency)
+      ? preferredSteamCurrency
+      : (currencies[0] ?? '')
   } catch (error) {
     steamServices.value = []
+    steamSelectedCurrency.value = ''
     steamError.value = resolveSteamErrorMessage(error)
   } finally {
     steamServicesLoading.value = false
+  }
+}
+
+async function runSteamPrecheck(): Promise<void> {
+  if (!canRunSteamPrecheck.value) {
+    clearSteamPrecheck()
+    return
+  }
+
+  steamPrecheckLoading.value = true
+  steamPrecheckError.value = ''
+  steamPrecheckResult.value = null
+  const requestId = ++steamPrecheckRequestId
+
+  try {
+    const result = await steamTopupService.precheck({
+      account: steamNormalizedAccount.value,
+      currency: steamSelectedCurrency.value,
+    })
+    if (requestId !== steamPrecheckRequestId) return
+    steamPrecheckResult.value = result
+  } catch (error) {
+    if (requestId !== steamPrecheckRequestId) return
+    steamPrecheckError.value = resolveSteamErrorMessage(error)
+  } finally {
+    if (requestId !== steamPrecheckRequestId) return
+    steamPrecheckLoading.value = false
   }
 }
 
@@ -136,7 +228,7 @@ async function validateSteamPromoCode(): Promise<void> {
     const result = await promoCodeService.validate({
       code: steamNormalizedPromoCode.value,
       context_type: 'steam_topup',
-      amount: steamAmountRub.value,
+      amount: steamAmountRub.value as number,
     })
     if (requestId !== steamPromoValidationRequestId) return
     steamPromoValidationResult.value = result
@@ -147,6 +239,21 @@ async function validateSteamPromoCode(): Promise<void> {
     if (requestId !== steamPromoValidationRequestId) return
     steamPromoValidationLoading.value = false
   }
+}
+
+function scheduleSteamPrecheck(): void {
+  if (steamPrecheckTimer) {
+    clearTimeout(steamPrecheckTimer)
+  }
+  if (!canRunSteamPrecheck.value) {
+    clearSteamPrecheck()
+    return
+  }
+  steamPrecheckError.value = ''
+  steamPrecheckResult.value = null
+  steamPrecheckTimer = setTimeout(() => {
+    void runSteamPrecheck()
+  }, 350)
 }
 
 function scheduleSteamPromoValidation(): void {
@@ -169,7 +276,7 @@ function scheduleSteamPromoValidation(): void {
 }
 
 function setQuickAmount(amount: number): void {
-  steamQuantity.value = selectedCurrency.value === 'USD' ? amount.toFixed(2) : String(amount)
+  steamQuantity.value = currencyInputStep.value === 1 ? String(amount) : amount.toFixed(2)
   clearSteamFeedback()
 }
 
@@ -178,7 +285,7 @@ function isQuickAmountActive(amount: number): boolean {
 }
 
 function formatQuickAmount(amount: number): string {
-  if (selectedCurrency.value === 'USD') {
+  if (currencyInputStep.value !== 1) {
     return `${currencySymbol.value}${amount.toFixed(2)}`
   }
   return `${Math.round(amount)} ${currencySymbol.value}`
@@ -186,11 +293,13 @@ function formatQuickAmount(amount: number): string {
 
 function buildSteamCreatePaymentPayload(): SteamTopUpCreatePaymentPayload | null {
   if (!steamIsAccountValid.value) return null
-  if (!Number.isFinite(steamAmountRub.value) || steamAmountRub.value <= 0) return null
+  if (!selectedSteamService.value || !steamSelectedCurrency.value) return null
+  if (!Number.isFinite(parsedSteamQuantity.value) || parsedSteamQuantity.value <= 0) return null
 
   return {
     account: steamNormalizedAccount.value,
-    amount_rub: steamAmountRub.value,
+    amount: parsedSteamQuantity.value,
+    currency: steamSelectedCurrency.value,
     ...(steamNormalizedPromoCode.value ? { promo_code: steamNormalizedPromoCode.value } : {}),
   }
 }
@@ -219,16 +328,19 @@ async function submitSteamTopUpPayment() {
   }
 }
 
-watch(selectedCurrency, (nextCurrency, prevCurrency) => {
-  const currentInput = Number.parseFloat(steamQuantity.value)
-  if (!Number.isFinite(currentInput) || currentInput <= 0) return
-
-  const converted = convertCurrencyAmount(currentInput, prevCurrency, nextCurrency)
-  steamQuantity.value = nextCurrency === 'USD' ? converted.toFixed(2) : Math.round(converted).toString()
+watch(steamSelectedCurrency, () => {
+  steamQuantity.value = ''
+  clearSteamFeedback()
+  clearSteamPromoValidation()
+  scheduleSteamPrecheck()
 })
 
-watch([steamPromoCode, steamQuantity, steamAccount, selectedCurrency], () => {
+watch([steamPromoCode, steamQuantity, steamAccount, steamSelectedCurrency], () => {
   scheduleSteamPromoValidation()
+})
+
+watch([steamAccount, steamSelectedCurrency], () => {
+  scheduleSteamPrecheck()
 })
 
 watch(
@@ -236,11 +348,14 @@ watch(
   async (currentUserId) => {
     if (!currentUserId) {
       steamServices.value = []
+      steamSelectedCurrency.value = ''
       clearSteamPromoValidation()
+      clearSteamPrecheck()
       return
     }
     await loadSteamServices()
     scheduleSteamPromoValidation()
+    scheduleSteamPrecheck()
   },
   { immediate: true },
 )
@@ -248,6 +363,9 @@ watch(
 onBeforeUnmount(() => {
   if (steamPromoValidationTimer) {
     clearTimeout(steamPromoValidationTimer)
+  }
+  if (steamPrecheckTimer) {
+    clearTimeout(steamPrecheckTimer)
   }
 })
 </script>
@@ -322,6 +440,63 @@ onBeforeUnmount(() => {
                   :placeholder="t('pages.index.steamTopUp.accountPlaceholder')"
                 />
               </label>
+
+              <div class="block space-y-2">
+                <span class="block text-sm font-medium text-[var(--text-body)]">
+                  {{ t('pages.index.steamTopUp.currency') }}
+                </span>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    v-for="currency in availableSteamCurrencies"
+                    :key="currency"
+                    type="button"
+                    class="inline-flex h-10 items-center justify-center rounded-lg border px-4 text-sm font-semibold transition-all duration-200"
+                    :class="steamSelectedCurrency === currency
+                      ? 'border-[rgb(var(--palette-blue-500)/0.45)] bg-[rgb(var(--palette-blue-500)/0.15)] text-[var(--text-title)]'
+                      : 'border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.6)] text-[var(--text-body)] hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-600))] hover:text-[var(--text-title)]'"
+                    @click="steamSelectedCurrency = currency"
+                  >
+                    {{ currency }}
+                  </button>
+                </div>
+              </div>
+
+              <div
+                v-if="steamPrecheckLoading || steamPrecheckError || steamPrecheckResult"
+                class="rounded-lg border px-4 py-3 text-sm"
+                :class="steamPrecheckError
+                  ? 'border-[rgb(var(--palette-red-500)/0.3)] bg-[rgb(var(--palette-red-500)/0.1)] text-[var(--text-danger-soft)]'
+                  : steamPrecheckResult?.is_match
+                    ? 'border-[rgb(var(--palette-emerald-500)/0.3)] bg-[rgb(var(--palette-emerald-500)/0.1)] text-[var(--text-success)]'
+                    : 'border-[rgb(var(--palette-yellow-500)/0.3)] bg-[rgb(var(--palette-yellow-500)/0.1)] text-[var(--text-warning)]'"
+              >
+                <p v-if="steamPrecheckLoading">
+                  {{ t('pages.index.steamTopUp.precheckLoading') }}
+                </p>
+                <p v-else-if="steamPrecheckError">
+                  {{ steamPrecheckError }}
+                </p>
+                <template v-else-if="steamPrecheckResult">
+                  <p>
+                    {{
+                      steamPrecheckResult.is_match
+                        ? t('pages.index.steamTopUp.precheckMatch')
+                        : (steamPrecheckResult.message || t('errors.STEAM_TOPUP_ACCOUNT_CURRENCY_MISMATCH'))
+                    }}
+                  </p>
+                  <p
+                    v-if="steamPrecheckResult.detected_region || steamPrecheckResult.detected_currency"
+                    class="mt-1 text-[var(--text-body)]"
+                  >
+                    {{
+                      t('pages.index.steamTopUp.precheckDetails', {
+                        region: steamPrecheckResult.detected_region || '—',
+                        currency: steamPrecheckResult.detected_currency || '—',
+                      })
+                    }}
+                  </p>
+                </template>
+              </div>
 
               <label class="block space-y-2">
                 <span class="block text-sm font-medium text-[var(--text-body)]">

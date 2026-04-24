@@ -988,10 +988,10 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 <div v-if="products.length && productCardViewMode === 'grid'"
                   class="profile-products-grid grid gap-1 md:gap-2 mt-6 w-full">
                   <ProfileProductCard v-for="product in products" :key="product.id" :product="product"
-                    :is-owner="isOwner" @click="goToProduct" />
+                    :is-owner="isOwner" hide-description @click="goToProduct" />
                 </div>
                 <div v-else-if="products.length" class="mt-6 w-full flex flex-col gap-2">
-                  <HomeProductListCard v-for="product in products" :key="product.id" :product="product"
+                  <HomeProductListCard v-for="product in products" :key="product.id" :product="product" hide-description
                     @click="goToProduct" />
                 </div>
 

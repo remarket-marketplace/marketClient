@@ -7,6 +7,8 @@ import {
   steamTopUpPayOrderInputSchema,
   steamTopUpOrderSchema,
   steamTopUpPayOrderSchema,
+  steamTopUpPrecheckInputSchema,
+  steamTopUpPrecheckSchema,
   steamTopUpServicesSchema,
   type SteamTopUpCreatePaymentPayload,
   type SteamTopUpCreatePaymentResponse,
@@ -14,6 +16,8 @@ import {
   type SteamTopUpOrder,
   type SteamTopUpPayOrderPayload,
   type SteamTopUpPayOrderResponse,
+  type SteamTopUpPrecheckPayload,
+  type SteamTopUpPrecheckResponse,
   type SteamTopUpServicesResponse,
 } from '@/validation/steamTopup/steamTopup'
 
@@ -35,6 +39,19 @@ export const steamTopupService = {
     try {
       const response = await httpClient.get('/steam-topup/services')
       return steamTopUpServicesSchema.parse(response.data)
+    } catch (error) {
+      if (error instanceof ZodError) {
+        console.error(error.issues)
+      }
+      throw error
+    }
+  },
+
+  async precheck(payload: SteamTopUpPrecheckPayload): Promise<SteamTopUpPrecheckResponse> {
+    const validatedPayload = steamTopUpPrecheckInputSchema.parse(payload)
+    try {
+      const response = await httpClient.post('/steam-topup/precheck', validatedPayload)
+      return steamTopUpPrecheckSchema.parse(response.data)
     } catch (error) {
       if (error instanceof ZodError) {
         console.error(error.issues)
