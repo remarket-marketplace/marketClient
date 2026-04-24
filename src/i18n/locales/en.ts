@@ -822,6 +822,7 @@ const en = {
         redirectToPayment: "Redirecting to payment page...",
         precheckLoading: "Checking Steam account region and wallet currency...",
         precheckMatch: "The account region matches the selected wallet currency.",
+        precheckUnknown: "Could not automatically verify the account region. Check the selected currency before payment.",
         precheckDetails: "Detected: region {region}, currency {currency}.",
       },
     },
