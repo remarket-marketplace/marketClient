@@ -2,6 +2,7 @@ import axios from "axios";
 import { ZodError } from "zod";
 import { httpClient } from "..";
 import { ProductSchema, type Product } from "@/validation/product/product";
+import { CategorySchema, type Category } from "@/validation/category/category";
 import { ErrorHandler, type ApiError } from "../errorHandler";
 import { PRODUCT_IMAGE_MIME_TYPES } from "@/utils/imageUpload";
 
@@ -90,6 +91,11 @@ export interface OfficialStoreConfig {
   hero_image_url: string | null;
 }
 
+export interface OfficialStoreOverview {
+  hero_image_url: string | null;
+  categories: Category[];
+}
+
 function buildProductsFilterParams(filters?: ProductsFilterParams) {
   if (!filters) return {};
 
@@ -158,6 +164,22 @@ export const productService = {
       return response.data as OfficialStoreConfig;
     } catch (e) {
       console.error("Failed to load official store config:", e);
+      return null;
+    }
+  },
+
+  async getOfficialStoreOverview(): Promise<OfficialStoreOverview | null> {
+    try {
+      const response = await httpClient.get("/products/official-store/overview");
+      return {
+        hero_image_url: response.data.hero_image_url ?? null,
+        categories: Array.isArray(response.data.categories)
+          ? response.data.categories.map((category: unknown) => CategorySchema.parse(category))
+          : [],
+      };
+    } catch (e) {
+      if (e instanceof ZodError) console.error(e.issues);
+      console.error("Failed to load official store overview:", e);
       return null;
     }
   },

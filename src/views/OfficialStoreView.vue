@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { categoryService } from '@/api/category/CategoryService'
 import { productService } from '@/api/product/ProductService'
 import MainProductCard from '@/components/mainProductCard.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
@@ -144,7 +143,9 @@ async function syncRouteQueryWithSelection() {
 }
 
 async function loadRootCategories() {
-  const categories = await categoryService.getAllCategoriesFlat(100, 30)
+  const overview = await productService.getOfficialStoreOverview()
+  const categories = overview?.categories ?? []
+  officialStoreHeroImageUrl.value = overview?.hero_image_url ?? null
   rootCategories.value = sortCategoriesByActiveProductsCount(
     categories.filter((item) => !item.parent_id && isVisibleCategory(item)),
   )
@@ -198,11 +199,7 @@ async function loadOfficialProducts(page = 1, append = false) {
 
 async function loadOfficialStorePageData() {
   isCategoryLoading.value = true
-  const [officialStoreConfig] = await Promise.all([
-    productService.getOfficialStoreConfig(),
-    loadRootCategories(),
-  ])
-  officialStoreHeroImageUrl.value = officialStoreConfig?.hero_image_url ?? null
+  await loadRootCategories()
   await applySelectionFromRouteQuery()
   await syncRouteQueryWithSelection()
   isCategoryLoading.value = false
