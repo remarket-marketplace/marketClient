@@ -127,7 +127,7 @@ const steamCanCreateOrder = computed(() => {
   if (!selectedSteamService.value) return false
   if (!steamIsAccountValid.value) return false
   if (steamPrecheckLoading.value) return false
-  if (!steamPrecheckResult.value?.is_match) return false
+  if (steamPrecheckResult.value && !steamPrecheckResult.value.is_match && !steamPrecheckResult.value.message) return false
   return Number.isFinite(parsedSteamQuantity.value) && parsedSteamQuantity.value > 0
 })
 
@@ -484,7 +484,9 @@ onBeforeUnmount(() => {
                     {{
                       steamPrecheckResult.is_match
                         ? t('pages.index.steamTopUp.precheckMatch')
-                        : (steamPrecheckResult.message || t('errors.STEAM_TOPUP_ACCOUNT_CURRENCY_MISMATCH'))
+                        : (steamPrecheckResult.message
+                          ? t('pages.index.steamTopUp.precheckUnknown')
+                          : t('errors.STEAM_TOPUP_ACCOUNT_CURRENCY_MISMATCH'))
                     }}
                   </p>
                   <p
