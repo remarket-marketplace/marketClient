@@ -11,8 +11,8 @@ import TheButton from './forms/TheButton.vue'
 import { useUserStore } from '@/stores/user'
 import Captcha from '@/components/Captcha.vue'
 import Title from '@/components/Title.vue'
-import AuthWelcomeTyping from '@/components/AuthWelcomeTyping.vue'
 import { buildAuthRedirectQuery, getAuthRedirectFromRoute } from '@/utils/authRedirect'
+import { queueAuthWelcomeToast } from '@/utils/authWelcomeToast'
 
 const sended = ref(false)
 const email = ref('')
@@ -20,9 +20,7 @@ const password = ref('')
 const captchaToken = ref('')
 const captchaRenderKey = ref(0)
 const passwordHidden = ref(true)
-const showWelcomeScreen = ref(false)
 const welcomeUsername = ref('')
-const isWelcomeRedirecting = ref(false)
 const errorMessage = ref('')
 
 const authStage = ref<'credentials' | 'twoFactor'>('credentials')
@@ -44,12 +42,13 @@ const signUpLocation = computed(() => ({
   query: buildAuthRedirectQuery(afterAuthRedirect.value),
 }))
 
-const welcomeText = computed(() => {
+const welcomeTitle = computed(() => {
   const safeUsername = welcomeUsername.value.trim() || t('common.user')
   return t('pages.auth.signIn.welcomeTitle', { username: safeUsername })
 })
 
-function resolveWelcomeUsername() {
+
+function resolveWelcomeUsername(): string {
   const usernameFromStore = userStore.user?.username?.trim()
   if (usernameFromStore) {
     return usernameFromStore
@@ -61,15 +60,6 @@ function resolveWelcomeUsername() {
   }
 
   return t('common.user')
-}
-
-function handleWelcomeFinished() {
-  if (isWelcomeRedirecting.value) {
-    return
-  }
-
-  isWelcomeRedirecting.value = true
-  router.push(afterAuthRedirect.value)
 }
 
 function refreshCaptcha() {
@@ -109,8 +99,10 @@ function resetTwoFactorState() {
 
 function showWelcome() {
   welcomeUsername.value = resolveWelcomeUsername()
-  isWelcomeRedirecting.value = false
-  showWelcomeScreen.value = true
+  queueAuthWelcomeToast({
+    title: welcomeTitle.value,
+  })
+  void router.push(afterAuthRedirect.value)
 }
 
 async function signIn() {
@@ -311,24 +303,12 @@ onUnmounted(() => {
 
 <template>
   <div class="h-full w-full flex flex-col items-center overflow-scroll pb-36 pt-10">
-    <transition name="signin-stage" mode="out-in">
-      <div v-if="showWelcomeScreen" key="welcome" class="my-auto w-full px-4">
-        <AuthWelcomeTyping
-          :text="welcomeText"
-          :duration-ms="900"
-          :hold-ms="220"
-          @finished="handleWelcomeFinished"
-        />
-      </div>
+    <div
+      class="max-w-sm w-full border border-[rgb(var(--palette-dark-700))] rounded-2xl bg-background p-8 backdrop-blur-md space-y-6 my-auto"
+    >
+      <Title :text="t('pages.auth.signIn.title')" class="text-center text-4xl" />
 
-      <div
-        v-else
-        key="form"
-        class="max-w-sm w-full border border-[rgb(var(--palette-dark-700))] rounded-2xl bg-background p-8 backdrop-blur-md space-y-6 my-auto"
-      >
-        <Title :text="t('pages.auth.signIn.title')" class="text-center text-4xl" />
-
-        <form v-if="authStage === 'credentials'" class="space-y-4" @submit.prevent>
+      <form v-if="authStage === 'credentials'" class="space-y-4" @submit.prevent>
           <div>
             <label for="email" class="mb-1 block text-sm text-[var(--text-secondary)]">
               {{ $t('common.email') }}
@@ -378,9 +358,9 @@ onUnmounted(() => {
           />
 
           <ErrorBanner :message="errorMessage" />
-        </form>
+      </form>
 
-        <form v-else class="space-y-4" @submit.prevent="confirmTwoFactorSignIn">
+      <form v-else class="space-y-4" @submit.prevent="confirmTwoFactorSignIn">
           <div class="space-y-2">
             <label class="block text-sm text-text-secondary">{{ $t('pages.auth.signIn.twoFactor.title') }}</label>
             <p class="text-xs text-[var(--text-muted)]">{{ $t('pages.auth.signIn.twoFactor.hint') }}</p>
@@ -434,36 +414,20 @@ onUnmounted(() => {
           >
             {{ $t('pages.auth.signIn.twoFactor.useAnotherAccount') }}
           </button>
-        </form>
+      </form>
 
-        <p v-if="authStage === 'credentials'" class="text-center text-sm text-text-secondaryDark">
-          {{ $t('pages.auth.signIn.noAccount') }}
-          <router-link :to="signUpLocation" class="text-text-link hover:underline">
-            {{ $t('pages.auth.signIn.register') }}
-          </router-link>
-        </p>
+      <p v-if="authStage === 'credentials'" class="text-center text-sm text-text-secondaryDark">
+        {{ $t('pages.auth.signIn.noAccount') }}
+        <router-link :to="signUpLocation" class="text-text-link hover:underline">
+          {{ $t('pages.auth.signIn.register') }}
+        </router-link>
+      </p>
 
-        <p v-if="authStage === 'credentials'" class="text-center text-sm text-text-secondaryDark">
-          <router-link to="/password-reset" class="text-text-link hover:underline">
-            {{ $t('pages.auth.signIn.forgotPassword') }}
-          </router-link>
-        </p>
-      </div>
-    </transition>
+      <p v-if="authStage === 'credentials'" class="text-center text-sm text-text-secondaryDark">
+        <router-link to="/password-reset" class="text-text-link hover:underline">
+          {{ $t('pages.auth.signIn.forgotPassword') }}
+        </router-link>
+      </p>
+    </div>
   </div>
 </template>
-
-<style scoped>
-.signin-stage-enter-active,
-.signin-stage-leave-active {
-  transition:
-    opacity 0.28s ease,
-    transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.signin-stage-enter-from,
-.signin-stage-leave-to {
-  opacity: 0;
-  transform: translateY(10px);
-}
-</style>

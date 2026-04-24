@@ -13,6 +13,8 @@ import { authService } from './api/auth/AuthService'
 import MainPageLayout from './views/layouts/MainPageLayout.vue'
 import AppRouteSkeleton from './components/layout/AppRouteSkeleton.vue'
 import CookieConsentBanner from './components/layout/CookieConsentBanner.vue'
+import AuthCornerToast from './components/AuthCornerToast.vue'
+import { consumeAuthWelcomeToast, type AuthWelcomeToastPayload } from './utils/authWelcomeToast'
 
 const store = useUserStore()
 const navigationStore = useNavigationStore()
@@ -20,9 +22,11 @@ const chatStore = useChatStore()
 const notificationStore = useNotificationStore()
 const route = useRoute()
 const isUserLoaded = ref(false)
+const authWelcomeToast = ref<AuthWelcomeToastPayload | null>(null)
 let unsubscribeChatUpdated: (() => void) | null = null
 let unsubscribeNotificationCreated: (() => void) | null = null
 let onlinePingIntervalHandle: number | null = null
+let authWelcomeToastTimer: number | null = null
 let chatSyncVersion = 0
 let isResyncingChats = false
 let needResyncChats = false
@@ -52,6 +56,24 @@ function stopOnlinePing() {
   if (!onlinePingIntervalHandle) return
   clearInterval(onlinePingIntervalHandle)
   onlinePingIntervalHandle = null
+}
+
+function clearAuthWelcomeToastTimer() {
+  if (!authWelcomeToastTimer) return
+  window.clearTimeout(authWelcomeToastTimer)
+  authWelcomeToastTimer = null
+}
+
+function showQueuedAuthWelcomeToast() {
+  const payload = consumeAuthWelcomeToast()
+  if (!payload) return
+
+  authWelcomeToast.value = payload
+  clearAuthWelcomeToastTimer()
+  authWelcomeToastTimer = window.setTimeout(() => {
+    authWelcomeToast.value = null
+    authWelcomeToastTimer = null
+  }, 2600)
 }
 
 function handleVisibilityChange() {
@@ -153,6 +175,13 @@ watch(
   { immediate: true }
 )
 
+watch(
+  () => route.fullPath,
+  () => {
+    showQueuedAuthWelcomeToast()
+  }
+)
+
 onMounted(async () => {
   try {
     await store.ensureUserLoaded()
@@ -163,6 +192,7 @@ onMounted(async () => {
   window.addEventListener('online', handleWindowOnline)
   document.addEventListener('visibilitychange', handleVisibilityChange)
   pingOnlineSafely()
+  showQueuedAuthWelcomeToast()
   isUserLoaded.value = true
 })
 
@@ -170,6 +200,7 @@ onUnmounted(() => {
   unsubscribeChatUpdated?.()
   unsubscribeNotificationCreated?.()
   stopOnlinePing()
+  clearAuthWelcomeToastTimer()
   window.removeEventListener('focus', handleWindowFocus)
   window.removeEventListener('online', handleWindowOnline)
   document.removeEventListener('visibilitychange', handleVisibilityChange)
@@ -188,6 +219,11 @@ const layout = computed(() => {
 
 <template>
   <div class="w-full h-full relative">
+    <AuthCornerToast
+      v-if="authWelcomeToast"
+      :title="authWelcomeToast.title"
+    />
+
     <Transition name="route-progress">
       <div v-if="showRouteProgress" class="pointer-events-none fixed inset-x-0 top-0 z-[140] h-1 overflow-hidden">
         <div class="route-progress-bar"></div>

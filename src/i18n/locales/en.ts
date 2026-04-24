@@ -1156,7 +1156,6 @@ const en = {
         completeCaptcha: "Please complete captcha",
         welcomeLabel: "Signed in",
         welcomeTitle: "Welcome, {username}",
-        welcomeHint: "Preparing your workspace...",
         twoFactor: {
           title: "Verification code",
           hint: "We sent a 6-digit code to your email. Enter it to complete sign in.",

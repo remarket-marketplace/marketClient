@@ -9,8 +9,8 @@ import { useRoute, useRouter } from 'vue-router'
 import TheButton from './forms/TheButton.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
 import Captcha from '@/components/Captcha.vue'
-import AuthWelcomeTyping from '@/components/AuthWelcomeTyping.vue'
 import { buildAuthRedirectQuery, getAuthRedirectFromRoute } from '@/utils/authRedirect'
+import { queueAuthWelcomeToast } from '@/utils/authWelcomeToast'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -35,8 +35,7 @@ const codeInputs = ref<(HTMLInputElement | null)[]>([])
 const errorMessage = ref('')
 const passwordHidden = ref(true)
 const passwordRepeatHidden = ref(true)
-const successShown = ref(false)
-const isWelcomeRedirecting = ref(false)
+const welcomeUsername = ref('')
 const afterAuthRedirect = computed(() => getAuthRedirectFromRoute(route))
 const signInLocation = computed(() => ({
   path: '/signin',
@@ -342,8 +341,11 @@ async function completeSignUp() {
   try {
     await authService.signUp(email.value, password.value, username.value, code)
     showCodeInput.value = false
-    successShown.value = true
-    isWelcomeRedirecting.value = false
+    welcomeUsername.value = username.value.trim() || t('common.user')
+    queueAuthWelcomeToast({
+      title: welcomeTitle.value,
+    })
+    void router.push(afterAuthRedirect.value)
   } catch (error) {
     errorMessage.value = resolveRequestError(error)
   } finally {
@@ -401,38 +403,17 @@ function clearPasswordRepeatError() {
   void validatePasswordRepeat(false)
 }
 
-const welcomeText = computed(() => {
-  const safeUsername = username.value.trim() || t('common.user')
+const welcomeTitle = computed(() => {
+  const safeUsername = welcomeUsername.value.trim() || t('common.user')
   return t('pages.auth.signIn.welcomeTitle', { username: safeUsername })
 })
-
-function handleWelcomeFinished() {
-  if (isWelcomeRedirecting.value) {
-    return
-  }
-
-  isWelcomeRedirecting.value = true
-  router.push(afterAuthRedirect.value)
-}
 </script>
 
 <template>
   <div class="h-full w-full flex flex-col items-center overflow-scroll pb-36 pt-10">
-    <transition name="signin-stage" mode="out-in">
-      <div v-if="successShown" key="welcome" class="my-auto w-full px-4">
-        <AuthWelcomeTyping
-          :text="welcomeText"
-          :duration-ms="900"
-          :hold-ms="220"
-          @finished="handleWelcomeFinished"
-        />
-      </div>
-
-      <div
-        v-else
-        key="form"
-        class="max-w-sm w-full border border-[rgb(var(--palette-dark-700))] rounded-2xl bg-background p-8 backdrop-blur-md space-y-6 my-auto"
-      >
+    <div
+      class="max-w-sm w-full border border-[rgb(var(--palette-dark-700))] rounded-2xl bg-background p-8 backdrop-blur-md space-y-6 my-auto"
+    >
         <h1 class="text-center text-3xl text-mainText font-bold">
           {{ $t('pages.auth.signUp.title') }}
         </h1>
@@ -538,22 +519,6 @@ function handleWelcomeFinished() {
             {{ $t('pages.auth.signUp.login') }}
           </router-link>
         </p>
-      </div>
-    </transition>
+    </div>
   </div>
 </template>
-
-<style scoped>
-.signin-stage-enter-active,
-.signin-stage-leave-active {
-  transition:
-    opacity 0.28s ease,
-    transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.signin-stage-enter-from,
-.signin-stage-leave-to {
-  opacity: 0;
-  transform: translateY(10px);
-}
-</style>
