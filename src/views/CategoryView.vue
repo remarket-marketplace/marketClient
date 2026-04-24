@@ -266,6 +266,22 @@ function scheduleApplyProductFilters(delayMs = 250) {
   }, delayMs)
 }
 
+function onMaxPriceFilterInput(event: Event) {
+  const input = event.target as HTMLInputElement | null
+  if (!input) {
+    scheduleApplyProductFilters()
+    return
+  }
+
+  const sanitizedValue = input.value.replace(/\D+/g, '').slice(0, 7)
+  maxPriceFilter.value = sanitizedValue
+  if (input.value !== sanitizedValue) {
+    input.value = sanitizedValue
+  }
+
+  scheduleApplyProductFilters()
+}
+
 function updateOfficialCarouselState() {
   const carouselElement = officialCarouselRef.value
   if (!carouselElement) {
@@ -1274,12 +1290,13 @@ onBeforeUnmount(() => {
                   <span class="block text-[11px] text-[var(--text-muted)]">{{ t('pages.index.priceTo') }}</span>
                   <input
                     v-model="maxPriceFilter"
-                    type="number"
-                    min="0"
-                    inputmode="decimal"
+                    type="text"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    maxlength="7"
                     class="mt-1 w-24 bg-[var(--transparent)] text-xs text-[var(--text-title)] outline-none placeholder-[var(--text-placeholder)]"
                     :placeholder="t('pages.index.priceTo')"
-                    @input="scheduleApplyProductFilters()"
+                    @input="onMaxPriceFilterInput"
                   />
                 </label>
 
