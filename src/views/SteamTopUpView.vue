@@ -108,11 +108,7 @@ const selectedSteamService = computed(() => findSteamTopUpServiceByCurrency(stea
 const steamAmountRub = computed(() => toSteamPromoAmountRub(parsedSteamQuantity.value, steamSelectedCurrency.value))
 const steamNormalizedPromoCode = computed(() => steamPromoCode.value.trim().toUpperCase())
 const canRunSteamPrecheck = computed(() => (
-  steamIsAccountValid.value
-  && !!selectedSteamService.value
-  && !!steamSelectedCurrency.value
-  && Number.isFinite(parsedSteamQuantity.value)
-  && parsedSteamQuantity.value > 0
+  false
 ))
 const canValidateSteamPromo = computed(() => (
   steamNormalizedPromoCode.value.length >= 3
