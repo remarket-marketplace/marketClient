@@ -751,6 +751,11 @@ const en = {
       autoDeliveryOnly: "Auto delivery",
       dateFrom: "Added from",
       dateTo: "Added to",
+      sellerRatingFrom: "Seller rating from",
+      sellersWithReviewsOnly: "Sellers with reviews only",
+      sortBySellerRating: "Seller rating",
+      sortByDate: "Date",
+      sortByReviews: "Reviews",
       viewSwitcherLabel: "Card view mode",
       viewGrid: "Grid",
       viewList: "List",
@@ -939,6 +944,7 @@ const en = {
       fortniteFiltersTitle: "Account filters",
       minValue: "Min",
       maxValue: "Max",
+      fromDaysPlaceholder: "from ... days",
     },
 
     feedback: {
