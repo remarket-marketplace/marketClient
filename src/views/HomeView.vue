@@ -78,7 +78,6 @@ const isLoadingMoreCategories = ref(false)
 const isLoadingMoreSubCategories = ref(false)
 const isExpandingCategories = ref(false)
 const isSearchPagination = ref(false)
-const hasUserScrolledPage = ref(false)
 const minPriceFilter = ref('')
 const maxPriceFilter = ref('')
 const createdFromFilter = ref('')
@@ -255,18 +254,6 @@ function sortCategoriesByActiveProductsCount(categories: Category[]): Category[]
   })
 }
 
-function isVisibleProduct(product: Product): boolean {
-  return (
-    product.status === 'active'
-    && product.category?.is_active
-    && !product.seller?.is_banned
-  )
-}
-
-function filterVisibleProducts(productsList: Product[]): Product[] {
-  return productsList.filter(isVisibleProduct)
-}
-
 function formatPrice(value: number): string {
   return formatCurrencyAmount(value, { fromCurrency: 'RUB' })
 }
@@ -364,7 +351,6 @@ const loadMoreTrigger = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 let onDocumentClickForSearchDropdown: ((event: MouseEvent) => void) | null = null
 let onWindowChangeForSearchDropdown: (() => void) | null = null
-let onWindowScrollForLoadMore: (() => void) | null = null
 
 function goToProduct(productKey: string) {
   if (!productKey) return
@@ -708,7 +694,7 @@ function debouncedSearch() {
       perPage.value,
       getProductFiltersParams(),
     )
-    products.value = filterVisibleProducts(res.products)
+    products.value = res.products
     currentPage.value = res.currentPage
     totalPages.value = res.totalPages
     isSearchPagination.value = true
@@ -727,8 +713,7 @@ async function loadProducts(page = 1, append = false) {
     perPage.value,
     getProductFiltersParams(),
   )
-  const visibleProducts = filterVisibleProducts(res.products)
-  products.value = append ? [...products.value, ...visibleProducts] : visibleProducts
+  products.value = append ? [...products.value, ...res.products] : res.products
   currentPage.value = res.currentPage
   totalPages.value = res.totalPages
   isServerPagination.value = true
@@ -747,8 +732,7 @@ async function loadCategoryProducts(categoryId: string, page = 1, append = false
     perPage.value,
     getProductFiltersParams(),
   )
-  const visibleProducts = filterVisibleProducts(res.products)
-  products.value = append ? [...products.value, ...visibleProducts] : visibleProducts
+  products.value = append ? [...products.value, ...res.products] : res.products
   currentPage.value = res.currentPage
   totalPages.value = res.totalPages
   isServerPagination.value = true
@@ -758,7 +742,6 @@ async function loadCategoryProducts(categoryId: string, page = 1, append = false
 }
 
 async function loadMoreProducts() {
-  if (!hasUserScrolledPage.value) return
   if (currentPage.value >= totalPages.value) return
   const nextPage = currentPage.value + 1
   if (isSearchPagination.value) {
@@ -768,7 +751,7 @@ async function loadMoreProducts() {
       perPage.value,
       getProductFiltersParams(),
     )
-    products.value = [...products.value, ...filterVisibleProducts(res.products)]
+    products.value = [...products.value, ...res.products]
     currentPage.value = res.currentPage
     totalPages.value = res.totalPages
     return
@@ -965,7 +948,7 @@ async function applyProductFilters() {
       perPage.value,
       getProductFiltersParams(),
     )
-    products.value = filterVisibleProducts(res.products)
+    products.value = res.products
     currentPage.value = res.currentPage
     totalPages.value = res.totalPages
     isSearchPagination.value = true
@@ -1081,16 +1064,8 @@ onMounted(async () => {
     if (!isSearchDropdownOpen.value) return
     updateSearchDropdownPosition()
   }
-  onWindowScrollForLoadMore = () => {
-    if (hasUserScrolledPage.value) return
-    const scrollTop = window.scrollY || document.documentElement.scrollTop || 0
-    if (scrollTop > 0) {
-      hasUserScrolledPage.value = true
-    }
-  }
   window.addEventListener('resize', onWindowChangeForSearchDropdown)
   window.addEventListener('scroll', onWindowChangeForSearchDropdown, true)
-  window.addEventListener('scroll', onWindowScrollForLoadMore, { passive: true })
 })
 
 onBeforeUnmount(() => {
@@ -1105,10 +1080,6 @@ onBeforeUnmount(() => {
     window.removeEventListener('resize', onWindowChangeForSearchDropdown)
     window.removeEventListener('scroll', onWindowChangeForSearchDropdown, true)
     onWindowChangeForSearchDropdown = null
-  }
-  if (onWindowScrollForLoadMore) {
-    window.removeEventListener('scroll', onWindowScrollForLoadMore)
-    onWindowScrollForLoadMore = null
   }
 })
 
