@@ -1247,10 +1247,10 @@ async function createProduct() {
                   <div class="flex items-center justify-between">
                     <div class="space-y-1">
                       <h4 class="text-sm font-semibold text-[var(--text-title)]">
-                        Официальный товар remarket
+                        {{ $t('pages.forms.createProduct.officialProductTitle') }}
                       </h4>
                       <p class="text-xs text-[rgb(var(--text-accent-rgb)/0.85)] leading-relaxed">
-                        Товар попадет в отдельную официальную карусель в категориях.
+                        {{ $t('pages.forms.createProduct.officialProductHint') }}
                       </p>
                     </div>
                     <Checkbox v-model="isOfficial" size="lg" />

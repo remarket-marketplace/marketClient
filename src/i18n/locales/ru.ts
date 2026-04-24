@@ -822,8 +822,13 @@ const ru = {
       subtitle: "Ваш персональный ключ к свободному интернету. Скоростные сервера, белые локации, поддержка 24/7.",
       heroAction: "Выбрать срок",
       trialAction: "Пробный период",
+      trialAuthHint: "Авторизуйтесь, чтобы получить пробный период Scope VPN.",
       pricePending: "Цена настраивается",
       processing: "Оформляем...",
+      highlights: {
+        countries: "Доступно 8+ стран",
+        unlimitedTraffic: "Безлимитный трафик",
+      },
       stats: {
         month: "1 месяц",
         monthLabel: "основной вариант",
@@ -2171,6 +2176,8 @@ const ru = {
         autoDelivery: "Автовыдача",
         autoDeliveryHint: "Товар будет автоматически отправлен покупателю после оплаты. Сделка будет автоматически отмечена как выполненная.",
         autoDeliveryEnabledHint: "После оплаты покупатель мгновенно получит данные из поля «Данные товара»",
+        officialProductTitle: "Официальный товар remarket",
+        officialProductHint: "Товар попадет в отдельную официальную карусель в категориях.",
         selectedImagesCount: "Выбрано изображений: {count}",
         creating: "Создание...",
         errorLoadingCategories: "Ошибка загрузки категорий",

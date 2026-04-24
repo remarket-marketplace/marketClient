@@ -471,15 +471,21 @@ onMounted(() => {
             <ArrowRight class="h-4 w-4" stroke-width="1.7" />
           </button>
           <button
-            v-if="isTrialAvailable"
+            v-if="user && isTrialAvailable"
             type="button"
-            class="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-[var(--surface-border-strong)] bg-[var(--surface-ghost-bg)] px-5 text-sm font-semibold text-[var(--text-primary-soft)] transition-colors duration-200 hover:bg-[var(--surface-ghost-hover-bg)]"
+            class="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-[var(--surface-border)] bg-[var(--surface-panel-bg)] px-5 text-sm font-semibold text-[var(--text-primary-strong)] transition-colors duration-200 hover:border-[var(--surface-border-hover)] hover:bg-[var(--surface-ghost-hover-bg)]"
             @click="openTrialModal"
           >
             <Clock class="h-4 w-4 text-[var(--accent-text)]" stroke-width="1.7" />
             <span>{{ t('pages.vpn.trialAction') }}</span>
           </button>
         </div>
+        <p
+          v-if="!user"
+          class="mt-3 text-sm leading-6 text-[var(--text-muted)]"
+        >
+          {{ t('pages.vpn.trialAuthHint') }}
+        </p>
 
         <div class="vpn-visual relative min-h-[430px]">
           <div class="vpn-visual__logo absolute left-1/2 top-1/2 flex h-80 w-80 -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full sm:h-96 sm:w-96">
@@ -492,16 +498,16 @@ onMounted(() => {
           </div>
 
           <div class="vpn-node vpn-node--top">
-            <BrainCircuit class="h-4 w-4 text-[var(--accent-text)]" />
-            <span>{{ t('pages.vpn.visual.ai') }}</span>
+            <Globe class="h-4 w-4 text-[var(--accent-text)]" />
+            <span>{{ t('pages.vpn.highlights.countries') }}</span>
           </div>
           <div class="vpn-node vpn-node--right">
             <Globe class="h-4 w-4 text-[var(--accent-text)]" />
             <span>{{ t('pages.vpn.visual.locations') }}</span>
           </div>
           <div class="vpn-node vpn-node--bottom">
-            <Smartphone class="h-4 w-4 text-[var(--accent-text)]" />
-            <span>{{ t('pages.vpn.visual.apps') }}</span>
+            <Check class="h-4 w-4 text-[var(--accent-text)]" />
+            <span>{{ t('pages.vpn.highlights.unlimitedTraffic') }}</span>
           </div>
         </div>
       </div>
@@ -849,6 +855,19 @@ onMounted(() => {
 <style scoped>
 .vpn-page {
   background: var(--background-color);
+  --vpn-solid-panel-bg: rgb(17 17 18);
+  --vpn-solid-muted-bg: rgb(21 21 22);
+  --vpn-solid-ghost-bg: rgb(24 24 25);
+  --vpn-solid-ghost-hover-bg: rgb(28 28 30);
+  --surface-panel-bg: var(--vpn-solid-panel-bg);
+  --surface-muted-bg: var(--vpn-solid-muted-bg);
+  --surface-ghost-bg: var(--vpn-solid-ghost-bg);
+  --surface-ghost-hover-bg: var(--vpn-solid-ghost-hover-bg);
+  --surface-ghost-soft-hover-bg: var(--vpn-solid-muted-bg);
+  --surface-border: rgb(var(--palette-dark-700));
+  --surface-border-strong: rgb(var(--palette-dark-600));
+  --surface-border-hover: rgb(var(--palette-dark-500));
+  --surface-border-muted: rgb(var(--palette-dark-600));
 }
 
 .vpn-page__grid {
@@ -895,9 +914,9 @@ onMounted(() => {
   align-items: center;
   gap: 0.5rem;
   min-width: 8.5rem;
-  border: 1px solid rgb(var(--palette-white) / 0.12);
+  border: 1px solid rgb(var(--palette-dark-700));
   border-radius: 9999px;
-  background: rgb(var(--palette-navy-850) / 0.44);
+  background: var(--vpn-solid-panel-bg);
   padding: 0.625rem 0.75rem;
   color: rgb(var(--palette-gray-200));
   font-size: 0.8125rem;
@@ -906,8 +925,6 @@ onMounted(() => {
   box-shadow:
     inset 0 1px 0 rgb(var(--palette-white) / 0.08),
     0 14px 32px rgb(var(--palette-black) / 0.18);
-  backdrop-filter: saturate(140%) blur(18px);
-  -webkit-backdrop-filter: saturate(140%) blur(18px);
 }
 
 .vpn-node span {
@@ -1129,16 +1146,14 @@ onMounted(() => {
     align-items: center;
     justify-content: center;
     padding: 0.32rem 0.46rem;
-    border-color: rgb(var(--palette-white) / 0.13);
-    background: rgb(var(--palette-navy-850) / 0.34);
+    border-color: rgb(var(--palette-dark-700));
+    background: var(--vpn-solid-panel-bg);
     font-size: 0.58rem;
     line-height: 1;
     text-align: left;
     box-shadow:
       inset 0 1px 0 rgb(var(--palette-white) / 0.07),
       0 10px 24px rgb(var(--palette-black) / 0.16);
-    backdrop-filter: saturate(150%) blur(20px);
-    -webkit-backdrop-filter: saturate(150%) blur(20px);
   }
 
   .vpn-node svg {

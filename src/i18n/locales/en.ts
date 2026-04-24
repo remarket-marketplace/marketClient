@@ -822,8 +822,13 @@ const en = {
       subtitle: "Your personal key to a freer internet. Fast servers, approved locations, 24/7 support.",
       heroAction: "Choose period",
       trialAction: "Trial period",
+      trialAuthHint: "Sign in to get the Scope VPN trial period.",
       pricePending: "Price is being configured",
       processing: "Processing...",
+      highlights: {
+        countries: "8+ countries available",
+        unlimitedTraffic: "Unlimited traffic",
+      },
       stats: {
         month: "1 month",
         monthLabel: "main option",
@@ -2176,6 +2181,8 @@ const en = {
         autoDelivery: "Auto delivery",
         autoDeliveryHint: "Product will be automatically delivered to the buyer after payment. The deal will be marked as fulfilled automatically.",
         autoDeliveryEnabledHint: "After payment, the buyer will instantly receive the data from the \"Product data\" field",
+        officialProductTitle: "Official remarket product",
+        officialProductHint: "The product will appear in a separate official carousel inside categories.",
         selectedImagesCount: "Selected images: {count}",
         creating: "Creating...",
         errorLoadingCategories: "Error loading categories",
