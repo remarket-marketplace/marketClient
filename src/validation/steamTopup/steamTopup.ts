@@ -148,6 +148,7 @@ export const steamTopUpCreatePaymentInputSchema = z.object({
 export const steamTopUpPrecheckInputSchema = z.object({
   account: steamTopUpAccountSchema,
   currency: z.string().trim().min(3).max(16).transform((value) => value.toUpperCase()),
+  amount: z.number().positive(),
 }).strip()
 
 export type SteamTopUpService = z.infer<typeof steamTopUpServiceSchema>

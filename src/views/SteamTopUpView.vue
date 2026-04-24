@@ -111,6 +111,8 @@ const canRunSteamPrecheck = computed(() => (
   steamIsAccountValid.value
   && !!selectedSteamService.value
   && !!steamSelectedCurrency.value
+  && Number.isFinite(parsedSteamQuantity.value)
+  && parsedSteamQuantity.value > 0
 ))
 const canValidateSteamPromo = computed(() => (
   steamNormalizedPromoCode.value.length >= 3
@@ -201,6 +203,7 @@ async function runSteamPrecheck(): Promise<void> {
     const result = await steamTopupService.precheck({
       account: steamNormalizedAccount.value,
       currency: steamSelectedCurrency.value,
+      amount: parsedSteamQuantity.value,
     })
     if (requestId !== steamPrecheckRequestId) return
     steamPrecheckResult.value = result
@@ -339,7 +342,7 @@ watch([steamPromoCode, steamQuantity, steamAccount, steamSelectedCurrency], () =
   scheduleSteamPromoValidation()
 })
 
-watch([steamAccount, steamSelectedCurrency], () => {
+watch([steamAccount, steamSelectedCurrency, steamQuantity], () => {
   scheduleSteamPrecheck()
 })
 
