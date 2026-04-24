@@ -7,6 +7,7 @@ import HomeProductListCard from '@/components/HomeProductListCard.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
 import Title from '@/components/Title.vue'
 import ScopeVpnCta from '@/components/ScopeVpnCta.vue'
+import CustomSelect from '@/components/CustomSelect.vue'
 import type { Category } from '@/validation/category/category'
 import type { Product } from '@/validation/product/product'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
@@ -24,7 +25,7 @@ import {
   type FortniteAccountDateFieldKey,
   isFortniteAccountsCategory,
 } from '@/utils/fortniteAccount'
-import { BadgeCheck, ChevronLeft, ChevronRight, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
+import { ArrowDown, ArrowUp, BadgeCheck, ChevronLeft, ChevronRight, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
 
 const { t, locale } = useI18n()
 const route = useRoute()
@@ -50,6 +51,11 @@ const isProductsLoading = ref(true)
 const isOfficialProductsLoading = ref(false)
 const isLoadingMore = ref(false)
 const isFiltersOpen = ref(false)
+type ProductSortMode = 'price_desc' | 'price_asc' | 'seller_rating_desc' | 'created_at_desc' | 'seller_reviews_desc'
+const priceSortOrder = ref<'desc' | 'asc' | null>(null)
+const sellerRatingSortEnabled = ref(false)
+const createdAtSortEnabled = ref(false)
+const sellerReviewsSortEnabled = ref(false)
 type ProductCardViewMode = 'grid' | 'list'
 const PRODUCT_CARD_VIEW_MODE_STORAGE_KEY = 'home_product_card_view_mode'
 const productCardViewMode = ref<ProductCardViewMode>('grid')
@@ -68,8 +74,29 @@ function sortCategoriesByActiveProductsCount(categories: Category[]): Category[]
 }
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
+let productFiltersApplyTimer: ReturnType<typeof setTimeout> | null = null
 const fortniteFilters = reactive(createEmptyFortniteAccountFilters())
 const fortniteCountryOptions = computed(() => getCountryOptions(locale.value))
+const fortniteCountrySelectOptions = computed(() => ([
+  { value: '', label: t('common.all') },
+  ...fortniteCountryOptions.value.map(option => ({
+    value: option.code,
+    label: option.label,
+  })),
+]))
+const fortniteBooleanSelectOptions = computed(() => ([
+  { value: '', label: t('common.all') },
+  { value: 'true', label: t('common.fortniteAccount.booleanValues.true') },
+  { value: 'false', label: t('common.fortniteAccount.booleanValues.false') },
+]))
+const FORTNITE_RELATIVE_DAYS_DATE_FIELDS: FortniteAccountDateFieldKey[] = [
+  'last_match_date',
+]
+const fortniteActivityDateFields = computed(() => (
+  FORTNITE_ACCOUNT_DATE_FIELDS.filter(field => (
+    FORTNITE_RELATIVE_DAYS_DATE_FIELDS.includes(field.key)
+  ))
+))
 
 const categoryKey = computed(() => String(route.params.categoryId ?? ''))
 const requestedPathRaw = computed(() => {
@@ -118,6 +145,19 @@ const activeFortniteFiltersCount = computed<number>(() => (
     }
     return count + 1
   }, 0)
+))
+const activeSortingCount = computed(() => (
+  Number(priceSortOrder.value !== null)
+  + Number(sellerRatingSortEnabled.value)
+  + Number(createdAtSortEnabled.value)
+  + Number(sellerReviewsSortEnabled.value)
+))
+const activeFiltersCount = computed(() => (
+  activeSortingCount.value
+  + (shouldShowFortniteAccountFilters.value ? activeFortniteFiltersCount.value : 0)
+))
+const hasActiveFilteringCriteria = computed(() => (
+  shouldShowFortniteAccountFilters.value && activeFortniteFiltersCount.value > 0
 ))
 
 const shouldShowSubcategoriesBlock = computed(() =>
@@ -176,6 +216,48 @@ function formatOfficialPrice(price: number): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   })
+}
+
+function toggleAndApplyProductSort(mode: ProductSortMode) {
+  if (mode === 'price_desc') {
+    priceSortOrder.value = priceSortOrder.value === 'desc' ? null : 'desc'
+  } else if (mode === 'price_asc') {
+    priceSortOrder.value = priceSortOrder.value === 'asc' ? null : 'asc'
+  } else if (mode === 'seller_rating_desc') {
+    sellerRatingSortEnabled.value = !sellerRatingSortEnabled.value
+  } else if (mode === 'created_at_desc') {
+    createdAtSortEnabled.value = !createdAtSortEnabled.value
+  } else if (mode === 'seller_reviews_desc') {
+    sellerReviewsSortEnabled.value = !sellerReviewsSortEnabled.value
+  }
+
+  void applyProductFilters()
+}
+
+function isProductSortModeActive(mode: ProductSortMode): boolean {
+  if (mode === 'price_desc') {
+    return priceSortOrder.value === 'desc'
+  }
+  if (mode === 'price_asc') {
+    return priceSortOrder.value === 'asc'
+  }
+  if (mode === 'seller_rating_desc') {
+    return sellerRatingSortEnabled.value
+  }
+  if (mode === 'created_at_desc') {
+    return createdAtSortEnabled.value
+  }
+  return sellerReviewsSortEnabled.value
+}
+
+function scheduleApplyProductFilters(delayMs = 250) {
+  if (productFiltersApplyTimer !== null) {
+    clearTimeout(productFiltersApplyTimer)
+  }
+  productFiltersApplyTimer = setTimeout(() => {
+    productFiltersApplyTimer = null
+    void applyProductFilters()
+  }, delayMs)
 }
 
 function updateOfficialCarouselState() {
@@ -519,11 +601,31 @@ async function loadMoreProducts() {
 }
 
 function getProductFiltersParams(): ProductsFilterParams | undefined {
-  if (!shouldShowFortniteAccountFilters.value) {
-    return undefined
+  const filters: ProductsFilterParams = {}
+  const sortStack: NonNullable<ProductsFilterParams['sortStack']> = []
+
+  if (priceSortOrder.value === 'desc') {
+    sortStack.push('price_desc')
+  } else if (priceSortOrder.value === 'asc') {
+    sortStack.push('price_asc')
+  }
+  if (sellerRatingSortEnabled.value) {
+    sortStack.push('seller_rating_desc')
+  }
+  if (createdAtSortEnabled.value) {
+    sortStack.push('created_at_desc')
+  }
+  if (sellerReviewsSortEnabled.value) {
+    sortStack.push('seller_reviews_desc')
   }
 
-  const filters: ProductsFilterParams = {}
+  if (sortStack.length > 0) {
+    filters.sortStack = sortStack
+  }
+
+  if (!shouldShowFortniteAccountFilters.value) {
+    return Object.keys(filters).length ? filters : undefined
+  }
 
   if (fortniteFilters.country.trim()) {
     filters.fortniteCountry = fortniteFilters.country.trim().toUpperCase()
@@ -555,23 +657,21 @@ function getProductFiltersParams(): ProductsFilterParams | undefined {
   if (fortniteFilters.last_email_change_to) {
     filters.fortniteLastEmailChangeTo = fortniteFilters.last_email_change_to
   }
-  if (fortniteFilters.last_login_from) {
-    filters.fortniteLastLoginFrom = fortniteFilters.last_login_from
-  }
-  if (fortniteFilters.last_login_to) {
-    filters.fortniteLastLoginTo = fortniteFilters.last_login_to
-  }
   if (fortniteFilters.last_display_name_change_from) {
     filters.fortniteLastDisplayNameChangeFrom = fortniteFilters.last_display_name_change_from
   }
   if (fortniteFilters.last_display_name_change_to) {
     filters.fortniteLastDisplayNameChangeTo = fortniteFilters.last_display_name_change_to
   }
-  if (fortniteFilters.last_match_date_from) {
-    filters.fortniteLastMatchDateFrom = fortniteFilters.last_match_date_from
+  const lastMatchRange = buildRelativeDaysDateRange(
+    fortniteFilters.last_match_date_from,
+    fortniteFilters.last_match_date_to,
+  )
+  if (lastMatchRange.from) {
+    filters.fortniteLastMatchDateFrom = lastMatchRange.from
   }
-  if (fortniteFilters.last_match_date_to) {
-    filters.fortniteLastMatchDateTo = fortniteFilters.last_match_date_to
+  if (lastMatchRange.to) {
+    filters.fortniteLastMatchDateTo = lastMatchRange.to
   }
   if (fortniteFilters.skins_count_min !== '') {
     filters.fortniteSkinsCountMin = Number(fortniteFilters.skins_count_min)
@@ -635,11 +735,6 @@ function resetFortniteFilters() {
   Object.assign(fortniteFilters, createEmptyFortniteAccountFilters())
 }
 
-async function resetAndApplyFortniteFilters() {
-  resetFortniteFilters()
-  await applyFortniteFilters()
-}
-
 function getFortniteDateFilterValue(
   key: FortniteAccountDateFieldKey,
   bound: 'from' | 'to',
@@ -656,6 +751,96 @@ function setFortniteDateFilterValue(
 ) {
   const filterKey = `${key}_${bound}` as keyof typeof fortniteFilters
   fortniteFilters[filterKey] = value as never
+}
+
+function isRelativeDaysDateField(key: FortniteAccountDateFieldKey): boolean {
+  return FORTNITE_RELATIVE_DAYS_DATE_FIELDS.includes(key)
+}
+
+function getFortniteRelativeDaysFilterValue(
+  key: FortniteAccountDateFieldKey,
+  bound: 'from' | 'to',
+): number | '' {
+  if (!isRelativeDaysDateField(key)) return ''
+  const filterKey = `${key}_${bound}` as keyof typeof fortniteFilters
+  const value = fortniteFilters[filterKey]
+  if (typeof value !== 'string' || !value.trim()) return ''
+  const parsedValue = Number(value)
+  if (!Number.isFinite(parsedValue)) return ''
+  return Math.max(0, Math.trunc(parsedValue))
+}
+
+function setFortniteRelativeDaysFilterValue(
+  key: FortniteAccountDateFieldKey,
+  bound: 'from' | 'to',
+  value: string,
+) {
+  if (!isRelativeDaysDateField(key)) return
+  const filterKey = `${key}_${bound}` as keyof typeof fortniteFilters
+  if (!value.trim()) {
+    fortniteFilters[filterKey] = '' as never
+    return
+  }
+
+  const parsedValue = Number(value)
+  if (!Number.isFinite(parsedValue)) return
+  fortniteFilters[filterKey] = String(Math.max(0, Math.trunc(parsedValue))) as never
+}
+
+function setFortniteRelativeDaysFromOnlyValue(
+  key: FortniteAccountDateFieldKey,
+  value: string,
+) {
+  setFortniteRelativeDaysFilterValue(key, 'from', value)
+  setFortniteRelativeDaysFilterValue(key, 'to', '')
+}
+
+function parseNonNegativeInteger(value: string): number | null {
+  if (!value.trim()) return null
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return null
+  return Math.max(0, Math.trunc(parsed))
+}
+
+function toApiDateString(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function dateMinusDays(days: number): Date {
+  const result = new Date()
+  result.setHours(0, 0, 0, 0)
+  result.setDate(result.getDate() - days)
+  return result
+}
+
+function buildRelativeDaysDateRange(
+  fromValue: string,
+  toValue: string,
+): { from?: string, to?: string } {
+  let minDays = parseNonNegativeInteger(fromValue)
+  let maxDays = parseNonNegativeInteger(toValue)
+
+  if (minDays === null && maxDays === null) {
+    return {}
+  }
+
+  if (minDays !== null && maxDays !== null && minDays > maxDays) {
+    [minDays, maxDays] = [maxDays, minDays]
+  }
+
+  const range: { from?: string, to?: string } = {}
+
+  if (maxDays !== null) {
+    range.from = toApiDateString(dateMinusDays(maxDays))
+  }
+  if (minDays !== null) {
+    range.to = toApiDateString(dateMinusDays(minDays))
+  }
+
+  return range
 }
 
 function getFortniteCountFilterValue(
@@ -686,7 +871,7 @@ function setFortniteCountFilterValue(
   fortniteFilters[filterKey] = Math.max(0, Math.trunc(parsedValue)) as never
 }
 
-async function applyFortniteFilters() {
+async function applyProductFilters() {
   await loadCategoryProducts(1, false)
 }
 
@@ -710,13 +895,17 @@ watch(productCardViewMode, (mode) => {
   window.localStorage.setItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY, mode)
 })
 
+watch(fortniteFilters, () => {
+  if (!shouldShowFortniteAccountFilters.value) return
+  scheduleApplyProductFilters()
+}, { deep: true })
+
 watch(shouldShowFortniteAccountFilters, (nextValue) => {
   if (nextValue) {
     return
   }
 
   resetFortniteFilters()
-  isFiltersOpen.value = false
 })
 
 watch(() => officialProducts.value.length, async () => {
@@ -753,6 +942,10 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   observer?.disconnect()
   window.removeEventListener('resize', updateOfficialCarouselState)
+  if (productFiltersApplyTimer !== null) {
+    clearTimeout(productFiltersApplyTimer)
+    productFiltersApplyTimer = null
+  }
 })
 </script>
 
@@ -1020,10 +1213,7 @@ onBeforeUnmount(() => {
       <div id="category-products-section" class="mt-10">
         <Title :text="t('common.products')" />
         <div class="mt-4 space-y-3">
-          <div
-            v-if="shouldShowFortniteAccountFilters"
-            class="flex flex-wrap items-center justify-between gap-2"
-          >
+          <div class="flex flex-wrap items-center justify-between gap-2">
             <button
               type="button"
               class="inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-semibold transition"
@@ -1033,140 +1223,192 @@ onBeforeUnmount(() => {
               @click="isFiltersOpen = !isFiltersOpen"
             >
               <SlidersHorizontal class="h-4 w-4" />
-              <span>{{ t('pages.category.fortniteFiltersTitle') }}</span>
+              <span>{{ t('pages.index.filtersTitle') }}</span>
               <span
-                v-if="activeFortniteFiltersCount > 0"
+                v-if="activeFiltersCount > 0"
                 class="inline-flex min-w-5 items-center justify-center rounded-full bg-[rgb(var(--palette-blue-600))] px-1.5 text-[11px] text-[var(--text-title)]"
               >
-                {{ activeFortniteFiltersCount }}
+                {{ activeFiltersCount }}
               </span>
             </button>
           </div>
 
           <div
-            v-if="shouldShowFortniteAccountFilters && isFiltersOpen"
+            v-if="isFiltersOpen"
             class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.25)] p-4 md:p-5"
           >
             <div class="space-y-5">
-              <div class="grid gap-3 md:grid-cols-2">
-                <label class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2.5">
-                  <span class="block text-xs text-[var(--text-muted)]">{{ t('common.fortniteAccount.fields.country') }}</span>
-                  <select
-                    v-model="fortniteFilters.country"
-                    class="mt-1.5 w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
-                  >
-                    <option value="">{{ t('common.all') }}</option>
-                    <option
-                      v-for="option in fortniteCountryOptions"
-                      :key="option.code"
-                      :value="option.code"
-                    >
-                      {{ option.label }}
-                    </option>
-                  </select>
-                </label>
-              </div>
-
-              <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                <label
-                  v-for="field in FORTNITE_ACCOUNT_BOOLEAN_FIELDS"
-                  :key="field.key"
-                  class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2.5"
+              <div class="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-semibold transition"
+                  :class="isProductSortModeActive('price_desc')
+                    ? 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-500)/0.1)] text-[var(--text-accent)]'
+                    : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.5)] hover:text-[var(--text-title)]'"
+                  @click="toggleAndApplyProductSort('price_desc')"
                 >
-                  <span class="block text-xs text-[var(--text-muted)]">{{ t(field.labelKey) }}</span>
-                  <select
-                    v-model="fortniteFilters[field.key]"
-                    class="mt-1.5 w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
-                  >
-                    <option value="">{{ t('common.all') }}</option>
-                    <option value="true">{{ t('common.fortniteAccount.booleanValues.true') }}</option>
-                    <option value="false">{{ t('common.fortniteAccount.booleanValues.false') }}</option>
-                  </select>
-                </label>
+                  <span>{{ t('common.price') }}</span>
+                  <ArrowDown class="h-3.5 w-3.5" />
+                </button>
+
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-semibold transition"
+                  :class="isProductSortModeActive('price_asc')
+                    ? 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-500)/0.1)] text-[var(--text-accent)]'
+                    : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.5)] hover:text-[var(--text-title)]'"
+                  @click="toggleAndApplyProductSort('price_asc')"
+                >
+                  <span>{{ t('common.price') }}</span>
+                  <ArrowUp class="h-3.5 w-3.5" />
+                </button>
+
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-semibold transition"
+                  :class="isProductSortModeActive('seller_rating_desc')
+                    ? 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-500)/0.1)] text-[var(--text-accent)]'
+                    : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.5)] hover:text-[var(--text-title)]'"
+                  @click="toggleAndApplyProductSort('seller_rating_desc')"
+                >
+                  <span>{{ t('pages.index.sortBySellerRating') }}</span>
+                  <ArrowUp class="h-3.5 w-3.5" />
+                </button>
+
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-semibold transition"
+                  :class="isProductSortModeActive('created_at_desc')
+                    ? 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-500)/0.1)] text-[var(--text-accent)]'
+                    : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.5)] hover:text-[var(--text-title)]'"
+                  @click="toggleAndApplyProductSort('created_at_desc')"
+                >
+                  <span>{{ t('pages.index.sortByDate') }}</span>
+                  <ArrowDown class="h-3.5 w-3.5" />
+                </button>
+
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-semibold transition"
+                  :class="isProductSortModeActive('seller_reviews_desc')
+                    ? 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-500)/0.1)] text-[var(--text-accent)]'
+                    : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.5)] hover:text-[var(--text-title)]'"
+                  @click="toggleAndApplyProductSort('seller_reviews_desc')"
+                >
+                  <span>{{ t('pages.index.sortByReviews') }}</span>
+                  <ArrowUp class="h-3.5 w-3.5" />
+                </button>
               </div>
 
-              <div class="space-y-3">
-                <p class="text-sm font-semibold text-[var(--text-title)]">
-                  {{ t('common.fortniteAccount.sections.activity') }}
-                </p>
+              <template v-if="shouldShowFortniteAccountFilters">
                 <div class="grid gap-3 md:grid-cols-2">
-                  <div
-                    v-for="field in FORTNITE_ACCOUNT_DATE_FIELDS"
-                    :key="field.key"
-                    class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2.5"
-                  >
-                    <span class="block text-xs text-[var(--text-muted)]">{{ t(field.labelKey) }}</span>
-                    <div class="mt-2 grid grid-cols-2 gap-2">
-                      <input
-                        :value="getFortniteDateFilterValue(field.key, 'from')"
-                        type="date"
-                        class="w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
-                        @input="setFortniteDateFilterValue(field.key, 'from', ($event.target as HTMLInputElement).value)"
-                      />
-                      <input
-                        :value="getFortniteDateFilterValue(field.key, 'to')"
-                        type="date"
-                        class="w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
-                        @input="setFortniteDateFilterValue(field.key, 'to', ($event.target as HTMLInputElement).value)"
+                  <label class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2.5">
+                    <span class="block text-xs text-[var(--text-muted)]">{{ t('common.fortniteAccount.fields.country') }}</span>
+                    <div class="mt-1.5">
+                      <CustomSelect
+                        v-model="fortniteFilters.country"
+                        :options="fortniteCountrySelectOptions"
                       />
                     </div>
-                  </div>
+                  </label>
                 </div>
-              </div>
 
-              <div class="space-y-3">
-                <p class="text-sm font-semibold text-[var(--text-title)]">
-                  {{ t('common.fortniteAccount.sections.inventory') }}
-                </p>
                 <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                  <div
-                    v-for="field in FORTNITE_ACCOUNT_COUNT_FIELDS"
+                  <label
+                    v-for="field in FORTNITE_ACCOUNT_BOOLEAN_FIELDS"
                     :key="field.key"
                     class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2.5"
                   >
                     <span class="block text-xs text-[var(--text-muted)]">{{ t(field.labelKey) }}</span>
-                    <div class="mt-2 grid grid-cols-2 gap-2">
-                      <input
-                        :value="getFortniteCountFilterValue(field.key, 'min')"
-                        type="number"
-                        min="0"
-                        step="1"
-                        inputmode="numeric"
-                        class="w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
-                        :placeholder="t('pages.category.minValue')"
-                        @input="setFortniteCountFilterValue(field.key, 'min', ($event.target as HTMLInputElement).value)"
+                    <div class="mt-1.5">
+                      <CustomSelect
+                        v-model="fortniteFilters[field.key]"
+                        :options="fortniteBooleanSelectOptions"
                       />
-                      <input
-                        :value="getFortniteCountFilterValue(field.key, 'max')"
-                        type="number"
-                        min="0"
-                        step="1"
-                        inputmode="numeric"
-                        class="w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
-                        :placeholder="t('pages.category.maxValue')"
-                        @input="setFortniteCountFilterValue(field.key, 'max', ($event.target as HTMLInputElement).value)"
-                      />
+                    </div>
+                  </label>
+                </div>
+
+                <div class="space-y-3">
+                  <p class="text-sm font-semibold text-[var(--text-title)]">
+                    {{ t('common.fortniteAccount.sections.activity') }}
+                  </p>
+                  <div class="grid gap-3 md:grid-cols-2">
+                    <div
+                      v-for="field in fortniteActivityDateFields"
+                      :key="field.key"
+                      class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2.5"
+                    >
+                      <span class="block text-xs text-[var(--text-muted)]">{{ t(field.labelKey) }}</span>
+                      <div class="mt-2 grid grid-cols-1 gap-2">
+                        <template v-if="isRelativeDaysDateField(field.key)">
+                          <input
+                            :value="getFortniteRelativeDaysFilterValue(field.key, 'from')"
+                            type="number"
+                            min="0"
+                            step="1"
+                            inputmode="numeric"
+                            class="w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
+                            :placeholder="t('pages.category.fromDaysPlaceholder')"
+                            @input="setFortniteRelativeDaysFromOnlyValue(field.key, ($event.target as HTMLInputElement).value)"
+                          />
+                        </template>
+                        <template v-else>
+                          <input
+                            :value="getFortniteDateFilterValue(field.key, 'from')"
+                            type="date"
+                            class="w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
+                            @input="setFortniteDateFilterValue(field.key, 'from', ($event.target as HTMLInputElement).value)"
+                          />
+                          <input
+                            :value="getFortniteDateFilterValue(field.key, 'to')"
+                            type="date"
+                            class="w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
+                            @input="setFortniteDateFilterValue(field.key, 'to', ($event.target as HTMLInputElement).value)"
+                          />
+                        </template>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="flex flex-wrap items-center justify-end gap-2">
-                <button
-                  type="button"
-                  class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.4)] px-4 py-2 text-sm font-semibold text-[var(--text-body)] transition hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[var(--text-title)]"
-                  @click="resetAndApplyFortniteFilters"
-                >
-                  {{ t('pages.index.resetFilters') }}
-                </button>
-                <button
-                  type="button"
-                  class="market-primary-surface market-primary-hover rounded-xl px-4 py-2 text-sm font-semibold text-[var(--text-title)] transition"
-                  @click="applyFortniteFilters"
-                >
-                  {{ t('common.apply') }}
-                </button>
-              </div>
+                <div class="space-y-3">
+                  <p class="text-sm font-semibold text-[var(--text-title)]">
+                    {{ t('common.fortniteAccount.sections.inventory') }}
+                  </p>
+                  <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    <div
+                      v-for="field in FORTNITE_ACCOUNT_COUNT_FIELDS"
+                      :key="field.key"
+                      class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2.5"
+                    >
+                      <span class="block text-xs text-[var(--text-muted)]">{{ t(field.labelKey) }}</span>
+                      <div class="mt-2 grid grid-cols-2 gap-2">
+                        <input
+                          :value="getFortniteCountFilterValue(field.key, 'min')"
+                          type="number"
+                          min="0"
+                          step="1"
+                          inputmode="numeric"
+                          class="w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
+                          :placeholder="t('pages.category.minValue')"
+                          @input="setFortniteCountFilterValue(field.key, 'min', ($event.target as HTMLInputElement).value)"
+                        />
+                        <input
+                          :value="getFortniteCountFilterValue(field.key, 'max')"
+                          type="number"
+                          min="0"
+                          step="1"
+                          inputmode="numeric"
+                          class="w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
+                          :placeholder="t('pages.category.maxValue')"
+                          @input="setFortniteCountFilterValue(field.key, 'max', ($event.target as HTMLInputElement).value)"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </template>
             </div>
           </div>
 
@@ -1224,7 +1466,7 @@ onBeforeUnmount(() => {
           class="mt-6 flex justify-center text-center text-sm text-[var(--text-muted)]"
         >
           {{
-            shouldShowFortniteAccountFilters && activeFortniteFiltersCount > 0
+            hasActiveFilteringCriteria
               ? t('pages.category.noProductsByFilters')
               : t('pages.category.noProducts')
           }}

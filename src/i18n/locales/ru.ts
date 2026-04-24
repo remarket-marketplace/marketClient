@@ -197,7 +197,7 @@ const ru = {
         two_factor_enabled: "2FA",
         last_login: "Последний вход",
         last_display_name_change: "Последняя смена ника",
-        last_match_date: "Последний матч",
+        last_match_date: "Отлега",
         skins_count: "Скины",
         backpacks_count: "Украшения на спину",
         pickaxes_count: "Кирки",
@@ -751,6 +751,11 @@ const ru = {
       autoDeliveryOnly: "Автодоставка",
       dateFrom: "Добавлено с",
       dateTo: "Добавлено до",
+      sellerRatingFrom: "Рейтинг продавца от",
+      sellersWithReviewsOnly: "Только продавцы с отзывами",
+      sortBySellerRating: "Рейтинг продавца",
+      sortByDate: "Дата",
+      sortByReviews: "Отзывы",
       viewSwitcherLabel: "Вид карточек",
       viewGrid: "Сетка",
       viewList: "Список",
@@ -944,6 +949,7 @@ const ru = {
       fortniteFiltersTitle: "Фильтры аккаунта",
       minValue: "От",
       maxValue: "До",
+      fromDaysPlaceholder: "от ... дней",
     },
 
     feedback: {
