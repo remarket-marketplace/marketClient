@@ -35,6 +35,20 @@ export interface ProductsFilterParams {
   maxPrice?: number;
   createdFrom?: string;
   createdTo?: string;
+  sortStack?: Array<
+    "price_desc"
+    | "price_asc"
+    | "seller_rating_desc"
+    | "seller_rating_asc"
+    | "seller_reviews_desc"
+    | "seller_reviews_asc"
+    | "created_at_desc"
+    | "created_at_asc"
+  >;
+  sortBy?: "created_at" | "price" | "seller_rating" | "seller_reviews";
+  sortOrder?: "asc" | "desc";
+  sellerMinRating?: number;
+  sellersWithReviewsOnly?: boolean;
   onlineSellersOnly?: boolean;
   autoDeliveryOnly?: boolean;
   isOfficialOnly?: boolean;
@@ -99,6 +113,11 @@ function buildProductsFilterParams(filters?: ProductsFilterParams) {
   if (filters.maxPrice !== undefined) params.max_price = filters.maxPrice;
   if (filters.createdFrom) params.created_from = filters.createdFrom;
   if (filters.createdTo) params.created_to = filters.createdTo;
+  if (filters.sortStack?.length) params.sort_stack = filters.sortStack.join(",");
+  if (filters.sortBy) params.sort_by = filters.sortBy;
+  if (filters.sortOrder) params.sort_order = filters.sortOrder;
+  if (filters.sellerMinRating !== undefined) params.seller_min_rating = filters.sellerMinRating;
+  if (filters.sellersWithReviewsOnly === true) params.sellers_with_reviews_only = true;
   if (filters.onlineSellersOnly === true) params.online_sellers_only = true;
   if (filters.autoDeliveryOnly === true) params.auto_delivery_only = true;
   if (filters.isOfficialOnly === true) params.is_official_only = true;
