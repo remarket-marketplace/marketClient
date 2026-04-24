@@ -318,7 +318,12 @@ async function submitSteamTopUpPayment() {
 
   try {
     const response = await steamTopupService.createPayment(payload)
-    window.location.href = response.payment_url
+    if (response.payment_url) {
+      window.location.href = response.payment_url
+      return
+    }
+    await userStore.fetchUser()
+    steamSuccess.value = t('pages.index.steamTopUp.orderPaid')
   } catch (error) {
     steamError.value = resolveSteamErrorMessage(error)
     steamSuccess.value = ''
