@@ -770,7 +770,8 @@ const en = {
       steamTopUp: {
         title: "Top up wallet",
         navLabel: "Top up",
-        subtitle: "The amount will be charged from your remarket balance.",
+        subtitle: "Instant Steam wallet top-up, multiple currencies, low fee",
+        action: "Open",
         quickBadge: "Balance / card",
         enterPromo: "Enter promo code",
         service: "Service",

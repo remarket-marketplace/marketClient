@@ -770,7 +770,8 @@ const ru = {
       steamTopUp: {
         title: "Пополнить кошелёк",
         navLabel: "Пополнить",
-        subtitle: "Сумма спишется с баланса remarket.",
+        subtitle: "Моментальное пополнение Steam кошелька, разные валюты, низкая комиссия",
+        action: "Открыть",
         quickBadge: "Баланс / карта",
         enterPromo: "Ввести промокод",
         service: "Сервис",
