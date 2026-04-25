@@ -771,6 +771,7 @@ const en = {
         title: "Top up wallet",
         navLabel: "Top up",
         subtitle: "The amount will be charged from your remarket balance.",
+        action: "Open",
         quickBadge: "Balance / card",
         enterPromo: "Enter promo code",
         service: "Service",

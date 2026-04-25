@@ -42,7 +42,7 @@ const spacingClass = computed(() => (isCompactVariant.value ? 'mt-3' : ''))
 
       <span class="steam-topup-entry__tail">
         <span class="steam-topup-entry__action">
-          <span class="hidden sm:inline">{{ t('pages.vpn.cta.action') }}</span>
+          <span class="hidden sm:inline">{{ t('pages.index.steamTopUp.action') }}</span>
           <ArrowRight class="h-4 w-4" stroke-width="1.8" />
         </span>
       </span>

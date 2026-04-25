@@ -771,6 +771,7 @@ const ru = {
         title: "Пополнить кошелёк",
         navLabel: "Пополнить",
         subtitle: "Сумма спишется с баланса remarket.",
+        action: "Открыть",
         quickBadge: "Баланс / карта",
         enterPromo: "Ввести промокод",
         service: "Сервис",
