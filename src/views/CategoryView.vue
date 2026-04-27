@@ -191,7 +191,7 @@ function isVpnCategoryCandidate(item: Category | null | undefined): boolean {
 }
 
 const shouldShowOfficialRemarketCarousel = computed(() =>
-  isOfficialProductsLoading.value || officialProducts.value.length > 0
+  officialProducts.value.length > 0
 )
 
 const officialProductsCountText = computed(() => {
@@ -1170,16 +1170,7 @@ onBeforeUnmount(() => {
           <span v-if="officialProductsSourceText" class="ml-1 text-[rgb(var(--text-accent-rgb)/0.85)]">• {{ officialProductsSourceText }}</span>
         </div>
 
-        <div v-if="isOfficialProductsLoading" class="official-carousel flex gap-4 overflow-x-auto pb-2 no-scrollbar">
-          <div
-            v-for="n in 7"
-            :key="`official-skeleton-${n}`"
-            class="h-[234px] w-[188px] shrink-0 animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-700)/0.7)] sm:h-[276px] sm:w-[232px]"
-          ></div>
-        </div>
-
         <div
-          v-else-if="officialProducts.length > 0"
           class="official-carousel-wrap relative"
         >
           <div
