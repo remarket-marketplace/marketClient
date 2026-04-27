@@ -794,15 +794,11 @@ async function sendMessage(payload: { files: File[] }) {
             <div
                 class="flex flex-1 min-h-0 transition-all duration-300"
                 :class="isMobile
-                    ? 'fixed inset-0 z-10 w-full bg-background'
+                    ? 'fixed inset-x-0 bottom-0 top-14 z-10 w-full bg-background'
                     : 'w-full flex-1 min-w-0 overflow-hidden rounded-3xl border border-[rgb(var(--palette-dark-400))]'"
             >
                 <div
                     class="flex w-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-2 md:rounded-xl"
-                    :class="{
-                        'pb-16': isMobile,
-                        'pt-[calc(var(--app-mobile-header-height)+0.5rem)]': isMobile,
-                    }"
                 >
                     <div class="flex w-full min-w-0 flex-grow flex-col overflow-hidden">
                         <div v-if="currentChatData"

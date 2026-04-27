@@ -906,12 +906,10 @@ async function sendMessage(payload: { files: File[] }) {
             <div v-if="!isMobile || (isMobile && mobileMode === 'chats')"
                 class="h-full lg:max-w-sm flex flex-col md:pr-5 transition-all duration-300 min-h-0" :class="[
                     isMobile && mobileMode === 'chats'
-                        ? 'fixed inset-x-0 top-0 bottom-14 z-10 w-full bg-background'
+                        ? 'fixed inset-x-0 top-14 bottom-0 z-10 w-full bg-background'
                         : 'w-3/12',
                 ]">
-                <div class="admin-surface-panel h-full flex flex-col md:rounded-3xl" :class="{
-                    'pt-[calc(var(--app-mobile-header-height)+0.5rem)]': isMobile && mobileMode === 'chats',
-                }">
+                <div class="admin-surface-panel h-full flex flex-col md:rounded-3xl">
                     <div v-if="isMobile" class="px-4 pt-3">
                         <button
                             type="button"
@@ -988,13 +986,10 @@ async function sendMessage(payload: { files: File[] }) {
             <div v-if="!isMobile || (isMobile && mobileMode === 'chat')"
                 class="flex flex-1 min-h-0 transition-all duration-300" :class="[
                     isMobile && mobileMode === 'chat'
-                        ? 'fixed inset-0 z-10 w-full bg-background'
+                        ? 'fixed inset-x-0 bottom-0 top-14 z-10 w-full bg-background'
                         : 'flex-1 w-9/12 overflow-hidden rounded-3xl border border-[rgb(var(--palette-dark-400))]',
                 ]">
-                <div class="flex w-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-2 md:rounded-xl" :class="{
-                    'pb-16': isMobile && mobileMode === 'chat',
-                    'pt-[calc(var(--app-mobile-header-height)+0.5rem)]': isMobile && mobileMode === 'chat',
-                }">
+                <div class="flex w-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-2 md:rounded-xl">
                     <div class="flex w-full min-w-0 flex-1 flex-col min-h-0">
                         <!-- chat title -->
                         <div v-if="currentChat"
