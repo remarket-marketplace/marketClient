@@ -193,9 +193,26 @@ const spacingClass = computed(() => (isCompactVariant.value ? 'mt-3' : ''))
 @media (max-width: 767px) {
   .steam-topup-entry__link {
     align-items: flex-start;
-    min-height: 5.8rem;
-    gap: 0.75rem;
-    padding: 0.75rem;
+    min-height: 4.55rem;
+    gap: 0.6rem;
+    border-radius: 1rem;
+    padding: 0.55rem 0.65rem;
+  }
+
+  .steam-topup-entry__logo {
+    height: 2.2rem;
+    width: 2.2rem;
+  }
+
+  .steam-topup-entry__title {
+    font-size: 0.9rem;
+    line-height: 1.15;
+  }
+
+  .steam-topup-entry__text {
+    margin-top: 0.2rem;
+    font-size: 0.76rem;
+    line-height: 1.28;
   }
 
   .steam-topup-entry__tail {

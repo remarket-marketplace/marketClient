@@ -1106,7 +1106,7 @@ onBeforeUnmount(() => {
 
     <div
       class="relative z-20 flex min-h-screen w-full flex-col items-center px-1 pb-6 sm:px-2 lg:px-2"
-      :class="user ? 'pt-20' : 'pt-6'"
+      :class="user ? 'pt-14 md:pt-20' : 'pt-0'"
     >
         <div class="mt-4 grid w-full items-stretch gap-3 lg:grid-cols-2">
           <ScopeVpnCta />
@@ -1623,6 +1623,22 @@ onBeforeUnmount(() => {
   color: rgb(var(--palette-gray-300) / 0.92);
   stroke-width: 2.2;
   pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  .home-search-glass :deep(input) {
+    min-height: 2.75rem;
+    border-radius: 0.65rem;
+    padding-left: 2.45rem !important;
+    padding-right: 0.85rem !important;
+    font-size: 0.875rem;
+  }
+
+  .home-search-glass :deep(svg) {
+    left: 0.85rem;
+    height: 1rem;
+    width: 1rem;
+  }
 }
 
 .home-category-label {

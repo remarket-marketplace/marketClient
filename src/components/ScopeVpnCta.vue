@@ -210,9 +210,26 @@ const text = computed(() => (
 @media (max-width: 767px) {
   .scope-vpn-entry__link {
     align-items: flex-start;
-    min-height: 5.8rem;
-    gap: 0.75rem;
-    padding: 0.75rem;
+    min-height: 4.55rem;
+    gap: 0.6rem;
+    border-radius: 1rem;
+    padding: 0.55rem 0.65rem;
+  }
+
+  .scope-vpn-entry__logo {
+    height: 2.15rem;
+    width: 2.15rem;
+  }
+
+  .scope-vpn-entry__title {
+    font-size: 0.9rem;
+    line-height: 1.15;
+  }
+
+  .scope-vpn-entry__text {
+    margin-top: 0.2rem;
+    font-size: 0.76rem;
+    line-height: 1.28;
   }
 
   .scope-vpn-entry__tail {

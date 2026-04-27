@@ -17,7 +17,7 @@ const highlights = computed(() => ([
 </script>
 
 <template>
-  <section class="relative w-full pt-[clamp(4.15rem,6vw,5.15rem)] pb-6 max-[767px]:pt-[4.5rem] max-[767px]:pb-5">
+  <section class="relative w-full pt-[clamp(4.15rem,6vw,5.15rem)] pb-0 max-[767px]:pt-[3.5rem]">
     <div
       class="relative isolate overflow-hidden rounded-[1.9rem] border border-[rgb(var(--palette-white)/0.08)] bg-[var(--hero-banner-bg)] bg-cover bg-[center_right] min-[768px]:min-h-[31rem] min-[768px]:[background-position:68%_center] max-[767px]:rounded-[1.5rem] max-[767px]:bg-[center_center]"
       :style="heroBackgroundStyle"
