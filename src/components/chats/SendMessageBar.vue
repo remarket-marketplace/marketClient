@@ -183,7 +183,7 @@ watch(
           maxlength="500"
         />
         <button
-          class="market-primary-surface market-primary-hover ml-2 flex h-8 w-8 flex-none items-center justify-center self-end rounded-full border border-[rgb(var(--palette-blue-400)/0.4)] text-[var(--text-title)] transition disabled:cursor-not-allowed disabled:border-[rgb(var(--palette-amber-400)/0.4)] disabled:bg-[rgb(var(--palette-dark-500))] disabled:opacity-60 disabled:hover:bg-[rgb(var(--palette-dark-500))]"
+          class="market-primary-surface market-primary-hover ml-2 flex h-8 w-8 flex-none items-center justify-center self-end rounded-full border border-[rgb(var(--palette-blue-400)/0.4)] text-[var(--text-title)] transition disabled:cursor-not-allowed disabled:border-[rgb(var(--palette-white)/0.12)] disabled:bg-[var(--transparent)] disabled:text-[var(--text-muted)] disabled:opacity-100 disabled:hover:bg-[var(--transparent)]"
           :disabled="isDisabled || !hasDraftToSend"
           @click="handleSendMessage"
         >

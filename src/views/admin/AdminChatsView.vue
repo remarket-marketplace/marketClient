@@ -906,10 +906,12 @@ async function sendMessage(payload: { files: File[] }) {
             <div v-if="!isMobile || (isMobile && mobileMode === 'chats')"
                 class="h-full lg:max-w-sm flex flex-col md:pr-5 transition-all duration-300 min-h-0" :class="[
                     isMobile && mobileMode === 'chats'
-                        ? 'fixed inset-x-0 bottom-0 top-14 z-10 w-full bg-background'
+                        ? 'fixed inset-x-0 top-0 bottom-14 z-10 w-full bg-background'
                         : 'w-3/12',
                 ]">
-                <div class="admin-surface-panel h-full flex flex-col md:rounded-3xl">
+                <div class="admin-surface-panel h-full flex flex-col md:rounded-3xl" :class="{
+                    'pt-[calc(var(--app-mobile-header-height)+0.5rem)]': isMobile && mobileMode === 'chats',
+                }">
                     <div v-if="isMobile" class="px-4 pt-3">
                         <button
                             type="button"
@@ -984,17 +986,20 @@ async function sendMessage(payload: { files: File[] }) {
 
             <!-- chat window -->
             <div v-if="!isMobile || (isMobile && mobileMode === 'chat')"
-                class="h-full flex flex-1 min-h-0 transition-all duration-300" :class="[
+                class="flex flex-1 min-h-0 transition-all duration-300" :class="[
                     isMobile && mobileMode === 'chat'
-                        ? 'fixed inset-x-0 bottom-0 top-14 z-10 w-full bg-background'
-                        : 'admin-surface-panel flex-1 min-w-0 rounded-3xl',
+                        ? 'fixed inset-0 z-10 w-full bg-background'
+                        : 'flex-1 w-9/12 overflow-hidden rounded-3xl border border-[rgb(var(--palette-dark-400))]',
                 ]">
-                <div class="h-full w-full flex flex-col min-h-0 px-2 md:rounded-xl">
-                    <div class="flex flex-1 flex-col min-h-0 w-full">
+                <div class="flex w-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-2 md:rounded-xl" :class="{
+                    'pb-16': isMobile && mobileMode === 'chat',
+                    'pt-[calc(var(--app-mobile-header-height)+0.5rem)]': isMobile && mobileMode === 'chat',
+                }">
+                    <div class="flex w-full min-w-0 flex-1 flex-col min-h-0">
                         <!-- chat title -->
                         <div v-if="currentChat"
-                            class="flex items-center gap-2 sticky top-0 bg-background px-2 py-2 lg:py-3 lg:px-3 z-10 lg:border-b border-[rgb(var(--palette-white)/0.08)]">
-                            <button v-if="isMobile" class="text-xl font-bold flex-shrink-0" @click="backToChats">
+                            class="sticky top-0 z-10 mx-1 flex items-center gap-2 bg-background px-2 py-1.5 lg:mx-2 lg:border-b lg:border-[rgb(var(--palette-dark-700))] lg:px-3 lg:py-3">
+                            <button v-if="isMobile" class="flex h-7 w-7 flex-shrink-0 items-center justify-center" @click="backToChats">
                                 <ArrowLeft />
                             </button>
                             <button
@@ -1002,19 +1007,19 @@ async function sendMessage(payload: { files: File[] }) {
                                 class="flex items-center gap-3 flex-1 min-w-0 text-left rounded-lg transition cursor-pointer bg-[var(--transparent)] border-0 p-0 focus:outline-none"
                                 @click="openChatProfile"
                             >
-                                <div class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
+                                <div class="h-7 w-7 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
                                     <UserAvatar
                                         :avatar-url="currentChat?.another_user.avatar_url"
                                         :alt="currentChat?.another_user.username || ''"
-                                        class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-[rgb(var(--palette-white)/0.1)] rounded-full object-cover"
+                                        class="h-7 w-7 lg:h-10 lg:w-10 border-2 border-[rgb(var(--palette-dark-600))] rounded-full object-cover"
                                     />
                                 </div>
-                                <div class="flex min-w-0 flex-col">
+                                <div class="flex min-w-0 flex-col justify-center">
                                     <div class="w-full min-w-0 truncate">
                                         <StyledUsername
                                             :username="currentChat?.another_user.username || ''"
                                             :style-id="currentChat?.another_user.nickname_style_id"
-                                            class="text-lg font-semibold"
+                                            class="text-base font-semibold leading-tight lg:text-lg"
                                         />
                                     </div>
                                     <p v-if="currentChat?.another_user.is_active" class="text-xs text-[var(--text-success-strong)]">
@@ -1028,9 +1033,10 @@ async function sendMessage(payload: { files: File[] }) {
                         </div>
 
                         <!-- message -->
-                        <div class="relative flex flex-1 min-h-0 flex-col overflow-hidden">
+                        <div class="relative flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden">
                             <FloatingDateHeader :label="isFloatingDateVisible ? floatingDateLabel : null" />
-                            <div ref="messageContainerRef" class="flex-1 min-h-0 overflow-y-auto overscroll-y-contain pb-2"
+                            <div ref="messageContainerRef"
+                                class="no-scrollbar flex flex-1 min-h-0 min-w-0 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain pb-2"
                                 @scroll="handleMessagesScroll"
                                 @wheel.passive="cancelChatPinning"
                                 @touchstart.passive="cancelChatPinning"
@@ -1040,13 +1046,13 @@ async function sendMessage(payload: { files: File[] }) {
                                 </div>
 
                                 <template v-else>
-                                    <div :class="isChatPinning ? 'opacity-0 pointer-events-none' : 'opacity-100'">
+                                    <div :class="isChatPinning ? 'h-full opacity-0 pointer-events-none' : 'h-full opacity-100'">
                                         <div v-if="isLoadingMoreMessages" class="flex justify-center py-2">
                                             <Loader size="sm" />
                                         </div>
 
-                                        <div v-if="chatTimelineItems.length > 0" class="flex flex-1 flex-col justify-start min-h-0">
-                                            <div class="flex flex-col pt-2 pb-18">
+                                        <div v-if="chatTimelineItems.length > 0" class="flex min-w-0 flex-1 flex-col justify-start">
+                                            <div class="flex min-w-0 flex-col pb-18">
                                                 <template v-for="item in chatTimelineItems" :key="item.message.id">
                                                     <div v-if="item.showDateDivider && item.dateLabel" class="flex justify-center py-2">
                                                         <span class="admin-surface-soft rounded-full px-3 py-1 text-xs font-medium text-mainText/90">
@@ -1086,15 +1092,13 @@ async function sendMessage(payload: { files: File[] }) {
                                 <div
                                     v-if="selectedChatId"
                                     aria-hidden="true"
-                                    class="w-full flex-none md:h-[108px]"
-                                    :class="isMobile ? 'h-[180px]' : 'h-[124px]'"
+                                    class="h-[120px] w-full flex-none md:h-[108px]"
                                 />
                             </div>
 
                             <div
                                 v-if="selectedChatId"
-                                class="pointer-events-none absolute inset-x-0 z-20 bg-[var(--transparent)] px-1 pb-2 pt-0 md:bottom-0"
-                                :class="isMobile ? 'bottom-14' : 'bottom-0'"
+                                class="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-[var(--transparent)] px-1 pb-1 pt-0 md:pb-2"
                             >
                                 <div class="pointer-events-auto">
                                     <SendMessageBar

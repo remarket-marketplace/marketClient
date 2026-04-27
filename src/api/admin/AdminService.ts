@@ -887,9 +887,9 @@ export const adminService = {
       const response = await httpClient.get(`/admin/chat/${chatId}/participants`)
       return response.data as {
         id: string
-        buyer: { id: string; username: string; avatar_url: string | null; is_active: boolean } | null
-        seller: { id: string; username: string; avatar_url: string | null; is_active: boolean } | null
-        support_user: { id: string; username: string; avatar_url: string | null; is_active: boolean } | null
+        buyer: { id: string; username: string; nickname_style_id?: string | null; avatar_url: string | null; is_active: boolean } | null
+        seller: { id: string; username: string; nickname_style_id?: string | null; avatar_url: string | null; is_active: boolean } | null
+        support_user: { id: string; username: string; nickname_style_id?: string | null; avatar_url: string | null; is_active: boolean } | null
       }
     } catch (e) {
       console.error('Error fetching chat participants', e)
