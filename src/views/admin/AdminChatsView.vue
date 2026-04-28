@@ -19,6 +19,7 @@ import CustomSelect from '@/components/CustomSelect.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
 import { createBottomPinController } from '@/utils/chatScroll'
+import { getChatTimelineSpacingClass } from '@/utils/chatTimelineSpacing'
 
 const route = useRoute()
 const router = useRouter()
@@ -199,6 +200,7 @@ type ChatTimelineItem = {
     dateKey: string | null
     dateLabel: string | null
     showDateDivider: boolean
+    spacingClass: string
 }
 
 const msPerDay = 24 * 60 * 60 * 1000
@@ -310,6 +312,7 @@ const chatTimelineItems = computed<ChatTimelineItem[]>(() => {
             dateKey,
             dateLabel,
             showDateDivider,
+            spacingClass: getChatTimelineSpacingClass(normalizedTimelineMessages.value, index),
         }
     })
 })
@@ -1056,7 +1059,7 @@ async function sendMessage(payload: { files: File[] }) {
                                                     </div>
 
                                                     <div
-                                                        class="mb-3"
+                                                        :class="item.spacingClass"
                                                         :data-chat-message-index="item.index"
                                                         :data-chat-date-key="item.dateKey ?? ''"
                                                     >

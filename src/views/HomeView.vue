@@ -80,9 +80,6 @@ const isExpandingCategories = ref(false)
 const isSearchPagination = ref(false)
 const minPriceFilter = ref('')
 const maxPriceFilter = ref('')
-const createdFromFilter = ref('')
-const createdToFilter = ref('')
-const sellerMinRatingFilter = ref('')
 const onlineSellersOnly = ref(false)
 const autoDeliveryOnly = ref(false)
 const sellersWithReviewsOnly = ref(false)
@@ -313,17 +310,9 @@ const hasPriceFilter = computed(() =>
   parsePriceFilterInRub(minPriceFilter.value) !== undefined
   || parsePriceFilterInRub(maxPriceFilter.value) !== undefined,
 )
-const hasDateFilter = computed(() =>
-  Boolean(createdFromFilter.value || createdToFilter.value),
-)
-const hasSellerRatingFilter = computed(() =>
-  parseSellerRatingFilter(sellerMinRatingFilter.value) !== undefined,
-)
 
 const activeProductFiltersCount = computed(() =>
   Number(hasPriceFilter.value)
-  + Number(hasDateFilter.value)
-  + Number(hasSellerRatingFilter.value)
   + Number(onlineSellersOnly.value)
   + Number(autoDeliveryOnly.value)
   + Number(sellersWithReviewsOnly.value),
@@ -876,16 +865,9 @@ function parseFilterNumber(value: string | number | null | undefined): number | 
   return Number.isNaN(parsed) ? undefined : parsed
 }
 
-function parseSellerRatingFilter(value: string | number | null | undefined): number | undefined {
-  const parsedValue = parseFilterNumber(value)
-  if (parsedValue === undefined) return undefined
-  return Math.min(5, Math.max(0, Number(parsedValue.toFixed(1))))
-}
-
 function getProductFiltersParams(): ProductsFilterParams {
   const minPriceRaw = parsePriceFilterInRub(minPriceFilter.value)
   const maxPriceRaw = parsePriceFilterInRub(maxPriceFilter.value)
-  const sellerMinRating = parseSellerRatingFilter(sellerMinRatingFilter.value)
 
   const minPrice =
     minPriceRaw !== undefined && maxPriceRaw !== undefined && minPriceRaw > maxPriceRaw
@@ -899,9 +881,6 @@ function getProductFiltersParams(): ProductsFilterParams {
   return {
     minPrice,
     maxPrice,
-    createdFrom: createdFromFilter.value || undefined,
-    createdTo: createdToFilter.value || undefined,
-    sellerMinRating,
     sellersWithReviewsOnly: sellersWithReviewsOnly.value,
     onlineSellersOnly: onlineSellersOnly.value,
     autoDeliveryOnly: autoDeliveryOnly.value,
@@ -911,9 +890,6 @@ function getProductFiltersParams(): ProductsFilterParams {
 
 function clearProductFilters() {
   clearPriceFilters()
-  createdFromFilter.value = ''
-  createdToFilter.value = ''
-  sellerMinRatingFilter.value = ''
   onlineSellersOnly.value = false
   autoDeliveryOnly.value = false
   sellersWithReviewsOnly.value = false
@@ -1358,7 +1334,7 @@ onBeforeUnmount(() => {
                 </button>
               </div>
 
-              <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                 <label class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2.5 transition focus-within:border-[rgb(var(--palette-blue-400)/0.4)] focus-within:bg-[rgb(var(--palette-dark-700)/0.55)]">
                   <span class="block text-xs text-[var(--text-muted)]">{{ t('pages.index.priceFrom') }}</span>
                   <div class="mt-1.5 flex items-center gap-2">
@@ -1389,41 +1365,6 @@ onBeforeUnmount(() => {
                     />
                     <span class="text-xs font-semibold text-[var(--text-muted)]">{{ currencySymbol }}</span>
                   </div>
-                </label>
-
-                <label class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2.5 transition focus-within:border-[rgb(var(--palette-blue-400)/0.4)] focus-within:bg-[rgb(var(--palette-dark-700)/0.55)]">
-                  <span class="block text-xs text-[var(--text-muted)]">{{ t('pages.index.dateFrom') }}</span>
-                  <input
-                    v-model="createdFromFilter"
-                    type="date"
-                    class="mt-1.5 w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
-                    @input="debouncedApplyProductFilters"
-                  />
-                </label>
-
-                <label class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2.5 transition focus-within:border-[rgb(var(--palette-blue-400)/0.4)] focus-within:bg-[rgb(var(--palette-dark-700)/0.55)]">
-                  <span class="block text-xs text-[var(--text-muted)]">{{ t('pages.index.dateTo') }}</span>
-                  <input
-                    v-model="createdToFilter"
-                    type="date"
-                    class="mt-1.5 w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none"
-                    @input="debouncedApplyProductFilters"
-                  />
-                </label>
-
-                <label class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2.5 transition focus-within:border-[rgb(var(--palette-blue-400)/0.4)] focus-within:bg-[rgb(var(--palette-dark-700)/0.55)]">
-                  <span class="block text-xs text-[var(--text-muted)]">{{ t('pages.index.sellerRatingFrom') }}</span>
-                  <input
-                    v-model="sellerMinRatingFilter"
-                    type="number"
-                    min="0"
-                    max="5"
-                    step="0.1"
-                    inputmode="decimal"
-                    class="mt-1.5 w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none placeholder-[var(--text-placeholder)]"
-                    :placeholder="t('pages.category.minValue')"
-                    @input="debouncedApplyProductFilters"
-                  />
                 </label>
               </div>
 

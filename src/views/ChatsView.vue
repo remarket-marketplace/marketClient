@@ -22,6 +22,7 @@ import UserAvatar from '@/components/UserAvatar.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
 import { formatChatTime, getChatTimestamp, parseChatDate } from '@/utils/chatDate'
 import { createBottomPinController } from '@/utils/chatScroll'
+import { getChatTimelineSpacingClass } from '@/utils/chatTimelineSpacing'
 import { formatLastSeen } from '@/utils/presence'
 
 const { t, locale } = useI18n()
@@ -401,6 +402,7 @@ type ChatTimelineItem = {
   dateKey: string | null
   dateLabel: string | null
   showDateDivider: boolean
+  spacingClass: string
   isLocal: boolean
 }
 
@@ -504,6 +506,7 @@ const chatTimelineItems = computed<ChatTimelineItem[]>(() => {
       dateKey,
       dateLabel,
       showDateDivider,
+      spacingClass: getChatTimelineSpacingClass(timelineMessages.value, index),
       isLocal: isLocalPendingMessage(message),
     }
   })
@@ -981,6 +984,7 @@ function applyMessagesReadUpdate(update: MessagesReadPayload) {
 }
 
 watch(selectedChatId, () => {
+  chatStore.setActive(selectedChatId.value)
   isMessageLimitLockedByServer.value = false
   sendErrorMessage.value = null
   floatingDateLabel.value = null
@@ -1149,6 +1153,7 @@ onUnmounted(() => {
     clearTimeout(floatingDateHideTimerId)
     floatingDateHideTimerId = null
   }
+  chatStore.setActive(null)
   window.removeEventListener('resize', checkMobile)
 })
 
@@ -1164,6 +1169,8 @@ function applyIncomingChatUpdate(update: ChatUpdateSchema) {
   }
 
   const chat = chats.value[chatIndex]
+  const isActiveChat = selectedChatId.value === update.chat_id
+  const unreadCount = isActiveChat ? 0 : update.unread_count
 
   if (update.last_message && chat) {
     if (
@@ -1177,8 +1184,11 @@ function applyIncomingChatUpdate(update: ChatUpdateSchema) {
     }
   }
 
-  if (chat && typeof update.unread_count === 'number') {
-    chat.unread_count = update.unread_count
+  if (chat && typeof unreadCount === 'number') {
+    chat.unread_count = unreadCount
+    if (isActiveChat && update.unread_count > 0) {
+      void chatsService.markChatRead(update.chat_id)
+    }
   }
 
   chatStore.updateChatFromSocket(update)
@@ -1641,7 +1651,7 @@ async function sendMessage(payload: { files: File[] }) {
                             </span>
                           </div>
 
-                          <div class="mb-3" :data-chat-message-index="item.index"
+                          <div :class="item.spacingClass" :data-chat-message-index="item.index"
                             :data-chat-date-key="item.dateKey ?? ''">
                             <PendingChatMessage v-if="item.isLocal" :message="item.message as LocalPendingChatMessage"
                               :format-date="formatPendingMessageDate" @retry="retryLocalPendingMessage" />

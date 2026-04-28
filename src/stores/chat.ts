@@ -47,17 +47,18 @@ export const useChatStore = defineStore('chat', {
     updateChatFromSocket(update: ChatUpdateSchema) {
       const chat = this.chats.find((c) => c.id === update.chat_id)
       if (!chat) return
+      const unreadCount = this.activeChatId === update.chat_id ? 0 : update.unread_count
       if (update.last_message) {
         const incoming = update.last_message as ChatMessageUnion
         if (incoming.message_type === 'update_deal_status_message') {
-          if (typeof update.unread_count === 'number') chat.unread_count = update.unread_count
+          if (typeof unreadCount === 'number') chat.unread_count = unreadCount
           return
         }
         if (this.shouldApplyLastMessage(chat.last_message as ChatMessageUnion | null, incoming)) {
           chat.last_message = incoming
         }
       }
-      if (typeof update.unread_count === 'number') chat.unread_count = update.unread_count
+      if (typeof unreadCount === 'number') chat.unread_count = unreadCount
     },
     resetUnread(chatId: string) {
       const chat = this.chats.find((c) => c.id === chatId)
