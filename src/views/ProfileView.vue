@@ -7,6 +7,7 @@ import { reviewService } from '@/api/review/ReviewService'
 import Loader from '@/components/Loader.vue'
 import ProfileProductCard from '@/components/ProfileProductCard.vue'
 import HomeProductListCard from '@/components/HomeProductListCard.vue'
+import ReportComplaintModal from '@/components/complaints/ReportComplaintModal.vue'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
@@ -17,7 +18,7 @@ import type { Product } from '@/validation/product/product'
 import type { PublicProfileData, UserRead } from '@/validation/user/userRead'
 import type { SubscriptionSeller } from '@/validation/user/subscriptions'
 import type { ReviewSchema } from '@/validation/review/review'
-import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart, Archive, Edit, Calendar, Package, ShoppingBag, MessageSquare, Loader2, LayoutGrid, Rows3, UserPlus, UserCheck, Users } from 'lucide-vue-next'
+import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart, Archive, Edit, Calendar, Package, ShoppingBag, MessageSquare, Loader2, LayoutGrid, Rows3, UserPlus, UserCheck, Users, Flag } from 'lucide-vue-next'
 import QrcodeVue from 'qrcode.vue'
 import type { Deal } from '@/validation/deal/deal'
 import UserRating from '@/components/UserRating.vue'
@@ -29,6 +30,7 @@ import { formatCurrencyAmount } from '@/utils/currency'
 import { isSafeImageFile, SAFE_IMAGE_INPUT_ACCEPT } from '@/utils/imageUpload'
 import { formatLastSeen } from '@/utils/presence'
 import { buildProductKey } from '@/utils/urlKeys'
+import { buildAuthRedirectQuery } from '@/utils/authRedirect'
 
 const { locale, t } = useI18n()
 const route = useRoute()
@@ -49,6 +51,7 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 const isUploading = ref(false)
 const showAvatarOverlay = ref(false)
 const showShareModal = ref(false)
+const showComplaintModal = ref(false)
 const isCopied = ref(false)
 const isOpeningDirectChat = ref(false)
 const directChatError = ref<string | null>(null)
@@ -431,6 +434,24 @@ function openShareModal() {
 }
 
 function closeShareModal() { showShareModal.value = false }
+
+function openProfileReport() {
+  if (isOwner.value) return
+
+  if (!currentUser.value) {
+    router.push({
+      path: '/signin',
+      query: buildAuthRedirectQuery(route.fullPath),
+    })
+    return
+  }
+
+  showComplaintModal.value = true
+}
+
+function closeComplaintModal() {
+  showComplaintModal.value = false
+}
 
 async function openDirectChat(event?: MouseEvent) {
   event?.preventDefault()
@@ -876,6 +897,16 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 {{ t('pages.profile.writeBlockedBanned') }}
               </p>
               <p v-if="directChatError" class="text-xs text-[var(--text-danger)] text-center">{{ directChatError }}</p>
+
+              <button
+                v-if="!isOwner"
+                type="button"
+                class="flex w-full items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-red-700)/0.35)] bg-[rgb(var(--palette-red-950)/0.12)] px-4 py-3 text-sm font-semibold text-[var(--text-danger-soft)] transition-colors hover:border-[rgb(var(--palette-red-600)/0.55)] hover:bg-[rgb(var(--palette-red-950)/0.2)]"
+                @click="openProfileReport"
+              >
+                <Flag class="h-4 w-4" />
+                <span>{{ t('pages.profile.reportUser') }}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -1216,6 +1247,16 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
           </div>
         </div>
       </AppModal>
+
+      <ReportComplaintModal
+        v-if="currentProfileData && !isOwner"
+        :is-open="showComplaintModal"
+        target-type="user"
+        :target-id="currentProfileData.id"
+        :target-label="currentProfileData.username"
+        :target-url="profileUrl"
+        @close="closeComplaintModal"
+      />
 
     </div>
   </div>

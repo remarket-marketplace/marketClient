@@ -1,0 +1,268 @@
+<script setup lang="ts">
+import { adminService } from '@/api/admin/AdminService'
+import BackButton from '@/components/navigation/BackButton.vue'
+import UserAvatar from '@/components/UserAvatar.vue'
+import type { AdminFeedbackListItem } from '@/validation/feedback/adminFeedback'
+import { Flag, Loader2, MessageCircle, UserRound } from 'lucide-vue-next'
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
+
+const { t } = useI18n()
+const router = useRouter()
+
+const complaints = ref<AdminFeedbackListItem[]>([])
+const isLoading = ref(true)
+const isLoadingMore = ref(false)
+const hasMore = ref(true)
+const errorMessage = ref('')
+
+const currentPage = ref(1)
+const totalPages = ref(1)
+const total = ref(0)
+const perPage = 20
+
+const listRef = ref<HTMLElement | null>(null)
+const sentinelRef = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | null = null
+
+const reasonTranslationKeys: Record<string, string> = {
+  fraud: 'complaints.reasons.fraud',
+  forbidden_content: 'complaints.reasons.forbiddenContent',
+  misleading_info: 'complaints.reasons.misleadingInfo',
+  abuse: 'complaints.reasons.abuse',
+  other: 'complaints.reasons.other',
+}
+
+function formatDate(dateString: string) {
+  return new Date(dateString).toLocaleString('ru-RU', {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function getComplaintReasonLabel(reason: string | null) {
+  if (!reason) return t('common.notSpecified')
+  const key = reasonTranslationKeys[reason] ?? ''
+  if (!key) return reason
+  const translated = t(key)
+  return translated === key ? reason : translated
+}
+
+function openComplaint(complaintId: string) {
+  router.push(`/admin/complaints/${complaintId}`)
+}
+
+function openProfile(username: string) {
+  router.push(`/user/${username}`)
+}
+
+function openSupportChat(chatId: string | null) {
+  if (!chatId) return
+  router.push({
+    path: '/admin/support/chats',
+    query: { chatId },
+  })
+}
+
+function setupObserver() {
+  if (!sentinelRef.value || !listRef.value) return
+
+  observer?.disconnect()
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting) {
+        loadMoreComplaints()
+      }
+    },
+    {
+      root: listRef.value,
+      threshold: 0.1,
+    },
+  )
+  observer.observe(sentinelRef.value)
+}
+
+async function loadComplaints() {
+  isLoading.value = true
+  errorMessage.value = ''
+
+  try {
+    const response = await adminService.getAdminComplaints(1, perPage)
+    complaints.value = response.feedbacks
+    currentPage.value = response.currentPage
+    totalPages.value = response.totalPages
+    total.value = response.total
+    hasMore.value = response.currentPage < response.totalPages
+  } catch {
+    errorMessage.value = t('pages.admin.complaintsPage.loadError')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+async function loadMoreComplaints() {
+  if (isLoadingMore.value || !hasMore.value) return
+
+  isLoadingMore.value = true
+
+  try {
+    const nextPage = currentPage.value + 1
+    const response = await adminService.getAdminComplaints(nextPage, perPage)
+
+    if (response.feedbacks.length === 0) {
+      hasMore.value = false
+      return
+    }
+
+    complaints.value.push(...response.feedbacks)
+    currentPage.value = response.currentPage
+    totalPages.value = response.totalPages
+    total.value = response.total
+    hasMore.value = response.currentPage < response.totalPages
+  } finally {
+    isLoadingMore.value = false
+  }
+}
+
+onMounted(async () => {
+  await loadComplaints()
+  await nextTick()
+  setupObserver()
+})
+
+onUnmounted(() => {
+  observer?.disconnect()
+})
+
+watch(
+  () => complaints.value.length,
+  async () => {
+    await nextTick()
+    setupObserver()
+  },
+)
+</script>
+
+<template>
+  <section class="h-full w-full flex flex-col gap-3 sm:gap-6 overflow-hidden pt-3 md:pt-4">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <BackButton />
+        <div>
+          <h1 class="text-lg sm:text-2xl font-bold text-mainText">
+            {{ $t('pages.admin.complaintsPage.title') }}
+          </h1>
+          <p class="text-xs sm:text-sm text-[var(--text-muted)]">
+            {{ $t('pages.admin.complaintsPage.subtitle') }}
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 text-xs sm:text-base text-text-secondary">
+        <Flag class="h-4 w-4" />
+        <span>{{ $t('common.total') }} {{ total }}</span>
+      </div>
+    </div>
+
+    <div class="flex-1 overflow-hidden">
+      <div v-if="isLoading" class="flex items-center justify-center h-32">
+        <Loader2 class="h-5 w-5 sm:h-8 sm:w-8 animate-spin text-[var(--text-link)]" />
+        <span class="ml-2 text-sm sm:text-lg text-[var(--text-muted)]">{{ $t('common.loading') }}</span>
+      </div>
+
+      <div v-else-if="errorMessage" class="flex items-center justify-center h-32">
+        <p class="text-[var(--text-danger)] text-sm sm:text-base">{{ errorMessage }}</p>
+      </div>
+
+      <div v-else-if="complaints.length === 0" class="h-full w-full flex items-center justify-center">
+        <div class="text-center px-4">
+          <Flag class="h-8 w-8 text-[var(--text-meta)] mx-auto mb-3" />
+          <p class="text-mainText font-semibold">{{ $t('pages.admin.complaintsPage.emptyTitle') }}</p>
+          <p class="text-sm text-[var(--text-muted)] mt-2">{{ $t('pages.admin.complaintsPage.emptyHint') }}</p>
+        </div>
+      </div>
+
+      <div v-else ref="listRef" class="h-full overflow-y-auto space-y-3 pr-1 pb-4">
+        <article
+          v-for="complaint in complaints"
+          :key="complaint.id"
+          class="admin-surface-card rounded-[1.4rem] p-3 sm:p-4"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <UserAvatar
+                :avatar-url="complaint.user.avatar_url"
+                :alt="complaint.user.username"
+                class="h-10 w-10 rounded-full object-cover border border-[rgb(var(--palette-dark-500))]"
+              />
+
+              <div class="min-w-0">
+                <button
+                  type="button"
+                  class="text-sm sm:text-base font-semibold text-mainText hover:text-[var(--text-link)] truncate max-w-[220px] text-left"
+                  @click="openProfile(complaint.user.username)"
+                >
+                  {{ complaint.user.username }}
+                </button>
+                <p class="text-xs text-[var(--text-meta)] mt-0.5">
+                  {{ formatDate(complaint.created_at) }}
+                </p>
+              </div>
+            </div>
+
+            <span class="rounded-full border border-[rgb(var(--palette-red-500)/0.28)] bg-[rgb(var(--palette-red-500)/0.1)] px-2.5 py-1 text-xs font-semibold text-[var(--text-danger-soft)]">
+              {{ getComplaintReasonLabel(complaint.complaint_reason) }}
+            </span>
+          </div>
+
+          <div class="mt-3 rounded-xl border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.03)] px-3 py-2 text-xs text-[var(--text-body)]">
+            <span class="text-[var(--text-muted)]">{{ $t('pages.admin.complaintsPage.target') }}:</span>
+            <span class="ml-1 font-medium text-[var(--text-title)]">
+              {{ complaint.target_label || complaint.target_id || $t('common.notSpecified') }}
+            </span>
+          </div>
+
+          <p class="mt-3 text-sm text-[var(--text-body-strong)] whitespace-pre-wrap break-words line-clamp-4">
+            {{ complaint.text_preview }}
+          </p>
+
+          <div class="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="admin-btn admin-btn-sm text-xs sm:text-sm"
+              @click="openComplaint(complaint.id)"
+            >
+              <UserRound class="h-4 w-4" />
+              {{ $t('pages.admin.complaintsPage.open') }}
+            </button>
+
+            <button
+              type="button"
+              :disabled="!complaint.support_chat_id"
+              class="admin-btn admin-btn-sm text-xs sm:text-sm"
+              :class="complaint.support_chat_id ? 'admin-btn-primary' : 'admin-btn-muted'"
+              @click="openSupportChat(complaint.support_chat_id)"
+            >
+              <MessageCircle class="h-4 w-4" />
+              {{
+                complaint.support_chat_id
+                  ? $t('pages.admin.feedbackPage.openSupportChat')
+                  : $t('pages.admin.feedbackPage.supportChatUnavailable')
+              }}
+            </button>
+          </div>
+        </article>
+
+        <div ref="sentinelRef" class="h-1"></div>
+
+        <div v-if="isLoadingMore" class="flex justify-center py-2">
+          <Loader2 class="h-5 w-5 animate-spin text-[var(--text-link)]" />
+        </div>
+      </div>
+    </div>
+  </section>
+</template>

@@ -8,6 +8,7 @@ import HomeProductListCard from '@/components/HomeProductListCard.vue'
 import FortniteAccountSnapshot from '@/components/FortniteAccountSnapshot.vue'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
 import AutoDeliveryTag from '@/components/AutoDeliveryTag.vue'
+import ReportComplaintModal from '@/components/complaints/ReportComplaintModal.vue'
 import type { Product, ProductImage } from '@/validation/product/product'
 import type { Category } from '@/validation/category/category'
 import { onMounted, ref, onUnmounted, computed, nextTick, watch } from 'vue'
@@ -70,6 +71,7 @@ const offeredPrice = ref<number | null>(null)
 const offerMessage = ref('')
 const selectedOfferMessageTemplateKey = ref<PriceOfferMessageTemplateKey | null>(null)
 const showInsufficientBalanceModal = ref(false)
+const showComplaintModal = ref(false)
 const insufficientBalanceDetails = ref<{
   balance: number
   price: number
@@ -752,15 +754,24 @@ function goToWalletTopUp() {
 function openProductReport() {
   if (!product.value) return
 
-  router.push({
-    path: '/feedback',
-    query: {
-      report_product: '1',
-      product_id: product.value.id,
-      product_title: product.value.title,
-      product_url: route.fullPath,
-    },
-  })
+  if (!user.value) {
+    router.push({
+      path: '/signin',
+      query: buildAuthRedirectQuery(route.fullPath),
+    })
+    return
+  }
+
+  showComplaintModal.value = true
+}
+
+function closeComplaintModal() {
+  showComplaintModal.value = false
+}
+
+function getProductReportUrl() {
+  if (typeof window === 'undefined') return route.fullPath
+  return `${window.location.origin}${route.fullPath}`
 }
 
 function nextImage() {
@@ -1601,6 +1612,16 @@ onUnmounted(() => {
         </div>
       </template>
     </ConfirmWindow>
+
+    <ReportComplaintModal
+      v-if="product"
+      :is-open="showComplaintModal"
+      target-type="product"
+      :target-id="product.id"
+      :target-label="product.title"
+      :target-url="getProductReportUrl()"
+      @close="closeComplaintModal"
+    />
   </section>
 
   <div v-else class="w-full min-h-[calc(100dvh-3.5rem)] flex items-center justify-center">
