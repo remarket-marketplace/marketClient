@@ -18,7 +18,7 @@ import type { Product } from '@/validation/product/product'
 import type { PublicProfileData, UserRead } from '@/validation/user/userRead'
 import type { SubscriptionSeller } from '@/validation/user/subscriptions'
 import type { ReviewSchema } from '@/validation/review/review'
-import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart, Archive, Edit, Calendar, Package, ShoppingBag, MessageSquare, Loader2, LayoutGrid, Rows3, UserPlus, UserCheck, Users, Flag } from 'lucide-vue-next'
+import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart, Archive, Edit, Calendar, Package, ShoppingBag, MessageSquare, Loader2, LayoutGrid, Rows3, UserPlus, UserCheck, Users, TriangleAlert } from 'lucide-vue-next'
 import QrcodeVue from 'qrcode.vue'
 import type { Deal } from '@/validation/deal/deal'
 import UserRating from '@/components/UserRating.vue'
@@ -720,6 +720,15 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                     :title="t('pages.profile.share')">
                     <Share2 class="w-4 h-4 text-[var(--text-body)]" />
                   </button>
+                  <button
+                    type="button"
+                    class="report-icon-btn"
+                    :title="t('pages.profile.reportUser')"
+                    :aria-label="t('pages.profile.reportUser')"
+                    @click="openProfileReport"
+                  >
+                    <TriangleAlert class="h-4 w-4" aria-hidden="true" />
+                  </button>
                 </div>
               </div>
 
@@ -897,16 +906,6 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 {{ t('pages.profile.writeBlockedBanned') }}
               </p>
               <p v-if="directChatError" class="text-xs text-[var(--text-danger)] text-center">{{ directChatError }}</p>
-
-              <button
-                v-if="!isOwner"
-                type="button"
-                class="flex w-full items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-red-700)/0.35)] bg-[rgb(var(--palette-red-950)/0.12)] px-4 py-3 text-sm font-semibold text-[var(--text-danger-soft)] transition-colors hover:border-[rgb(var(--palette-red-600)/0.55)] hover:bg-[rgb(var(--palette-red-950)/0.2)]"
-                @click="openProfileReport"
-              >
-                <Flag class="h-4 w-4" />
-                <span>{{ t('pages.profile.reportUser') }}</span>
-              </button>
             </div>
           </div>
         </div>
@@ -1280,6 +1279,26 @@ input[type="number"] {
 
 .profile-products-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.report-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(var(--palette-dark-600) / 0.9);
+  color: var(--text-muted);
+  background: rgb(var(--palette-dark-700) / 0.22);
+  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.report-icon-btn:hover {
+  border-color: rgb(var(--palette-red-700) / 0.45);
+  color: var(--text-danger-soft);
+  background: rgb(var(--palette-red-950) / 0.16);
+  transform: translateY(-1px);
 }
 
 @media (max-width: 359px) {

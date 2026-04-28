@@ -14,7 +14,7 @@ import type { Category } from '@/validation/category/category'
 import { onMounted, ref, onUnmounted, computed, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { BadgeCheck, ChevronLeft, ChevronRight, X, Heart, Trash2, Percent, ShoppingBag, LayoutGrid, Rows3, Flag, HelpCircle, ChevronRightCircle } from 'lucide-vue-next'
+import { BadgeCheck, ChevronLeft, ChevronRight, X, Heart, Trash2, Percent, ShoppingBag, LayoutGrid, Rows3, HelpCircle, TriangleAlert } from 'lucide-vue-next'
 import TrustComponent from './TrustComponent.vue'
 import { useUserStore } from '@/stores/user'
 import BackButton from '@/components/navigation/BackButton.vue'
@@ -1108,7 +1108,7 @@ onUnmounted(() => {
                   </button>
                 </div>
 
-                <div class="shrink-0">
+                <div class="flex shrink-0 items-center gap-2">
                   <Heart
                     v-if="product.is_liked"
                     @click="user !== null && removeProductLike()"
@@ -1122,6 +1122,16 @@ onUnmounted(() => {
                     class="h-8 w-8"
                     :class="user === null ? 'cursor-default text-[var(--text-meta)]' : 'cursor-pointer text-[var(--text-title)]'"
                   />
+                  <button
+                    v-if="!product.is_owner"
+                    type="button"
+                    class="report-icon-btn"
+                    :title="$t('pages.product.reportProduct')"
+                    :aria-label="$t('pages.product.reportProduct')"
+                    @click="openProductReport"
+                  >
+                    <TriangleAlert class="h-4 w-4" aria-hidden="true" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -1135,20 +1145,7 @@ onUnmounted(() => {
             class="w-full py-4 text-center bg-[rgb(var(--palette-dark-600)/0.4)] border border-[rgb(var(--palette-dark-700))] text-[var(--text-muted)] rounded-2xl font-semibold">
             {{ $t('pages.product.sold') }}
           </div>
-
         </div>
-        <button
-          v-if="!product.is_owner"
-          type="button"
-          class="group inline-flex w-full items-center justify-between gap-3 rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.22)] px-4 py-3 text-sm font-semibold text-[var(--text-body)] transition hover:border-[rgb(var(--palette-red-700)/0.45)] hover:bg-[rgb(var(--palette-red-950)/0.16)] hover:text-[var(--text-danger-soft)]"
-          @click="openProductReport"
-        >
-          <span class="inline-flex min-w-0 items-center gap-2">
-            <Flag class="h-4 w-4 shrink-0 text-[var(--text-muted)] transition group-hover:text-[var(--text-danger-soft)]" />
-            <span class="truncate">{{ $t('pages.product.reportProduct') }}</span>
-          </span>
-          <ChevronRightCircle class="h-4 w-4 shrink-0 text-[var(--text-meta)] transition group-hover:text-[var(--text-danger-soft)]" />
-        </button>
       </div>
     </div>
 
@@ -1756,6 +1753,26 @@ onUnmounted(() => {
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.report-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(var(--palette-dark-600) / 0.9);
+  color: var(--text-muted);
+  background: rgb(var(--palette-dark-700) / 0.22);
+  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.report-icon-btn:hover {
+  border-color: rgb(var(--palette-red-700) / 0.45);
+  color: var(--text-danger-soft);
+  background: rgb(var(--palette-red-950) / 0.16);
+  transform: translateY(-1px);
 }
 
 @media (min-width: 680px) {
