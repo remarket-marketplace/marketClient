@@ -10,6 +10,7 @@ export const useChatStore = defineStore('chat', {
   }),
   getters: {
     unreadTotal: (state) => state.chats.reduce((sum, chat) => sum + (chat.unread_count ?? 0), 0),
+    unreadDialogTotal: (state) => state.chats.filter((chat) => (chat.unread_count ?? 0) > 0).length,
   },
   actions: {
     getMessageTimestamp(message?: ChatMessageUnion | null): number {

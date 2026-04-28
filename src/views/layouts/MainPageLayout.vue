@@ -41,7 +41,7 @@ const route = useRoute()
 
 const isDesktop = ref(true)
 const { user } = storeToRefs(store)
-const { unreadTotal } = storeToRefs(chatStore)
+const { unreadDialogTotal } = storeToRefs(chatStore)
 const signInFromCurrentLocation = computed(() => ({
     path: '/signin',
     query: buildAuthRedirectQuery(route.fullPath),
@@ -294,10 +294,10 @@ const mobileNavGridStyle = computed(() => ({
                                     'transition-colors duration-300 group-hover:text-[var(--nav-link-active)]'
                                 ]" :size="item.sell ? 24 : 20" stroke-width="1.5" />
                                 <span
-                                    v-if="item.id === 'chats' && unreadTotal > 0"
+                                    v-if="item.id === 'chats' && unreadDialogTotal > 0"
                                     class="absolute -top-1 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--nav-notification-bg)] text-[10px] text-[var(--text-primary-strong)] font-semibold flex items-center justify-center shadow-lg"
                                 >
-                                    {{ unreadTotal > 99 ? '99+' : unreadTotal }}
+                                    {{ unreadDialogTotal > 99 ? '99+' : unreadDialogTotal }}
                                 </span>
                             </div>
                             <span class="ml-1 transition-colors duration-300 group-hover:text-[var(--nav-link-active)]"
@@ -321,10 +321,10 @@ const mobileNavGridStyle = computed(() => ({
                                     'transition-colors duration-300 group-hover:text-[var(--nav-link-active)]'
                                 ]" :size="item.sell ? 24 : 20" stroke-width="1.5" />
                                 <span
-                                    v-if="item.id === 'chats' && unreadTotal > 0"
+                                    v-if="item.id === 'chats' && unreadDialogTotal > 0"
                                     class="absolute -top-1 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--nav-notification-bg)] text-[10px] text-[var(--text-primary-strong)] font-semibold flex items-center justify-center shadow-lg"
                                 >
-                                    {{ unreadTotal > 99 ? '99+' : unreadTotal }}
+                                    {{ unreadDialogTotal > 99 ? '99+' : unreadDialogTotal }}
                                 </span>
                             </div>
                             <span class="ml-1 transition-colors duration-300 group-hover:text-[var(--nav-link-active)]"
@@ -397,10 +397,10 @@ const mobileNavGridStyle = computed(() => ({
                         ]">
                         <component :is="item.icon" :size="22" stroke-width="1.5" />
                         <span
-                            v-if="item.id === 'chats' && unreadTotal > 0"
+                            v-if="item.id === 'chats' && unreadDialogTotal > 0"
                             class="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--nav-notification-bg)] text-[10px] text-[var(--text-primary-strong)] font-semibold flex items-center justify-center shadow-md"
                         >
-                            {{ unreadTotal > 99 ? '99+' : unreadTotal }}
+                            {{ unreadDialogTotal > 99 ? '99+' : unreadDialogTotal }}
                         </span>
                     </div>
                     <span
@@ -436,10 +436,10 @@ const mobileNavGridStyle = computed(() => ({
                         ]">
                         <component :is="item.icon" :size="22" stroke-width="1.5" />
                         <span
-                            v-if="item.id === 'chats' && unreadTotal > 0"
+                            v-if="item.id === 'chats' && unreadDialogTotal > 0"
                             class="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--nav-notification-bg)] text-[10px] text-[var(--text-primary-strong)] font-semibold flex items-center justify-center shadow-md"
                         >
-                            {{ unreadTotal > 99 ? '99+' : unreadTotal }}
+                            {{ unreadDialogTotal > 99 ? '99+' : unreadDialogTotal }}
                         </span>
                     </div>
                     <span
