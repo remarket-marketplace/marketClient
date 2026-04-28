@@ -41,6 +41,7 @@ const router = useRouter()
 const userStore = useUserStore()
 const HARD_MIN_DEPOSIT_RUB = 10
 const SALE_WITHDRAWAL_DELAY_MS = 24 * 60 * 60 * 1000
+type WithdrawMethod = 'crypto' | 'card'
 
 const balance = ref(0)
 const isLoading = ref(false)
@@ -62,6 +63,7 @@ const depositErrorMessage = ref<string | null>(null)
 
 const depositAmount = ref('')
 const withdrawAmount = ref('')
+const selectedWithdrawMethod = ref<WithdrawMethod>('crypto')
 const withdrawWalletAddress = ref('')
 const hasBlurredWithdrawWalletAddress = ref(false)
 const withdrawErrorMessage = ref<string | null>(null)
@@ -83,6 +85,23 @@ const withdrawAmountInRub = computed(() => {
   return convertCurrencyAmount(parsedWithdrawAmount.value, selectedCurrency.value, 'RUB')
 })
 const withdrawWalletAddressNormalized = computed(() => withdrawWalletAddress.value.trim())
+
+const withdrawMethodOptions = computed(() => [
+  {
+    id: 'crypto' as const,
+    title: t('pages.wallet.withdrawMethodCrypto'),
+    hint: t('pages.wallet.withdrawMethodCryptoHint'),
+    icon: WalletIcon,
+    disabled: false,
+  },
+  {
+    id: 'card' as const,
+    title: t('pages.wallet.withdrawMethodCard'),
+    hint: t('pages.wallet.withdrawMethodSoon'),
+    icon: CreditCard,
+    disabled: true,
+  },
+])
 
 const depositInputMin = computed(() => {
   const converted = convertCurrencyAmount(minDepositRub.value, 'RUB', selectedCurrency.value)
@@ -256,7 +275,11 @@ const isWithdrawAmountValid = computed(() => {
   )
 })
 const isWithdrawWalletAddressValid = computed(() => /^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(withdrawWalletAddressNormalized.value))
-const canSubmitWithdrawal = computed(() => isWithdrawAmountValid.value && isWithdrawWalletAddressValid.value)
+const canSubmitWithdrawal = computed(() =>
+  selectedWithdrawMethod.value === 'crypto'
+  && isWithdrawAmountValid.value
+  && isWithdrawWalletAddressValid.value,
+)
 const withdrawAmountValidationMessage = computed(() => {
   if (!withdrawAmount.value.trim()) return null
   if (!Number.isFinite(parsedWithdrawAmount.value) || parsedWithdrawAmount.value <= 0) {
@@ -1409,6 +1432,50 @@ const typeLabel = (type: string) => {
         <p v-if="withdrawAmountValidationMessage" class="text-xs text-[var(--text-danger)]">
           {{ withdrawAmountValidationMessage }}
         </p>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-sm font-medium text-[var(--text-body)]">
+          {{ $t('pages.wallet.withdrawMethod') }}
+        </label>
+        <div class="grid grid-cols-2 gap-2">
+          <button
+            v-for="option in withdrawMethodOptions"
+            :key="option.id"
+            type="button"
+            :disabled="option.disabled"
+            :aria-pressed="selectedWithdrawMethod === option.id"
+            class="group min-h-[76px] rounded-xl border px-3 py-3 text-left transition-colors"
+            :class="[
+              selectedWithdrawMethod === option.id
+                ? 'border-[rgb(var(--palette-blue-500)/0.65)] bg-[rgb(var(--palette-blue-500)/0.12)]'
+                : 'border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.03)] hover:border-[rgb(var(--palette-white)/0.16)]',
+              option.disabled
+                ? 'cursor-not-allowed opacity-55 hover:border-[rgb(var(--palette-white)/0.08)]'
+                : 'cursor-pointer',
+            ]"
+            @click="selectedWithdrawMethod = option.id"
+          >
+            <span class="flex items-start justify-between gap-2">
+              <span class="flex items-center gap-2">
+                <span
+                  class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body)]"
+                  :class="selectedWithdrawMethod === option.id ? 'text-[var(--text-link)]' : ''"
+                >
+                  <component :is="option.icon" class="h-4 w-4" />
+                </span>
+                <span class="min-w-0">
+                  <span class="block text-sm font-semibold text-[var(--text-title)]">
+                    {{ option.title }}
+                  </span>
+                  <span class="block text-xs text-[var(--text-muted)]">
+                    {{ option.hint }}
+                  </span>
+                </span>
+              </span>
+            </span>
+          </button>
+        </div>
       </div>
 
       <div class="space-y-2">
