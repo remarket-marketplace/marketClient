@@ -76,6 +76,7 @@ function sortCategoriesByActiveProductsCount(categories: Category[]): Category[]
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 let productFiltersApplyTimer: ReturnType<typeof setTimeout> | null = null
+let officialProductsRequestId = 0
 const fortniteFilters = reactive(createEmptyFortniteAccountFilters())
 const fortniteCountryOptions = computed(() => getCountryOptions(locale.value))
 const fortniteCountrySelectOptions = computed(() => ([
@@ -191,7 +192,7 @@ function isVpnCategoryCandidate(item: Category | null | undefined): boolean {
 }
 
 const shouldShowOfficialRemarketCarousel = computed(() =>
-  officialProducts.value.length > 0
+  !isOfficialProductsLoading.value && officialProducts.value.length > 0
 )
 
 const officialProductsCountText = computed(() => {
@@ -576,12 +577,14 @@ async function loadCategoryProducts(page = 1, append = false) {
 }
 
 async function loadOfficialProductsForCarousel() {
+  const requestId = ++officialProductsRequestId
   const currentActiveCategory = activeCategory.value
+  officialProducts.value = []
+  officialProductsSourceCategory.value = null
+  updateOfficialCarouselState()
+
   if (!currentActiveCategory) {
-    officialProducts.value = []
-    officialProductsSourceCategory.value = null
     isOfficialProductsLoading.value = false
-    updateOfficialCarouselState()
     return
   }
 
@@ -595,12 +598,16 @@ async function loadOfficialProductsForCarousel() {
       officialProductsPerPage.value,
       { isOfficialOnly: true },
     )
+    if (requestId !== officialProductsRequestId) return
+
     officialProducts.value = response.products
     officialProductsSourceCategory.value = response.total > 0 ? sourceCategory : null
     await nextTick()
     updateOfficialCarouselState()
   } finally {
-    isOfficialProductsLoading.value = false
+    if (requestId === officialProductsRequestId) {
+      isOfficialProductsLoading.value = false
+    }
   }
 }
 
@@ -1217,10 +1224,6 @@ onBeforeUnmount(() => {
             class="official-carousel__edge official-carousel__edge--right"
             :class="isOfficialCarouselAtEnd ? 'opacity-0' : 'opacity-100'"
           ></div>
-        </div>
-
-        <div v-else class="rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-dark-800)/0.5)] px-4 py-3 text-sm text-[var(--text-body-strong)]">
-          Официальные товары появятся после добавления админом.
         </div>
 
         <div class="mt-3 sm:hidden">
