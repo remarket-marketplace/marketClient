@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import type { ChatMessageUnion } from '@/validation/chat/chatMessage'
 import { useI18n } from 'vue-i18n'
+import { ShieldCheck } from 'lucide-vue-next'
 
 // ===== TYPE GUARDS =====
 function isTextMessage(msg: ChatMessageUnion): msg is Extract<ChatMessageUnion, { message_type: 'text_message' }> {
@@ -70,10 +71,8 @@ function formatDate(dateInput: string | Date): string {
     <!-- Admin message - centered, full width -->
     <div v-if="textMessage.is_admin_message" class="w-full max-w-2xl px-4 py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--palette-blue-500)/0.1)] to-[rgb(var(--palette-cyan-500)/0.1)] border border-[rgb(var(--palette-blue-500)/0.3)] text-mainText text-sm break-words">
       <div class="flex items-start gap-2">
-        <div class="flex-shrink-0 mt-0.5 p-1.5 rounded-full bg-[rgb(var(--palette-blue-500)/0.2)]">
-          <svg class="w-4 h-4 text-[var(--text-link)]" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M18 9.5a1.5 1.5 0 11-3 0v-6a1.5 1.5 0 011.5-1.5h3V2a.5.5 0 00-.5-.5h-3A4.5 4.5 0 0010 5.5v6a4.5 4.5 0 004.5 4.5h3a.5.5 0 00.5-.5V15h-3a1.5 1.5 0 01-1.5-1.5z"></path>
-          </svg>
+        <div class="mt-0.5 inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[rgb(var(--palette-blue-500)/0.2)] text-[var(--text-link)]">
+          <ShieldCheck class="h-4 w-4" :stroke-width="2" aria-hidden="true" />
         </div>
         <div class="flex-1">
           <p class="text-[var(--text-accent)] font-medium text-xs mb-1">{{ senderName }}</p>

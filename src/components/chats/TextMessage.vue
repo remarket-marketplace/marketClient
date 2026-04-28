@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Check, CheckCheck, Copy } from 'lucide-vue-next'
+import { Check, CheckCheck, Copy, ShieldCheck } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import AppModal from '@/components/AppModal.vue'
 
@@ -223,14 +223,11 @@ const shouldRenderAdminMessage = computed(() => {
 	<div v-if="shouldRenderAdminMessage" class="w-full min-w-0 flex justify-center">
 		<div class="w-full min-w-0 max-w-2xl overflow-hidden rounded-xl border border-[rgb(var(--palette-blue-500)/0.3)] bg-gradient-to-r from-[rgb(var(--palette-blue-500)/0.1)] to-[rgb(var(--palette-cyan-500)/0.1)] px-4 py-3 text-sm text-mainText break-words [overflow-wrap:anywhere]">
 			<div class="flex items-start gap-2">
-				<div class="flex-shrink-0 mt-0.5 p-1.5 rounded-full bg-[rgb(var(--palette-blue-500)/0.2)]">
-					<svg class="w-4 h-4 text-[var(--text-link)]" fill="currentColor" viewBox="0 0 20 20">
-						<path d="M18 9.5a1.5 1.5 0 11-3 0v-6a1.5 1.5 0 011.5-1.5h3V2a.5.5 0 00-.5-.5h-3A4.5 4.5 0 0010 5.5v6a4.5 4.5 0 004.5 4.5h3a.5.5 0 00.5-.5V15h-3a1.5 1.5 0 01-1.5-1.5z"></path>
-					</svg>
+				<div class="mt-0.5 inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[rgb(var(--palette-blue-500)/0.2)] text-[var(--text-link)]">
+					<ShieldCheck class="h-4 w-4" :stroke-width="2" aria-hidden="true" />
 				</div>
 				<div class="min-w-0 flex-1">
 					<p class="text-[var(--text-accent)] font-medium text-xs mb-1">{{ $t('common.admin') }}</p>
-          <p v-if="senderLabel || forceShowSender" class="text-xs text-[var(--text-muted)] mb-1">{{ senderLabel || $t('common.admin') }}</p>
 					<p class="whitespace-pre-wrap text-[var(--text-heading)] break-words [overflow-wrap:anywhere]">
             <template v-for="(part, index) in adminContentParts" :key="`admin-${textMessage?.id}-${index}`">
               <br v-if="part.type === 'newline'" />

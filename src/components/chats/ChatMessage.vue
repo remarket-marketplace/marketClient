@@ -31,6 +31,14 @@ function isPriceOfferMessage(msg: ChatMessageUnion): msg is Extract<ChatMessageU
   return msg.message_type === 'price_offer_message'
 }
 
+function getSenderLabel(message: Extract<ChatMessageUnion, { message_type: 'text_message' | 'image_message' }>): string | undefined {
+  if (message.message_type === 'text_message' && message.is_admin_message) {
+    return undefined
+  }
+
+  return props.senderLabels?.[message.sender_id]
+}
+
 const props = defineProps<{
   message: ChatMessageUnion
   user: any
@@ -111,7 +119,7 @@ function formatDate(dateInput: string | Date): string {
       :formatDate="formatDate"
       :showAdminBadge="showAdminBadge"
       :chat-participant-ids="props.chatParticipantIds"
-      :sender-label="props.senderLabels?.[textMessage.sender_id]"
+      :sender-label="getSenderLabel(textMessage)"
       :sender-role="props.senderRoles?.[textMessage.sender_id]"
       :force-show-sender="props.forceShowSender"
     />
@@ -121,7 +129,7 @@ function formatDate(dateInput: string | Date): string {
       :image-message="imageMessage"
       :user="user"
       :format-date="formatDate"
-      :sender-label="props.senderLabels?.[imageMessage.sender_id]"
+      :sender-label="getSenderLabel(imageMessage)"
       :force-show-sender="props.forceShowSender"
     />
 

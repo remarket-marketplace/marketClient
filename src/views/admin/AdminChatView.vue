@@ -76,6 +76,17 @@ type ChatParticipantsData = {
 
 const chatParticipants = ref<ChatParticipantsData | null>(null)
 
+const chatHeaderParticipants = computed<ChatParticipantData[]>(() => {
+    const participants = chatParticipants.value
+    if (!participants) return []
+
+    return [
+        participants.buyer,
+        participants.seller,
+        participants.support_user,
+    ].filter((participant): participant is ChatParticipantData => Boolean(participant))
+})
+
 function getPrimaryChatParticipant() {
     return chatParticipants.value?.buyer
         ?? chatParticipants.value?.seller
@@ -96,7 +107,7 @@ function resolveSenderDisplayName(senderId: string): string {
     }
 
     if (senderId === user.value?.id) {
-        return user.value?.username || t('common.admin')
+        return t('common.admin')
     }
 
     return getPrimaryChatParticipant()?.username || currentChatData.value?.username || t('common.user')
@@ -106,7 +117,7 @@ const senderLabels = computed<Record<string, string>>(() => {
     const labels: Record<string, string> = {}
     if (chatParticipants.value?.buyer) labels[chatParticipants.value.buyer.id] = chatParticipants.value.buyer.username
     if (chatParticipants.value?.seller) labels[chatParticipants.value.seller.id] = chatParticipants.value.seller.username
-    if (chatParticipants.value?.support_user) labels[chatParticipants.value.support_user.id] = chatParticipants.value.support_user.username
+    if (chatParticipants.value?.support_user) labels[chatParticipants.value.support_user.id] = t('common.admin')
 
     for (const message of chatMessages.value) {
         if ('sender_id' in message && !labels[message.sender_id]) {
@@ -817,7 +828,31 @@ async function sendMessage(payload: { files: File[] }) {
                                         class="h-7 w-7 lg:h-10 lg:w-10 border-2 border-[rgb(var(--palette-dark-600))] rounded-full object-cover"
                                     />
                                 </div>
-                                <div class="flex min-w-0 flex-col justify-center">
+                                <div
+                                    v-if="chatHeaderParticipants.length > 0"
+                                    class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5"
+                                >
+                                    <div
+                                        v-for="participant in chatHeaderParticipants"
+                                        :key="participant.id"
+                                        class="min-w-0 max-w-[12rem] border-r border-[rgb(var(--palette-dark-600))] pr-3 last:border-r-0 last:pr-0"
+                                    >
+                                        <div class="w-full min-w-0 truncate">
+                                            <StyledUsername
+                                                :username="participant.username"
+                                                :style-id="participant.nickname_style_id ?? 'default'"
+                                                class="text-sm font-semibold leading-tight lg:text-base"
+                                            />
+                                        </div>
+                                        <p
+                                            class="mt-0.5 text-[11px] leading-none"
+                                            :class="participant.is_active ? 'text-[var(--text-success-strong)]' : 'text-[var(--text-meta)]'"
+                                        >
+                                            {{ participant.is_active ? $t('common.online') : $t('common.offline') }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div v-else class="flex min-w-0 flex-col justify-center">
                                     <div class="w-full min-w-0 truncate">
                                         <StyledUsername
                                             :username="currentChatData.username"
@@ -825,11 +860,11 @@ async function sendMessage(payload: { files: File[] }) {
                                             class="text-base font-semibold leading-tight lg:text-lg"
                                         />
                                     </div>
-                                    <p v-if="currentChatData.is_active" class="text-xs text-[var(--text-success-strong)]">
-                                        {{ $t('common.online') }}
-                                    </p>
-                                    <p v-else class="text-xs text-[var(--text-meta)]">
-                                        {{ $t('common.offline') }}
+                                    <p
+                                        class="text-xs"
+                                        :class="currentChatData.is_active ? 'text-[var(--text-success-strong)]' : 'text-[var(--text-meta)]'"
+                                    >
+                                        {{ currentChatData.is_active ? $t('common.online') : $t('common.offline') }}
                                     </p>
                                 </div>
                             </div>
