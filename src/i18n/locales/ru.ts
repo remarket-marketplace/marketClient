@@ -488,6 +488,29 @@ const ru = {
     },
   },
 
+  complaints: {
+    title: "Пожаловаться",
+    subtitle: "Выберите причину и опишите ситуацию. Жалоба попадёт в обработку администраторов.",
+    target: "Цель жалобы",
+    reasonLabel: "Причина",
+    reasonPlaceholder: "Выберите причину",
+    reasonRequired: "Выберите причину жалобы.",
+    descriptionLabel: "Описание",
+    descriptionPlaceholder: "Опишите, что именно нарушает правила или вызывает сомнения...",
+    descriptionHint: "Минимум {min} символов",
+    descriptionMinError: "Введите минимум {min} символов.",
+    submit: "Отправить жалобу",
+    sending: "Отправка...",
+    sendSuccess: "Жалоба отправлена.",
+    reasons: {
+      fraud: "Мошенничество",
+      forbiddenContent: "Запрещённый контент",
+      misleadingInfo: "Недостоверная информация",
+      abuse: "Оскорбления или угрозы",
+      other: "Другое",
+    },
+  },
+
   footer: {
     features: "Возможности",
     support: "Поддержка",
@@ -521,6 +544,7 @@ const ru = {
       categories: "Категории",
       chats: "Чаты",
       feedback: "Обращения",
+      complaints: "Обработка жалоб",
       activityLogs: "Логи",
       backToSite: "Вернуться на сайт",
       sections: {
@@ -1452,6 +1476,7 @@ const ru = {
       wallet: "Кошелек",
       changePhoto: "Сменить фото",
       shareProfile: "Поделиться профилем",
+      reportUser: "Пожаловаться на пользователя",
       writeMessage: "Написать сообщение",
       writeMessageTitle: "Первое сообщение",
       writeMessageHint: "Можно отправить только одно сообщение, пока пользователь не ответит.",
@@ -2109,6 +2134,7 @@ const ru = {
           wallet_top_up_chargebacked: "Пополнение возвращено",
           wallet_top_up_moderated_by_admin: "Модерация пополнения администратором",
           feedback_submitted: "Отправка обращения",
+          complaint_submitted: "Отправка жалобы",
           profile_description_updated: "Изменение описания профиля",
           password_changed: "Смена пароля",
           username_changed: "Смена ника",
@@ -2135,6 +2161,23 @@ const ru = {
         notFound: "Обращение не найдено",
         loadError: "Не удалось загрузить обращение",
         imagesCount: "Изображений: {count}",
+      },
+
+      complaintsPage: {
+        title: "Обработка жалоб",
+        subtitle: "Просматривайте жалобы на товары и пользователей.",
+        open: "Открыть жалобу",
+        detailsTitle: "Жалоба",
+        reason: "Причина жалобы",
+        target: "Объект жалобы",
+        targetType: "Тип объекта",
+        targetName: "Название",
+        openTarget: "Открыть объект",
+        description: "Описание",
+        emptyTitle: "Жалоб пока нет",
+        emptyHint: "Когда пользователи отправят жалобы, они появятся здесь.",
+        notFound: "Жалоба не найдена",
+        loadError: "Не удалось загрузить жалобы",
       }
     },
     paymentSuccess: {

@@ -173,6 +173,18 @@ const routes = [
       meta: { requiredAdmin: true },
     },
     {
+      path: "/admin/complaints",
+      name: "admin complaints",
+      component: () => import("@/views/admin/AdminComplaintsView.vue"),
+      meta: { requiredAdmin: true },
+    },
+    {
+      path: "/admin/complaints/:complaintId",
+      name: "admin complaint",
+      component: () => import("@/views/admin/AdminComplaintView.vue"),
+      meta: { requiredAdmin: true },
+    },
+    {
       path: "/admin/activity-logs",
       name: "admin activity logs",
       component: () => import("@/views/admin/AdminActivityLogsView.vue"),

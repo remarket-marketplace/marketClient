@@ -488,6 +488,29 @@ const en = {
     },
   },
 
+  complaints: {
+    title: "Report",
+    subtitle: "Choose a reason and describe the situation. The report will go to admin review.",
+    target: "Report target",
+    reasonLabel: "Reason",
+    reasonPlaceholder: "Choose a reason",
+    reasonRequired: "Choose a report reason.",
+    descriptionLabel: "Description",
+    descriptionPlaceholder: "Describe what violates the rules or looks suspicious...",
+    descriptionHint: "Minimum {min} characters",
+    descriptionMinError: "Enter at least {min} characters.",
+    submit: "Send report",
+    sending: "Sending...",
+    sendSuccess: "Report sent.",
+    reasons: {
+      fraud: "Fraud",
+      forbiddenContent: "Forbidden content",
+      misleadingInfo: "Misleading information",
+      abuse: "Abuse or threats",
+      other: "Other",
+    },
+  },
+
   footer: {
     features: "Features",
     support: "Support",
@@ -521,6 +544,7 @@ const en = {
       categories: "Categories",
       chats: "Chats",
       feedback: "Feedback",
+      complaints: "Report Handling",
       activityLogs: "Logs",
       backToSite: "Back to site",
       sections: {
@@ -1455,6 +1479,7 @@ const en = {
       wallet: "Wallet",
       changePhoto: "Change photo",
       shareProfile: "Share profile",
+      reportUser: "Report user",
       writeMessage: "Write message",
       writeMessageTitle: "First message",
       writeMessageHint: "You can send only one message until this user replies.",
@@ -2112,6 +2137,7 @@ const en = {
           wallet_top_up_chargebacked: "Top-up reversed",
           wallet_top_up_moderated_by_admin: "Top-up moderated by admin",
           feedback_submitted: "Feedback submitted",
+          complaint_submitted: "Report submitted",
           profile_description_updated: "Profile description updated",
           password_changed: "Password changed",
           username_changed: "Username changed",
@@ -2138,6 +2164,23 @@ const en = {
         notFound: "Feedback not found",
         loadError: "Failed to load feedback",
         imagesCount: "Images: {count}",
+      },
+
+      complaintsPage: {
+        title: "Report handling",
+        subtitle: "Review reports about products and users.",
+        open: "Open report",
+        detailsTitle: "Report",
+        reason: "Report reason",
+        target: "Report target",
+        targetType: "Target type",
+        targetName: "Name",
+        openTarget: "Open target",
+        description: "Description",
+        emptyTitle: "No reports yet",
+        emptyHint: "User reports will appear here after submission.",
+        notFound: "Report not found",
+        loadError: "Failed to load reports",
       }
     },
     paymentSuccess: {
