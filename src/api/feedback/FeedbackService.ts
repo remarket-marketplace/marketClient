@@ -4,6 +4,21 @@ type SendFeedbackResult =
   | { success: true }
   | { success: false; errorMessage: string };
 
+function getFeedbackErrorMessage(error: any, fallback: string): string {
+  const detail = error?.response?.data?.detail;
+
+  if (typeof detail === "string") {
+    return detail;
+  }
+
+  if (Array.isArray(detail)) {
+    const firstMessage = detail.find((item) => typeof item?.msg === "string")?.msg;
+    return firstMessage || fallback;
+  }
+
+  return detail?.error_message || fallback;
+}
+
 export type ComplaintTargetType = "product" | "user";
 
 export interface SendComplaintPayload {
@@ -38,15 +53,9 @@ export const feedbackService = {
 
       return { success: true };
     } catch (error: any) {
-      const detail = error?.response?.data?.detail;
-      const errorMessage =
-        typeof detail === "string"
-          ? detail
-          : detail?.error_message || "Failed to send feedback";
-
       return {
         success: false,
-        errorMessage,
+        errorMessage: getFeedbackErrorMessage(error, "Failed to send feedback"),
       };
     }
   },
@@ -76,15 +85,9 @@ export const feedbackService = {
 
       return { success: true };
     } catch (error: any) {
-      const detail = error?.response?.data?.detail;
-      const errorMessage =
-        typeof detail === "string"
-          ? detail
-          : detail?.error_message || "Failed to send complaint";
-
       return {
         success: false,
-        errorMessage,
+        errorMessage: getFeedbackErrorMessage(error, "Не удалось отправить жалобу"),
       };
     }
   },
