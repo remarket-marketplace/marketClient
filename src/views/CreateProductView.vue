@@ -137,7 +137,7 @@ const fortniteAccountPayload = computed(() => buildFortniteAccountPayload(
 const PRODUCT_LIMITS = {
   title: { min: 10, max: 80 },
   description: { min: 10, max: 1200 },
-  productData: { min: 10, max: 128 },
+  productData: { min: 10, max: 300 },
   count: { min: 1, max: 5000 },
   images: { min: 1, max: 10 },
 }
@@ -155,6 +155,34 @@ let draftAutosaveTimer: ReturnType<typeof window.setTimeout> | null = null
 function getMultipartTransportLength(value: string): number {
   // Multipart form payload normalizes LF to CRLF, so backend sees this length.
   return value.replace(/\r?\n/g, '\r\n').length
+}
+
+function limitMultipartTransportLength(value: string, maxLength: number): string {
+  let result = ''
+  let length = 0
+
+  for (const char of value) {
+    const charLength = getMultipartTransportLength(char)
+    if (length + charLength > maxLength) break
+    result += char
+    length += charLength
+  }
+
+  return result
+}
+
+function onProductDataInput(event: Event): void {
+  const textarea = event.target as HTMLTextAreaElement | null
+  if (!textarea) return
+
+  const limitedValue = limitMultipartTransportLength(
+    textarea.value,
+    PRODUCT_LIMITS.productData.max,
+  )
+  if (textarea.value !== limitedValue) {
+    textarea.value = limitedValue
+  }
+  productData.value = limitedValue
 }
 
 const totalImagesCount = computed(() => draftImages.value.length + images.value.length)
@@ -1273,10 +1301,10 @@ async function createProduct() {
                     id="productData"
                     v-model="productData"
                     rows="6"
-                    :maxlength="PRODUCT_LIMITS.productData.max"
                     :minlength="PRODUCT_LIMITS.productData.min"
                     :placeholder="$t('pages.forms.createProduct.productDataPlaceholder')"
                     class="w-full rounded-lg bg-[rgb(var(--palette-dark-600))] border border-[rgb(var(--palette-dark-700))] px-4 py-3 text-sm outline-none text-[var(--text-title)] placeholder-[var(--text-placeholder)] resize-none font-mono"
+                    @input="onProductDataInput"
                   ></textarea>
 
                   <div class="flex items-center justify-between gap-3">
