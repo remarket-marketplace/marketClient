@@ -87,6 +87,7 @@ const isFiltersOpen = ref(false)
 type ProductCardViewMode = 'grid' | 'list'
 const PRODUCT_CARD_VIEW_MODE_STORAGE_KEY = 'home_product_card_view_mode'
 const productCardViewMode = ref<ProductCardViewMode>('grid')
+const CATEGORY_PLACEHOLDER_COUNT = 8
 const loadingSkeletonCount = computed(() => (
   productCardViewMode.value === 'grid'
     ? perPage.value
@@ -243,12 +244,14 @@ function filterVisibleCategories(categories: Category[]): Category[] {
   return categories.filter(isVisibleCategory)
 }
 
-function sortCategoriesByActiveProductsCount(categories: Category[]): Category[] {
-  return [...categories].sort((a, b) => {
-    const countDiff = (b.active_products_count ?? 0) - (a.active_products_count ?? 0)
-    if (countDiff !== 0) return countDiff
-    return a.name.localeCompare(b.name)
+function mergeUniqueCategories(currentCategories: Category[], nextCategories: Category[]): Category[] {
+  const seenCategoryIds = new Set(currentCategories.map((category) => category.id))
+  const uniqueNextCategories = nextCategories.filter((category) => {
+    if (seenCategoryIds.has(category.id)) return false
+    seenCategoryIds.add(category.id)
+    return true
   })
+  return [...currentCategories, ...uniqueNextCategories]
 }
 
 function formatPrice(value: number): string {
@@ -761,16 +764,19 @@ async function loadMoreProducts() {
 
 async function loadMainCategories(page = 1, append = false) {
   if (!append) isCategoriesLoading.value = true
-  const res = await categoryService.getAllCategories(page, categoriesPerPage.value)
-  const visibleMainCategories = sortCategoriesByActiveProductsCount(
-    filterVisibleCategories(res.categories).filter((category) => !category.parent_id),
-  )
-  mainCategories.value = append
-    ? sortCategoriesByActiveProductsCount([...mainCategories.value, ...visibleMainCategories])
-    : visibleMainCategories
-  categoryPage.value = res.currentPage
-  categoryTotalPages.value = res.totalPages
-  isCategoriesLoading.value = false
+  try {
+    const res = await categoryService.getAllCategories(page, categoriesPerPage.value)
+    const visibleMainCategories = filterVisibleCategories(res.categories)
+      .filter((category) => !category.parent_id)
+
+    mainCategories.value = append
+      ? mergeUniqueCategories(mainCategories.value, visibleMainCategories)
+      : visibleMainCategories
+    categoryPage.value = res.currentPage
+    categoryTotalPages.value = res.totalPages
+  } finally {
+    if (!append) isCategoriesLoading.value = false
+  }
 }
 
 async function loadSearchableCategories() {
@@ -1108,99 +1114,113 @@ onBeforeUnmount(() => {
         <div class="mt-10 w-full sm:mt-16">
           <Title :text="t('common.categories')" />
 
-          <div v-if="isCategoriesLoading" class="flex gap-2 overflow-x-auto sm:gap-3">
-            <div v-for="n in 5" :key="n" class="h-16 w-16 bg-[rgb(var(--palette-dark-600))] animate-pulse rounded-lg sm:h-20 sm:w-20" />
-          </div>
-
-          <div v-else class="w-full">
-            <div class="relative">
+          <transition name="home-categories-fade" mode="out-in">
+            <div
+              v-if="isCategoriesLoading"
+              key="categories-loading"
+              class="home-categories-loading-row"
+              aria-hidden="true"
+            >
               <div
-                v-if="!areCategoriesExpanded"
-                class="w-full overflow-hidden"
+                v-for="n in CATEGORY_PLACEHOLDER_COUNT"
+                :key="`category-placeholder-${n}`"
+                class="home-category-skeleton"
               >
-                <div class="flex min-w-max gap-2 py-1.5 sm:gap-3 sm:py-2">
-                  <button
-                    v-for="cat in mainCategories"
-                    :key="cat.id"
-                    type="button"
-                    @click="onMainCategoryClick(cat)"
-                    class="flex-shrink-0 cursor-pointer flex flex-col items-center p-1.5 rounded-lg transition sm:p-2"
-                  >
-                    <div class="h-12 w-12 flex items-center justify-center bg-[rgb(var(--palette-dark-700))] rounded-lg overflow-hidden border border-[rgb(var(--palette-white)/0.05)] shadow-inner sm:h-16 sm:w-16">
-                      <img
-                        v-if="isCategoryImageAvailable(cat.id, cat.image_url)"
-                        :src="`${API_HOST}${cat.image_url}`"
-                        class="w-full h-full object-cover"
-                        @error="markCategoryImageBroken(cat.id)"
-                      />
-                      <Folder v-else class="h-6 w-6 text-[var(--text-muted)] sm:h-8 sm:w-8" />
-                    </div>
-                    <span class="home-category-label mt-1.5 sm:mt-2">{{ cat.name }}</span>
-                  </button>
+                <div class="home-category-skeleton-thumb"></div>
+                <div class="home-category-skeleton-label"></div>
+              </div>
+            </div>
+
+            <div v-else key="categories-loaded" class="w-full">
+              <div class="relative">
+                <div
+                  v-if="!areCategoriesExpanded"
+                  class="w-full overflow-hidden"
+                >
+                  <div class="home-categories-row">
+                    <button
+                      v-for="cat in mainCategories"
+                      :key="cat.id"
+                      type="button"
+                      @click="onMainCategoryClick(cat)"
+                      class="home-category-button flex-shrink-0"
+                    >
+                      <div class="home-category-thumb">
+                        <img
+                          v-if="isCategoryImageAvailable(cat.id, cat.image_url)"
+                          :src="resolveCategoryImageUrl(cat.image_url)"
+                          class="home-category-image"
+                          @error="markCategoryImageBroken(cat.id)"
+                        />
+                        <Folder v-else class="h-6 w-6 text-[var(--text-muted)] sm:h-8 sm:w-8" />
+                      </div>
+                      <span class="home-category-label mt-1.5 sm:mt-2">{{ cat.name }}</span>
+                    </button>
+                  </div>
                 </div>
+
+                <button
+                  v-if="shouldShowCategoryExpandButton && !areCategoriesExpanded"
+                  type="button"
+                  class="home-category-expand-btn market-primary-surface market-primary-hover absolute right-1 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[rgb(var(--palette-blue-400)/0.25)] text-[var(--text-title)] ring-4 ring-[rgb(var(--palette-dark-800)/0.55)] transition disabled:cursor-default disabled:opacity-60 sm:h-12 sm:w-12"
+                  :aria-expanded="areCategoriesExpanded"
+                  :aria-label="areCategoriesExpanded ? t('pages.index.collapseCategories') : t('pages.index.expandCategories')"
+                  :title="areCategoriesExpanded ? t('pages.index.collapseCategories') : t('pages.index.expandCategories')"
+                  :disabled="isExpandingCategories"
+                  @click="toggleCategoriesExpanded"
+                >
+                  <ChevronRight
+                    class="h-5 w-5 transition-transform duration-200 sm:h-6 sm:w-6"
+                    :class="areCategoriesExpanded ? 'rotate-90' : ''"
+                  />
+                </button>
               </div>
 
-              <button
-                v-if="shouldShowCategoryExpandButton && !areCategoriesExpanded"
-                type="button"
-                class="home-category-expand-btn market-primary-surface market-primary-hover absolute right-1 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[rgb(var(--palette-blue-400)/0.25)] text-[var(--text-title)] ring-4 ring-[rgb(var(--palette-dark-800)/0.55)] transition disabled:cursor-default disabled:opacity-60 sm:h-12 sm:w-12"
-                :aria-expanded="areCategoriesExpanded"
-                :aria-label="areCategoriesExpanded ? t('pages.index.collapseCategories') : t('pages.index.expandCategories')"
-                :title="areCategoriesExpanded ? t('pages.index.collapseCategories') : t('pages.index.expandCategories')"
-                :disabled="isExpandingCategories"
-                @click="toggleCategoriesExpanded"
+              <div
+                v-if="areCategoriesExpanded"
+                class="home-expanded-categories-grid mt-2"
               >
-                <ChevronRight
-                  class="h-5 w-5 transition-transform duration-200 sm:h-6 sm:w-6"
-                  :class="areCategoriesExpanded ? 'rotate-90' : ''"
-                />
-              </button>
-            </div>
+                <button
+                  v-for="cat in mainCategories"
+                  :key="cat.id"
+                  type="button"
+                  @click="onMainCategoryClick(cat)"
+                  class="home-category-button home-expanded-category-card"
+                >
+                  <div class="home-category-thumb">
+                    <img
+                      v-if="isCategoryImageAvailable(cat.id, cat.image_url)"
+                      :src="resolveCategoryImageUrl(cat.image_url)"
+                      class="home-category-image"
+                      @error="markCategoryImageBroken(cat.id)"
+                    />
+                    <Folder v-else class="h-6 w-6 text-[var(--text-muted)] sm:h-8 sm:w-8" />
+                  </div>
+                  <span class="home-category-label mt-1.5 sm:mt-2">
+                    {{ cat.name }}
+                  </span>
+                </button>
 
-            <div
-              v-if="areCategoriesExpanded"
-              class="home-expanded-categories-grid mt-2"
-            >
-              <button
-                v-for="cat in mainCategories"
-                :key="cat.id"
-                type="button"
-                @click="onMainCategoryClick(cat)"
-                class="home-expanded-category-card cursor-pointer flex w-full flex-col items-center rounded-lg p-1 transition hover:bg-[rgb(var(--palette-dark-700)/0.25)] sm:p-1.5"
-              >
-                <div class="h-12 w-12 flex items-center justify-center bg-[rgb(var(--palette-dark-700))] rounded-lg overflow-hidden border border-[rgb(var(--palette-white)/0.05)] shadow-inner sm:h-16 sm:w-16">
-                  <img
-                    v-if="isCategoryImageAvailable(cat.id, cat.image_url)"
-                    :src="`${API_HOST}${cat.image_url}`"
-                    class="w-full h-full object-cover"
-                    @error="markCategoryImageBroken(cat.id)"
-                  />
-                  <Folder v-else class="h-6 w-6 text-[var(--text-muted)] sm:h-8 sm:w-8" />
-                </div>
-                <span class="home-category-label mt-1.5 sm:mt-2">
-                  {{ cat.name }}
-                </span>
-              </button>
-
-              <button
-                v-if="shouldShowCategoryExpandButton"
-                type="button"
-                class="home-expanded-category-card flex w-full flex-col items-center rounded-lg p-1 text-[var(--text-title)] transition disabled:cursor-default disabled:opacity-60 sm:p-1.5"
-                :aria-expanded="areCategoriesExpanded"
-                :aria-label="t('pages.index.collapseCategories')"
-                :title="t('pages.index.collapseCategories')"
-                :disabled="isExpandingCategories"
-                @click="toggleCategoriesExpanded"
-              >
-                <div class="flex h-12 w-12 items-center justify-center rounded-full border border-[rgb(var(--palette-white)/0.1)] sm:h-16 sm:w-16">
-                  <ChevronRight class="h-5 w-5 rotate-270 sm:h-6 sm:w-6" />
-                </div>
-                <span class="home-category-label mt-1.5 sm:mt-2">
-                  {{ t('pages.index.collapseCategoriesShort') }}
-                </span>
-              </button>
+                <button
+                  v-if="shouldShowCategoryExpandButton"
+                  type="button"
+                  class="home-expanded-category-card flex w-full flex-col items-center rounded-lg p-1 text-[var(--text-title)] transition disabled:cursor-default disabled:opacity-60 sm:p-1.5"
+                  :aria-expanded="areCategoriesExpanded"
+                  :aria-label="t('pages.index.collapseCategories')"
+                  :title="t('pages.index.collapseCategories')"
+                  :disabled="isExpandingCategories"
+                  @click="toggleCategoriesExpanded"
+                >
+                  <div class="flex h-12 w-12 items-center justify-center rounded-full border border-[rgb(var(--palette-white)/0.1)] sm:h-16 sm:w-16">
+                    <ChevronRight class="h-5 w-5 rotate-270 sm:h-6 sm:w-6" />
+                  </div>
+                  <span class="home-category-label mt-1.5 sm:mt-2">
+                    {{ t('pages.index.collapseCategoriesShort') }}
+                  </span>
+                </button>
+              </div>
             </div>
-          </div>
+          </transition>
         </div>
 
         <Title class="mt-12 w-full check-text" :text="t('common.products')" />
@@ -1582,6 +1602,106 @@ onBeforeUnmount(() => {
   }
 }
 
+.home-categories-fade-enter-active,
+.home-categories-fade-leave-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.home-categories-fade-enter-from,
+.home-categories-fade-leave-to {
+  opacity: 0;
+  transform: translateY(0.25rem);
+}
+
+.home-categories-loading-row {
+  display: flex;
+  min-height: 5.25rem;
+  gap: 0.5rem;
+  overflow: hidden;
+  padding: 0.375rem 0 0.5rem;
+}
+
+.home-categories-row {
+  display: flex;
+  min-width: max-content;
+  gap: 0.25rem;
+  padding: 0.375rem 0 0.5rem;
+}
+
+.home-category-skeleton,
+.home-category-button {
+  display: flex;
+  width: 3.75rem;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 0.75rem;
+  padding: 0.375rem;
+}
+
+.home-category-button {
+  cursor: pointer;
+  transition: background-color 0.18s ease, transform 0.18s ease;
+}
+
+.home-category-button:hover {
+  background: rgb(var(--palette-white) / 0.035);
+  transform: translateY(-1px);
+}
+
+.home-category-thumb,
+.home-category-skeleton-thumb {
+  display: flex;
+  height: 3rem;
+  width: 3rem;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(var(--palette-white) / 0.06);
+  background: rgb(var(--palette-dark-700));
+  box-shadow: inset 0 1px 0 rgb(var(--palette-white) / 0.04);
+}
+
+.home-category-image {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+
+.home-category-skeleton-thumb,
+.home-category-skeleton-label {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(
+      100deg,
+      rgb(var(--palette-white) / 0.035) 0%,
+      rgb(var(--palette-white) / 0.095) 42%,
+      rgb(var(--palette-white) / 0.035) 76%
+    ),
+    rgb(var(--palette-dark-700));
+  background-size: 220% 100%;
+  animation: home-category-shimmer 1.25s ease-in-out infinite;
+}
+
+.home-category-skeleton-label {
+  margin-top: 0.55rem;
+  height: 0.5rem;
+  width: 2.4rem;
+  border-radius: 999px;
+}
+
+@keyframes home-category-shimmer {
+  0% {
+    background-position: 120% 0;
+  }
+
+  100% {
+    background-position: -120% 0;
+  }
+}
+
 .home-category-label {
   display: block;
   width: 3rem;
@@ -1609,29 +1729,57 @@ onBeforeUnmount(() => {
 
 .home-expanded-categories-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(3.5rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(3.75rem, 1fr));
   gap: 0.25rem;
   align-items: start;
 }
 
 .home-expanded-category-card {
-  max-width: 3.5rem;
+  max-width: 3.75rem;
   justify-self: center;
 }
 
 @media (min-width: 640px) {
+  .home-categories-loading-row {
+    min-height: 6.75rem;
+    gap: 0.75rem;
+    padding: 0.5rem 0 0.625rem;
+  }
+
+  .home-categories-row {
+    gap: 0.5rem;
+    padding: 0.5rem 0 0.625rem;
+  }
+
+  .home-category-skeleton,
+  .home-category-button {
+    width: 5rem;
+    padding: 0.5rem;
+  }
+
+  .home-category-thumb,
+  .home-category-skeleton-thumb {
+    height: 4rem;
+    width: 4rem;
+  }
+
+  .home-category-skeleton-label {
+    height: 0.625rem;
+    width: 3.2rem;
+  }
+
   .home-category-label {
     width: 4rem;
     font-size: 0.75rem;
   }
 
   .home-expanded-categories-grid {
-    grid-template-columns: repeat(auto-fit, minmax(4.5rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr));
     gap: 0.5rem;
   }
 
   .home-expanded-category-card {
-    max-width: 4.5rem;
+    max-width: 5rem;
   }
 }
 
