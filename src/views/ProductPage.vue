@@ -1153,7 +1153,7 @@ onUnmounted(() => {
       class="w-full gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] lg:items-start lg:gap-8"
     >
       <div class="order-2 space-y-4 py-4 lg:order-1 lg:py-0">
-        <h1 class="text-xl font-bold text-[var(--text-title)]">{{ $t('pages.product.description') }}</h1>
+        <h2 class="text-xl font-bold text-[var(--text-title)]">{{ $t('pages.product.description') }}</h2>
         <p class="text-[var(--text-body)] leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere] text-sm lg:text-base">
           {{ product.description || $t('pages.product.descriptionMissing') }}
         </p>

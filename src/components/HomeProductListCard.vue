@@ -24,6 +24,7 @@ const emit = defineEmits<{
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
+const productPath = computed(() => `/product/${buildProductKey(props.product)}`)
 const shouldShowSellerRating = computed(() => props.product.seller.rating > 0)
 const activeImageIndex = ref(0)
 const touchStartX = ref(0)
@@ -153,7 +154,13 @@ function handleImageTouchEnd(event: TouchEvent) {
     <div class="flex min-w-0 flex-1 flex-col py-2 pr-3 sm:py-3 sm:pr-4">
       <div class="flex min-w-0 items-start justify-between gap-3">
         <h3 class="home-list-title min-w-0 text-sm font-semibold text-mainText sm:text-base">
-          {{ product.title }}
+          <RouterLink
+            :to="productPath"
+            class="hover:text-[var(--text-link)]"
+            @click.stop
+          >
+            {{ product.title }}
+          </RouterLink>
         </h3>
         <div class="shrink-0 rounded-lg bg-[rgb(var(--palette-blue-600))] px-2.5 py-1 text-xs font-semibold text-[var(--text-title)] sm:text-sm">
           {{ formattedPrice }}

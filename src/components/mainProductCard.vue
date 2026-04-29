@@ -46,6 +46,7 @@ function goToSeller() {
 }
 
 const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
+const productPath = computed(() => `/product/${buildProductKey(props.product)}`)
 const currentImageUrl = computed(() => {
   if (!props.product.images.length) return ''
   return `${API_HOST}${props.product.images[activeImageIndex.value]?.image_url ?? props.product.images[0]?.image_url ?? ''}`
@@ -160,7 +161,13 @@ function handleImageTouchEnd(event: TouchEvent) {
     <div class="px-3 pb-3 flex flex-1 flex-col">
       <!-- Title -->
       <h3 class="product-title text-sm md:text-base font-semibold text-mainText leading-[1.125rem] md:leading-5 mb-2 h-[2.25rem] md:h-[2.5rem] flex-shrink-0">
-        {{ product.title }}
+        <RouterLink
+          :to="productPath"
+          class="hover:text-[var(--text-link)]"
+          @click.stop
+        >
+          {{ product.title }}
+        </RouterLink>
       </h3>
 
       <hr class="border-[rgb(var(--palette-dark-700))] opacity-80 mb-2 flex-shrink-0" />
@@ -196,7 +203,7 @@ function handleImageTouchEnd(event: TouchEvent) {
         <!-- Buy button -->
         <button
           class="market-primary-surface market-primary-hover group relative w-full flex-shrink-0 cursor-pointer overflow-hidden whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-semibold text-[var(--text-title)] transition sm:px-3 sm:py-2 sm:text-sm"
-          @click="onClick">
+          @click.stop="onClick">
           <span class="block text-center tabular-nums transition-all duration-200 group-hover:-translate-y-full group-hover:opacity-0">
             {{ formattedPrice }}
           </span>
