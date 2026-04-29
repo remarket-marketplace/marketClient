@@ -10,6 +10,7 @@ import {
   Folder,
   MessageCircle,
   MessageSquareText,
+  Flag,
   History,
   Menu,
   X,
@@ -129,6 +130,12 @@ const navItems = computed<NavItem[]>(() => [
     to: '/admin/feedback',
   },
   {
+    id: 'complaints',
+    title: t('navigation.admin.complaints'),
+    icon: Flag,
+    to: '/admin/complaints',
+  },
+  {
     id: 'activity-logs',
     title: t('navigation.admin.activityLogs'),
     icon: History,
@@ -153,7 +160,7 @@ const navGroups = computed<NavGroup[]>(() => {
     {
       id: 'communication',
       title: t('navigation.admin.sections.communication'),
-      items: pickNavItems(items, ['chats', 'feedback', 'activity-logs']),
+      items: pickNavItems(items, ['chats', 'feedback', 'complaints', 'activity-logs']),
     },
   ]
 })

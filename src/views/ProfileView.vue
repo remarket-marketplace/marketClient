@@ -7,6 +7,7 @@ import { reviewService } from '@/api/review/ReviewService'
 import Loader from '@/components/Loader.vue'
 import ProfileProductCard from '@/components/ProfileProductCard.vue'
 import HomeProductListCard from '@/components/HomeProductListCard.vue'
+import ReportComplaintModal from '@/components/complaints/ReportComplaintModal.vue'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
@@ -17,7 +18,7 @@ import type { Product } from '@/validation/product/product'
 import type { PublicProfileData, UserRead } from '@/validation/user/userRead'
 import type { SubscriptionSeller } from '@/validation/user/subscriptions'
 import type { ReviewSchema } from '@/validation/review/review'
-import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart, Archive, Edit, Calendar, Package, ShoppingBag, MessageSquare, Loader2, LayoutGrid, Rows3, UserPlus, UserCheck, Users } from 'lucide-vue-next'
+import { Settings, LogOut, Share2, Copy, Check, Wallet, Heart, Archive, Edit, Calendar, Package, ShoppingBag, MessageSquare, Loader2, LayoutGrid, Rows3, UserPlus, UserCheck, Users, TriangleAlert } from 'lucide-vue-next'
 import QrcodeVue from 'qrcode.vue'
 import type { Deal } from '@/validation/deal/deal'
 import UserRating from '@/components/UserRating.vue'
@@ -29,6 +30,7 @@ import { formatCurrencyAmount } from '@/utils/currency'
 import { isSafeImageFile, SAFE_IMAGE_INPUT_ACCEPT } from '@/utils/imageUpload'
 import { formatLastSeen } from '@/utils/presence'
 import { buildProductKey } from '@/utils/urlKeys'
+import { buildAuthRedirectQuery } from '@/utils/authRedirect'
 
 const { locale, t } = useI18n()
 const route = useRoute()
@@ -49,6 +51,7 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 const isUploading = ref(false)
 const showAvatarOverlay = ref(false)
 const showShareModal = ref(false)
+const showComplaintModal = ref(false)
 const isCopied = ref(false)
 const isOpeningDirectChat = ref(false)
 const directChatError = ref<string | null>(null)
@@ -432,6 +435,24 @@ function openShareModal() {
 
 function closeShareModal() { showShareModal.value = false }
 
+function openProfileReport() {
+  if (isOwner.value) return
+
+  if (!currentUser.value) {
+    router.push({
+      path: '/signin',
+      query: buildAuthRedirectQuery(route.fullPath),
+    })
+    return
+  }
+
+  showComplaintModal.value = true
+}
+
+function closeComplaintModal() {
+  showComplaintModal.value = false
+}
+
 async function openDirectChat(event?: MouseEvent) {
   event?.preventDefault()
   event?.stopPropagation()
@@ -698,6 +719,15 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                     class="w-8 h-8 flex items-center justify-center rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.5)] hover:bg-[rgb(var(--palette-dark-700))] transition-colors"
                     :title="t('pages.profile.share')">
                     <Share2 class="w-4 h-4 text-[var(--text-body)]" />
+                  </button>
+                  <button
+                    type="button"
+                    class="report-icon-btn"
+                    :title="t('pages.profile.reportUser')"
+                    :aria-label="t('pages.profile.reportUser')"
+                    @click="openProfileReport"
+                  >
+                    <TriangleAlert class="h-4 w-4" aria-hidden="true" />
                   </button>
                 </div>
               </div>
@@ -1217,6 +1247,16 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
         </div>
       </AppModal>
 
+      <ReportComplaintModal
+        v-if="currentProfileData && !isOwner"
+        :is-open="showComplaintModal"
+        target-type="user"
+        :target-id="currentProfileData.id"
+        :target-label="currentProfileData.username"
+        :target-url="profileUrl"
+        @close="closeComplaintModal"
+      />
+
     </div>
   </div>
 </template>
@@ -1239,6 +1279,26 @@ input[type="number"] {
 
 .profile-products-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.report-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(var(--palette-dark-600) / 0.9);
+  color: var(--text-muted);
+  background: rgb(var(--palette-dark-700) / 0.22);
+  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.report-icon-btn:hover {
+  border-color: rgb(var(--palette-red-700) / 0.45);
+  color: var(--text-danger-soft);
+  background: rgb(var(--palette-red-950) / 0.16);
+  transform: translateY(-1px);
 }
 
 @media (max-width: 359px) {

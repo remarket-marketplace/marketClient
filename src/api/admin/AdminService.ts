@@ -882,6 +882,53 @@ export const adminService = {
     }
   },
 
+  async getAdminComplaints(page = 1, perPage = 20) {
+    try {
+      const response = await httpClient.get('/admin/complaints', {
+        params: {
+          page,
+          per_page: perPage,
+        },
+      })
+
+      const parsed = AdminFeedbackListSchema.parse(response.data)
+
+      return {
+        feedbacks: parsed.feedbacks,
+        currentPage: page,
+        totalPages: parsed.total_pages,
+        total: parsed.total,
+      }
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error('Admin complaints validation error:', e.issues)
+      } else {
+        console.error('Error fetching admin complaints:', e)
+      }
+
+      return {
+        feedbacks: [],
+        currentPage: 1,
+        totalPages: 1,
+        total: 0,
+      }
+    }
+  },
+
+  async getAdminComplaintById(complaintId: string): Promise<AdminFeedback | null> {
+    try {
+      const response = await httpClient.get(`/admin/complaints/${complaintId}`)
+      return AdminFeedbackSchema.parse(response.data)
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error('Admin complaint validation error:', e.issues)
+      } else {
+        console.error('Error fetching admin complaint by id:', e)
+      }
+      return null
+    }
+  },
+
   async getChatParticipants(chatId: string) {
     try {
       const response = await httpClient.get(`/admin/chat/${chatId}/participants`)
