@@ -115,6 +115,7 @@ const isActiveRouteMobile = (item: NavItem) => {
 }
 
 const showFooter = computed(() => !route.path.startsWith('/chats'))
+const isAuthPage = computed(() => route.path === '/signin' || route.path === '/signup')
 
 onMounted(() => {
   checkDesktop()
@@ -261,7 +262,7 @@ const mobileNavGridStyle = computed(() => ({
             </div>
           </div>
 
-          <HeaderSearch class="mx-2 sm:mx-3" />
+          <HeaderSearch v-if="!isAuthPage" class="mx-2 sm:mx-3" />
 
           <div class="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2 md:gap-3">
             <nav class="hidden items-center gap-1 md:flex">
