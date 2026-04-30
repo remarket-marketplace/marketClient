@@ -834,15 +834,8 @@ const chatParticipantIds = computed<string[]>(() => {
   if (user.value?.id) {
     participants.add(user.value.id)
   }
-  for (const message of chatMessages.value) {
-    if ('sender_id' in message) {
-      participants.add(message.sender_id)
-      continue
-    }
-    if (message.message_type === 'price_offer_message') {
-      participants.add(message.buyer_id)
-      participants.add(message.seller_id)
-    }
+  if (currentChat.value?.another_user.id) {
+    participants.add(currentChat.value.another_user.id)
   }
   return Array.from(participants)
 })
