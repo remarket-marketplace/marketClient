@@ -4,6 +4,7 @@ import { productService } from '@/api/product/ProductService'
 import { steamTopupService } from '@/api/steamTopup/steamTopupService'
 import MainProductCard from '@/components/mainProductCard.vue'
 import HomeProductListCard from '@/components/HomeProductListCard.vue'
+import OfficialProductsShowcase from '@/components/OfficialProductsShowcase.vue'
 import Title from '@/components/Title.vue'
 import HeroSection from '@/components/HeroSection.vue'
 import HeroBackground from '@/components/HeroBackground.vue'
@@ -23,9 +24,9 @@ import type {
   SteamTopUpService,
 } from '@/validation/steamTopup/steamTopup'
 import { isValidSteamTopUpAccount, normalizeSteamTopUpAccount } from '@/validation/steamTopup/steamTopup'
-import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ChevronLeft, ChevronRight, Folder, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
+import { ChevronRight, Folder, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
 import axios from 'axios'
 import {
   convertCurrencyAmount,
@@ -86,15 +87,8 @@ const loadingSkeletonCount = computed(() => (
     : Math.min(perPage.value, 12)
 ))
 const brokenCategoryImages = ref<Record<string, true>>({})
-interface OfficialHomeProduct {
-  category: Category
-  product: Product
-}
-const officialHomeProducts = ref<OfficialHomeProduct[]>([])
-const officialHomeCarouselRef = ref<HTMLElement | null>(null)
+const officialHomeProducts = ref<Product[]>([])
 const isOfficialHomeLoading = ref(false)
-const isOfficialHomeCarouselAtStart = ref(true)
-const isOfficialHomeCarouselAtEnd = ref(false)
 const shouldShowOfficialHomeShowcase = computed(() => (
   !isOfficialHomeLoading.value && officialHomeProducts.value.length > 0
 ))
@@ -372,64 +366,9 @@ function resolveCategoryImageUrl(imageUrl: string | null): string {
   return `${API_HOST}${imageUrl}`
 }
 
-function resolveProductImageUrl(product: Product): string {
-  const firstImage = product.images[0]?.image_url ?? ''
-  if (!firstImage) return ''
-  if (firstImage.startsWith('http://') || firstImage.startsWith('https://')) {
-    return firstImage
-  }
-  return `${API_HOST}${firstImage}`
-}
-
-function formatOfficialPrice(price: number): string {
-  return formatCurrencyAmount(price, {
-    currency: 'RUB',
-    fromCurrency: 'RUB',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  })
-}
-
-function updateOfficialHomeCarouselState() {
-  const carouselElement = officialHomeCarouselRef.value
-  if (!carouselElement) {
-    isOfficialHomeCarouselAtStart.value = true
-    isOfficialHomeCarouselAtEnd.value = true
-    return
-  }
-
-  const maxScrollLeft = Math.max(0, carouselElement.scrollWidth - carouselElement.clientWidth)
-  const scrollLeft = Math.max(0, carouselElement.scrollLeft)
-  const edgeThreshold = 8
-  isOfficialHomeCarouselAtStart.value = scrollLeft <= edgeThreshold
-  isOfficialHomeCarouselAtEnd.value = scrollLeft >= maxScrollLeft - edgeThreshold
-}
-
-function handleOfficialHomeCarouselScroll() {
-  updateOfficialHomeCarouselState()
-}
-
-function scrollOfficialHomeCarousel(direction: 'prev' | 'next') {
-  const carouselElement = officialHomeCarouselRef.value
-  if (!carouselElement) return
-
-  const firstCard = carouselElement.querySelector<HTMLElement>('[data-home-official-card]')
-  const scrollStep = firstCard
-    ? firstCard.offsetWidth + 16
-    : Math.max(320, Math.round(carouselElement.clientWidth * 0.82))
-
-  carouselElement.scrollBy({
-    left: direction === 'next' ? scrollStep : -scrollStep,
-    behavior: 'smooth',
-  })
-
-  window.setTimeout(updateOfficialHomeCarouselState, 320)
-}
-
 async function loadOfficialHomeProducts() {
   isOfficialHomeLoading.value = true
   officialHomeProducts.value = []
-  updateOfficialHomeCarouselState()
 
   try {
     const overview = await productService.getOfficialStoreOverview()
@@ -446,15 +385,13 @@ async function loadOfficialHomeProducts() {
           { isOfficialOnly: true },
         )
         const product = response.products[0]
-        return product ? { category, product } : null
+        return product ?? null
       }),
     )
 
     officialHomeProducts.value = categoryProducts.filter(
-      (item): item is OfficialHomeProduct => item !== null,
+      (item): item is Product => item !== null,
     )
-    await nextTick()
-    updateOfficialHomeCarouselState()
   } finally {
     isOfficialHomeLoading.value = false
   }
@@ -1022,21 +959,6 @@ watch(
   },
 )
 
-watch(() => officialHomeProducts.value.length, async () => {
-  await nextTick()
-  updateOfficialHomeCarouselState()
-})
-
-watch(shouldShowOfficialHomeShowcase, async (nextValue) => {
-  if (!nextValue) {
-    isOfficialHomeCarouselAtStart.value = true
-    isOfficialHomeCarouselAtEnd.value = true
-    return
-  }
-  await nextTick()
-  updateOfficialHomeCarouselState()
-})
-
 onMounted(async () => {
   restoreProductCardViewModeFromStorage()
   await Promise.all([
@@ -1046,13 +968,11 @@ onMounted(async () => {
   ])
   observer = new IntersectionObserver((entries) => { if (entries[0]!.isIntersecting) loadMoreProducts() }, { rootMargin: '300px' })
   if (loadMoreTrigger.value) observer.observe(loadMoreTrigger.value)
-  window.addEventListener('resize', updateOfficialHomeCarouselState, { passive: true })
 })
 
 onBeforeUnmount(() => {
   if (filterTimeout) clearTimeout(filterTimeout)
   observer?.disconnect()
-  window.removeEventListener('resize', updateOfficialHomeCarouselState)
 })
 
 </script>
@@ -1079,105 +999,13 @@ onBeforeUnmount(() => {
           <SteamTopUpCta v-if="HOME_STEAM_TOPUP_ENABLED" />
         </div>
 
-        <section
+        <OfficialProductsShowcase
           v-if="shouldShowOfficialHomeShowcase"
-          class="home-official-showcase mt-3 w-full rounded-3xl p-3"
-        >
-          <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <div class="flex min-w-0 items-center gap-2.5">
-              <div class="home-official-heading inline-flex min-w-0 items-center gap-2">
-                <span class="home-official-mark">
-                  <span aria-hidden="true">🔥</span>
-                </span>
-                <span class="truncate">{{ t('pages.index.officialHome.title') }}</span>
-              </div>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <button
-                type="button"
-                class="home-official-ghost-btn !hidden sm:!inline-flex"
-                @click="router.push('/official')"
-              >
-                <span>{{ t('pages.index.officialHome.viewAll') }}</span>
-                <ChevronRight class="h-4 w-4" />
-              </button>
-
-              <div class="home-official-control-group hidden items-center gap-1 rounded-full p-1 sm:inline-flex">
-                <button
-                  type="button"
-                  class="home-official-arrow-btn"
-                  :disabled="isOfficialHomeCarouselAtStart || officialHomeProducts.length <= 1"
-                  :aria-label="t('pages.index.officialHome.scrollPrev')"
-                  @click="scrollOfficialHomeCarousel('prev')"
-                >
-                  <ChevronLeft class="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  class="home-official-arrow-btn"
-                  :disabled="isOfficialHomeCarouselAtEnd || officialHomeProducts.length <= 1"
-                  :aria-label="t('pages.index.officialHome.scrollNext')"
-                  @click="scrollOfficialHomeCarousel('next')"
-                >
-                  <ChevronRight class="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="home-official-carousel-wrap relative">
-            <div
-              ref="officialHomeCarouselRef"
-              class="home-official-carousel flex gap-4 overflow-x-auto pr-1 no-scrollbar snap-x snap-mandatory"
-              @scroll.passive="handleOfficialHomeCarouselScroll"
-            >
-              <button
-                v-for="item in officialHomeProducts"
-                :key="`home-official-${item.category.id}-${item.product.id}`"
-                type="button"
-                data-home-official-card
-                class="home-official-card h-[234px] w-[188px] shrink-0 snap-start overflow-hidden rounded-2xl text-left sm:h-[276px] sm:w-[232px]"
-                @click="goToProductByModel(item.product)"
-              >
-                <div class="home-official-card__media relative h-[140px] w-full overflow-hidden sm:h-[170px]">
-                  <img
-                    v-if="resolveProductImageUrl(item.product)"
-                    :src="resolveProductImageUrl(item.product)"
-                    :alt="item.product.title"
-                    class="h-full w-full object-cover object-center"
-                  />
-                  <div v-else class="flex h-full w-full items-center justify-center text-xs text-[var(--text-body)]">
-                    {{ t('common.noImage') }}
-                  </div>
-                  <span class="home-official-card__category absolute left-3 top-3 max-w-[calc(100%-1.5rem)] truncate rounded-full px-2.5 py-1 text-[11px] font-semibold">
-                    {{ item.category.name }}
-                  </span>
-                </div>
-                <div class="space-y-2 px-3.5 py-3">
-                  <p class="home-official-card__price text-[1.3rem] font-bold leading-none tracking-tight sm:text-[1.55rem]">
-                    {{ formatOfficialPrice(item.product.price) }}
-                  </p>
-                  <p class="home-official-card__title min-h-[2.5rem] text-[0.93rem] leading-5 sm:text-[1.03rem] sm:leading-6">
-                    {{ item.product.title }}
-                  </p>
-                </div>
-              </button>
-            </div>
-
-          </div>
-
-          <div class="mt-3 sm:hidden">
-            <button
-              type="button"
-              class="home-official-ghost-btn w-full justify-center"
-              @click="router.push('/official')"
-            >
-              <span>{{ t('pages.index.officialHome.viewAllProducts') }}</span>
-              <ChevronRight class="h-4 w-4" />
-            </button>
-          </div>
-        </section>
+          :products="officialHomeProducts"
+          class="mt-3 w-full p-3"
+          @product-click="goToProductByModel"
+          @view-all="router.push('/official')"
+        />
 
         <div class="mt-10 w-full sm:mt-16">
           <Title :text="t('common.categories')" />
@@ -1580,125 +1408,6 @@ onBeforeUnmount(() => {
   background-repeat: no-repeat;
   background-position: right 0.9rem center;
   background-size: 0.85rem 0.85rem;
-}
-
-.home-official-showcase {
-  border: 1px solid var(--home-official-surface-border);
-  background-color: var(--home-official-surface-bg);
-  backdrop-filter: blur(20px) saturate(1.14);
-  -webkit-backdrop-filter: blur(20px) saturate(1.14);
-}
-
-.home-official-heading {
-  min-width: 0;
-  color: var(--home-official-title);
-  font-size: 1.18rem;
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 1.25;
-}
-
-.home-official-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  font-size: 1.15rem;
-  line-height: 1;
-}
-
-.home-official-control-group {
-  border: 1px solid var(--home-official-control-border);
-  background-color: var(--home-official-control-bg);
-}
-
-.home-official-ghost-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  border-radius: 9999px;
-  border: 1px solid var(--home-official-control-border);
-  background-color: var(--home-official-control-bg);
-  padding: 0.42rem 0.8rem;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--home-official-control-text);
-  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
-}
-
-.home-official-ghost-btn:hover {
-  border-color: var(--home-official-control-hover-border);
-  background-color: var(--home-official-control-hover-bg);
-  color: var(--home-official-control-hover-text);
-}
-
-.home-official-arrow-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 1.85rem;
-  width: 1.85rem;
-  border-radius: 9999px;
-  color: var(--home-official-control-text);
-  background-color: var(--home-official-control-bg);
-  border: 1px solid var(--home-official-control-border);
-  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
-}
-
-.home-official-arrow-btn:hover:not(:disabled) {
-  color: var(--home-official-control-hover-text);
-  border-color: var(--home-official-control-hover-border);
-  background-color: var(--home-official-control-hover-bg);
-}
-
-.home-official-arrow-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
-.home-official-carousel {
-  scroll-behavior: smooth;
-}
-
-.home-official-card {
-  border: 1px solid var(--home-official-card-border);
-  background-color: var(--home-official-card-bg);
-}
-
-.home-official-card__media {
-  background-color: var(--home-official-card-media-bg);
-}
-
-.home-official-card__category {
-  border: 1px solid var(--home-official-card-category-border);
-  background-color: var(--home-official-card-category-bg);
-  color: rgb(var(--text-title-rgb) / 0.9);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.home-official-card__price {
-  white-space: nowrap;
-  color: var(--home-official-card-price);
-}
-
-.home-official-card__title {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  color: var(--home-official-card-title);
-}
-
-@media (min-width: 640px) {
-  .home-official-heading {
-    font-size: 1.34rem;
-  }
-
-  .home-official-mark {
-    font-size: 1.28rem;
-  }
 }
 
 .home-categories-fade-enter-active,

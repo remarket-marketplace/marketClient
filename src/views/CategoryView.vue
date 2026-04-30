@@ -4,16 +4,16 @@ import { productService } from '@/api/product/ProductService'
 import type { ProductsFilterParams } from '@/api/product/ProductService'
 import MainProductCard from '@/components/mainProductCard.vue'
 import HomeProductListCard from '@/components/HomeProductListCard.vue'
+import OfficialProductsShowcase from '@/components/OfficialProductsShowcase.vue'
 import BackButton from '@/components/navigation/BackButton.vue'
 import Title from '@/components/Title.vue'
 import ScopeVpnCta from '@/components/ScopeVpnCta.vue'
 import CustomSelect from '@/components/CustomSelect.vue'
 import type { Category } from '@/validation/category/category'
 import type { Product } from '@/validation/product/product'
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { formatCurrencyAmount } from '@/utils/currency'
 import { getCountryOptions } from '@/utils/countryOptions'
 import { buildCategoryKey, buildProductKey, extractIdFromSlugKey } from '@/utils/urlKeys'
 import {
@@ -25,7 +25,7 @@ import {
   type FortniteAccountDateFieldKey,
   isFortniteAccountsCategory,
 } from '@/utils/fortniteAccount'
-import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
+import { ArrowDown, ArrowUp, ChevronRight, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
 
 const { t, locale } = useI18n()
 const route = useRoute()
@@ -38,9 +38,6 @@ const selectedCategoryPath = ref<Category[]>([])
 const products = ref<Product[]>([])
 const officialProducts = ref<Product[]>([])
 const officialProductsSourceCategory = ref<Category | null>(null)
-const officialCarouselRef = ref<HTMLElement | null>(null)
-const isOfficialCarouselAtStart = ref(true)
-const isOfficialCarouselAtEnd = ref(false)
 const currentPage = ref(1)
 const totalPages = ref(1)
 const perPage = ref(30)
@@ -195,15 +192,6 @@ const shouldShowOfficialRemarketCarousel = computed(() =>
   !isOfficialProductsLoading.value && officialProducts.value.length > 0
 )
 
-function formatOfficialPrice(price: number): string {
-  return formatCurrencyAmount(price, {
-    currency: 'RUB',
-    fromCurrency: 'RUB',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  })
-}
-
 function parseFilterNumber(value: string | number | null | undefined): number | undefined {
   if (value === null || value === undefined) return undefined
   if (typeof value === 'number') {
@@ -263,42 +251,6 @@ function onMaxPriceFilterInput(event: Event) {
   scheduleApplyProductFilters()
 }
 
-function updateOfficialCarouselState() {
-  const carouselElement = officialCarouselRef.value
-  if (!carouselElement) {
-    isOfficialCarouselAtStart.value = true
-    isOfficialCarouselAtEnd.value = true
-    return
-  }
-
-  const maxScrollLeft = Math.max(0, carouselElement.scrollWidth - carouselElement.clientWidth)
-  const scrollLeft = Math.max(0, carouselElement.scrollLeft)
-  const edgeThreshold = 8
-  isOfficialCarouselAtStart.value = scrollLeft <= edgeThreshold
-  isOfficialCarouselAtEnd.value = scrollLeft >= maxScrollLeft - edgeThreshold
-}
-
-function handleOfficialCarouselScroll() {
-  updateOfficialCarouselState()
-}
-
-function scrollOfficialCarousel(direction: 'prev' | 'next') {
-  const carouselElement = officialCarouselRef.value
-  if (!carouselElement) return
-
-  const firstCard = carouselElement.querySelector<HTMLElement>('[data-official-card]')
-  const scrollStep = firstCard
-    ? firstCard.offsetWidth + 16
-    : Math.max(320, Math.round(carouselElement.clientWidth * 0.82))
-
-  carouselElement.scrollBy({
-    left: direction === 'next' ? scrollStep : -scrollStep,
-    behavior: 'smooth',
-  })
-
-  window.setTimeout(updateOfficialCarouselState, 320)
-}
-
 function openOfficialStorePage() {
   const rootCategory = category.value
   if (!rootCategory) return
@@ -333,15 +285,6 @@ function resolveCategoryImageUrl(imageUrl: string | null): string {
     return imageUrl
   }
   return `${API_HOST}${imageUrl}`
-}
-
-function resolveProductImageUrl(product: Product): string {
-  const firstImage = product.images[0]?.image_url ?? ''
-  if (!firstImage) return ''
-  if (firstImage.startsWith('http://') || firstImage.startsWith('https://')) {
-    return firstImage
-  }
-  return `${API_HOST}${firstImage}`
 }
 
 function goToProduct(productKey: string) {
@@ -561,7 +504,6 @@ async function loadOfficialProductsForCarousel() {
   const currentActiveCategory = activeCategory.value
   officialProducts.value = []
   officialProductsSourceCategory.value = null
-  updateOfficialCarouselState()
 
   if (!currentActiveCategory) {
     isOfficialProductsLoading.value = false
@@ -582,8 +524,6 @@ async function loadOfficialProductsForCarousel() {
 
     officialProducts.value = response.products
     officialProductsSourceCategory.value = response.total > 0 ? sourceCategory : null
-    await nextTick()
-    updateOfficialCarouselState()
   } finally {
     if (requestId === officialProductsRequestId) {
       isOfficialProductsLoading.value = false
@@ -929,25 +869,9 @@ watch(shouldShowFortniteAccountFilters, (nextValue) => {
   resetFortniteFilters()
 })
 
-watch(() => officialProducts.value.length, async () => {
-  await nextTick()
-  updateOfficialCarouselState()
-})
-
-watch(shouldShowOfficialRemarketCarousel, async (nextValue) => {
-  if (nextValue) {
-    await nextTick()
-    updateOfficialCarouselState()
-    return
-  }
-  isOfficialCarouselAtStart.value = true
-  isOfficialCarouselAtEnd.value = true
-})
-
 onMounted(async () => {
   restoreProductCardViewModeFromStorage()
   await loadCategoryPageData()
-  window.addEventListener('resize', updateOfficialCarouselState, { passive: true })
   observer = new IntersectionObserver((entries) => {
     if (entries[0]?.isIntersecting) {
       loadMoreProducts()
@@ -956,13 +880,10 @@ onMounted(async () => {
   if (loadMoreTrigger.value) {
     observer.observe(loadMoreTrigger.value)
   }
-  await nextTick()
-  updateOfficialCarouselState()
 })
 
 onBeforeUnmount(() => {
   observer?.disconnect()
-  window.removeEventListener('resize', updateOfficialCarouselState)
   if (productFiltersApplyTimer !== null) {
     clearTimeout(productFiltersApplyTimer)
     productFiltersApplyTimer = null
@@ -1103,103 +1024,13 @@ onBeforeUnmount(() => {
         <div v-else class="mt-3 text-sm text-[var(--text-muted)]">{{ t('pages.category.noSubcategories') }}</div>
       </div>
 
-      <div
+      <OfficialProductsShowcase
         v-if="shouldShowOfficialRemarketCarousel"
-        class="official-showcase mt-5 rounded-3xl p-4 sm:mt-6 sm:p-5"
-      >
-        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div class="flex min-w-0 items-center gap-2.5">
-            <div class="official-showcase__heading inline-flex min-w-0 items-center gap-2">
-              <span class="official-showcase__mark">
-                <span aria-hidden="true">🔥</span>
-              </span>
-              <span class="truncate">{{ t('pages.index.officialHome.title') }}</span>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <button
-              type="button"
-              class="official-showcase__ghost-btn !hidden sm:!inline-flex"
-              @click="openOfficialStorePage"
-            >
-              <span>{{ t('pages.index.officialHome.viewAll') }}</span>
-              <ChevronRight class="h-4 w-4" />
-            </button>
-
-            <div class="official-showcase__control-group hidden items-center gap-1 rounded-full p-1 sm:inline-flex">
-              <button
-                type="button"
-                class="official-showcase__arrow-btn"
-                :disabled="isOfficialCarouselAtStart || officialProducts.length <= 1"
-                :aria-label="t('pages.index.officialHome.scrollPrev')"
-                @click="scrollOfficialCarousel('prev')"
-              >
-                <ChevronLeft class="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                class="official-showcase__arrow-btn"
-                :disabled="isOfficialCarouselAtEnd || officialProducts.length <= 1"
-                :aria-label="t('pages.index.officialHome.scrollNext')"
-                @click="scrollOfficialCarousel('next')"
-              >
-                <ChevronRight class="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div
-          class="official-carousel-wrap relative"
-        >
-          <div
-            ref="officialCarouselRef"
-            class="official-carousel flex gap-4 overflow-x-auto pb-2 pr-1 no-scrollbar snap-x snap-mandatory"
-            @scroll.passive="handleOfficialCarouselScroll"
-          >
-            <button
-              v-for="product in officialProducts"
-              :key="`official-${product.id}`"
-              type="button"
-              data-official-card
-              class="official-card h-[234px] w-[188px] shrink-0 snap-start overflow-hidden rounded-2xl text-left sm:h-[276px] sm:w-[232px]"
-              @click="goToProductByModel(product)"
-            >
-              <div class="official-card__media relative h-[140px] w-full overflow-hidden sm:h-[170px]">
-                <img
-                  v-if="resolveProductImageUrl(product)"
-                  :src="resolveProductImageUrl(product)"
-                  :alt="product.title"
-                  class="h-full w-full object-cover object-center"
-                />
-                <div v-else class="flex h-full w-full items-center justify-center text-xs text-[var(--text-body)]">
-                  {{ t('common.noImage') }}
-                </div>
-              </div>
-              <div class="space-y-2 px-3.5 py-3">
-                <p class="official-card__price text-[1.3rem] font-bold leading-none tracking-tight sm:text-[1.55rem]">
-                  {{ formatOfficialPrice(product.price) }}
-                </p>
-                <p class="official-card__title min-h-[2.5rem] text-[0.93rem] leading-5 sm:text-[1.03rem] sm:leading-6">
-                  {{ product.title }}
-                </p>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        <div class="mt-3 sm:hidden">
-          <button
-            type="button"
-            class="official-showcase__ghost-btn w-full justify-center"
-            @click="openOfficialStorePage"
-          >
-            <span>{{ t('pages.index.officialHome.viewAllProducts') }}</span>
-            <ChevronRight class="h-4 w-4" />
-          </button>
-        </div>
-      </div>
+        :products="officialProducts"
+        class="mt-5 p-4 sm:mt-6 sm:p-5"
+        @product-click="goToProductByModel"
+        @view-all="openOfficialStorePage"
+      />
 
       <div id="category-products-section" class="mt-10">
         <Title :text="t('common.products')" />
@@ -1554,117 +1385,6 @@ onBeforeUnmount(() => {
 
 .products-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.official-showcase {
-  border: 1px solid var(--home-official-surface-border);
-  background-color: var(--home-official-surface-bg);
-  backdrop-filter: blur(20px) saturate(1.14);
-  -webkit-backdrop-filter: blur(20px) saturate(1.14);
-}
-
-.official-showcase__heading {
-  min-width: 0;
-  color: var(--home-official-title);
-  font-size: 1.18rem;
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 1.25;
-}
-
-.official-showcase__mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  font-size: 1.15rem;
-  line-height: 1;
-}
-
-.official-showcase__control-group {
-  border: 1px solid var(--home-official-control-border);
-  background-color: var(--home-official-control-bg);
-}
-
-.official-showcase__ghost-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  border-radius: 9999px;
-  border: 1px solid var(--home-official-control-border);
-  background-color: var(--home-official-control-bg);
-  padding: 0.42rem 0.8rem;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--home-official-control-text);
-  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
-}
-
-.official-showcase__ghost-btn:hover {
-  border-color: var(--home-official-control-hover-border);
-  background-color: var(--home-official-control-hover-bg);
-  color: var(--home-official-control-hover-text);
-}
-
-.official-showcase__arrow-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 1.85rem;
-  width: 1.85rem;
-  border-radius: 9999px;
-  color: var(--home-official-control-text);
-  background-color: var(--home-official-control-bg);
-  border: 1px solid var(--home-official-control-border);
-  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
-}
-
-.official-showcase__arrow-btn:hover:not(:disabled) {
-  color: var(--home-official-control-hover-text);
-  border-color: var(--home-official-control-hover-border);
-  background-color: var(--home-official-control-hover-bg);
-}
-
-.official-showcase__arrow-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
-.official-carousel {
-  scroll-behavior: smooth;
-}
-
-.official-card {
-  border: 1px solid var(--home-official-card-border);
-  background-color: var(--home-official-card-bg);
-}
-
-.official-card__media {
-  background-color: var(--home-official-card-media-bg);
-}
-
-.official-card__price {
-  white-space: nowrap;
-  color: var(--home-official-card-price);
-}
-
-.official-card__title {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  color: var(--home-official-card-title);
-}
-
-@media (min-width: 640px) {
-  .official-showcase__heading {
-    font-size: 1.34rem;
-  }
-
-  .official-showcase__mark {
-    font-size: 1.28rem;
-  }
 }
 
 @media (min-width: 680px) {
