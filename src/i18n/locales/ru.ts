@@ -791,6 +791,13 @@ const ru = {
       popularTitle: "Популярное",
       popularEmpty: "Пока нет популярных товаров",
       resetFilters: "Сбросить",
+      officialHome: {
+        title: "Специально для вас от remarket",
+        viewAll: "Смотреть все",
+        viewAllProducts: "Смотреть все товары",
+        scrollPrev: "Прокрутить влево",
+        scrollNext: "Прокрутить вправо",
+      },
       steamTopUp: {
         title: "Пополнить кошелёк",
         navLabel: "Пополнить",

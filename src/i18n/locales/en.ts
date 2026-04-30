@@ -791,6 +791,13 @@ const en = {
       popularTitle: "Popular",
       popularEmpty: "No popular products yet",
       resetFilters: "Reset",
+      officialHome: {
+        title: "Specially for you from remarket",
+        viewAll: "View all",
+        viewAllProducts: "View all products",
+        scrollPrev: "Scroll left",
+        scrollNext: "Scroll right",
+      },
       steamTopUp: {
         title: "Top up wallet",
         navLabel: "Top up",

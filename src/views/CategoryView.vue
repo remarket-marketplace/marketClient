@@ -25,7 +25,7 @@ import {
   type FortniteAccountDateFieldKey,
   isFortniteAccountsCategory,
 } from '@/utils/fortniteAccount'
-import { ArrowDown, ArrowUp, BadgeCheck, ChevronLeft, ChevronRight, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
+import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
 
 const { t, locale } = useI18n()
 const route = useRoute()
@@ -194,26 +194,6 @@ function isVpnCategoryCandidate(item: Category | null | undefined): boolean {
 const shouldShowOfficialRemarketCarousel = computed(() =>
   !isOfficialProductsLoading.value && officialProducts.value.length > 0
 )
-
-const officialProductsCountText = computed(() => {
-  const count = officialProducts.value.length
-  return `${count} ${getProductWordFormRu(count)}`
-})
-
-const officialProductsSourceText = computed(() => {
-  const sourceCategory = officialProductsSourceCategory.value
-  if (!sourceCategory) return ''
-  return `из раздела ${sourceCategory.name}`
-})
-
-function getProductWordFormRu(count: number): string {
-  const normalizedCount = Math.abs(Math.trunc(count))
-  const mod10 = normalizedCount % 10
-  const mod100 = normalizedCount % 100
-  if (mod10 === 1 && mod100 !== 11) return 'товар'
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'товара'
-  return 'товаров'
-}
 
 function formatOfficialPrice(price: number): string {
   return formatCurrencyAmount(price, {
@@ -1125,18 +1105,16 @@ onBeforeUnmount(() => {
 
       <div
         v-if="shouldShowOfficialRemarketCarousel"
-        class="official-showcase mt-5 rounded-3xl border border-[rgb(var(--palette-white)/0.12)] p-4 sm:mt-6 sm:p-5"
+        class="official-showcase mt-5 rounded-3xl p-4 sm:mt-6 sm:p-5"
       >
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div class="flex items-center gap-2.5">
-            <div class="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--palette-blue-300)/0.7)] bg-[rgb(var(--palette-blue-500)/0.32)] px-3 py-1.5 text-sm font-semibold tracking-wide text-[var(--text-accent-strong)] shadow-[var(--official-showcase-badge-shadow)]">
-              <BadgeCheck class="h-4 w-4" />
-              <span>Официально от remarket</span>
+          <div class="flex min-w-0 items-center gap-2.5">
+            <div class="official-showcase__heading inline-flex min-w-0 items-center gap-2">
+              <span class="official-showcase__mark">
+                <span aria-hidden="true">🔥</span>
+              </span>
+              <span class="truncate">{{ t('pages.index.officialHome.title') }}</span>
             </div>
-            <span class="hidden text-sm font-medium text-[rgb(var(--text-accent-strong-rgb)/0.85)] sm:inline-flex sm:items-center sm:gap-2">
-              {{ officialProductsCountText }}
-              <span v-if="officialProductsSourceText" class="text-[rgb(var(--text-accent-rgb)/0.85)]">{{ officialProductsSourceText }}</span>
-            </span>
           </div>
 
           <div class="flex items-center gap-2">
@@ -1145,16 +1123,16 @@ onBeforeUnmount(() => {
               class="official-showcase__ghost-btn !hidden sm:!inline-flex"
               @click="openOfficialStorePage"
             >
-              <span>Смотреть все</span>
+              <span>{{ t('pages.index.officialHome.viewAll') }}</span>
               <ChevronRight class="h-4 w-4" />
             </button>
 
-            <div class="hidden items-center gap-1 rounded-full border border-[var(--official-showcase-control-border)] bg-[var(--official-showcase-control-bg)] p-1 sm:inline-flex">
+            <div class="official-showcase__control-group hidden items-center gap-1 rounded-full p-1 sm:inline-flex">
               <button
                 type="button"
                 class="official-showcase__arrow-btn"
                 :disabled="isOfficialCarouselAtStart || officialProducts.length <= 1"
-                aria-label="Прокрутить влево"
+                :aria-label="t('pages.index.officialHome.scrollPrev')"
                 @click="scrollOfficialCarousel('prev')"
               >
                 <ChevronLeft class="h-4 w-4" />
@@ -1163,18 +1141,13 @@ onBeforeUnmount(() => {
                 type="button"
                 class="official-showcase__arrow-btn"
                 :disabled="isOfficialCarouselAtEnd || officialProducts.length <= 1"
-                aria-label="Прокрутить вправо"
+                :aria-label="t('pages.index.officialHome.scrollNext')"
                 @click="scrollOfficialCarousel('next')"
               >
                 <ChevronRight class="h-4 w-4" />
               </button>
             </div>
           </div>
-        </div>
-
-        <div class="mb-3 text-sm font-medium text-[rgb(var(--text-accent-strong-rgb)/0.85)] sm:hidden">
-          {{ officialProductsCountText }}
-          <span v-if="officialProductsSourceText" class="ml-1 text-[rgb(var(--text-accent-rgb)/0.85)]">• {{ officialProductsSourceText }}</span>
         </div>
 
         <div
@@ -1190,7 +1163,7 @@ onBeforeUnmount(() => {
               :key="`official-${product.id}`"
               type="button"
               data-official-card
-              class="official-card group h-[234px] w-[188px] shrink-0 snap-start overflow-hidden rounded-2xl border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-dark-900)/0.9)] text-left transition duration-200 hover:-translate-y-0.5 hover:border-[rgb(var(--palette-blue-300)/0.4)] hover:bg-[rgb(var(--palette-dark-900))] sm:h-[276px] sm:w-[232px]"
+              class="official-card h-[234px] w-[188px] shrink-0 snap-start overflow-hidden rounded-2xl text-left sm:h-[276px] sm:w-[232px]"
               @click="goToProductByModel(product)"
             >
               <div class="official-card__media relative h-[140px] w-full overflow-hidden sm:h-[170px]">
@@ -1198,32 +1171,22 @@ onBeforeUnmount(() => {
                   v-if="resolveProductImageUrl(product)"
                   :src="resolveProductImageUrl(product)"
                   :alt="product.title"
-                  class="h-full w-full object-cover object-center transition duration-300 group-hover:scale-[1.03]"
+                  class="h-full w-full object-cover object-center"
                 />
                 <div v-else class="flex h-full w-full items-center justify-center text-xs text-[var(--text-body)]">
                   {{ t('common.noImage') }}
                 </div>
-                <div class="official-card__overlay absolute inset-0"></div>
               </div>
               <div class="space-y-2 px-3.5 py-3">
-                <p class="official-card__price text-[1.3rem] font-bold leading-none tracking-tight text-[var(--text-accent-strong)] sm:text-[1.55rem]">
+                <p class="official-card__price text-[1.3rem] font-bold leading-none tracking-tight sm:text-[1.55rem]">
                   {{ formatOfficialPrice(product.price) }}
                 </p>
-                <p class="official-card__title min-h-[2.5rem] text-[0.93rem] leading-5 text-[rgb(var(--text-title-rgb)/0.95)] sm:text-[1.03rem] sm:leading-6">
+                <p class="official-card__title min-h-[2.5rem] text-[0.93rem] leading-5 sm:text-[1.03rem] sm:leading-6">
                   {{ product.title }}
                 </p>
               </div>
             </button>
           </div>
-
-          <div
-            class="official-carousel__edge official-carousel__edge--left"
-            :class="isOfficialCarouselAtStart ? 'opacity-0' : 'opacity-100'"
-          ></div>
-          <div
-            class="official-carousel__edge official-carousel__edge--right"
-            :class="isOfficialCarouselAtEnd ? 'opacity-0' : 'opacity-100'"
-          ></div>
         </div>
 
         <div class="mt-3 sm:hidden">
@@ -1232,7 +1195,7 @@ onBeforeUnmount(() => {
             class="official-showcase__ghost-btn w-full justify-center"
             @click="openOfficialStorePage"
           >
-            <span>Смотреть все товары</span>
+            <span>{{ t('pages.index.officialHome.viewAllProducts') }}</span>
             <ChevronRight class="h-4 w-4" />
           </button>
         </div>
@@ -1594,7 +1557,33 @@ onBeforeUnmount(() => {
 }
 
 .official-showcase {
-  background: var(--official-showcase-bg);
+  border: 1px solid var(--home-official-surface-border);
+  background-color: var(--home-official-surface-bg);
+  backdrop-filter: blur(20px) saturate(1.14);
+  -webkit-backdrop-filter: blur(20px) saturate(1.14);
+}
+
+.official-showcase__heading {
+  min-width: 0;
+  color: var(--home-official-title);
+  font-size: 1.18rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.25;
+}
+
+.official-showcase__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.official-showcase__control-group {
+  border: 1px solid var(--home-official-control-border);
+  background-color: var(--home-official-control-bg);
 }
 
 .official-showcase__ghost-btn {
@@ -1602,19 +1591,19 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 0.4rem;
   border-radius: 9999px;
-  border: 1px solid var(--official-showcase-control-border);
-  background: var(--official-showcase-control-bg);
+  border: 1px solid var(--home-official-control-border);
+  background-color: var(--home-official-control-bg);
   padding: 0.42rem 0.8rem;
   font-size: 0.82rem;
   font-weight: 600;
-  color: var(--official-showcase-control-text);
+  color: var(--home-official-control-text);
   transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
 }
 
 .official-showcase__ghost-btn:hover {
-  border-color: var(--official-showcase-control-border-hover);
-  background: var(--official-showcase-control-bg-hover);
-  color: var(--text-primary-strong);
+  border-color: var(--home-official-control-hover-border);
+  background-color: var(--home-official-control-hover-bg);
+  color: var(--home-official-control-hover-text);
 }
 
 .official-showcase__arrow-btn {
@@ -1624,16 +1613,16 @@ onBeforeUnmount(() => {
   height: 1.85rem;
   width: 1.85rem;
   border-radius: 9999px;
-  color: var(--official-showcase-arrow-text);
-  background: var(--official-showcase-arrow-bg);
-  border: 1px solid var(--official-showcase-arrow-border);
+  color: var(--home-official-control-text);
+  background-color: var(--home-official-control-bg);
+  border: 1px solid var(--home-official-control-border);
   transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
 }
 
 .official-showcase__arrow-btn:hover:not(:disabled) {
-  color: var(--text-primary-strong);
-  border-color: var(--official-showcase-arrow-border-hover);
-  background: var(--official-showcase-arrow-bg-hover);
+  color: var(--home-official-control-hover-text);
+  border-color: var(--home-official-control-hover-border);
+  background-color: var(--home-official-control-hover-bg);
 }
 
 .official-showcase__arrow-btn:disabled {
@@ -1645,31 +1634,18 @@ onBeforeUnmount(() => {
   scroll-behavior: smooth;
 }
 
-.official-carousel__edge {
-  pointer-events: none;
-  position: absolute;
-  top: 0;
-  bottom: 0.5rem;
-  width: 2.3rem;
-  transition: opacity 180ms ease;
+.official-card {
+  border: 1px solid var(--home-official-card-border);
+  background-color: var(--home-official-card-bg);
 }
 
-.official-carousel__edge--left {
-  left: 0;
-  background: var(--official-carousel-fade-left);
-}
-
-.official-carousel__edge--right {
-  right: 0;
-  background: var(--official-carousel-fade-right);
-}
-
-.official-card__overlay {
-  background: var(--official-carousel-card-glow);
+.official-card__media {
+  background-color: var(--home-official-card-media-bg);
 }
 
 .official-card__price {
   white-space: nowrap;
+  color: var(--home-official-card-price);
 }
 
 .official-card__title {
@@ -1678,6 +1654,17 @@ onBeforeUnmount(() => {
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  color: var(--home-official-card-title);
+}
+
+@media (min-width: 640px) {
+  .official-showcase__heading {
+    font-size: 1.34rem;
+  }
+
+  .official-showcase__mark {
+    font-size: 1.28rem;
+  }
 }
 
 @media (min-width: 680px) {
