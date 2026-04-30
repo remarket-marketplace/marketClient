@@ -155,8 +155,8 @@ const navItems = computed(() => {
 
     if (user.value?.role === 'partner') {
         const partnerType = getPartnerType()
-        const partnerRoute = partnerType === 'vpn' 
-            ? '/partner/vpn-stats' 
+        const partnerRoute = partnerType === 'vpn'
+            ? '/partner/vpn-stats'
             : '/partner/fortnite-stats'
         items.push({
             id: 'partner-stats',
@@ -243,7 +243,8 @@ const mobileNavGridStyle = computed(() => ({
     <div class="min-h-screen w-screen flex flex-col bg-background text-mainText">
         <header
             class="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div class="mx-auto flex h-16 w-full items-center justify-between gap-2 px-1.5 sm:gap-3 lg:px-5 min-[2000px]:w-1/2">
+            <div
+                class="mx-auto flex h-16 w-full items-center justify-between gap-2 px-1.5 sm:gap-3 lg:px-5 min-[2000px]:w-1/2">
                 <div class="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2 md:gap-3">
                     <div class="flex cursor-pointer items-center gap-2 text-base text-mainText font-semibold sm:text-xl title"
                         @click="router.push('/')">
@@ -254,55 +255,56 @@ const mobileNavGridStyle = computed(() => ({
                 <div class="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2 md:gap-3">
                     <nav class="hidden items-center gap-1 md:flex">
                         <router-link v-for="item in primaryNavItems" :key="item.id" :to="item.to"
-                            class="group relative flex min-w-[3.35rem] flex-col items-center justify-center gap-1 px-1 text-center text-[11px] leading-none text-mainText transition-all duration-300 hover:text-[var(--nav-link-hover)]"
+                            class="group relative flex h-12 w-14 flex-col items-center justify-start gap-0.5 text-center text-[11px] leading-none transition-all duration-300 hover:text-[var(--nav-link-hover)]"
                             :class="{
                                 'text-[var(--nav-link-active)]': isActiveRoute(item),
                                 'text-[var(--nav-link-muted)]': !isActiveRoute(item)
                             }">
-                            <div class="relative">
-                                <component :is="item.icon" :class="[
-                                    item.sell ? 'text-2xl' : 'text-xl',
+                            <div class="relative flex h-7 w-7 items-center justify-center">
+                                <component :is="item.icon" :size="22" stroke-width="1.5" :class="[
                                     item.admin ? 'text-[var(--nav-admin-text)]' : '',
                                     item.partner ? 'text-[var(--nav-partner-text)]' : '',
                                     isActiveRoute(item) ? 'text-[var(--nav-link-active)]' : 'text-[var(--nav-link-muted)]',
                                     'transition-colors duration-300 group-hover:text-[var(--nav-link-active)]'
-                                ]" :size="item.sell ? 24 : 22" stroke-width="1.5" />
-                                <span
-                                    v-if="item.id === 'chats' && unreadDialogTotal > 0"
-                                    class="absolute -top-1 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--nav-notification-bg)] text-[10px] text-[var(--text-primary-strong)] font-semibold flex items-center justify-center shadow-lg"
-                                >
+                                ]" />
+
+                                <span v-if="item.id === 'chats' && unreadDialogTotal > 0"
+                                    class="absolute -top-1 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--nav-notification-bg)] text-[10px] text-[var(--text-primary-strong)] font-semibold flex items-center justify-center shadow-lg">
                                     {{ unreadDialogTotal > 99 ? '99+' : unreadDialogTotal }}
                                 </span>
                             </div>
-                            <span class="menu-label whitespace-nowrap px-0.5 text-center text-[11px] font-medium leading-none transition-colors duration-300 group-hover:text-[var(--nav-link-active)]"
-                                :class="{ 'text-[var(--nav-admin-text-soft)]': item.admin, 'text-[var(--nav-partner-text-soft)]': item.partner }">
+
+                            <span
+                                class="menu-label block h-3 w-full truncate text-center text-[11px] font-medium leading-none transition-colors duration-300 group-hover:text-[var(--nav-link-active)]"
+                                :class="{
+                                    'text-[var(--nav-admin-text-soft)]': item.admin,
+                                    'text-[var(--nav-partner-text-soft)]': item.partner
+                                }">
                                 {{ item.title }}
                             </span>
                         </router-link>
 
                         <router-link v-for="item in roleNavItems" :key="item.id" :to="item.to"
-                            class="group relative flex min-w-[3.35rem] flex-col items-center justify-center gap-1 px-1 text-center text-[11px] leading-none text-mainText transition-all duration-300 hover:text-[var(--nav-link-hover)]"
+                            class="group relative flex h-12 w-14 flex-col items-center justify-start gap-0.5 text-center text-[11px] leading-none transition-all duration-300 hover:text-[var(--nav-link-hover)]"
                             :class="{
                                 'text-[var(--nav-link-active)]': isActiveRoute(item),
                                 'text-[var(--nav-link-muted)]': !isActiveRoute(item)
                             }">
-                            <div class="relative">
-                                <component :is="item.icon" :class="[
-                                    item.sell ? 'text-2xl' : 'text-xl',
+                            <div class="relative flex h-7 w-7 items-center justify-center">
+                                <component :is="item.icon" :size="22" stroke-width="1.5" :class="[
                                     item.admin ? 'text-[var(--nav-admin-text)]' : '',
                                     item.partner ? 'text-[var(--nav-partner-text)]' : '',
                                     isActiveRoute(item) ? 'text-[var(--nav-link-active)]' : 'text-[var(--nav-link-muted)]',
                                     'transition-colors duration-300 group-hover:text-[var(--nav-link-active)]'
-                                ]" :size="item.sell ? 24 : 22" stroke-width="1.5" />
-                                <span
-                                    v-if="item.id === 'chats' && unreadDialogTotal > 0"
-                                    class="absolute -top-1 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--nav-notification-bg)] text-[10px] text-[var(--text-primary-strong)] font-semibold flex items-center justify-center shadow-lg"
-                                >
-                                    {{ unreadDialogTotal > 99 ? '99+' : unreadDialogTotal }}
-                                </span>
+                                ]" />
                             </div>
-                            <span class="menu-label whitespace-nowrap px-0.5 text-center text-[11px] font-medium leading-none transition-colors duration-300 group-hover:text-[var(--nav-link-active)]"
-                                :class="{ 'text-[var(--nav-admin-text-soft)]': item.admin, 'text-[var(--nav-partner-text-soft)]': item.partner }">
+
+                            <span
+                                class="menu-label block h-3 w-full truncate text-center text-[11px] font-medium leading-none transition-colors duration-300 group-hover:text-[var(--nav-link-active)]"
+                                :class="{
+                                    'text-[var(--nav-admin-text-soft)]': item.admin,
+                                    'text-[var(--nav-partner-text-soft)]': item.partner
+                                }">
                                 {{ item.title }}
                             </span>
                         </router-link>
@@ -323,7 +325,8 @@ const mobileNavGridStyle = computed(() => ({
             </div>
         </main>
 
-        <nav class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-50 h-14 border-t border-[var(--mobile-nav-border)] md:hidden">
+        <nav
+            class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-50 h-14 border-t border-[var(--mobile-nav-border)] md:hidden">
             <div class="mx-auto grid h-full w-full max-w-6xl min-[2000px]:max-w-screen-xl items-center"
                 :style="mobileNavGridStyle">
                 <router-link v-for="item in mobileNavItems" :key="item.id" :to="item.to"
@@ -339,10 +342,8 @@ const mobileNavGridStyle = computed(() => ({
                             item.partner ? 'text-[var(--nav-partner-text)]' : ''
                         ]">
                         <component :is="item.icon" :size="22" stroke-width="1.5" />
-                        <span
-                            v-if="item.id === 'chats' && unreadDialogTotal > 0"
-                            class="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--nav-notification-bg)] text-[10px] text-[var(--text-primary-strong)] font-semibold flex items-center justify-center shadow-md"
-                        >
+                        <span v-if="item.id === 'chats' && unreadDialogTotal > 0"
+                            class="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--nav-notification-bg)] text-[10px] text-[var(--text-primary-strong)] font-semibold flex items-center justify-center shadow-md">
                             {{ unreadDialogTotal > 99 ? '99+' : unreadDialogTotal }}
                         </span>
                     </div>
@@ -362,7 +363,8 @@ const mobileNavGridStyle = computed(() => ({
         <MainPageFooter />
 
         <!-- mobile nav -->
-        <nav class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-50 h-14 border-t border-[var(--mobile-nav-border)] md:hidden">
+        <nav
+            class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-50 h-14 border-t border-[var(--mobile-nav-border)] md:hidden">
             <div class="mx-auto grid h-full w-full max-w-6xl min-[2000px]:max-w-screen-xl items-center"
                 :style="mobileNavGridStyle">
                 <router-link v-for="item in mobileNavItems" :key="item.id" :to="item.to"
@@ -378,10 +380,8 @@ const mobileNavGridStyle = computed(() => ({
                             item.partner ? 'text-[var(--nav-partner-text)]' : ''
                         ]">
                         <component :is="item.icon" :size="22" stroke-width="1.5" />
-                        <span
-                            v-if="item.id === 'chats' && unreadDialogTotal > 0"
-                            class="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--nav-notification-bg)] text-[10px] text-[var(--text-primary-strong)] font-semibold flex items-center justify-center shadow-md"
-                        >
+                        <span v-if="item.id === 'chats' && unreadDialogTotal > 0"
+                            class="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--nav-notification-bg)] text-[10px] text-[var(--text-primary-strong)] font-semibold flex items-center justify-center shadow-md">
                             {{ unreadDialogTotal > 99 ? '99+' : unreadDialogTotal }}
                         </span>
                     </div>
@@ -442,5 +442,4 @@ const mobileNavGridStyle = computed(() => ({
 .group:hover {
     transform: translateY(-1px);
 }
-
 </style>
