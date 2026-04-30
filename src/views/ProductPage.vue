@@ -6,7 +6,6 @@ import Loader from '@/components/Loader.vue'
 import MainProductCard from '@/components/mainProductCard.vue'
 import HomeProductListCard from '@/components/HomeProductListCard.vue'
 import FortniteAccountSnapshot from '@/components/FortniteAccountSnapshot.vue'
-import ProductStatusTag from '@/components/ProductStatusTag.vue'
 import ReportComplaintModal from '@/components/complaints/ReportComplaintModal.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
@@ -15,9 +14,8 @@ import type { Category } from '@/validation/category/category'
 import { onMounted, ref, onUnmounted, computed, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { BadgeCheck, Check, ChevronLeft, ChevronRight, X, Heart, Trash2, Percent, ShoppingBag, LayoutGrid, Rows3, ShieldCheck, TriangleAlert, ImageOff, Star } from 'lucide-vue-next'
+import { BadgeCheck, Check, ChevronLeft, ChevronRight, X, Heart, Trash2, ShoppingBag, LayoutGrid, Rows3, ShieldCheck, ImageOff, Star } from 'lucide-vue-next'
 import { useUserStore } from '@/stores/user'
-import BackButton from '@/components/navigation/BackButton.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
 import { formatCurrencyAmount, getCurrencySymbol, resolvePreferredCurrency } from '@/utils/currency'
 import { storeToRefs } from 'pinia'
@@ -170,16 +168,8 @@ const additionalInfoItems = computed(() => {
 
   return [
     {
-      label: t('common.category'),
-      value: displayedSubcategory.value?.name ?? displayedCategory.value?.name ?? t('common.notSpecified'),
-    },
-    {
       label: t('pages.product.remainingQuantity'),
       value: String(product.value.count),
-    },
-    {
-      label: t('common.published'),
-      value: formatFullDate(product.value.created_at),
     },
     {
       label: t('common.autoDelivery'),
@@ -192,6 +182,7 @@ const officialProductsCountText = computed(() => {
   const count = officialProducts.value.length
   return `${count} ${getProductWordFormRu(count)}`
 })
+const hasSingleOfficialProduct = computed(() => officialProducts.value.length === 1)
 
 const productOfferBasePrice = computed(() => Number(product.value?.price ?? 0))
 const maxOfferedPrice = computed(() => {
@@ -575,6 +566,11 @@ function goToProductByModel(nextProduct: Product) {
   goToProductPage(nextProductKey)
 }
 
+function goToSellerProfile() {
+  if (!product.value?.seller.username) return
+  router.push(`/user/${product.value.seller.username}`)
+}
+
 function selectImage(image: ProductImage) {
   selectedImage.value = image
 }
@@ -927,21 +923,20 @@ onUnmounted(() => {
   <section v-if="product"
     class="product-page-shell h-full w-full mx-auto max-w-[1280px] flex flex-col items-start gap-6 overflow-x-hidden px-4 pb-36 pt-2 text-mainText lg:px-0 lg:pb-8">
     <div class="flex w-full flex-wrap items-center justify-between gap-3">
-      <nav class="flex min-w-0 flex-wrap items-center gap-1 text-xs text-[var(--text-meta)]">
+      <nav class="flex min-w-0 flex-wrap items-center gap-1.5 text-sm text-[var(--text-meta)] sm:text-[15px]">
         <template v-for="(breadcrumbItem, index) in breadcrumbItems" :key="`${breadcrumbItem.label}-${index}`">
           <button
             v-if="breadcrumbItem.action"
             type="button"
-            class="max-w-[180px] truncate transition hover:text-[var(--text-title)]"
+            class="max-w-[220px] truncate font-medium transition hover:text-[var(--text-title)]"
             @click="breadcrumbItem.action"
           >
             {{ breadcrumbItem.label }}
           </button>
-          <span v-else class="max-w-[180px] truncate text-[var(--text-body)]">{{ breadcrumbItem.label }}</span>
+          <span v-else class="max-w-[220px] truncate font-medium text-[var(--text-body)]">{{ breadcrumbItem.label }}</span>
           <span v-if="index < breadcrumbItems.length - 1" class="text-[var(--text-meta)]">›</span>
         </template>
       </nav>
-      <BackButton />
     </div>
 
     <div class="product-detail-layout grid w-full grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_390px]">
@@ -1012,15 +1007,15 @@ onUnmounted(() => {
             class="inline-flex h-9 items-center rounded-lg bg-[rgb(var(--palette-dark-700)/0.55)] px-4 text-sm font-semibold text-[var(--text-title)] transition hover:bg-[rgb(var(--palette-dark-600)/0.7)]"
             @click="isDescriptionExpanded = !isDescriptionExpanded"
           >
-            {{ isDescriptionExpanded ? 'Скрыть' : $t('common.loadMore') }}
+            {{ isDescriptionExpanded ? 'Скрыть' : 'Раскрыть' }}
           </button>
         </section>
 
-        <section class="space-y-3">
+        <section v-if="productReviews.length" class="space-y-3">
           <h2 class="text-xl font-bold text-[var(--text-title)]">
             {{ $t('pages.product.reviews') }}<span class="text-[var(--text-muted)]">{{ reviewCountLabel }}</span>
           </h2>
-          <div v-if="visibleReviews.length" class="reviews-strip -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+          <div class="reviews-strip -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
             <article
               v-for="review in visibleReviews"
               :key="review.id"
@@ -1052,128 +1047,21 @@ onUnmounted(() => {
               <p class="mt-2 line-clamp-2 text-xs leading-5 text-[var(--text-body)]">{{ review.body }}</p>
             </article>
           </div>
-          <div v-else class="rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900)/0.55)] px-4 py-5 text-sm text-[var(--text-muted)]">
-            {{ $t('pages.profile.noReviews') }}
-          </div>
           <button
             v-if="hasMoreReviews"
             type="button"
             class="inline-flex h-9 items-center rounded-lg bg-[rgb(var(--palette-dark-700)/0.55)] px-4 text-sm font-semibold text-[var(--text-title)] transition hover:bg-[rgb(var(--palette-dark-600)/0.7)]"
             @click="visibleReviewsCount += 6"
           >
-            {{ $t('common.loadMore') }}
+            {{ 'Раскрыть' }}
           </button>
         </section>
 
-        <div
-          v-if="shouldShowOfficialRemarketCarousel"
-          class="official-showcase mt-6 w-full rounded-3xl border border-[rgb(var(--palette-white)/0.12)] p-4 sm:p-5"
-        >
-          <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div class="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--palette-blue-300)/0.7)] bg-[rgb(var(--palette-blue-500)/0.32)] px-3 py-1.5 text-sm font-semibold tracking-wide text-[var(--text-accent-strong)] shadow-[var(--official-showcase-badge-shadow)]">
-              <BadgeCheck class="h-4 w-4" />
-              <span>Официально от remarket</span>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <button
-                type="button"
-                class="official-showcase__ghost-btn !hidden sm:!inline-flex"
-                @click="openOfficialStorePage"
-              >
-                <span>{{ officialProductsCountText }}</span>
-                <ChevronRight class="h-4 w-4" />
-              </button>
-
-              <div class="hidden items-center gap-1 rounded-full border border-[var(--official-showcase-control-border)] bg-[var(--official-showcase-control-bg)] p-1 sm:inline-flex">
-                <button
-                  type="button"
-                  class="official-showcase__arrow-btn"
-                  :disabled="isOfficialCarouselAtStart || officialProducts.length <= 1"
-                  aria-label="Прокрутить влево"
-                  @click="scrollOfficialCarousel('prev')"
-                >
-                  <ChevronLeft class="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  class="official-showcase__arrow-btn"
-                  :disabled="isOfficialCarouselAtEnd || officialProducts.length <= 1"
-                  aria-label="Прокрутить вправо"
-                  @click="scrollOfficialCarousel('next')"
-                >
-                  <ChevronRight class="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="mb-3 text-sm font-medium text-[rgb(var(--text-accent-strong-rgb)/0.85)] sm:hidden">
-            {{ officialProductsCountText }}
-          </div>
-
-          <div v-if="isOfficialProductsLoading" class="official-carousel flex gap-4 overflow-x-auto pb-2 no-scrollbar">
-            <div
-              v-for="n in officialProductsLoadingSkeletonCount"
-              :key="`official-skeleton-${n}`"
-              class="h-[234px] w-[188px] shrink-0 animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-700)/0.7)] sm:h-[276px] sm:w-[232px]"
-            ></div>
-          </div>
-
-          <div v-else-if="officialProducts.length > 0" class="official-carousel-wrap relative">
-            <div
-              ref="officialCarouselRef"
-              class="official-carousel flex gap-4 overflow-x-auto pb-2 pr-1 no-scrollbar snap-x snap-mandatory"
-              @scroll.passive="handleOfficialCarouselScroll"
-            >
-              <button
-                v-for="officialProduct in officialProducts"
-                :key="`official-${officialProduct.id}`"
-                type="button"
-                data-official-card
-                class="official-card group h-[234px] w-[188px] shrink-0 snap-start overflow-hidden rounded-2xl border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-dark-900)/0.9)] text-left transition duration-200 hover:-translate-y-0.5 hover:border-[rgb(var(--palette-blue-300)/0.4)] hover:bg-[rgb(var(--palette-dark-900))] sm:h-[276px] sm:w-[232px]"
-                @click="goToProductByModel(officialProduct)"
-              >
-                <div class="official-card__media relative h-[140px] w-full overflow-hidden sm:h-[170px]">
-                  <img
-                    v-if="resolveProductImageUrl(officialProduct)"
-                    :src="resolveProductImageUrl(officialProduct)"
-                    :alt="officialProduct.title"
-                    class="h-full w-full object-cover object-center transition duration-300 group-hover:scale-[1.03]"
-                  />
-                  <div v-else class="flex h-full w-full items-center justify-center text-xs text-[var(--text-body)]">
-                    {{ t('common.noImage') }}
-                  </div>
-                  <div class="official-card__overlay absolute inset-0"></div>
-                </div>
-                <div class="space-y-2 px-3.5 py-3">
-                  <p class="official-card__price text-[1.3rem] font-bold leading-none tracking-tight text-[var(--text-accent-strong)] sm:text-[1.55rem]">
-                    {{ formatOfficialPrice(officialProduct.price) }}
-                  </p>
-                  <p class="official-card__title min-h-[2.5rem] text-[0.93rem] leading-5 text-[rgb(var(--text-title-rgb)/0.95)] sm:text-[1.03rem] sm:leading-6">
-                    {{ officialProduct.title }}
-                  </p>
-                </div>
-              </button>
-            </div>
-
-            <div class="official-carousel__edge official-carousel__edge--left" :class="isOfficialCarouselAtStart ? 'opacity-0' : 'opacity-100'"></div>
-            <div class="official-carousel__edge official-carousel__edge--right" :class="isOfficialCarouselAtEnd ? 'opacity-0' : 'opacity-100'"></div>
-          </div>
-
-          <div class="mt-3 sm:hidden">
-            <button type="button" class="official-showcase__ghost-btn w-full justify-center" @click="openOfficialStorePage">
-              <span>Смотреть все</span>
-              <ChevronRight class="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-
-        <section class="mt-6 w-full space-y-4">
+        <section v-if="isSimilarProductsLoading || similarProducts.length" class="mt-6 w-full space-y-4">
           <h2 class="text-xl font-bold text-[var(--text-title)]">
             {{ $t('pages.product.similarProducts') }}<span class="text-[var(--text-muted)]">{{ similarProductsCountLabel }}</span>
           </h2>
-          <div v-if="isSimilarProductsLoading || similarProducts.length" class="space-y-4">
+          <div class="space-y-4">
             <div class="flex justify-end">
               <div
                 class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.4)] p-0.5"
@@ -1243,24 +1131,22 @@ onUnmounted(() => {
               />
             </div>
           </div>
-          <div v-else class="rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900)/0.55)] px-4 py-5 text-sm text-[var(--text-muted)]">
-            {{ $t('pages.product.noSimilarProducts') }}
-          </div>
         </section>
       </main>
 
       <aside class="product-buy-sidebar min-w-0 space-y-4 lg:sticky lg:top-20 lg:self-start">
+        <div class="space-y-2">
+          <h1 class="text-2xl font-extrabold uppercase leading-none text-[var(--text-title)] sm:text-3xl lg:text-[1.6rem]">
+            {{ product.title }}
+          </h1>
+        </div>
+
         <section class="rounded-lg bg-[rgb(var(--palette-dark-900)/0.92)] p-4 shadow-[0_18px_50px_rgb(0_0_0/0.18)]">
           <div class="space-y-3">
-            <div class="flex flex-wrap items-start gap-2">
-              <h1 class="min-w-0 flex-1 text-2xl font-extrabold uppercase leading-none text-[var(--text-title)] sm:text-3xl lg:text-[1.6rem]">
-                {{ product.title }}
-              </h1>
-              <ProductStatusTag v-if="product.is_owner || user?.role === 'admin'" :product-status="product.status" />
-            </div>
-
             <div class="flex flex-wrap items-baseline gap-2">
-              <span class="text-3xl font-extrabold leading-none text-[var(--text-title)]">{{ formatCurrencyAmount(product.price) }}</span>
+              <span class="text-3xl font-extrabold leading-none text-[var(--text-title)]">
+                {{ formatCurrencyAmount(product.price) }}
+              </span>
               <button
                 v-if="!product.is_owner && !product.is_sold && product.status === 'active'"
                 type="button"
@@ -1271,7 +1157,11 @@ onUnmounted(() => {
               </button>
             </div>
 
-            <div class="flex items-center gap-3 rounded-lg bg-[rgb(var(--palette-dark-800)/0.58)] p-2">
+            <button
+              type="button"
+              class="flex w-full items-center gap-3 rounded-lg bg-[rgb(var(--palette-dark-800)/0.58)] p-2 text-left transition hover:bg-[rgb(var(--palette-dark-800)/0.78)]"
+              @click="goToSellerProfile"
+            >
               <UserAvatar
                 :avatar-url="product.seller.avatar_url"
                 :alt="product.seller.username"
@@ -1295,7 +1185,7 @@ onUnmounted(() => {
                   {{ product.seller_trust?.completed_deals_count ?? 0 }} продаж
                 </p>
               </div>
-            </div>
+            </button>
 
             <span v-if="user === null && !product.is_owner" class="block text-sm text-[var(--text-muted)]">
               {{ $t('pages.product.authRequired') }}
@@ -1339,26 +1229,6 @@ onUnmounted(() => {
                     <Heart class="h-5 w-5" :style="product.is_liked ? { fill: 'currentColor' } : undefined" />
                   </button>
                 </div>
-                <div class="flex gap-2">
-                  <button
-                    type="button"
-                    class="inline-flex h-10 flex-1 items-center justify-center rounded-lg border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] px-3 text-xs font-semibold text-[var(--text-body-strong)] transition hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)]"
-                    @click="user === null ? goToSignInFromProduct() : openOfferConfirm()"
-                  >
-                    <Percent class="mr-2 h-4 w-4" />
-                    {{ $t('pages.product.offerPrice') }}
-                  </button>
-                  <button
-                    v-if="!product.is_owner"
-                    type="button"
-                    class="report-icon-btn"
-                    :title="$t('pages.product.reportProduct')"
-                    :aria-label="$t('pages.product.reportProduct')"
-                    @click="openProductReport"
-                  >
-                    <TriangleAlert class="h-4 w-4" aria-hidden="true" />
-                  </button>
-                </div>
               </template>
             </div>
 
@@ -1388,20 +1258,34 @@ onUnmounted(() => {
 
         <section class="rounded-lg bg-[rgb(var(--palette-dark-900)/0.82)] p-4">
           <div class="mb-2 flex items-center gap-2">
-            <ShieldCheck class="h-5 w-5 text-[var(--text-title)]" />
+            <ShieldCheck class="h-4 w-4 text-[rgb(var(--palette-white)/0.95)]" />
             <h2 class="text-base font-semibold text-[var(--text-title)]">Гарантия безопасной сделки</h2>
           </div>
           <ul class="space-y-2 text-sm text-[var(--text-body)]">
             <li class="flex gap-2">
-              <Check class="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-success)]" />
+              <Check class="mt-1 h-3.5 w-3.5 shrink-0 text-[rgb(var(--palette-white)/0.78)]" />
               <span>Продавец получит деньги после подтверждения</span>
             </li>
             <li class="flex gap-2">
-              <Check class="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-success)]" />
+              <Check class="mt-1 h-3.5 w-3.5 shrink-0 text-[rgb(var(--palette-white)/0.78)]" />
               <span>Возврат средств, если товар не будет получен</span>
             </li>
           </ul>
         </section>
+
+        <div class="px-1 text-right text-xs text-[var(--text-meta)]">
+          <span>{{ formatFullDate(product.created_at) }}</span>
+          <button
+            v-if="!product.is_owner"
+            type="button"
+            class="ml-3 inline-flex items-center text-xs font-medium text-[var(--text-meta)] underline decoration-[rgb(var(--palette-white)/0.28)] underline-offset-2 transition hover:text-[var(--text-danger-soft)]"
+            :title="$t('pages.product.reportProduct')"
+            :aria-label="$t('pages.product.reportProduct')"
+            @click="openProductReport"
+          >
+            Пожаловаться
+          </button>
+        </div>
 
         <section v-if="product.is_raika_verified" class="rounded-lg border border-[rgb(var(--palette-emerald-700)/0.4)] bg-[rgb(var(--palette-emerald-900)/0.2)] p-3 text-xs text-[var(--text-success)]">
           <p class="flex flex-wrap items-center gap-1.5">
@@ -1439,6 +1323,114 @@ onUnmounted(() => {
           />
         </div>
       </aside>
+
+      <div
+        v-if="shouldShowOfficialRemarketCarousel"
+        class="official-showcase mt-2 w-full rounded-3xl border border-[rgb(var(--palette-white)/0.12)] p-4 sm:p-5 lg:col-span-2"
+      >
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div class="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--palette-blue-300)/0.7)] bg-[rgb(var(--palette-blue-500)/0.32)] px-3 py-1.5 text-sm font-semibold tracking-wide text-[var(--text-accent-strong)] shadow-[var(--official-showcase-badge-shadow)]">
+            <BadgeCheck class="h-4 w-4" />
+            <span>Официально от remarket</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="official-showcase__ghost-btn !hidden sm:!inline-flex"
+              @click="openOfficialStorePage"
+            >
+              <span>{{ officialProductsCountText }}</span>
+              <ChevronRight class="h-4 w-4" />
+            </button>
+
+            <div class="hidden items-center gap-1 rounded-full border border-[var(--official-showcase-control-border)] bg-[var(--official-showcase-control-bg)] p-1 sm:inline-flex">
+              <button
+                type="button"
+                class="official-showcase__arrow-btn"
+                :disabled="isOfficialCarouselAtStart || officialProducts.length <= 1"
+                aria-label="Прокрутить влево"
+                @click="scrollOfficialCarousel('prev')"
+              >
+                <ChevronLeft class="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                class="official-showcase__arrow-btn"
+                :disabled="isOfficialCarouselAtEnd || officialProducts.length <= 1"
+                aria-label="Прокрутить вправо"
+                @click="scrollOfficialCarousel('next')"
+              >
+                <ChevronRight class="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3 text-sm font-medium text-[rgb(var(--text-accent-strong-rgb)/0.85)] sm:hidden">
+          {{ officialProductsCountText }}
+        </div>
+
+        <div v-if="isOfficialProductsLoading" class="official-carousel flex gap-4 overflow-x-auto pb-2 no-scrollbar">
+          <div
+            v-for="n in officialProductsLoadingSkeletonCount"
+            :key="`official-skeleton-${n}`"
+            class="h-[234px] w-[188px] shrink-0 animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-700)/0.7)] sm:h-[276px] sm:w-[232px]"
+          ></div>
+        </div>
+
+        <div v-else-if="officialProducts.length > 0" class="official-carousel-wrap relative">
+          <div
+            ref="officialCarouselRef"
+            class="official-carousel pb-2 pr-1 no-scrollbar"
+            :class="hasSingleOfficialProduct
+              ? 'block overflow-visible'
+              : 'flex gap-4 overflow-x-auto snap-x snap-mandatory'"
+            @scroll.passive="handleOfficialCarouselScroll"
+          >
+            <button
+              v-for="officialProduct in officialProducts"
+              :key="`official-${officialProduct.id}`"
+              type="button"
+              data-official-card
+              class="official-card group h-[234px] shrink-0 overflow-hidden rounded-2xl border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-dark-900)/0.9)] text-left transition duration-200 hover:-translate-y-0.5 hover:border-[rgb(var(--palette-blue-300)/0.4)] hover:bg-[rgb(var(--palette-dark-900))] sm:h-[276px]"
+              :class="hasSingleOfficialProduct ? 'w-full max-w-none' : 'w-[188px] snap-start sm:w-[232px]'"
+              @click="goToProductByModel(officialProduct)"
+            >
+              <div class="official-card__media relative h-[140px] w-full overflow-hidden sm:h-[170px]">
+                <img
+                  v-if="resolveProductImageUrl(officialProduct)"
+                  :src="resolveProductImageUrl(officialProduct)"
+                  :alt="officialProduct.title"
+                  class="h-full w-full object-cover object-center transition duration-300 group-hover:scale-[1.03]"
+                />
+                <div v-else class="flex h-full w-full items-center justify-center text-xs text-[var(--text-body)]">
+                  {{ t('common.noImage') }}
+                </div>
+                <div class="official-card__overlay absolute inset-0"></div>
+              </div>
+              <div class="space-y-2 px-3.5 py-3">
+                <p class="official-card__price text-[1.3rem] font-bold leading-none tracking-tight text-[var(--text-accent-strong)] sm:text-[1.55rem]">
+                  {{ formatOfficialPrice(officialProduct.price) }}
+                </p>
+                <p class="official-card__title min-h-[2.5rem] text-[0.93rem] leading-5 text-[rgb(var(--text-title-rgb)/0.95)] sm:text-[1.03rem] sm:leading-6">
+                  {{ officialProduct.title }}
+                </p>
+              </div>
+            </button>
+          </div>
+
+          <div class="official-carousel__edge official-carousel__edge--left" :class="isOfficialCarouselAtStart ? 'opacity-0' : 'opacity-100'"></div>
+          <div class="official-carousel__edge official-carousel__edge--right" :class="isOfficialCarouselAtEnd ? 'opacity-0' : 'opacity-100'"></div>
+        </div>
+
+        <div class="mt-3 sm:hidden">
+          <button type="button" class="official-showcase__ghost-btn w-full justify-center" @click="openOfficialStorePage">
+            <span>Смотреть все</span>
+            <ChevronRight class="h-4 w-4" />
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Image modal -->
@@ -1811,26 +1803,6 @@ onUnmounted(() => {
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.report-icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 0.75rem;
-  border: 1px solid rgb(var(--palette-dark-600) / 0.9);
-  color: var(--text-muted);
-  background: rgb(var(--palette-dark-700) / 0.22);
-  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 160ms ease;
-}
-
-.report-icon-btn:hover {
-  border-color: rgb(var(--palette-red-700) / 0.45);
-  color: var(--text-danger-soft);
-  background: rgb(var(--palette-red-950) / 0.16);
-  transform: translateY(-1px);
 }
 
 @media (min-width: 680px) {
