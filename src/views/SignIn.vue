@@ -190,17 +190,16 @@ async function resendTwoFactorCode() {
     return
   }
 
-  if (!email.value.trim() || !captchaToken.value) {
-    errorMessage.value = t('pages.auth.signIn.completeCaptcha')
+  if (!email.value.trim()) {
+    errorMessage.value = t('errors.FILL_ALL_INPUTS')
     return
   }
 
   isResendingLoginCode.value = true
   errorMessage.value = ''
   try {
-    await authService.sendLoginCode(email.value, captchaToken.value)
+    await authService.resendLoginCode(email.value)
     codeDigits.value = ['', '', '', '', '', '']
-    refreshCaptcha()
     startResendCooldown()
     await nextTick()
     codeInputs.value[0]?.focus()
@@ -212,7 +211,6 @@ async function resendTwoFactorCode() {
     } else {
       errorMessage.value = t('errors.SERVER_ERROR')
     }
-    refreshCaptcha()
   } finally {
     isResendingLoginCode.value = false
   }
@@ -352,14 +350,10 @@ onUnmounted(() => {
 
           <ErrorBanner :message="errorMessage" />
 
-          <div>
-            <Captcha :key="captchaRenderKey" @verified="(token: string) => captchaToken = token" />
-          </div>
-
           <button
             type="button"
             class="w-full text-center text-sm text-text-link hover:underline disabled:cursor-not-allowed disabled:opacity-60 disabled:no-underline"
-            :disabled="sended || isResendingLoginCode || resendSecondsLeft > 0 || !captchaToken"
+            :disabled="sended || isResendingLoginCode || resendSecondsLeft > 0"
             @click="resendTwoFactorCode"
           >
             {{

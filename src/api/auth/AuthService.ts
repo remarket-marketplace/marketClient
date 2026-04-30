@@ -34,6 +34,12 @@ export const authService = {
     });
   },
 
+  async resendLoginCode(email: string) {
+    return await httpClient.post("/auth/resend-login-code", {
+      email,
+    });
+  },
+
   async sendPasswordResetLetter(email: string, captchaToken: string) {
     return httpClient.post("/auth/password-reset-letter", {
       email: email,
