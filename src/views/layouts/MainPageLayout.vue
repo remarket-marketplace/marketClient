@@ -6,7 +6,6 @@ import {
     User,
     Shield,
     BarChart3,
-    Wallet,
 } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -15,9 +14,9 @@ import { useUserStore } from '@/stores/user'
 import { useChatStore } from '@/stores/chat'
 import { storeToRefs } from 'pinia'
 import MainPageFooter from '@/components/layout/MainPageFooter.vue'
-import { formatCompactCurrencyAmount, formatCurrencyAmount } from '@/utils/currency'
 import NotificationsMenu from '@/components/layout/NotificationsMenu.vue'
 import MobileHeaderSettingsMenu from '@/components/layout/MobileHeaderSettingsMenu.vue'
+import HeaderSearch from '@/components/layout/HeaderSearch.vue'
 import type { FunctionalComponent } from 'vue'
 import type { LucideProps } from 'lucide-vue-next'
 import type { RouteLocationRaw } from 'vue-router'
@@ -235,32 +234,6 @@ const primaryNavItems = computed(() =>
     navItems.value.filter((item) => item.id !== 'admin' && item.id !== 'partner-stats'),
 )
 
-const walletBalanceLabel = computed(() =>
-    formatCurrencyAmount(Number(user.value?.balance ?? 0), {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    }),
-)
-
-const walletBalanceCompactLabel = computed(() =>
-    formatCompactCurrencyAmount(Number(user.value?.balance ?? 0)),
-)
-
-const walletTitle = computed(() =>
-    t('navigation.market.walletBalance', { balance: walletBalanceLabel.value }),
-)
-
-function goToWallet() {
-    if (!user.value) {
-        router.push({
-            path: '/signin',
-            query: buildAuthRedirectQuery('/wallet'),
-        })
-        return
-    }
-    router.push('/wallet')
-}
-
 const mobileNavGridStyle = computed(() => ({
     gridTemplateColumns: `repeat(${Math.max(1, mobileNavItems.value.length)}, minmax(0, 1fr))`,
 }))
@@ -270,17 +243,18 @@ const mobileNavGridStyle = computed(() => ({
     <div class="min-h-screen w-screen flex flex-col bg-background text-mainText">
         <header
             class="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div class="mx-auto flex h-12 w-full items-center justify-between gap-2 px-1.5 sm:h-14 sm:gap-3 lg:px-5 min-[2000px]:w-1/2">
-                <div class="flex min-w-0 items-center gap-1.5 sm:gap-2 md:gap-3">
-                    <div class="flex cursor-pointer items-center gap-2 text-base text-mainText font-semibold sm:text-xl title"
+            <div class="mx-auto flex h-16 w-full items-center justify-between gap-2 px-1.5 sm:gap-3 lg:px-5 min-[2000px]:w-1/2">
+                <div class="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2 md:gap-3">
+                    <div class="flex cursor-pointer items-center gap-2 text-base text-mainText font-extrabold sm:text-xl title"
                         @click="router.push('/')">
                         remarket
                     </div>
                 </div>
-                <div class="flex min-w-0 items-center gap-1.5 sm:gap-2 md:gap-3">
-                    <nav class="hidden items-center gap-6 md:flex">
+                <HeaderSearch class="mx-2 sm:mx-3" />
+                <div class="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2 md:gap-3">
+                    <nav class="hidden items-center gap-1 md:flex">
                         <router-link v-for="item in primaryNavItems" :key="item.id" :to="item.to"
-                            class="flex items-center gap-1 text-sm text-mainText transition-all duration-300 hover:text-[var(--nav-link-hover)] relative group"
+                            class="group relative flex min-w-[3.35rem] flex-col items-center justify-center gap-1 px-1 text-center text-[11px] leading-none text-mainText transition-all duration-300 hover:text-[var(--nav-link-hover)]"
                             :class="{
                                 'text-[var(--nav-link-active)]': isActiveRoute(item),
                                 'text-[var(--nav-link-muted)]': !isActiveRoute(item)
@@ -292,7 +266,7 @@ const mobileNavGridStyle = computed(() => ({
                                     item.partner ? 'text-[var(--nav-partner-text)]' : '',
                                     isActiveRoute(item) ? 'text-[var(--nav-link-active)]' : 'text-[var(--nav-link-muted)]',
                                     'transition-colors duration-300 group-hover:text-[var(--nav-link-active)]'
-                                ]" :size="item.sell ? 24 : 20" stroke-width="1.5" />
+                                ]" :size="item.sell ? 24 : 22" stroke-width="1.5" />
                                 <span
                                     v-if="item.id === 'chats' && unreadDialogTotal > 0"
                                     class="absolute -top-1 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--nav-notification-bg)] text-[10px] text-[var(--text-primary-strong)] font-semibold flex items-center justify-center shadow-lg"
@@ -300,14 +274,14 @@ const mobileNavGridStyle = computed(() => ({
                                     {{ unreadDialogTotal > 99 ? '99+' : unreadDialogTotal }}
                                 </span>
                             </div>
-                            <span class="ml-1 transition-colors duration-300 group-hover:text-[var(--nav-link-active)]"
+                            <span class="menu-label whitespace-nowrap px-0.5 text-center text-[11px] font-medium leading-none transition-colors duration-300 group-hover:text-[var(--nav-link-active)]"
                                 :class="{ 'text-[var(--nav-admin-text-soft)]': item.admin, 'text-[var(--nav-partner-text-soft)]': item.partner }">
                                 {{ item.title }}
                             </span>
                         </router-link>
 
                         <router-link v-for="item in roleNavItems" :key="item.id" :to="item.to"
-                            class="flex items-center gap-1 text-sm text-mainText transition-all duration-300 hover:text-[var(--nav-link-hover)] relative group"
+                            class="group relative flex min-w-[3.35rem] flex-col items-center justify-center gap-1 px-1 text-center text-[11px] leading-none text-mainText transition-all duration-300 hover:text-[var(--nav-link-hover)]"
                             :class="{
                                 'text-[var(--nav-link-active)]': isActiveRoute(item),
                                 'text-[var(--nav-link-muted)]': !isActiveRoute(item)
@@ -319,7 +293,7 @@ const mobileNavGridStyle = computed(() => ({
                                     item.partner ? 'text-[var(--nav-partner-text)]' : '',
                                     isActiveRoute(item) ? 'text-[var(--nav-link-active)]' : 'text-[var(--nav-link-muted)]',
                                     'transition-colors duration-300 group-hover:text-[var(--nav-link-active)]'
-                                ]" :size="item.sell ? 24 : 20" stroke-width="1.5" />
+                                ]" :size="item.sell ? 24 : 22" stroke-width="1.5" />
                                 <span
                                     v-if="item.id === 'chats' && unreadDialogTotal > 0"
                                     class="absolute -top-1 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--nav-notification-bg)] text-[10px] text-[var(--text-primary-strong)] font-semibold flex items-center justify-center shadow-lg"
@@ -327,45 +301,14 @@ const mobileNavGridStyle = computed(() => ({
                                     {{ unreadDialogTotal > 99 ? '99+' : unreadDialogTotal }}
                                 </span>
                             </div>
-                            <span class="ml-1 transition-colors duration-300 group-hover:text-[var(--nav-link-active)]"
+                            <span class="menu-label whitespace-nowrap px-0.5 text-center text-[11px] font-medium leading-none transition-colors duration-300 group-hover:text-[var(--nav-link-active)]"
                                 :class="{ 'text-[var(--nav-admin-text-soft)]': item.admin, 'text-[var(--nav-partner-text-soft)]': item.partner }">
                                 {{ item.title }}
                             </span>
                         </router-link>
 
-                        <button
-                            v-if="user && user.role !== 'admin'"
-                            type="button"
-                            class="inline-flex h-9 items-center gap-1.5 rounded-full border border-[var(--nav-chip-border)] bg-[var(--transparent)] px-2.5 text-xs text-[var(--body-copy-strong)] transition-colors duration-200 hover:border-[var(--nav-chip-hover-border)] hover:text-[var(--text-primary-strong)] focus:outline-none"
-                            :title="walletTitle"
-                            @click="goToWallet"
-                        >
-                            <Wallet class="h-3.5 w-3.5 text-[var(--nav-wallet-icon)]" />
-                            <span class="font-medium">{{ walletBalanceLabel }}</span>
-                        </button>
-
-                        <button
-                            v-if="user && user.role === 'admin'"
-                            type="button"
-                            class="inline-flex h-9 items-center gap-1.5 rounded-full border border-[var(--nav-chip-border)] bg-[var(--transparent)] px-2.5 text-xs text-[var(--body-copy-strong)] transition-colors duration-200 hover:border-[var(--nav-chip-hover-border)] hover:text-[var(--text-primary-strong)] focus:outline-none"
-                            :title="walletTitle"
-                            @click="goToWallet"
-                        >
-                            <Wallet class="h-3.5 w-3.5 text-[var(--nav-wallet-icon)]" />
-                            <span class="font-medium">{{ walletBalanceLabel }}</span>
-                        </button>
                     </nav>
 
-                    <button
-                        v-if="user"
-                        type="button"
-                        class="inline-flex h-9 items-center gap-1 rounded-full border border-[var(--nav-chip-border)] bg-[var(--transparent)] px-2 text-[10px] text-[var(--body-copy-strong)] transition-colors duration-200 hover:border-[var(--nav-chip-hover-border)] hover:text-[var(--text-primary-strong)] focus:outline-none md:hidden"
-                        :title="walletTitle"
-                        @click="goToWallet"
-                    >
-                        <Wallet class="h-3.5 w-3.5 text-[var(--nav-wallet-icon)]" />
-                        <span class="block max-w-[64px] truncate font-medium">{{ walletBalanceCompactLabel }}</span>
-                    </button>
                     <MobileHeaderSettingsMenu />
                     <NotificationsMenu v-if="user?.username" />
                 </div>

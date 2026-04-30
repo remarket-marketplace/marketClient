@@ -4,7 +4,6 @@ import { productService } from '@/api/product/ProductService'
 import { steamTopupService } from '@/api/steamTopup/steamTopupService'
 import MainProductCard from '@/components/mainProductCard.vue'
 import HomeProductListCard from '@/components/HomeProductListCard.vue'
-import SearchField from '@/components/SearchField.vue'
 import Title from '@/components/Title.vue'
 import HeroSection from '@/components/HeroSection.vue'
 import HeroBackground from '@/components/HeroBackground.vue'
@@ -12,7 +11,7 @@ import ScopeVpnCta from '@/components/ScopeVpnCta.vue'
 import SteamTopUpCta from '@/components/SteamTopUpCta.vue'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import type { ProductsFilterParams } from '@/api/product/ProductService'
 import type { Category } from '@/validation/category/category'
 import type { Product } from '@/validation/product/product'
@@ -39,6 +38,7 @@ import { getErrorMessage } from '@/utils/errorsMap'
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 const API_HOST = import.meta.env.VITE_API_HOST
 const HOME_STEAM_TOPUP_ENABLED = import.meta.env.VITE_STEAM_TOPUP_ENABLED !== 'false'
 const userStore = useUserStore()
@@ -59,15 +59,7 @@ const categoryTotalPages = ref(1)
 const subCategoryPage = ref(1)
 const subCategoryTotalPages = ref(1)
 const categoriesPerPage = ref(30)
-const searchQuery = ref('')
-const searchableCategories = ref<Category[]>([])
-const hasLoadedSearchableCategories = ref(false)
-const isSearchableCategoriesLoading = ref(false)
-const isSearchDropdownOpen = ref(false)
-const searchDropdownHighlightedIndex = ref(-1)
-const searchDropdownRef = ref<HTMLElement | null>(null)
-const searchDropdownFloatingRef = ref<HTMLElement | null>(null)
-const searchDropdownStyle = ref<Record<string, string>>({})
+const searchQuery = ref(getRouteSearchQuery())
 const isServerPagination = ref(true)
 const isCategoryPagination = ref(false)
 const isLoadingMore = ref(false)
@@ -106,14 +98,6 @@ const isOfficialHomeCarouselAtEnd = ref(false)
 const shouldShowOfficialHomeShowcase = computed(() => (
   !isOfficialHomeLoading.value && officialHomeProducts.value.length > 0
 ))
-const normalizedSearchQuery = computed(() => searchQuery.value.trim().toLowerCase())
-const categorySearchResults = computed(() => {
-  if (normalizedSearchQuery.value.length < 1) return []
-  return searchableCategories.value
-    .filter((category) => category.name.toLowerCase().includes(normalizedSearchQuery.value))
-    .slice(0, 8)
-})
-const hasCategorySearchResults = computed(() => categorySearchResults.value.length > 0)
 const areCategoriesExpanded = ref(false)
 const shouldShowCategoryExpandButton = computed(() => (
   mainCategories.value.length > 8 || categoryTotalPages.value > 1
@@ -256,6 +240,15 @@ function filterVisibleCategories(categories: Category[]): Category[] {
   return categories.filter(isVisibleCategory)
 }
 
+function normalizeRouteSearchQuery(value: unknown): string {
+  if (Array.isArray(value)) return typeof value[0] === 'string' ? value[0] : ''
+  return typeof value === 'string' ? value : ''
+}
+
+function getRouteSearchQuery(): string {
+  return normalizeRouteSearchQuery(route.query.search).trim()
+}
+
 function mergeUniqueCategories(currentCategories: Category[], nextCategories: Category[]): Category[] {
   const seenCategoryIds = new Set(currentCategories.map((category) => category.id))
   const uniqueNextCategories = nextCategories.filter((category) => {
@@ -353,8 +346,6 @@ async function onPricePresetClick(preset: PricePreset) {
 
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
-let onDocumentClickForSearchDropdown: ((event: MouseEvent) => void) | null = null
-let onWindowChangeForSearchDropdown: (() => void) | null = null
 
 function goToProduct(productKey: string) {
   if (!productKey) return
@@ -368,91 +359,9 @@ function goToProductByModel(product: Product) {
 }
 
 function goToCategoryPage(category: Category) {
-  isSearchDropdownOpen.value = false
-  searchDropdownHighlightedIndex.value = -1
   const categoryKey = buildCategoryKey(category)
   if (!categoryKey) return
   router.push({ path: `/category/${categoryKey}` })
-}
-
-function openSearchDropdown() {
-  if (!normalizedSearchQuery.value || !hasCategorySearchResults.value) return
-  isSearchDropdownOpen.value = true
-  if (searchDropdownHighlightedIndex.value < 0) {
-    searchDropdownHighlightedIndex.value = 0
-  }
-  void nextTick(() => {
-    updateSearchDropdownPosition()
-  })
-}
-
-function closeSearchDropdown() {
-  isSearchDropdownOpen.value = false
-  searchDropdownHighlightedIndex.value = -1
-}
-
-function updateSearchDropdownPosition() {
-  if (typeof window === 'undefined') return
-  const anchor = searchDropdownRef.value
-  if (!anchor) return
-
-  const rect = anchor.getBoundingClientRect()
-  const viewportPadding = 12
-  const width = Math.min(rect.width, window.innerWidth - viewportPadding * 2)
-  const left = Math.min(
-    Math.max(rect.left, viewportPadding),
-    window.innerWidth - viewportPadding - width,
-  )
-  const top = rect.bottom + 8
-  const maxHeight = Math.max(window.innerHeight - top - viewportPadding, 160)
-
-  searchDropdownStyle.value = {
-    top: `${top}px`,
-    left: `${left}px`,
-    width: `${width}px`,
-    maxHeight: `${maxHeight}px`,
-  }
-}
-
-function moveSearchDropdownHighlight(direction: 1 | -1) {
-  const total = categorySearchResults.value.length
-  if (!total) {
-    searchDropdownHighlightedIndex.value = -1
-    return
-  }
-  if (!isSearchDropdownOpen.value) {
-    openSearchDropdown()
-    return
-  }
-  const current = searchDropdownHighlightedIndex.value < 0 ? 0 : searchDropdownHighlightedIndex.value
-  searchDropdownHighlightedIndex.value = (current + direction + total) % total
-}
-
-function onSearchDropdownKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape') {
-    closeSearchDropdown()
-    return
-  }
-
-  if (event.key === 'ArrowDown') {
-    event.preventDefault()
-    moveSearchDropdownHighlight(1)
-    return
-  }
-
-  if (event.key === 'ArrowUp') {
-    event.preventDefault()
-    moveSearchDropdownHighlight(-1)
-    return
-  }
-
-  if (event.key === 'Enter' && isSearchDropdownOpen.value) {
-    if (searchDropdownHighlightedIndex.value < 0) return
-    const category = categorySearchResults.value[searchDropdownHighlightedIndex.value]
-    if (!category) return
-    event.preventDefault()
-    goToCategoryPage(category)
-  }
 }
 
 function resolveCategoryImageUrl(imageUrl: string | null): string {
@@ -781,31 +690,33 @@ async function confirmSteamCheckout() {
   }
 }
 
-let searchTimeout: ReturnType<typeof setTimeout> | null = null
 let filterTimeout: ReturnType<typeof setTimeout> | null = null
 
-function debouncedSearch() {
-  if (searchTimeout) clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(async () => {
-    if (!searchQuery.value.trim()) {
-      await resetAllFilters()
-      return
-    }
-    isProductsLoading.value = true
-    const res = await productService.searchProducts(
-      searchQuery.value.trim(),
-      1,
-      perPage.value,
-      getProductFiltersParams(),
-    )
-    products.value = res.products
-    currentPage.value = res.currentPage
-    totalPages.value = res.totalPages
-    isSearchPagination.value = true
-    isCategoryPagination.value = false
-    isServerPagination.value = false
-    isProductsLoading.value = false
-  }, 300)
+async function searchProductsByQuery(query: string, page = 1, append = false) {
+  const trimmedQuery = query.trim()
+  if (!trimmedQuery) {
+    await resetAllFilters()
+    return
+  }
+
+  if (append && isLoadingMore.value) return
+  isLoadingMore.value = append
+  if (!append) isProductsLoading.value = true
+
+  const res = await productService.searchProducts(
+    trimmedQuery,
+    page,
+    perPage.value,
+    getProductFiltersParams(),
+  )
+  products.value = append ? [...products.value, ...res.products] : res.products
+  currentPage.value = res.currentPage
+  totalPages.value = res.totalPages
+  isSearchPagination.value = true
+  isCategoryPagination.value = false
+  isServerPagination.value = false
+  isLoadingMore.value = false
+  isProductsLoading.value = false
 }
 
 async function loadProducts(page = 1, append = false) {
@@ -849,15 +760,7 @@ async function loadMoreProducts() {
   if (currentPage.value >= totalPages.value) return
   const nextPage = currentPage.value + 1
   if (isSearchPagination.value) {
-    const res = await productService.searchProducts(
-      searchQuery.value.trim(),
-      nextPage,
-      perPage.value,
-      getProductFiltersParams(),
-    )
-    products.value = [...products.value, ...res.products]
-    currentPage.value = res.currentPage
-    totalPages.value = res.totalPages
+    await searchProductsByQuery(searchQuery.value, nextPage, true)
     return
   }
   if (isCategoryPagination.value) {
@@ -882,22 +785,6 @@ async function loadMainCategories(page = 1, append = false) {
     categoryTotalPages.value = res.totalPages
   } finally {
     if (!append) isCategoriesLoading.value = false
-  }
-}
-
-async function loadSearchableCategories() {
-  const categories = await categoryService.getAllCategoriesFlat(100, 20)
-  searchableCategories.value = filterVisibleCategories(categories)
-  hasLoadedSearchableCategories.value = true
-}
-
-async function ensureSearchableCategoriesLoaded() {
-  if (hasLoadedSearchableCategories.value || isSearchableCategoriesLoading.value) return
-  isSearchableCategoriesLoading.value = true
-  try {
-    await loadSearchableCategories()
-  } finally {
-    isSearchableCategoriesLoading.value = false
   }
 }
 
@@ -1114,29 +1001,26 @@ watch(productCardViewMode, (mode) => {
   window.localStorage.setItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY, mode)
 })
 
-watch([normalizedSearchQuery, hasCategorySearchResults], ([query, hasResults]) => {
-  if (query) {
-    void ensureSearchableCategoriesLoaded()
-  }
-  if (!query || !hasResults) {
-    closeSearchDropdown()
-    return
-  }
-  isSearchDropdownOpen.value = true
-  if (searchDropdownHighlightedIndex.value < 0) {
-    searchDropdownHighlightedIndex.value = 0
-  }
-  void nextTick(() => {
-    updateSearchDropdownPosition()
-  })
-})
+watch(
+  () => route.query.search,
+  async (value) => {
+    const nextQuery = normalizeRouteSearchQuery(value).trim()
+    if (nextQuery === searchQuery.value.trim()) return
 
-watch(isSearchDropdownOpen, (isOpen) => {
-  if (!isOpen) return
-  void nextTick(() => {
-    updateSearchDropdownPosition()
-  })
-})
+    searchQuery.value = nextQuery
+    if (nextQuery) {
+      selectedMainCategoryId.value = ''
+      selectedSubCategoryId.value = ''
+      subCategories.value = []
+      await searchProductsByQuery(nextQuery, 1, false)
+      return
+    }
+
+    if (isSearchPagination.value) {
+      await resetAllFilters()
+    }
+  },
+)
 
 watch(() => officialHomeProducts.value.length, async () => {
   await nextTick()
@@ -1156,42 +1040,18 @@ watch(shouldShowOfficialHomeShowcase, async (nextValue) => {
 onMounted(async () => {
   restoreProductCardViewModeFromStorage()
   await Promise.all([
-    loadProducts(),
+    searchQuery.value ? searchProductsByQuery(searchQuery.value, 1, false) : loadProducts(),
     loadMainCategories(),
     loadOfficialHomeProducts(),
   ])
   observer = new IntersectionObserver((entries) => { if (entries[0]!.isIntersecting) loadMoreProducts() }, { rootMargin: '300px' })
   if (loadMoreTrigger.value) observer.observe(loadMoreTrigger.value)
-  onDocumentClickForSearchDropdown = (event: MouseEvent) => {
-    const target = event.target as Node | null
-    if (!target) return
-    if (searchDropdownRef.value?.contains(target)) return
-    if (searchDropdownFloatingRef.value?.contains(target)) return
-    closeSearchDropdown()
-  }
-  document.addEventListener('click', onDocumentClickForSearchDropdown)
-  onWindowChangeForSearchDropdown = () => {
-    if (!isSearchDropdownOpen.value) return
-    updateSearchDropdownPosition()
-  }
-  window.addEventListener('resize', onWindowChangeForSearchDropdown)
-  window.addEventListener('scroll', onWindowChangeForSearchDropdown, true)
   window.addEventListener('resize', updateOfficialHomeCarouselState, { passive: true })
 })
 
 onBeforeUnmount(() => {
-  if (searchTimeout) clearTimeout(searchTimeout)
   if (filterTimeout) clearTimeout(filterTimeout)
   observer?.disconnect()
-  if (onDocumentClickForSearchDropdown) {
-    document.removeEventListener('click', onDocumentClickForSearchDropdown)
-    onDocumentClickForSearchDropdown = null
-  }
-  if (onWindowChangeForSearchDropdown) {
-    window.removeEventListener('resize', onWindowChangeForSearchDropdown)
-    window.removeEventListener('scroll', onWindowChangeForSearchDropdown, true)
-    onWindowChangeForSearchDropdown = null
-  }
   window.removeEventListener('resize', updateOfficialHomeCarouselState)
 })
 
@@ -1214,32 +1074,16 @@ onBeforeUnmount(() => {
       class="relative z-20 flex min-h-screen w-full flex-col items-center px-1 pb-6 sm:px-2 lg:px-2"
       :class="user ? 'pt-14 md:pt-20' : 'pt-0'"
     >
-        <div class="mt-4 grid w-full items-stretch gap-3 lg:grid-cols-2">
+        <div class="mt-2 grid w-full items-stretch gap-3 lg:grid-cols-2">
           <ScopeVpnCta />
           <SteamTopUpCta v-if="HOME_STEAM_TOPUP_ENABLED" />
         </div>
 
-        <div class="mt-4 w-full sm:mt-5">
-          <div
-            ref="searchDropdownRef"
-            class="relative w-full"
-            @focusin="openSearchDropdown"
-            @keydown="onSearchDropdownKeydown"
-          >
-            <SearchField
-              v-model="searchQuery"
-              :placeholder="$t('pages.index.searchPlaceholder')"
-              @search-change="debouncedSearch"
-              class="home-search-glass w-full"
-            />
-          </div>
-        </div>
-
         <section
           v-if="shouldShowOfficialHomeShowcase"
-          class="home-official-showcase mt-6 w-full rounded-3xl p-4 sm:mt-8 sm:p-5"
+          class="home-official-showcase mt-3 w-full rounded-3xl p-3"
         >
-          <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
             <div class="flex min-w-0 items-center gap-2.5">
               <div class="home-official-heading inline-flex min-w-0 items-center gap-2">
                 <span class="home-official-mark">
@@ -1285,7 +1129,7 @@ onBeforeUnmount(() => {
           <div class="home-official-carousel-wrap relative">
             <div
               ref="officialHomeCarouselRef"
-              class="home-official-carousel flex gap-4 overflow-x-auto pb-2 pr-1 no-scrollbar snap-x snap-mandatory"
+              class="home-official-carousel flex gap-4 overflow-x-auto pr-1 no-scrollbar snap-x snap-mandatory"
               @scroll.passive="handleOfficialHomeCarouselScroll"
             >
               <button
@@ -1659,43 +1503,6 @@ onBeforeUnmount(() => {
 
     <div ref="loadMoreTrigger" class="h-10"></div>
   </section>
-
-  <Teleport to="body">
-    <div
-      v-if="hasCategorySearchResults && isSearchDropdownOpen"
-      ref="searchDropdownFloatingRef"
-      class="home-category-search-dropdown fixed z-[180] overflow-y-auto rounded-2xl border border-[rgb(var(--palette-white)/0.1)] p-2 backdrop-blur-xl"
-      :style="searchDropdownStyle"
-    >
-      <p class="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[rgb(var(--text-muted-rgb)/0.85)]">
-        {{ t('pages.index.categoriesFound') }}
-      </p>
-      <button
-        v-for="(category, index) in categorySearchResults"
-        :key="`search-category-${category.id}`"
-        type="button"
-        class="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm text-[var(--text-title)] transition duration-200"
-        :class="{
-          'bg-[rgb(var(--palette-white)/0.07)]': searchDropdownHighlightedIndex === index,
-          'hover:bg-[rgb(var(--palette-white)/0.05)]': searchDropdownHighlightedIndex !== index,
-        }"
-        @mouseenter="searchDropdownHighlightedIndex = index"
-        @click="goToCategoryPage(category)"
-      >
-        <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-dark-800)/0.8)]">
-          <img
-            v-if="isCategoryImageAvailable(category.id, category.image_url)"
-            :src="resolveCategoryImageUrl(category.image_url)"
-            :alt="category.name"
-            class="h-6 w-6 rounded-md object-cover"
-            @error="markCategoryImageBroken(category.id)"
-          />
-          <Folder v-else class="h-4 w-4 text-[var(--text-muted)]" />
-        </span>
-        <span class="truncate text-sm leading-5">{{ category.name }}</span>
-      </button>
-    </div>
-  </Teleport>
 </template>
 
 <style scoped>
@@ -1894,57 +1701,6 @@ onBeforeUnmount(() => {
   }
 }
 
-.home-search-glass :deep(input) {
-  border: 1px solid var(--home-search-glass-border);
-  min-height: 3.5rem;
-  border-radius: 0.75rem;
-  padding-left: 2.9rem !important;
-  padding-right: 1rem !important;
-  background: var(--home-search-glass-bg);
-  color: rgb(var(--palette-white) / 0.94);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  box-shadow: var(--home-search-glass-shadow);
-  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.home-search-glass :deep(input::placeholder) {
-  color: rgb(var(--palette-gray-400) / 0.82);
-}
-
-.home-search-glass :deep(input:focus) {
-  border-color: var(--home-search-glass-focus-border);
-  box-shadow: var(--home-search-glass-focus-shadow);
-  background: rgb(var(--palette-white) / 0.04);
-}
-
-.home-search-glass :deep(svg) {
-  display: block;
-  left: 1rem;
-  z-index: 1;
-  height: 1.1rem;
-  width: 1.1rem;
-  color: rgb(var(--palette-gray-300) / 0.92);
-  stroke-width: 2.2;
-  pointer-events: none;
-}
-
-@media (max-width: 767px) {
-  .home-search-glass :deep(input) {
-    min-height: 2.75rem;
-    border-radius: 0.65rem;
-    padding-left: 2.45rem !important;
-    padding-right: 0.85rem !important;
-    font-size: 0.875rem;
-  }
-
-  .home-search-glass :deep(svg) {
-    left: 0.85rem;
-    height: 1rem;
-    width: 1rem;
-  }
-}
-
 .home-categories-fade-enter-active,
 .home-categories-fade-leave-active {
   transition: opacity 0.22s ease, transform 0.22s ease;
@@ -2059,14 +1815,6 @@ onBeforeUnmount(() => {
   font-weight: 500;
   -webkit-mask-image: linear-gradient(to right, rgb(var(--palette-black)) 0%, rgb(var(--palette-black)) 78%, transparent 100%);
   mask-image: linear-gradient(to right, rgb(var(--palette-black)) 0%, rgb(var(--palette-black)) 78%, transparent 100%);
-}
-
-.home-category-search-dropdown {
-  border-color: rgb(var(--palette-white) / 0.08);
-  background: rgb(var(--palette-white) / 0.035);
-  box-shadow: none;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 }
 
 .home-category-expand-btn {
