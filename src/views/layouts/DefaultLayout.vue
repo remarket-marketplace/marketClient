@@ -10,7 +10,6 @@ import {
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { Icon } from '@iconify/vue'
 import { useUserStore } from '@/stores/user'
 import { useChatStore } from '@/stores/chat'
 import { storeToRefs } from 'pinia'
@@ -38,7 +37,6 @@ const chatStore = useChatStore()
 const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
-const HOME_STEAM_TOPUP_ENABLED = import.meta.env.VITE_STEAM_TOPUP_ENABLED !== 'false'
 
 const isDesktop = ref(true)
 const { user } = storeToRefs(store)
@@ -241,10 +239,6 @@ const primaryNavItems = computed(() =>
   navItems.value.filter((item) => item.id !== 'admin' && item.id !== 'partner-stats'),
 )
 
-function goToSteamTopUp() {
-  router.push('/steam-topup')
-}
-
 const mobileNavGridStyle = computed(() => ({
   gridTemplateColumns: `repeat(${Math.max(1, mobileNavItems.value.length)}, minmax(0, 1fr))`,
 }))
@@ -259,46 +253,18 @@ const mobileNavGridStyle = computed(() => ({
       class="fixed inset-x-0 top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
     >
       <div class="mx-auto w-full min-[2000px]:w-1/2">
-        <div class="mx-auto h-16 w-full flex items-center justify-between gap-2 px-1.5 lg:gap-3 lg:px-5">
-          <div class="flex min-w-0 shrink-0 items-center gap-2 md:gap-3">
-            <div class="flex cursor-pointer items-center gap-2 text-lg text-mainText font-extrabold sm:text-xl"
+        <div class="mx-auto h-16 w-full flex items-center justify-between gap-2 px-1.5 sm:gap-3 lg:px-5">
+          <div class="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2 md:gap-3">
+            <div class="flex cursor-pointer items-center gap-2 text-base text-mainText font-semibold sm:text-xl"
               @click="router.push('/')">
               remarket
             </div>
-            <button
-              v-if="HOME_STEAM_TOPUP_ENABLED"
-              type="button"
-              class="inline-flex h-9 min-w-0 max-w-[7.75rem] shrink items-center gap-1 rounded-full border border-[var(--nav-chip-border)] bg-[var(--transparent)] pl-2 pr-2 text-[var(--body-copy-strong)] transition-colors duration-200 hover:border-[var(--nav-chip-hover-border)] hover:text-[var(--text-primary-strong)] md:hidden"
-              :title="t('pages.index.steamTopUp.navLabel')"
-              @click="goToSteamTopUp"
-            >
-              <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--nav-chip-border)] text-[var(--text-secondary)]">
-                <Icon icon="mdi:steam" class="h-3.5 w-3.5" />
-              </span>
-              <span class="min-w-0 flex-1 truncate text-left text-[10px] font-medium leading-none sm:text-[11px]">
-                {{ t('pages.index.steamTopUp.navLabel') }}
-              </span>
-            </button>
-            <button
-              v-if="HOME_STEAM_TOPUP_ENABLED"
-              type="button"
-              class="hidden h-9 min-w-0 max-w-[9.5rem] shrink items-center gap-1.5 rounded-full border border-[var(--nav-chip-border)] bg-[var(--transparent)] px-2.5 text-[var(--body-copy-strong)] transition-colors duration-200 hover:border-[var(--nav-chip-hover-border)] hover:text-[var(--text-primary-strong)] lg:max-w-[8.75rem] xl:max-w-[10rem] min-[2000px]:max-w-none min-[2000px]:px-3 md:inline-flex"
-              :title="t('pages.index.steamTopUp.navLabel')"
-              @click="goToSteamTopUp"
-            >
-              <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--nav-chip-border)] text-[var(--text-secondary)] transition-colors duration-200 lg:h-5 lg:w-5 xl:h-6 xl:w-6">
-                <Icon icon="mdi:steam" class="h-4 w-4" />
-              </span>
-              <span class="min-w-0 truncate text-xs font-medium leading-none lg:text-[13px] xl:text-sm">
-                {{ t('pages.index.steamTopUp.navLabel') }}
-              </span>
-            </button>
           </div>
 
           <HeaderSearch class="mx-2 sm:mx-3" />
 
-          <div class="flex min-w-0 shrink-0 items-center gap-2 md:gap-3">
-            <nav class="hidden items-center gap-1 md:flex lg:gap-1.5">
+          <div class="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2 md:gap-3">
+            <nav class="hidden items-center gap-1 md:flex">
               <router-link v-for="item in primaryNavItems" :key="item.id" :to="item.to"
                 class="group relative flex min-w-[3.35rem] flex-col items-center justify-center gap-1 px-1 text-center text-[11px] leading-none text-mainText transition-all duration-300 hover:text-[var(--nav-link-hover)]"
                 :class="{

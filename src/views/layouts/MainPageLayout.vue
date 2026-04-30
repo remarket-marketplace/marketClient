@@ -245,7 +245,7 @@ const mobileNavGridStyle = computed(() => ({
             class="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div class="mx-auto flex h-16 w-full items-center justify-between gap-2 px-1.5 sm:gap-3 lg:px-5 min-[2000px]:w-1/2">
                 <div class="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2 md:gap-3">
-                    <div class="flex cursor-pointer items-center gap-2 text-base text-mainText font-extrabold sm:text-xl title"
+                    <div class="flex cursor-pointer items-center gap-2 text-base text-mainText font-semibold sm:text-xl title"
                         @click="router.push('/')">
                         remarket
                     </div>
