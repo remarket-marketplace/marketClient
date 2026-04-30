@@ -7,15 +7,15 @@ import MainProductCard from '@/components/mainProductCard.vue'
 import HomeProductListCard from '@/components/HomeProductListCard.vue'
 import FortniteAccountSnapshot from '@/components/FortniteAccountSnapshot.vue'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
-import AutoDeliveryTag from '@/components/AutoDeliveryTag.vue'
 import ReportComplaintModal from '@/components/complaints/ReportComplaintModal.vue'
+import UserAvatar from '@/components/UserAvatar.vue'
+import StyledUsername from '@/components/StyledUsername.vue'
 import type { Product, ProductImage } from '@/validation/product/product'
 import type { Category } from '@/validation/category/category'
 import { onMounted, ref, onUnmounted, computed, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { BadgeCheck, ChevronLeft, ChevronRight, X, Heart, Trash2, Percent, ShoppingBag, LayoutGrid, Rows3, HelpCircle, TriangleAlert } from 'lucide-vue-next'
-import TrustComponent from './TrustComponent.vue'
+import { BadgeCheck, Check, ChevronLeft, ChevronRight, X, Heart, Trash2, Percent, ShoppingBag, LayoutGrid, Rows3, ShieldCheck, TriangleAlert, ImageOff, Star } from 'lucide-vue-next'
 import { useUserStore } from '@/stores/user'
 import BackButton from '@/components/navigation/BackButton.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
@@ -72,6 +72,8 @@ const offerMessage = ref('')
 const selectedOfferMessageTemplateKey = ref<PriceOfferMessageTemplateKey | null>(null)
 const showInsufficientBalanceModal = ref(false)
 const showComplaintModal = ref(false)
+const isDescriptionExpanded = ref(false)
+const visibleReviewsCount = ref(3)
 const insufficientBalanceDetails = ref<{
   balance: number
   price: number
@@ -110,28 +112,81 @@ const similarProductsLoadingSkeletonCount = computed(() => (
     : 3
 ))
 const officialProductsLoadingSkeletonCount = 7
-const productFaqLinks = computed(() => [
-  {
-    label: t('pages.product.faq.dealFlow'),
-    to: '/rules#marketplace-deals',
-  },
-  {
-    label: t('pages.product.faq.refunds'),
-    to: '/rules#marketplace-refunds',
-  },
-  {
-    label: t('pages.product.faq.delivery'),
-    to: '/rules#marketplace-deals',
-  },
-  {
-    label: t('pages.product.faq.support'),
-    to: '/feedback#feedback-text',
-  },
-])
-
 const shouldShowOfficialRemarketCarousel = computed(() =>
   isOfficialProductsLoading.value || officialProducts.value.length > 0
 )
+
+const productReviews = computed(() => product.value?.reviews ?? [])
+const visibleReviews = computed(() => productReviews.value.slice(0, visibleReviewsCount.value))
+const hasMoreReviews = computed(() => productReviews.value.length > visibleReviews.value.length)
+const reviewCountLabel = computed(() => productReviews.value.length ? ` ${productReviews.value.length}` : '')
+const similarProductsCountLabel = computed(() => (
+  similarProducts.value.length ? ` ${similarProducts.value.length}` : ''
+))
+
+const shouldCollapseDescription = computed(() => {
+  const description = product.value?.description ?? ''
+  return description.length > 260 || description.split('\n').length > 5
+})
+
+const displayedDescription = computed(() => {
+  const description = product.value?.description || t('pages.product.descriptionMissing')
+  if (isDescriptionExpanded.value || !shouldCollapseDescription.value) {
+    return description
+  }
+
+  return `${description.slice(0, 260).trim()}...`
+})
+
+const breadcrumbItems = computed(() => {
+  const items: Array<{ label: string, action?: () => void }> = [
+    { label: t('common.home'), action: () => router.push('/') },
+    { label: 'Каталог', action: () => router.push('/') },
+  ]
+
+  if (displayedCategory.value) {
+    items.push({
+      label: displayedCategory.value.name,
+      action: canNavigateToDisplayedCategory.value
+        ? () => goToCategoryPage(displayedCategory.value)
+        : undefined,
+    })
+  }
+
+  if (displayedSubcategory.value) {
+    items.push({
+      label: displayedSubcategory.value.name,
+      action: canNavigateToDisplayedSubcategory.value
+        ? () => goToCategoryPageWithSubcategory(displayedCategory.value, displayedSubcategory.value)
+        : undefined,
+    })
+  }
+
+  return items
+})
+
+const additionalInfoItems = computed(() => {
+  if (!product.value) return []
+
+  return [
+    {
+      label: t('common.category'),
+      value: displayedSubcategory.value?.name ?? displayedCategory.value?.name ?? t('common.notSpecified'),
+    },
+    {
+      label: t('pages.product.remainingQuantity'),
+      value: String(product.value.count),
+    },
+    {
+      label: t('common.published'),
+      value: formatFullDate(product.value.created_at),
+    },
+    {
+      label: t('common.autoDelivery'),
+      value: product.value.auto_delivery ? t('common.yes') : t('common.no'),
+    },
+  ]
+})
 
 const officialProductsCountText = computed(() => {
   const count = officialProducts.value.length
@@ -870,258 +925,429 @@ onUnmounted(() => {
 
 <template>
   <section v-if="product"
-    class="h-full w-full mx-auto max-w-[1280px] flex flex-col items-start gap-2 lg:pt-2 overflow-x-hidden pb-36 text-mainText lg:px-0 lg:pb-6 px-4">
-    <div class="pt-1">
+    class="product-page-shell h-full w-full mx-auto max-w-[1280px] flex flex-col items-start gap-6 overflow-x-hidden px-4 pb-36 pt-2 text-mainText lg:px-0 lg:pb-8">
+    <div class="flex w-full flex-wrap items-center justify-between gap-3">
+      <nav class="flex min-w-0 flex-wrap items-center gap-1 text-xs text-[var(--text-meta)]">
+        <template v-for="(breadcrumbItem, index) in breadcrumbItems" :key="`${breadcrumbItem.label}-${index}`">
+          <button
+            v-if="breadcrumbItem.action"
+            type="button"
+            class="max-w-[180px] truncate transition hover:text-[var(--text-title)]"
+            @click="breadcrumbItem.action"
+          >
+            {{ breadcrumbItem.label }}
+          </button>
+          <span v-else class="max-w-[180px] truncate text-[var(--text-body)]">{{ breadcrumbItem.label }}</span>
+          <span v-if="index < breadcrumbItems.length - 1" class="text-[var(--text-meta)]">›</span>
+        </template>
+      </nav>
       <BackButton />
     </div>
 
-    <!-- Image gallery -->
-    <div class="w-full grid grid-cols-1 gap-5 lg:gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
-      <div class="w-full min-w-0 space-y-4">
-        <div v-if="selectedImage" class="flex justify-center rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.4)] overflow-hidden">
-          <div class="relative w-full aspect-[4/3] sm:aspect-[5/4] lg:aspect-[4/3] max-h-[640px] flex items-center justify-center">
+    <div class="product-detail-layout grid w-full grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_390px]">
+      <main class="min-w-0 space-y-8">
+        <div class="space-y-3">
+          <div v-if="selectedImage" class="product-hero-media relative overflow-hidden rounded-lg bg-[rgb(var(--palette-dark-950)/0.92)]">
             <template v-if="product.images && product.images.length > 1">
               <button
                 type="button"
-                class="absolute inset-y-0 left-0 z-20 w-12 md:w-16 bg-[var(--transparent)]"
+                class="absolute inset-y-0 left-0 z-20 w-12 bg-[var(--transparent)] md:w-16"
                 :aria-label="t('common.previous')"
                 @click="prevImage"
               />
               <button
                 type="button"
-                class="absolute inset-y-0 right-0 z-20 w-12 md:w-16 bg-[var(--transparent)]"
+                class="absolute inset-y-0 right-0 z-20 w-12 bg-[var(--transparent)] md:w-16"
                 :aria-label="t('common.next')"
                 @click="nextImage"
               />
               <button
                 type="button"
-                class="pointer-events-none absolute left-3 top-1/2 z-30 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[rgb(var(--palette-white)/0.25)] bg-[rgb(var(--palette-black)/0.45)] text-[rgb(var(--text-title-rgb)/0.9)]"
-                :aria-label="t('common.previous')"
+                class="pointer-events-none absolute left-3 top-1/2 z-30 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[rgb(var(--palette-white)/0.18)] bg-[rgb(var(--palette-black)/0.5)] text-[rgb(var(--text-title-rgb)/0.9)]"
               >
                 <ChevronLeft class="h-5 w-5" />
               </button>
               <button
                 type="button"
-                class="pointer-events-none absolute right-3 top-1/2 z-30 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[rgb(var(--palette-white)/0.25)] bg-[rgb(var(--palette-black)/0.45)] text-[rgb(var(--text-title-rgb)/0.9)]"
-                :aria-label="t('common.next')"
+                class="pointer-events-none absolute right-3 top-1/2 z-30 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[rgb(var(--palette-white)/0.18)] bg-[rgb(var(--palette-black)/0.5)] text-[rgb(var(--text-title-rgb)/0.9)]"
               >
                 <ChevronRight class="h-5 w-5" />
               </button>
             </template>
 
             <img :src="`${API_HOST}${selectedImage.image_url}`" :alt="product.title"
-              class="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-55 select-none pointer-events-none"
+              class="absolute inset-0 h-full w-full scale-105 object-cover opacity-35 blur-2xl select-none pointer-events-none"
               loading="lazy" aria-hidden="true" />
-            <div
-              class="absolute inset-0 product-image-overlay"
-              aria-hidden="true" />
+            <div class="absolute inset-0 product-image-overlay" aria-hidden="true" />
             <img :src="`${API_HOST}${selectedImage.image_url}`" :alt="product.title"
-              class="relative z-10 w-full h-full object-contain p-2 sm:p-3 md:p-4 cursor-zoom-in transition-opacity hover:opacity-90"
+              class="relative z-10 h-full w-full cursor-zoom-in object-contain p-2 transition-opacity hover:opacity-95 sm:p-3"
               loading="lazy" @click="openImageModal = true" />
           </div>
+          <div
+            v-else
+            class="product-hero-media flex flex-col items-center justify-center gap-3 rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-800)/0.28)] text-[var(--text-muted)]"
+          >
+            <ImageOff class="h-10 w-10" />
+            <span class="text-sm">{{ $t('common.noImage') }}</span>
+          </div>
+
+          <div v-if="product.images && product.images.length > 1" class="thumbnails-scroll flex gap-2 overflow-x-auto pb-1">
+            <img v-for="image in product.images" :key="image.id" :src="`${API_HOST}${image.image_url}`"
+              class="h-16 w-16 flex-shrink-0 cursor-pointer rounded-lg border object-cover transition-all duration-200 hover:opacity-85 sm:h-20 sm:w-20"
+              :alt="`Product image: ${product.title}`" :class="{
+                'border-[rgb(var(--palette-blue-500))] opacity-100': image.image_url === selectedImage?.image_url,
+                'border-[rgb(var(--palette-dark-700))] opacity-70': image.image_url !== selectedImage?.image_url,
+              }" loading="lazy" @click="selectImage(image)">
+          </div>
         </div>
 
-        <div v-if="product.images && product.images.length > 1" class="thumbnails-scroll flex gap-3 overflow-x-auto pb-2">
-          <img v-for="image in product.images" :key="image.id" :src="`${API_HOST}${image.image_url}`"
-            class="h-20 w-20 flex-shrink-0 cursor-pointer border-2 rounded-lg object-cover transition-all duration-200 hover:opacity-80"
-            :alt="`Product image: ${product.title}`" :class="{
-              'border-[rgb(var(--palette-blue-500))]': image.image_url === selectedImage?.image_url,
-              'border-[rgb(var(--palette-dark-700))]': image.image_url !== selectedImage?.image_url,
-            }" loading="lazy" @click="selectImage(image)">
-        </div>
+        <section class="space-y-3">
+          <h2 class="text-xl font-bold text-[var(--text-title)]">{{ $t('pages.product.description') }}</h2>
+          <p class="product-description-text whitespace-pre-line break-words text-sm leading-relaxed text-[var(--text-body)] [overflow-wrap:anywhere] lg:text-base">
+            {{ displayedDescription }}
+          </p>
+          <button
+            v-if="shouldCollapseDescription"
+            type="button"
+            class="inline-flex h-9 items-center rounded-lg bg-[rgb(var(--palette-dark-700)/0.55)] px-4 text-sm font-semibold text-[var(--text-title)] transition hover:bg-[rgb(var(--palette-dark-600)/0.7)]"
+            @click="isDescriptionExpanded = !isDescriptionExpanded"
+          >
+            {{ isDescriptionExpanded ? 'Скрыть' : $t('common.loadMore') }}
+          </button>
+        </section>
 
-        <div v-else-if="!selectedImage && product.images?.length" class="py-4 text-center text-[var(--text-muted)]">
-          {{ $t('pages.product.noImages') }}
-        </div>
-
-      </div>
-
-      <!-- Product details -->
-      <div class="w-full min-w-0 space-y-5 pt-4 lg:pt-0">
-        <!-- Title and price -->
-        <div class="flex justify-between">
-          <div class="space-y-4">
-            <h1 class="text-2xl lg:text-3xl font-bold text-[var(--text-title)] leading-tight break-words">
-              {{ product.title }}
-            </h1>
-            <div class="flex flex-wrap items-center gap-3">
-              <div class="inline-flex flex-col">
-                <span class="product-price-label text-[11px] font-semibold uppercase tracking-[0.12em]">
-                  {{ $t('common.price') }}
-                </span>
-                <span class="product-price-value text-2xl font-bold lg:text-3xl">
-                  {{ formatCurrencyAmount(product.price) }}
-                </span>
+        <section class="space-y-3">
+          <h2 class="text-xl font-bold text-[var(--text-title)]">
+            {{ $t('pages.product.reviews') }}<span class="text-[var(--text-muted)]">{{ reviewCountLabel }}</span>
+          </h2>
+          <div v-if="visibleReviews.length" class="reviews-strip -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+            <article
+              v-for="review in visibleReviews"
+              :key="review.id"
+              class="review-card min-w-[220px] rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900)/0.82)] p-3 sm:min-w-[250px]"
+            >
+              <div class="flex items-start gap-2.5">
+                <UserAvatar
+                  :avatar-url="review.reviewer?.avatar_url ?? ''"
+                  :alt="review.reviewer?.username ?? 'reviewer'"
+                  class="h-9 w-9 shrink-0 rounded-full border border-[rgb(var(--palette-dark-700))] object-cover"
+                />
+                <div class="min-w-0 flex-1">
+                  <div class="flex min-w-0 items-center gap-1.5">
+                    <StyledUsername
+                      v-if="review.reviewer"
+                      :username="review.reviewer.username"
+                      :style-id="review.reviewer.nickname_style_id"
+                      class="truncate text-sm font-semibold"
+                    />
+                    <span v-else class="truncate text-sm font-semibold text-[var(--text-title)]">{{ $t('common.user') }}</span>
+                    <span class="inline-flex shrink-0 items-center gap-0.5 text-xs font-semibold text-[var(--text-title)]">
+                      <Star class="h-3 w-3 fill-current text-[var(--text-warning-strong)]" />
+                      {{ review.rating }}
+                    </span>
+                  </div>
+                  <p class="mt-0.5 text-[10px] text-[var(--text-meta)]">{{ formatFullDate(review.created_at) }}</p>
+                </div>
               </div>
-              <AutoDeliveryTag v-if="product.auto_delivery" />
-              <ProductStatusTag v-if="product.is_owner || user?.role === 'admin'" :product-status="product.status" />
+              <p class="mt-2 line-clamp-2 text-xs leading-5 text-[var(--text-body)]">{{ review.body }}</p>
+            </article>
+          </div>
+          <div v-else class="rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900)/0.55)] px-4 py-5 text-sm text-[var(--text-muted)]">
+            {{ $t('pages.profile.noReviews') }}
+          </div>
+          <button
+            v-if="hasMoreReviews"
+            type="button"
+            class="inline-flex h-9 items-center rounded-lg bg-[rgb(var(--palette-dark-700)/0.55)] px-4 text-sm font-semibold text-[var(--text-title)] transition hover:bg-[rgb(var(--palette-dark-600)/0.7)]"
+            @click="visibleReviewsCount += 6"
+          >
+            {{ $t('common.loadMore') }}
+          </button>
+        </section>
+
+        <div
+          v-if="shouldShowOfficialRemarketCarousel"
+          class="official-showcase mt-6 w-full rounded-3xl border border-[rgb(var(--palette-white)/0.12)] p-4 sm:p-5"
+        >
+          <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div class="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--palette-blue-300)/0.7)] bg-[rgb(var(--palette-blue-500)/0.32)] px-3 py-1.5 text-sm font-semibold tracking-wide text-[var(--text-accent-strong)] shadow-[var(--official-showcase-badge-shadow)]">
+              <BadgeCheck class="h-4 w-4" />
+              <span>Официально от remarket</span>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="official-showcase__ghost-btn !hidden sm:!inline-flex"
+                @click="openOfficialStorePage"
+              >
+                <span>{{ officialProductsCountText }}</span>
+                <ChevronRight class="h-4 w-4" />
+              </button>
+
+              <div class="hidden items-center gap-1 rounded-full border border-[var(--official-showcase-control-border)] bg-[var(--official-showcase-control-bg)] p-1 sm:inline-flex">
+                <button
+                  type="button"
+                  class="official-showcase__arrow-btn"
+                  :disabled="isOfficialCarouselAtStart || officialProducts.length <= 1"
+                  aria-label="Прокрутить влево"
+                  @click="scrollOfficialCarousel('prev')"
+                >
+                  <ChevronLeft class="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  class="official-showcase__arrow-btn"
+                  :disabled="isOfficialCarouselAtEnd || officialProducts.length <= 1"
+                  aria-label="Прокрутить вправо"
+                  @click="scrollOfficialCarousel('next')"
+                >
+                  <ChevronRight class="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Meta info -->
-        <div class="space-y-3 py-4 border-t border-[rgb(var(--palette-dark-700))]">
-          <div class="flex items-center gap-3">
-            <span class="text-[var(--text-muted)] font-medium min-w-20">{{ $t('common.published') }}:</span>
-            <span class="text-[var(--text-title)]">{{ formatFullDate(product.created_at) }}</span>
+          <div class="mb-3 text-sm font-medium text-[rgb(var(--text-accent-strong-rgb)/0.85)] sm:hidden">
+            {{ officialProductsCountText }}
           </div>
-          <div class="flex items-center gap-3">
-            <span class="text-[var(--text-muted)] font-medium min-w-20">{{ $t('common.category') }}:</span>
+
+          <div v-if="isOfficialProductsLoading" class="official-carousel flex gap-4 overflow-x-auto pb-2 no-scrollbar">
             <div
-              v-if="displayedCategory"
-              class="min-w-0 flex items-center gap-1 text-[var(--text-title)]"
+              v-for="n in officialProductsLoadingSkeletonCount"
+              :key="`official-skeleton-${n}`"
+              class="h-[234px] w-[188px] shrink-0 animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-700)/0.7)] sm:h-[276px] sm:w-[232px]"
+            ></div>
+          </div>
+
+          <div v-else-if="officialProducts.length > 0" class="official-carousel-wrap relative">
+            <div
+              ref="officialCarouselRef"
+              class="official-carousel flex gap-4 overflow-x-auto pb-2 pr-1 no-scrollbar snap-x snap-mandatory"
+              @scroll.passive="handleOfficialCarouselScroll"
             >
               <button
-                v-if="canNavigateToDisplayedCategory"
+                v-for="officialProduct in officialProducts"
+                :key="`official-${officialProduct.id}`"
                 type="button"
-                class="truncate text-left text-[var(--text-title)] transition hover:text-[var(--text-link)] hover:underline"
-                @click="goToCategoryPage(displayedCategory)"
+                data-official-card
+                class="official-card group h-[234px] w-[188px] shrink-0 snap-start overflow-hidden rounded-2xl border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-dark-900)/0.9)] text-left transition duration-200 hover:-translate-y-0.5 hover:border-[rgb(var(--palette-blue-300)/0.4)] hover:bg-[rgb(var(--palette-dark-900))] sm:h-[276px] sm:w-[232px]"
+                @click="goToProductByModel(officialProduct)"
               >
-                {{ displayedCategory.name }}
+                <div class="official-card__media relative h-[140px] w-full overflow-hidden sm:h-[170px]">
+                  <img
+                    v-if="resolveProductImageUrl(officialProduct)"
+                    :src="resolveProductImageUrl(officialProduct)"
+                    :alt="officialProduct.title"
+                    class="h-full w-full object-cover object-center transition duration-300 group-hover:scale-[1.03]"
+                  />
+                  <div v-else class="flex h-full w-full items-center justify-center text-xs text-[var(--text-body)]">
+                    {{ t('common.noImage') }}
+                  </div>
+                  <div class="official-card__overlay absolute inset-0"></div>
+                </div>
+                <div class="space-y-2 px-3.5 py-3">
+                  <p class="official-card__price text-[1.3rem] font-bold leading-none tracking-tight text-[var(--text-accent-strong)] sm:text-[1.55rem]">
+                    {{ formatOfficialPrice(officialProduct.price) }}
+                  </p>
+                  <p class="official-card__title min-h-[2.5rem] text-[0.93rem] leading-5 text-[rgb(var(--text-title-rgb)/0.95)] sm:text-[1.03rem] sm:leading-6">
+                    {{ officialProduct.title }}
+                  </p>
+                </div>
               </button>
-              <span v-else class="truncate text-left text-[var(--text-title)]">
-                {{ displayedCategory.name }}
-              </span>
-              <template v-if="displayedSubcategory">
-                <span class="text-[var(--text-meta)]">/</span>
+            </div>
+
+            <div class="official-carousel__edge official-carousel__edge--left" :class="isOfficialCarouselAtStart ? 'opacity-0' : 'opacity-100'"></div>
+            <div class="official-carousel__edge official-carousel__edge--right" :class="isOfficialCarouselAtEnd ? 'opacity-0' : 'opacity-100'"></div>
+          </div>
+
+          <div class="mt-3 sm:hidden">
+            <button type="button" class="official-showcase__ghost-btn w-full justify-center" @click="openOfficialStorePage">
+              <span>Смотреть все</span>
+              <ChevronRight class="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        <section class="mt-6 w-full space-y-4">
+          <h2 class="text-xl font-bold text-[var(--text-title)]">
+            {{ $t('pages.product.similarProducts') }}<span class="text-[var(--text-muted)]">{{ similarProductsCountLabel }}</span>
+          </h2>
+          <div v-if="isSimilarProductsLoading || similarProducts.length" class="space-y-4">
+            <div class="flex justify-end">
+              <div
+                class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.4)] p-0.5"
+                role="group"
+                :aria-label="t('pages.index.viewSwitcherLabel')"
+              >
                 <button
-                  v-if="canNavigateToDisplayedSubcategory"
                   type="button"
-                  class="truncate text-left text-[var(--text-title)] transition hover:text-[var(--text-link)] hover:underline"
-                  @click="goToCategoryPageWithSubcategory(displayedCategory, displayedSubcategory)"
+                  class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
+                  :class="productCardViewMode === 'grid'
+                    ? 'bg-[rgb(var(--palette-blue-600))] text-[var(--text-title)]'
+                    : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[var(--text-title)]'"
+                  :title="t('pages.index.viewGrid')"
+                  @click="setProductCardViewMode('grid')"
                 >
-                  {{ displayedSubcategory.name }}
+                  <LayoutGrid class="h-3.5 w-3.5" />
+                  <span class="hidden sm:inline">{{ t('pages.index.viewGrid') }}</span>
                 </button>
-                <span v-else class="truncate text-left text-[var(--text-title)]">
-                  {{ displayedSubcategory.name }}
-                </span>
-              </template>
+
+                <button
+                  type="button"
+                  class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
+                  :class="productCardViewMode === 'list'
+                    ? 'bg-[rgb(var(--palette-blue-600))] text-[var(--text-title)]'
+                    : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[var(--text-title)]'"
+                  :title="t('pages.index.viewList')"
+                  @click="setProductCardViewMode('list')"
+                >
+                  <Rows3 class="h-3.5 w-3.5" />
+                  <span class="hidden sm:inline">{{ t('pages.index.viewList') }}</span>
+                </button>
+              </div>
             </div>
-            <span v-else class="text-[var(--text-title)]">{{ $t('common.notSpecified') }}</span>
+
+            <div
+              v-if="isSimilarProductsLoading"
+              class="w-full"
+              :class="productCardViewMode === 'grid'
+                ? 'similar-products-grid grid gap-2'
+                : 'flex flex-col gap-2'"
+            >
+              <div
+                v-for="n in similarProductsLoadingSkeletonCount"
+                :key="`similar-skeleton-${n}`"
+                class="animate-pulse rounded-lg bg-[rgb(var(--palette-dark-600))]"
+                :class="productCardViewMode === 'grid' ? 'h-64' : 'h-[118px] sm:h-[134px]'"
+              />
+            </div>
+
+            <div
+              v-else-if="similarProducts.length && productCardViewMode === 'grid'"
+              class="similar-products-grid grid w-full gap-2"
+            >
+              <MainProductCard
+                v-for="similarProduct in similarProducts"
+                :key="similarProduct.id"
+                :product="similarProduct"
+                @click="goToProductPage"
+              />
+            </div>
+            <div v-else-if="similarProducts.length" class="w-full flex flex-col gap-2">
+              <HomeProductListCard
+                v-for="similarProduct in similarProducts"
+                :key="similarProduct.id"
+                :product="similarProduct"
+                @click="goToProductPage"
+              />
+            </div>
           </div>
-          <div class="flex items-center gap-3">
-            <span class="text-[var(--text-muted)] font-medium min-w-20">{{ $t('pages.product.remainingQuantity') }}:</span>
-            <span class="text-[var(--text-title)]">{{ product.count }}</span>
+          <div v-else class="rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900)/0.55)] px-4 py-5 text-sm text-[var(--text-muted)]">
+            {{ $t('pages.product.noSimilarProducts') }}
           </div>
-          <div v-if="product.is_owner" class="flex items-center gap-3">
-            <span class="text-[var(--text-muted)] font-medium min-w-20">{{ $t('pages.product.favoritesCount') }}:</span>
-            <span class="inline-flex items-center gap-1.5 text-[var(--text-title)]">
-              <Heart class="h-4 w-4 text-[var(--text-muted)]" />
-              <span>{{ product.likes ?? 0 }}</span>
-            </span>
-          </div>
-        </div>
+        </section>
+      </main>
 
-        <div
-          v-if="product.is_raika_verified"
-          class="rounded-lg border border-[rgb(var(--palette-emerald-700)/0.4)] bg-[rgb(var(--palette-emerald-900)/0.2)] p-3 text-xs text-[var(--text-success)]"
-        >
-          <p class="flex flex-wrap items-center gap-1.5">
-            <img
-              :src="RAIKA_LOGO_URL"
-              alt="Raika logo"
-              class="h-4 w-4 rounded-sm object-contain shrink-0"
-              loading="lazy"
-            />
-            <span>
-              {{ $t('pages.product.raikaVerifiedPrefix') }}
-              <a
-                :href="RAIKA_BOT_URL"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="underline decoration-[rgb(var(--palette-emerald-300)/0.6)] underline-offset-2 hover:text-[var(--text-success)] transition-colors"
-              >
-                {{ $t('pages.product.raikaName') }}
-              </a>
-            </span>
-          </p>
-        </div>
+      <aside class="product-buy-sidebar min-w-0 space-y-4 lg:sticky lg:top-20 lg:self-start">
+        <section class="rounded-lg bg-[rgb(var(--palette-dark-900)/0.92)] p-4 shadow-[0_18px_50px_rgb(0_0_0/0.18)]">
+          <div class="space-y-3">
+            <div class="flex flex-wrap items-start gap-2">
+              <h1 class="min-w-0 flex-1 text-2xl font-extrabold uppercase leading-none text-[var(--text-title)] sm:text-3xl lg:text-[1.6rem]">
+                {{ product.title }}
+              </h1>
+              <ProductStatusTag v-if="product.is_owner || user?.role === 'admin'" :product-status="product.status" />
+            </div>
 
-        <div
-          v-if="canSeeModerationRejectReason"
-          class="rounded-lg border border-[rgb(var(--palette-red-800)/0.4)] bg-[rgb(var(--palette-red-950)/0.2)] p-3 text-sm text-[var(--text-danger-soft)]"
-        >
-          <p class="text-[var(--text-danger)] font-semibold">
-            {{ $t('pages.product.moderationRejectedTitle') }}
-          </p>
-          <p class="mt-2 text-[rgb(var(--text-danger-soft-rgb)/0.9)]">
-            <span class="text-[var(--text-danger-soft)]">{{ $t('pages.product.moderationRejectReasonLabel') }}:</span>
-            {{ moderationRejectReasonLabel ?? $t('common.notSpecified') }}
-          </p>
-          <p
-            v-if="product.moderation_reject_reason_text"
-            class="mt-2 whitespace-pre-line text-[rgb(var(--text-danger-soft-rgb)/0.8)]"
-          >
-            {{ product.moderation_reject_reason_text }}
-          </p>
-        </div>
-
-        <TrustComponent :product="product" />
-
-        <!-- Action buttons -->
-        <div class="pt-4 border-t border-[rgb(var(--palette-dark-700))]">
-          <div v-if="!product.is_sold" class="flex flex-col gap-3 sm:flex-row justify-end">
-            <div class="w-full flex items-center justify-end gap-3" v-if="product.is_owner">
+            <div class="flex flex-wrap items-baseline gap-2">
+              <span class="text-3xl font-extrabold leading-none text-[var(--text-title)]">{{ formatCurrencyAmount(product.price) }}</span>
               <button
+                v-if="!product.is_owner && !product.is_sold && product.status === 'active'"
                 type="button"
-                class="market-primary-surface market-primary-hover inline-flex h-12 min-w-[160px] items-center justify-center rounded-lg px-5 text-sm font-semibold text-[var(--text-title)] transition"
-                @click.stop="editProduct">
-                {{ $t('common.edit') }}
-              </button>
-              <button
-                type="button"
-                class="inline-flex h-12 w-12 items-center justify-center rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.22)] text-[var(--text-body)] transition hover:border-[rgb(var(--palette-red-700)/0.45)] hover:bg-[rgb(var(--palette-red-950)/0.16)] hover:text-[var(--text-danger-soft)]"
-                :aria-label="$t('common.delete')"
-                @click="openDeleteConfirm"
+                class="text-xs font-semibold text-[var(--text-muted)] underline decoration-[rgb(var(--palette-white)/0.28)] underline-offset-2 transition hover:text-[var(--text-title)]"
+                @click="user === null ? goToSignInFromProduct() : openOfferConfirm()"
               >
-                <Trash2 class="h-5 w-5" />
+                {{ $t('pages.product.offerPrice') }}
               </button>
             </div>
 
-            <div v-else class="w-full">
-              <span v-if="user === null" class="mb-2 block text-sm text-[var(--text-muted)] sm:text-right">
-                {{ $t('pages.product.authRequired') }}
-              </span>
+            <div class="flex items-center gap-3 rounded-lg bg-[rgb(var(--palette-dark-800)/0.58)] p-2">
+              <UserAvatar
+                :avatar-url="product.seller.avatar_url"
+                :alt="product.seller.username"
+                class="h-11 w-11 shrink-0 rounded-full border border-[rgb(var(--palette-dark-700))] object-cover"
+              />
+              <div class="min-w-0 flex-1">
+                <div class="flex min-w-0 items-center gap-1.5">
+                  <StyledUsername
+                    :username="product.seller.username"
+                    :style-id="product.seller.nickname_style_id"
+                    class="truncate text-sm font-semibold"
+                  />
+                  <span
+                    class="h-2 w-2 shrink-0 rounded-full"
+                    :class="product.seller.is_active ? 'bg-[rgb(var(--palette-green-500))]' : 'bg-[rgb(var(--palette-gray-500))]'"
+                  />
+                </div>
+                <p class="mt-0.5 text-xs text-[var(--text-muted)]">
+                  {{ product.seller.rating > 0 ? `${product.seller.rating.toFixed(1)} ★` : '—' }}
+                  <span class="mx-1 text-[var(--text-meta)]">·</span>
+                  {{ product.seller_trust?.completed_deals_count ?? 0 }} продаж
+                </p>
+              </div>
+            </div>
 
-              <div v-if="product.status === 'active'" class="flex w-full items-center justify-end gap-3">
-                <div class="flex min-w-0 flex-1 flex-nowrap items-stretch gap-2">
-                  <button @click="user === null ? goToSignInFromProduct() : openOfferConfirm()" class="inline-flex h-12 flex-1 items-center justify-center whitespace-nowrap rounded-lg px-4 text-sm font-semibold leading-none transition
-          border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body-strong)] hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)]
-          disabled:bg-[rgb(var(--palette-white)/0.03)]
-          disabled:text-[rgb(var(--text-title-rgb)/0.45)]
-          disabled:cursor-not-allowed
-          disabled:hover:bg-[rgb(var(--palette-white)/0.03)]">
-                    <span class="inline-flex items-center justify-center gap-2 leading-none">
-                      <Percent class="h-4 w-4" />
-                      {{ $t('pages.product.offerPrice') }}
-                    </span>
+            <span v-if="user === null && !product.is_owner" class="block text-sm text-[var(--text-muted)]">
+              {{ $t('pages.product.authRequired') }}
+            </span>
+
+            <div v-if="!product.is_sold" class="space-y-2">
+              <div v-if="product.is_owner" class="flex items-center gap-2">
+                <button
+                  type="button"
+                  class="market-primary-surface market-primary-hover inline-flex h-11 flex-1 items-center justify-center rounded-lg px-5 text-sm font-semibold text-[var(--text-title)] transition"
+                  @click.stop="editProduct">
+                  {{ $t('common.edit') }}
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.35)] text-[var(--text-body)] transition hover:border-[rgb(var(--palette-red-700)/0.45)] hover:bg-[rgb(var(--palette-red-950)/0.16)] hover:text-[var(--text-danger-soft)]"
+                  :aria-label="$t('common.delete')"
+                  @click="openDeleteConfirm"
+                >
+                  <Trash2 class="h-5 w-5" />
+                </button>
+              </div>
+
+              <template v-else-if="product.status === 'active'">
+                <div class="flex items-stretch gap-2">
+                  <button
+                    type="button"
+                    class="market-primary-surface market-primary-hover inline-flex h-11 min-w-0 flex-1 items-center justify-center rounded-lg px-4 text-sm font-semibold text-[var(--text-title)] transition"
+                    @click="user === null ? goToSignInFromProduct() : openBuyConfirm()"
+                  >
+                    <ShoppingBag class="mr-2 h-4 w-4" />
+                    {{ $t('pages.product.buy') }}
                   </button>
-                  <button @click="user === null ? goToSignInFromProduct() : openBuyConfirm()" class="market-primary-surface market-primary-hover inline-flex h-12 flex-1 items-center justify-center whitespace-nowrap rounded-lg px-4 text-sm font-semibold leading-none text-[var(--text-title)] transition
-          disabled:bg-[rgb(var(--palette-blue-600)/0.4)]
-          disabled:text-[rgb(var(--text-title-rgb)/0.6)]
-          disabled:cursor-not-allowed
-          disabled:hover:bg-[rgb(var(--palette-blue-600)/0.4)]">
-                    <span class="inline-flex items-center justify-center gap-2 leading-none">
-                      <ShoppingBag class="h-4 w-4" />
-                      {{ $t('pages.product.buy') }}
-                    </span>
+                  <button
+                    type="button"
+                    class="inline-flex h-11 w-12 shrink-0 items-center justify-center rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-800)/0.72)] transition hover:border-[rgb(var(--palette-red-700)/0.45)]"
+                    :class="product.is_liked ? 'text-[var(--text-danger)]' : 'text-[var(--text-body)]'"
+                    aria-label="Избранное"
+                    @click="user !== null && (product.is_liked ? removeProductLike() : likeProduct())"
+                  >
+                    <Heart class="h-5 w-5" :style="product.is_liked ? { fill: 'currentColor' } : undefined" />
                   </button>
                 </div>
-
-                <div class="flex shrink-0 items-center gap-2">
-                  <Heart
-                    v-if="product.is_liked"
-                    @click="user !== null && removeProductLike()"
-                    class="h-8 w-8"
-                    :class="user === null ? 'cursor-default text-[var(--text-meta)]' : 'cursor-pointer text-[var(--text-danger)]'"
-                    :style="user !== null ? { fill: 'currentColor' } : undefined"
-                  />
-                  <Heart
-                    v-else
-                    @click="user !== null && likeProduct()"
-                    class="h-8 w-8"
-                    :class="user === null ? 'cursor-default text-[var(--text-meta)]' : 'cursor-pointer text-[var(--text-title)]'"
-                  />
+                <div class="flex gap-2">
+                  <button
+                    type="button"
+                    class="inline-flex h-10 flex-1 items-center justify-center rounded-lg border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] px-3 text-xs font-semibold text-[var(--text-body-strong)] transition hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)]"
+                    @click="user === null ? goToSignInFromProduct() : openOfferConfirm()"
+                  >
+                    <Percent class="mr-2 h-4 w-4" />
+                    {{ $t('pages.product.offerPrice') }}
+                  </button>
                   <button
                     v-if="!product.is_owner"
                     type="button"
@@ -1133,21 +1359,32 @@ onUnmounted(() => {
                     <TriangleAlert class="h-4 w-4" aria-hidden="true" />
                   </button>
                 </div>
-              </div>
+              </template>
             </div>
 
-            <div v-if="buyError" class="mt-2 text-sm text-[var(--text-danger)]">
+            <div v-else class="rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.35)] py-4 text-center font-semibold text-[var(--text-muted)]">
+              {{ $t('pages.product.sold') }}
+            </div>
+
+            <div v-if="buyError" class="text-sm text-[var(--text-danger)]">
               {{ buyError }}
             </div>
           </div>
+        </section>
 
-          <div v-else
-            class="w-full py-4 text-center bg-[rgb(var(--palette-dark-600)/0.4)] border border-[rgb(var(--palette-dark-700))] text-[var(--text-muted)] rounded-2xl font-semibold">
-            {{ $t('pages.product.sold') }}
+        <section class="rounded-lg bg-[rgb(var(--palette-dark-900)/0.82)] p-4">
+          <h2 class="mb-3 text-base font-semibold text-[var(--text-title)]">Дополнительная информация</h2>
+          <div class="grid grid-cols-2 gap-2">
+            <div
+              v-for="infoItem in additionalInfoItems"
+              :key="infoItem.label"
+              class="rounded-lg bg-[rgb(var(--palette-dark-800)/0.62)] px-3 py-3"
+            >
+              <p class="truncate text-[11px] text-[var(--text-meta)]">{{ infoItem.label }}</p>
+              <p class="mt-1 truncate text-sm font-semibold text-[var(--text-title)]">{{ infoItem.value }}</p>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
+        </section>
 
     <div
       class="w-full gap-5 lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-start lg:gap-8"
@@ -1159,10 +1396,9 @@ onUnmounted(() => {
         </p>
       </div>
 
-      <aside class="order-1 space-y-4 lg:order-2">
         <div
           v-if="shouldShowFortniteAccountDetails"
-          class="space-y-4 rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.2)] p-4"
+          class="space-y-4 rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900)/0.82)] p-4"
         >
           <h2 class="text-lg font-semibold text-[var(--text-title)]">
             {{ $t('pages.product.fortniteAccountDetails') }}
@@ -1172,239 +1408,7 @@ onUnmounted(() => {
             variant="full"
           />
         </div>
-
-        <div
-          class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.18)] p-4"
-        >
-          <div class="mb-3 flex items-center gap-2">
-            <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[rgb(var(--palette-blue-400)/0.22)] bg-[rgb(var(--palette-blue-600)/0.12)] text-[var(--text-link)]">
-              <HelpCircle class="h-4 w-4" />
-            </span>
-            <h2 class="text-base font-semibold text-[var(--text-title)]">
-              {{ $t('pages.product.faq.title') }}
-            </h2>
-          </div>
-
-          <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-            <router-link
-              v-for="faqLink in productFaqLinks"
-              :key="faqLink.label"
-              :to="faqLink.to"
-              class="group inline-flex min-h-11 items-center justify-between gap-3 rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900)/0.25)] px-3 py-2 text-sm font-medium text-[var(--text-body)] transition hover:border-[rgb(var(--palette-blue-400)/0.35)] hover:bg-[rgb(var(--palette-blue-600)/0.08)] hover:text-[var(--text-title)]"
-            >
-              <span class="min-w-0 truncate">{{ faqLink.label }}</span>
-              <ChevronRight class="h-4 w-4 shrink-0 text-[var(--text-meta)] transition group-hover:text-[var(--text-link)]" />
-            </router-link>
-          </div>
-        </div>
       </aside>
-    </div>
-
-    <div v-if="product.reviews" class="w-full flex flex-col gap-4">
-      <p class="text-3xl font-bold">{{ $t('pages.product.reviews') }}</p>
-      <div class="flex flex-col gap-2">
-        <div v-for="review in product.reviews" :key="review.id"
-          class="border border-[rgb(var(--palette-dark-700))] rounded-xl bg-[rgb(var(--palette-dark-600)/0.4)] p-4 space-y-3">
-          <div class="flex justify-between items-center">
-            <span class="font-medium">{{ review.rating }} ⭐</span>
-            <span class="text-xs text-[var(--text-muted)]">{{ formatFullDate(review.created_at) }}</span>
-          </div>
-          <p class="text-sm">{{ review.body }}</p>
-        </div>
-      </div>
-    </div>
-
-    <div
-      v-if="shouldShowOfficialRemarketCarousel"
-      class="official-showcase mt-6 w-full rounded-3xl border border-[rgb(var(--palette-white)/0.12)] p-4 sm:p-5"
-    >
-      <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div class="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--palette-blue-300)/0.7)] bg-[rgb(var(--palette-blue-500)/0.32)] px-3 py-1.5 text-sm font-semibold tracking-wide text-[var(--text-accent-strong)] shadow-[var(--official-showcase-badge-shadow)]">
-          <BadgeCheck class="h-4 w-4" />
-          <span>Официально от remarket</span>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <button
-            type="button"
-            class="official-showcase__ghost-btn !hidden sm:!inline-flex"
-            @click="openOfficialStorePage"
-          >
-            <span>{{ officialProductsCountText }}</span>
-            <ChevronRight class="h-4 w-4" />
-          </button>
-
-          <div class="hidden items-center gap-1 rounded-full border border-[var(--official-showcase-control-border)] bg-[var(--official-showcase-control-bg)] p-1 sm:inline-flex">
-            <button
-              type="button"
-              class="official-showcase__arrow-btn"
-              :disabled="isOfficialCarouselAtStart || officialProducts.length <= 1"
-              aria-label="Прокрутить влево"
-              @click="scrollOfficialCarousel('prev')"
-            >
-              <ChevronLeft class="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              class="official-showcase__arrow-btn"
-              :disabled="isOfficialCarouselAtEnd || officialProducts.length <= 1"
-              aria-label="Прокрутить вправо"
-              @click="scrollOfficialCarousel('next')"
-            >
-              <ChevronRight class="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="mb-3 text-sm font-medium text-[rgb(var(--text-accent-strong-rgb)/0.85)] sm:hidden">
-        {{ officialProductsCountText }}
-      </div>
-
-      <div v-if="isOfficialProductsLoading" class="official-carousel flex gap-4 overflow-x-auto pb-2 no-scrollbar">
-        <div
-          v-for="n in officialProductsLoadingSkeletonCount"
-          :key="`official-skeleton-${n}`"
-          class="h-[234px] w-[188px] shrink-0 animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-700)/0.7)] sm:h-[276px] sm:w-[232px]"
-        ></div>
-      </div>
-
-      <div
-        v-else-if="officialProducts.length > 0"
-        class="official-carousel-wrap relative"
-      >
-        <div
-          ref="officialCarouselRef"
-          class="official-carousel flex gap-4 overflow-x-auto pb-2 pr-1 no-scrollbar snap-x snap-mandatory"
-          @scroll.passive="handleOfficialCarouselScroll"
-        >
-          <button
-            v-for="officialProduct in officialProducts"
-            :key="`official-${officialProduct.id}`"
-            type="button"
-            data-official-card
-            class="official-card group h-[234px] w-[188px] shrink-0 snap-start overflow-hidden rounded-2xl border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-dark-900)/0.9)] text-left transition duration-200 hover:-translate-y-0.5 hover:border-[rgb(var(--palette-blue-300)/0.4)] hover:bg-[rgb(var(--palette-dark-900))] sm:h-[276px] sm:w-[232px]"
-            @click="goToProductByModel(officialProduct)"
-          >
-            <div class="official-card__media relative h-[140px] w-full overflow-hidden sm:h-[170px]">
-              <img
-                v-if="resolveProductImageUrl(officialProduct)"
-                :src="resolveProductImageUrl(officialProduct)"
-                :alt="officialProduct.title"
-                class="h-full w-full object-cover object-center transition duration-300 group-hover:scale-[1.03]"
-              />
-              <div v-else class="flex h-full w-full items-center justify-center text-xs text-[var(--text-body)]">
-                {{ t('common.noImage') }}
-              </div>
-              <div class="official-card__overlay absolute inset-0"></div>
-            </div>
-            <div class="space-y-2 px-3.5 py-3">
-              <p class="official-card__price text-[1.3rem] font-bold leading-none tracking-tight text-[var(--text-accent-strong)] sm:text-[1.55rem]">
-                {{ formatOfficialPrice(officialProduct.price) }}
-              </p>
-              <p class="official-card__title min-h-[2.5rem] text-[0.93rem] leading-5 text-[rgb(var(--text-title-rgb)/0.95)] sm:text-[1.03rem] sm:leading-6">
-                {{ officialProduct.title }}
-              </p>
-            </div>
-          </button>
-        </div>
-
-        <div
-          class="official-carousel__edge official-carousel__edge--left"
-          :class="isOfficialCarouselAtStart ? 'opacity-0' : 'opacity-100'"
-        ></div>
-        <div
-          class="official-carousel__edge official-carousel__edge--right"
-          :class="isOfficialCarouselAtEnd ? 'opacity-0' : 'opacity-100'"
-        ></div>
-      </div>
-
-      <div class="mt-3 sm:hidden">
-        <button
-          type="button"
-          class="official-showcase__ghost-btn w-full justify-center"
-          @click="openOfficialStorePage"
-        >
-          <span>Смотреть все</span>
-          <ChevronRight class="h-4 w-4" />
-        </button>
-      </div>
-    </div>
-
-    <div
-      v-if="isSimilarProductsLoading || similarProducts.length"
-      class="mt-6 w-full flex flex-col gap-4"
-    >
-      <p class="text-xl sm:text-2xl font-bold">{{ $t('pages.product.similarProducts') }}</p>
-      <div class="flex justify-end">
-        <div
-          class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.4)] p-0.5"
-          role="group"
-          :aria-label="t('pages.index.viewSwitcherLabel')"
-        >
-          <button
-            type="button"
-            class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
-            :class="productCardViewMode === 'grid'
-              ? 'bg-[rgb(var(--palette-blue-600))] text-[var(--text-title)]'
-              : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[var(--text-title)]'"
-            :title="t('pages.index.viewGrid')"
-            @click="setProductCardViewMode('grid')"
-          >
-            <LayoutGrid class="h-3.5 w-3.5" />
-            <span class="hidden sm:inline">{{ t('pages.index.viewGrid') }}</span>
-          </button>
-
-          <button
-            type="button"
-            class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
-            :class="productCardViewMode === 'list'
-              ? 'bg-[rgb(var(--palette-blue-600))] text-[var(--text-title)]'
-              : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[var(--text-title)]'"
-            :title="t('pages.index.viewList')"
-            @click="setProductCardViewMode('list')"
-          >
-            <Rows3 class="h-3.5 w-3.5" />
-            <span class="hidden sm:inline">{{ t('pages.index.viewList') }}</span>
-          </button>
-        </div>
-      </div>
-
-      <div
-        v-if="isSimilarProductsLoading"
-        class="w-full"
-        :class="productCardViewMode === 'grid'
-          ? 'similar-products-grid grid gap-1 md:gap-2'
-          : 'flex flex-col gap-2'"
-      >
-        <div
-          v-for="n in similarProductsLoadingSkeletonCount"
-          :key="`similar-skeleton-${n}`"
-          class="bg-[rgb(var(--palette-dark-600))] animate-pulse rounded-2xl"
-          :class="productCardViewMode === 'grid' ? 'h-64' : 'h-[118px] sm:h-[134px]'"
-        />
-      </div>
-
-      <div
-        v-else-if="similarProducts.length && productCardViewMode === 'grid'"
-        class="similar-products-grid grid gap-1 md:gap-2 w-full"
-      >
-        <MainProductCard
-          v-for="similarProduct in similarProducts"
-          :key="similarProduct.id"
-          :product="similarProduct"
-          @click="goToProductPage"
-        />
-      </div>
-      <div v-else-if="similarProducts.length" class="w-full flex flex-col gap-2">
-        <HomeProductListCard
-          v-for="similarProduct in similarProducts"
-          :key="similarProduct.id"
-          :product="similarProduct"
-          @click="goToProductPage"
-        />
-      </div>
-
     </div>
 
     <!-- Image modal -->
@@ -1664,6 +1668,30 @@ onUnmounted(() => {
   color: var(--product-price-value);
 }
 
+.product-hero-media {
+  aspect-ratio: 16 / 11;
+  min-height: 320px;
+}
+
+.reviews-strip {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.reviews-strip::-webkit-scrollbar {
+  height: 6px;
+}
+
+.reviews-strip::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 3px;
+}
+
+.reviews-strip::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+
 .similar-products-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -1784,6 +1812,13 @@ onUnmounted(() => {
 @media (min-width: 980px) {
   .similar-products-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .product-hero-media {
+    aspect-ratio: 1 / 1;
+    min-height: 260px;
   }
 }
 
