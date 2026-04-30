@@ -2001,8 +2001,11 @@ onBeforeUnmount(() => {
   justify-content: center;
   overflow: hidden;
   border-radius: 0.75rem;
-  border: 1px solid rgb(var(--palette-white) / 0.06);
   background: rgb(var(--palette-dark-700));
+}
+
+.home-category-skeleton-thumb {
+  border: 1px solid rgb(var(--palette-white) / 0.06);
   box-shadow: inset 0 1px 0 rgb(var(--palette-white) / 0.04);
 }
 
