@@ -1386,45 +1386,15 @@ onUnmounted(() => {
           </div>
         </section>
 
-        <section class="rounded-lg bg-[rgb(var(--palette-dark-900)/0.82)] p-4">
-          <div class="mb-2 flex items-center gap-2">
-            <ShieldCheck class="h-5 w-5 text-[var(--text-title)]" />
-            <h2 class="text-base font-semibold text-[var(--text-title)]">Гарантия безопасной сделки</h2>
-          </div>
-          <ul class="space-y-2 text-sm text-[var(--text-body)]">
-            <li class="flex gap-2">
-              <Check class="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-success)]" />
-              <span>Продавец получит деньги после подтверждения</span>
-            </li>
-            <li class="flex gap-2">
-              <Check class="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-success)]" />
-              <span>Возврат средств, если товар не будет получен</span>
-            </li>
-          </ul>
-        </section>
-
-        <section v-if="product.is_raika_verified" class="rounded-lg border border-[rgb(var(--palette-emerald-700)/0.4)] bg-[rgb(var(--palette-emerald-900)/0.2)] p-3 text-xs text-[var(--text-success)]">
-          <p class="flex flex-wrap items-center gap-1.5">
-            <img :src="RAIKA_LOGO_URL" alt="Raika logo" class="h-4 w-4 shrink-0 rounded-sm object-contain" loading="lazy" />
-            <span>
-              {{ $t('pages.product.raikaVerifiedPrefix') }}
-              <a :href="RAIKA_BOT_URL" target="_blank" rel="noopener noreferrer" class="underline decoration-[rgb(var(--palette-emerald-300)/0.6)] underline-offset-2 hover:text-[var(--text-success)] transition-colors">
-                {{ $t('pages.product.raikaName') }}
-              </a>
-            </span>
-          </p>
-        </section>
-
-        <section v-if="canSeeModerationRejectReason" class="rounded-lg border border-[rgb(var(--palette-red-800)/0.4)] bg-[rgb(var(--palette-red-950)/0.2)] p-3 text-sm text-[var(--text-danger-soft)]">
-          <p class="font-semibold text-[var(--text-danger)]">{{ $t('pages.product.moderationRejectedTitle') }}</p>
-          <p class="mt-2 text-[rgb(var(--text-danger-soft-rgb)/0.9)]">
-            <span class="text-[var(--text-danger-soft)]">{{ $t('pages.product.moderationRejectReasonLabel') }}:</span>
-            {{ moderationRejectReasonLabel ?? $t('common.notSpecified') }}
-          </p>
-          <p v-if="product.moderation_reject_reason_text" class="mt-2 whitespace-pre-line text-[rgb(var(--text-danger-soft-rgb)/0.8)]">
-            {{ product.moderation_reject_reason_text }}
-          </p>
-        </section>
+    <div
+      class="w-full gap-5 lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-start lg:gap-8"
+    >
+      <div class="order-2 space-y-4 py-4 lg:order-1 lg:py-0">
+        <h2 class="text-xl font-bold text-[var(--text-title)]">{{ $t('pages.product.description') }}</h2>
+        <p class="text-[var(--text-body)] leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere] text-sm lg:text-base">
+          {{ product.description || $t('pages.product.descriptionMissing') }}
+        </p>
+      </div>
 
         <div
           v-if="shouldShowFortniteAccountDetails"
