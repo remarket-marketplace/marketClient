@@ -18,12 +18,11 @@ import { useRoute, useRouter } from 'vue-router'
 import { Check, ChevronLeft, ChevronRight, X, Heart, Trash2, ShoppingBag, LayoutGrid, Rows3, ShieldCheck, ImageOff, Star } from 'lucide-vue-next'
 import { useUserStore } from '@/stores/user'
 import { getErrorMessage } from '@/utils/errorsMap'
-import { formatCurrencyAmount, getCurrencySymbol, resolvePreferredCurrency } from '@/utils/currency'
+import { convertCurrencyAmount, formatCurrencyAmount, getCurrencySymbol, resolvePreferredCurrency } from '@/utils/currency'
 import { storeToRefs } from 'pinia'
 import { buildCategoryKey, buildProductKey } from '@/utils/urlKeys'
-import { calculateDiscountPercent, calculateOfferedPriceByPercent } from '@/utils/priceOffer'
+import { calculateOfferedPriceByPercent } from '@/utils/priceOffer'
 import {
-  PRICE_OFFER_MESSAGE_TEMPLATE_KEYS,
   encodePriceOfferTemplateMessage,
   type PriceOfferMessageTemplateKey,
 } from '@/utils/priceOfferMessageTemplate'
@@ -176,23 +175,25 @@ const additionalInfoItems = computed(() => {
 })
 
 const productOfferBasePrice = computed(() => Number(product.value?.price ?? 0))
+const offeredPriceRub = computed(() => {
+  const value = Number(offeredPrice.value)
+  if (!Number.isFinite(value)) return 0
+  return convertCurrencyAmount(value, offerCurrencyCode.value, 'RUB')
+})
 const maxOfferedPrice = computed(() => {
   const basePrice = productOfferBasePrice.value
   if (!Number.isFinite(basePrice) || basePrice <= 0) {
     return null
   }
 
-  return Math.max(0.01, Number((basePrice - 0.01).toFixed(2)))
+  const maxRubPrice = Math.max(0.01, Number((basePrice - 0.01).toFixed(2)))
+  return Number(convertCurrencyAmount(maxRubPrice, 'RUB', offerCurrencyCode.value).toFixed(2))
 })
-const offerDiscountPercent = computed(() => calculateDiscountPercent(
-  productOfferBasePrice.value,
-  Number(offeredPrice.value),
-))
 function getOfferMessageTemplateText(templateKey: PriceOfferMessageTemplateKey): string {
-  const offeredValue = Number(offeredPrice.value)
+  const offeredValue = offeredPriceRub.value
   const priceLabel = formatCurrencyAmount(
     Number.isFinite(offeredValue) && offeredValue > 0 ? offeredValue : productOfferBasePrice.value,
-    { minimumFractionDigits: 2, maximumFractionDigits: 2 },
+    { fromCurrency: 'RUB', minimumFractionDigits: 2, maximumFractionDigits: 2 },
   )
 
   switch (templateKey) {
@@ -200,11 +201,6 @@ function getOfferMessageTemplateText(templateKey: PriceOfferMessageTemplateKey):
       return t('pages.product.offerPriceConfirm.messageTemplateBuyNow', { price: priceLabel })
   }
 }
-
-const offerMessageTemplates = computed(() => PRICE_OFFER_MESSAGE_TEMPLATE_KEYS.map(templateKey => ({
-  id: templateKey,
-  text: getOfferMessageTemplateText(templateKey),
-})))
 
 const displayedCategory = computed(() => {
   const currentCategory = product.value?.category
@@ -551,10 +547,11 @@ function goToSignInFromProduct() {
 function openOfferConfirm() {
   if (!product.value) return
   const productPrice = Number(product.value.price)
-  offeredPrice.value = calculateOfferedPriceByPercent(productPrice, OFFER_DISCOUNT_PRESETS[0])
+  const initialOfferPriceRub = calculateOfferedPriceByPercent(productPrice, OFFER_DISCOUNT_PRESETS[0])
     ?? Math.max(0.01, Math.round((productPrice - 0.01) * 100) / 100)
-  offerMessage.value = ''
-  selectedOfferMessageTemplateKey.value = null
+  offeredPrice.value = Number(convertCurrencyAmount(initialOfferPriceRub, 'RUB', offerCurrencyCode.value).toFixed(2))
+  selectedOfferMessageTemplateKey.value = 'price_offer_buy_now'
+  offerMessage.value = getOfferMessageTemplateText(selectedOfferMessageTemplateKey.value)
   offerError.value = null
   showOfferConfirm.value = true
 }
@@ -587,7 +584,8 @@ function getOfferPriceForDiscount(discountPercent: number): number | null {
   const discounted = currentPrice * (1 - discountPercent / 100)
   const rounded = Number(discounted.toFixed(2))
   const maxAllowed = Number((currentPrice - 0.01).toFixed(2))
-  return Math.max(0.01, Math.min(rounded, maxAllowed))
+  const offerRub = Math.max(0.01, Math.min(rounded, maxAllowed))
+  return Number(convertCurrencyAmount(offerRub, 'RUB', offerCurrencyCode.value).toFixed(2))
 }
 
 function applyOfferDiscount(discountPercent: number) {
@@ -606,11 +604,6 @@ function isDiscountPresetActive(discountPercent: number): boolean {
   return Math.abs(currentOfferedPrice - presetPrice) < 0.001
 }
 
-function applyOfferMessageTemplate(templateKey: PriceOfferMessageTemplateKey) {
-  selectedOfferMessageTemplateKey.value = templateKey
-  offerMessage.value = getOfferMessageTemplateText(templateKey)
-}
-
 function handleOfferMessageInput() {
   if (!selectedOfferMessageTemplateKey.value) return
 
@@ -624,7 +617,7 @@ async function handleOfferConfirm() {
   if (!product.value || user.value === null) return
 
   normalizeOfferedPrice()
-  const priceNumber = Number(offeredPrice.value)
+  const priceNumber = Number(offeredPriceRub.value.toFixed(2))
   if (!Number.isFinite(priceNumber) || priceNumber <= 0 || priceNumber >= Number(product.value.price)) {
     offerError.value = t('errors.INVALID_PRICE_OFFER')
     return
@@ -1342,7 +1335,7 @@ onUnmounted(() => {
     <ConfirmWindow
       :is-open="showOfferConfirm"
       :title="$t('pages.product.offerPriceConfirm.title')"
-      :message="$t('pages.product.offerPriceConfirm.message')"
+      message=""
       :confirm-text="$t('pages.product.offerPriceConfirm.confirm')"
       :cancel-text="$t('pages.product.offerPriceConfirm.cancel')"
       :is-loading="isOfferSubmitting"
@@ -1360,7 +1353,7 @@ onUnmounted(() => {
                 type="button"
                 class="rounded-md border px-2.5 py-1 text-xs font-medium transition-colors"
                 :class="isDiscountPresetActive(discount)
-                  ? 'border-[rgb(var(--palette-blue-400))] bg-[rgb(var(--palette-blue-500)/0.25)] text-[var(--text-accent-strong)]'
+                  ? 'border-[rgb(var(--palette-white)/0.18)] bg-[rgb(var(--palette-white)/0.09)] text-[var(--text-title)]'
                   : 'border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body)] hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)]'"
                 @click="applyOfferDiscount(discount)"
               >
@@ -1374,29 +1367,12 @@ onUnmounted(() => {
                 min="0.01"
                 :max="maxOfferedPrice ?? undefined"
                 step="0.01"
-                class="price-offer-input w-full rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.6)] px-3 py-2 pr-20 text-sm text-[var(--text-title)] outline-none focus:border-[rgb(var(--palette-blue-500))]"
+                class="price-offer-input w-full rounded-lg border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.04)] px-3 py-2 pr-20 text-sm text-[var(--text-title)] outline-none transition-colors focus:border-[rgb(var(--palette-white)/0.16)] focus:bg-[rgb(var(--palette-white)/0.055)]"
                 @input="normalizeOfferedPrice"
                 @blur="normalizeOfferedPrice"
               />
               <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 whitespace-nowrap text-xs text-[var(--text-body)]">
-                {{ offerCurrencySymbol }} {{ offerCurrencyCode }}
-              </span>
-            </div>
-          </div>
-          <div
-            v-if="offerDiscountPercent !== null"
-            class="rounded-lg border border-[rgb(var(--palette-blue-500)/0.25)] bg-[rgb(var(--palette-blue-500)/0.1)] p-3"
-          >
-            <p class="text-xs text-[var(--text-body)]">{{ $t('pages.product.offerPriceConfirm.previewLabel') }}</p>
-            <div class="mt-1 flex flex-wrap items-center gap-2">
-              <span class="text-xs text-[var(--text-meta)] line-through">
-                {{ formatCurrencyAmount(Number(product?.price ?? 0), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
-              </span>
-              <span class="text-sm font-semibold text-[var(--text-accent)]">
-                {{ formatCurrencyAmount(Number(offeredPrice ?? 0), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
-              </span>
-              <span class="inline-flex items-center rounded-full border border-[rgb(var(--palette-blue-400)/0.3)] bg-[rgb(var(--palette-blue-500)/0.15)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-accent)]">
-                {{ $t('pages.product.offerPriceConfirm.discountBadge', { percent: offerDiscountPercent }) }}
+                {{ offerCurrencySymbol }}
               </span>
             </div>
           </div>
@@ -1406,29 +1382,10 @@ onUnmounted(() => {
               v-model="offerMessage"
               rows="3"
               maxlength="500"
-              class="mt-1 w-full resize-none rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.6)] px-3 py-2 text-sm text-[var(--text-title)] outline-none focus:border-[rgb(var(--palette-emerald-500))]"
+              class="mt-1 w-full resize-none rounded-lg border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.04)] px-3 py-2 text-sm text-[var(--text-title)] outline-none transition-colors focus:border-[rgb(var(--palette-white)/0.16)] focus:bg-[rgb(var(--palette-white)/0.055)]"
               :placeholder="$t('pages.product.offerPriceConfirm.messagePlaceholder')"
               @input="handleOfferMessageInput"
             />
-            <div class="mt-2">
-              <p class="text-[11px] font-medium text-[var(--text-muted)]">
-                {{ $t('pages.product.offerPriceConfirm.messageTemplatesLabel') }}
-              </p>
-              <div class="mt-1.5 flex flex-wrap gap-1.5">
-                <button
-                  v-for="template in offerMessageTemplates"
-                  :key="template.id"
-                  type="button"
-                  class="rounded-md border px-2.5 py-1 text-left text-[11px] leading-4 transition-colors"
-                  :class="selectedOfferMessageTemplateKey === template.id
-                    ? 'border-[rgb(var(--palette-blue-400))] bg-[rgb(var(--palette-blue-500)/0.25)] text-[var(--text-accent-strong)]'
-                    : 'border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body)] hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)]'"
-                  @click="applyOfferMessageTemplate(template.id)"
-                >
-                  {{ template.text }}
-                </button>
-              </div>
-            </div>
           </div>
           <p v-if="offerError" class="text-xs text-[var(--text-danger)]">{{ offerError }}</p>
         </div>

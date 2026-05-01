@@ -122,6 +122,7 @@ onBeforeUnmount(() => {
 
 const hasHeader = computed(() => Boolean(props.eyebrow || props.title || props.description || props.showCloseButton))
 const hasFooter = computed(() => Boolean(slots.footer))
+const isSimpleHeader = computed(() => Boolean(props.title || props.showCloseButton) && !props.eyebrow && !props.description)
 const sizeClass = computed(() => {
   switch (props.size) {
     case 'sm':
@@ -156,16 +157,19 @@ const titleClass = computed(() => (
           @click="requestClose"
         />
 
-        <div class="relative z-10 flex w-full justify-center">
+        <div class="pointer-events-none relative z-10 flex w-full justify-center">
           <div
-            class="app-modal-panel app-modal-card relative flex w-full flex-col rounded-[30px] border border-[rgb(var(--palette-white)/0.1)]"
+            class="app-modal-panel app-modal-card pointer-events-auto relative flex w-full flex-col rounded-[30px] border border-[rgb(var(--palette-white)/0.1)]"
             :class="[sizeClass, props.allowOverflowVisible ? 'overflow-visible' : 'overflow-hidden', props.panelClass]"
           >
             <div v-if="hasHeader" class="relative px-5 pt-5 sm:px-8 sm:pt-8">
               <div
                 :class="props.headerAlign === 'center'
                   ? 'relative flex min-h-10 items-center justify-center'
-                  : 'flex items-start justify-between gap-4'"
+                  : [
+                    'flex justify-between gap-4',
+                    isSimpleHeader ? 'items-center' : 'items-start',
+                  ]"
               >
                 <div
                   :class="props.headerAlign === 'center'
@@ -184,7 +188,7 @@ const titleClass = computed(() => (
                     class="break-words whitespace-normal"
                     :class="[
                       titleClass,
-                      props.headerAlign === 'center' && !props.eyebrow ? '' : 'mt-3',
+                      props.eyebrow ? 'mt-3' : '',
                     ]"
                   >
                     {{ props.title }}
