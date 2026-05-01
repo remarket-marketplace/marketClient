@@ -31,21 +31,6 @@ const reviewText = ref('')
 const reviewSubmitting = ref(false)
 const reviewError = ref<string | null>(null)
 
-const mockOrder = {
-  id: '—',
-  email: '—',
-  title: 'Товар',
-  deliveryType: 'ручной',
-  amount: '—',
-  createdAt: '—',
-}
-
-const mockSeller = {
-  username: 'Продавец',
-  rating: 0,
-  avatarUrl: '',
-}
-
 const dealId = computed(() => {
   const rawDealId = route.query.dealId
   if (Array.isArray(rawDealId)) return rawDealId[0] ?? null
@@ -62,16 +47,20 @@ const isReviewEntry = computed(() => route.query.review === '1' || route.query.m
 const showCongratulations = computed(() => !isReviewEntry.value)
 const product = computed<Product | null>(() => latestDealMessage.value?.product ?? null)
 const seller = computed(() => product.value?.seller ?? null)
-const currentDealStatus = computed(() => latestDealMessage.value?.deal_status ?? null)
+const currentDealStatus = computed(() => {
+  if (latestDealMessage.value?.deal_status) return latestDealMessage.value.deal_status
+  if (isReviewEntry.value && dealId.value) return 'completed'
+  return null
+})
 const isDealCompleted = computed(() => currentDealStatus.value === 'completed')
 const canLeaveReview = computed(() => Boolean(dealId.value && isDealCompleted.value && !hasReview.value))
 
-const orderIdLabel = computed(() => dealId.value ? `RM${dealId.value.slice(0, 8).toUpperCase()}` : mockOrder.id)
-const orderTitle = computed(() => product.value?.title ?? mockOrder.title)
-const orderAmount = computed(() => product.value ? formatCurrencyAmount(product.value.price) : mockOrder.amount)
+const orderIdLabel = computed(() => dealId.value ? `RM${dealId.value.slice(0, 8).toUpperCase()}` : null)
+const orderTitle = computed(() => product.value?.title ?? null)
+const orderAmount = computed(() => product.value ? formatCurrencyAmount(product.value.price) : null)
 const orderCreatedAt = computed(() => {
   const createdAt = latestDealMessage.value?.created_at
-  if (!createdAt) return mockOrder.createdAt
+  if (!createdAt) return null
 
   return new Date(createdAt).toLocaleString('ru-RU', {
     day: '2-digit',
@@ -81,8 +70,8 @@ const orderCreatedAt = computed(() => {
     minute: '2-digit',
   })
 })
-const orderEmail = computed(() => userStore.user?.email ?? mockOrder.email)
-const productPreviewTitle = computed(() => orderTitle.value || mockOrder.title)
+const orderEmail = computed(() => userStore.user?.email ?? null)
+const productPreviewTitle = computed(() => orderTitle.value || 'Товар')
 
 const orderStatusLabel = computed(() => {
   if (showCongratulations.value) return 'Ожидает выдачи'
@@ -93,14 +82,14 @@ const orderStatusLabel = computed(() => {
   return 'Ожидает выдачи'
 })
 
-const sellerUsername = computed(() => seller.value?.username ?? mockSeller.username)
-const sellerRating = computed(() => Number(seller.value?.rating ?? mockSeller.rating).toFixed(1))
+const sellerUsername = computed(() => seller.value?.username ?? null)
+const sellerRating = computed(() => seller.value?.rating != null ? Number(seller.value.rating).toFixed(1) : null)
 const sellerSales = computed(() => {
   if (sellerCompletedDealsCount.value != null) return sellerCompletedDealsCount.value
   return product.value?.seller_trust?.completed_deals_count ?? 0
 })
 const isSellerOnline = computed(() => Boolean(seller.value?.is_active))
-const sellerAvatarUrl = computed(() => seller.value?.avatar_url ?? mockSeller.avatarUrl)
+const sellerAvatarUrl = computed(() => seller.value?.avatar_url ?? '')
 const productImageUrl = computed(() => {
   const imageUrl = product.value?.images?.[0]?.image_url
   if (!imageUrl) return ''
@@ -121,9 +110,24 @@ async function loadAfterPaymentData() {
   isLoading.value = true
   loadError.value = null
 
-  const result = requestedDealId
+  let result = requestedDealId
     ? await chatsService.getChatMessagesByDealId(requestedDealId, 1, 20)
     : await chatsService.getChatMessages(requestedChatId!, 1, 20)
+
+  if (requestedDealId && !result.latestDealMessage) {
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 700))
+      const retried = await chatsService.getChatMessagesByDealId(requestedDealId, 1, 20)
+      if (retried.latestDealMessage) {
+        result = retried
+        break
+      }
+    }
+  }
+
+  if (!result.latestDealMessage && requestedChatId) {
+    result = await chatsService.getChatMessages(requestedChatId, 1, 20)
+  }
 
   // Some deal states may return no latest_deal_message. Keep the last known payload
   // to avoid false-negative "failed to load" errors right after status transitions.
@@ -146,13 +150,8 @@ async function loadSellerSales() {
     return
   }
 
-  const profileWithTrust = profile as typeof profile & {
-    completed_deals_count?: number
-    total_deals_count?: number
-  }
-
-  const completedDeals = profileWithTrust.completed_deals_count
-  const totalDeals = profileWithTrust.total_deals_count
+  const completedDeals = profile.completed_deals_count
+  const totalDeals = profile.total_deals_count
   const sales = Number.isFinite(completedDeals) ? completedDeals : (Number.isFinite(totalDeals) ? totalDeals : null)
   sellerCompletedDealsCount.value = sales
 }
@@ -260,7 +259,7 @@ onMounted(async () => {
           </span>
         </div>
         <p class="mt-1 text-sm font-medium text-[var(--text-meta)]">
-          Отправили данные о заказе на <span class="underline decoration-[rgb(var(--palette-white)/0.24)] underline-offset-2">{{ orderEmail }}</span>
+          Отправили данные о заказе на <span class="underline decoration-[rgb(var(--palette-white)/0.24)] underline-offset-2">{{ orderEmail ?? '—' }}</span>
         </p>
       </header>
 
@@ -276,7 +275,7 @@ onMounted(async () => {
         <section class="order-panel min-w-0 p-5 sm:p-6">
           <div class="mb-6 flex flex-wrap items-center gap-x-7 gap-y-2">
             <h2 class="text-2xl font-extrabold leading-tight sm:text-[1.8rem]">
-              Заказ #{{ orderIdLabel }}
+              Заказ #{{ orderIdLabel ?? '—' }}
             </h2>
             <span class="text-sm font-medium text-[rgb(var(--palette-amber-300))]">{{ orderStatusLabel }}</span>
           </div>
@@ -303,13 +302,13 @@ onMounted(async () => {
                   {{ orderTitle }}
                 </p>
                 <p class="text-base text-[rgb(var(--text-title-rgb)/0.88)]">
-                  Тип доставки: {{ product?.auto_delivery ? 'автоматический' : mockOrder.deliveryType }}
+                  Тип доставки: {{ product?.auto_delivery ? 'автоматический' : 'ручной' }}
                 </p>
               </div>
 
               <div class="text-right">
-                <p class="text-[1.45rem] font-extrabold leading-none sm:text-[1.6rem]">Сумма: {{ orderAmount }}</p>
-                <p class="mt-3 text-sm text-[var(--text-meta)]">{{ orderCreatedAt }}</p>
+                <p class="text-[1.45rem] font-extrabold leading-none sm:text-[1.6rem]">Сумма: {{ orderAmount ?? '—' }}</p>
+                <p class="mt-3 text-sm text-[var(--text-meta)]">{{ orderCreatedAt ?? '—' }}</p>
               </div>
             </div>
           </div>
@@ -326,7 +325,7 @@ onMounted(async () => {
               <div class="relative">
                 <UserAvatar
                   :avatar-url="sellerAvatarUrl"
-                  :alt="sellerUsername"
+                  :alt="sellerUsername ?? 'seller'"
                   class="h-12 w-12 rounded-full object-cover"
                 />
                 <span
@@ -337,9 +336,9 @@ onMounted(async () => {
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex min-w-0 items-center gap-1.5">
-                  <span class="truncate text-sm font-bold">{{ sellerUsername }}</span>
+                  <span class="truncate text-sm font-bold">{{ sellerUsername ?? 'Продавец' }}</span>
                   <Star class="h-3.5 w-3.5 fill-current text-[var(--text-title)]" />
-                  <span class="text-sm font-semibold">{{ sellerRating }}</span>
+                  <span class="text-sm font-semibold">{{ sellerRating ?? '—' }}</span>
                 </div>
                 <p class="text-xs text-[var(--text-meta)]">{{ sellerSales }} продаж</p>
               </div>
