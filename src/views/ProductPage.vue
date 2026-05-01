@@ -571,6 +571,11 @@ function goToSellerProfile() {
   router.push(`/user/${product.value.seller.username}`)
 }
 
+function goToUserProfile(username?: string | null) {
+  if (!username) return
+  router.push(`/user/${username}`)
+}
+
 function selectImage(image: ProductImage) {
   selectedImage.value = image
 }
@@ -1211,21 +1216,43 @@ onUnmounted(() => {
               :key="review.id"
               class="review-card min-w-[220px] rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900)/0.82)] p-3 sm:min-w-[250px]"
             >
-              <div class="flex items-start gap-2.5">
+              <div v-if="review.reviewer?.username" class="flex items-start gap-2.5">
+                <button
+                  type="button"
+                  class="-m-1 inline-flex min-w-0 flex-1 items-start gap-2.5 rounded-lg p-1 text-left transition hover:bg-[rgb(var(--palette-dark-700)/0.45)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-500)/0.8)]"
+                  :title="review.reviewer.username"
+                  @click="goToUserProfile(review.reviewer.username)"
+                >
+                  <UserAvatar
+                    :avatar-url="review.reviewer.avatar_url"
+                    :alt="review.reviewer.username"
+                    class="h-9 w-9 shrink-0 rounded-full border border-[rgb(var(--palette-dark-700))] object-cover"
+                  />
+                  <div class="min-w-0 flex-1">
+                    <div class="flex min-w-0 items-center gap-1.5">
+                      <StyledUsername
+                        :username="review.reviewer.username"
+                        :style-id="review.reviewer.nickname_style_id"
+                        class="truncate text-sm font-semibold"
+                      />
+                      <span class="inline-flex shrink-0 items-center gap-0.5 text-xs font-semibold text-[var(--text-title)]">
+                        <Star class="h-3 w-3 fill-current text-[var(--text-title)]" />
+                        {{ review.rating }}
+                      </span>
+                    </div>
+                    <p class="mt-0.5 text-[10px] text-[var(--text-meta)]">{{ formatFullDate(review.created_at) }}</p>
+                  </div>
+                </button>
+              </div>
+              <div v-else class="flex items-start gap-2.5">
                 <UserAvatar
-                  :avatar-url="review.reviewer?.avatar_url ?? ''"
-                  :alt="review.reviewer?.username ?? 'reviewer'"
+                  avatar-url=""
+                  :alt="$t('common.user')"
                   class="h-9 w-9 shrink-0 rounded-full border border-[rgb(var(--palette-dark-700))] object-cover"
                 />
                 <div class="min-w-0 flex-1">
                   <div class="flex min-w-0 items-center gap-1.5">
-                    <StyledUsername
-                      v-if="review.reviewer"
-                      :username="review.reviewer.username"
-                      :style-id="review.reviewer.nickname_style_id"
-                      class="truncate text-sm font-semibold"
-                    />
-                    <span v-else class="truncate text-sm font-semibold text-[var(--text-title)]">{{ $t('common.user') }}</span>
+                    <span class="truncate text-sm font-semibold text-[var(--text-title)]">{{ $t('common.user') }}</span>
                     <span class="inline-flex shrink-0 items-center gap-0.5 text-xs font-semibold text-[var(--text-title)]">
                       <Star class="h-3 w-3 fill-current text-[var(--text-title)]" />
                       {{ review.rating }}
