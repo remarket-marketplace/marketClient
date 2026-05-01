@@ -89,9 +89,11 @@ const routes: RouteRecordRaw[] = [
       component: () => import("@/views/OfficialStoreView.vue"),
     },
     {
-      path: "/page/test",
-      name: "order success test",
+      path: "/afterpayment",
+      alias: "/page/test",
+      name: "afterpayment",
       component: () => import("@/views/OrderSuccessTestView.vue"),
+      meta: { requiredAuthorized: true },
     },
     {
       path: "/chats/:chatId?",

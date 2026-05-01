@@ -403,6 +403,16 @@ function goToChat(chatId: string) {
   router.push({ name: 'chats', query: { chatId } })
 }
 
+function goToAfterPayment(deal: Deal) {
+  router.push({
+    name: 'afterpayment',
+    query: {
+      dealId: deal.id,
+      ...(deal.status === 'completed' ? { review: '1' } : {}),
+    },
+  })
+}
+
 function handleClickOutside(event: MouseEvent) {
   if (showMenu.value && menuContainerRef.value && !menuContainerRef.value.contains(event.target as Node)) showMenu.value = false
 }
@@ -1132,11 +1142,18 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                         </div>
                       </div>
 
-                      <button v-if="deal.chat_room_id" @click.stop="goToChat(deal.chat_room_id)"
-                        class="market-btn market-btn-primary rounded-lg px-3 py-2 text-xs">
-                        <MessageSquare class="w-4 h-4" />
-                        <span>{{ t('common.toChat') }}</span>
-                      </button>
+                      <div class="flex flex-wrap gap-2">
+                        <button type="button" @click.stop="goToAfterPayment(deal)"
+                          class="market-btn market-btn-secondary rounded-lg px-3 py-2 text-xs">
+                          <ShoppingBag class="w-4 h-4" />
+                          <span>{{ deal.status === 'completed' ? 'Оставить отзыв' : 'Открыть заказ' }}</span>
+                        </button>
+                        <button v-if="deal.chat_room_id" type="button" @click.stop="goToChat(deal.chat_room_id)"
+                          class="market-btn market-btn-primary rounded-lg px-3 py-2 text-xs">
+                          <MessageSquare class="w-4 h-4" />
+                          <span>{{ t('common.toChat') }}</span>
+                        </button>
+                      </div>
                     </div>
 
                     <!-- Карточка товара -->

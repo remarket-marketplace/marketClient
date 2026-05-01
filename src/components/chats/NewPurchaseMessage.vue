@@ -398,6 +398,7 @@ async function doConfirmDeal() {
   if (response === true) {
     localDealStatus.value = 'completed'
     localHasReview.value = false
+    router.push({ name: 'afterpayment', query: { dealId: props.dealId, review: '1' } })
   }
 
   showConfirmModal.value = false
