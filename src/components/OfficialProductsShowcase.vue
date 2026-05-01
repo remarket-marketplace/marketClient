@@ -5,9 +5,14 @@ import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   products: Product[]
-}>()
+  loading?: boolean
+  skeletonCount?: number
+}>(), {
+  loading: false,
+  skeletonCount: 7,
+})
 
 const emit = defineEmits<{
   productClick: [product: Product]
@@ -71,7 +76,7 @@ function scrollCarousel(direction: 'prev' | 'next') {
   window.setTimeout(updateCarouselState, 320)
 }
 
-watch(() => props.products.length, async () => {
+watch(() => [props.products.length, props.loading], async () => {
   await nextTick()
   updateCarouselState()
 })
@@ -113,7 +118,7 @@ onBeforeUnmount(() => {
           <button
             type="button"
             class="official-products-showcase__arrow-btn"
-            :disabled="isCarouselAtStart || products.length <= 1"
+            :disabled="isCarouselAtStart || props.loading || products.length <= 1"
             :aria-label="t('pages.index.officialHome.scrollPrev')"
             @click="scrollCarousel('prev')"
           >
@@ -122,7 +127,7 @@ onBeforeUnmount(() => {
           <button
             type="button"
             class="official-products-showcase__arrow-btn"
-            :disabled="isCarouselAtEnd || products.length <= 1"
+            :disabled="isCarouselAtEnd || props.loading || products.length <= 1"
             :aria-label="t('pages.index.officialHome.scrollNext')"
             @click="scrollCarousel('next')"
           >
@@ -138,7 +143,24 @@ onBeforeUnmount(() => {
         class="official-products-showcase__carousel flex gap-4 overflow-x-auto pr-1 no-scrollbar snap-x snap-mandatory"
         @scroll.passive="updateCarouselState"
       >
+        <template v-if="props.loading">
+          <div
+            v-for="n in props.skeletonCount"
+            :key="`official-showcase-skeleton-${n}`"
+            data-official-product-card
+            class="official-products-showcase__card official-products-showcase__skeleton w-[188px] shrink-0 snap-start sm:w-[190px] lg:w-[196px]"
+          >
+            <div class="official-products-showcase__card-media aspect-square w-full rounded-xl"></div>
+            <div class="pt-2">
+              <div class="official-products-showcase__skeleton-line h-5 w-20 rounded"></div>
+              <div class="official-products-showcase__skeleton-line mt-2 h-4 w-full rounded"></div>
+              <div class="official-products-showcase__skeleton-line mt-1.5 h-4 w-3/4 rounded"></div>
+            </div>
+          </div>
+        </template>
+
         <button
+          v-else
           v-for="product in products"
           :key="`official-showcase-${product.id}`"
           type="button"
@@ -287,6 +309,27 @@ onBeforeUnmount(() => {
   -webkit-box-orient: vertical;
   overflow: hidden;
   color: rgb(var(--palette-white) / 0.88);
+}
+
+.official-products-showcase__skeleton {
+  pointer-events: none;
+}
+
+.official-products-showcase__skeleton .official-products-showcase__card-media,
+.official-products-showcase__skeleton-line {
+  background: rgb(var(--palette-white) / 0.12);
+  animation: official-showcase-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes official-showcase-pulse {
+  0%,
+  100% {
+    opacity: 0.42;
+  }
+
+  50% {
+    opacity: 0.82;
+  }
 }
 
 @media (min-width: 640px) {

@@ -5,6 +5,7 @@ import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import Loader from '@/components/Loader.vue'
 import MainProductCard from '@/components/mainProductCard.vue'
 import HomeProductListCard from '@/components/HomeProductListCard.vue'
+import OfficialProductsShowcase from '@/components/OfficialProductsShowcase.vue'
 import FortniteAccountSnapshot from '@/components/FortniteAccountSnapshot.vue'
 import ReportComplaintModal from '@/components/complaints/ReportComplaintModal.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
@@ -14,7 +15,7 @@ import type { Category } from '@/validation/category/category'
 import { onMounted, ref, onUnmounted, computed, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { BadgeCheck, Check, ChevronLeft, ChevronRight, X, Heart, Trash2, ShoppingBag, LayoutGrid, Rows3, ShieldCheck, ImageOff, Star } from 'lucide-vue-next'
+import { Check, ChevronLeft, ChevronRight, X, Heart, Trash2, ShoppingBag, LayoutGrid, Rows3, ShieldCheck, ImageOff, Star } from 'lucide-vue-next'
 import { useUserStore } from '@/stores/user'
 import { getErrorMessage } from '@/utils/errorsMap'
 import { formatCurrencyAmount, getCurrencySymbol, resolvePreferredCurrency } from '@/utils/currency'
@@ -54,9 +55,6 @@ const similarProducts = ref<Product[]>([])
 const officialProducts = ref<Product[]>([])
 const isSimilarProductsLoading = ref(false)
 const isOfficialProductsLoading = ref(false)
-const officialCarouselRef = ref<HTMLElement | null>(null)
-const isOfficialCarouselAtStart = ref(true)
-const isOfficialCarouselAtEnd = ref(false)
 const selectedImage = ref<ProductImage | null>(null)
 const openImageModal = ref(false)
 const showDeleteConfirm = ref(false)
@@ -109,7 +107,6 @@ const similarProductsLoadingSkeletonCount = computed(() => (
     ? 4
     : 3
 ))
-const officialProductsLoadingSkeletonCount = 7
 const shouldShowOfficialRemarketCarousel = computed(() =>
   isOfficialProductsLoading.value || officialProducts.value.length > 0
 )
@@ -177,12 +174,6 @@ const additionalInfoItems = computed(() => {
     },
   ]
 })
-
-const officialProductsCountText = computed(() => {
-  const count = officialProducts.value.length
-  return `${count} ${getProductWordFormRu(count)}`
-})
-const hasSingleOfficialProduct = computed(() => officialProducts.value.length === 1)
 
 const productOfferBasePrice = computed(() => Number(product.value?.price ?? 0))
 const maxOfferedPrice = computed(() => {
@@ -274,69 +265,6 @@ function restoreProductCardViewModeFromStorage(): void {
   if (typeof window === 'undefined') return
   const saved = window.localStorage.getItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY)
   productCardViewMode.value = saved === 'list' ? 'list' : 'grid'
-}
-
-function getProductWordFormRu(count: number): string {
-  const normalizedCount = Math.abs(Math.trunc(count))
-  const mod10 = normalizedCount % 10
-  const mod100 = normalizedCount % 100
-  if (mod10 === 1 && mod100 !== 11) return 'товар'
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'товара'
-  return 'товаров'
-}
-
-function formatOfficialPrice(price: number): string {
-  return formatCurrencyAmount(price, {
-    currency: 'RUB',
-    fromCurrency: 'RUB',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  })
-}
-
-function resolveProductImageUrl(productValue: Product): string {
-  const firstImage = productValue.images[0]?.image_url ?? ''
-  if (!firstImage) return ''
-  if (firstImage.startsWith('http://') || firstImage.startsWith('https://')) {
-    return firstImage
-  }
-  return `${API_HOST}${firstImage}`
-}
-
-function updateOfficialCarouselState() {
-  const carouselElement = officialCarouselRef.value
-  if (!carouselElement) {
-    isOfficialCarouselAtStart.value = true
-    isOfficialCarouselAtEnd.value = true
-    return
-  }
-
-  const maxScrollLeft = Math.max(0, carouselElement.scrollWidth - carouselElement.clientWidth)
-  const scrollLeft = Math.max(0, carouselElement.scrollLeft)
-  const edgeThreshold = 8
-  isOfficialCarouselAtStart.value = scrollLeft <= edgeThreshold
-  isOfficialCarouselAtEnd.value = scrollLeft >= maxScrollLeft - edgeThreshold
-}
-
-function handleOfficialCarouselScroll() {
-  updateOfficialCarouselState()
-}
-
-function scrollOfficialCarousel(direction: 'prev' | 'next') {
-  const carouselElement = officialCarouselRef.value
-  if (!carouselElement) return
-
-  const firstCard = carouselElement.querySelector<HTMLElement>('[data-official-card]')
-  const scrollStep = firstCard
-    ? firstCard.offsetWidth + 16
-    : Math.max(320, Math.round(carouselElement.clientWidth * 0.82))
-
-  carouselElement.scrollBy({
-    left: direction === 'next' ? scrollStep : -scrollStep,
-    behavior: 'smooth',
-  })
-
-  window.setTimeout(updateOfficialCarouselState, 320)
 }
 
 function openOfficialStorePage() {
@@ -436,7 +364,6 @@ async function loadOfficialProductsForCarousel(baseProduct: Product) {
   if (!categoryKey) {
     officialProducts.value = []
     isOfficialProductsLoading.value = false
-    updateOfficialCarouselState()
     return
   }
 
@@ -475,8 +402,6 @@ async function loadOfficialProductsForCarousel(baseProduct: Product) {
     }
 
     officialProducts.value = collected.slice(0, OFFICIAL_PRODUCTS_LIMIT)
-    await nextTick()
-    updateOfficialCarouselState()
   } finally {
     isOfficialProductsLoading.value = false
   }
@@ -524,9 +449,6 @@ async function loadProductData() {
 onMounted(async () => {
   restoreProductCardViewModeFromStorage()
   await loadProductData()
-  window.addEventListener('resize', updateOfficialCarouselState, { passive: true })
-  await nextTick()
-  updateOfficialCarouselState()
 })
 
 watch(productCardViewMode, (mode) => {
@@ -913,7 +835,6 @@ watch(
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
-  window.removeEventListener('resize', updateOfficialCarouselState)
 })
 
 </script>
@@ -1345,113 +1266,14 @@ onUnmounted(() => {
         </section>
       </main>
 
-      <div
+      <OfficialProductsShowcase
         v-if="shouldShowOfficialRemarketCarousel"
-        class="official-showcase mt-2 w-full rounded-3xl border border-[rgb(var(--palette-white)/0.12)] p-4 sm:p-5 lg:col-span-2"
-      >
-        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div class="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--palette-blue-300)/0.7)] bg-[rgb(var(--palette-blue-500)/0.32)] px-3 py-1.5 text-sm font-semibold tracking-wide text-[var(--text-accent-strong)] shadow-[var(--official-showcase-badge-shadow)]">
-            <BadgeCheck class="h-4 w-4" />
-            <span>Официально от remarket</span>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <button
-              type="button"
-              class="official-showcase__ghost-btn !hidden sm:!inline-flex"
-              @click="openOfficialStorePage"
-            >
-              <span>{{ officialProductsCountText }}</span>
-              <ChevronRight class="h-4 w-4" />
-            </button>
-
-            <div class="hidden items-center gap-1 rounded-full border border-[var(--official-showcase-control-border)] bg-[var(--official-showcase-control-bg)] p-1 sm:inline-flex">
-              <button
-                type="button"
-                class="official-showcase__arrow-btn"
-                :disabled="isOfficialCarouselAtStart || officialProducts.length <= 1"
-                aria-label="Прокрутить влево"
-                @click="scrollOfficialCarousel('prev')"
-              >
-                <ChevronLeft class="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                class="official-showcase__arrow-btn"
-                :disabled="isOfficialCarouselAtEnd || officialProducts.length <= 1"
-                aria-label="Прокрутить вправо"
-                @click="scrollOfficialCarousel('next')"
-              >
-                <ChevronRight class="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="mb-3 text-sm font-medium text-[rgb(var(--text-accent-strong-rgb)/0.85)] sm:hidden">
-          {{ officialProductsCountText }}
-        </div>
-
-        <div v-if="isOfficialProductsLoading" class="official-carousel flex gap-4 overflow-x-auto pb-2 no-scrollbar">
-          <div
-            v-for="n in officialProductsLoadingSkeletonCount"
-            :key="`official-skeleton-${n}`"
-            class="h-[234px] w-[188px] shrink-0 animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-700)/0.7)] sm:h-[276px] sm:w-[232px]"
-          ></div>
-        </div>
-
-        <div v-else-if="officialProducts.length > 0" class="official-carousel-wrap relative">
-          <div
-            ref="officialCarouselRef"
-            class="official-carousel pb-2 pr-1 no-scrollbar"
-            :class="hasSingleOfficialProduct
-              ? 'block overflow-visible'
-              : 'flex gap-4 overflow-x-auto snap-x snap-mandatory'"
-            @scroll.passive="handleOfficialCarouselScroll"
-          >
-            <button
-              v-for="officialProduct in officialProducts"
-              :key="`official-${officialProduct.id}`"
-              type="button"
-              data-official-card
-              class="official-card group h-[234px] shrink-0 overflow-hidden rounded-2xl border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-dark-900)/0.9)] text-left transition duration-200 hover:-translate-y-0.5 hover:border-[rgb(var(--palette-blue-300)/0.4)] hover:bg-[rgb(var(--palette-dark-900))] sm:h-[276px]"
-              :class="hasSingleOfficialProduct ? 'w-full max-w-none' : 'w-[188px] snap-start sm:w-[232px]'"
-              @click="goToProductByModel(officialProduct)"
-            >
-              <div class="official-card__media relative h-[140px] w-full overflow-hidden sm:h-[170px]">
-                <img
-                  v-if="resolveProductImageUrl(officialProduct)"
-                  :src="resolveProductImageUrl(officialProduct)"
-                  :alt="officialProduct.title"
-                  class="h-full w-full object-cover object-center transition duration-300 group-hover:scale-[1.03]"
-                />
-                <div v-else class="flex h-full w-full items-center justify-center text-xs text-[var(--text-body)]">
-                  {{ t('common.noImage') }}
-                </div>
-                <div class="official-card__overlay absolute inset-0"></div>
-              </div>
-              <div class="space-y-2 px-3.5 py-3">
-                <p class="official-card__price text-[1.3rem] font-bold leading-none tracking-tight text-[var(--text-accent-strong)] sm:text-[1.55rem]">
-                  {{ formatOfficialPrice(officialProduct.price) }}
-                </p>
-                <p class="official-card__title min-h-[2.5rem] text-[0.93rem] leading-5 text-[rgb(var(--text-title-rgb)/0.95)] sm:text-[1.03rem] sm:leading-6">
-                  {{ officialProduct.title }}
-                </p>
-              </div>
-            </button>
-          </div>
-
-          <div class="official-carousel__edge official-carousel__edge--left" :class="isOfficialCarouselAtStart ? 'opacity-0' : 'opacity-100'"></div>
-          <div class="official-carousel__edge official-carousel__edge--right" :class="isOfficialCarouselAtEnd ? 'opacity-0' : 'opacity-100'"></div>
-        </div>
-
-        <div class="mt-3 sm:hidden">
-          <button type="button" class="official-showcase__ghost-btn w-full justify-center" @click="openOfficialStorePage">
-            <span>Смотреть все</span>
-            <ChevronRight class="h-4 w-4" />
-          </button>
-        </div>
-      </div>
+        :products="officialProducts"
+        :loading="isOfficialProductsLoading"
+        class="mt-6 w-full p-3 sm:mt-8 lg:col-span-2"
+        @product-click="goToProductByModel"
+        @view-all="openOfficialStorePage"
+      />
     </div>
 
     <!-- Image modal -->
@@ -1737,93 +1559,6 @@ onUnmounted(() => {
 
 .similar-products-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.official-showcase {
-  background: var(--official-showcase-bg);
-}
-
-.official-showcase__ghost-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  border-radius: 9999px;
-  border: 1px solid var(--official-showcase-control-border);
-  background: var(--official-showcase-control-bg);
-  padding: 0.42rem 0.8rem;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--official-showcase-control-text);
-  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
-}
-
-.official-showcase__ghost-btn:hover {
-  border-color: var(--official-showcase-control-border-hover);
-  background: var(--official-showcase-control-bg-hover);
-  color: var(--text-primary-strong);
-}
-
-.official-showcase__arrow-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 1.85rem;
-  width: 1.85rem;
-  border-radius: 9999px;
-  color: var(--official-showcase-arrow-text);
-  background: var(--official-showcase-arrow-bg);
-  border: 1px solid var(--official-showcase-arrow-border);
-  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
-}
-
-.official-showcase__arrow-btn:hover:not(:disabled) {
-  color: var(--text-primary-strong);
-  border-color: var(--official-showcase-arrow-border-hover);
-  background: var(--official-showcase-arrow-bg-hover);
-}
-
-.official-showcase__arrow-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
-.official-carousel {
-  scroll-behavior: smooth;
-}
-
-.official-carousel__edge {
-  pointer-events: none;
-  position: absolute;
-  top: 0;
-  bottom: 0.5rem;
-  width: 2.3rem;
-  transition: opacity 180ms ease;
-}
-
-.official-carousel__edge--left {
-  left: 0;
-  background: var(--official-carousel-fade-left);
-}
-
-.official-carousel__edge--right {
-  right: 0;
-  background: var(--official-carousel-fade-right);
-}
-
-.official-card__overlay {
-  background: var(--official-carousel-card-glow);
-}
-
-.official-card__price {
-  white-space: nowrap;
-}
-
-.official-card__title {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 @media (min-width: 680px) {
