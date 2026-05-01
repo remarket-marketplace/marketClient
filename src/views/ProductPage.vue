@@ -1037,7 +1037,7 @@ onUnmounted(() => {
                     />
                     <span v-else class="truncate text-sm font-semibold text-[var(--text-title)]">{{ $t('common.user') }}</span>
                     <span class="inline-flex shrink-0 items-center gap-0.5 text-xs font-semibold text-[var(--text-title)]">
-                      <Star class="h-3 w-3 fill-current text-[var(--text-warning-strong)]" />
+                      <Star class="h-3 w-3 fill-current text-[var(--text-title)]" />
                       {{ review.rating }}
                     </span>
                   </div>
