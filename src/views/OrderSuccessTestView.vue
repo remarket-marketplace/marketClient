@@ -32,18 +32,18 @@ const reviewSubmitting = ref(false)
 const reviewError = ref<string | null>(null)
 
 const mockOrder = {
-  id: 'RM1234567',
-  email: 'user@mail.ru',
-  title: '50 STARS ПО USERNAME | БЫСТРО',
+  id: '—',
+  email: '—',
+  title: 'Товар',
   deliveryType: 'ручной',
-  amount: '79 ₽',
-  createdAt: '30.04.26 22:40',
+  amount: '—',
+  createdAt: '—',
 }
 
 const mockSeller = {
-  username: 'Parallax',
-  rating: 5,
-  avatarUrl: 'https://images.unsplash.com/photo-1542909168-82c3e7fdca5c?auto=format&fit=crop&w=120&q=80',
+  username: 'Продавец',
+  rating: 0,
+  avatarUrl: '',
 }
 
 const dealId = computed(() => {
@@ -82,6 +82,7 @@ const orderCreatedAt = computed(() => {
   })
 })
 const orderEmail = computed(() => userStore.user?.email ?? mockOrder.email)
+const productPreviewTitle = computed(() => orderTitle.value || mockOrder.title)
 
 const orderStatusLabel = computed(() => {
   if (showCongratulations.value) return 'Ожидает выдачи'
@@ -286,11 +287,11 @@ onMounted(async () => {
             </div>
             <div v-else class="product-preview flex aspect-square min-h-[190px] flex-col justify-between overflow-hidden rounded-lg p-5">
               <div>
-                <p class="text-center text-2xl font-extrabold tracking-tight text-[rgb(var(--palette-blue-300))]">Telegram</p>
-                <p class="mt-1 text-center text-sm font-bold text-[rgb(var(--palette-white)/0.9)]">Stars по @username</p>
+                <p class="line-clamp-2 text-center text-lg font-extrabold tracking-tight text-[rgb(var(--palette-blue-300))]">{{ productPreviewTitle }}</p>
+                <p class="mt-1 text-center text-sm font-bold text-[rgb(var(--palette-white)/0.9)]">Детали заказа</p>
               </div>
               <div class="flex items-center justify-center gap-2">
-                <span class="text-[3.75rem] font-extrabold leading-none text-[rgb(var(--palette-blue-400))]">50</span>
+                <span class="text-[2rem] font-extrabold leading-none text-[rgb(var(--palette-blue-400))]">{{ orderAmount }}</span>
                 <Star class="h-14 w-14 text-[rgb(var(--palette-blue-400))]" />
               </div>
               <div class="mx-auto h-px w-20 rotate-[-38deg] bg-[rgb(var(--palette-white)/0.4)]"></div>
