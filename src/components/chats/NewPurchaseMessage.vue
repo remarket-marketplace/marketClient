@@ -3,7 +3,7 @@ import { productService } from '@/api/product/ProductService'
 import { reviewService } from '@/api/review/ReviewService'
 import { chatsService } from '@/api/chats/chatsService'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import type { Product } from '@/validation/product/product'
 import type { RefusalReasonsList } from '@/validation/deal/deal'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -39,6 +39,7 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
+const route = useRoute()
 const { locale, t } = useI18n()
 
 const localDealStatus = ref<string | null>(null)
@@ -398,7 +399,16 @@ async function doConfirmDeal() {
   if (response === true) {
     localDealStatus.value = 'completed'
     localHasReview.value = false
-    router.push({ name: 'afterpayment', query: { dealId: props.dealId, review: '1' } })
+    const rawChatId = route.query.chatId
+    const chatId = Array.isArray(rawChatId) ? (rawChatId[0] ?? null) : (rawChatId ?? null)
+    router.push({
+      name: 'afterpayment',
+      query: {
+        dealId: props.dealId,
+        review: '1',
+        ...(chatId ? { chatId } : {}),
+      },
+    })
   }
 
   showConfirmModal.value = false
