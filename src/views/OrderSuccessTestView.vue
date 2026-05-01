@@ -1,25 +1,29 @@
 <script setup lang="ts">
 import { chatsService } from '@/api/chats/chatsService'
+import { profileService } from '@/api/profile/ProfileService'
 import { reviewService } from '@/api/review/ReviewService'
 import AppModal from '@/components/AppModal.vue'
 import Loader from '@/components/Loader.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
+import { useUserStore } from '@/stores/user'
 import type { Product } from '@/validation/product/product'
 import type { PurchaseMessage } from '@/validation/chat/chatMessage'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowRight, CheckCircle2, Copy, HelpCircle, MessageCircle, Send, Star } from 'lucide-vue-next'
+import { ArrowRight, HelpCircle, MessageCircle, Send, Star } from 'lucide-vue-next'
 import { formatCurrencyAmount } from '@/utils/currency'
 
 const API_HOST = import.meta.env.VITE_API_HOST || ''
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
 const isLoading = ref(false)
 const latestDealMessage = ref<PurchaseMessage | null>(null)
 const loadError = ref<string | null>(null)
 const hasReview = ref(false)
+const sellerCompletedDealsCount = ref<number | null>(null)
 
 const showReviewModal = ref(false)
 const reviewStars = ref(0)
@@ -39,7 +43,6 @@ const mockOrder = {
 const mockSeller = {
   username: 'Parallax',
   rating: 5,
-  sales: 67,
   avatarUrl: 'https://images.unsplash.com/photo-1542909168-82c3e7fdca5c?auto=format&fit=crop&w=120&q=80',
 }
 
@@ -78,6 +81,7 @@ const orderCreatedAt = computed(() => {
     minute: '2-digit',
   })
 })
+const orderEmail = computed(() => userStore.user?.email ?? mockOrder.email)
 
 const orderStatusLabel = computed(() => {
   if (showCongratulations.value) return 'Ожидает выдачи'
@@ -90,7 +94,11 @@ const orderStatusLabel = computed(() => {
 
 const sellerUsername = computed(() => seller.value?.username ?? mockSeller.username)
 const sellerRating = computed(() => Number(seller.value?.rating ?? mockSeller.rating).toFixed(1))
-const sellerSales = computed(() => product.value?.seller_trust?.completed_deals_count ?? mockSeller.sales)
+const sellerSales = computed(() => {
+  if (sellerCompletedDealsCount.value != null) return sellerCompletedDealsCount.value
+  return product.value?.seller_trust?.completed_deals_count ?? 0
+})
+const isSellerOnline = computed(() => Boolean(seller.value?.is_active))
 const sellerAvatarUrl = computed(() => seller.value?.avatar_url ?? mockSeller.avatarUrl)
 const productImageUrl = computed(() => {
   const imageUrl = product.value?.images?.[0]?.image_url
@@ -116,14 +124,36 @@ async function loadAfterPaymentData() {
     ? await chatsService.getChatMessagesByDealId(requestedDealId, 1, 20)
     : await chatsService.getChatMessages(requestedChatId!, 1, 20)
 
-  latestDealMessage.value = result.latestDealMessage
-  hasReview.value = Boolean(result.latestDealMessage?.has_review)
-
-  if (!result.latestDealMessage) {
-    loadError.value = 'Не удалось загрузить данные заказа'
-  }
+  // Some deal states may return no latest_deal_message. Keep the last known payload
+  // to avoid false-negative "failed to load" errors right after status transitions.
+  latestDealMessage.value = result.latestDealMessage ?? latestDealMessage.value
+  hasReview.value = Boolean((result.latestDealMessage ?? latestDealMessage.value)?.has_review)
 
   isLoading.value = false
+}
+
+async function loadSellerSales() {
+  const username = sellerUsername.value?.trim()
+  if (!username) {
+    sellerCompletedDealsCount.value = null
+    return
+  }
+
+  const profile = await profileService.getUserProfileData(username)
+  if (!profile) {
+    sellerCompletedDealsCount.value = null
+    return
+  }
+
+  const profileWithTrust = profile as typeof profile & {
+    completed_deals_count?: number
+    total_deals_count?: number
+  }
+
+  const completedDeals = profileWithTrust.completed_deals_count
+  const totalDeals = profileWithTrust.total_deals_count
+  const sales = Number.isFinite(completedDeals) ? completedDeals : (Number.isFinite(totalDeals) ? totalDeals : null)
+  sellerCompletedDealsCount.value = sales
 }
 
 function goToSellerProfile() {
@@ -147,11 +177,6 @@ function openReviewModal() {
   reviewText.value = ''
   reviewError.value = null
   showReviewModal.value = true
-}
-
-async function copyProductData() {
-  if (!productDataText.value || typeof navigator === 'undefined' || !navigator.clipboard) return
-  await navigator.clipboard.writeText(productDataText.value)
 }
 
 function closeReviewModal() {
@@ -186,6 +211,13 @@ watch(
 )
 
 watch(
+  sellerUsername,
+  async () => {
+    await loadSellerSales()
+  },
+)
+
+watch(
   [isReviewEntry, canLeaveReview],
   async ([shouldOpen, canOpen]) => {
     if (!shouldOpen || !canOpen || showReviewModal.value) return
@@ -197,6 +229,7 @@ watch(
 
 onMounted(async () => {
   await loadAfterPaymentData()
+  await loadSellerSales()
   if (isReviewEntry.value && canLeaveReview.value) {
     await nextTick()
     openReviewModal()
@@ -212,20 +245,21 @@ onMounted(async () => {
           <h1 class="text-[1.7rem] font-extrabold leading-tight sm:text-[2rem]">
             Поздравляем с покупкой
           </h1>
-          <span class="party-popper" aria-hidden="true">
-            <span class="party-popper__cone"></span>
-            <span class="party-popper__band party-popper__band--top"></span>
-            <span class="party-popper__band party-popper__band--bottom"></span>
-            <span class="party-popper__stream party-popper__stream--left"></span>
-            <span class="party-popper__stream party-popper__stream--right"></span>
-            <span class="party-popper__piece party-popper__piece--one"></span>
-            <span class="party-popper__piece party-popper__piece--two"></span>
-            <span class="party-popper__piece party-popper__piece--three"></span>
-            <span class="party-popper__piece party-popper__piece--four"></span>
+          <span class="tg-popper" aria-hidden="true">
+            <svg viewBox="0 0 64 64" class="h-12 w-12 sm:h-14 sm:w-14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M19 44L44 31L31 56L19 44Z" fill="#FFC83D"/>
+              <path d="M22 41L44 31L31 53L22 41Z" fill="#FFB020"/>
+              <path d="M29 36L48 42" stroke="#9A67FF" stroke-width="4" stroke-linecap="round"/>
+              <path d="M27 42L45 48" stroke="#7D4DFF" stroke-width="4" stroke-linecap="round"/>
+              <rect x="16" y="17" width="6" height="22" rx="3" transform="rotate(14 16 17)" fill="#2E83FF"/>
+              <rect x="27" y="12" width="6" height="18" rx="3" transform="rotate(-14 27 12)" fill="#FF4B93"/>
+              <rect x="37" y="10" width="8" height="8" rx="2" transform="rotate(-18 37 10)" fill="#FFD84D"/>
+              <rect x="42" y="20" width="7" height="7" rx="2" transform="rotate(19 42 20)" fill="#FF7F50"/>
+            </svg>
           </span>
         </div>
         <p class="mt-1 text-sm font-medium text-[var(--text-meta)]">
-          Отправили данные о заказе на <span class="underline decoration-[rgb(var(--palette-white)/0.24)] underline-offset-2">{{ mockOrder.email }}</span>
+          Отправили данные о заказе на <span class="underline decoration-[rgb(var(--palette-white)/0.24)] underline-offset-2">{{ orderEmail }}</span>
         </p>
       </header>
 
@@ -294,7 +328,11 @@ onMounted(async () => {
                   :alt="sellerUsername"
                   class="h-12 w-12 rounded-full object-cover"
                 />
-                <span class="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[rgb(var(--palette-dark-900))] bg-[rgb(var(--palette-green-500))]"></span>
+                <span
+                  class="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[rgb(var(--palette-dark-900))]"
+                  :class="isSellerOnline ? 'bg-[rgb(var(--palette-green-500))]' : 'bg-[rgb(var(--palette-gray-500))]'"
+                  :title="isSellerOnline ? 'Online' : 'Offline'"
+                ></span>
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex min-w-0 items-center gap-1.5">
@@ -336,40 +374,8 @@ onMounted(async () => {
 
         <section class="order-panel min-w-0 p-5 sm:p-6 lg:col-start-1">
           <h2 class="mb-5 text-xl font-extrabold">Ваш товар</h2>
-          <div class="product-delivery-box rounded-lg p-4">
-            <div class="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--palette-green-500)/0.2)] bg-[rgb(var(--palette-green-500)/0.1)] px-3 py-1 text-xs font-semibold text-[var(--text-success)]">
-              <CheckCircle2 class="h-3.5 w-3.5" />
-              {{ orderStatusLabel }}
-            </div>
-            <div v-if="hasAutoDeliveryData" class="mt-4 space-y-3">
-              <p class="text-sm font-semibold text-[var(--text-title)]">Данные автовыдачи</p>
-              <div class="rounded-lg border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-black)/0.22)] p-3">
-                <pre class="whitespace-pre-wrap break-words text-sm leading-6 text-[rgb(var(--text-title-rgb)/0.9)]">{{ productDataText }}</pre>
-              </div>
-              <button
-                type="button"
-                class="inline-flex h-10 items-center justify-center rounded-lg border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] px-4 text-xs font-semibold text-[var(--text-title)] transition hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)]"
-                @click="copyProductData"
-              >
-                <Copy class="mr-2 h-4 w-4" />
-                Скопировать данные
-              </button>
-            </div>
-            <div v-else class="mt-4 rounded-lg border border-[rgb(var(--palette-blue-500)/0.18)] bg-[rgb(var(--palette-blue-500)/0.08)] p-4">
-              <p class="text-sm font-semibold text-[var(--text-title)]">Свяжитесь с продавцом, чтобы получить товар.</p>
-              <p class="mt-2 text-sm leading-6 text-[var(--text-body)]">
-                Продавец выдаст товар вручную. Откройте чат, если нужно уточнить детали заказа.
-              </p>
-              <button
-                type="button"
-                class="mt-4 inline-flex h-10 items-center justify-center rounded-lg bg-[rgb(var(--palette-blue-600))] px-4 text-xs font-bold text-[var(--text-title)] transition hover:bg-[rgb(var(--palette-blue-500))]"
-                @click="goToChat"
-              >
-                <MessageCircle class="mr-2 h-4 w-4" />
-                Написать продавцу
-              </button>
-            </div>
-          </div>
+          <p v-if="hasAutoDeliveryData" class="whitespace-pre-wrap break-words text-sm leading-6 text-[rgb(var(--text-title-rgb)/0.9)]">{{ productDataText }}</p>
+          <p v-else class="text-sm leading-6 text-[var(--text-body)]">Свяжитесь с продавцом, чтобы получить товар. Продавец выдаст товар вручную.</p>
         </section>
 
         <section class="order-panel min-w-0 p-5 sm:p-6 lg:col-span-2">
@@ -477,133 +483,20 @@ onMounted(async () => {
     linear-gradient(145deg, rgb(5 9 22) 0%, rgb(8 18 39) 54%, rgb(3 6 18) 100%);
 }
 
-.product-delivery-box {
-  background: rgb(var(--palette-dark-800) / 0.72);
+.tg-popper {
+  display: inline-flex;
+  filter: drop-shadow(0 8px 16px rgb(0 0 0 / 0.28));
+  animation: tg-popper-enter 650ms cubic-bezier(0.22, 1.2, 0.4, 1) both;
 }
 
-.party-popper {
-  position: relative;
-  display: inline-block;
-  width: 3rem;
-  height: 3.2rem;
-  transform: rotate(-18deg);
-  animation: popper-kick 900ms cubic-bezier(0.2, 1.35, 0.45, 1) both;
-}
-
-.party-popper__cone {
-  position: absolute;
-  left: 0.45rem;
-  bottom: 0.18rem;
-  width: 2.15rem;
-  height: 2.4rem;
-  clip-path: polygon(0 100%, 32% 0, 100% 68%);
-  background: linear-gradient(135deg, #d58b16 0%, #ffd646 45%, #b67212 100%);
-  box-shadow: inset -0.35rem -0.15rem 0 rgb(77 48 13 / 0.28);
-}
-
-.party-popper__band {
-  position: absolute;
-  left: 0.88rem;
-  width: 1.95rem;
-  height: 0.34rem;
-  border-radius: 999px;
-  background: #a65cff;
-  transform: rotate(27deg);
-}
-
-.party-popper__band--top {
-  bottom: 1.34rem;
-}
-
-.party-popper__band--bottom {
-  bottom: 0.72rem;
-}
-
-.party-popper__stream,
-.party-popper__piece {
-  position: absolute;
-  opacity: 0;
-  animation: confetti-shot 1300ms ease-out 180ms both;
-}
-
-.party-popper__stream {
-  width: 0.26rem;
-  height: 1.25rem;
-  border-radius: 999px;
-}
-
-.party-popper__stream--left {
-  left: 0.6rem;
-  top: 0.08rem;
-  background: #2e6cff;
-  transform: rotate(26deg);
-}
-
-.party-popper__stream--right {
-  right: 0.2rem;
-  top: 0.1rem;
-  background: #ff3f86;
-  transform: rotate(-34deg);
-}
-
-.party-popper__piece {
-  width: 0.42rem;
-  height: 0.42rem;
-  border-radius: 0.08rem;
-}
-
-.party-popper__piece--one {
-  left: 0.15rem;
-  top: 0.05rem;
-  background: #f43f7f;
-}
-
-.party-popper__piece--two {
-  left: 1.15rem;
-  top: -0.22rem;
-  background: #2f6bff;
-}
-
-.party-popper__piece--three {
-  right: 0.58rem;
-  top: -0.1rem;
-  background: #fff14a;
-}
-
-.party-popper__piece--four {
-  right: -0.08rem;
-  top: 0.68rem;
-  background: #ff9f1c;
-}
-
-@keyframes popper-kick {
-  0% {
-    transform: translateY(0.4rem) rotate(-34deg) scale(0.65);
-    opacity: 0;
-  }
-  45% {
-    transform: translateY(-0.18rem) rotate(-14deg) scale(1.08);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(0) rotate(-18deg) scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes confetti-shot {
+@keyframes tg-popper-enter {
   0% {
     opacity: 0;
-    translate: 0 0.75rem;
-    scale: 0.55;
-  }
-  18% {
-    opacity: 1;
+    transform: translateY(6px) rotate(-16deg) scale(0.8);
   }
   100% {
     opacity: 1;
-    translate: 0 -0.25rem;
-    scale: 1;
+    transform: translateY(0) rotate(0deg) scale(1);
   }
 }
 
