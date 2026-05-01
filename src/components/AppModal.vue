@@ -9,7 +9,8 @@ const props = withDefaults(defineProps<{
   description?: string
   eyebrow?: string
   size?: 'sm' | 'md' | 'lg' | 'xl'
-  titleScale?: 'default' | 'hero'
+  titleScale?: 'default' | 'large' | 'hero'
+  headerAlign?: 'start' | 'center'
   showCloseButton?: boolean
   dismissible?: boolean
   allowOverflowVisible?: boolean
@@ -23,6 +24,7 @@ const props = withDefaults(defineProps<{
   eyebrow: '',
   size: 'md',
   titleScale: 'default',
+  headerAlign: 'start',
   showCloseButton: true,
   dismissible: true,
   allowOverflowVisible: false,
@@ -136,7 +138,9 @@ const sizeClass = computed(() => {
 const titleClass = computed(() => (
   props.titleScale === 'hero'
     ? 'text-[1.9rem] font-semibold leading-[1.04] tracking-[-0.03em] text-[var(--text-title)] sm:text-[2.85rem]'
-    : 'text-xl font-semibold leading-tight text-[var(--text-title)] sm:text-[1.65rem]'
+    : props.titleScale === 'large'
+      ? 'text-[1.9rem] font-semibold leading-none text-[var(--text-title)] sm:text-[2.25rem]'
+      : 'text-xl font-semibold leading-tight text-[var(--text-title)] sm:text-[1.65rem]'
 ))
 </script>
 
@@ -158,8 +162,16 @@ const titleClass = computed(() => (
             :class="[sizeClass, props.allowOverflowVisible ? 'overflow-visible' : 'overflow-hidden', props.panelClass]"
           >
             <div v-if="hasHeader" class="relative px-5 pt-5 sm:px-8 sm:pt-8">
-              <div class="flex items-start justify-between gap-4">
-                <div class="min-w-0 flex-1">
+              <div
+                :class="props.headerAlign === 'center'
+                  ? 'relative flex min-h-10 items-center justify-center'
+                  : 'flex items-start justify-between gap-4'"
+              >
+                <div
+                  :class="props.headerAlign === 'center'
+                    ? 'min-w-0 flex-1 px-12 text-center'
+                    : 'min-w-0 flex-1'"
+                >
                   <div
                     v-if="props.eyebrow"
                     class="inline-flex max-w-full items-center rounded-full border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.26em] text-[var(--text-muted)]"
@@ -167,7 +179,14 @@ const titleClass = computed(() => (
                     <span class="truncate">{{ props.eyebrow }}</span>
                   </div>
 
-                  <h3 v-if="props.title" class="mt-3 break-words whitespace-normal" :class="titleClass">
+                  <h3
+                    v-if="props.title"
+                    class="break-words whitespace-normal"
+                    :class="[
+                      titleClass,
+                      props.headerAlign === 'center' && !props.eyebrow ? '' : 'mt-3',
+                    ]"
+                  >
                     {{ props.title }}
                   </h3>
 
@@ -183,6 +202,7 @@ const titleClass = computed(() => (
                   v-if="props.showCloseButton"
                   type="button"
                   class="app-modal-close flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body)] transition hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)] disabled:cursor-not-allowed disabled:opacity-50"
+                  :class="props.headerAlign === 'center' ? 'absolute right-0 top-1/2 -translate-y-1/2' : ''"
                   :disabled="!props.dismissible"
                   :aria-label="t('common.close')"
                   @click="requestClose"

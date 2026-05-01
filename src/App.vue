@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from './stores/user'
 import { useNavigationStore } from './stores/navigation'
 import { useChatStore } from './stores/chat'
@@ -14,13 +14,17 @@ import MainPageLayout from './views/layouts/MainPageLayout.vue'
 import AppRouteSkeleton from './components/layout/AppRouteSkeleton.vue'
 import CookieConsentBanner from './components/layout/CookieConsentBanner.vue'
 import AuthCornerToast from './components/AuthCornerToast.vue'
+import AuthModal from './components/auth/AuthModal.vue'
 import { consumeAuthWelcomeToast, type AuthWelcomeToastPayload } from './utils/authWelcomeToast'
+
+type AuthModalMode = 'signin' | 'signup'
 
 const store = useUserStore()
 const navigationStore = useNavigationStore()
 const chatStore = useChatStore()
 const notificationStore = useNotificationStore()
 const route = useRoute()
+const router = useRouter()
 const isUserLoaded = ref(false)
 const authWelcomeToast = ref<AuthWelcomeToastPayload | null>(null)
 let unsubscribeChatUpdated: (() => void) | null = null
@@ -38,6 +42,37 @@ const resolvedOnlinePingIntervalMs = Number.isFinite(onlinePingIntervalMs)
 const { user } = storeToRefs(store)
 const { routePending } = storeToRefs(navigationStore)
 const showRouteProgress = computed(() => isUserLoaded.value && routePending.value)
+const authModalMode = computed<AuthModalMode | null>(() => {
+  const mode = route.query.auth
+  const normalizedMode = Array.isArray(mode) ? mode[0] : mode
+  if (normalizedMode === 'signin' || normalizedMode === 'signup') {
+    return normalizedMode
+  }
+  return null
+})
+const isAuthModalOpen = computed(() => Boolean(authModalMode.value) && !user.value)
+
+function closeAuthModal() {
+  const nextQuery = { ...route.query }
+  delete nextQuery.auth
+  delete nextQuery.redirect
+  void router.replace({
+    path: route.path,
+    query: nextQuery,
+    hash: route.hash,
+  })
+}
+
+function setAuthModalMode(mode: AuthModalMode) {
+  void router.replace({
+    path: route.path,
+    query: {
+      ...route.query,
+      auth: mode,
+    },
+    hash: route.hash,
+  })
+}
 
 function pingOnlineSafely() {
   if (!user.value) return
@@ -168,11 +203,23 @@ watch(
   (userId) => {
     if (userId) {
       startOnlinePing()
+      if (authModalMode.value) {
+        closeAuthModal()
+      }
       return
     }
     stopOnlinePing()
   },
   { immediate: true }
+)
+
+watch(
+  authModalMode,
+  (mode) => {
+    if (mode && user.value) {
+      closeAuthModal()
+    }
+  }
 )
 
 watch(
@@ -248,6 +295,14 @@ const layout = computed(() => {
     </component>
 
     <CookieConsentBanner />
+
+    <AuthModal
+      v-if="authModalMode"
+      :is-open="isAuthModalOpen"
+      :mode="authModalMode"
+      @close="closeAuthModal"
+      @mode-change="setAuthModalMode"
+    />
   </div>
 </template>
 

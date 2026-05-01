@@ -1,11 +1,11 @@
-import { createRouter, createWebHistory, createMemoryHistory } from "vue-router";
+import { createRouter, createWebHistory, createMemoryHistory, type RouteRecordRaw } from "vue-router";
 import { useNavigationStore } from "@/stores/navigation";
 import { useUserStore } from "@/stores/user";
 import { buildAuthRedirectQuery, getAuthRedirectFromRoute } from "@/utils/authRedirect";
 
 const YANDEX_METRIKA_COUNTER_ID = 106828907;
 
-const routes = [
+const routes: RouteRecordRaw[] = [
     {
       path: "/",
       name: "home",
@@ -14,14 +14,24 @@ const routes = [
     {
       path: "/signin",
       name: "signIn",
-      component: () => import("@/views/SignIn.vue"),
-      meta: { requiredGuest: true },
+      redirect: (to) => ({
+        path: "/",
+        query: {
+          ...to.query,
+          auth: "signin",
+        },
+      }),
     },
     {
       path: "/signup",
       name: "signUp",
-      component: () => import("@/views/SignUp.vue"),
-      meta: { requiredGuest: true },
+      redirect: (to) => ({
+        path: "/",
+        query: {
+          ...to.query,
+          auth: "signup",
+        },
+      }),
     },
     {
       path: "/password-reset",
