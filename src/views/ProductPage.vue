@@ -939,9 +939,8 @@ onUnmounted(() => {
       </nav>
     </div>
 
-    <div class="product-detail-layout grid w-full grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_390px]">
-      <main class="min-w-0 space-y-8">
-        <div class="space-y-3">
+      <div class="product-detail-layout grid w-full grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_390px]">
+        <div class="product-media-column min-w-0 space-y-3 lg:col-start-1 lg:row-start-1">
           <div v-if="selectedImage" class="product-hero-media relative overflow-hidden rounded-lg bg-[rgb(var(--palette-dark-950)/0.92)]">
             <template v-if="product.images && product.images.length > 1">
               <button
@@ -996,145 +995,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <section class="space-y-3">
-          <h2 class="text-xl font-bold text-[var(--text-title)]">{{ $t('pages.product.description') }}</h2>
-          <p class="product-description-text whitespace-pre-line break-words text-sm leading-relaxed text-[var(--text-body)] [overflow-wrap:anywhere] lg:text-base">
-            {{ displayedDescription }}
-          </p>
-          <button
-            v-if="shouldCollapseDescription"
-            type="button"
-            class="inline-flex h-9 items-center rounded-lg bg-[rgb(var(--palette-dark-700)/0.55)] px-4 text-sm font-semibold text-[var(--text-title)] transition hover:bg-[rgb(var(--palette-dark-600)/0.7)]"
-            @click="isDescriptionExpanded = !isDescriptionExpanded"
-          >
-            {{ isDescriptionExpanded ? 'Скрыть' : 'Раскрыть' }}
-          </button>
-        </section>
-
-        <section v-if="productReviews.length" class="space-y-3">
-          <h2 class="text-xl font-bold text-[var(--text-title)]">
-            {{ $t('pages.product.reviews') }}<span class="text-[var(--text-muted)]">{{ reviewCountLabel }}</span>
-          </h2>
-          <div class="reviews-strip -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-            <article
-              v-for="review in visibleReviews"
-              :key="review.id"
-              class="review-card min-w-[220px] rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900)/0.82)] p-3 sm:min-w-[250px]"
-            >
-              <div class="flex items-start gap-2.5">
-                <UserAvatar
-                  :avatar-url="review.reviewer?.avatar_url ?? ''"
-                  :alt="review.reviewer?.username ?? 'reviewer'"
-                  class="h-9 w-9 shrink-0 rounded-full border border-[rgb(var(--palette-dark-700))] object-cover"
-                />
-                <div class="min-w-0 flex-1">
-                  <div class="flex min-w-0 items-center gap-1.5">
-                    <StyledUsername
-                      v-if="review.reviewer"
-                      :username="review.reviewer.username"
-                      :style-id="review.reviewer.nickname_style_id"
-                      class="truncate text-sm font-semibold"
-                    />
-                    <span v-else class="truncate text-sm font-semibold text-[var(--text-title)]">{{ $t('common.user') }}</span>
-                    <span class="inline-flex shrink-0 items-center gap-0.5 text-xs font-semibold text-[var(--text-title)]">
-                      <Star class="h-3 w-3 fill-current text-[var(--text-title)]" />
-                      {{ review.rating }}
-                    </span>
-                  </div>
-                  <p class="mt-0.5 text-[10px] text-[var(--text-meta)]">{{ formatFullDate(review.created_at) }}</p>
-                </div>
-              </div>
-              <p class="mt-2 line-clamp-2 text-xs leading-5 text-[var(--text-body)]">{{ review.body }}</p>
-            </article>
-          </div>
-          <button
-            v-if="hasMoreReviews"
-            type="button"
-            class="inline-flex h-9 items-center rounded-lg bg-[rgb(var(--palette-dark-700)/0.55)] px-4 text-sm font-semibold text-[var(--text-title)] transition hover:bg-[rgb(var(--palette-dark-600)/0.7)]"
-            @click="visibleReviewsCount += 6"
-          >
-            {{ 'Раскрыть' }}
-          </button>
-        </section>
-
-        <section v-if="isSimilarProductsLoading || similarProducts.length" class="mt-6 w-full space-y-4">
-          <h2 class="text-xl font-bold text-[var(--text-title)]">
-            {{ $t('pages.product.similarProducts') }}<span class="text-[var(--text-muted)]">{{ similarProductsCountLabel }}</span>
-          </h2>
-          <div class="space-y-4">
-            <div class="flex justify-end">
-              <div
-                class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.4)] p-0.5"
-                role="group"
-                :aria-label="t('pages.index.viewSwitcherLabel')"
-              >
-                <button
-                  type="button"
-                  class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
-                  :class="productCardViewMode === 'grid'
-                    ? 'bg-[rgb(var(--palette-blue-600))] text-[var(--text-title)]'
-                    : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[var(--text-title)]'"
-                  :title="t('pages.index.viewGrid')"
-                  @click="setProductCardViewMode('grid')"
-                >
-                  <LayoutGrid class="h-3.5 w-3.5" />
-                  <span class="hidden sm:inline">{{ t('pages.index.viewGrid') }}</span>
-                </button>
-
-                <button
-                  type="button"
-                  class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
-                  :class="productCardViewMode === 'list'
-                    ? 'bg-[rgb(var(--palette-blue-600))] text-[var(--text-title)]'
-                    : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[var(--text-title)]'"
-                  :title="t('pages.index.viewList')"
-                  @click="setProductCardViewMode('list')"
-                >
-                  <Rows3 class="h-3.5 w-3.5" />
-                  <span class="hidden sm:inline">{{ t('pages.index.viewList') }}</span>
-                </button>
-              </div>
-            </div>
-
-            <div
-              v-if="isSimilarProductsLoading"
-              class="w-full"
-              :class="productCardViewMode === 'grid'
-                ? 'similar-products-grid grid gap-2'
-                : 'flex flex-col gap-2'"
-            >
-              <div
-                v-for="n in similarProductsLoadingSkeletonCount"
-                :key="`similar-skeleton-${n}`"
-                class="animate-pulse rounded-lg bg-[rgb(var(--palette-dark-600))]"
-                :class="productCardViewMode === 'grid' ? 'h-64' : 'h-[118px] sm:h-[134px]'"
-              />
-            </div>
-
-            <div
-              v-else-if="similarProducts.length && productCardViewMode === 'grid'"
-              class="similar-products-grid grid w-full gap-2"
-            >
-              <MainProductCard
-                v-for="similarProduct in similarProducts"
-                :key="similarProduct.id"
-                :product="similarProduct"
-                @click="goToProductPage"
-              />
-            </div>
-            <div v-else-if="similarProducts.length" class="w-full flex flex-col gap-2">
-              <HomeProductListCard
-                v-for="similarProduct in similarProducts"
-                :key="similarProduct.id"
-                :product="similarProduct"
-                @click="goToProductPage"
-              />
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <aside class="product-buy-sidebar min-w-0 space-y-4 lg:sticky lg:top-20 lg:self-start">
+      <aside class="product-buy-sidebar min-w-0 space-y-4 lg:sticky lg:top-20 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
         <div class="space-y-2">
           <h1 class="text-2xl font-extrabold uppercase leading-none text-[var(--text-title)] sm:text-3xl lg:text-[1.6rem]">
             {{ product.title }}
@@ -1323,6 +1184,145 @@ onUnmounted(() => {
           />
         </div>
       </aside>
+
+      <main class="product-content-column min-w-0 space-y-8 lg:col-start-1 lg:row-start-2">
+        <section class="space-y-3">
+          <h2 class="text-xl font-bold text-[var(--text-title)]">{{ $t('pages.product.description') }}</h2>
+          <p class="product-description-text whitespace-pre-line break-words text-sm leading-relaxed text-[var(--text-body)] [overflow-wrap:anywhere] lg:text-base">
+            {{ displayedDescription }}
+          </p>
+          <button
+            v-if="shouldCollapseDescription"
+            type="button"
+            class="inline-flex h-9 items-center rounded-lg bg-[rgb(var(--palette-dark-700)/0.55)] px-4 text-sm font-semibold text-[var(--text-title)] transition hover:bg-[rgb(var(--palette-dark-600)/0.7)]"
+            @click="isDescriptionExpanded = !isDescriptionExpanded"
+          >
+            {{ isDescriptionExpanded ? 'Скрыть' : 'Раскрыть' }}
+          </button>
+        </section>
+
+        <section v-if="productReviews.length" class="space-y-3">
+          <h2 class="text-xl font-bold text-[var(--text-title)]">
+            {{ $t('pages.product.reviews') }}<span class="text-[var(--text-muted)]">{{ reviewCountLabel }}</span>
+          </h2>
+          <div class="reviews-strip -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+            <article
+              v-for="review in visibleReviews"
+              :key="review.id"
+              class="review-card min-w-[220px] rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900)/0.82)] p-3 sm:min-w-[250px]"
+            >
+              <div class="flex items-start gap-2.5">
+                <UserAvatar
+                  :avatar-url="review.reviewer?.avatar_url ?? ''"
+                  :alt="review.reviewer?.username ?? 'reviewer'"
+                  class="h-9 w-9 shrink-0 rounded-full border border-[rgb(var(--palette-dark-700))] object-cover"
+                />
+                <div class="min-w-0 flex-1">
+                  <div class="flex min-w-0 items-center gap-1.5">
+                    <StyledUsername
+                      v-if="review.reviewer"
+                      :username="review.reviewer.username"
+                      :style-id="review.reviewer.nickname_style_id"
+                      class="truncate text-sm font-semibold"
+                    />
+                    <span v-else class="truncate text-sm font-semibold text-[var(--text-title)]">{{ $t('common.user') }}</span>
+                    <span class="inline-flex shrink-0 items-center gap-0.5 text-xs font-semibold text-[var(--text-title)]">
+                      <Star class="h-3 w-3 fill-current text-[var(--text-title)]" />
+                      {{ review.rating }}
+                    </span>
+                  </div>
+                  <p class="mt-0.5 text-[10px] text-[var(--text-meta)]">{{ formatFullDate(review.created_at) }}</p>
+                </div>
+              </div>
+              <p class="mt-2 line-clamp-2 text-xs leading-5 text-[var(--text-body)]">{{ review.body }}</p>
+            </article>
+          </div>
+          <button
+            v-if="hasMoreReviews"
+            type="button"
+            class="inline-flex h-9 items-center rounded-lg bg-[rgb(var(--palette-dark-700)/0.55)] px-4 text-sm font-semibold text-[var(--text-title)] transition hover:bg-[rgb(var(--palette-dark-600)/0.7)]"
+            @click="visibleReviewsCount += 6"
+          >
+            {{ 'Раскрыть' }}
+          </button>
+        </section>
+
+        <section v-if="isSimilarProductsLoading || similarProducts.length" class="mt-6 w-full space-y-4">
+          <h2 class="text-xl font-bold text-[var(--text-title)]">
+            {{ $t('pages.product.similarProducts') }}<span class="text-[var(--text-muted)]">{{ similarProductsCountLabel }}</span>
+          </h2>
+          <div class="space-y-4">
+            <div class="flex justify-end">
+              <div
+                class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.4)] p-0.5"
+                role="group"
+                :aria-label="t('pages.index.viewSwitcherLabel')"
+              >
+                <button
+                  type="button"
+                  class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
+                  :class="productCardViewMode === 'grid'
+                    ? 'bg-[rgb(var(--palette-blue-600))] text-[var(--text-title)]'
+                    : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[var(--text-title)]'"
+                  :title="t('pages.index.viewGrid')"
+                  @click="setProductCardViewMode('grid')"
+                >
+                  <LayoutGrid class="h-3.5 w-3.5" />
+                  <span class="hidden sm:inline">{{ t('pages.index.viewGrid') }}</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
+                  :class="productCardViewMode === 'list'
+                    ? 'bg-[rgb(var(--palette-blue-600))] text-[var(--text-title)]'
+                    : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[var(--text-title)]'"
+                  :title="t('pages.index.viewList')"
+                  @click="setProductCardViewMode('list')"
+                >
+                  <Rows3 class="h-3.5 w-3.5" />
+                  <span class="hidden sm:inline">{{ t('pages.index.viewList') }}</span>
+                </button>
+              </div>
+            </div>
+
+            <div
+              v-if="isSimilarProductsLoading"
+              class="w-full"
+              :class="productCardViewMode === 'grid'
+                ? 'similar-products-grid grid gap-2'
+                : 'flex flex-col gap-2'"
+            >
+              <div
+                v-for="n in similarProductsLoadingSkeletonCount"
+                :key="`similar-skeleton-${n}`"
+                class="animate-pulse rounded-lg bg-[rgb(var(--palette-dark-600))]"
+                :class="productCardViewMode === 'grid' ? 'h-64' : 'h-[118px] sm:h-[134px]'"
+              />
+            </div>
+
+            <div
+              v-else-if="similarProducts.length && productCardViewMode === 'grid'"
+              class="similar-products-grid grid w-full gap-2"
+            >
+              <MainProductCard
+                v-for="similarProduct in similarProducts"
+                :key="similarProduct.id"
+                :product="similarProduct"
+                @click="goToProductPage"
+              />
+            </div>
+            <div v-else-if="similarProducts.length" class="w-full flex flex-col gap-2">
+              <HomeProductListCard
+                v-for="similarProduct in similarProducts"
+                :key="similarProduct.id"
+                :product="similarProduct"
+                @click="goToProductPage"
+              />
+            </div>
+          </div>
+        </section>
+      </main>
 
       <div
         v-if="shouldShowOfficialRemarketCarousel"
