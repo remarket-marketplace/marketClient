@@ -6,7 +6,6 @@ import Loader from '@/components/Loader.vue'
 import MainProductCard from '@/components/mainProductCard.vue'
 import HomeProductListCard from '@/components/HomeProductListCard.vue'
 import FortniteAccountSnapshot from '@/components/FortniteAccountSnapshot.vue'
-import ProductStatusTag from '@/components/ProductStatusTag.vue'
 import ReportComplaintModal from '@/components/complaints/ReportComplaintModal.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
@@ -15,9 +14,8 @@ import type { Category } from '@/validation/category/category'
 import { onMounted, ref, onUnmounted, computed, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { BadgeCheck, Check, ChevronLeft, ChevronRight, X, Heart, Trash2, Percent, ShoppingBag, LayoutGrid, Rows3, ShieldCheck, TriangleAlert, ImageOff, Star } from 'lucide-vue-next'
+import { BadgeCheck, Check, ChevronLeft, ChevronRight, X, Heart, Trash2, ShoppingBag, LayoutGrid, Rows3, ShieldCheck, ImageOff, Star } from 'lucide-vue-next'
 import { useUserStore } from '@/stores/user'
-import BackButton from '@/components/navigation/BackButton.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
 import { formatCurrencyAmount, getCurrencySymbol, resolvePreferredCurrency } from '@/utils/currency'
 import { storeToRefs } from 'pinia'
@@ -170,16 +168,8 @@ const additionalInfoItems = computed(() => {
 
   return [
     {
-      label: t('common.category'),
-      value: displayedSubcategory.value?.name ?? displayedCategory.value?.name ?? t('common.notSpecified'),
-    },
-    {
       label: t('pages.product.remainingQuantity'),
       value: String(product.value.count),
-    },
-    {
-      label: t('common.published'),
-      value: formatFullDate(product.value.created_at),
     },
     {
       label: t('common.autoDelivery'),
@@ -192,6 +182,7 @@ const officialProductsCountText = computed(() => {
   const count = officialProducts.value.length
   return `${count} ${getProductWordFormRu(count)}`
 })
+const hasSingleOfficialProduct = computed(() => officialProducts.value.length === 1)
 
 const productOfferBasePrice = computed(() => Number(product.value?.price ?? 0))
 const maxOfferedPrice = computed(() => {
@@ -575,6 +566,16 @@ function goToProductByModel(nextProduct: Product) {
   goToProductPage(nextProductKey)
 }
 
+function goToSellerProfile() {
+  if (!product.value?.seller.username) return
+  router.push(`/user/${product.value.seller.username}`)
+}
+
+function goToUserProfile(username?: string | null) {
+  if (!username) return
+  router.push(`/user/${username}`)
+}
+
 function selectImage(image: ProductImage) {
   selectedImage.value = image
 }
@@ -927,26 +928,24 @@ onUnmounted(() => {
   <section v-if="product"
     class="product-page-shell h-full w-full mx-auto max-w-[1280px] flex flex-col items-start gap-6 overflow-x-hidden px-4 pb-36 pt-2 text-mainText lg:px-0 lg:pb-8">
     <div class="flex w-full flex-wrap items-center justify-between gap-3">
-      <nav class="flex min-w-0 flex-wrap items-center gap-1 text-xs text-[var(--text-meta)]">
+      <nav class="flex min-w-0 flex-wrap items-center gap-1.5 text-sm text-[var(--text-meta)] sm:text-[15px]">
         <template v-for="(breadcrumbItem, index) in breadcrumbItems" :key="`${breadcrumbItem.label}-${index}`">
           <button
             v-if="breadcrumbItem.action"
             type="button"
-            class="max-w-[180px] truncate transition hover:text-[var(--text-title)]"
+            class="max-w-[220px] truncate font-medium transition hover:text-[var(--text-title)]"
             @click="breadcrumbItem.action"
           >
             {{ breadcrumbItem.label }}
           </button>
-          <span v-else class="max-w-[180px] truncate text-[var(--text-body)]">{{ breadcrumbItem.label }}</span>
+          <span v-else class="max-w-[220px] truncate font-medium text-[var(--text-body)]">{{ breadcrumbItem.label }}</span>
           <span v-if="index < breadcrumbItems.length - 1" class="text-[var(--text-meta)]">›</span>
         </template>
       </nav>
-      <BackButton />
     </div>
 
-    <div class="product-detail-layout grid w-full grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_390px]">
-      <main class="min-w-0 space-y-8">
-        <div class="space-y-3">
+      <div class="product-detail-layout grid w-full grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_390px]">
+        <div class="product-media-column min-w-0 space-y-3 lg:col-start-1 lg:row-start-1">
           <div v-if="selectedImage" class="product-hero-media relative overflow-hidden rounded-lg bg-[rgb(var(--palette-dark-950)/0.92)]">
             <template v-if="product.images && product.images.length > 1">
               <button
@@ -1001,6 +1000,197 @@ onUnmounted(() => {
           </div>
         </div>
 
+      <aside class="product-buy-sidebar min-w-0 space-y-4 lg:sticky lg:top-20 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
+        <div class="space-y-2">
+          <h1 class="text-2xl font-extrabold uppercase leading-none text-[var(--text-title)] sm:text-3xl lg:text-[1.6rem]">
+            {{ product.title }}
+          </h1>
+        </div>
+
+        <section class="rounded-lg bg-[rgb(var(--palette-dark-900)/0.92)] p-4 shadow-[0_18px_50px_rgb(0_0_0/0.18)]">
+          <div class="space-y-3">
+            <div class="flex flex-wrap items-baseline gap-2">
+              <span class="text-3xl font-extrabold leading-none text-[var(--text-title)]">
+                {{ formatCurrencyAmount(product.price) }}
+              </span>
+              <button
+                v-if="!product.is_owner && !product.is_sold && product.status === 'active'"
+                type="button"
+                class="text-xs font-semibold text-[var(--text-muted)] underline decoration-[rgb(var(--palette-white)/0.28)] underline-offset-2 transition hover:text-[var(--text-title)]"
+                @click="user === null ? goToSignInFromProduct() : openOfferConfirm()"
+              >
+                {{ $t('pages.product.offerPrice') }}
+              </button>
+            </div>
+
+            <button
+              type="button"
+              class="flex w-full items-center gap-3 rounded-lg bg-[rgb(var(--palette-dark-800)/0.58)] p-2 text-left transition hover:bg-[rgb(var(--palette-dark-800)/0.78)]"
+              @click="goToSellerProfile"
+            >
+              <UserAvatar
+                :avatar-url="product.seller.avatar_url"
+                :alt="product.seller.username"
+                class="h-11 w-11 shrink-0 rounded-full border border-[rgb(var(--palette-dark-700))] object-cover"
+              />
+              <div class="min-w-0 flex-1">
+                <div class="flex min-w-0 items-center gap-1.5">
+                  <StyledUsername
+                    :username="product.seller.username"
+                    :style-id="product.seller.nickname_style_id"
+                    class="truncate text-sm font-semibold"
+                  />
+                  <span
+                    class="h-2 w-2 shrink-0 rounded-full"
+                    :class="product.seller.is_active ? 'bg-[rgb(var(--palette-green-500))]' : 'bg-[rgb(var(--palette-gray-500))]'"
+                  />
+                </div>
+                <p class="mt-0.5 text-xs text-[var(--text-muted)]">
+                  {{ product.seller.rating > 0 ? `${product.seller.rating.toFixed(1)} ★` : '—' }}
+                  <span class="mx-1 text-[var(--text-meta)]">·</span>
+                  {{ product.seller_trust?.completed_deals_count ?? 0 }} продаж
+                </p>
+              </div>
+            </button>
+
+            <span v-if="user === null && !product.is_owner" class="block text-sm text-[var(--text-muted)]">
+              {{ $t('pages.product.authRequired') }}
+            </span>
+
+            <div v-if="!product.is_sold" class="space-y-2">
+              <div v-if="product.is_owner" class="flex items-center gap-2">
+                <button
+                  type="button"
+                  class="market-primary-surface market-primary-hover inline-flex h-11 flex-1 items-center justify-center rounded-lg px-5 text-sm font-semibold text-[var(--text-title)] transition"
+                  @click.stop="editProduct">
+                  {{ $t('common.edit') }}
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.35)] text-[var(--text-body)] transition hover:border-[rgb(var(--palette-red-700)/0.45)] hover:bg-[rgb(var(--palette-red-950)/0.16)] hover:text-[var(--text-danger-soft)]"
+                  :aria-label="$t('common.delete')"
+                  @click="openDeleteConfirm"
+                >
+                  <Trash2 class="h-5 w-5" />
+                </button>
+              </div>
+
+              <template v-else-if="product.status === 'active'">
+                <div class="flex items-stretch gap-2">
+                  <button
+                    type="button"
+                    class="market-primary-surface market-primary-hover inline-flex h-11 min-w-0 flex-1 items-center justify-center rounded-lg px-4 text-sm font-semibold text-[var(--text-title)] transition"
+                    @click="user === null ? goToSignInFromProduct() : openBuyConfirm()"
+                  >
+                    <ShoppingBag class="mr-2 h-4 w-4" />
+                    {{ $t('pages.product.buy') }}
+                  </button>
+                  <button
+                    type="button"
+                    class="inline-flex h-11 w-12 shrink-0 items-center justify-center rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-800)/0.72)] transition hover:border-[rgb(var(--palette-red-700)/0.45)]"
+                    :class="product.is_liked ? 'text-[var(--text-danger)]' : 'text-[var(--text-body)]'"
+                    aria-label="Избранное"
+                    @click="user !== null && (product.is_liked ? removeProductLike() : likeProduct())"
+                  >
+                    <Heart class="h-5 w-5" :style="product.is_liked ? { fill: 'currentColor' } : undefined" />
+                  </button>
+                </div>
+              </template>
+            </div>
+
+            <div v-else class="rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.35)] py-4 text-center font-semibold text-[var(--text-muted)]">
+              {{ $t('pages.product.sold') }}
+            </div>
+
+            <div v-if="buyError" class="text-sm text-[var(--text-danger)]">
+              {{ buyError }}
+            </div>
+          </div>
+        </section>
+
+        <section class="rounded-lg bg-[rgb(var(--palette-dark-900)/0.82)] p-4">
+          <h2 class="mb-3 text-base font-semibold text-[var(--text-title)]">Дополнительная информация</h2>
+          <div class="grid grid-cols-2 gap-2">
+            <div
+              v-for="infoItem in additionalInfoItems"
+              :key="infoItem.label"
+              class="rounded-lg bg-[rgb(var(--palette-dark-800)/0.62)] px-3 py-3"
+            >
+              <p class="truncate text-[11px] text-[var(--text-meta)]">{{ infoItem.label }}</p>
+              <p class="mt-1 truncate text-sm font-semibold text-[var(--text-title)]">{{ infoItem.value }}</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="rounded-lg bg-[rgb(var(--palette-dark-900)/0.82)] p-4">
+          <div class="mb-2 flex items-center gap-2">
+            <ShieldCheck class="h-4 w-4 text-[rgb(var(--palette-white)/0.95)]" />
+            <h2 class="text-base font-semibold text-[var(--text-title)]">Гарантия безопасной сделки</h2>
+          </div>
+          <ul class="space-y-2 text-sm text-[var(--text-body)]">
+            <li class="flex gap-2">
+              <Check class="mt-1 h-3.5 w-3.5 shrink-0 text-[rgb(var(--palette-white)/0.78)]" />
+              <span>Продавец получит средства после подтверждения</span>
+            </li>
+            <li class="flex gap-2">
+              <Check class="mt-1 h-3.5 w-3.5 shrink-0 text-[rgb(var(--palette-white)/0.78)]" />
+              <span>Возврат средств, если товар не будет получен</span>
+            </li>
+          </ul>
+        </section>
+
+        <div class="px-1 text-right text-xs text-[var(--text-meta)]">
+          <span>{{ formatFullDate(product.created_at) }}</span>
+          <button
+            v-if="!product.is_owner"
+            type="button"
+            class="ml-3 inline-flex items-center text-xs font-medium text-[var(--text-meta)] underline decoration-[rgb(var(--palette-white)/0.28)] underline-offset-2 transition hover:text-[var(--text-danger-soft)]"
+            :title="$t('pages.product.reportProduct')"
+            :aria-label="$t('pages.product.reportProduct')"
+            @click="openProductReport"
+          >
+            Пожаловаться
+          </button>
+        </div>
+
+        <section v-if="product.is_raika_verified" class="rounded-lg border border-[rgb(var(--palette-emerald-700)/0.4)] bg-[rgb(var(--palette-emerald-900)/0.2)] p-3 text-xs text-[var(--text-success)]">
+          <p class="flex flex-wrap items-center gap-1.5">
+            <img :src="RAIKA_LOGO_URL" alt="Raika logo" class="h-4 w-4 shrink-0 rounded-sm object-contain" loading="lazy" />
+            <span>
+              {{ $t('pages.product.raikaVerifiedPrefix') }}
+              <a :href="RAIKA_BOT_URL" target="_blank" rel="noopener noreferrer" class="underline decoration-[rgb(var(--palette-emerald-300)/0.6)] underline-offset-2 hover:text-[var(--text-success)] transition-colors">
+                {{ $t('pages.product.raikaName') }}
+              </a>
+            </span>
+          </p>
+        </section>
+
+        <section v-if="canSeeModerationRejectReason" class="rounded-lg border border-[rgb(var(--palette-red-800)/0.4)] bg-[rgb(var(--palette-red-950)/0.2)] p-3 text-sm text-[var(--text-danger-soft)]">
+          <p class="font-semibold text-[var(--text-danger)]">{{ $t('pages.product.moderationRejectedTitle') }}</p>
+          <p class="mt-2 text-[rgb(var(--text-danger-soft-rgb)/0.9)]">
+            <span class="text-[var(--text-danger-soft)]">{{ $t('pages.product.moderationRejectReasonLabel') }}:</span>
+            {{ moderationRejectReasonLabel ?? $t('common.notSpecified') }}
+          </p>
+          <p v-if="product.moderation_reject_reason_text" class="mt-2 whitespace-pre-line text-[rgb(var(--text-danger-soft-rgb)/0.8)]">
+            {{ product.moderation_reject_reason_text }}
+          </p>
+        </section>
+
+        <div
+          v-if="shouldShowFortniteAccountDetails"
+          class="space-y-4 rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900)/0.82)] p-4"
+        >
+          <h2 class="text-lg font-semibold text-[var(--text-title)]">
+            {{ $t('pages.product.fortniteAccountDetails') }}
+          </h2>
+          <FortniteAccountSnapshot
+            :details="product.fortnite_account_details"
+            variant="full"
+          />
+        </div>
+      </aside>
+
+      <main class="product-content-column min-w-0 space-y-8 lg:col-start-1 lg:row-start-2">
         <section class="space-y-3">
           <h2 class="text-xl font-bold text-[var(--text-title)]">{{ $t('pages.product.description') }}</h2>
           <p class="product-description-text whitespace-pre-line break-words text-sm leading-relaxed text-[var(--text-body)] [overflow-wrap:anywhere] lg:text-base">
@@ -1012,37 +1202,59 @@ onUnmounted(() => {
             class="inline-flex h-9 items-center rounded-lg bg-[rgb(var(--palette-dark-700)/0.55)] px-4 text-sm font-semibold text-[var(--text-title)] transition hover:bg-[rgb(var(--palette-dark-600)/0.7)]"
             @click="isDescriptionExpanded = !isDescriptionExpanded"
           >
-            {{ isDescriptionExpanded ? 'Скрыть' : $t('common.loadMore') }}
+            {{ isDescriptionExpanded ? 'Скрыть' : 'Раскрыть' }}
           </button>
         </section>
 
-        <section class="space-y-3">
+        <section v-if="productReviews.length" class="space-y-3">
           <h2 class="text-xl font-bold text-[var(--text-title)]">
             {{ $t('pages.product.reviews') }}<span class="text-[var(--text-muted)]">{{ reviewCountLabel }}</span>
           </h2>
-          <div v-if="visibleReviews.length" class="reviews-strip -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+          <div class="reviews-strip -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
             <article
               v-for="review in visibleReviews"
               :key="review.id"
               class="review-card min-w-[220px] rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900)/0.82)] p-3 sm:min-w-[250px]"
             >
-              <div class="flex items-start gap-2.5">
+              <div v-if="review.reviewer?.username" class="flex items-start gap-2.5">
+                <button
+                  type="button"
+                  class="-m-1 inline-flex min-w-0 flex-1 items-start gap-2.5 rounded-lg p-1 text-left transition hover:bg-[rgb(var(--palette-dark-700)/0.45)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-500)/0.8)]"
+                  :title="review.reviewer.username"
+                  @click="goToUserProfile(review.reviewer.username)"
+                >
+                  <UserAvatar
+                    :avatar-url="review.reviewer.avatar_url"
+                    :alt="review.reviewer.username"
+                    class="h-9 w-9 shrink-0 rounded-full border border-[rgb(var(--palette-dark-700))] object-cover"
+                  />
+                  <div class="min-w-0 flex-1">
+                    <div class="flex min-w-0 items-center gap-1.5">
+                      <StyledUsername
+                        :username="review.reviewer.username"
+                        :style-id="review.reviewer.nickname_style_id"
+                        class="truncate text-sm font-semibold"
+                      />
+                      <span class="inline-flex shrink-0 items-center gap-0.5 text-xs font-semibold text-[var(--text-title)]">
+                        <Star class="h-3 w-3 fill-current text-[var(--text-title)]" />
+                        {{ review.rating }}
+                      </span>
+                    </div>
+                    <p class="mt-0.5 text-[10px] text-[var(--text-meta)]">{{ formatFullDate(review.created_at) }}</p>
+                  </div>
+                </button>
+              </div>
+              <div v-else class="flex items-start gap-2.5">
                 <UserAvatar
-                  :avatar-url="review.reviewer?.avatar_url ?? ''"
-                  :alt="review.reviewer?.username ?? 'reviewer'"
+                  avatar-url=""
+                  :alt="$t('common.user')"
                   class="h-9 w-9 shrink-0 rounded-full border border-[rgb(var(--palette-dark-700))] object-cover"
                 />
                 <div class="min-w-0 flex-1">
                   <div class="flex min-w-0 items-center gap-1.5">
-                    <StyledUsername
-                      v-if="review.reviewer"
-                      :username="review.reviewer.username"
-                      :style-id="review.reviewer.nickname_style_id"
-                      class="truncate text-sm font-semibold"
-                    />
-                    <span v-else class="truncate text-sm font-semibold text-[var(--text-title)]">{{ $t('common.user') }}</span>
+                    <span class="truncate text-sm font-semibold text-[var(--text-title)]">{{ $t('common.user') }}</span>
                     <span class="inline-flex shrink-0 items-center gap-0.5 text-xs font-semibold text-[var(--text-title)]">
-                      <Star class="h-3 w-3 fill-current text-[var(--text-warning-strong)]" />
+                      <Star class="h-3 w-3 fill-current text-[var(--text-title)]" />
                       {{ review.rating }}
                     </span>
                   </div>
@@ -1052,128 +1264,21 @@ onUnmounted(() => {
               <p class="mt-2 line-clamp-2 text-xs leading-5 text-[var(--text-body)]">{{ review.body }}</p>
             </article>
           </div>
-          <div v-else class="rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900)/0.55)] px-4 py-5 text-sm text-[var(--text-muted)]">
-            {{ $t('pages.profile.noReviews') }}
-          </div>
           <button
             v-if="hasMoreReviews"
             type="button"
             class="inline-flex h-9 items-center rounded-lg bg-[rgb(var(--palette-dark-700)/0.55)] px-4 text-sm font-semibold text-[var(--text-title)] transition hover:bg-[rgb(var(--palette-dark-600)/0.7)]"
             @click="visibleReviewsCount += 6"
           >
-            {{ $t('common.loadMore') }}
+            {{ 'Раскрыть' }}
           </button>
         </section>
 
-        <div
-          v-if="shouldShowOfficialRemarketCarousel"
-          class="official-showcase mt-6 w-full rounded-3xl border border-[rgb(var(--palette-white)/0.12)] p-4 sm:p-5"
-        >
-          <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div class="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--palette-blue-300)/0.7)] bg-[rgb(var(--palette-blue-500)/0.32)] px-3 py-1.5 text-sm font-semibold tracking-wide text-[var(--text-accent-strong)] shadow-[var(--official-showcase-badge-shadow)]">
-              <BadgeCheck class="h-4 w-4" />
-              <span>Официально от remarket</span>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <button
-                type="button"
-                class="official-showcase__ghost-btn !hidden sm:!inline-flex"
-                @click="openOfficialStorePage"
-              >
-                <span>{{ officialProductsCountText }}</span>
-                <ChevronRight class="h-4 w-4" />
-              </button>
-
-              <div class="hidden items-center gap-1 rounded-full border border-[var(--official-showcase-control-border)] bg-[var(--official-showcase-control-bg)] p-1 sm:inline-flex">
-                <button
-                  type="button"
-                  class="official-showcase__arrow-btn"
-                  :disabled="isOfficialCarouselAtStart || officialProducts.length <= 1"
-                  aria-label="Прокрутить влево"
-                  @click="scrollOfficialCarousel('prev')"
-                >
-                  <ChevronLeft class="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  class="official-showcase__arrow-btn"
-                  :disabled="isOfficialCarouselAtEnd || officialProducts.length <= 1"
-                  aria-label="Прокрутить вправо"
-                  @click="scrollOfficialCarousel('next')"
-                >
-                  <ChevronRight class="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="mb-3 text-sm font-medium text-[rgb(var(--text-accent-strong-rgb)/0.85)] sm:hidden">
-            {{ officialProductsCountText }}
-          </div>
-
-          <div v-if="isOfficialProductsLoading" class="official-carousel flex gap-4 overflow-x-auto pb-2 no-scrollbar">
-            <div
-              v-for="n in officialProductsLoadingSkeletonCount"
-              :key="`official-skeleton-${n}`"
-              class="h-[234px] w-[188px] shrink-0 animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-700)/0.7)] sm:h-[276px] sm:w-[232px]"
-            ></div>
-          </div>
-
-          <div v-else-if="officialProducts.length > 0" class="official-carousel-wrap relative">
-            <div
-              ref="officialCarouselRef"
-              class="official-carousel flex gap-4 overflow-x-auto pb-2 pr-1 no-scrollbar snap-x snap-mandatory"
-              @scroll.passive="handleOfficialCarouselScroll"
-            >
-              <button
-                v-for="officialProduct in officialProducts"
-                :key="`official-${officialProduct.id}`"
-                type="button"
-                data-official-card
-                class="official-card group h-[234px] w-[188px] shrink-0 snap-start overflow-hidden rounded-2xl border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-dark-900)/0.9)] text-left transition duration-200 hover:-translate-y-0.5 hover:border-[rgb(var(--palette-blue-300)/0.4)] hover:bg-[rgb(var(--palette-dark-900))] sm:h-[276px] sm:w-[232px]"
-                @click="goToProductByModel(officialProduct)"
-              >
-                <div class="official-card__media relative h-[140px] w-full overflow-hidden sm:h-[170px]">
-                  <img
-                    v-if="resolveProductImageUrl(officialProduct)"
-                    :src="resolveProductImageUrl(officialProduct)"
-                    :alt="officialProduct.title"
-                    class="h-full w-full object-cover object-center transition duration-300 group-hover:scale-[1.03]"
-                  />
-                  <div v-else class="flex h-full w-full items-center justify-center text-xs text-[var(--text-body)]">
-                    {{ t('common.noImage') }}
-                  </div>
-                  <div class="official-card__overlay absolute inset-0"></div>
-                </div>
-                <div class="space-y-2 px-3.5 py-3">
-                  <p class="official-card__price text-[1.3rem] font-bold leading-none tracking-tight text-[var(--text-accent-strong)] sm:text-[1.55rem]">
-                    {{ formatOfficialPrice(officialProduct.price) }}
-                  </p>
-                  <p class="official-card__title min-h-[2.5rem] text-[0.93rem] leading-5 text-[rgb(var(--text-title-rgb)/0.95)] sm:text-[1.03rem] sm:leading-6">
-                    {{ officialProduct.title }}
-                  </p>
-                </div>
-              </button>
-            </div>
-
-            <div class="official-carousel__edge official-carousel__edge--left" :class="isOfficialCarouselAtStart ? 'opacity-0' : 'opacity-100'"></div>
-            <div class="official-carousel__edge official-carousel__edge--right" :class="isOfficialCarouselAtEnd ? 'opacity-0' : 'opacity-100'"></div>
-          </div>
-
-          <div class="mt-3 sm:hidden">
-            <button type="button" class="official-showcase__ghost-btn w-full justify-center" @click="openOfficialStorePage">
-              <span>Смотреть все</span>
-              <ChevronRight class="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-
-        <section class="mt-6 w-full space-y-4">
+        <section v-if="isSimilarProductsLoading || similarProducts.length" class="mt-6 w-full space-y-4">
           <h2 class="text-xl font-bold text-[var(--text-title)]">
             {{ $t('pages.product.similarProducts') }}<span class="text-[var(--text-muted)]">{{ similarProductsCountLabel }}</span>
           </h2>
-          <div v-if="isSimilarProductsLoading || similarProducts.length" class="space-y-4">
+          <div class="space-y-4">
             <div class="flex justify-end">
               <div
                 class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.4)] p-0.5"
@@ -1243,162 +1348,116 @@ onUnmounted(() => {
               />
             </div>
           </div>
-          <div v-else class="rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900)/0.55)] px-4 py-5 text-sm text-[var(--text-muted)]">
-            {{ $t('pages.product.noSimilarProducts') }}
-          </div>
         </section>
       </main>
 
-      <aside class="product-buy-sidebar min-w-0 space-y-4 lg:sticky lg:top-20 lg:self-start">
-        <section class="rounded-lg bg-[rgb(var(--palette-dark-900)/0.92)] p-4 shadow-[0_18px_50px_rgb(0_0_0/0.18)]">
-          <div class="space-y-3">
-            <div class="flex flex-wrap items-start gap-2">
-              <h1 class="min-w-0 flex-1 text-2xl font-extrabold uppercase leading-none text-[var(--text-title)] sm:text-3xl lg:text-[1.6rem]">
-                {{ product.title }}
-              </h1>
-              <ProductStatusTag v-if="product.is_owner || user?.role === 'admin'" :product-status="product.status" />
-            </div>
+      <div
+        v-if="shouldShowOfficialRemarketCarousel"
+        class="official-showcase mt-2 w-full rounded-3xl border border-[rgb(var(--palette-white)/0.12)] p-4 sm:p-5 lg:col-span-2"
+      >
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div class="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--palette-blue-300)/0.7)] bg-[rgb(var(--palette-blue-500)/0.32)] px-3 py-1.5 text-sm font-semibold tracking-wide text-[var(--text-accent-strong)] shadow-[var(--official-showcase-badge-shadow)]">
+            <BadgeCheck class="h-4 w-4" />
+            <span>Официально от remarket</span>
+          </div>
 
-            <div class="flex flex-wrap items-baseline gap-2">
-              <span class="text-3xl font-extrabold leading-none text-[var(--text-title)]">{{ formatCurrencyAmount(product.price) }}</span>
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="official-showcase__ghost-btn !hidden sm:!inline-flex"
+              @click="openOfficialStorePage"
+            >
+              <span>{{ officialProductsCountText }}</span>
+              <ChevronRight class="h-4 w-4" />
+            </button>
+
+            <div class="hidden items-center gap-1 rounded-full border border-[var(--official-showcase-control-border)] bg-[var(--official-showcase-control-bg)] p-1 sm:inline-flex">
               <button
-                v-if="!product.is_owner && !product.is_sold && product.status === 'active'"
                 type="button"
-                class="text-xs font-semibold text-[var(--text-muted)] underline decoration-[rgb(var(--palette-white)/0.28)] underline-offset-2 transition hover:text-[var(--text-title)]"
-                @click="user === null ? goToSignInFromProduct() : openOfferConfirm()"
+                class="official-showcase__arrow-btn"
+                :disabled="isOfficialCarouselAtStart || officialProducts.length <= 1"
+                aria-label="Прокрутить влево"
+                @click="scrollOfficialCarousel('prev')"
               >
-                {{ $t('pages.product.offerPrice') }}
+                <ChevronLeft class="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                class="official-showcase__arrow-btn"
+                :disabled="isOfficialCarouselAtEnd || officialProducts.length <= 1"
+                aria-label="Прокрутить вправо"
+                @click="scrollOfficialCarousel('next')"
+              >
+                <ChevronRight class="h-4 w-4" />
               </button>
             </div>
+          </div>
+        </div>
 
-            <div class="flex items-center gap-3 rounded-lg bg-[rgb(var(--palette-dark-800)/0.58)] p-2">
-              <UserAvatar
-                :avatar-url="product.seller.avatar_url"
-                :alt="product.seller.username"
-                class="h-11 w-11 shrink-0 rounded-full border border-[rgb(var(--palette-dark-700))] object-cover"
-              />
-              <div class="min-w-0 flex-1">
-                <div class="flex min-w-0 items-center gap-1.5">
-                  <StyledUsername
-                    :username="product.seller.username"
-                    :style-id="product.seller.nickname_style_id"
-                    class="truncate text-sm font-semibold"
-                  />
-                  <span
-                    class="h-2 w-2 shrink-0 rounded-full"
-                    :class="product.seller.is_active ? 'bg-[rgb(var(--palette-green-500))]' : 'bg-[rgb(var(--palette-gray-500))]'"
-                  />
+        <div class="mb-3 text-sm font-medium text-[rgb(var(--text-accent-strong-rgb)/0.85)] sm:hidden">
+          {{ officialProductsCountText }}
+        </div>
+
+        <div v-if="isOfficialProductsLoading" class="official-carousel flex gap-4 overflow-x-auto pb-2 no-scrollbar">
+          <div
+            v-for="n in officialProductsLoadingSkeletonCount"
+            :key="`official-skeleton-${n}`"
+            class="h-[234px] w-[188px] shrink-0 animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-700)/0.7)] sm:h-[276px] sm:w-[232px]"
+          ></div>
+        </div>
+
+        <div v-else-if="officialProducts.length > 0" class="official-carousel-wrap relative">
+          <div
+            ref="officialCarouselRef"
+            class="official-carousel pb-2 pr-1 no-scrollbar"
+            :class="hasSingleOfficialProduct
+              ? 'block overflow-visible'
+              : 'flex gap-4 overflow-x-auto snap-x snap-mandatory'"
+            @scroll.passive="handleOfficialCarouselScroll"
+          >
+            <button
+              v-for="officialProduct in officialProducts"
+              :key="`official-${officialProduct.id}`"
+              type="button"
+              data-official-card
+              class="official-card group h-[234px] shrink-0 overflow-hidden rounded-2xl border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-dark-900)/0.9)] text-left transition duration-200 hover:-translate-y-0.5 hover:border-[rgb(var(--palette-blue-300)/0.4)] hover:bg-[rgb(var(--palette-dark-900))] sm:h-[276px]"
+              :class="hasSingleOfficialProduct ? 'w-full max-w-none' : 'w-[188px] snap-start sm:w-[232px]'"
+              @click="goToProductByModel(officialProduct)"
+            >
+              <div class="official-card__media relative h-[140px] w-full overflow-hidden sm:h-[170px]">
+                <img
+                  v-if="resolveProductImageUrl(officialProduct)"
+                  :src="resolveProductImageUrl(officialProduct)"
+                  :alt="officialProduct.title"
+                  class="h-full w-full object-cover object-center transition duration-300 group-hover:scale-[1.03]"
+                />
+                <div v-else class="flex h-full w-full items-center justify-center text-xs text-[var(--text-body)]">
+                  {{ t('common.noImage') }}
                 </div>
-                <p class="mt-0.5 text-xs text-[var(--text-muted)]">
-                  {{ product.seller.rating > 0 ? `${product.seller.rating.toFixed(1)} ★` : '—' }}
-                  <span class="mx-1 text-[var(--text-meta)]">·</span>
-                  {{ product.seller_trust?.completed_deals_count ?? 0 }} продаж
+                <div class="official-card__overlay absolute inset-0"></div>
+              </div>
+              <div class="space-y-2 px-3.5 py-3">
+                <p class="official-card__price text-[1.3rem] font-bold leading-none tracking-tight text-[var(--text-accent-strong)] sm:text-[1.55rem]">
+                  {{ formatOfficialPrice(officialProduct.price) }}
+                </p>
+                <p class="official-card__title min-h-[2.5rem] text-[0.93rem] leading-5 text-[rgb(var(--text-title-rgb)/0.95)] sm:text-[1.03rem] sm:leading-6">
+                  {{ officialProduct.title }}
                 </p>
               </div>
-            </div>
-
-            <span v-if="user === null && !product.is_owner" class="block text-sm text-[var(--text-muted)]">
-              {{ $t('pages.product.authRequired') }}
-            </span>
-
-            <div v-if="!product.is_sold" class="space-y-2">
-              <div v-if="product.is_owner" class="flex items-center gap-2">
-                <button
-                  type="button"
-                  class="market-primary-surface market-primary-hover inline-flex h-11 flex-1 items-center justify-center rounded-lg px-5 text-sm font-semibold text-[var(--text-title)] transition"
-                  @click.stop="editProduct">
-                  {{ $t('common.edit') }}
-                </button>
-                <button
-                  type="button"
-                  class="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.35)] text-[var(--text-body)] transition hover:border-[rgb(var(--palette-red-700)/0.45)] hover:bg-[rgb(var(--palette-red-950)/0.16)] hover:text-[var(--text-danger-soft)]"
-                  :aria-label="$t('common.delete')"
-                  @click="openDeleteConfirm"
-                >
-                  <Trash2 class="h-5 w-5" />
-                </button>
-              </div>
-
-              <template v-else-if="product.status === 'active'">
-                <div class="flex items-stretch gap-2">
-                  <button
-                    type="button"
-                    class="market-primary-surface market-primary-hover inline-flex h-11 min-w-0 flex-1 items-center justify-center rounded-lg px-4 text-sm font-semibold text-[var(--text-title)] transition"
-                    @click="user === null ? goToSignInFromProduct() : openBuyConfirm()"
-                  >
-                    <ShoppingBag class="mr-2 h-4 w-4" />
-                    {{ $t('pages.product.buy') }}
-                  </button>
-                  <button
-                    type="button"
-                    class="inline-flex h-11 w-12 shrink-0 items-center justify-center rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-800)/0.72)] transition hover:border-[rgb(var(--palette-red-700)/0.45)]"
-                    :class="product.is_liked ? 'text-[var(--text-danger)]' : 'text-[var(--text-body)]'"
-                    aria-label="Избранное"
-                    @click="user !== null && (product.is_liked ? removeProductLike() : likeProduct())"
-                  >
-                    <Heart class="h-5 w-5" :style="product.is_liked ? { fill: 'currentColor' } : undefined" />
-                  </button>
-                </div>
-                <div class="flex gap-2">
-                  <button
-                    type="button"
-                    class="inline-flex h-10 flex-1 items-center justify-center rounded-lg border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] px-3 text-xs font-semibold text-[var(--text-body-strong)] transition hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)]"
-                    @click="user === null ? goToSignInFromProduct() : openOfferConfirm()"
-                  >
-                    <Percent class="mr-2 h-4 w-4" />
-                    {{ $t('pages.product.offerPrice') }}
-                  </button>
-                  <button
-                    v-if="!product.is_owner"
-                    type="button"
-                    class="report-icon-btn"
-                    :title="$t('pages.product.reportProduct')"
-                    :aria-label="$t('pages.product.reportProduct')"
-                    @click="openProductReport"
-                  >
-                    <TriangleAlert class="h-4 w-4" aria-hidden="true" />
-                  </button>
-                </div>
-              </template>
-            </div>
-
-            <div v-else class="rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.35)] py-4 text-center font-semibold text-[var(--text-muted)]">
-              {{ $t('pages.product.sold') }}
-            </div>
-
-            <div v-if="buyError" class="text-sm text-[var(--text-danger)]">
-              {{ buyError }}
-            </div>
+            </button>
           </div>
-        </section>
 
-        <section class="rounded-lg bg-[rgb(var(--palette-dark-900)/0.82)] p-4">
-          <h2 class="mb-3 text-base font-semibold text-[var(--text-title)]">Дополнительная информация</h2>
-          <div class="grid grid-cols-2 gap-2">
-            <div
-              v-for="infoItem in additionalInfoItems"
-              :key="infoItem.label"
-              class="rounded-lg bg-[rgb(var(--palette-dark-800)/0.62)] px-3 py-3"
-            >
-              <p class="truncate text-[11px] text-[var(--text-meta)]">{{ infoItem.label }}</p>
-              <p class="mt-1 truncate text-sm font-semibold text-[var(--text-title)]">{{ infoItem.value }}</p>
-            </div>
-          </div>
-        </section>
-
-        <div
-          v-if="shouldShowFortniteAccountDetails"
-          class="space-y-4 rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900)/0.82)] p-4"
-        >
-          <h2 class="text-lg font-semibold text-[var(--text-title)]">
-            {{ $t('pages.product.fortniteAccountDetails') }}
-          </h2>
-          <FortniteAccountSnapshot
-            :details="product.fortnite_account_details"
-            variant="full"
-          />
+          <div class="official-carousel__edge official-carousel__edge--left" :class="isOfficialCarouselAtStart ? 'opacity-0' : 'opacity-100'"></div>
+          <div class="official-carousel__edge official-carousel__edge--right" :class="isOfficialCarouselAtEnd ? 'opacity-0' : 'opacity-100'"></div>
         </div>
-      </aside>
+
+        <div class="mt-3 sm:hidden">
+          <button type="button" class="official-showcase__ghost-btn w-full justify-center" @click="openOfficialStorePage">
+            <span>Смотреть все</span>
+            <ChevronRight class="h-4 w-4" />
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Image modal -->
@@ -1771,26 +1830,6 @@ onUnmounted(() => {
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.report-icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 0.75rem;
-  border: 1px solid rgb(var(--palette-dark-600) / 0.9);
-  color: var(--text-muted);
-  background: rgb(var(--palette-dark-700) / 0.22);
-  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 160ms ease;
-}
-
-.report-icon-btn:hover {
-  border-color: rgb(var(--palette-red-700) / 0.45);
-  color: var(--text-danger-soft);
-  background: rgb(var(--palette-red-950) / 0.16);
-  transform: translateY(-1px);
 }
 
 @media (min-width: 680px) {
