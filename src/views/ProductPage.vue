@@ -27,7 +27,7 @@ import {
   type PriceOfferMessageTemplateKey,
 } from '@/utils/priceOfferMessageTemplate'
 import { hasFortniteAccountDetails } from '@/utils/fortniteAccount'
-import { buildAuthRedirectQuery } from '@/utils/authRedirect'
+import { buildAuthModalLocation } from '@/utils/authRedirect'
 
 const API_HOST = import.meta.env.VITE_API_HOST
 const NORMALIZED_API_HOST = String(API_HOST || '').replace(/\/$/, '')
@@ -623,10 +623,7 @@ function openBuyConfirm() {
 }
 
 function goToSignInFromProduct() {
-  router.push({
-    path: '/signin',
-    query: buildAuthRedirectQuery(route.fullPath),
-  })
+  router.push(buildAuthModalLocation(route))
 }
 
 function openOfferConfirm() {
@@ -811,10 +808,7 @@ function openProductReport() {
   if (!product.value) return
 
   if (!user.value) {
-    router.push({
-      path: '/signin',
-      query: buildAuthRedirectQuery(route.fullPath),
-    })
+    router.push(buildAuthModalLocation(route))
     return
   }
 

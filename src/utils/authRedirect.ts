@@ -1,4 +1,4 @@
-import type { LocationQueryRaw, RouteLocationNormalizedLoaded } from 'vue-router'
+import type { LocationQueryRaw, RouteLocationNormalizedLoaded, RouteLocationRaw } from 'vue-router'
 
 const AUTH_PATHS = new Set([
   '/signin',
@@ -57,4 +57,28 @@ export function getAuthRedirectFromRoute(route: RouteLocationNormalizedLoaded, f
 export function buildAuthRedirectQuery(targetFullPath: string): LocationQueryRaw {
   const redirect = getSafeAuthRedirect(targetFullPath, '/')
   return redirect === '/' ? {} : { redirect }
+}
+
+export function buildAuthModalQuery(
+  targetFullPath: string,
+  baseQuery: LocationQueryRaw = {},
+  mode: 'signin' | 'signup' = 'signin',
+): LocationQueryRaw {
+  return {
+    ...baseQuery,
+    ...buildAuthRedirectQuery(targetFullPath),
+    auth: mode,
+  }
+}
+
+export function buildAuthModalLocation(
+  route: RouteLocationNormalizedLoaded,
+  targetFullPath = route.fullPath,
+  mode: 'signin' | 'signup' = 'signin',
+): RouteLocationRaw {
+  return {
+    path: route.path,
+    query: buildAuthModalQuery(targetFullPath, route.query, mode),
+    hash: route.hash,
+  }
 }

@@ -20,7 +20,7 @@ import HeaderSearch from '@/components/layout/HeaderSearch.vue'
 import type { FunctionalComponent } from 'vue'
 import type { LucideProps } from 'lucide-vue-next'
 import type { RouteLocationRaw } from 'vue-router'
-import { buildAuthRedirectQuery } from '@/utils/authRedirect'
+import { buildAuthModalLocation } from '@/utils/authRedirect'
 
 interface NavItem {
   id: string;
@@ -41,10 +41,7 @@ const route = useRoute()
 const isDesktop = ref(true)
 const { user } = storeToRefs(store)
 const { unreadDialogTotal } = storeToRefs(chatStore)
-const signInFromCurrentLocation = computed(() => ({
-  path: '/signin',
-  query: buildAuthRedirectQuery(route.fullPath),
-}))
+const signInFromCurrentLocation = computed(() => buildAuthModalLocation(route))
 
 const getPartnerType = () => {
   if (user.value?.partner_type) return user.value.partner_type

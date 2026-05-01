@@ -217,13 +217,39 @@ function onKeydown(event: KeyboardEvent) {
 }
 
 watch(
-  () => route.fullPath,
-  () => {
+  () => [route.path, route.query.search] as const,
+  async ([nextPath], [previousPath]) => {
     const nextQuery = getRouteSearchQuery()
     if (searchQuery.value !== nextQuery) {
       searchQuery.value = nextQuery
     }
-    closeDropdown()
+
+    if (nextPath !== previousPath) {
+      closeDropdown()
+      return
+    }
+
+    const activeElement = typeof document !== 'undefined' ? document.activeElement : null
+    const isSearchFocused = Boolean(
+      activeElement
+      && searchRootRef.value
+      && searchRootRef.value.contains(activeElement)
+    )
+
+    if (!nextQuery || !isSearchFocused) {
+      closeDropdown()
+      return
+    }
+
+    await ensureSearchableCategoriesLoaded()
+    if (hasCategorySearchResults.value) {
+      isDropdownOpen.value = true
+      if (highlightedIndex.value < 0) {
+        highlightedIndex.value = 0
+      }
+      await nextTick()
+      updateDropdownPosition()
+    }
   },
 )
 

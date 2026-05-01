@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import AppModal from '@/components/AppModal.vue'
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
@@ -10,6 +10,7 @@ import { useUserStore } from '@/stores/user'
 import { vpnService, type ScopeVpnOrder } from '@/api/vpn/VpnService'
 import { formatCurrencyAmount } from '@/utils/currency'
 import { getErrorMessage } from '@/utils/errorsMap'
+import { buildAuthModalLocation } from '@/utils/authRedirect'
 import scopeVpnLogoSrc from '@/assets/images/scope_vpn_logo.png'
 import { Icon } from '@iconify/vue'
 import {
@@ -59,6 +60,7 @@ interface VpnApp {
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 const { user } = storeToRefs(userStore)
 
@@ -340,7 +342,7 @@ async function loadPlans(): Promise<void> {
 
 function requireUser(): boolean {
   if (user.value) return true
-  void router.push('/signin')
+  void router.push(buildAuthModalLocation(route))
   return false
 }
 

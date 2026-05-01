@@ -218,11 +218,11 @@ function resolveWelcomeUsername(): string {
   return t('common.user')
 }
 
-function finishAuth() {
+function finishAuth(redirectTarget = afterAuthRedirect.value) {
   queueAuthWelcomeToast({
     title: welcomeTitle.value,
   })
-  void router.push(afterAuthRedirect.value)
+  void router.push(redirectTarget)
 }
 
 async function requestLoginCode() {
@@ -320,9 +320,10 @@ async function confirmLoginCode() {
 
   isSubmitting.value = true
   errorMessage.value = ''
+  const redirectTarget = afterAuthRedirect.value
   try {
     await authService.confirmLoginCode(email.value, code)
-    finishAuth()
+    finishAuth(redirectTarget)
   } catch (error: any) {
     const detail = error?.response?.data?.detail
     const errorCode = detail?.error_code
@@ -373,10 +374,11 @@ async function completeSignUp() {
 
   errorMessage.value = ''
   isSubmitting.value = true
+  const redirectTarget = afterAuthRedirect.value
 
   try {
     await authService.signUp(email.value, username.value, code)
-    finishAuth()
+    finishAuth(redirectTarget)
   } catch (error) {
     errorMessage.value = resolveRequestError(error)
   } finally {

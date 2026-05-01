@@ -9,6 +9,7 @@ import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import Loader from '@/components/Loader.vue'
+import { buildAuthModalLocation } from '@/utils/authRedirect'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -79,7 +80,7 @@ onMounted(async () => {
       </div>
 
       <p class="text-center text-sm text-text-secondaryDark">
-        <router-link to="/signin" class="text-text-link hover:underline">
+        <router-link :to="buildAuthModalLocation(route)" class="text-text-link hover:underline">
           {{ $t('common.backToSignIn') }}
         </router-link>
       </p>

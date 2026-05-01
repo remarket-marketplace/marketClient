@@ -30,7 +30,7 @@ import { formatCurrencyAmount } from '@/utils/currency'
 import { isSafeImageFile, SAFE_IMAGE_INPUT_ACCEPT } from '@/utils/imageUpload'
 import { formatLastSeen } from '@/utils/presence'
 import { buildProductKey } from '@/utils/urlKeys'
-import { buildAuthRedirectQuery } from '@/utils/authRedirect'
+import { buildAuthModalLocation } from '@/utils/authRedirect'
 
 const { locale, t } = useI18n()
 const route = useRoute()
@@ -380,7 +380,7 @@ async function loadMorePurchases() {
 
 async function logout() {
   if (!isOwner.value) return
-  if (await authService.logout()) router.push('/signin')
+  if (await authService.logout()) router.push(buildAuthModalLocation(route))
 }
 
 async function updateProfileDescription(newValue: string) {
@@ -439,10 +439,7 @@ function openProfileReport() {
   if (isOwner.value) return
 
   if (!currentUser.value) {
-    router.push({
-      path: '/signin',
-      query: buildAuthRedirectQuery(route.fullPath),
-    })
+    router.push(buildAuthModalLocation(route))
     return
   }
 

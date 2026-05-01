@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory, createMemoryHistory, type RouteRecordRaw } from "vue-router";
 import { useNavigationStore } from "@/stores/navigation";
 import { useUserStore } from "@/stores/user";
-import { buildAuthRedirectQuery, getAuthRedirectFromRoute } from "@/utils/authRedirect";
+import { buildAuthModalQuery, getAuthRedirectFromRoute } from "@/utils/authRedirect";
 
 const YANDEX_METRIKA_COUNTER_ID = 106828907;
 
@@ -324,6 +324,12 @@ export function createAppRouter(isSSR = false) {
     && to.query.tab !== from.query.tab
   )
 
+  const isSamePageQueryNavigation = (to: any, from: any) => (
+    to.path === from.path
+    && to.hash === from.hash
+    && to.fullPath !== from.fullPath
+  )
+
   const getHashScrollContainer = (target: HTMLElement): HTMLElement | null => {
     let current = target.parentElement
 
@@ -371,6 +377,10 @@ export function createAppRouter(isSSR = false) {
     history,
     routes,
     scrollBehavior(to, from) {
+      if (isSamePageQueryNavigation(to, from)) {
+        return false
+      }
+
       if (isProfileTabSwitch(to, from)) {
         return false
       }
@@ -380,7 +390,7 @@ export function createAppRouter(isSSR = false) {
     },
   })
 
-  router.beforeEach(async (to) => {
+  router.beforeEach(async (to, from) => {
     const navigationStore = useNavigationStore()
     const userStore = useUserStore()
     const { requiredAdmin, requiredAuthorized, requiredGuest, requiredPartner } = to.meta
@@ -397,13 +407,22 @@ export function createAppRouter(isSSR = false) {
     }
 
     const user = userStore.user
+    const signInModalRedirect = () => (
+      from.name
+        ? {
+          path: from.path,
+          query: buildAuthModalQuery(to.fullPath, from.query),
+          hash: from.hash,
+        }
+        : {
+          path: '/',
+          query: buildAuthModalQuery(to.fullPath),
+        }
+    )
 
     if (requiredAdmin) {
       if (!user) {
-        return {
-          path: '/signin',
-          query: buildAuthRedirectQuery(to.fullPath),
-        }
+        return signInModalRedirect()
       }
 
       return user.role === 'admin' ? true : '/not-access'
@@ -411,10 +430,7 @@ export function createAppRouter(isSSR = false) {
 
     if (requiredPartner) {
       if (!user) {
-        return {
-          path: '/signin',
-          query: buildAuthRedirectQuery(to.fullPath),
-        }
+        return signInModalRedirect()
       }
 
       // Admins always have access
@@ -438,10 +454,7 @@ export function createAppRouter(isSSR = false) {
     if (requiredAuthorized) {
       return user
         ? true
-        : {
-          path: '/signin',
-          query: buildAuthRedirectQuery(to.fullPath),
-        }
+        : signInModalRedirect()
     }
 
     if (requiredGuest) {
@@ -459,6 +472,10 @@ export function createAppRouter(isSSR = false) {
     }
 
     if (isProfileTabSwitch(to, from)) {
+      return
+    }
+
+    if (isSamePageQueryNavigation(to, from)) {
       return
     }
 
