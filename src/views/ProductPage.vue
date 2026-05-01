@@ -1264,7 +1264,7 @@ onUnmounted(() => {
           <ul class="space-y-2 text-sm text-[var(--text-body)]">
             <li class="flex gap-2">
               <Check class="mt-1 h-3.5 w-3.5 shrink-0 text-[rgb(var(--palette-white)/0.78)]" />
-              <span>Продавец получит деньги после подтверждения</span>
+              <span>Продавец получит средства после подтверждения</span>
             </li>
             <li class="flex gap-2">
               <Check class="mt-1 h-3.5 w-3.5 shrink-0 text-[rgb(var(--palette-white)/0.78)]" />
