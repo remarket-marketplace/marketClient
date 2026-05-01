@@ -12,6 +12,7 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowRight, HelpCircle, MessageCircle, Send, Star } from 'lucide-vue-next'
 import { formatCurrencyAmount } from '@/utils/currency'
+import { getShortDealId } from '@/utils/dealId'
 
 const API_HOST = import.meta.env.VITE_API_HOST || ''
 
@@ -34,7 +35,7 @@ const reviewError = ref<string | null>(null)
 const dealId = computed(() => {
   const rawDealId = route.query.dealId
   if (Array.isArray(rawDealId)) return rawDealId[0] ?? null
-  return rawDealId ?? latestDealMessage.value?.deal_id ?? null
+  return latestDealMessage.value?.deal_id ?? rawDealId ?? null
 })
 
 const chatId = computed(() => {
@@ -55,7 +56,10 @@ const currentDealStatus = computed(() => {
 const isDealCompleted = computed(() => currentDealStatus.value === 'completed')
 const canLeaveReview = computed(() => Boolean(dealId.value && isDealCompleted.value && !hasReview.value))
 
-const orderIdLabel = computed(() => dealId.value ? `RM${dealId.value.slice(0, 8).toUpperCase()}` : null)
+const orderIdLabel = computed(() => {
+  const shortDealId = getShortDealId(dealId.value)
+  return shortDealId ? `RM${shortDealId}` : null
+})
 const orderTitle = computed(() => product.value?.title ?? null)
 const orderAmount = computed(() => product.value ? formatCurrencyAmount(product.value.price) : null)
 const orderCreatedAt = computed(() => {
@@ -81,6 +85,11 @@ const orderStatusLabel = computed(() => {
   if (currentDealStatus.value === 'refunded') return 'Возврат'
   return 'Ожидает выдачи'
 })
+const orderStatusClass = computed(() => (
+  currentDealStatus.value === 'completed'
+    ? 'text-[var(--text-success)]'
+    : 'text-[rgb(var(--palette-amber-300))]'
+))
 
 const sellerUsername = computed(() => seller.value?.username ?? null)
 const sellerRating = computed(() => seller.value?.rating != null ? Number(seller.value.rating).toFixed(1) : null)
@@ -277,7 +286,7 @@ onMounted(async () => {
             <h2 class="text-2xl font-extrabold leading-tight sm:text-[1.8rem]">
               Заказ #{{ orderIdLabel ?? '—' }}
             </h2>
-            <span class="text-sm font-medium text-[rgb(var(--palette-amber-300))]">{{ orderStatusLabel }}</span>
+            <span class="text-sm font-medium" :class="orderStatusClass">{{ orderStatusLabel }}</span>
           </div>
 
           <div class="grid gap-4 sm:grid-cols-[190px_minmax(0,1fr)] sm:gap-5">
@@ -372,7 +381,7 @@ onMounted(async () => {
           </section>
         </aside>
 
-        <section class="order-panel min-w-0 p-5 sm:p-6 lg:col-start-1">
+        <section v-if="!isDealCompleted" class="order-panel min-w-0 p-5 sm:p-6 lg:col-start-1">
           <h2 class="mb-5 text-xl font-extrabold">Ваш товар</h2>
           <p v-if="hasAutoDeliveryData" class="whitespace-pre-wrap break-words text-sm leading-6 text-[rgb(var(--text-title-rgb)/0.9)]">{{ productDataText }}</p>
           <p v-else class="text-sm leading-6 text-[var(--text-body)]">Свяжитесь с продавцом, чтобы получить товар. Продавец выдаст товар вручную.</p>
