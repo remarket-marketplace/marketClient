@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { settingsService } from '@/api/settings/settingsService'
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
-import TheInput from '@/components/TheInput.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
 import Checkbox from '@/components/Checkbox.vue'
 import DarkColorPicker from '@/components/settings/DarkColorPicker.vue'
@@ -11,7 +10,7 @@ import SuccessMessage from '@/components/SuccessMessage.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
 import { isSafeImageFile, SAFE_IMAGE_INPUT_ACCEPT } from '@/utils/imageUpload'
-import { AtSign, Bell, Key, Loader2, Lock, Mail, Palette, Send, Shield, ImagePlus, Link2Off } from 'lucide-vue-next'
+import { AtSign, Bell, Loader2, Mail, Palette, Send, Shield, ImagePlus, Link2Off } from 'lucide-vue-next'
 import BackButton from '@/components/navigation/BackButton.vue'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
@@ -29,7 +28,6 @@ import type {
   NicknameStyleCatalogResponse,
 } from '@/validation/user/nicknameStyle'
 import type { NotificationSettings } from '@/validation/user/notificationSettings'
-import type { TwoFactorSettings } from '@/validation/user/twoFactorSettings'
 
 type SettingsSection = 'security' | 'notifications' | 'nickname' | 'nickname-styles'
 type ColorPickerGroup = 'primary' | 'secondary' | 'glow'
@@ -47,47 +45,6 @@ const userStore = useUserStore()
 const { user } = storeToRefs(userStore)
 const API_HOST = import.meta.env.VITE_API_HOST
 
-const isLoading = ref(false)
-const isSendedChangePassword = ref(false)
-
-const changingPasswordCurrentPassword = ref('')
-const changingPasswordNewPassword = ref('')
-const passwordIsChanged = ref(false)
-const passwordErrorMessage = ref<string | null>(null)
-const passwordValidationHints = computed(() => {
-  const value = changingPasswordNewPassword.value
-  return [
-    {
-      key: 'length',
-      label: t('pages.auth.signUp.passwordLengthError'),
-      isMet: value.length >= 8,
-    },
-    {
-      key: 'uppercase',
-      label: t('pages.auth.signUp.passwordUppercaseError'),
-      isMet: /[A-Z]/.test(value),
-    },
-    {
-      key: 'lowercase',
-      label: t('pages.auth.signUp.passwordLowercaseError'),
-      isMet: /[a-z]/.test(value),
-    },
-    {
-      key: 'digit',
-      label: t('pages.auth.signUp.passwordDigitError'),
-      isMet: /\d/.test(value),
-    },
-    {
-      key: 'special',
-      label: t('pages.auth.signUp.passwordSpecialCharError'),
-      isMet: /[^A-Za-z0-9]/.test(value),
-    },
-  ]
-})
-const activePasswordValidationHint = computed(
-  () => passwordValidationHints.value.find((hint) => !hint.isMet) ?? null,
-)
-
 const changingUsername = ref('')
 const isChangingUsername = ref(false)
 const usernameErrorMessage = ref<string | null>(null)
@@ -99,11 +56,6 @@ const isNotificationsLoading = ref(false)
 const isNotificationsSaving = ref(false)
 const isTelegramConnectLoading = ref(false)
 const isTelegramDisconnectLoading = ref(false)
-const twoFactorData = ref<TwoFactorSettings | null>(null)
-const twoFactorErrorMessage = ref<string | null>(null)
-const twoFactorSuccessMessage = ref<string | null>(null)
-const isTwoFactorLoading = ref(false)
-const isTwoFactorSaving = ref(false)
 const pendingTelegramConnectUrl = ref<string | null>(null)
 let isNotificationsSilentRefreshInFlight = false
 let telegramStatusPollingTimer: ReturnType<typeof window.setInterval> | null = null
@@ -199,7 +151,6 @@ const telegramIntegrationEnabled = computed(
 const telegramConnected = computed(() => notificationsData.value?.telegram_connected === true)
 const telegramUsername = computed(() => notificationsData.value?.telegram_username ?? null)
 const telegramBotUsername = computed(() => notificationsData.value?.telegram_bot_username ?? null)
-const twoFactorEnabled = computed(() => twoFactorData.value?.enabled ?? false)
 const activeSection = computed<SettingsSection>(() => normalizeSettingsSection(route.query.section))
 const canChangeUsername = computed(() => {
   const normalized = changingUsername.value.trim()
@@ -306,15 +257,6 @@ function setNotificationsSuccessMessage(value: string) {
   window.setTimeout(() => {
     if (notificationsSuccessMessage.value === value) {
       notificationsSuccessMessage.value = null
-    }
-  }, 2600)
-}
-
-function setTwoFactorSuccessMessage(value: string) {
-  twoFactorSuccessMessage.value = value
-  window.setTimeout(() => {
-    if (twoFactorSuccessMessage.value === value) {
-      twoFactorSuccessMessage.value = null
     }
   }, 2600)
 }
@@ -495,48 +437,6 @@ async function loadNotificationSettings() {
 
   applyNotificationSettings(result.data)
   isNotificationsLoading.value = false
-}
-
-async function loadTwoFactorSettings() {
-  isTwoFactorLoading.value = true
-  twoFactorErrorMessage.value = null
-
-  const result = await settingsService.getTwoFactorSettings()
-  if (!result.success || !result.data) {
-    twoFactorErrorMessage.value = getErrorMessage(
-      result.error,
-      t as unknown as (key: string) => string,
-    )
-    isTwoFactorLoading.value = false
-    return
-  }
-
-  twoFactorData.value = result.data
-  isTwoFactorLoading.value = false
-}
-
-async function toggleTwoFactorSettings() {
-  if (!twoFactorData.value || isTwoFactorSaving.value) return
-
-  isTwoFactorSaving.value = true
-  twoFactorErrorMessage.value = null
-  twoFactorSuccessMessage.value = null
-
-  const result = await settingsService.updateTwoFactorSettings({
-    enabled: !twoFactorData.value.enabled,
-  })
-  if (!result.success || !result.data) {
-    twoFactorErrorMessage.value = getErrorMessage(
-      result.error,
-      t as unknown as (key: string) => string,
-    )
-    isTwoFactorSaving.value = false
-    return
-  }
-
-  twoFactorData.value = result.data
-  setTwoFactorSuccessMessage(t('pages.settingsPage.twoFactorSaved'))
-  isTwoFactorSaving.value = false
 }
 
 async function updateNotificationSettings(payload: {
@@ -959,56 +859,11 @@ async function changeUsername() {
   setUsernameSuccessMessage(t('pages.settingsPage.nicknameChanged'))
 }
 
-async function changePassword() {
-  passwordErrorMessage.value = null
-  passwordIsChanged.value = false
-  isLoading.value = true
-
-  if (!changingPasswordCurrentPassword.value || !changingPasswordNewPassword.value) {
-    passwordErrorMessage.value = t('errors.FILL_REQUIRED_FIELDS')
-    isLoading.value = false
-    return
-  }
-
-  if (activePasswordValidationHint.value) {
-    passwordErrorMessage.value = activePasswordValidationHint.value.label
-    isLoading.value = false
-    return
-  }
-
-  try {
-    isSendedChangePassword.value = true
-    const response = await settingsService.changePassword(
-      changingPasswordCurrentPassword.value,
-      changingPasswordNewPassword.value,
-    )
-
-    if (response.success) {
-      passwordIsChanged.value = true
-      changingPasswordCurrentPassword.value = ''
-      changingPasswordNewPassword.value = ''
-    } else if (response.error) {
-      passwordErrorMessage.value = getErrorMessage(response.error, t)
-    } else {
-      passwordErrorMessage.value = t('errors.SERVER_ERROR')
-    }
-  } catch (e: any) {
-    console.error('Unexpected error:', e)
-    passwordErrorMessage.value = t('errors.SERVER_ERROR')
-  } finally {
-    isLoading.value = false
-    isSendedChangePassword.value = false
-  }
-}
-
 watch(
   activeSection,
   (section) => {
     if (section === 'nickname-styles' && !stylesCatalog.value && !isStylesLoading.value) {
       void loadNicknameStyles()
-    }
-    if (section === 'security' && !twoFactorData.value && !isTwoFactorLoading.value) {
-      void loadTwoFactorSettings()
     }
     if (section === 'notifications' && !isNotificationsLoading.value) {
       if (!notificationsData.value) {
@@ -1183,121 +1038,35 @@ onUnmounted(() => {
         <div class="px-4 lg:px-0 lg:pb-6 space-y-6">
           <div v-if="activeSection === 'security'" class="space-y-6">
             <div>
-              <h2 class="text-xl font-bold text-[var(--text-title)]">{{ $t('pages.settingsPage.changePassword') }}</h2>
-              <p class="text-sm text-[var(--text-muted)]">{{ $t('pages.settingsPage.changePasswordHint') }}</p>
-            </div>
-
-            <div class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.4)] p-6 space-y-4">
-              <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div class="min-w-0">
-                  <div class="flex flex-wrap items-center gap-2 text-[var(--text-title)] font-semibold">
-                    <Mail class="w-4 h-4 text-[var(--text-link)]" />
-                    <span>{{ $t('pages.settingsPage.twoFactorTitle') }}</span>
-                  </div>
-                  <p class="mt-1 text-xs text-[var(--text-body)]">{{ $t('pages.settingsPage.twoFactorHint') }}</p>
-                </div>
-                <div
-                  class="grid w-full grid-cols-2 rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.5)] p-1 sm:w-auto sm:min-w-[220px]"
-                  :class="isTwoFactorLoading || isTwoFactorSaving || !twoFactorData ? 'opacity-60' : ''"
-                >
-                  <button
-                    type="button"
-                    :disabled="isTwoFactorLoading || isTwoFactorSaving || !twoFactorData || twoFactorEnabled"
-                    class="rounded-lg px-4 py-2 text-sm font-semibold transition"
-                    :class="twoFactorEnabled
-                      ? 'settings-toggle-option-active'
-                      : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-600)/0.8)] hover:text-[var(--text-title)] disabled:hover:bg-[var(--transparent)]'"
-                    @click="!twoFactorEnabled && toggleTwoFactorSettings()"
-                  >
-                    {{ $t('pages.settingsPage.twoFactorEnabled') }}
-                  </button>
-                  <button
-                    type="button"
-                    :disabled="isTwoFactorLoading || isTwoFactorSaving || !twoFactorData || !twoFactorEnabled"
-                    class="rounded-lg px-4 py-2 text-sm font-semibold transition"
-                    :class="!twoFactorEnabled
-                      ? 'settings-toggle-option-danger'
-                      : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-600)/0.8)] hover:text-[var(--text-title)] disabled:hover:bg-[var(--transparent)]'"
-                    @click="twoFactorEnabled && toggleTwoFactorSettings()"
-                  >
-                    {{ $t('pages.settingsPage.twoFactorDisabled') }}
-                  </button>
-                </div>
-              </div>
-
-              <div v-if="isTwoFactorLoading || isTwoFactorSaving" class="flex items-center gap-2 text-sm text-[var(--text-body)]">
-                <Loader2 class="w-4 h-4 animate-spin" />
-                <span>{{ t('common.loading') }}</span>
-              </div>
-
-              <ErrorMessage
-                v-if="twoFactorErrorMessage"
-                :error-message="twoFactorErrorMessage"
-              />
-              <SuccessMessage
-                v-if="twoFactorSuccessMessage"
-                :success-message="twoFactorSuccessMessage"
-              />
+              <h2 class="text-xl font-bold text-[var(--text-title)]">{{ $t('pages.settingsPage.passwordlessTitle') }}</h2>
+              <p class="text-sm text-[var(--text-muted)]">{{ $t('pages.settingsPage.passwordlessHint') }}</p>
             </div>
 
             <div class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.4)] p-6 space-y-6">
-              <div class="space-y-3">
-                <label class="block text-sm font-medium text-[var(--text-body)]">
-                  {{ $t('pages.settingsPage.currentPassword') }}
-                  <span class="text-[var(--text-danger)] ml-1">*</span>
-                </label>
-                <div class="flex items-center gap-3">
-                  <Lock class="w-5 h-5 text-[var(--text-muted)]" />
-                  <TheInput
-                    v-model="changingPasswordCurrentPassword"
-                    :placeholder="$t('pages.settingsPage.enterCurrentPassword')"
-                    type="password"
-                    class="w-full"
-                  />
+              <div class="flex items-start gap-3">
+                <div class="mt-0.5 h-9 w-9 shrink-0 rounded-full bg-[rgb(var(--palette-dark-700))] flex items-center justify-center">
+                  <Mail class="h-4 w-4 text-[var(--text-link)]" />
+                </div>
+                <div class="min-w-0">
+                  <h3 class="font-semibold leading-5 text-[var(--text-title)]">{{ $t('pages.settingsPage.passwordlessCardTitle') }}</h3>
+                  <p class="mt-1 text-sm leading-6 text-[var(--text-body)]">{{ $t('pages.settingsPage.passwordlessCardText') }}</p>
                 </div>
               </div>
 
-              <div class="space-y-3">
-                <label class="block text-sm font-medium text-[var(--text-body)]">
-                  {{ $t('pages.settingsPage.newPassword') }}
-                  <span class="text-[var(--text-danger)] ml-1">*</span>
-                </label>
-                <div class="flex items-center gap-3">
-                  <Key class="w-5 h-5 text-[var(--text-muted)]" />
-                  <TheInput
-                    v-model="changingPasswordNewPassword"
-                    :placeholder="$t('pages.settingsPage.enterNewPassword')"
-                    type="password"
-                    class="w-full"
-                  />
+              <div class="grid gap-3 md:grid-cols-3">
+                <div class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.3)] p-4">
+                  <p class="text-sm font-semibold text-[var(--text-title)]">{{ $t('pages.settingsPage.passwordlessPoint1Title') }}</p>
+                  <p class="mt-1 text-xs leading-5 text-[var(--text-body)]">{{ $t('pages.settingsPage.passwordlessPoint1Text') }}</p>
                 </div>
-                <div v-if="changingPasswordNewPassword.length > 0 && activePasswordValidationHint" class="mt-2">
-                  <p class="flex items-center gap-2 text-xs leading-4 text-[var(--text-muted)]">
-                    <span class="inline-flex w-3 justify-center font-semibold">•</span>
-                    <span>{{ activePasswordValidationHint.label }}</span>
-                  </p>
+                <div class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.3)] p-4">
+                  <p class="text-sm font-semibold text-[var(--text-title)]">{{ $t('pages.settingsPage.passwordlessPoint2Title') }}</p>
+                  <p class="mt-1 text-xs leading-5 text-[var(--text-body)]">{{ $t('pages.settingsPage.passwordlessPoint2Text') }}</p>
+                </div>
+                <div class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.3)] p-4">
+                  <p class="text-sm font-semibold text-[var(--text-title)]">{{ $t('pages.settingsPage.passwordlessPoint3Title') }}</p>
+                  <p class="mt-1 text-xs leading-5 text-[var(--text-body)]">{{ $t('pages.settingsPage.passwordlessPoint3Text') }}</p>
                 </div>
               </div>
-
-              <div class="space-y-3">
-                <SuccessMessage
-                  v-if="passwordIsChanged"
-                  :success-message="$t('pages.settingsPage.passwordChanged')"
-                />
-                <ErrorMessage
-                  v-if="passwordErrorMessage"
-                  :error-message="passwordErrorMessage"
-                />
-              </div>
-
-              <button
-                :disabled="isLoading || !changingPasswordCurrentPassword || !changingPasswordNewPassword"
-                class="market-btn market-btn-primary w-full rounded-xl py-3.5"
-                @click="changePassword"
-              >
-                <Loader2 v-if="isLoading" class="w-4 h-4 animate-spin" />
-                <span>{{ isLoading ? t('common.loading') : t('pages.settingsPage.changePassword') }}</span>
-              </button>
             </div>
 
           </div>

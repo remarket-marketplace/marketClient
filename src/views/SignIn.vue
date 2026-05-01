@@ -2,7 +2,6 @@
 import { computed, nextTick, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { Eye, EyeOff } from 'lucide-vue-next'
 import { authService } from '@/api/auth/AuthService'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import TheInput from '@/components/TheInput.vue'
@@ -16,19 +15,17 @@ import { queueAuthWelcomeToast } from '@/utils/authWelcomeToast'
 
 const sended = ref(false)
 const email = ref('')
-const password = ref('')
 const captchaToken = ref('')
 const captchaRenderKey = ref(0)
-const passwordHidden = ref(true)
 const welcomeUsername = ref('')
 const errorMessage = ref('')
+const emailError = ref('')
 
-const authStage = ref<'credentials' | 'twoFactor'>('credentials')
-const twoFactorToken = ref('')
+const authStage = ref<'email' | 'code'>('email')
 const codeDigits = ref<string[]>(['', '', '', '', '', ''])
 const codeInputs = ref<(HTMLInputElement | null)[]>([])
 const resendSecondsLeft = ref(0)
-const isResendingTwoFactorCode = ref(false)
+const isResendingLoginCode = ref(false)
 let resendTimer: ReturnType<typeof window.setInterval> | null = null
 
 const { t } = useI18n()
@@ -67,6 +64,29 @@ function refreshCaptcha() {
   captchaRenderKey.value += 1
 }
 
+function validateEmail() {
+  emailError.value = ''
+  const normalizedEmail = email.value.trim()
+  email.value = normalizedEmail
+
+  if (normalizedEmail.length > 64) {
+    emailError.value = t('pages.auth.signUp.emailLengthError')
+    return false
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(normalizedEmail)) {
+    emailError.value = t('pages.auth.signUp.invalidEmail')
+    return false
+  }
+
+  return true
+}
+
+function clearEmailError() {
+  emailError.value = ''
+}
+
 function clearResendTimer() {
   if (!resendTimer) return
   window.clearInterval(resendTimer)
@@ -86,13 +106,12 @@ function startResendCooldown(seconds = 30) {
   }, 1000)
 }
 
-function resetTwoFactorState() {
-  authStage.value = 'credentials'
-  twoFactorToken.value = ''
+function resetLoginCodeState() {
+  authStage.value = 'email'
   codeDigits.value = ['', '', '', '', '', '']
   clearResendTimer()
   resendSecondsLeft.value = 0
-  isResendingTwoFactorCode.value = false
+  isResendingLoginCode.value = false
   errorMessage.value = ''
   refreshCaptcha()
 }
@@ -106,7 +125,7 @@ function showWelcome() {
 }
 
 async function signIn() {
-  if (sended.value || authStage.value !== 'credentials') return
+  if (sended.value || authStage.value !== 'email') return
 
   if (!captchaToken.value) {
     errorMessage.value = t('pages.auth.signIn.completeCaptcha')
@@ -117,36 +136,22 @@ async function signIn() {
   errorMessage.value = ''
 
   try {
-    if (!email.value.trim() || !password.value.trim()) {
+    if (!email.value.trim()) {
       errorMessage.value = t('errors.FILL_ALL_INPUTS')
       return
     }
 
-    const result = await authService.signIn(email.value, password.value, captchaToken.value)
-
-    if (result.two_factor_required) {
-      if (!result.two_factor_token) {
-        errorMessage.value = t('errors.SERVER_ERROR')
-        refreshCaptcha()
-        return
-      }
-      twoFactorToken.value = result.two_factor_token
-      codeDigits.value = ['', '', '', '', '', '']
-      authStage.value = 'twoFactor'
-      refreshCaptcha()
-      startResendCooldown()
-      await nextTick()
-      codeInputs.value[0]?.focus()
+    if (!validateEmail()) {
       return
     }
 
-    if (!result.user) {
-      errorMessage.value = t('errors.INCORRECT_EMAIL_OR_PASSWORD')
-      refreshCaptcha()
-      return
-    }
-
-    showWelcome()
+    await authService.sendLoginCode(email.value, captchaToken.value)
+    codeDigits.value = ['', '', '', '', '', '']
+    authStage.value = 'code'
+    refreshCaptcha()
+    startResendCooldown()
+    await nextTick()
+    codeInputs.value[0]?.focus()
   } catch (e: any) {
     const detail = e?.response?.data?.detail
     const errorCode = detail?.error_code
@@ -178,31 +183,23 @@ async function signIn() {
 async function resendTwoFactorCode() {
   if (
     sended.value
-    || isResendingTwoFactorCode.value
-    || authStage.value !== 'twoFactor'
+    || isResendingLoginCode.value
+    || authStage.value !== 'code'
     || resendSecondsLeft.value > 0
   ) {
     return
   }
 
-  if (!email.value.trim() || !password.value.trim() || !captchaToken.value) {
-    errorMessage.value = t('pages.auth.signIn.completeCaptcha')
+  if (!email.value.trim()) {
+    errorMessage.value = t('errors.FILL_ALL_INPUTS')
     return
   }
 
-  isResendingTwoFactorCode.value = true
+  isResendingLoginCode.value = true
   errorMessage.value = ''
   try {
-    const result = await authService.signIn(email.value, password.value, captchaToken.value)
-    if (!result.two_factor_required || !result.two_factor_token) {
-      errorMessage.value = t('errors.SERVER_ERROR')
-      resetTwoFactorState()
-      return
-    }
-
-    twoFactorToken.value = result.two_factor_token
+    await authService.resendLoginCode(email.value)
     codeDigits.value = ['', '', '', '', '', '']
-    refreshCaptcha()
     startResendCooldown()
     await nextTick()
     codeInputs.value[0]?.focus()
@@ -214,14 +211,13 @@ async function resendTwoFactorCode() {
     } else {
       errorMessage.value = t('errors.SERVER_ERROR')
     }
-    refreshCaptcha()
   } finally {
-    isResendingTwoFactorCode.value = false
+    isResendingLoginCode.value = false
   }
 }
 
 async function confirmTwoFactorSignIn() {
-  if (sended.value || authStage.value !== 'twoFactor') return
+  if (sended.value || authStage.value !== 'code') return
 
   const code = codeDigits.value.join('')
   if (code.length !== 6) {
@@ -229,16 +225,10 @@ async function confirmTwoFactorSignIn() {
     return
   }
 
-  if (!twoFactorToken.value) {
-    errorMessage.value = t('errors.SERVER_ERROR')
-    resetTwoFactorState()
-    return
-  }
-
   sended.value = true
   errorMessage.value = ''
   try {
-    await authService.confirmTwoFactorLogin(twoFactorToken.value, code)
+    await authService.confirmLoginCode(email.value, code)
     showWelcome()
   } catch (e: any) {
     const detail = e?.response?.data?.detail
@@ -292,10 +282,6 @@ function handleCodePaste(event: ClipboardEvent) {
   })
 }
 
-function switchPasswordVisibility() {
-  passwordHidden.value = !passwordHidden.value
-}
-
 onUnmounted(() => {
   clearResendTimer()
 })
@@ -308,7 +294,7 @@ onUnmounted(() => {
     >
       <Title :text="t('pages.auth.signIn.title')" class="text-center text-4xl" />
 
-      <form v-if="authStage === 'credentials'" class="space-y-4" @submit.prevent>
+      <form v-if="authStage === 'email'" class="space-y-4" novalidate @submit.prevent="signIn">
           <div>
             <label for="email" class="mb-1 block text-sm text-[var(--text-secondary)]">
               {{ $t('common.email') }}
@@ -319,32 +305,12 @@ onUnmounted(() => {
               type="email"
               :placeholder="$t('common.email')"
               required
+              :maxlength="64"
+              autocomplete="email"
+              @blur="validateEmail"
+              @input="clearEmailError"
             />
-          </div>
-
-          <div>
-            <label for="password" class="mb-1 block text-sm text-[var(--text-secondary)]">
-              {{ $t('common.password') }}
-            </label>
-            <TheInput
-              id="password"
-              v-model="password"
-              :type="passwordHidden ? 'password' : 'text'"
-              placeholder="••••••••"
-              required
-              :minlength="8"
-            >
-              <template #append>
-                <button
-                  type="button"
-                  class="p-1 text-[var(--text-muted)] transition-colors hover:text-[var(--text-secondary)] focus:outline-none"
-                  @click="switchPasswordVisibility"
-                >
-                  <EyeOff v-if="passwordHidden" class="w-5 h-5" />
-                  <Eye v-else class="w-5 h-5" />
-                </button>
-              </template>
-            </TheInput>
+            <p v-if="emailError" class="mt-1 text-xs leading-4 text-[var(--danger-text-soft)]">{{ emailError }}</p>
           </div>
 
           <div>
@@ -384,14 +350,10 @@ onUnmounted(() => {
 
           <ErrorBanner :message="errorMessage" />
 
-          <div>
-            <Captcha :key="captchaRenderKey" @verified="(token: string) => captchaToken = token" />
-          </div>
-
           <button
             type="button"
             class="w-full text-center text-sm text-text-link hover:underline disabled:cursor-not-allowed disabled:opacity-60 disabled:no-underline"
-            :disabled="sended || isResendingTwoFactorCode || resendSecondsLeft > 0 || !captchaToken"
+            :disabled="sended || isResendingLoginCode || resendSecondsLeft > 0"
             @click="resendTwoFactorCode"
           >
             {{
@@ -410,22 +372,16 @@ onUnmounted(() => {
           <button
             type="button"
             class="w-full text-center text-sm text-text-link hover:underline"
-            @click="resetTwoFactorState"
+            @click="resetLoginCodeState"
           >
             {{ $t('pages.auth.signIn.twoFactor.useAnotherAccount') }}
           </button>
       </form>
 
-      <p v-if="authStage === 'credentials'" class="text-center text-sm text-text-secondaryDark">
+      <p v-if="authStage === 'email'" class="text-center text-sm text-text-secondaryDark">
         {{ $t('pages.auth.signIn.noAccount') }}
         <router-link :to="signUpLocation" class="text-text-link hover:underline">
           {{ $t('pages.auth.signIn.register') }}
-        </router-link>
-      </p>
-
-      <p v-if="authStage === 'credentials'" class="text-center text-sm text-text-secondaryDark">
-        <router-link to="/password-reset" class="text-text-link hover:underline">
-          {{ $t('pages.auth.signIn.forgotPassword') }}
         </router-link>
       </p>
     </div>

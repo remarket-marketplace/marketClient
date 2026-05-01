@@ -27,6 +27,19 @@ export const authService = {
     });
   },
 
+  async sendLoginCode(email: string, captchaToken: string) {
+    return await httpClient.post("/auth/send-login-code", {
+      email,
+      captcha_token: captchaToken
+    });
+  },
+
+  async resendLoginCode(email: string) {
+    return await httpClient.post("/auth/resend-login-code", {
+      email,
+    });
+  },
+
   async sendPasswordResetLetter(email: string, captchaToken: string) {
     return httpClient.post("/auth/password-reset-letter", {
       email: email,
@@ -78,9 +91,19 @@ export const authService = {
     return userData;
   },
 
+  async confirmLoginCode(email: string, code: string): Promise<UserRead> {
+    chatsService.disconnect();
+    const response = await httpClient.post("/auth/confirm-login-code", {
+      email,
+      email_code: code,
+    });
+    const userData = UserReadSchema.parse(response.data);
+    await useUserStore().setUser(userData);
+    return userData;
+  },
+
   async signUp(
     email: string,
-    password: string,
     username: string,
     code: string
   ) {
@@ -90,7 +113,6 @@ export const authService = {
       {
         email,
         username,
-        password,
         email_code: code,
       }
     );

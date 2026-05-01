@@ -2,8 +2,7 @@
 import { authService } from '@/api/auth/AuthService'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import TheInput from '@/components/TheInput.vue'
-import { Eye, EyeOff } from 'lucide-vue-next'
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import TheButton from './forms/TheButton.vue'
@@ -18,8 +17,6 @@ const route = useRoute()
 
 // Данные регистрации
 const email = ref('')
-const password = ref('')
-const passwordRepeat = ref('')
 const username = ref('')
 
 const captchaToken = ref('')
@@ -33,8 +30,6 @@ const showCodeInput = ref(false)
 const codeDigits = ref<string[]>(['', '', '', '', '', ''])
 const codeInputs = ref<(HTMLInputElement | null)[]>([])
 const errorMessage = ref('')
-const passwordHidden = ref(true)
-const passwordRepeatHidden = ref(true)
 const welcomeUsername = ref('')
 const afterAuthRedirect = computed(() => getAuthRedirectFromRoute(route))
 const signInLocation = computed(() => ({
@@ -45,90 +40,11 @@ const signInLocation = computed(() => ({
 // Ошибки валидации
 const usernameError = ref('')
 const emailError = ref('')
-const passwordError = ref('')
-const passwordRepeatError = ref('')
 
 function refreshCaptcha() {
   captchaToken.value = ''
   captchaRenderKey.value += 1
 }
-
-function normalizePasswordToLatin(value: string): string {
-  return value.replace(/[^\x21-\x7E]/g, '')
-}
-
-watch(password, (value) => {
-  const normalized = normalizePasswordToLatin(value)
-  if (normalized !== value) {
-    password.value = normalized
-  }
-})
-
-watch(passwordRepeat, (value) => {
-  const normalized = normalizePasswordToLatin(value)
-  if (normalized !== value) {
-    passwordRepeat.value = normalized
-  }
-})
-
-function getPasswordRequirementError(): string {
-  if (!/[A-Z]/.test(password.value)) {
-    return t('pages.auth.signUp.passwordUppercaseError')
-  }
-
-  if (!/[a-z]/.test(password.value)) {
-    return t('pages.auth.signUp.passwordLowercaseError')
-  }
-
-  if (!/\d/.test(password.value)) {
-    return t('pages.auth.signUp.passwordDigitError')
-  }
-
-  if (!/[^A-Za-z0-9]/.test(password.value)) {
-    return t('pages.auth.signUp.passwordSpecialCharError')
-  }
-
-  if (password.value.length < 8) {
-    return t('pages.auth.signUp.passwordLengthError')
-  }
-
-  return ''
-}
-
-const passwordHints = computed(() => {
-  const value = password.value
-  return [
-    {
-      key: 'length',
-      label: t('pages.auth.signUp.passwordLengthError'),
-      isMet: value.length >= 8,
-    },
-    {
-      key: 'uppercase',
-      label: t('pages.auth.signUp.passwordUppercaseError'),
-      isMet: /[A-Z]/.test(value),
-    },
-    {
-      key: 'lowercase',
-      label: t('pages.auth.signUp.passwordLowercaseError'),
-      isMet: /[a-z]/.test(value),
-    },
-    {
-      key: 'digit',
-      label: t('pages.auth.signUp.passwordDigitError'),
-      isMet: /\d/.test(value),
-    },
-    {
-      key: 'special',
-      label: t('pages.auth.signUp.passwordSpecialCharError'),
-      isMet: /[^A-Za-z0-9]/.test(value),
-    },
-  ]
-})
-
-const activePasswordHint = computed(() =>
-  passwordHints.value.find((hint) => !hint.isMet) ?? null,
-)
 
 const isUsernameValidForSubmit = computed(() => {
   const normalizedUsername = username.value.trim()
@@ -154,20 +70,12 @@ const isEmailValidForSubmit = computed(() => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)
 })
 
-const isPasswordValidForSubmit = computed(() => password.value.length > 0 && getPasswordRequirementError() === '')
-
-const isPasswordRepeatValidForSubmit = computed(() =>
-  passwordRepeat.value.length > 0 && password.value === passwordRepeat.value,
-)
-
 const canRequestVerificationCode = computed(() =>
   !sended.value
   && !showCodeInput.value
   && Boolean(captchaToken.value)
   && isUsernameValidForSubmit.value
   && isEmailValidForSubmit.value
-  && isPasswordValidForSubmit.value
-  && isPasswordRepeatValidForSubmit.value,
 )
 
 function validateUsername() {
@@ -214,17 +122,11 @@ function validateEmail() {
   return true
 }
 
-function validatePassword() {
-  passwordError.value = getPasswordRequirementError()
-  return passwordError.value === ''
-}
-
 function validateForm() {
   const isUsernameValid = validateUsername()
   const isEmailValid = validateEmail()
-  const isPasswordValid = validatePassword()
 
-  return isUsernameValid && isEmailValid && isPasswordValid
+  return isUsernameValid && isEmailValid
 }
 
 function normalizeCredentials() {
@@ -261,10 +163,6 @@ async function sendCode() {
     return
   }
 
-  if (!validatePasswordRepeat()) {
-    return
-  }
-
   errorMessage.value = ''
   sended.value = true
 
@@ -272,6 +170,8 @@ async function sendCode() {
     await authService.sendVerificationCode(email.value, username.value, captchaToken.value)
     showCodeInput.value = true
     codeDigits.value = ['', '', '', '', '', '']
+    await nextTick()
+    codeInputs.value[0]?.focus()
   } catch (error) {
     errorMessage.value = resolveRequestError(error)
   } finally {
@@ -296,38 +196,12 @@ function handlePaste(event: ClipboardEvent) {
 }
 
 
-function switchPasswordVisibility() {
-  passwordHidden.value = !passwordHidden.value
-}
-
-function switchPasswordRepeatVisibility() {
-  passwordRepeatHidden.value = !passwordRepeatHidden.value
-}
-
-function validatePasswordRepeat(showFormError = true): boolean {
-  passwordRepeatError.value = ''
-
-  if (password.value !== passwordRepeat.value) {
-    passwordRepeatError.value = t('pages.auth.signUp.passwordsMismatch')
-    if (showFormError) {
-      errorMessage.value = t('pages.auth.signUp.passwordsMismatch')
-    }
-    return false
-  }
-  passwordRepeatError.value = ''
-  return true
-}
-
 async function completeSignUp() {
   if (sended.value) {
     return
   }
 
   normalizeCredentials()
-
-  if (!validatePasswordRepeat()) {
-    return
-  }
 
   const code = codeDigits.value.join('')
   if (!code || code.length !== 6) {
@@ -339,7 +213,7 @@ async function completeSignUp() {
   sended.value = true
 
   try {
-    await authService.signUp(email.value, password.value, username.value, code)
+    await authService.signUp(email.value, username.value, code)
     showCodeInput.value = false
     welcomeUsername.value = username.value.trim() || t('common.user')
     queueAuthWelcomeToast({
@@ -386,23 +260,6 @@ function clearEmailError() {
   emailError.value = ''
 }
 
-function clearPasswordError() {
-  if (!password.value) {
-    passwordError.value = ''
-    return
-  }
-
-  passwordError.value = getPasswordRequirementError()
-}
-
-function clearPasswordRepeatError() {
-  if (!passwordRepeat.value.length) {
-    passwordRepeatError.value = ''
-    return
-  }
-  void validatePasswordRepeat(false)
-}
-
 const welcomeTitle = computed(() => {
   const safeUsername = welcomeUsername.value.trim() || t('common.user')
   return t('pages.auth.signIn.welcomeTitle', { username: safeUsername })
@@ -437,44 +294,6 @@ const welcomeTitle = computed(() => {
             <p v-if="emailError" class="mt-1 text-xs leading-4 text-[var(--danger-text-soft)]">{{ emailError }}</p>
           </div>
 
-          <!-- Password с иконкой глаза -->
-          <div>
-            <label for="password" class="mb-1 block text-sm text-text-secondary">{{ $t('common.password') }}</label>
-            <TheInput id="password" v-model="password" :type="passwordHidden ? 'password' : 'text'" placeholder="••••••••"
-              required :minlength="8" @blur="validatePassword" @input="clearPasswordError" autocomplete="new-password">
-              <template #append>
-                <button type="button" class="p-1 text-[var(--text-muted)] transition-colors hover:text-[var(--text-secondary)] focus:outline-none"
-                  @click="switchPasswordVisibility">
-                  <EyeOff v-if="passwordHidden" class="w-5 h-5" />
-                  <Eye v-else class="w-5 h-5" />
-                </button>
-              </template>
-            </TheInput>
-            <div v-if="password.length > 0 && activePasswordHint" class="mt-2">
-              <p class="flex items-center gap-2 text-xs leading-4 text-[var(--danger-text-soft)]">
-                <span class="inline-flex w-3 justify-center font-semibold">•</span>
-                <span>{{ activePasswordHint.label }}</span>
-              </p>
-            </div>
-          </div>
-
-          <!-- Confirm Password с иконкой глаза -->
-          <div>
-            <label for="passwordRepeat" class="mb-1 block text-sm text-text-secondary">{{
-              $t('pages.auth.signUp.confirmPassword')
-              }}</label>
-            <TheInput id="passwordRepeat" v-model="passwordRepeat" :type="passwordRepeatHidden ? 'password' : 'text'" placeholder="••••••••" required
-              :minlength="8" autocomplete="new-password" @input="clearPasswordRepeatError" @blur="clearPasswordRepeatError">
-              <template #append>
-                <button type="button" class="p-1 text-[var(--text-muted)] transition-colors hover:text-[var(--text-secondary)] focus:outline-none"
-                  @click="switchPasswordRepeatVisibility">
-                  <EyeOff v-if="passwordRepeatHidden" class="w-5 h-5" />
-                  <Eye v-else class="w-5 h-5" />
-                </button>
-              </template>
-            </TheInput>
-            <p v-if="passwordRepeatError" class="mt-1 text-sm text-[var(--danger-text-soft)]">{{ passwordRepeatError }}</p>
-          </div>
           <Captcha :key="captchaRenderKey" @verified="(token: string) => captchaToken = token" />
 
           <p class="text-xs leading-relaxed text-[var(--text-muted)]">
