@@ -95,7 +95,9 @@ const sellerUsername = computed(() => seller.value?.username ?? null)
 const sellerRating = computed(() => seller.value?.rating != null ? Number(seller.value.rating).toFixed(1) : null)
 const sellerSales = computed(() => {
   if (sellerCompletedDealsCount.value != null) return sellerCompletedDealsCount.value
-  return product.value?.seller_trust?.completed_deals_count ?? 0
+  return product.value?.seller_trust?.completed_deals_count
+    ?? product.value?.seller_trust?.total_deals_count
+    ?? 0
 })
 const isSellerOnline = computed(() => Boolean(seller.value?.is_active))
 const sellerAvatarUrl = computed(() => seller.value?.avatar_url ?? '')
@@ -344,12 +346,13 @@ onMounted(async () => {
                 ></span>
               </div>
               <div class="min-w-0 flex-1">
-                <div class="flex min-w-0 items-center gap-1.5">
-                  <span class="truncate text-sm font-bold">{{ sellerUsername ?? 'Продавец' }}</span>
+                <p class="truncate text-sm font-bold">{{ sellerUsername ?? 'Продавец' }}</p>
+                <div class="mt-1 flex items-center gap-2 text-xs text-[var(--text-meta)]">
+                  <span class="font-semibold text-[var(--text-title)]">{{ sellerRating ?? '—' }}</span>
                   <Star class="h-3.5 w-3.5 fill-current text-[var(--text-title)]" />
-                  <span class="text-sm font-semibold">{{ sellerRating ?? '—' }}</span>
+                  <span aria-hidden="true">·</span>
+                  <span>{{ sellerSales }} продаж</span>
                 </div>
-                <p class="text-xs text-[var(--text-meta)]">{{ sellerSales }} продаж</p>
               </div>
               <ArrowRight class="h-5 w-5 shrink-0 transition group-hover:translate-x-0.5" />
             </button>
