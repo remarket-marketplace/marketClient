@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { chatsService } from '@/api/chats/chatsService'
-import { profileService } from '@/api/profile/ProfileService'
+import { productService } from '@/api/product/ProductService'
 import { reviewService } from '@/api/review/ReviewService'
 import AppModal from '@/components/AppModal.vue'
 import Loader from '@/components/Loader.vue'
@@ -24,7 +24,7 @@ const isLoading = ref(false)
 const latestDealMessage = ref<PurchaseMessage | null>(null)
 const loadError = ref<string | null>(null)
 const hasReview = ref(false)
-const sellerCompletedDealsCount = ref<number | null>(null)
+const sellerDealsCountOverride = ref<number | null>(null)
 
 const showReviewModal = ref(false)
 const reviewStars = ref(0)
@@ -93,11 +93,11 @@ const orderStatusClass = computed(() => (
 
 const sellerUsername = computed(() => seller.value?.username ?? null)
 const sellerRating = computed(() => seller.value?.rating != null ? Number(seller.value.rating).toFixed(1) : null)
-const sellerSales = computed(() => {
-  if (sellerCompletedDealsCount.value != null) return sellerCompletedDealsCount.value
+const sellerSales = computed<number | null>(() => {
+  if (sellerDealsCountOverride.value != null) return sellerDealsCountOverride.value
   return product.value?.seller_trust?.completed_deals_count
     ?? product.value?.seller_trust?.total_deals_count
-    ?? 0
+    ?? null
 })
 const isSellerOnline = computed(() => Boolean(seller.value?.is_active))
 const sellerAvatarUrl = computed(() => seller.value?.avatar_url ?? '')
@@ -149,22 +149,20 @@ async function loadAfterPaymentData() {
 }
 
 async function loadSellerSales() {
-  const username = sellerUsername.value?.trim()
-  if (!username) {
-    sellerCompletedDealsCount.value = null
+  const productId = product.value?.id
+  if (!productId) {
+    sellerDealsCountOverride.value = null
     return
   }
 
-  const profile = await profileService.getUserProfileData(username)
-  if (!profile) {
-    sellerCompletedDealsCount.value = null
-    return
+  try {
+    const freshProduct = await productService.getProductById(productId)
+    sellerDealsCountOverride.value = freshProduct?.seller_trust?.completed_deals_count
+      ?? freshProduct?.seller_trust?.total_deals_count
+      ?? null
+  } catch {
+    sellerDealsCountOverride.value = null
   }
-
-  const completedDeals = profile.completed_deals_count
-  const totalDeals = profile.total_deals_count
-  const sales = Number.isFinite(completedDeals) ? completedDeals : (Number.isFinite(totalDeals) ? totalDeals : null)
-  sellerCompletedDealsCount.value = sales
 }
 
 function goToSellerProfile() {
@@ -222,7 +220,7 @@ watch(
 )
 
 watch(
-  sellerUsername,
+  () => product.value?.id,
   async () => {
     await loadSellerSales()
   },
@@ -258,14 +256,36 @@ onMounted(async () => {
           </h1>
           <span class="tg-popper" aria-hidden="true">
             <svg viewBox="0 0 64 64" class="h-12 w-12 sm:h-14 sm:w-14" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 44L44 31L31 56L19 44Z" fill="#FFC83D"/>
-              <path d="M22 41L44 31L31 53L22 41Z" fill="#FFB020"/>
-              <path d="M29 36L48 42" stroke="#9A67FF" stroke-width="4" stroke-linecap="round"/>
-              <path d="M27 42L45 48" stroke="#7D4DFF" stroke-width="4" stroke-linecap="round"/>
-              <rect x="16" y="17" width="6" height="22" rx="3" transform="rotate(14 16 17)" fill="#2E83FF"/>
-              <rect x="27" y="12" width="6" height="18" rx="3" transform="rotate(-14 27 12)" fill="#FF4B93"/>
-              <rect x="37" y="10" width="8" height="8" rx="2" transform="rotate(-18 37 10)" fill="#FFD84D"/>
-              <rect x="42" y="20" width="7" height="7" rx="2" transform="rotate(19 42 20)" fill="#FF7F50"/>
+              <defs>
+                <linearGradient id="coneMain" x1="18" y1="45" x2="44" y2="33" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#F6A720" />
+                  <stop offset="0.55" stop-color="#FFD45A" />
+                  <stop offset="1" stop-color="#FFB436" />
+                </linearGradient>
+                <linearGradient id="streamBlue" x1="0" y1="0" x2="0" y2="1">
+                  <stop stop-color="#5BA6FF" />
+                  <stop offset="1" stop-color="#2C7AF9" />
+                </linearGradient>
+                <linearGradient id="streamPink" x1="0" y1="0" x2="0" y2="1">
+                  <stop stop-color="#FF73B1" />
+                  <stop offset="1" stop-color="#F24A90" />
+                </linearGradient>
+              </defs>
+
+              <path d="M19 46L46 32L31.5 58L19 46Z" fill="url(#coneMain)" />
+              <path d="M22 43L45.5 32.8L31.6 54.7L22 43Z" fill="#FFBE3A" />
+              <path d="M30.5 37L49.5 42.4" stroke="#936BFF" stroke-width="4.4" stroke-linecap="round" />
+              <path d="M28 42.7L46.7 48.2" stroke="#7B57F5" stroke-width="4.4" stroke-linecap="round" />
+
+              <rect x="15.5" y="16" width="6.1" height="22.2" rx="3.05" transform="rotate(13 15.5 16)" fill="url(#streamBlue)" />
+              <rect x="27.1" y="11.2" width="6.1" height="17.6" rx="3.05" transform="rotate(-14 27.1 11.2)" fill="url(#streamPink)" />
+
+              <rect x="37" y="10.4" width="7.2" height="7.2" rx="1.9" transform="rotate(-18 37 10.4)" fill="#FFE768" />
+              <rect x="42.2" y="19.6" width="6.3" height="6.3" rx="1.8" transform="rotate(18 42.2 19.6)" fill="#FF9361" />
+              <circle cx="22.5" cy="11.8" r="2.1" fill="#4B8BFF" />
+              <circle cx="47.4" cy="30.2" r="1.9" fill="#FF4D97" />
+
+              <path d="M30 58L20.4 46.2L18.8 46.9L30 60L31.2 58.8L30 58Z" fill="#5E4B2C" fill-opacity="0.28" />
             </svg>
           </span>
         </div>
@@ -351,7 +371,7 @@ onMounted(async () => {
                   <span class="font-semibold text-[var(--text-title)]">{{ sellerRating ?? '—' }}</span>
                   <Star class="h-3.5 w-3.5 fill-current text-[var(--text-title)]" />
                   <span aria-hidden="true">·</span>
-                  <span>{{ sellerSales }} продаж</span>
+                  <span>{{ sellerSales ?? '—' }} продаж</span>
                 </div>
               </div>
               <ArrowRight class="h-5 w-5 shrink-0 transition group-hover:translate-x-0.5" />
@@ -498,18 +518,7 @@ onMounted(async () => {
 .tg-popper {
   display: inline-flex;
   filter: drop-shadow(0 8px 16px rgb(0 0 0 / 0.28));
-  animation: tg-popper-enter 650ms cubic-bezier(0.22, 1.2, 0.4, 1) both;
-}
-
-@keyframes tg-popper-enter {
-  0% {
-    opacity: 0;
-    transform: translateY(6px) rotate(-16deg) scale(0.8);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) rotate(0deg) scale(1);
-  }
+  transform: rotate(-8deg);
 }
 
 @media (max-width: 640px) {
