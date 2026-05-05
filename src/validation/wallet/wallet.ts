@@ -1,18 +1,18 @@
 import z from "zod";
 
-export const walletTopUpProviderSchema = z.enum(["platega", "lava"]);
+export const walletTopUpProviderSchema = z.enum(["platega", "lava", "paritypay"]);
 
 export const balanceSchema = z.object({
   balance: z.number(),
   top_up_min_amount: z.number().int().positive(),
   top_up_max_amount: z.number().int().positive(),
   withdrawal_commission_percent: z.number().min(0).max(100).default(0),
-  available_top_up_providers: z.array(walletTopUpProviderSchema).default(["platega"]),
+  available_top_up_providers: z.array(walletTopUpProviderSchema).default(["lava"]),
 });
 
 export const topUpBalanceRequestSchema = z.object({
   amount: z.number().int().positive(),
-  provider: walletTopUpProviderSchema.default("platega"),
+  provider: walletTopUpProviderSchema.default("lava"),
 });
 
 export const topUpBalanceResponse = z.object({

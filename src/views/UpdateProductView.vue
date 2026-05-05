@@ -420,7 +420,6 @@ async function updateProduct() {
         <FileUploader
           v-model="newImages"
           :max-files="computedMaxNewFiles"
-          :hint="$t('pages.forms.createProduct.imageHint')"
         />
 
         <p
@@ -573,10 +572,6 @@ async function updateProduct() {
                 {{ $t('common.price') }}
                 <span class="text-xs text-[var(--text-danger)] ml-1">*</span>
               </label>
-              <div class="flex items-center gap-2">
-                <Calculator class="w-4 h-4 text-[var(--text-link)]" />
-                <span class="text-xs text-[var(--text-muted)]">{{ currencySymbol }}</span>
-              </div>
             </div>
             <div class="relative">
               <input

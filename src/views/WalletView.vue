@@ -56,7 +56,7 @@ const totalPages = ref(1)
 const isFetchingTransactions = ref(false)
 const minDepositRub = ref(HARD_MIN_DEPOSIT_RUB)
 const maxDepositRub = ref(100000)
-const defaultDepositProvider: WalletTopUpProvider = 'platega'
+const defaultDepositProvider: WalletTopUpProvider = 'lava'
 const availableDepositProviders = ref<WalletTopUpProvider[]>([defaultDepositProvider])
 const selectedDepositProvider = ref<WalletTopUpProvider>(defaultDepositProvider)
 const depositErrorMessage = ref<string | null>(null)
@@ -133,32 +133,28 @@ const canSubmitDeposit = computed(() => {
 const depositProviderOptions = computed(() => {
   const options = [
     {
+      id: 'paritypay' as WalletTopUpProvider,
+      title: t('pages.wallet.paymentProviderTitle', {number: "#1"}),
+      badges: [
+        t('pages.wallet.paymentProviderParitypayCard'),
+        t('pages.wallet.paymentProviderParitypaySbp'),
+      ],
+    },
+    {
       id: 'platega' as WalletTopUpProvider,
       title: 'Platega',
       description: t('pages.wallet.paymentProviderPlategaHint'),
       badges: [] as string[],
       icon: Landmark,
-      surfaceClass: 'bg-gradient-to-br from-[rgb(var(--palette-sky-400)/0.22)] via-[rgb(var(--palette-sky-400)/0.08)] to-[var(--transparent)]',
-      activeClass: 'border-[rgb(var(--palette-sky-400)/0.6)] bg-[rgb(var(--palette-sky-500)/0.1)]',
-      activeIconClass: 'border-[rgb(var(--palette-sky-300)/0.35)] bg-[rgb(var(--palette-sky-400)/0.15)] text-[var(--text-accent-strong)]',
-      activeIndicatorClass: 'border-[rgb(var(--palette-sky-300)/0.7)] bg-[rgb(var(--palette-sky-300)/0.18)]',
-      activeCopyClass: 'text-[rgb(var(--text-accent-strong-rgb)/0.88)]',
     },
     {
       id: 'lava' as WalletTopUpProvider,
-      title: 'Lava',
-      description: t('pages.wallet.paymentProviderLavaHint'),
+      title: t('pages.wallet.paymentProviderTitle', {number: "#2"}),
       badges: [
         t('pages.wallet.paymentProviderLavaCardsFee'),
         t('pages.wallet.paymentProviderLavaSbpFee'),
         t('pages.wallet.paymentProviderLavaCryptoFee'),
       ],
-      icon: Flame,
-      surfaceClass: 'bg-gradient-to-br from-[rgb(var(--palette-orange-400)/0.22)] via-[rgb(var(--palette-amber-400)/0.08)] to-[var(--transparent)]',
-      activeClass: 'border-[rgb(var(--palette-orange-400)/0.6)] bg-[rgb(var(--palette-orange-500)/0.1)]',
-      activeIconClass: 'border-[rgb(var(--palette-orange-300)/0.35)] bg-[rgb(var(--palette-orange-400)/0.15)] text-[var(--text-warning)]',
-      activeIndicatorClass: 'border-[rgb(var(--palette-orange-300)/0.7)] bg-[rgb(var(--palette-orange-300)/0.18)]',
-      activeCopyClass: 'text-[rgb(var(--text-warning-rgb)/0.88)]',
     },
   ]
 
@@ -686,18 +682,11 @@ const toggleHistoryItem = (id: string) => {
 
 const isHistoryItemExpanded = (id: string) => expandedTransactionId.value === id
 
-const formatProviderName = (provider: string | null | undefined) => {
-  const map: Record<string, string> = {
-    platega: 'Platega',
-    lava: 'Lava',
-  }
-  if (!provider) return null
-  return map[provider.toLowerCase()] ?? provider
-}
 
 const formatPaymentMethod = (paymentMethod: string | null | undefined) => {
   const map: Record<string, string> = {
     sbp: t('pages.wallet.historyDetails.paymentMethodSbp'),
+    card: t('pages.wallet.historyDetails.paymentMethodBankCard'),
     bank_card: t('pages.wallet.historyDetails.paymentMethodBankCard'),
     card_acquiring: t('pages.wallet.historyDetails.paymentMethodCardAcquiring'),
     international_card: t('pages.wallet.historyDetails.paymentMethodInternationalCard'),
@@ -837,14 +826,6 @@ const getTransactionDetails = (item: WalletHistoryItem) => {
     details.push({
       label: t('pages.wallet.historyDetails.unlockAt'),
       value: saleTimerUnlockText,
-    })
-  }
-
-  const providerName = formatProviderName(item.payment_provider)
-  if (providerName) {
-    details.push({
-      label: t('pages.wallet.historyDetails.provider'),
-      value: providerName,
     })
   }
 
@@ -1296,62 +1277,27 @@ const typeLabel = (type: string) => {
             :key="option.id"
             type="button"
             :aria-pressed="selectedDepositProvider === option.id"
-            class="group relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-200 sm:p-5"
-            :class="selectedDepositProvider === option.id ? option.activeClass : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.4)] hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-700)/0.7)]'"
+            class="rounded-xl border p-4 text-left transition-all duration-200"
+            :class="selectedDepositProvider === option.id
+              ? 'border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-white)/0.08)]'
+              : 'border-[rgb(var(--palette-white)/0.06)] bg-[rgb(var(--palette-white)/0.02)] hover:bg-[rgb(var(--palette-white)/0.04)]'"
             @click="selectedDepositProvider = option.id"
           >
+            <div class="text-sm font-semibold text-[var(--text-title)]">
+              {{ option.title }}
+            </div>
+
             <div
-              class="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200"
-              :class="[option.surfaceClass, selectedDepositProvider === option.id ? 'opacity-100' : 'group-hover:opacity-70']"
-            />
-
-            <div class="relative flex items-start gap-4">
-              <div
-                class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border transition-colors duration-200"
-                :class="selectedDepositProvider === option.id ? option.activeIconClass : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.75)] text-[var(--text-body)]'"
+              v-if="option.badges.length"
+              class="mt-2 flex flex-wrap gap-1.5"
+            >
+              <span
+                v-for="badge in option.badges"
+                :key="badge"
+                class="inline-flex items-center rounded-md border border-[rgb(var(--palette-white)/0.06)] bg-[rgb(var(--palette-white)/0.03)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-muted)]"
               >
-                <component :is="option.icon" class="h-5 w-5" />
-              </div>
-
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center justify-between gap-3">
-                  <div class="text-base font-semibold text-[var(--text-title)] sm:text-lg">
-                    {{ option.title }}
-                  </div>
-                  <span
-                    class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-200"
-                    :class="selectedDepositProvider === option.id ? option.activeIndicatorClass : 'border-[rgb(var(--palette-dark-500))] bg-[rgb(var(--palette-dark-700)/0.8)]'"
-                  >
-                    <span
-                      class="h-2 w-2 rounded-full transition-opacity duration-200"
-                      :class="selectedDepositProvider === option.id ? 'bg-[rgb(var(--palette-white))] opacity-100' : 'bg-[var(--transparent)] opacity-0'"
-                    />
-                  </span>
-                </div>
-
-                <p
-                  class="mt-2 max-w-[20rem] text-sm leading-6 transition-colors duration-200"
-                  :class="selectedDepositProvider === option.id ? option.activeCopyClass : 'text-[var(--text-muted)]'"
-                >
-                  {{ option.description }}
-                </p>
-
-                <div
-                  v-if="option.badges.length"
-                  class="mt-3 flex flex-wrap gap-2"
-                >
-                  <span
-                    v-for="badge in option.badges"
-                    :key="badge"
-                    class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-[0.02em] transition-colors duration-200"
-                    :class="selectedDepositProvider === option.id
-                      ? 'border-[rgb(var(--palette-orange-300)/0.3)] bg-[rgb(var(--palette-orange-400)/0.12)] text-[var(--text-warning)]'
-                      : 'border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body)]'"
-                  >
-                    {{ badge }}
-                  </span>
-                </div>
-              </div>
+                {{ badge }}
+              </span>
             </div>
           </button>
         </div>
@@ -1445,34 +1391,22 @@ const typeLabel = (type: string) => {
             type="button"
             :disabled="option.disabled"
             :aria-pressed="selectedWithdrawMethod === option.id"
-            class="group min-h-[76px] rounded-xl border px-3 py-3 text-left transition-colors"
+            class="rounded-xl border px-3 py-3 text-left transition-colors"
             :class="[
               selectedWithdrawMethod === option.id
-                ? 'border-[rgb(var(--palette-blue-500)/0.65)] bg-[rgb(var(--palette-blue-500)/0.12)]'
-                : 'border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.03)] hover:border-[rgb(var(--palette-white)/0.16)]',
+                ? 'border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-white)/0.08)]'
+                : 'border-[rgb(var(--palette-white)/0.06)] bg-[rgb(var(--palette-white)/0.02)] hover:bg-[rgb(var(--palette-white)/0.04)]',
               option.disabled
-                ? 'cursor-not-allowed opacity-55 hover:border-[rgb(var(--palette-white)/0.08)]'
+                ? 'cursor-not-allowed opacity-55'
                 : 'cursor-pointer',
             ]"
             @click="selectedWithdrawMethod = option.id"
           >
-            <span class="flex items-start justify-between gap-2">
-              <span class="flex items-center gap-2">
-                <span
-                  class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body)]"
-                  :class="selectedWithdrawMethod === option.id ? 'text-[var(--text-link)]' : ''"
-                >
-                  <component :is="option.icon" class="h-4 w-4" />
-                </span>
-                <span class="min-w-0">
-                  <span class="block text-sm font-semibold text-[var(--text-title)]">
-                    {{ option.title }}
-                  </span>
-                  <span class="block text-xs text-[var(--text-muted)]">
-                    {{ option.hint }}
-                  </span>
-                </span>
-              </span>
+            <span class="block text-sm font-semibold text-[var(--text-title)]">
+              {{ option.title }}
+            </span>
+            <span class="block text-xs text-[var(--text-muted)] mt-0.5">
+              {{ option.hint }}
             </span>
           </button>
         </div>

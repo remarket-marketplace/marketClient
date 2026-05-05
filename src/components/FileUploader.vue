@@ -259,10 +259,6 @@ function clearAll() {
       </div>
     </div>
 
-    <!-- Хинт под кнопкой -->
-    <div v-if="hint" class="text-xs text-[var(--text-muted)]">
-      {{ hint }}
-    </div>
     
     <!-- Сообщение об ошибке -->
     <div v-if="errorMessage" class="text-sm text-[var(--text-danger)] mt-2 flex items-center gap-2">
@@ -271,10 +267,6 @@ function clearAll() {
     </div>
 
     <!-- Информация о поддерживаемых форматах -->
-    <div class="text-xs text-[var(--text-muted)] flex items-center gap-1">
-      <Image class="w-3 h-3" />
-      {{ $t('components.fileUploader.supportOnlyImages') }}
-    </div>
     <div class="text-xs text-[var(--text-muted)]">
       {{ $t('components.fileUploader.pasteHint') }}
     </div>
