@@ -133,14 +133,6 @@ const canSubmitDeposit = computed(() => {
 const depositProviderOptions = computed(() => {
   const options = [
     {
-      id: 'paritypay' as WalletTopUpProvider,
-      title: t('pages.wallet.paymentProviderTitle', {number: "#1"}),
-      badges: [
-        t('pages.wallet.paymentProviderParitypayCard'),
-        t('pages.wallet.paymentProviderParitypaySbp'),
-      ],
-    },
-    {
       id: 'platega' as WalletTopUpProvider,
       title: 'Platega',
       description: t('pages.wallet.paymentProviderPlategaHint'),
@@ -149,7 +141,7 @@ const depositProviderOptions = computed(() => {
     },
     {
       id: 'lava' as WalletTopUpProvider,
-      title: t('pages.wallet.paymentProviderTitle', {number: "#2"}),
+      title: t('pages.wallet.paymentProviderTitle', {number: "#1"}),
       badges: [
         t('pages.wallet.paymentProviderLavaCardsFee'),
         t('pages.wallet.paymentProviderLavaSbpFee'),
@@ -1307,10 +1299,6 @@ const typeLabel = (type: string) => {
         >
           {{ $t('pages.wallet.paymentProvidersUnavailable') }}
         </div>
-
-        <p class="text-xs text-[var(--text-muted)]">
-          {{ $t('pages.wallet.paymentProviderHint') }}
-        </p>
       </div>
 
       <div

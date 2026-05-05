@@ -1,6 +1,6 @@
 import z from "zod";
 
-export const walletTopUpProviderSchema = z.enum(["platega", "lava", "paritypay"]);
+export const walletTopUpProviderSchema = z.enum(["platega", "lava"]);
 
 export const balanceSchema = z.object({
   balance: z.number(),
