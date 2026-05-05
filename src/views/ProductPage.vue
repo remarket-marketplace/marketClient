@@ -671,9 +671,9 @@ async function handleBuyConfirm() {
 
   if (result.success) {
     if (result.chatId) {
-      router.push({ name: 'chats', query: { chatId: result.chatId } })
+      router.push({ name: 'afterpayment', query: { chatId: result.chatId, source: 'payment' } })
     } else {
-      router.push('/chats')
+      router.push('/afterpayment')
     }
     return
   }
