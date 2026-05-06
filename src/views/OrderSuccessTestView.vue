@@ -5,7 +5,6 @@ import { reviewService } from '@/api/review/ReviewService'
 import AppModal from '@/components/AppModal.vue'
 import Loader from '@/components/Loader.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
-import { useUserStore } from '@/stores/user'
 import type { Product } from '@/validation/product/product'
 import type { PurchaseMessage } from '@/validation/chat/chatMessage'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
@@ -15,10 +14,10 @@ import { formatCurrencyAmount } from '@/utils/currency'
 import { getShortDealId } from '@/utils/dealId'
 
 const API_HOST = import.meta.env.VITE_API_HOST || ''
+const partyPopperSrc = '/party-popper.webp'
 
 const route = useRoute()
 const router = useRouter()
-const userStore = useUserStore()
 
 const isLoading = ref(false)
 const latestDealMessage = ref<PurchaseMessage | null>(null)
@@ -31,6 +30,10 @@ const reviewStars = ref(0)
 const reviewText = ref('')
 const reviewSubmitting = ref(false)
 const reviewError = ref<string | null>(null)
+const showSupportModal = ref(false)
+
+const SUPPORT_TELEGRAM_URL = 'https://t.me/remarketgg'
+const SUPPORT_EMAIL = 'support@re-market.net'
 
 const dealId = computed(() => {
   const rawDealId = route.query.dealId
@@ -45,7 +48,9 @@ const chatId = computed(() => {
 })
 
 const isReviewEntry = computed(() => route.query.review === '1' || route.query.mode === 'review')
-const showCongratulations = computed(() => !isReviewEntry.value)
+const showCongratulations = computed(() => (
+  !isReviewEntry.value || currentDealStatus.value === 'completed'
+))
 const product = computed<Product | null>(() => latestDealMessage.value?.product ?? null)
 const seller = computed(() => product.value?.seller ?? null)
 const currentDealStatus = computed(() => {
@@ -74,11 +79,9 @@ const orderCreatedAt = computed(() => {
     minute: '2-digit',
   })
 })
-const orderEmail = computed(() => userStore.user?.email ?? null)
 const productPreviewTitle = computed(() => orderTitle.value || 'Товар')
 
 const orderStatusLabel = computed(() => {
-  if (showCongratulations.value) return 'Ожидает выдачи'
   if (currentDealStatus.value === 'completed') return 'Получение подтверждено'
   if (currentDealStatus.value === 'confirmed') return 'Ожидает подтверждения получения'
   if (currentDealStatus.value === 'disputed') return 'Спор открыт'
@@ -179,6 +182,31 @@ function goToChat() {
   router.push('/chats')
 }
 
+function openSupportModal() {
+  showSupportModal.value = true
+}
+
+function closeSupportModal() {
+  showSupportModal.value = false
+}
+
+function openSupportChat() {
+  showSupportModal.value = false
+  router.push({ name: 'chats', query: { support: '1' } })
+}
+
+function openSupportTelegram() {
+  showSupportModal.value = false
+  if (typeof window === 'undefined') return
+  window.open(SUPPORT_TELEGRAM_URL, '_blank', 'noopener,noreferrer')
+}
+
+function openSupportEmail() {
+  showSupportModal.value = false
+  if (typeof window === 'undefined') return
+  window.location.href = `mailto:${SUPPORT_EMAIL}`
+}
+
 function openReviewModal() {
   if (!canLeaveReview.value) return
 
@@ -239,114 +267,108 @@ watch(
 onMounted(async () => {
   await loadAfterPaymentData()
   await loadSellerSales()
-  if (isReviewEntry.value && canLeaveReview.value) {
-    await nextTick()
-    openReviewModal()
-  }
 })
 </script>
 
 <template>
   <main class="order-success-page min-h-[calc(100dvh-3.5rem)] w-full bg-[rgb(var(--palette-black))] px-4 py-10 text-[var(--text-title)] sm:py-14">
     <div class="mx-auto w-full max-w-[920px]">
-      <header v-if="showCongratulations" class="mb-6 text-center sm:mb-7">
+      <header v-if="showCongratulations" class="mb-4 text-center sm:mb-5">
         <div class="inline-flex items-center gap-3">
           <h1 class="text-[1.7rem] font-extrabold leading-tight sm:text-[2rem]">
             Поздравляем с покупкой
           </h1>
           <span class="tg-popper" aria-hidden="true">
-            <svg viewBox="0 0 64 64" class="h-12 w-12 sm:h-14 sm:w-14" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="coneMain" x1="18" y1="45" x2="44" y2="33" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#F6A720" />
-                  <stop offset="0.55" stop-color="#FFD45A" />
-                  <stop offset="1" stop-color="#FFB436" />
-                </linearGradient>
-                <linearGradient id="streamBlue" x1="0" y1="0" x2="0" y2="1">
-                  <stop stop-color="#5BA6FF" />
-                  <stop offset="1" stop-color="#2C7AF9" />
-                </linearGradient>
-                <linearGradient id="streamPink" x1="0" y1="0" x2="0" y2="1">
-                  <stop stop-color="#FF73B1" />
-                  <stop offset="1" stop-color="#F24A90" />
-                </linearGradient>
-              </defs>
-
-              <path d="M19 46L46 32L31.5 58L19 46Z" fill="url(#coneMain)" />
-              <path d="M22 43L45.5 32.8L31.6 54.7L22 43Z" fill="#FFBE3A" />
-              <path d="M30.5 37L49.5 42.4" stroke="#936BFF" stroke-width="4.4" stroke-linecap="round" />
-              <path d="M28 42.7L46.7 48.2" stroke="#7B57F5" stroke-width="4.4" stroke-linecap="round" />
-
-              <rect x="15.5" y="16" width="6.1" height="22.2" rx="3.05" transform="rotate(13 15.5 16)" fill="url(#streamBlue)" />
-              <rect x="27.1" y="11.2" width="6.1" height="17.6" rx="3.05" transform="rotate(-14 27.1 11.2)" fill="url(#streamPink)" />
-
-              <rect x="37" y="10.4" width="7.2" height="7.2" rx="1.9" transform="rotate(-18 37 10.4)" fill="#FFE768" />
-              <rect x="42.2" y="19.6" width="6.3" height="6.3" rx="1.8" transform="rotate(18 42.2 19.6)" fill="#FF9361" />
-              <circle cx="22.5" cy="11.8" r="2.1" fill="#4B8BFF" />
-              <circle cx="47.4" cy="30.2" r="1.9" fill="#FF4D97" />
-
-              <path d="M30 58L20.4 46.2L18.8 46.9L30 60L31.2 58.8L30 58Z" fill="#5E4B2C" fill-opacity="0.28" />
-            </svg>
+            <img :src="partyPopperSrc" alt="" class="h-12 w-12 object-contain sm:h-14 sm:w-14" />
           </span>
         </div>
-        <p class="mt-1 text-sm font-medium text-[var(--text-meta)]">
-          Отправили данные о заказе на <span class="underline decoration-[rgb(var(--palette-white)/0.24)] underline-offset-2">{{ orderEmail ?? '—' }}</span>
-        </p>
       </header>
 
       <div v-if="isLoading" class="flex min-h-[360px] items-center justify-center">
         <Loader />
       </div>
 
-      <div v-else class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div v-else class="grid gap-4 lg:items-start lg:grid-cols-[minmax(0,1fr)_320px]">
         <section v-if="loadError" class="order-panel min-w-0 p-5 sm:p-6 lg:col-span-2">
           <p class="text-sm text-[var(--text-danger)]">{{ loadError }}</p>
         </section>
 
-        <section class="order-panel min-w-0 p-5 sm:p-6">
-          <div class="mb-6 flex flex-wrap items-center gap-x-7 gap-y-2">
-            <h2 class="text-2xl font-extrabold leading-tight sm:text-[1.8rem]">
-              Заказ #{{ orderIdLabel ?? '—' }}
-            </h2>
-            <span class="text-sm font-medium" :class="orderStatusClass">{{ orderStatusLabel }}</span>
-          </div>
-
-          <div class="grid gap-4 sm:grid-cols-[190px_minmax(0,1fr)] sm:gap-5">
-            <div v-if="productImageUrl" class="aspect-square min-h-[190px] overflow-hidden rounded-lg bg-[rgb(var(--palette-dark-800))]">
-              <img :src="productImageUrl" :alt="orderTitle" class="h-full w-full object-cover" />
+        <div class="min-w-0 space-y-4 lg:col-start-1">
+          <section class="order-panel min-w-0 p-5 sm:p-6">
+            <div class="mb-6 flex flex-wrap items-center gap-x-7 gap-y-2">
+              <h2 class="text-2xl font-extrabold leading-tight sm:text-[1.8rem]">
+                Заказ #{{ orderIdLabel ?? '—' }}
+              </h2>
+              <span class="text-sm font-medium" :class="orderStatusClass">{{ orderStatusLabel }}</span>
             </div>
-            <div v-else class="product-preview flex aspect-square min-h-[190px] flex-col justify-between overflow-hidden rounded-lg p-5">
+
+            <div class="grid gap-4 sm:grid-cols-[190px_minmax(0,1fr)] sm:gap-5">
+              <div v-if="productImageUrl" class="aspect-square min-h-[190px] overflow-hidden rounded-lg bg-[rgb(var(--palette-dark-800))]">
+                <img :src="productImageUrl" :alt="orderTitle ?? ''" class="h-full w-full object-cover" />
+              </div>
+              <div v-else class="product-preview flex aspect-square min-h-[190px] flex-col justify-between overflow-hidden rounded-lg p-5">
+                <div>
+                  <p class="line-clamp-2 text-center text-lg font-extrabold tracking-tight text-[rgb(var(--palette-blue-300))]">{{ productPreviewTitle }}</p>
+                  <p class="mt-1 text-center text-sm font-bold text-[rgb(var(--palette-white)/0.9)]">Детали заказа</p>
+                </div>
+                <div class="flex items-center justify-center gap-2">
+                  <span class="text-[2rem] font-extrabold leading-none text-[rgb(var(--palette-blue-400))]">{{ orderAmount }}</span>
+                  <Star class="h-14 w-14 text-[rgb(var(--palette-blue-400))]" />
+                </div>
+                <div class="mx-auto h-px w-20 rotate-[-38deg] bg-[rgb(var(--palette-white)/0.4)]"></div>
+              </div>
+
+              <div class="flex min-w-0 flex-col justify-between gap-8">
+                <div class="space-y-3">
+                  <p class="break-words text-base font-medium uppercase leading-6 text-[rgb(var(--text-title-rgb)/0.94)]">
+                    {{ orderTitle }}
+                  </p>
+                  <p class="text-base text-[rgb(var(--text-title-rgb)/0.88)]">
+                    Тип доставки: {{ product?.auto_delivery ? 'автоматический' : 'ручной' }}
+                  </p>
+                </div>
+
+                <div class="text-right">
+                  <p class="text-[1.45rem] font-extrabold leading-none sm:text-[1.6rem]">Сумма: {{ orderAmount ?? '—' }}</p>
+                  <p class="mt-3 text-sm text-[var(--text-meta)]">{{ orderCreatedAt ?? '—' }}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section v-if="!isDealCompleted" class="order-panel min-w-0 p-4 sm:p-5">
+            <h2 class="mb-2 text-lg font-extrabold sm:text-xl">Ваш товар</h2>
+            <p v-if="hasAutoDeliveryData" class="whitespace-pre-wrap break-words text-sm leading-5 text-[rgb(var(--text-title-rgb)/0.9)]">{{ productDataText }}</p>
+            <p v-else class="text-sm leading-5 text-[var(--text-body)]">Свяжитесь с продавцом, чтобы получить товар. Продавец выдаст товар вручную.</p>
+          </section>
+
+          <section class="order-panel min-w-0 p-4 sm:p-5">
+            <div class="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p class="line-clamp-2 text-center text-lg font-extrabold tracking-tight text-[rgb(var(--palette-blue-300))]">{{ productPreviewTitle }}</p>
-                <p class="mt-1 text-center text-sm font-bold text-[rgb(var(--palette-white)/0.9)]">Детали заказа</p>
-              </div>
-              <div class="flex items-center justify-center gap-2">
-                <span class="text-[2rem] font-extrabold leading-none text-[rgb(var(--palette-blue-400))]">{{ orderAmount }}</span>
-                <Star class="h-14 w-14 text-[rgb(var(--palette-blue-400))]" />
-              </div>
-              <div class="mx-auto h-px w-20 rotate-[-38deg] bg-[rgb(var(--palette-white)/0.4)]"></div>
-            </div>
-
-            <div class="flex min-w-0 flex-col justify-between gap-8">
-              <div class="space-y-3">
-                <p class="break-words text-base font-medium uppercase leading-6 text-[rgb(var(--text-title-rgb)/0.94)]">
-                  {{ orderTitle }}
-                </p>
-                <p class="text-base text-[rgb(var(--text-title-rgb)/0.88)]">
-                  Тип доставки: {{ product?.auto_delivery ? 'автоматический' : 'ручной' }}
+                <h2 class="text-base font-extrabold sm:text-lg">Оставить отзыв о продавце</h2>
+                <p class="mt-0.5 text-sm text-[var(--text-meta)]">
+                  <span v-if="hasReview">Отзыв по этой сделке уже оставлен.</span>
+                  <span v-else-if="canLeaveReview">Оцените продавца после завершения сделки.</span>
+                  <span v-else>Отзыв можно оставить только после подтверждения получения товара.</span>
                 </p>
               </div>
-
-              <div class="text-right">
-                <p class="text-[1.45rem] font-extrabold leading-none sm:text-[1.6rem]">Сумма: {{ orderAmount ?? '—' }}</p>
-                <p class="mt-3 text-sm text-[var(--text-meta)]">{{ orderCreatedAt ?? '—' }}</p>
-              </div>
+              <button
+                type="button"
+                class="inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-bold transition"
+                :class="canLeaveReview
+                  ? 'bg-[rgb(var(--palette-blue-600))] text-[var(--text-title)] hover:bg-[rgb(var(--palette-blue-500))]'
+                  : 'cursor-not-allowed bg-[rgb(var(--palette-dark-700))] text-[var(--text-meta)]'"
+                :disabled="!canLeaveReview"
+                @click="openReviewModal"
+              >
+                Оставить отзыв
+              </button>
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
 
-        <aside class="space-y-4">
-          <section class="order-panel p-5">
+        <aside class="space-y-4 lg:col-start-2">
+          <section class="order-panel p-4 sm:p-5">
             <h2 class="mb-3 text-[1.35rem] font-extrabold">Продавец</h2>
             <button
               type="button"
@@ -377,7 +399,7 @@ onMounted(async () => {
               <ArrowRight class="h-5 w-5 shrink-0 transition group-hover:translate-x-0.5" />
             </button>
 
-            <p class="mt-5 text-base leading-6 text-[rgb(var(--text-title-rgb)/0.9)]">
+            <p class="mt-4 text-sm leading-6 text-[rgb(var(--text-title-rgb)/0.9)] sm:text-base">
               Если у вас есть вопросы, напишите продавцу
             </p>
             <button type="button" class="mt-4 inline-flex h-11 w-full items-center justify-center rounded-lg bg-[rgb(var(--palette-blue-600))] px-4 text-sm font-bold transition hover:bg-[rgb(var(--palette-blue-500))]" @click="goToChat">
@@ -386,55 +408,56 @@ onMounted(async () => {
             </button>
           </section>
 
-          <section class="order-panel p-5">
-            <p class="text-base leading-6 text-[rgb(var(--text-title-rgb)/0.9)]">
+          <section class="order-panel p-4 sm:p-5">
+            <p class="text-sm leading-6 text-[rgb(var(--text-title-rgb)/0.9)] sm:text-base">
               Заказ должен быть обработан в течение 24 часов, если этого не произошло - обратитесь в поддержку.
             </p>
-            <button type="button" class="mt-4 inline-flex h-11 w-full items-center justify-center rounded-lg bg-[rgb(var(--palette-blue-600))] px-4 text-sm font-bold transition hover:bg-[rgb(var(--palette-blue-500))]">
+            <button type="button" class="mt-4 inline-flex h-11 w-full items-center justify-center rounded-lg bg-[rgb(var(--palette-blue-600))] px-4 text-sm font-bold transition hover:bg-[rgb(var(--palette-blue-500))]" @click="openSupportModal">
               Поддержка
               <Send class="ml-2 h-4 w-4" />
             </button>
           </section>
 
-          <section class="order-panel min-h-[224px] p-5">
+          <section class="order-panel p-4 sm:p-5">
             <div class="flex items-center gap-2 text-base font-medium">
               <HelpCircle class="h-4 w-4 text-[var(--text-meta)]" />
               Частозадаваемые вопросы
             </div>
           </section>
         </aside>
-
-        <section v-if="!isDealCompleted" class="order-panel min-w-0 p-5 sm:p-6 lg:col-start-1">
-          <h2 class="mb-5 text-xl font-extrabold">Ваш товар</h2>
-          <p v-if="hasAutoDeliveryData" class="whitespace-pre-wrap break-words text-sm leading-6 text-[rgb(var(--text-title-rgb)/0.9)]">{{ productDataText }}</p>
-          <p v-else class="text-sm leading-6 text-[var(--text-body)]">Свяжитесь с продавцом, чтобы получить товар. Продавец выдаст товар вручную.</p>
-        </section>
-
-        <section class="order-panel min-w-0 p-5 sm:p-6 lg:col-span-2">
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 class="text-xl font-extrabold">Оставить отзыв о продавце</h2>
-              <p class="mt-1 text-sm text-[var(--text-meta)]">
-                <span v-if="hasReview">Отзыв по этой сделке уже оставлен.</span>
-                <span v-else-if="canLeaveReview">Оцените продавца после завершения сделки.</span>
-                <span v-else>Отзыв можно оставить только после подтверждения получения товара.</span>
-              </p>
-            </div>
-            <button
-              type="button"
-              class="inline-flex h-11 items-center justify-center rounded-lg px-5 text-sm font-bold transition"
-              :class="canLeaveReview
-                ? 'bg-[rgb(var(--palette-blue-600))] text-[var(--text-title)] hover:bg-[rgb(var(--palette-blue-500))]'
-                : 'cursor-not-allowed bg-[rgb(var(--palette-dark-700))] text-[var(--text-meta)]'"
-              :disabled="!canLeaveReview"
-              @click="openReviewModal"
-            >
-              Оставить отзыв
-            </button>
-          </div>
-        </section>
       </div>
     </div>
+
+    <AppModal
+      :is-open="showSupportModal"
+      title="Поддержка"
+      description="Выберите удобный способ связи с поддержкой."
+      size="sm"
+      body-class="space-y-3"
+      @cancel="closeSupportModal"
+    >
+      <button
+        type="button"
+        class="inline-flex h-11 w-full items-center justify-center rounded-lg bg-[rgb(var(--palette-blue-600))] px-4 text-sm font-bold text-[var(--text-title)] transition hover:bg-[rgb(var(--palette-blue-500))]"
+        @click="openSupportChat"
+      >
+        Поддержка в чате
+      </button>
+      <button
+        type="button"
+        class="inline-flex h-11 w-full items-center justify-center rounded-lg border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-white)/0.04)] px-4 text-sm font-semibold text-[var(--text-title)] transition hover:bg-[rgb(var(--palette-white)/0.08)]"
+        @click="openSupportTelegram"
+      >
+        Поддержка в тг @remarketgg
+      </button>
+      <button
+        type="button"
+        class="inline-flex h-11 w-full items-center justify-center rounded-lg border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-white)/0.04)] px-4 text-sm font-semibold text-[var(--text-title)] transition hover:bg-[rgb(var(--palette-white)/0.08)]"
+        @click="openSupportEmail"
+      >
+        {{ SUPPORT_EMAIL }}
+      </button>
+    </AppModal>
 
     <AppModal
       :is-open="showReviewModal"
