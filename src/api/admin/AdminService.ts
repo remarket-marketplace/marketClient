@@ -1223,4 +1223,22 @@ export const adminService = {
     }
   },
 
+  async sendUsersBroadcast(
+    emailSubject: string,
+    emailText: string,
+    includeAdmins: boolean,
+  ): Promise<boolean> {
+    try {
+      const response = await httpClient.post("/admin/users-broadcast", {
+        email_subject: emailSubject,
+        email_text: emailText,
+        include_admins: includeAdmins,
+      })
+      return response.status === 200
+    } catch (e) {
+      console.error("Error sending broadcast:", e)
+      return false
+    }
+  },
+
 };

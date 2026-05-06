@@ -545,6 +545,7 @@ const ru = {
       feedback: "Обращения",
       complaints: "Обработка жалоб",
       activityLogs: "Логи",
+      broadcast: "Рассылка",
       backToSite: "Вернуться на сайт",
       sections: {
         overview: "Обзор",
@@ -2194,7 +2195,22 @@ const ru = {
         emptyHint: "Когда пользователи отправят жалобы, они появятся здесь.",
         notFound: "Жалоба не найдена",
         loadError: "Не удалось загрузить жалобы",
-      }
+      },
+
+      broadcastPage: {
+        title: "Рассылка",
+        usernameTagHint: "Используйте тег {tag} в теме или тексте письма — он будет заменён на никнейм каждого пользователя.",
+        subjectLabel: "Тема письма",
+        subjectPlaceholder: "Введите тему письма...",
+        messageLabel: "Текст письма",
+        messagePlaceholder: "Введите текст письма...",
+        includeAdminsLabel: "Включая админов",
+        includeAdminsHint: "Если включено, письма получат все пользователи, включая администраторов и модераторов.",
+        previewLabel: "Подсказка",
+        sendButton: "Отправить рассылку",
+        sendSuccess: "Рассылка успешно запущена! Письма будут отправлены в ближайшее время.",
+        sendError: "Не удалось отправить рассылку. Попробуйте позже.",
+      },
     },
     paymentSuccess: {
       title: "Платёж принят",

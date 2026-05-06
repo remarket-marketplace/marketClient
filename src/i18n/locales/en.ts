@@ -545,6 +545,7 @@ const en = {
       feedback: "Feedback",
       complaints: "Report Handling",
       activityLogs: "Logs",
+      broadcast: "Broadcast",
       backToSite: "Back to site",
       sections: {
         overview: "Overview",
@@ -2197,7 +2198,22 @@ const en = {
         emptyHint: "User reports will appear here after submission.",
         notFound: "Report not found",
         loadError: "Failed to load reports",
-      }
+      },
+
+      broadcastPage: {
+        title: "Broadcast",
+        usernameTagHint: "Use the {tag} tag in the subject or body — it will be replaced with each user's username.",
+        subjectLabel: "Email subject",
+        subjectPlaceholder: "Enter email subject...",
+        messageLabel: "Email body",
+        messagePlaceholder: "Enter email text...",
+        includeAdminsLabel: "Include admins",
+        includeAdminsHint: "If enabled, emails will be sent to all users, including administrators and moderators.",
+        previewLabel: "Hint",
+        sendButton: "Send broadcast",
+        sendSuccess: "Broadcast started successfully! Emails will be delivered shortly.",
+        sendError: "Failed to send broadcast. Please try again later.",
+      },
     },
     paymentSuccess: {
       title: "Payment received",

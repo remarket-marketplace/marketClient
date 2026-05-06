@@ -16,6 +16,7 @@ import {
   X,
   ArrowLeft,
   Shield,
+  Mail,
 } from 'lucide-vue-next'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -141,6 +142,12 @@ const navItems = computed<NavItem[]>(() => [
     icon: History,
     to: '/admin/activity-logs',
   },
+  {
+    id: 'broadcast',
+    title: t('navigation.admin.broadcast'),
+    icon: Mail,
+    to: '/admin/broadcast',
+  },
 ])
 
 const navGroups = computed<NavGroup[]>(() => {
@@ -160,7 +167,7 @@ const navGroups = computed<NavGroup[]>(() => {
     {
       id: 'communication',
       title: t('navigation.admin.sections.communication'),
-      items: pickNavItems(items, ['chats', 'feedback', 'complaints', 'activity-logs']),
+      items: pickNavItems(items, ['chats', 'feedback', 'complaints', 'activity-logs', 'broadcast']),
     },
   ]
 })

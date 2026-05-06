@@ -208,6 +208,12 @@ const routes: RouteRecordRaw[] = [
       meta: { requiredAdmin: true },
     },
     {
+      path: "/admin/broadcast",
+      name: "admin broadcast",
+      component: () => import("@/views/admin/AdminBroadcastView.vue"),
+      meta: { requiredAdmin: true },
+    },
+    {
       path: "/admin/categories/edit/:id",
       name: "edit category",
       component: () => import("@/views/admin/AdminEditCategoryView.vue"),
