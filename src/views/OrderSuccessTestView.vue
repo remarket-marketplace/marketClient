@@ -60,6 +60,7 @@ const currentDealStatus = computed(() => {
 })
 const isDealCompleted = computed(() => currentDealStatus.value === 'completed')
 const canLeaveReview = computed(() => Boolean(dealId.value && isDealCompleted.value && !hasReview.value))
+const canShowReviewSection = computed(() => canLeaveReview.value || hasReview.value)
 
 const orderIdLabel = computed(() => {
   const shortDealId = getShortDealId(dealId.value)
@@ -271,15 +272,15 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="order-success-page min-h-[calc(100dvh-3.5rem)] w-full bg-[rgb(var(--palette-black))] px-4 py-10 text-[var(--text-title)] sm:py-14">
+  <main class="order-success-page min-h-[calc(100dvh-3.5rem)] w-full bg-[var(--order-panel-bg)] px-4 py-10 text-[var(--text-title)] sm:py-14">
     <div class="mx-auto w-full max-w-[920px]">
-      <header v-if="showCongratulations" class="mb-4 text-center sm:mb-5">
+      <header v-if="showCongratulations" class="mb-2 text-center sm:mb-5">
         <div class="inline-flex items-center gap-3">
-          <h1 class="text-[1.7rem] font-extrabold leading-tight sm:text-[2rem]">
+          <h1 class="text-[1.36rem] font-extrabold leading-tight sm:text-[2rem]">
             Поздравляем с покупкой
           </h1>
           <span class="tg-popper" aria-hidden="true">
-            <img :src="partyPopperSrc" alt="" class="h-12 w-12 object-contain sm:h-14 sm:w-14" />
+            <img :src="partyPopperSrc" alt="" class="h-[2.4rem] w-[2.4rem] object-contain sm:h-14 sm:w-14" />
           </span>
         </div>
       </header>
@@ -329,7 +330,7 @@ onMounted(async () => {
                 </div>
 
                 <div class="text-right">
-                  <p class="text-[1.45rem] font-extrabold leading-none sm:text-[1.6rem]">Сумма: {{ orderAmount ?? '—' }}</p>
+                  <p class="text-[1.6rem] font-extrabold leading-none sm:text-[1.8rem]">{{ orderAmount ?? '—' }}</p>
                   <p class="mt-3 text-sm text-[var(--text-meta)]">{{ orderCreatedAt ?? '—' }}</p>
                 </div>
               </div>
@@ -342,7 +343,7 @@ onMounted(async () => {
             <p v-else class="text-sm leading-5 text-[var(--text-body)]">Свяжитесь с продавцом, чтобы получить товар. Продавец выдаст товар вручную.</p>
           </section>
 
-          <section class="order-panel min-w-0 p-4 sm:p-5">
+          <section v-if="canShowReviewSection" class="order-panel hidden min-w-0 p-4 sm:p-5 lg:block">
             <div class="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 class="text-base font-extrabold sm:text-lg">Оставить отзыв о продавце</h2>
@@ -406,6 +407,30 @@ onMounted(async () => {
               <MessageCircle class="mr-2 h-4 w-4" />
               Перейти в чат
             </button>
+          </section>
+
+          <section v-if="canShowReviewSection" class="order-panel min-w-0 p-4 sm:p-5 lg:hidden">
+            <div class="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 class="text-base font-extrabold sm:text-lg">Оставить отзыв о продавце</h2>
+                <p class="mt-0.5 text-sm text-[var(--text-meta)]">
+                  <span v-if="hasReview">Отзыв по этой сделке уже оставлен.</span>
+                  <span v-else-if="canLeaveReview">Оцените продавца после завершения сделки.</span>
+                  <span v-else>Отзыв можно оставить только после подтверждения получения товара.</span>
+                </p>
+              </div>
+              <button
+                type="button"
+                class="inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-bold transition"
+                :class="canLeaveReview
+                  ? 'bg-[rgb(var(--palette-blue-600))] text-[var(--text-title)] hover:bg-[rgb(var(--palette-blue-500))]'
+                  : 'cursor-not-allowed bg-[rgb(var(--palette-dark-700))] text-[var(--text-meta)]'"
+                :disabled="!canLeaveReview"
+                @click="openReviewModal"
+              >
+                Оставить отзыв
+              </button>
+            </div>
           </section>
 
           <section class="order-panel p-4 sm:p-5">
@@ -542,6 +567,30 @@ onMounted(async () => {
   display: inline-flex;
   filter: drop-shadow(0 8px 16px rgb(0 0 0 / 0.28));
   transform: rotate(-8deg);
+  transform-origin: 58% 72%;
+  animation: popper-bounce 2.1s ease-in-out infinite;
+}
+
+@keyframes popper-bounce {
+  0%,
+  100% {
+    transform: rotate(-8deg) translateY(0) scale(1);
+  }
+  25% {
+    transform: rotate(-3deg) translateY(-2px) scale(1.03);
+  }
+  50% {
+    transform: rotate(-10deg) translateY(0) scale(0.99);
+  }
+  75% {
+    transform: rotate(-5deg) translateY(-1px) scale(1.02);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tg-popper {
+    animation: none;
+  }
 }
 
 @media (max-width: 640px) {
