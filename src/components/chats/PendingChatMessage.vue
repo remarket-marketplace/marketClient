@@ -50,7 +50,7 @@ const imagePreviewUrls = computed(() => (
         v-else
         class="min-w-0 rounded-2xl rounded-br-none bg-[rgb(var(--palette-blue-600))] px-3 py-2 leading-[1.42] break-words [overflow-wrap:anywhere]"
       >
-        <p class="whitespace-pre-wrap break-words [overflow-wrap:anywhere]"><template>{{ message.text }}</template><span class="ml-1.5 inline-flex shrink-0 translate-y-[1px] items-center justify-end gap-0.5 whitespace-nowrap align-baseline text-[10.5px] leading-none text-[rgb(var(--text-body-rgb)/0.72)] tabular-nums">
+        <p class="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{{ message.text }}<span class="ml-1.5 inline-flex shrink-0 translate-y-[1px] items-center justify-end gap-0.5 whitespace-nowrap align-baseline text-[10.5px] leading-none text-[rgb(var(--text-body-rgb)/0.72)] tabular-nums">
             <span>{{ formatDate(message.created_at) }}</span>
             <span class="inline-flex h-3.5 w-4 shrink-0 items-center justify-center leading-none">
               <Clock3
