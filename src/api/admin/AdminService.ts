@@ -944,6 +944,23 @@ export const adminService = {
     }
   },
 
+  async updateSupportCaseStatus(chatId: string, status: 'open' | 'closed') {
+    try {
+      const response = await httpClient.patch(`/admin/chat/${chatId}/support-case-status`, {
+        status,
+      })
+      return {
+        success: Boolean(response.data?.success),
+        support_ticket_status: response.data?.support_ticket_status as string | undefined,
+      }
+    } catch (e) {
+      console.error('Error updating support case status', e)
+      return {
+        success: false,
+      }
+    }
+  },
+
   async getActivityLogs(
     page = 1,
     perPage = 30,

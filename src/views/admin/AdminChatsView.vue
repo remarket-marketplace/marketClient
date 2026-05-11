@@ -65,6 +65,7 @@ const topLoadThresholdPx = 8
 const bottomAutoScrollThresholdPx = 120
 const previousMessageScrollTop = ref(0)
 const hasUserScrolledAwayFromTop = ref(false)
+const isSupportCaseStatusUpdating = ref(false)
 
 // Все чаты для админа - только support_chat типы
 const searchQuery = ref('')
@@ -127,6 +128,16 @@ const sortedChats = computed(() => {
 const currentChat = computed(() =>
     chats.value.find(chat => chat.id === selectedChatId.value) || null
 )
+const currentSupportTicketStatus = computed<'open' | 'closed'>(() => {
+    const rawStatus = currentChat.value?.support_ticket_status
+    return typeof rawStatus === 'string' && rawStatus.trim().toLowerCase() === 'closed'
+        ? 'closed'
+        : 'open'
+})
+const isCurrentSupportCaseClosed = computed(() => currentSupportTicketStatus.value === 'closed')
+const supportCaseActionButtonLabel = computed(() => (
+    isCurrentSupportCaseClosed.value ? 'Переоткрыть кейс' : 'Закрыть кейс'
+))
 
 type PriceOfferChatMessage = Extract<ChatMessageUnion, { message_type: 'price_offer_message' }>
 
@@ -527,6 +538,10 @@ onMounted(async () => {
                     void chatsService.markChatRead(update.chat_id)
                 }
             }
+
+            if (typeof update.support_ticket_status === 'string' && update.support_ticket_status.trim()) {
+                chat.support_ticket_status = update.support_ticket_status.trim().toLowerCase()
+            }
         })
 
         unsubscribeNewMessage = chatsService.onNewMessage(message => {
@@ -891,6 +906,23 @@ async function sendMessage(payload: { files: File[] }) {
         })
     }
 }
+
+async function toggleSupportCaseStatus() {
+    if (!selectedChatId.value || !currentChat.value || isSupportCaseStatusUpdating.value) return
+
+    isSupportCaseStatusUpdating.value = true
+    const nextStatus: 'open' | 'closed' = isCurrentSupportCaseClosed.value ? 'open' : 'closed'
+    const result = await adminService.updateSupportCaseStatus(selectedChatId.value, nextStatus)
+
+    if (!result.success) {
+        errorMessage.value = 'Не удалось изменить статус кейса.'
+        isSupportCaseStatusUpdating.value = false
+        return
+    }
+
+    currentChat.value.support_ticket_status = nextStatus
+    isSupportCaseStatusUpdating.value = false
+}
 </script>
 
 <template>
@@ -1027,6 +1059,17 @@ async function sendMessage(payload: { files: File[] }) {
                                         {{ $t('common.offline') }}
                                     </p>
                                 </div>
+                            </button>
+                            <button
+                                type="button"
+                                class="h-8 flex-shrink-0 rounded-lg px-3 text-xs font-semibold transition disabled:opacity-60 lg:h-9 lg:text-sm"
+                                :class="isCurrentSupportCaseClosed
+                                    ? 'bg-[rgb(var(--palette-blue-600)/0.2)] text-[var(--text-link)] hover:bg-[rgb(var(--palette-blue-600)/0.28)]'
+                                    : 'bg-[rgb(var(--palette-red-600)/0.16)] text-[var(--text-danger)] hover:bg-[rgb(var(--palette-red-600)/0.24)]'"
+                                :disabled="isSupportCaseStatusUpdating"
+                                @click="toggleSupportCaseStatus"
+                            >
+                                {{ isSupportCaseStatusUpdating ? 'Сохраняем...' : supportCaseActionButtonLabel }}
                             </button>
                         </div>
 

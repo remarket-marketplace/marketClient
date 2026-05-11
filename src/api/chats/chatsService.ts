@@ -48,6 +48,9 @@ let visibilityHandlerRegistered = false;
 function parseChatUpdatePayload(data: any): ChatUpdateSchema | null {
   const chatId = typeof data?.chat_id === "string" ? data.chat_id : null;
   const unreadCount = typeof data?.unread_count === "number" ? data.unread_count : 0;
+  const supportTicketStatus = typeof data?.support_ticket_status === "string"
+    ? data.support_ticket_status
+    : null;
 
   if (!chatId) {
     return null;
@@ -70,6 +73,7 @@ function parseChatUpdatePayload(data: any): ChatUpdateSchema | null {
     chat_id: chatId,
     last_message: lastMessage,
     unread_count: unreadCount,
+    support_ticket_status: supportTicketStatus,
   };
 }
 

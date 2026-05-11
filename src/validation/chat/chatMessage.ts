@@ -78,6 +78,7 @@ export const ChatUpdateSchema = z.object({
   chat_id: z.string(),
   last_message: ChatMessageUnionSchema.optional(),
   unread_count: z.number(),
+  support_ticket_status: z.string().nullable().optional(),
 })
 
 export const MessagesReadSchema = z.object({
