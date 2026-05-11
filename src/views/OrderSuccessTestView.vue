@@ -7,7 +7,7 @@ import Loader from '@/components/Loader.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import type { Product } from '@/validation/product/product'
 import type { PurchaseMessage } from '@/validation/chat/chatMessage'
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowRight, HelpCircle, MessageCircle, Send, Star } from 'lucide-vue-next'
 import { formatCurrencyAmount } from '@/utils/currency'
@@ -31,6 +31,9 @@ const reviewText = ref('')
 const reviewSubmitting = ref(false)
 const reviewError = ref<string | null>(null)
 const showSupportModal = ref(false)
+const autoOpenedReviewDealIds = ref(new Set<string>())
+const isRefreshingAfterPayData = ref(false)
+let lastAfterPayRefreshAt = 0
 
 const SUPPORT_TELEGRAM_URL = 'https://t.me/remarketgg'
 const SUPPORT_EMAIL = 'support@re-market.net'
@@ -55,7 +58,6 @@ const product = computed<Product | null>(() => latestDealMessage.value?.product 
 const seller = computed(() => product.value?.seller ?? null)
 const currentDealStatus = computed(() => {
   if (latestDealMessage.value?.deal_status) return latestDealMessage.value.deal_status
-  if (isReviewEntry.value && dealId.value) return 'completed'
   return null
 })
 const isDealCompleted = computed(() => currentDealStatus.value === 'completed')
@@ -114,6 +116,17 @@ const productImageUrl = computed(() => {
 const productDataText = computed(() => product.value?.product_data_string?.trim() ?? '')
 const hasAutoDeliveryData = computed(() => Boolean(product.value?.auto_delivery && productDataText.value))
 
+function resolveHasReviewFromMessages(
+  messages: Awaited<ReturnType<typeof chatsService.getChatMessages>>['messages'],
+  targetDealId: string | null,
+) {
+  return messages.some((message) => {
+    if (message.message_type !== 'review_message') return false
+    if (!targetDealId) return true
+    return message.review.deal_id === targetDealId
+  })
+}
+
 async function loadAfterPaymentData() {
   const requestedChatId = chatId.value
   const requestedDealId = dealId.value
@@ -125,9 +138,9 @@ async function loadAfterPaymentData() {
   isLoading.value = true
   loadError.value = null
 
-  let result = requestedDealId
-    ? await chatsService.getChatMessagesByDealId(requestedDealId, 1, 20)
-    : await chatsService.getChatMessages(requestedChatId!, 1, 20)
+  let result = requestedChatId
+    ? await chatsService.getChatMessages(requestedChatId, 1, 20)
+    : await chatsService.getChatMessagesByDealId(requestedDealId!, 1, 20)
 
   if (requestedDealId && !result.latestDealMessage) {
     for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -144,10 +157,14 @@ async function loadAfterPaymentData() {
     result = await chatsService.getChatMessages(requestedChatId, 1, 20)
   }
 
-  // Some deal states may return no latest_deal_message. Keep the last known payload
-  // to avoid false-negative "failed to load" errors right after status transitions.
-  latestDealMessage.value = result.latestDealMessage ?? latestDealMessage.value
-  hasReview.value = Boolean((result.latestDealMessage ?? latestDealMessage.value)?.has_review)
+  // Do not keep stale deal snapshots when backend returns no latest_deal_message:
+  // stale data can reopen review modal after user has already left a review.
+  latestDealMessage.value = result.latestDealMessage ?? null
+  const hasReviewFromLatestDealMessage = Boolean(
+    latestDealMessage.value?.has_review,
+  )
+  const hasReviewFromMessages = resolveHasReviewFromMessages(result.messages, requestedDealId)
+  hasReview.value = hasReviewFromLatestDealMessage || hasReviewFromMessages
 
   isLoading.value = false
 }
@@ -241,6 +258,26 @@ async function submitReview() {
   reviewText.value = ''
 }
 
+async function refreshAfterPayData(force = false) {
+  const now = Date.now()
+  if (isRefreshingAfterPayData.value) return
+  if (!force && now - lastAfterPayRefreshAt < 3000) return
+
+  isRefreshingAfterPayData.value = true
+  try {
+    await loadAfterPaymentData()
+    await loadSellerSales()
+  } finally {
+    isRefreshingAfterPayData.value = false
+    lastAfterPayRefreshAt = Date.now()
+  }
+}
+
+function onAfterPayTabVisible() {
+  if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
+  void refreshAfterPayData()
+}
+
 watch(
   () => route.fullPath,
   async () => {
@@ -256,9 +293,17 @@ watch(
 )
 
 watch(
-  [isReviewEntry, canLeaveReview],
-  async ([shouldOpen, canOpen]) => {
-    if (!shouldOpen || !canOpen || showReviewModal.value) return
+  [isReviewEntry, canLeaveReview, hasReview, dealId],
+  async ([shouldOpen, canOpen, reviewAlreadyExists, currentDealId]) => {
+    if (reviewAlreadyExists && showReviewModal.value) {
+      showReviewModal.value = false
+      return
+    }
+
+    if (!shouldOpen || !canOpen || !currentDealId || showReviewModal.value) return
+    if (autoOpenedReviewDealIds.value.has(currentDealId)) return
+
+    autoOpenedReviewDealIds.value.add(currentDealId)
     await nextTick()
     openReviewModal()
   },
@@ -266,8 +311,12 @@ watch(
 )
 
 onMounted(async () => {
-  await loadAfterPaymentData()
-  await loadSellerSales()
+  await refreshAfterPayData(true)
+  document.addEventListener('visibilitychange', onAfterPayTabVisible)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('visibilitychange', onAfterPayTabVisible)
 })
 </script>
 
