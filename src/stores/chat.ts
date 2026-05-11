@@ -59,6 +59,9 @@ export const useChatStore = defineStore('chat', {
         }
       }
       if (typeof unreadCount === 'number') chat.unread_count = unreadCount
+      if (typeof update.support_ticket_status === 'string') {
+        chat.support_ticket_status = update.support_ticket_status
+      }
     },
     resetUnread(chatId: string) {
       const chat = this.chats.find((c) => c.id === chatId)

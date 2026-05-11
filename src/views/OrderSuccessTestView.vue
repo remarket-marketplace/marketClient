@@ -31,6 +31,9 @@ const reviewText = ref('')
 const reviewSubmitting = ref(false)
 const reviewError = ref<string | null>(null)
 const showSupportModal = ref(false)
+const supportChatOpening = ref(false)
+const supportChatCooldownActive = ref(false)
+let supportChatCooldownTimer: ReturnType<typeof setTimeout> | null = null
 const autoOpenedReviewDealIds = ref(new Set<string>())
 const isRefreshingAfterPayData = ref(false)
 let lastAfterPayRefreshAt = 0
@@ -67,6 +70,10 @@ const canShowReviewSection = computed(() => canLeaveReview.value || hasReview.va
 const orderIdLabel = computed(() => {
   const shortDealId = getShortDealId(dealId.value)
   return shortDealId ? `RM${shortDealId}` : null
+})
+const supportContextMessage = computed(() => {
+  const orderReference = orderIdLabel.value ? `#${orderIdLabel.value}` : (dealId.value ? `#${dealId.value}` : null)
+  return orderReference ? `Проблема по сделке ${orderReference}` : 'Проблема по сделке'
 })
 const orderTitle = computed(() => product.value?.title ?? null)
 const orderAmount = computed(() => product.value ? formatCurrencyAmount(product.value.price) : null)
@@ -208,9 +215,46 @@ function closeSupportModal() {
   showSupportModal.value = false
 }
 
-function openSupportChat() {
+function startSupportChatCooldown(durationMs = 8000) {
+  supportChatCooldownActive.value = true
+  if (supportChatCooldownTimer) clearTimeout(supportChatCooldownTimer)
+  supportChatCooldownTimer = setTimeout(() => {
+    supportChatCooldownActive.value = false
+    supportChatCooldownTimer = null
+  }, durationMs)
+}
+
+async function openSupportChat() {
+  if (supportChatOpening.value || supportChatCooldownActive.value) return
+
+  supportChatOpening.value = true
+  startSupportChatCooldown()
   showSupportModal.value = false
-  router.push({ name: 'chats', query: { support: '1' } })
+  try {
+    const chats = await chatsService.getChats()
+    const supportChat = chats.find((chat) => chat.chat_type === 'support_chat')
+
+    if (supportChat?.id) {
+      await router.push({
+        name: 'chats',
+        query: {
+          chatId: supportChat.id,
+          supportContext: supportContextMessage.value,
+        },
+      })
+      return
+    }
+
+    await router.push({
+      name: 'chats',
+      query: {
+        support: '1',
+        supportContext: supportContextMessage.value,
+      },
+    })
+  } finally {
+    supportChatOpening.value = false
+  }
 }
 
 function openSupportTelegram() {
@@ -317,6 +361,13 @@ onMounted(async () => {
 
 onUnmounted(() => {
   document.removeEventListener('visibilitychange', onAfterPayTabVisible)
+})
+
+onUnmounted(() => {
+  if (supportChatCooldownTimer) {
+    clearTimeout(supportChatCooldownTimer)
+    supportChatCooldownTimer = null
+  }
 })
 </script>
 
@@ -513,9 +564,15 @@ onUnmounted(() => {
       <button
         type="button"
         class="inline-flex h-11 w-full items-center justify-center rounded-lg bg-[rgb(var(--palette-blue-600))] px-4 text-sm font-bold text-[var(--text-title)] transition hover:bg-[rgb(var(--palette-blue-500))]"
+        :disabled="supportChatOpening || supportChatCooldownActive"
+        :class="supportChatOpening || supportChatCooldownActive
+          ? 'cursor-not-allowed opacity-70'
+          : ''"
         @click="openSupportChat"
       >
-        Поддержка в чате
+        <span v-if="supportChatOpening">Открываем чат...</span>
+        <span v-else-if="supportChatCooldownActive">Подождите немного...</span>
+        <span v-else>Поддержка в чате</span>
       </button>
       <button
         type="button"
