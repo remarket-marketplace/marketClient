@@ -650,7 +650,7 @@ onBeforeUnmount(() => {
       </div>
 
       <div v-if="showSummaryBody" :class="contentClass">
-        <div class="mb-2 flex items-center gap-2">
+        <div v-if="!isSummaryLayout" class="mb-2 flex items-center gap-2">
           <DealStatusTag :deal-status="currentDealStatus" />
         </div>
         <div v-if="isSummaryLayout" class="mb-1 grid grid-cols-3 gap-1 sm:gap-1.5">
