@@ -38,13 +38,15 @@ const autoOpenedReviewDealIds = ref(new Set<string>())
 const isRefreshingAfterPayData = ref(false)
 let lastAfterPayRefreshAt = 0
 
-const SUPPORT_TELEGRAM_URL = 'https://t.me/remarketgg'
+const SUPPORT_TELEGRAM_URL = 'https://t.me/remarket_helper'
 const SUPPORT_EMAIL = 'support@re-market.net'
 
 const dealId = computed(() => {
   const rawDealId = route.query.dealId
   if (Array.isArray(rawDealId)) return rawDealId[0] ?? null
-  return latestDealMessage.value?.deal_id ?? rawDealId ?? null
+  // Keep afterpay page bound to the explicitly requested deal from URL.
+  // Fallback to latest chat deal only when query dealId is absent.
+  return rawDealId ?? latestDealMessage.value?.deal_id ?? null
 })
 
 const chatId = computed(() => {
@@ -579,7 +581,7 @@ onUnmounted(() => {
         class="inline-flex h-11 w-full items-center justify-center rounded-lg border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-white)/0.04)] px-4 text-sm font-semibold text-[var(--text-title)] transition hover:bg-[rgb(var(--palette-white)/0.08)]"
         @click="openSupportTelegram"
       >
-        Поддержка в тг @remarketgg
+        Поддержка в тг @remarket_helper
       </button>
       <button
         type="button"
