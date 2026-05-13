@@ -146,10 +146,25 @@ const helperClass = computed(() => (
     : 'w-full rounded-xl border border-[rgb(var(--palette-dark-600)/0.75)] bg-[rgb(var(--palette-dark-800)/0.55)] px-3 py-2.5'
 ))
 const summaryPrimaryButtonClass = computed(() => (
-  'flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-[var(--text-title)] transition-all sm:px-4 sm:py-2.5 sm:text-sm'
+  'flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-[var(--text-title)] transition-all sm:px-4 sm:py-2.5 sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-400)/0.55)] focus-visible:ring-offset-1 focus-visible:ring-offset-[rgb(var(--palette-dark-900))] active:translate-y-px'
 ))
 const summaryStatusClass = computed(() => (
   'flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-[var(--text-body-strong)] sm:px-4 sm:py-2.5 sm:text-sm'
+))
+const primaryActionButtonClass = computed(() => (
+  isSummaryLayout.value
+    ? `${summaryPrimaryButtonClass.value} market-primary-surface market-primary-hover border border-[rgb(var(--palette-blue-500))]`
+    : 'market-primary-surface market-primary-hover flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-blue-500))] px-4 py-2.5 text-sm font-semibold text-[var(--text-title)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-400)/0.55)] focus-visible:ring-offset-1 focus-visible:ring-offset-[rgb(var(--palette-dark-900))] active:translate-y-px'
+))
+const secondaryActionButtonClass = computed(() => (
+  isSummaryLayout.value
+    ? `${summaryPrimaryButtonClass.value} border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body-strong)] hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-white)/0.35)] focus-visible:ring-offset-1 focus-visible:ring-offset-[rgb(var(--palette-dark-900))] active:translate-y-px`
+    : 'flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] px-4 py-2.5 text-sm font-semibold text-[var(--text-body-strong)] transition-all hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-white)/0.35)] focus-visible:ring-offset-1 focus-visible:ring-offset-[rgb(var(--palette-dark-900))] active:translate-y-px'
+))
+const ghostActionButtonClass = computed(() => (
+  isSummaryLayout.value
+    ? `${summaryPrimaryButtonClass.value} border border-[rgb(var(--palette-white)/0.08)] bg-transparent text-[rgb(var(--text-body-rgb)/0.9)] hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.04)] hover:text-[var(--text-title)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-white)/0.3)] focus-visible:ring-offset-1 focus-visible:ring-offset-[rgb(var(--palette-dark-900))] active:translate-y-px`
+    : 'flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-white)/0.08)] bg-transparent px-4 py-2.5 text-sm font-semibold text-[rgb(var(--text-body-rgb)/0.9)] transition hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.04)] hover:text-[var(--text-title)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-white)/0.3)] focus-visible:ring-offset-1 focus-visible:ring-offset-[rgb(var(--palette-dark-900))] active:translate-y-px'
 ))
 const shouldShowSummaryToggle = computed(() => isSummaryLayout.value && props.collapsible === true)
 const showSummaryBody = computed(() => !isSummaryLayout.value || props.collapsed !== true)
@@ -714,9 +729,7 @@ onBeforeUnmount(() => {
         <template v-if="canConfirmReceipt">
           <div class="flex flex-col gap-1">
             <button
-              :class="isSummaryLayout
-                ? `${summaryPrimaryButtonClass} market-primary-surface market-primary-hover border border-[rgb(var(--palette-blue-500))]`
-                : 'market-primary-surface market-primary-hover flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-blue-500))] px-4 py-2.5 text-sm font-semibold text-[var(--text-title)] transition-all'"
+              :class="primaryActionButtonClass"
               @click="openConfirmReceiptModal()"
             >
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -732,9 +745,7 @@ onBeforeUnmount(() => {
 
         <template v-else-if="canConfirmFulfillment">
           <button
-            :class="isSummaryLayout
-              ? `${summaryPrimaryButtonClass} market-primary-surface market-primary-hover border border-[rgb(var(--palette-blue-500))]`
-              : 'market-primary-surface market-primary-hover flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-blue-500))] px-4 py-2.5 text-sm font-semibold text-[var(--text-title)] transition-all'"
+            :class="primaryActionButtonClass"
             @click="openConfirmFulfillmentModal()"
           >
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -747,9 +758,7 @@ onBeforeUnmount(() => {
         <template v-if="isSeller && effectiveDealStatus === 'pending'">
           <template v-if="!isDealRefunded">
             <button
-              :class="isSummaryLayout
-                ? `${summaryPrimaryButtonClass} border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body-strong)] hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)]`
-                : 'flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] px-4 py-2.5 text-sm font-semibold text-[var(--text-body-strong)] transition-all hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)]'"
+              :class="secondaryActionButtonClass"
               @click="openRefundModal"
             >
               <RefreshCcw class="h-4 w-4" />
@@ -773,9 +782,7 @@ onBeforeUnmount(() => {
         <template v-if="isBuyer">
           <div v-if="canSendReport" class="sm:ml-auto flex flex-col gap-2">
             <button
-            :class="isSummaryLayout
-                ? `${summaryPrimaryButtonClass} border border-[rgb(var(--palette-white)/0.08)] bg-transparent text-[rgb(var(--text-body-rgb)/0.9)] hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.04)] hover:text-[var(--text-title)]`
-                : 'flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-white)/0.08)] bg-transparent px-4 py-2.5 text-sm font-semibold text-[rgb(var(--text-body-rgb)/0.9)] transition hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.04)] hover:text-[var(--text-title)]'"
+              :class="ghostActionButtonClass"
               @click="openRefusalModal()"
             >
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -808,7 +815,7 @@ onBeforeUnmount(() => {
       <template v-if="showSummaryBody && isDealCompleted && !localHasReview && isBuyer">
         <div :class="reviewActionClass">
           <button
-            class="market-primary-surface market-primary-hover flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-blue-500))] px-4 py-2.5 text-sm font-semibold text-[var(--text-title)]"
+            :class="primaryActionButtonClass"
             @click="openReviewModal"
           >
             <Star class="h-4 w-4" />
