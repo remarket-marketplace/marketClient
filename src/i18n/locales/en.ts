@@ -1398,6 +1398,7 @@ const en = {
       newAdminMessage: "New message from support",
       viewProduct: "View Product",
       productData: "Product data",
+      orderTotalLabel: "Order total",
       reported: "Reported",
       newDealStatus: "New deal status:",
       updateDealStatus: "New deal status",

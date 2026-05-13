@@ -1397,6 +1397,7 @@ const ru = {
       newAdminMessage: "Новое сообщение от поддержки",
       viewProduct: "Посмотреть товар",
       productData: "Данные товара",
+      orderTotalLabel: "Итог",
       reported: "Жалоба отправлена",
       newDealStatus: "Новый статус сделки:",
       updateDealStatus: "Новый статус сделки",

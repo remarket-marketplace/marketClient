@@ -141,7 +141,7 @@ const titleClass = computed(() => (
   isSummaryLayout.value ? 'mt-0.5 block min-w-0 rounded-sm px-0.5 text-left text-xs font-semibold leading-tight text-[var(--text-title)] transition hover:text-[var(--text-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-400)/0.5)] sm:text-[13px]' : 'mt-1 block min-w-0 rounded-sm px-0.5 text-left text-sm font-semibold text-[var(--text-title)] transition hover:text-[var(--text-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-400)/0.5)]'
 ))
 const priceClass = computed(() => (
-  isSummaryLayout.value ? 'text-[11px] font-semibold text-[var(--text-success)] sm:text-xs' : 'text-sm font-semibold text-[var(--text-success)]'
+  isSummaryLayout.value ? 'text-[11px] font-semibold text-[rgb(var(--text-body-rgb)/0.86)] sm:text-xs' : 'text-sm font-semibold text-[var(--text-success)]'
 ))
 const deliveryClass = computed(() => (
   isSummaryLayout.value
@@ -681,7 +681,7 @@ onBeforeUnmount(() => {
           </button>
 
           <div class="min-w-0 flex-1">
-            <div class="flex flex-wrap items-start justify-between gap-2 sm:gap-3">
+            <div class="flex flex-col items-start gap-1.5 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-2 sm:gap-3">
               <div class="min-w-0 flex-1">
                 <button
                   type="button"
@@ -692,7 +692,8 @@ onBeforeUnmount(() => {
                 </button>
               </div>
 
-              <p :class="priceClass">
+              <p :class="priceClass" class="whitespace-nowrap sm:ml-auto">
+                <span v-if="isSummaryLayout">{{ $t('pages.chats.orderTotalLabel') }}: </span>
                 {{ formatCurrencyAmount(product.price) }}
               </p>
             </div>
