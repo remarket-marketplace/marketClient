@@ -103,12 +103,12 @@ const rootClass = computed(() => (
 const cardClass = computed(() => (
   isSummaryLayout.value
     ? 'w-full min-w-0'
-    : 'message-compose-shell mx-auto flex w-full max-w-2xl min-w-0 flex-col overflow-hidden rounded-[26px] border border-[rgb(var(--palette-white)/0.1)] bg-background/85 px-4 py-3 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70'
+    : 'message-compose-shell mx-auto flex w-full max-w-2xl min-w-0 flex-col overflow-hidden rounded-[26px] border border-[rgb(var(--palette-white)/0.07)] bg-[rgb(var(--palette-dark-900)/0.92)] px-4 py-3'
 ))
 const summaryHeaderClass = computed(() => (
   isSummaryLayout.value
     ? 'order-1 flex min-h-8 flex-wrap items-center justify-between gap-2'
-    : 'mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[rgb(var(--palette-white)/0.08)] pb-2.5'
+    : 'mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[rgb(var(--palette-dark-600)/0.65)] pb-2.5'
 ))
 const contentClass = computed(() => (
   isSummaryLayout.value ? 'order-3 flex flex-col gap-2 sm:gap-2.5' : 'flex flex-col gap-3'
@@ -124,7 +124,7 @@ const imageButtonClass = computed(() => (
 const actionsClass = computed(() => (
   isSummaryLayout.value
     ? 'order-4 mt-1 flex flex-wrap items-center gap-1.5 sm:gap-2'
-    : 'mt-1 flex flex-wrap items-center gap-2 border-t border-[rgb(var(--palette-white)/0.08)] pt-3'
+    : 'mt-1 flex flex-wrap items-center gap-2 border-t border-[rgb(var(--palette-dark-600)/0.65)] pt-3'
 ))
 const reviewActionClass = computed(() => (
   isSummaryLayout.value ? 'order-5 mt-0.5' : 'mt-3'
@@ -138,12 +138,12 @@ const priceClass = computed(() => (
 const deliveryClass = computed(() => (
   isSummaryLayout.value
     ? 'w-full rounded-lg border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.03)] px-2.5 py-1.5'
-    : 'w-full rounded-xl border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.03)] px-3 py-2.5'
+    : 'w-full rounded-xl border border-[rgb(var(--palette-dark-600)/0.75)] bg-[rgb(var(--palette-dark-800)/0.55)] px-3 py-2.5'
 ))
 const helperClass = computed(() => (
   isSummaryLayout.value
     ? 'w-full rounded-lg border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.03)] px-2.5 py-1.5'
-    : 'w-full rounded-xl border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.03)] px-3 py-2.5'
+    : 'w-full rounded-xl border border-[rgb(var(--palette-dark-600)/0.75)] bg-[rgb(var(--palette-dark-800)/0.55)] px-3 py-2.5'
 ))
 const summaryPrimaryButtonClass = computed(() => (
   'flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-[var(--text-title)] transition-all sm:px-4 sm:py-2.5 sm:text-sm'
