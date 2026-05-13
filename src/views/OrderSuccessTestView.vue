@@ -374,7 +374,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main class="order-success-page min-h-[calc(100dvh-3.5rem)] w-full bg-[var(--order-panel-bg)] px-4 py-10 text-[var(--text-title)] sm:py-14">
+  <main class="order-success-page min-h-[calc(100dvh-3.5rem)] w-full px-4 py-10 text-[var(--text-title)] sm:py-14">
     <div class="mx-auto w-full max-w-[920px]">
       <header v-if="showCongratulations" class="mb-2 text-center sm:mb-5">
         <div class="inline-flex items-center gap-3">
