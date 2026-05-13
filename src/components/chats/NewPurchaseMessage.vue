@@ -529,7 +529,6 @@ onBeforeUnmount(() => {
           >
             {{ $t('pages.chats.autoConfirmTimer', { value: autoConfirmTimerLabel }) }}
           </span>
-          <DealStatusTag :deal-status="currentDealStatus" />
           <button
             v-if="shouldShowSummaryToggle"
             type="button"
@@ -543,6 +542,9 @@ onBeforeUnmount(() => {
       </div>
 
       <div v-if="showSummaryBody" :class="contentClass">
+        <div class="mb-2 flex items-center gap-2">
+          <DealStatusTag :deal-status="currentDealStatus" />
+        </div>
         <div :class="topRowClass">
           <button
             type="button"
@@ -587,7 +589,7 @@ onBeforeUnmount(() => {
           v-if="!isSummaryLayout && deliverySummary"
           :class="deliveryClass"
         >
-          <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+          <p class="text-[11px] font-medium uppercase tracking-[0.06em] text-[rgb(var(--text-body-rgb)/0.7)]">
             {{ $t('pages.chats.productData') }}
           </p>
           <p class="mt-1 line-clamp-3 break-words text-sm leading-relaxed text-[var(--text-body-strong)] [overflow-wrap:anywhere]">
@@ -708,9 +710,9 @@ onBeforeUnmount(() => {
         <template v-if="isBuyer">
           <div v-if="canSendReport" class="sm:ml-auto flex flex-col gap-2">
             <button
-              :class="isSummaryLayout
-                ? `${summaryPrimaryButtonClass} border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body-strong)] hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)]`
-                : 'flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] px-4 py-2.5 text-sm font-semibold text-[var(--text-body-strong)] transition hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)]'"
+            :class="isSummaryLayout
+                ? `${summaryPrimaryButtonClass} border border-[rgb(var(--palette-white)/0.08)] bg-transparent text-[rgb(var(--text-body-rgb)/0.9)] hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.04)] hover:text-[var(--text-title)]`
+                : 'flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-white)/0.08)] bg-transparent px-4 py-2.5 text-sm font-semibold text-[rgb(var(--text-body-rgb)/0.9)] transition hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.04)] hover:text-[var(--text-title)]'"
               @click="openRefusalModal()"
             >
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
