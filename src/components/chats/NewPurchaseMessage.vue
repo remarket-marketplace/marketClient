@@ -163,11 +163,6 @@ const secondaryActionButtonClass = computed(() => (
     ? `${summaryPrimaryButtonClass.value} border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body-strong)] hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-white)/0.35)] focus-visible:ring-offset-1 focus-visible:ring-offset-[rgb(var(--palette-dark-900))] active:translate-y-px`
     : 'flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] px-4 py-2.5 text-sm font-semibold text-[var(--text-body-strong)] transition-all hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-white)/0.35)] focus-visible:ring-offset-1 focus-visible:ring-offset-[rgb(var(--palette-dark-900))] active:translate-y-px'
 ))
-const ghostActionButtonClass = computed(() => (
-  isSummaryLayout.value
-    ? `${summaryPrimaryButtonClass.value} border border-[rgb(var(--palette-white)/0.08)] bg-transparent text-[rgb(var(--text-body-rgb)/0.9)] hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.04)] hover:text-[var(--text-title)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-white)/0.3)] focus-visible:ring-offset-1 focus-visible:ring-offset-[rgb(var(--palette-dark-900))] active:translate-y-px`
-    : 'flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-white)/0.08)] bg-transparent px-4 py-2.5 text-sm font-semibold text-[rgb(var(--text-body-rgb)/0.9)] transition hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.04)] hover:text-[var(--text-title)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-white)/0.3)] focus-visible:ring-offset-1 focus-visible:ring-offset-[rgb(var(--palette-dark-900))] active:translate-y-px'
-))
 const shouldShowSummaryToggle = computed(() => isSummaryLayout.value && props.collapsible === true)
 const showSummaryBody = computed(() => !isSummaryLayout.value || props.collapsed !== true)
 const shortDealId = computed(() => getShortDealId(props.dealId))
@@ -821,19 +816,12 @@ onBeforeUnmount(() => {
         </template>
 
         <template v-if="isBuyer">
-          <div v-if="canSendReport" class="flex w-full flex-col gap-2 sm:ml-auto sm:w-auto">
+          <div v-if="canSendReport" class="ml-auto flex w-full justify-end sm:w-auto">
             <button
-              :class="ghostActionButtonClass"
+              type="button"
+              class="inline-flex items-center justify-end rounded-sm px-1 py-1 text-xs font-semibold text-[rgb(var(--text-body-rgb)/0.88)] underline underline-offset-4 transition hover:text-[var(--text-title)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-white)/0.3)] focus-visible:ring-offset-1 focus-visible:ring-offset-[rgb(var(--palette-dark-900))] sm:text-sm"
               @click="openRefusalModal()"
             >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
-                />
-              </svg>
               {{ $t('pages.chats.report') }}
             </button>
           </div>
