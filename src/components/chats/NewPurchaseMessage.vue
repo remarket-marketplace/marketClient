@@ -118,8 +118,8 @@ const topRowClass = computed(() => (
 ))
 const imageButtonClass = computed(() => (
   isSummaryLayout.value
-    ? 'h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-dark-700))] sm:h-11 sm:w-11'
-    : 'h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700))]'
+    ? 'h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-dark-700))] transition hover:border-[rgb(var(--palette-white)/0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-400)/0.5)] focus-visible:ring-offset-1 focus-visible:ring-offset-[rgb(var(--palette-dark-900))] sm:h-11 sm:w-11'
+    : 'h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700))] transition hover:border-[rgb(var(--palette-dark-500))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-400)/0.5)] focus-visible:ring-offset-1 focus-visible:ring-offset-[rgb(var(--palette-dark-900))]'
 ))
 const actionsClass = computed(() => (
   isSummaryLayout.value
@@ -130,7 +130,7 @@ const reviewActionClass = computed(() => (
   isSummaryLayout.value ? 'order-5 mt-0.5' : 'mt-3'
 ))
 const titleClass = computed(() => (
-  isSummaryLayout.value ? 'mt-0.5 block min-w-0 text-left text-xs font-semibold leading-tight text-[var(--text-title)] transition hover:text-[var(--text-accent)] sm:text-[13px]' : 'mt-1 block min-w-0 text-left text-sm font-semibold text-[var(--text-title)] transition hover:text-[var(--text-accent)]'
+  isSummaryLayout.value ? 'mt-0.5 block min-w-0 rounded-sm px-0.5 text-left text-xs font-semibold leading-tight text-[var(--text-title)] transition hover:text-[var(--text-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-400)/0.5)] sm:text-[13px]' : 'mt-1 block min-w-0 rounded-sm px-0.5 text-left text-sm font-semibold text-[var(--text-title)] transition hover:text-[var(--text-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-400)/0.5)]'
 ))
 const priceClass = computed(() => (
   isSummaryLayout.value ? 'text-[11px] font-semibold text-[var(--text-success)] sm:text-xs' : 'text-sm font-semibold text-[var(--text-success)]'
@@ -598,7 +598,7 @@ onBeforeUnmount(() => {
           <button
             v-if="shouldShowSummaryToggle"
             type="button"
-            class="flex h-7 w-7 items-center justify-center rounded-full border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] text-[var(--text-body)] transition hover:bg-[rgb(var(--palette-white)/0.06)] hover:text-[var(--text-title)]"
+            class="flex h-7 w-7 items-center justify-center rounded-full border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] text-[var(--text-body)] transition hover:bg-[rgb(var(--palette-white)/0.06)] hover:text-[var(--text-title)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-400)/0.5)] focus-visible:ring-offset-1 focus-visible:ring-offset-[rgb(var(--palette-dark-900))]"
             @click="handleToggleSummaryCollapse"
           >
             <ChevronUp v-if="!props.collapsed" class="h-4 w-4" />
