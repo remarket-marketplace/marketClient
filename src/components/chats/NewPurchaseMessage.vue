@@ -7,7 +7,7 @@ import { useRoute, useRouter } from 'vue-router'
 import type { Product } from '@/validation/product/product'
 import type { RefusalReasonsList } from '@/validation/deal/deal'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { ChevronDown, ChevronUp, RefreshCcw, Star } from 'lucide-vue-next'
+import { ChevronDown, ChevronUp, Clock3, RefreshCcw, Star } from 'lucide-vue-next'
 import AppModal from '@/components/AppModal.vue'
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
@@ -591,9 +591,11 @@ onBeforeUnmount(() => {
           </span>
           <span
             v-if="shouldShowAutoConfirmTimer && autoConfirmTimerLabel"
-            class="inline-flex items-center rounded-full border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-white)/0.04)] px-2 py-1 text-[10px] font-semibold tracking-[0.06em] text-[var(--text-body-strong)] sm:text-[11px]"
+            class="inline-flex items-center gap-1 rounded-full border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-white)/0.04)] px-2 py-1 text-[10px] font-semibold tracking-[0.02em] text-[var(--text-body-strong)] sm:gap-1.5 sm:text-[11px]"
           >
-            {{ $t('pages.chats.autoConfirmTimer', { value: autoConfirmTimerLabel }) }}
+            <Clock3 class="h-3 w-3 text-[rgb(var(--text-body-rgb)/0.85)]" />
+            <span class="sm:hidden">{{ autoConfirmTimerLabel }}</span>
+            <span class="hidden sm:inline">{{ $t('pages.chats.autoConfirmTimer', { value: autoConfirmTimerLabel }) }}</span>
           </span>
           <button
             v-if="shouldShowSummaryToggle"
