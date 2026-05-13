@@ -1427,6 +1427,7 @@ const ru = {
       sellerPendingInstructionText: "Отправьте покупателю данные или товар в чате. После выдачи нажмите «Подтвердить выполнение».",
       dealTimer: "В сделке: {value}",
       autoConfirmTimer: "Автоподтверждение через {value}",
+      autoConfirmTooltip: "Автоподтверждение произойдет через: {value}",
       confirmReceiptHint: "Проверьте данные товара перед подтверждением получения.",
       dealProgress: {
         paid: "Оплачен",

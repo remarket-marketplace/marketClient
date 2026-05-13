@@ -49,6 +49,8 @@ const showReviewModal = ref(false)
 const reviewStars = ref(0)
 const reviewText = ref('')
 const reviewSubmitting = ref(false)
+const showAutoConfirmTooltip = ref(false)
+let autoConfirmTooltipTimer: ReturnType<typeof setTimeout> | null = null
 
 const showRefusalModal = ref(false)
 const refusalReasons = ref<RefusalReasonsList>([])
@@ -341,6 +343,30 @@ function startDealTimerInterval() {
   }, 1000)
 }
 
+function hideAutoConfirmTooltip() {
+  showAutoConfirmTooltip.value = false
+  if (autoConfirmTooltipTimer) {
+    clearTimeout(autoConfirmTooltipTimer)
+    autoConfirmTooltipTimer = null
+  }
+}
+
+function toggleAutoConfirmTooltip() {
+  showAutoConfirmTooltip.value = !showAutoConfirmTooltip.value
+
+  if (autoConfirmTooltipTimer) {
+    clearTimeout(autoConfirmTooltipTimer)
+    autoConfirmTooltipTimer = null
+  }
+
+  if (showAutoConfirmTooltip.value) {
+    autoConfirmTooltipTimer = setTimeout(() => {
+      showAutoConfirmTooltip.value = false
+      autoConfirmTooltipTimer = null
+    }, 2600)
+  }
+}
+
 function stopDealTimerInterval() {
   if (dealTimerIntervalId === null) return
   clearInterval(dealTimerIntervalId)
@@ -567,6 +593,7 @@ watch(
 
 onBeforeUnmount(() => {
   stopDealTimerInterval()
+  hideAutoConfirmTooltip()
   if (typeof document === 'undefined') return
   document.body.style.overflow = ''
 })
@@ -591,11 +618,23 @@ onBeforeUnmount(() => {
           </span>
           <span
             v-if="shouldShowAutoConfirmTimer && autoConfirmTimerLabel"
-            class="inline-flex items-center gap-1 rounded-full border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-white)/0.04)] px-2 py-1 text-[10px] font-semibold tracking-[0.02em] text-[var(--text-body-strong)] sm:gap-1.5 sm:text-[11px]"
+            class="relative inline-flex items-center gap-1 rounded-full border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-white)/0.04)] px-2 py-1 text-[10px] font-semibold tracking-[0.02em] text-[var(--text-body-strong)] sm:gap-1.5 sm:text-[11px]"
           >
-            <Clock3 class="h-3 w-3 text-[rgb(var(--text-body-rgb)/0.85)]" />
+            <button
+              type="button"
+              class="inline-flex h-4 w-4 items-center justify-center rounded-full text-[rgb(var(--text-body-rgb)/0.85)] transition hover:text-[var(--text-title)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-400)/0.55)]"
+              @click.stop="toggleAutoConfirmTooltip"
+            >
+              <Clock3 class="h-3 w-3" />
+            </button>
             <span class="sm:hidden">{{ autoConfirmTimerLabel }}</span>
             <span class="hidden sm:inline">{{ $t('pages.chats.autoConfirmTimer', { value: autoConfirmTimerLabel }) }}</span>
+            <span
+              v-if="showAutoConfirmTooltip"
+              class="absolute left-0 top-[calc(100%+0.45rem)] z-20 min-w-[210px] rounded-md border border-[rgb(var(--palette-white)/0.14)] bg-[rgb(var(--palette-dark-900)/0.98)] px-2.5 py-1.5 text-left text-[10px] font-medium leading-tight text-[var(--text-body-strong)] shadow-[0_8px_18px_rgb(0_0_0/0.38)] sm:text-[11px]"
+            >
+              {{ $t('pages.chats.autoConfirmTooltip', { value: autoConfirmTimerLabel }) }}
+            </span>
           </span>
           <button
             v-if="shouldShowSummaryToggle"

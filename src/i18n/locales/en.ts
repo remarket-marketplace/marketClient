@@ -1428,6 +1428,7 @@ const en = {
       sellerPendingInstructionText: "Send the product data or item to the buyer in chat. After delivery, click \"Confirm fulfillment\".",
       dealTimer: "In deal: {value}",
       autoConfirmTimer: "Auto-confirm in {value}",
+      autoConfirmTooltip: "Auto-confirm will happen in: {value}",
       confirmReceiptHint: "Check product details before confirming receipt.",
       dealProgress: {
         paid: "Paid",
