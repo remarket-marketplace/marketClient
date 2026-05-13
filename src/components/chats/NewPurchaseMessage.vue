@@ -141,7 +141,7 @@ const titleClass = computed(() => (
   isSummaryLayout.value ? 'mt-0.5 block min-w-0 rounded-sm px-0.5 text-left text-xs font-semibold leading-tight text-[var(--text-title)] transition hover:text-[var(--text-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-400)/0.5)] sm:text-[13px]' : 'mt-1 block min-w-0 rounded-sm px-0.5 text-left text-sm font-semibold text-[var(--text-title)] transition hover:text-[var(--text-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-400)/0.5)]'
 ))
 const priceClass = computed(() => (
-  isSummaryLayout.value ? 'text-[11px] font-semibold text-[rgb(var(--text-body-rgb)/0.86)] sm:text-xs' : 'text-sm font-semibold text-[var(--text-success)]'
+  isSummaryLayout.value ? 'text-[11px] font-semibold text-[var(--text-success)] sm:text-xs' : 'text-sm font-semibold text-[var(--text-success)]'
 ))
 const deliveryClass = computed(() => (
   isSummaryLayout.value
