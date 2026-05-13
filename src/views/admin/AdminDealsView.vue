@@ -87,24 +87,33 @@ function normalizeSearchInput(value: string): string {
 }
 
 const normalizedQuery = computed(() => normalizeSearchInput(searchQuery.value))
+const normalizedDealToken = computed(() => normalizedQuery.value.replace(/[^a-z0-9]/g, '').replace(/^rm/, ''))
 
 const filteredDeals = computed(() => {
   return deals.value.filter(deal => {
-    const matchesQuery = normalizedQuery.value
+    const normalizedDealId = deal.id.toLowerCase()
+    const compactDealId = deal.id.replace(/-/g, '').toLowerCase()
+    const shortDealId = getShortDealId(deal.id).toLowerCase()
+    const matchesTextQuery = normalizedQuery.value
       ? [
           deal.product.title,
           deal.product.description,
           deal.product.category.name,
           deal.seller.username,
           deal.buyer.username,
-          deal.id.toLowerCase(),
-          deal.id.replace(/-/g, '').toLowerCase(),
-          getShortDealId(deal.id),
+          normalizedDealId,
+          compactDealId,
+          shortDealId,
+          `rm${shortDealId}`,
         ]
           .join(' ')
           .toLowerCase()
           .includes(normalizedQuery.value)
       : true
+    const matchesDealToken = normalizedDealToken.value
+      ? compactDealId.includes(normalizedDealToken.value) || shortDealId.includes(normalizedDealToken.value)
+      : false
+    const matchesQuery = normalizedQuery.value ? (matchesTextQuery || matchesDealToken) : true
 
     const matchesStatus =
       statusFilter.value === 'all' ? true : deal.status === statusFilter.value
