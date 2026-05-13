@@ -258,6 +258,67 @@ const autoConfirmTimerLabel = computed(() => {
   return `${hours}h ${minutes}m`
 })
 
+type DealProgressState = 'completed' | 'current' | 'upcoming'
+
+type DealProgressStep = {
+  key: 'paid' | 'fulfilled' | 'confirmed'
+  label: string
+  state: DealProgressState
+}
+
+const hasFulfillmentEvent = computed(() => (
+  normalizedDealTimeline.value.some((event) => event.status === 'confirmed')
+))
+
+const dealProgressSteps = computed<DealProgressStep[]>(() => {
+  const normalizedStatus = (effectiveDealStatus.value ?? 'pending').toLowerCase()
+  let paidState: DealProgressState = 'completed'
+  let fulfilledState: DealProgressState = 'upcoming'
+  let confirmedState: DealProgressState = 'upcoming'
+
+  if (normalizedStatus === 'pending') {
+    fulfilledState = 'current'
+  } else if (normalizedStatus === 'confirmed' || normalizedStatus === 'disputed') {
+    fulfilledState = 'completed'
+    confirmedState = 'current'
+  } else if (normalizedStatus === 'completed') {
+    fulfilledState = 'completed'
+    confirmedState = 'completed'
+  } else if (normalizedStatus === 'refunded' || normalizedStatus === 'cancelled' || normalizedStatus === 'canceled') {
+    fulfilledState = hasFulfillmentEvent.value ? 'completed' : 'current'
+  } else {
+    paidState = 'current'
+  }
+
+  return [
+    { key: 'paid', label: t('pages.chats.dealProgress.paid'), state: paidState },
+    { key: 'fulfilled', label: t('pages.chats.dealProgress.fulfilled'), state: fulfilledState },
+    { key: 'confirmed', label: t('pages.chats.dealProgress.confirmed'), state: confirmedState },
+  ]
+})
+
+function getDealProgressChipClass(state: DealProgressState): string {
+  if (state === 'completed') {
+    return 'border-[rgb(var(--palette-green-500)/0.35)] bg-[rgb(var(--palette-green-500)/0.14)]'
+  }
+  if (state === 'current') {
+    return 'border-[rgb(var(--palette-blue-500)/0.38)] bg-[rgb(var(--palette-blue-500)/0.14)]'
+  }
+  return 'border-[rgb(var(--palette-dark-600)/0.75)] bg-[rgb(var(--palette-dark-700)/0.6)]'
+}
+
+function getDealProgressDotClass(state: DealProgressState): string {
+  if (state === 'completed') return 'bg-[rgb(var(--palette-green-400))]'
+  if (state === 'current') return 'bg-[rgb(var(--palette-blue-400))]'
+  return 'bg-[rgb(var(--palette-gray-500))]'
+}
+
+function getDealProgressTextClass(state: DealProgressState): string {
+  if (state === 'completed') return 'text-[rgb(var(--palette-green-100))]'
+  if (state === 'current') return 'text-[rgb(var(--palette-blue-100))]'
+  return 'text-[rgb(var(--text-body-rgb)/0.82)]'
+}
+
 function startDealTimerInterval() {
   if (dealTimerIntervalId !== null) return
   dealTimerIntervalId = setInterval(() => {
@@ -535,6 +596,19 @@ onBeforeUnmount(() => {
         <div class="mb-2 flex items-center gap-2">
           <DealStatusTag :deal-status="currentDealStatus" />
         </div>
+        <div v-if="isSummaryLayout" class="mb-1 grid grid-cols-3 gap-1.5">
+          <div
+            v-for="step in dealProgressSteps"
+            :key="step.key"
+            class="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-md border px-2 py-1"
+            :class="getDealProgressChipClass(step.state)"
+          >
+            <span class="h-1.5 w-1.5 flex-shrink-0 rounded-full" :class="getDealProgressDotClass(step.state)"></span>
+            <span class="truncate text-[10px] font-medium sm:text-[11px]" :class="getDealProgressTextClass(step.state)">
+              {{ step.label }}
+            </span>
+          </div>
+        </div>
         <div :class="topRowClass">
           <button
             type="button"
@@ -566,12 +640,6 @@ onBeforeUnmount(() => {
               </p>
             </div>
 
-            <div
-              v-if="!isSummaryLayout"
-              class="mt-2 flex flex-wrap items-center gap-2"
-            >
-              <DealStatusTag :deal-status="currentDealStatus" />
-            </div>
           </div>
         </div>
 
@@ -644,17 +712,22 @@ onBeforeUnmount(() => {
 
       <div v-if="showSummaryBody" :class="actionsClass">
         <template v-if="canConfirmReceipt">
-          <button
-            :class="isSummaryLayout
-              ? `${summaryPrimaryButtonClass} market-primary-surface market-primary-hover border border-[rgb(var(--palette-blue-500))]`
-              : 'market-primary-surface market-primary-hover flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-blue-500))] px-4 py-2.5 text-sm font-semibold text-[var(--text-title)] transition-all'"
-            @click="openConfirmReceiptModal()"
-          >
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-            {{ $t('pages.chats.confirmReceipt') }}
-          </button>
+          <div class="flex flex-col gap-1">
+            <button
+              :class="isSummaryLayout
+                ? `${summaryPrimaryButtonClass} market-primary-surface market-primary-hover border border-[rgb(var(--palette-blue-500))]`
+                : 'market-primary-surface market-primary-hover flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-blue-500))] px-4 py-2.5 text-sm font-semibold text-[var(--text-title)] transition-all'"
+              @click="openConfirmReceiptModal()"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              {{ $t('pages.chats.confirmReceipt') }}
+            </button>
+            <p v-if="isSummaryLayout" class="text-[10px] text-[rgb(var(--text-body-rgb)/0.78)] sm:text-[11px]">
+              {{ $t('pages.chats.confirmReceiptHint') }}
+            </p>
+          </div>
         </template>
 
         <template v-else-if="canConfirmFulfillment">
