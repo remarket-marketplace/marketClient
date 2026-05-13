@@ -123,11 +123,11 @@ const imageButtonClass = computed(() => (
 ))
 const actionsClass = computed(() => (
   isSummaryLayout.value
-    ? 'order-4 mt-1 flex flex-wrap items-center gap-1.5 sm:gap-2'
+    ? 'order-4 mt-1 flex flex-col items-stretch gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2'
     : 'mt-1 flex flex-wrap items-center gap-2 border-t border-[rgb(var(--palette-dark-600)/0.65)] pt-3'
 ))
 const reviewActionClass = computed(() => (
-  isSummaryLayout.value ? 'order-5 mt-0.5' : 'mt-3'
+  isSummaryLayout.value ? 'order-5 mt-0.5 w-full sm:w-auto' : 'mt-3'
 ))
 const titleClass = computed(() => (
   isSummaryLayout.value ? 'mt-0.5 block min-w-0 rounded-sm px-0.5 text-left text-xs font-semibold leading-tight text-[var(--text-title)] transition hover:text-[var(--text-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-400)/0.5)] sm:text-[13px]' : 'mt-1 block min-w-0 rounded-sm px-0.5 text-left text-sm font-semibold text-[var(--text-title)] transition hover:text-[var(--text-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-400)/0.5)]'
@@ -146,10 +146,10 @@ const helperClass = computed(() => (
     : 'w-full rounded-xl border border-[rgb(var(--palette-dark-600)/0.75)] bg-[rgb(var(--palette-dark-800)/0.55)] px-3 py-2.5'
 ))
 const summaryPrimaryButtonClass = computed(() => (
-  'flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-[var(--text-title)] transition-all sm:px-4 sm:py-2.5 sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-400)/0.55)] focus-visible:ring-offset-1 focus-visible:ring-offset-[rgb(var(--palette-dark-900))] active:translate-y-px'
+  'flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-[var(--text-title)] transition-all sm:min-h-0 sm:w-auto sm:px-4 sm:py-2.5 sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-400)/0.55)] focus-visible:ring-offset-1 focus-visible:ring-offset-[rgb(var(--palette-dark-900))] active:translate-y-px'
 ))
 const summaryStatusClass = computed(() => (
-  'flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-[var(--text-body-strong)] sm:px-4 sm:py-2.5 sm:text-sm'
+  'flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-[var(--text-body-strong)] sm:min-h-0 sm:w-auto sm:px-4 sm:py-2.5 sm:text-sm'
 ))
 const primaryActionButtonClass = computed(() => (
   isSummaryLayout.value
@@ -611,15 +611,15 @@ onBeforeUnmount(() => {
         <div class="mb-2 flex items-center gap-2">
           <DealStatusTag :deal-status="currentDealStatus" />
         </div>
-        <div v-if="isSummaryLayout" class="mb-1 grid grid-cols-3 gap-1.5">
+        <div v-if="isSummaryLayout" class="mb-1 grid grid-cols-3 gap-1 sm:gap-1.5">
           <div
             v-for="step in dealProgressSteps"
             :key="step.key"
-            class="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-md border px-2 py-1"
+            class="inline-flex min-w-0 items-center justify-center gap-1 rounded-md border px-1.5 py-1 sm:gap-1.5 sm:px-2"
             :class="getDealProgressChipClass(step.state)"
           >
             <span class="h-1.5 w-1.5 flex-shrink-0 rounded-full" :class="getDealProgressDotClass(step.state)"></span>
-            <span class="truncate text-[10px] font-medium sm:text-[11px]" :class="getDealProgressTextClass(step.state)">
+            <span class="truncate text-[9px] font-medium sm:text-[11px]" :class="getDealProgressTextClass(step.state)">
               {{ step.label }}
             </span>
           </div>
@@ -727,7 +727,7 @@ onBeforeUnmount(() => {
 
       <div v-if="showSummaryBody" :class="actionsClass">
         <template v-if="canConfirmReceipt">
-          <div class="flex flex-col gap-1">
+          <div class="flex w-full flex-col gap-1 sm:w-auto">
             <button
               :class="primaryActionButtonClass"
               @click="openConfirmReceiptModal()"
@@ -780,7 +780,7 @@ onBeforeUnmount(() => {
         </template>
 
         <template v-if="isBuyer">
-          <div v-if="canSendReport" class="sm:ml-auto flex flex-col gap-2">
+          <div v-if="canSendReport" class="flex w-full flex-col gap-2 sm:ml-auto sm:w-auto">
             <button
               :class="ghostActionButtonClass"
               @click="openRefusalModal()"
@@ -797,7 +797,7 @@ onBeforeUnmount(() => {
             </button>
           </div>
 
-          <div v-else-if="showReportedBadge" class="sm:ml-auto flex flex-col gap-2">
+          <div v-else-if="showReportedBadge" class="flex w-full flex-col gap-2 sm:ml-auto sm:w-auto">
             <div :class="isSummaryLayout ? `${summaryStatusClass} border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.7)]` : 'flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.7)] px-4 py-2.5 text-sm font-semibold text-[var(--text-body-strong)]'">
               <svg class="h-4 w-4 text-[var(--text-danger)]" fill="currentColor" viewBox="0 0 20 20">
                 <path
