@@ -89,6 +89,12 @@ const canSendReport = computed(() => (
 const showReportedBadge = computed(() => (
   isBuyer.value && isDealDisputed.value
 ))
+const shouldShowInlineReportAction = computed(() => (
+  isBuyer.value && canSendReport.value
+))
+const shouldShowInlineReportedState = computed(() => (
+  isBuyer.value && showReportedBadge.value
+))
 const showFulfillmentConfirmedBadge = computed(() => (
   isSeller.value && effectiveDealStatus.value === 'confirmed'
 ))
@@ -815,30 +821,6 @@ onBeforeUnmount(() => {
           </template>
         </template>
 
-        <template v-if="isBuyer">
-          <div v-if="canSendReport" class="ml-auto flex w-full justify-end sm:w-auto">
-            <button
-              type="button"
-              class="inline-flex items-center justify-end rounded-sm px-1 py-1 text-xs font-semibold text-[rgb(var(--text-body-rgb)/0.88)] underline underline-offset-4 transition hover:text-[var(--text-title)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-white)/0.3)] focus-visible:ring-offset-1 focus-visible:ring-offset-[rgb(var(--palette-dark-900))] sm:text-sm"
-              @click="openRefusalModal()"
-            >
-              {{ $t('pages.chats.report') }}
-            </button>
-          </div>
-
-          <div v-else-if="showReportedBadge" class="flex w-full flex-col gap-2 sm:ml-auto sm:w-auto">
-            <div :class="isSummaryLayout ? `${summaryStatusClass} border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.7)]` : 'flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.7)] px-4 py-2.5 text-sm font-semibold text-[var(--text-body-strong)]'">
-              <svg class="h-4 w-4 text-[var(--text-danger)]" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fill-rule="evenodd"
-                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-              {{ $t('pages.chats.reported') }}
-            </div>
-          </div>
-        </template>
       </div>
 
       <template v-if="showSummaryBody && isDealCompleted && !localHasReview && isBuyer">
@@ -853,8 +835,25 @@ onBeforeUnmount(() => {
         </div>
       </template>
 
-      <div v-if="timelineTimestamp" class="mt-1 flex items-center justify-end text-xs text-[var(--text-body)]">
-        <span>{{ timelineTimestamp }}</span>
+      <div
+        v-if="timelineTimestamp || shouldShowInlineReportAction || shouldShowInlineReportedState"
+        class="mt-1 flex items-center justify-between gap-2 text-xs text-[rgb(var(--text-body-rgb)/0.76)]"
+      >
+        <span class="truncate">{{ timelineTimestamp ?? '' }}</span>
+        <button
+          v-if="shouldShowInlineReportAction"
+          type="button"
+          class="inline-flex items-center justify-end rounded-sm px-0.5 py-0.5 text-xs font-medium text-[rgb(var(--text-body-rgb)/0.7)] no-underline transition hover:text-[var(--text-title)] hover:underline hover:underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-white)/0.28)] focus-visible:ring-offset-1 focus-visible:ring-offset-[rgb(var(--palette-dark-900))]"
+          @click="openRefusalModal()"
+        >
+          {{ $t('pages.chats.report') }}
+        </button>
+        <span
+          v-else-if="shouldShowInlineReportedState"
+          class="text-xs font-medium text-[rgb(var(--text-body-rgb)/0.66)]"
+        >
+          {{ $t('pages.chats.reported') }}
+        </span>
       </div>
     </div>
   </div>
