@@ -1398,6 +1398,7 @@ const en = {
       newAdminMessage: "New message from support",
       viewProduct: "View Product",
       productData: "Product data",
+      orderTotalLabel: "Order total",
       reported: "Reported",
       newDealStatus: "New deal status:",
       updateDealStatus: "New deal status",
@@ -1428,6 +1429,13 @@ const en = {
       sellerPendingInstructionText: "Send the product data or item to the buyer in chat. After delivery, click \"Confirm fulfillment\".",
       dealTimer: "In deal: {value}",
       autoConfirmTimer: "Auto-confirm in {value}",
+      autoConfirmTooltip: "Auto-confirm will happen in: {value}",
+      confirmReceiptHint: "Check product details before confirming receipt.",
+      dealProgress: {
+        paid: "Paid",
+        fulfilled: "Delivered",
+        confirmed: "Confirmed",
+      },
 
       pending: "Deal created. Waiting for fulfillment confirmation from the seller.",
       confirmed:
