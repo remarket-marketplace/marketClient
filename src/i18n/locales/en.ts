@@ -862,7 +862,7 @@ const en = {
     vpn: {
       eyebrow: "Scope VPN",
       title: "Scope VPN",
-      subtitle: "Your personal key to a freer internet. Fast servers, approved locations, 24/7 support.",
+      subtitle: "Fast servers, 24/7 support.",
       heroAction: "Choose period",
       trialAction: "Trial period",
       trialAuthHint: "Sign in to get the Scope VPN trial period.",
