@@ -43,7 +43,7 @@ function openCookieSettings() {
                 </a>
               </li>
               <li>
-                <router-link :to="{ path: '/chats', query: { support: '1' } }"
+                <router-link to="/feedback"
                   class="text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light">
                   {{ $t('footer.support', 'Поддержка') }}
                 </router-link>

@@ -129,6 +129,7 @@ function writeSupportTriageSessionMap(map: Record<string, SupportTriageReasonId>
 
 const selectedSupportTriageReasonByChatId = ref<Record<string, SupportTriageReasonId>>(readSupportTriageSessionMap())
 const supportReasonAppliedChatIds = ref(new Set<string>())
+const dealScopedSupportChatAccessIds = ref(new Set<string>())
 const supportClosedStatusValues = new Set([
   'closed',
   'resolved',
@@ -165,11 +166,20 @@ function clearSupportContextQuery() {
   })
 }
 
+function grantDealScopedSupportAccess(chatId: string) {
+  if (dealScopedSupportChatAccessIds.value.has(chatId)) return
+  const next = new Set(dealScopedSupportChatAccessIds.value)
+  next.add(chatId)
+  dealScopedSupportChatAccessIds.value = next
+}
+
 function applySupportContextDraftIfNeeded() {
   const context = supportContextFromQuery.value
   if (!context) return
   if (appliedSupportContextValue.value === context) return
   if (currentChat.value?.chat_type !== 'support_chat' || !selectedChatId.value) return
+
+  grantDealScopedSupportAccess(selectedChatId.value)
 
   if (!newMessage.value.trim()) {
     newMessage.value = context
@@ -678,7 +688,12 @@ function showFloatingDateTemporarily() {
 }
 
 const sortedChats = computed(() => {
-  return [...chats.value].sort((a, b) => (
+  const visibleChats = chats.value.filter((chat) => (
+    chat.chat_type !== 'support_chat'
+    || dealScopedSupportChatAccessIds.value.has(chat.id)
+  ))
+
+  return [...visibleChats].sort((a, b) => (
     getLastMessageTimestamp(b) - getLastMessageTimestamp(a)
   ))
 })
@@ -753,16 +768,24 @@ function isSupportCaseClosed(chat: ChatListItem | null): boolean {
 }
 
 const isCurrentSupportCaseClosed = computed(() => isSupportCaseClosed(currentChat.value))
+const canWriteToCurrentSupportChat = computed(() => {
+  if (!isSupportChat.value) return true
+  if (!selectedChatId.value) return false
+  return dealScopedSupportChatAccessIds.value.has(selectedChatId.value)
+})
+const isSupportAccessMissing = computed(() => (
+  isSupportChat.value && !canWriteToCurrentSupportChat.value
+))
 
 const currentSupportTriageReason = computed<SupportTriageReasonId | null>(() => {
   if (!selectedChatId.value) return null
   return selectedSupportTriageReasonByChatId.value[selectedChatId.value] ?? null
 })
 const isSupportTriageMissing = computed(() => (
-  isSupportChat.value && !currentSupportTriageReason.value
+  isSupportChat.value && canWriteToCurrentSupportChat.value && !currentSupportTriageReason.value
 ))
 const isComposerDisabled = computed(() => (
-  isSendLocked.value || isSupportTriageMissing.value
+  isSendLocked.value || isSupportAccessMissing.value || isSupportTriageMissing.value
 ))
 
 watch(
@@ -1271,7 +1294,10 @@ onMounted(async () => {
     }
 
     const supportFromQuery = route.query.support as string | undefined
-    if (supportFromQuery === '1' || supportFromQuery === 'true') {
+    if (
+      (supportFromQuery === '1' || supportFromQuery === 'true')
+      && supportContextFromQuery.value
+    ) {
       const supportChat = chats.value.find(chat => chat.chat_type === 'support_chat')
       if (supportChat) {
         await loadChatMessages(supportChat.id)
@@ -1631,6 +1657,10 @@ async function retryLocalPendingMessage(messageId: string) {
 
 async function sendMessage(payload: { files: File[] }) {
   if (!selectedChatId.value || isSendLocked.value || !user.value) return
+  if (isSupportAccessMissing.value) {
+    sendErrorMessage.value = t('pages.chats.supportDealOnlyNotice')
+    return
+  }
   if (isSupportTriageMissing.value) {
     sendErrorMessage.value = 'Перед отправкой выберите причину обращения: Оплата, Сделка или Аккаунт.'
     return
@@ -1867,6 +1897,10 @@ async function sendMessage(payload: { files: File[] }) {
                 <div v-if="sendErrorMessage"
                   class="pointer-events-auto mx-1 mb-2 rounded-xl border border-[rgb(var(--palette-red-500)/0.4)] bg-[rgb(var(--palette-red-500)/0.1)] px-3 py-2 text-sm text-[var(--text-danger)]">
                   {{ sendErrorMessage }}
+                </div>
+                <div v-if="isSupportAccessMissing"
+                  class="pointer-events-auto mx-1 mb-2 rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-dark-900)/0.65)] px-3 py-2 text-sm text-[var(--text-meta)]">
+                  {{ $t('pages.chats.supportDealOnlyNotice') }}
                 </div>
                 <div v-if="isSupportTriageMissing"
                   class="pointer-events-auto mx-1 mb-2 rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-dark-900)/0.65)] px-3 py-2">

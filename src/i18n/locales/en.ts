@@ -1461,6 +1461,7 @@ const en = {
       supportChat: "Support Chat",
       dealChat: "Deal",
       regularChat: "Chat",
+      supportDealOnlyNotice: "Support chat is available only from a deal when there is a product issue.",
       emptySupport: "Hello! Here you can get support from our team",
       emptySupportDesc: "Write your question or issue, and our team will respond to you as soon as possible. We're here to help you 24/7!",
       priceOfferTitle: "Price offer",
