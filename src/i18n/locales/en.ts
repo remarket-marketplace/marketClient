@@ -521,6 +521,9 @@ const en = {
     privacyPolicy: "Privacy policy",
     termsOfService: "Terms of service",
     marketRules: "Marketplace rules",
+    companyName: "Monitorson OÜ",
+    companyRegistryCode: "Registry code: 1725577",
+    companyAddress: "Registered address: Järva maakond, Türi vald, Türi linn, Aia tn 12, 72215, Estonia",
   },
 
   navigation: {
@@ -653,7 +656,7 @@ const en = {
     termsOfServicePage: {
       title: "Terms of service",
       updatedAt: "Current as of May 15, 2026",
-      supportLead: "10.1. For all questions, the user may contact support:",
+      supportLead: "10.4. For all questions, the user may contact support:",
       feedbackLead: "via the",
       feedbackLink: "feedback page",
       emailLead: "by email:",
@@ -760,7 +763,11 @@ const en = {
         },
         {
           title: "10. Contact information",
-          paragraphs: []
+          paragraphs: [
+            "10.1. The legal entity operating the service is Monitorson OÜ.",
+            "10.2. Registry code: 1725577.",
+            "10.3. Registered address: Järva maakond, Türi vald, Türi linn, Aia tn 12, 72215, Estonia."
+          ]
         },
         {
           accent: "By using the service, the user confirms that they have reviewed these Terms and accept them in full."

@@ -521,6 +521,9 @@ const ru = {
     privacyPolicy: "Политика конфиденциальности",
     termsOfService: "Условия использования",
     marketRules: "Правила площадки",
+    companyName: "Monitorson OÜ",
+    companyRegistryCode: "Регистрационный номер: 1725577",
+    companyAddress: "Юридический адрес: Järva maakond, Türi vald, Türi linn, Aia tn 12, 72215, Estonia",
   },
 
   navigation: {
@@ -653,7 +656,7 @@ const ru = {
     termsOfServicePage: {
       title: "Пользовательское соглашение",
       updatedAt: "Актуально на 15 мая 2026 года",
-      supportLead: "10.1. По всем вопросам пользователь может обратиться в службу поддержки:",
+      supportLead: "10.4. По всем вопросам пользователь может обратиться в службу поддержки:",
       feedbackLead: "через",
       feedbackLink: "страницу обратной связи",
       emailLead: "по email:",
@@ -760,7 +763,11 @@ const ru = {
         },
         {
           title: "10. Контактная информация",
-          paragraphs: []
+          paragraphs: [
+            "10.1. Юридическое лицо сервиса: Monitorson OÜ.",
+            "10.2. Регистрационный номер: 1725577.",
+            "10.3. Юридический адрес: Järva maakond, Türi vald, Türi linn, Aia tn 12, 72215, Estonia."
+          ]
         },
         {
           accent: "Используя сервис, пользователь подтверждает, что ознакомлен с настоящим Соглашением и принимает его условия в полном объёме."
