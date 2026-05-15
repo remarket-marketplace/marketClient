@@ -10,6 +10,7 @@ const MAX_IMAGES_PER_MESSAGE = 5
 const props = defineProps<{
   newMessage: string
   disabled?: boolean
+  placeholder?: string
 }>()
 
 const emit = defineEmits<{
@@ -178,7 +179,7 @@ watch(
           @keydown="handleMessageKeydown"
           rows="1"
           class="max-h-[140px] min-h-8 flex-1 resize-none border-0 bg-[var(--transparent)] py-1 text-[var(--text-title)] outline-none placeholder:text-[var(--text-muted)] disabled:cursor-not-allowed disabled:placeholder:text-[rgb(var(--text-warning-rgb)/0.7)]"
-          :placeholder="$t('pages.chats.messagePlaceholder')"
+          :placeholder="props.placeholder || $t('pages.chats.messagePlaceholder')"
           :disabled="isDisabled"
           maxlength="500"
         />
