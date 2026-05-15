@@ -688,12 +688,7 @@ function showFloatingDateTemporarily() {
 }
 
 const sortedChats = computed(() => {
-  const visibleChats = chats.value.filter((chat) => (
-    chat.chat_type !== 'support_chat'
-    || dealScopedSupportChatAccessIds.value.has(chat.id)
-  ))
-
-  return [...visibleChats].sort((a, b) => (
+  return [...chats.value].sort((a, b) => (
     getLastMessageTimestamp(b) - getLastMessageTimestamp(a)
   ))
 })
@@ -1294,10 +1289,7 @@ onMounted(async () => {
     }
 
     const supportFromQuery = route.query.support as string | undefined
-    if (
-      (supportFromQuery === '1' || supportFromQuery === 'true')
-      && supportContextFromQuery.value
-    ) {
+    if (supportFromQuery === '1' || supportFromQuery === 'true') {
       const supportChat = chats.value.find(chat => chat.chat_type === 'support_chat')
       if (supportChat) {
         await loadChatMessages(supportChat.id)
