@@ -3,13 +3,13 @@ import { computed, ref, watch } from 'vue'
 import { ChevronLeft, RotateCcw } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { formatChatTime } from '@/utils/chatDate'
-
-type FaqNode = {
-  id: string
-  label: string
-  reply: string
-  children?: FaqNode[]
-}
+import {
+  SUPPORT_FAQ_NAV_TEXT,
+  SUPPORT_FAQ_ROOT_EN,
+  SUPPORT_FAQ_ROOT_INTRO,
+  SUPPORT_FAQ_ROOT_RU,
+  type SupportFaqNode,
+} from '@/config/supportFaq'
 
 type FaqMessage = {
   id: string
@@ -24,197 +24,18 @@ const props = defineProps<{
 
 const { locale } = useI18n()
 const localSequence = ref(0)
-const navigationStack = ref<FaqNode[]>([])
+const navigationStack = ref<SupportFaqNode[]>([])
 const messages = ref<FaqMessage[]>([])
 
-const RU_ROOT: FaqNode[] = [
-  {
-    id: 'balance',
-    label: 'Balance',
-    reply: 'Выберите вопрос по балансу ниже.',
-    children: [
-      {
-        id: 'balance-topup',
-        label: 'Пополнение баланса',
-        reply: 'Откройте Профиль -> Баланс -> введите сумму -> выберите способ оплаты и завершите платеж.',
-      },
-      {
-        id: 'balance-currency',
-        label: 'Валюта операций',
-        reply: 'Все операции на сайте проходят в RUB. Если карта в другой валюте, конвертация выполняется платежной системой.',
-      },
-      {
-        id: 'balance-not-credited',
-        label: 'Деньги не зачислились',
-        reply: 'Если платеж прошел, но баланс не обновился, дождитесь до 15 минут и проверьте историю. Если не помогло, откройте спор из сделки с подтверждением оплаты.',
-      },
-      {
-        id: 'balance-methods',
-        label: 'Способы оплаты',
-        reply: 'Актуальные способы оплаты показываются в момент пополнения. Список может меняться по региону и провайдеру.',
-      },
-    ],
-  },
-  {
-    id: 'buyers',
-    label: 'Для покупателей',
-    reply: 'Выберите вопрос по покупке товара.',
-    children: [
-      {
-        id: 'buyers-how-buy',
-        label: 'Как купить товар',
-        reply: 'Откройте карточку товара, нажмите Купить, оплатите заказ, затем получите выдачу в чате сделки.',
-      },
-      {
-        id: 'buyers-no-delivery',
-        label: 'Товар не выдали',
-        reply: 'Если продавец не выдал товар, не подтверждайте получение и откройте спор по сделке через кнопку Пожаловаться.',
-      },
-      {
-        id: 'buyers-refund',
-        label: 'Возврат средств',
-        reply: 'Возврат рассматривается по истории сделки. Для запуска проверки обратитесь в поддержку из конкретной сделки.',
-      },
-    ],
-  },
-  {
-    id: 'sellers',
-    label: 'Для продавцов',
-    reply: 'Выберите вопрос по продажам.',
-    children: [
-      {
-        id: 'sellers-payout',
-        label: 'Когда зачисляются средства',
-        reply: 'Средства зачисляются после успешного завершения сделки и подтверждения получения покупателем.',
-      },
-      {
-        id: 'sellers-dispute',
-        label: 'Спор с покупателем',
-        reply: 'В споре важно сохранять общение и выдачу в рамках чата сделки. Поддержка рассматривает логи и статусные события.',
-      },
-      {
-        id: 'sellers-listing',
-        label: 'Модерация товара',
-        reply: 'Проверьте, что описание, цена и условия выдачи прозрачны и соответствуют товару. Это ускоряет публикацию.',
-      },
-    ],
-  },
-  {
-    id: 'account',
-    label: 'Аккаунт и безопасность',
-    reply: 'Выберите вопрос по аккаунту.',
-    children: [
-      {
-        id: 'account-reset',
-        label: 'Сброс пароля',
-        reply: 'Используйте восстановление пароля на странице входа. Ссылка придет на привязанную почту.',
-      },
-      {
-        id: 'account-2fa',
-        label: 'Защита аккаунта',
-        reply: 'Рекомендуем включить 2FA, использовать сложный пароль и не передавать коды подтверждения третьим лицам.',
-      },
-      {
-        id: 'account-block',
-        label: 'Блокировка аккаунта',
-        reply: 'Если считаете блокировку ошибочной, оставьте обращение через feedback или напишите из сделки, где возникла проблема.',
-      },
-    ],
-  },
-  {
-    id: 'site',
-    label: 'Сайт и функционал',
-    reply: 'Выберите вопрос по работе сайта.',
-    children: [
-      {
-        id: 'site-slow',
-        label: 'Сайт работает медленно',
-        reply: 'Обновите страницу, отключите VPN/прокси, попробуйте другой браузер. При массовом сбое информация обычно появляется в каналах проекта.',
-      },
-      {
-        id: 'site-notifications',
-        label: 'Не приходят уведомления',
-        reply: 'Проверьте настройки уведомлений в профиле и разрешения браузера на push-уведомления.',
-      },
-      {
-        id: 'site-images',
-        label: 'Ошибка загрузки изображений',
-        reply: 'Проверьте формат и размер файла, затем повторите загрузку. Для JPG/PNG обычно проблем не возникает.',
-      },
-    ],
-  },
-]
-
-const EN_ROOT: FaqNode[] = [
-  {
-    id: 'balance',
-    label: 'Balance',
-    reply: 'Choose a balance-related question below.',
-    children: [
-      {
-        id: 'balance-topup',
-        label: 'Top up balance',
-        reply: 'Open Profile -> Balance -> enter amount -> choose payment method and complete payment.',
-      },
-      {
-        id: 'balance-currency',
-        label: 'Operation currency',
-        reply: 'All operations are processed in RUB. If your card uses another currency, conversion is done by the payment provider.',
-      },
-      {
-        id: 'balance-not-credited',
-        label: 'Funds not credited',
-        reply: 'If payment succeeded but balance did not update, wait up to 15 minutes and check history. If still missing, open support from the related deal with payment proof.',
-      },
-    ],
-  },
-  {
-    id: 'buyers',
-    label: 'For buyers',
-    reply: 'Choose a question about buying.',
-    children: [
-      {
-        id: 'buyers-how-buy',
-        label: 'How to buy',
-        reply: 'Open product page, click Buy, complete payment, then receive delivery inside deal chat.',
-      },
-      {
-        id: 'buyers-no-delivery',
-        label: 'No delivery from seller',
-        reply: 'Do not confirm receipt. Open a dispute from the deal using the Report button.',
-      },
-    ],
-  },
-  {
-    id: 'account',
-    label: 'Account and security',
-    reply: 'Choose an account question.',
-    children: [
-      {
-        id: 'account-reset',
-        label: 'Password reset',
-        reply: 'Use password recovery on sign-in page. A reset link will be sent to your email.',
-      },
-      {
-        id: 'account-2fa',
-        label: 'Account protection',
-        reply: 'Enable 2FA, use a strong password, and never share verification codes.',
-      },
-    ],
-  },
-]
-
 const isRu = computed(() => String(locale.value).toLowerCase().startsWith('ru'))
-const rootNodes = computed<FaqNode[]>(() => (isRu.value ? RU_ROOT : EN_ROOT))
+const localeKey = computed<'ru' | 'en'>(() => (isRu.value ? 'ru' : 'en'))
+const navText = computed(() => SUPPORT_FAQ_NAV_TEXT[localeKey.value])
 
-const rootIntro = computed(() => (
-  isRu.value
-    ? 'Бот поддержки поможет найти быстрый ответ.\n\nВыберите тему ниже. Если вопрос касается конкретного товара или оплаты по сделке, обращайтесь в поддержку из этой сделки.'
-    : 'Support bot helps you find quick answers.\n\nChoose a topic below. If your issue is about a specific product or deal payment, contact support from that deal.'
-))
+const rootNodes = computed<SupportFaqNode[]>(() => (isRu.value ? SUPPORT_FAQ_ROOT_RU : SUPPORT_FAQ_ROOT_EN))
+const rootIntro = computed(() => SUPPORT_FAQ_ROOT_INTRO[localeKey.value])
 
-const currentNode = computed<FaqNode | null>(() => navigationStack.value[navigationStack.value.length - 1] ?? null)
-const currentOptions = computed<FaqNode[]>(() => currentNode.value?.children ?? rootNodes.value)
+const currentNode = computed<SupportFaqNode | null>(() => navigationStack.value[navigationStack.value.length - 1] ?? null)
+const currentOptions = computed<SupportFaqNode[]>(() => currentNode.value?.children ?? rootNodes.value)
 const canGoBack = computed(() => navigationStack.value.length > 0)
 
 function nowIso(): string {
@@ -250,7 +71,7 @@ function resetFaq() {
   pushBotMessage(rootIntro.value)
 }
 
-function handleSelectNode(node: FaqNode) {
+function handleSelectNode(node: SupportFaqNode) {
   pushUserMessage(node.label)
   pushBotMessage(node.reply)
 
@@ -262,13 +83,13 @@ function handleSelectNode(node: FaqNode) {
 function goBack() {
   if (!canGoBack.value) return
   navigationStack.value = navigationStack.value.slice(0, -1)
-  pushBotMessage(isRu.value ? 'Возвращаюсь на уровень выше.' : 'Going one level up.')
+  pushBotMessage(navText.value.levelUpReply)
 }
 
 function goRoot() {
   if (!canGoBack.value) return
   navigationStack.value = []
-  pushBotMessage(isRu.value ? 'Открываю главное меню FAQ.' : 'Opening the main FAQ menu.')
+  pushBotMessage(navText.value.rootReply)
 }
 
 function formatFaqTime(dateInput: string): string {
@@ -294,7 +115,7 @@ watch(
         :class="message.role === 'user' ? 'justify-end' : 'justify-start'"
       >
         <div v-if="message.role === 'bot'" class="w-full max-w-3xl">
-          <p class="mb-1 text-xs font-medium text-[rgb(var(--text-body-rgb)/0.78)]">Bot</p>
+          <p class="mb-1 text-xs font-medium text-[rgb(var(--text-body-rgb)/0.78)]">{{ navText.botName }}</p>
           <div class="rounded-2xl rounded-bl-md border border-[rgb(var(--palette-dark-600)/0.8)] bg-[rgb(var(--palette-dark-800)/0.72)] px-3 py-2.5">
             <p class="whitespace-pre-wrap text-sm leading-6 text-[var(--text-body-strong)]">{{ message.text }}</p>
             <p class="mt-2 text-right text-xs text-[rgb(var(--text-body-rgb)/0.58)]">{{ formatFaqTime(message.created_at) }}</p>
@@ -317,7 +138,7 @@ watch(
           @click="goBack"
         >
           <ChevronLeft class="h-3.5 w-3.5" />
-          {{ isRu ? 'Назад' : 'Back' }}
+          {{ navText.back }}
         </button>
         <button
           v-if="canGoBack"
@@ -326,10 +147,10 @@ watch(
           @click="goRoot"
         >
           <RotateCcw class="h-3.5 w-3.5" />
-          {{ isRu ? 'В начало' : 'Main menu' }}
+          {{ navText.root }}
         </button>
         <span class="ml-auto text-xs text-[rgb(var(--text-body-rgb)/0.7)]">
-          {{ currentNode ? currentNode.label : (isRu ? 'Главные темы' : 'Main topics') }}
+          {{ currentNode ? currentNode.label : navText.rootLabel }}
         </span>
       </div>
 
