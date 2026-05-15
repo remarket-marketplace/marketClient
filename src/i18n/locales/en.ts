@@ -584,6 +584,7 @@ const en = {
     },
     privacyPolicyPage: {
       title: "Privacy policy",
+      updatedAt: "Current as of May 15, 2026",
       sections: [
         {
           title: "1. General provisions",
@@ -651,6 +652,7 @@ const en = {
     },
     termsOfServicePage: {
       title: "Terms of service",
+      updatedAt: "Current as of May 15, 2026",
       supportLead: "10.1. For all questions, the user may contact support:",
       feedbackLead: "via the",
       feedbackLink: "feedback page",
@@ -1070,6 +1072,7 @@ const en = {
 
     marketRules: {
       title: "Marketplace Rules",
+      updatedAt: "Current as of May 15, 2026",
       general: {
         title: "1. General Provisions",
         p1: "1.1. These Rules govern product listings, transaction flow, and user behavior on remarket.",
