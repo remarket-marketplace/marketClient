@@ -6,6 +6,7 @@ import FloatingDateHeader from '@/components/chats/FloatingDateHeader.vue'
 import NewPurchaseMessage from '@/components/chats/NewPurchaseMessage.vue'
 import PendingChatMessage from '@/components/chats/PendingChatMessage.vue'
 import SendMessageBar from '@/components/chats/SendMessageBar.vue'
+import SupportFaqAssistant from '@/components/chats/SupportFaqAssistant.vue'
 import Loader from '@/components/Loader.vue'
 import { useUserStore } from '@/stores/user'
 import { useChatStore } from '@/stores/chat'
@@ -1725,7 +1726,7 @@ async function sendMessage(payload: { files: File[] }) {
                       </div>
                     </div>
 
-                    <div v-else-if="selectedChatId != null && chatMessages.length === 0"
+                    <div v-else-if="selectedChatId != null && chatMessages.length === 0 && !(isSupportChat && isSupportAccessMissing)"
                       class="h-full w-full flex items-center justify-center">
                       <div v-if="isSupportChat"
                         class="flex flex-col items-center justify-center gap-4 text-center px-4">
@@ -1738,6 +1739,10 @@ async function sendMessage(payload: { files: File[] }) {
 
                     <div v-else-if="selectedChatId === null" class="h-full w-full flex items-center justify-center">
                       <p class="text-[var(--text-muted)] font-light">{{ $t('pages.chats.selectChat') }}</p>
+                    </div>
+
+                    <div v-if="selectedChatId && isSupportChat && isSupportAccessMissing" class="px-1.5 pb-4 lg:px-4">
+                      <SupportFaqAssistant :chat-id="selectedChatId" />
                     </div>
                   </div>
                 </template>
@@ -1762,7 +1767,12 @@ async function sendMessage(payload: { files: File[] }) {
                   {{ $t('pages.chats.supportDealOnlyNotice') }}
                 </div>
                 <div class="pointer-events-auto">
-                  <SendMessageBar v-model:newMessage="newMessage" :disabled="isComposerDisabled" @sendMessage="sendMessage" />
+                  <SendMessageBar
+                    v-model:newMessage="newMessage"
+                    :disabled="isComposerDisabled"
+                    :placeholder="isSupportAccessMissing ? $t('pages.chats.faqInputPlaceholder') : undefined"
+                    @sendMessage="sendMessage"
+                  />
                 </div>
               </div>
 
