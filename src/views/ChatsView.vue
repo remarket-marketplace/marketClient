@@ -80,63 +80,7 @@ const topLoadThresholdPx = 8
 const previousMessageScrollTop = ref(0)
 const hasUserScrolledAwayFromTop = ref(false)
 const bottomAutoScrollThresholdPx = 120
-type SupportTriageReasonId = 'payment' | 'deal' | 'account'
-type SupportTriageReasonOption = { id: SupportTriageReasonId; label: string }
-
-const supportTriageReasonOptions: SupportTriageReasonOption[] = [
-  { id: 'payment', label: 'Оплата' },
-  { id: 'deal', label: 'Сделка' },
-  { id: 'account', label: 'Аккаунт' },
-]
-const supportTriageReasonOptionIds = new Set<SupportTriageReasonId>(supportTriageReasonOptions.map(option => option.id))
-const supportTriageSessionStorageKey = 'support-triage-reason-by-chat-id-v1'
-
-function readSupportTriageSessionMap(): Record<string, SupportTriageReasonId> {
-  if (typeof window === 'undefined') return {}
-
-  try {
-    const raw = window.sessionStorage.getItem(supportTriageSessionStorageKey)
-    if (!raw) return {}
-
-    const parsed = JSON.parse(raw) as Record<string, string>
-    const result: Record<string, SupportTriageReasonId> = {}
-
-    for (const [chatId, reason] of Object.entries(parsed)) {
-      if (supportTriageReasonOptionIds.has(reason as SupportTriageReasonId)) {
-        result[chatId] = reason as SupportTriageReasonId
-      }
-    }
-
-    return result
-  } catch (error) {
-    console.warn('Failed to read support triage session map:', error)
-    return {}
-  }
-}
-
-function writeSupportTriageSessionMap(map: Record<string, SupportTriageReasonId>) {
-  if (typeof window === 'undefined') return
-
-  try {
-    window.sessionStorage.setItem(
-      supportTriageSessionStorageKey,
-      JSON.stringify(map),
-    )
-  } catch (error) {
-    console.warn('Failed to write support triage session map:', error)
-  }
-}
-
-const selectedSupportTriageReasonByChatId = ref<Record<string, SupportTriageReasonId>>(readSupportTriageSessionMap())
-const supportReasonAppliedChatIds = ref(new Set<string>())
 const dealScopedSupportChatAccessIds = ref(new Set<string>())
-const supportClosedStatusValues = new Set([
-  'closed',
-  'resolved',
-  'done',
-  'completed',
-  'solved',
-])
 
 const routeChatId = computed(() => {
   if (typeof route.query.chatId === 'string' && route.query.chatId.length > 0) {
@@ -183,15 +127,6 @@ function applySupportContextDraftIfNeeded() {
 
   if (!newMessage.value.trim()) {
     newMessage.value = context
-  }
-
-  if (!selectedSupportTriageReasonByChatId.value[selectedChatId.value]) {
-    const nextReasonMap: Record<string, SupportTriageReasonId> = {
-      ...selectedSupportTriageReasonByChatId.value,
-      [selectedChatId.value]: 'deal',
-    }
-    selectedSupportTriageReasonByChatId.value = nextReasonMap
-    writeSupportTriageSessionMap(nextReasonMap)
   }
 
   appliedSupportContextValue.value = context
@@ -751,18 +686,6 @@ const isSupportChat = computed(() => {
   return currentChat.value?.chat_type === 'support_chat'
 })
 
-function isSupportCaseClosed(chat: ChatListItem | null): boolean {
-  if (!chat || chat.chat_type !== 'support_chat') return false
-  if (chat.is_closed === true || chat.is_resolved === true) return true
-
-  const statusCandidates = [chat.support_ticket_status, chat.support_status]
-  return statusCandidates.some((status) => {
-    if (!status) return false
-    return supportClosedStatusValues.has(status.trim().toLowerCase())
-  })
-}
-
-const isCurrentSupportCaseClosed = computed(() => isSupportCaseClosed(currentChat.value))
 const canWriteToCurrentSupportChat = computed(() => {
   if (!isSupportChat.value) return true
   if (!selectedChatId.value) return false
@@ -772,51 +695,14 @@ const isSupportAccessMissing = computed(() => (
   isSupportChat.value && !canWriteToCurrentSupportChat.value
 ))
 
-const currentSupportTriageReason = computed<SupportTriageReasonId | null>(() => {
-  if (!selectedChatId.value) return null
-  return selectedSupportTriageReasonByChatId.value[selectedChatId.value] ?? null
-})
-const isSupportTriageMissing = computed(() => (
-  isSupportChat.value && canWriteToCurrentSupportChat.value && !currentSupportTriageReason.value
-))
 const isComposerDisabled = computed(() => (
-  isSendLocked.value || isSupportAccessMissing.value || isSupportTriageMissing.value
+  isSendLocked.value || isSupportAccessMissing.value
 ))
-
-watch(
-  [() => currentChat.value?.id, isCurrentSupportCaseClosed],
-  ([chatId, isClosed]) => {
-    if (!chatId || !isClosed) return
-    clearSupportTriageReasonForChat(chatId)
-  },
-  { immediate: true },
-)
 
 // Показываем админ бейдж только для обычных чатов, не для поддержки
 const shouldShowAdminBadge = computed(() => {
   return !isSupportChat.value
 })
-
-function setSupportTriageReason(reason: SupportTriageReasonId) {
-  if (!selectedChatId.value) return
-  const nextReasonMap: Record<string, SupportTriageReasonId> = {
-    ...selectedSupportTriageReasonByChatId.value,
-    [selectedChatId.value]: reason,
-  }
-  selectedSupportTriageReasonByChatId.value = nextReasonMap
-  writeSupportTriageSessionMap(nextReasonMap)
-  sendErrorMessage.value = null
-}
-
-function clearSupportTriageReasonForChat(chatId: string) {
-  if (!selectedSupportTriageReasonByChatId.value[chatId]) return
-
-  const nextReasonMap: Record<string, SupportTriageReasonId> = { ...selectedSupportTriageReasonByChatId.value }
-  delete nextReasonMap[chatId]
-  selectedSupportTriageReasonByChatId.value = nextReasonMap
-  writeSupportTriageSessionMap(nextReasonMap)
-  supportReasonAppliedChatIds.value.delete(chatId)
-}
 
 type TextMessage = Extract<ChatMessageUnion, { message_type: 'text_message' }>
 const textMessagesInChat = computed<TextMessage[]>(() =>
@@ -1653,10 +1539,6 @@ async function sendMessage(payload: { files: File[] }) {
     sendErrorMessage.value = t('pages.chats.supportDealOnlyNotice')
     return
   }
-  if (isSupportTriageMissing.value) {
-    sendErrorMessage.value = 'Перед отправкой выберите причину обращения: Оплата, Сделка или Аккаунт.'
-    return
-  }
 
   const rawText = newMessage.value.trim()
   const files = payload.files ?? []
@@ -1664,22 +1546,7 @@ async function sendMessage(payload: { files: File[] }) {
 
   const chatId = selectedChatId.value
   const senderId = user.value.id
-  const selectedReasonLabel = supportTriageReasonOptions.find(
-    (option) => option.id === currentSupportTriageReason.value,
-  )?.label
-  const shouldPrefixSupportReason = Boolean(
-    isSupportChat.value
-    && selectedReasonLabel
-    && !supportReasonAppliedChatIds.value.has(chatId)
-    && rawText.length > 0,
-  )
-  const text = shouldPrefixSupportReason
-    ? `[${selectedReasonLabel}] ${rawText}`
-    : rawText
-
-  if (shouldPrefixSupportReason) {
-    supportReasonAppliedChatIds.value.add(chatId)
-  }
+  const text = rawText
 
   const pendingTextMessage = text ? createLocalTextPendingMessage(chatId, senderId, text) : null
   const pendingImageMessage = files.length > 0
@@ -1893,26 +1760,6 @@ async function sendMessage(payload: { files: File[] }) {
                 <div v-if="isSupportAccessMissing"
                   class="pointer-events-auto mx-1 mb-2 rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-dark-900)/0.65)] px-3 py-2 text-sm text-[var(--text-meta)]">
                   {{ $t('pages.chats.supportDealOnlyNotice') }}
-                </div>
-                <div v-if="isSupportTriageMissing"
-                  class="pointer-events-auto mx-1 mb-2 rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-dark-900)/0.65)] px-3 py-2">
-                  <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-meta)]">
-                    Выберите причину обращения
-                  </p>
-                  <div class="flex flex-wrap gap-2">
-                    <button
-                      v-for="option in supportTriageReasonOptions"
-                      :key="option.id"
-                      type="button"
-                      class="rounded-lg border px-3 py-1.5 text-sm font-semibold transition"
-                      :class="currentSupportTriageReason === option.id
-                        ? 'border-[rgb(var(--palette-blue-500))] bg-[rgb(var(--palette-blue-600)/0.22)] text-[var(--text-title)]'
-                        : 'border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-white)/0.03)] text-[var(--text-meta)] hover:text-[var(--text-title)]'"
-                      @click="setSupportTriageReason(option.id)"
-                    >
-                      {{ option.label }}
-                    </button>
-                  </div>
                 </div>
                 <div class="pointer-events-auto">
                   <SendMessageBar v-model:newMessage="newMessage" :disabled="isComposerDisabled" @sendMessage="sendMessage" />
