@@ -194,6 +194,8 @@ export const SUPPORT_FAQ_NAV_TEXT = {
     rootLabel: 'Главные темы',
     levelUpReply: 'Возвращаюсь на уровень выше.',
     rootReply: 'Открываю главное меню FAQ.',
+    showMoreQuestions: 'Показать еще вопросы',
+    showMoreReply: 'Показываю доступные вопросы.',
     botName: 'Бот',
   },
   en: {
@@ -202,6 +204,8 @@ export const SUPPORT_FAQ_NAV_TEXT = {
     rootLabel: 'Main topics',
     levelUpReply: 'Going one level up.',
     rootReply: 'Opening the main FAQ menu.',
+    showMoreQuestions: 'Show more questions',
+    showMoreReply: 'Showing available questions.',
     botName: 'Bot',
   },
 } as const

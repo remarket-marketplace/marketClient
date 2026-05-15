@@ -66,6 +66,7 @@ const bottomAutoScrollThresholdPx = 120
 const previousMessageScrollTop = ref(0)
 const hasUserScrolledAwayFromTop = ref(false)
 const isSupportCaseStatusUpdating = ref(false)
+const isSupportCaseAutoReopening = ref(false)
 
 // Все чаты для админа - только support_chat типы
 const searchQuery = ref('')
@@ -128,16 +129,38 @@ const sortedChats = computed(() => {
 const currentChat = computed(() =>
     chats.value.find(chat => chat.id === selectedChatId.value) || null
 )
+
+function resolveSupportTicketStatus(chat: ChatListItem | null | undefined): 'open' | 'closed' {
+    if (!chat) return 'open'
+
+    const statusCandidates = [
+        chat.support_ticket_status,
+        chat.support_status,
+    ]
+
+    for (const candidate of statusCandidates) {
+        if (typeof candidate !== 'string') continue
+        const normalized = candidate.trim().toLowerCase()
+        if (normalized === 'closed' || normalized === 'open') {
+            return normalized
+        }
+    }
+
+    if (typeof chat.is_closed === 'boolean') {
+        return chat.is_closed ? 'closed' : 'open'
+    }
+
+    if (typeof chat.is_resolved === 'boolean') {
+        return chat.is_resolved ? 'closed' : 'open'
+    }
+
+    return 'open'
+}
+
 const currentSupportTicketStatus = computed<'open' | 'closed'>(() => {
-    const rawStatus = currentChat.value?.support_ticket_status
-    return typeof rawStatus === 'string' && rawStatus.trim().toLowerCase() === 'closed'
-        ? 'closed'
-        : 'open'
+    return resolveSupportTicketStatus(currentChat.value)
 })
 const isCurrentSupportCaseClosed = computed(() => currentSupportTicketStatus.value === 'closed')
-const supportCaseActionButtonLabel = computed(() => (
-    isCurrentSupportCaseClosed.value ? 'Переоткрыть кейс' : 'Закрыть кейс'
-))
 
 type PriceOfferChatMessage = Extract<ChatMessageUnion, { message_type: 'price_offer_message' }>
 
@@ -540,11 +563,16 @@ onMounted(async () => {
             }
 
             if (typeof update.support_ticket_status === 'string' && update.support_ticket_status.trim()) {
-                chat.support_ticket_status = update.support_ticket_status.trim().toLowerCase()
+                const normalizedStatus = update.support_ticket_status.trim().toLowerCase() === 'closed' ? 'closed' : 'open'
+                chat.support_ticket_status = normalizedStatus
+                chat.support_status = normalizedStatus
+                chat.is_closed = normalizedStatus === 'closed'
+                chat.is_resolved = normalizedStatus === 'closed'
             }
         })
 
         unsubscribeNewMessage = chatsService.onNewMessage(message => {
+            void autoReopenSupportCaseIfNeeded(message.chat_room_id, { force: true })
             if (selectedChatId.value === message.chat_room_id) {
                 if (!chatMessages.value.some(m => m.id === message.id)) {
                     const shouldStickToBottom = isNearBottom()
@@ -827,6 +855,7 @@ async function loadChatMessages(
         await chatsService.joinChat(chatId)
         selectedChatId.value = chatId
         updateUrlChatId(chatId)
+        await autoReopenSupportCaseIfNeeded(chatId)
 
         const response = await chatsService.getChatMessages(chatId, 1, messagesPerPage.value)
         chatMessages.value = normalizeMessagesChronological(response.messages)
@@ -907,11 +936,38 @@ async function sendMessage(payload: { files: File[] }) {
     }
 }
 
+async function autoReopenSupportCaseIfNeeded(
+    chatId: string,
+    options: { force?: boolean } = {},
+): Promise<void> {
+    if (isSupportCaseStatusUpdating.value || isSupportCaseAutoReopening.value) return
+
+    const chat = chats.value.find((item) => item.id === chatId)
+    if (!chat || chat.chat_type !== 'support_chat') return
+    if (resolveSupportTicketStatus(chat) !== 'closed') return
+    if (!options.force && (chat.unread_count ?? 0) <= 0) return
+
+    isSupportCaseAutoReopening.value = true
+    try {
+        const result = await adminService.updateSupportCaseStatus(chatId, 'open')
+        if (!result.success) return
+
+        chat.support_ticket_status = 'open'
+        chat.support_status = 'open'
+        chat.is_closed = false
+        chat.is_resolved = false
+        errorMessage.value = null
+    } finally {
+        isSupportCaseAutoReopening.value = false
+    }
+}
+
 async function toggleSupportCaseStatus() {
     if (!selectedChatId.value || !currentChat.value || isSupportCaseStatusUpdating.value) return
+    if (isCurrentSupportCaseClosed.value) return
 
     isSupportCaseStatusUpdating.value = true
-    const nextStatus: 'open' | 'closed' = isCurrentSupportCaseClosed.value ? 'open' : 'closed'
+    const nextStatus: 'open' | 'closed' = 'closed'
     const result = await adminService.updateSupportCaseStatus(selectedChatId.value, nextStatus)
 
     if (!result.success) {
@@ -920,7 +976,12 @@ async function toggleSupportCaseStatus() {
         return
     }
 
-    currentChat.value.support_ticket_status = nextStatus
+    const updatedStatus = result.support_ticket_status === 'closed' ? 'closed' : 'open'
+    currentChat.value.support_ticket_status = updatedStatus
+    currentChat.value.support_status = updatedStatus
+    currentChat.value.is_closed = updatedStatus === 'closed'
+    currentChat.value.is_resolved = updatedStatus === 'closed'
+    errorMessage.value = null
     isSupportCaseStatusUpdating.value = false
 }
 </script>
@@ -1060,16 +1121,20 @@ async function toggleSupportCaseStatus() {
                                     </p>
                                 </div>
                             </button>
+                            <span
+                                v-if="isCurrentSupportCaseClosed"
+                                class="inline-flex h-8 flex-shrink-0 items-center rounded-lg border border-[rgb(var(--palette-green-500)/0.35)] bg-[rgb(var(--palette-green-500)/0.14)] px-3 text-xs font-semibold text-[var(--text-success-strong)] lg:h-9 lg:text-sm"
+                            >
+                                Жалоба успешно обработана
+                            </span>
                             <button
+                                v-else
                                 type="button"
-                                class="h-8 flex-shrink-0 rounded-lg px-3 text-xs font-semibold transition disabled:opacity-60 lg:h-9 lg:text-sm"
-                                :class="isCurrentSupportCaseClosed
-                                    ? 'bg-[rgb(var(--palette-blue-600)/0.2)] text-[var(--text-link)] hover:bg-[rgb(var(--palette-blue-600)/0.28)]'
-                                    : 'bg-[rgb(var(--palette-red-600)/0.16)] text-[var(--text-danger)] hover:bg-[rgb(var(--palette-red-600)/0.24)]'"
-                                :disabled="isSupportCaseStatusUpdating"
+                                class="h-8 flex-shrink-0 rounded-lg bg-[rgb(var(--palette-red-600)/0.16)] px-3 text-xs font-semibold text-[var(--text-danger)] transition hover:bg-[rgb(var(--palette-red-600)/0.24)] disabled:opacity-60 lg:h-9 lg:text-sm"
+                                :disabled="isSupportCaseStatusUpdating || isSupportCaseAutoReopening"
                                 @click="toggleSupportCaseStatus"
                             >
-                                {{ isSupportCaseStatusUpdating ? 'Сохраняем...' : supportCaseActionButtonLabel }}
+                                {{ isSupportCaseStatusUpdating || isSupportCaseAutoReopening ? 'Сохраняем...' : 'Закрыть кейс' }}
                             </button>
                         </div>
 

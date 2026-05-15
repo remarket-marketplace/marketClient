@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { ChevronLeft, RotateCcw } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { formatChatTime } from '@/utils/chatDate'
@@ -21,11 +21,15 @@ type FaqMessage = {
 const props = defineProps<{
   chatId: string | null
 }>()
+const emit = defineEmits<{
+  (event: 'faq-updated'): void
+}>()
 
 const { locale } = useI18n()
 const localSequence = ref(0)
 const navigationStack = ref<SupportFaqNode[]>([])
 const messages = ref<FaqMessage[]>([])
+const areOptionsCollapsed = ref(false)
 
 const isRu = computed(() => String(locale.value).toLowerCase().startsWith('ru'))
 const localeKey = computed<'ru' | 'en'>(() => (isRu.value ? 'ru' : 'en'))
@@ -36,7 +40,15 @@ const rootIntro = computed(() => SUPPORT_FAQ_ROOT_INTRO[localeKey.value])
 
 const currentNode = computed<SupportFaqNode | null>(() => navigationStack.value[navigationStack.value.length - 1] ?? null)
 const currentOptions = computed<SupportFaqNode[]>(() => currentNode.value?.children ?? rootNodes.value)
+const hasCurrentOptions = computed(() => currentOptions.value.length > 0)
 const canGoBack = computed(() => navigationStack.value.length > 0)
+const showBackButton = computed(() => (
+  canGoBack.value && (areOptionsCollapsed.value || navigationStack.value.length > 1)
+))
+const showRootButton = computed(() => canGoBack.value)
+const breadcrumbPathLabel = computed(() => (
+  navigationStack.value.map((node) => node.label).join(' / ')
+))
 
 function nowIso(): string {
   return new Date().toISOString()
@@ -65,10 +77,18 @@ function pushUserMessage(text: string) {
   })
 }
 
+function notifyFaqUpdated() {
+  void nextTick(() => {
+    emit('faq-updated')
+  })
+}
+
 function resetFaq() {
   navigationStack.value = []
   messages.value = []
+  areOptionsCollapsed.value = false
   pushBotMessage(rootIntro.value)
+  notifyFaqUpdated()
 }
 
 function handleSelectNode(node: SupportFaqNode) {
@@ -77,19 +97,42 @@ function handleSelectNode(node: SupportFaqNode) {
 
   if (node.children && node.children.length > 0) {
     navigationStack.value = [...navigationStack.value, node]
+    areOptionsCollapsed.value = false
+  } else {
+    areOptionsCollapsed.value = true
   }
+
+  notifyFaqUpdated()
 }
 
 function goBack() {
   if (!canGoBack.value) return
+
+  if (areOptionsCollapsed.value) {
+    areOptionsCollapsed.value = false
+    pushBotMessage(navText.value.showMoreReply)
+    notifyFaqUpdated()
+    return
+  }
+
   navigationStack.value = navigationStack.value.slice(0, -1)
+  areOptionsCollapsed.value = false
   pushBotMessage(navText.value.levelUpReply)
+  notifyFaqUpdated()
 }
 
 function goRoot() {
   if (!canGoBack.value) return
   navigationStack.value = []
+  areOptionsCollapsed.value = false
   pushBotMessage(navText.value.rootReply)
+  notifyFaqUpdated()
+}
+
+function showMoreQuestions() {
+  areOptionsCollapsed.value = false
+  pushBotMessage(navText.value.showMoreReply)
+  notifyFaqUpdated()
 }
 
 function formatFaqTime(dateInput: string): string {
@@ -106,7 +149,7 @@ watch(
 </script>
 
 <template>
-  <div class="mx-auto w-full max-w-4xl rounded-2xl border border-[rgb(var(--palette-dark-700)/0.7)] bg-[rgb(var(--palette-dark-900)/0.62)] p-3 md:p-4">
+  <div class="mx-auto w-full max-w-4xl p-1 md:p-2">
     <div class="space-y-3">
       <div
         v-for="message in messages"
@@ -130,31 +173,31 @@ watch(
     </div>
 
     <div class="mt-3 border-t border-[rgb(var(--palette-dark-700)/0.8)] pt-3">
-      <div class="mb-2 flex flex-wrap items-center gap-2">
+      <div v-if="canGoBack" class="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <p class="min-w-0 text-xs text-[rgb(var(--text-body-rgb)/0.72)]">
+          {{ navText.rootLabel }} / {{ breadcrumbPathLabel }}
+        </p>
         <button
-          v-if="canGoBack"
+          v-if="showBackButton"
           type="button"
-          class="inline-flex items-center gap-1 rounded-lg border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-white)/0.03)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-body)] transition hover:text-[var(--text-title)]"
+          class="inline-flex items-center gap-1 rounded-lg border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-white)/0.03)] px-2 py-1 text-[11px] font-semibold text-[var(--text-body)] transition hover:text-[var(--text-title)]"
           @click="goBack"
         >
           <ChevronLeft class="h-3.5 w-3.5" />
           {{ navText.back }}
         </button>
         <button
-          v-if="canGoBack"
+          v-if="showRootButton"
           type="button"
-          class="inline-flex items-center gap-1 rounded-lg border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-white)/0.03)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-body)] transition hover:text-[var(--text-title)]"
+          class="inline-flex items-center gap-1 rounded-lg border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-white)/0.03)] px-2 py-1 text-[11px] font-semibold text-[var(--text-body)] transition hover:text-[var(--text-title)]"
           @click="goRoot"
         >
           <RotateCcw class="h-3.5 w-3.5" />
           {{ navText.root }}
         </button>
-        <span class="ml-auto text-xs text-[rgb(var(--text-body-rgb)/0.7)]">
-          {{ currentNode ? currentNode.label : navText.rootLabel }}
-        </span>
       </div>
 
-      <div class="flex flex-wrap gap-2">
+      <div v-if="!areOptionsCollapsed" class="flex flex-wrap gap-2">
         <button
           v-for="node in currentOptions"
           :key="node.id"
@@ -165,6 +208,14 @@ watch(
           {{ node.label }}
         </button>
       </div>
+      <button
+        v-else-if="hasCurrentOptions"
+        type="button"
+        class="rounded-lg border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-white)/0.03)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-body)] transition hover:text-[var(--text-title)]"
+        @click="showMoreQuestions"
+      >
+        {{ navText.showMoreQuestions }}
+      </button>
     </div>
   </div>
 </template>

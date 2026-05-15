@@ -46,6 +46,7 @@ const liveDealStatusEventsById = ref<Record<string, DealStatusTimelineEvent>>({}
 const selectedChatId = ref<string | null>(null)
 const messageContainerRef = ref<HTMLElement | null>(null)
 const latestDealSummaryRef = ref<HTMLElement | null>(null)
+const composerOverlayRef = ref<HTMLElement | null>(null)
 const bottomPin = createBottomPinController(() => messageContainerRef.value)
 const isPageLoading = ref(false)
 const isChatLoading = ref(false)
@@ -67,7 +68,9 @@ let deferredBottomPinTimeoutIds: number[] = []
 let deferredDealSummaryMeasureTimeoutIds: number[] = []
 let localPendingMessageSequence = 0
 let latestDealSummaryResizeObserver: ResizeObserver | null = null
+let composerOverlayResizeObserver: ResizeObserver | null = null
 const latestDealSummaryHeightPx = ref(0)
+const composerOverlayHeightPx = ref(0)
 
 const currentPage = ref(1)
 const totalPages = ref(0)
@@ -82,6 +85,7 @@ const previousMessageScrollTop = ref(0)
 const hasUserScrolledAwayFromTop = ref(false)
 const bottomAutoScrollThresholdPx = 120
 const dealScopedSupportChatAccessIds = ref(new Set<string>())
+const supportAccessStorageKey = 'dealScopedSupportAccessChatIds'
 
 const routeChatId = computed(() => {
   if (typeof route.query.chatId === 'string' && route.query.chatId.length > 0) {
@@ -116,6 +120,159 @@ function grantDealScopedSupportAccess(chatId: string) {
   const next = new Set(dealScopedSupportChatAccessIds.value)
   next.add(chatId)
   dealScopedSupportChatAccessIds.value = next
+  persistDealScopedSupportAccess()
+}
+
+function revokeDealScopedSupportAccess(chatId: string) {
+  if (!dealScopedSupportChatAccessIds.value.has(chatId)) return
+  const next = new Set(dealScopedSupportChatAccessIds.value)
+  next.delete(chatId)
+  dealScopedSupportChatAccessIds.value = next
+  persistDealScopedSupportAccess()
+}
+
+function persistDealScopedSupportAccess() {
+  if (typeof window === 'undefined') return
+  try {
+    const ids = Array.from(dealScopedSupportChatAccessIds.value).filter(
+      (id) => typeof id === 'string' && id.length > 0,
+    )
+    window.sessionStorage.setItem(supportAccessStorageKey, JSON.stringify(ids))
+  } catch (error) {
+    console.warn('Failed to persist support access state', error)
+  }
+}
+
+function hydrateDealScopedSupportAccess() {
+  if (typeof window === 'undefined') return
+  try {
+    const raw = window.sessionStorage.getItem(supportAccessStorageKey)
+    if (!raw) return
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return
+
+    const restoredIds = parsed.filter((id): id is string => typeof id === 'string' && id.length > 0)
+    if (restoredIds.length === 0) return
+
+    dealScopedSupportChatAccessIds.value = new Set(restoredIds)
+  } catch (error) {
+    console.warn('Failed to restore support access state', error)
+  }
+}
+
+function resolveSupportTicketStatus(chat: ChatListItem | null | undefined): 'open' | 'closed' {
+  if (!chat) return 'open'
+
+  const statusCandidates = [
+    chat.support_ticket_status,
+    chat.support_status,
+  ]
+
+  for (const candidate of statusCandidates) {
+    if (typeof candidate !== 'string') continue
+    const normalized = candidate.trim().toLowerCase()
+    if (normalized === 'closed' || normalized === 'open') {
+      return normalized
+    }
+  }
+
+  if (typeof chat.is_closed === 'boolean') {
+    return chat.is_closed ? 'closed' : 'open'
+  }
+
+  if (typeof chat.is_resolved === 'boolean') {
+    return chat.is_resolved ? 'closed' : 'open'
+  }
+
+  return 'open'
+}
+
+const supportCaseClosedTextMarkers = [
+  'обращение закрыто администратором',
+  'обращение закрыто',
+  'жалоба успешно обработана',
+  'support case closed',
+  'case closed by administrator',
+  'request closed by administrator',
+] as const
+
+function isSupportCaseClosedByText(text: string | null | undefined): boolean {
+  if (typeof text !== 'string') return false
+  const normalized = text.trim().toLowerCase()
+  if (!normalized) return false
+  return supportCaseClosedTextMarkers.some((marker) => normalized.includes(marker))
+}
+
+function isSupportCaseClosedMessage(message: ChatMessageUnion): boolean {
+  if (message.message_type !== 'text_message') return false
+
+  const rawData = message.data as Record<string, unknown> | null | undefined
+  const statusCandidates = [
+    rawData?.support_ticket_status,
+    rawData?.support_status,
+    rawData?.status,
+  ]
+
+  for (const candidate of statusCandidates) {
+    if (typeof candidate !== 'string') continue
+    if (candidate.trim().toLowerCase() === 'closed') {
+      return true
+    }
+  }
+
+  if (typeof rawData?.is_closed === 'boolean') {
+    return rawData.is_closed
+  }
+  if (typeof rawData?.is_resolved === 'boolean') {
+    return rawData.is_resolved
+  }
+
+  return isSupportCaseClosedByText(message.text)
+}
+
+function markSupportCaseClosedLocally(chatId: string) {
+  const chat = chats.value.find((item) => item.id === chatId)
+  if (!chat || chat.chat_type !== 'support_chat') return
+
+  chat.support_ticket_status = 'closed'
+  chat.support_status = 'closed'
+  chat.is_closed = true
+  chat.is_resolved = true
+  revokeDealScopedSupportAccess(chatId)
+
+  chatStore.updateChatFromSocket({
+    chat_id: chatId,
+    unread_count: chat.unread_count ?? 0,
+    support_ticket_status: 'closed',
+    support_status: 'closed',
+    is_closed: true,
+    is_resolved: true,
+  })
+}
+
+function syncSupportAccessWithChatStatuses() {
+  let hasChanges = false
+  const next = new Set(dealScopedSupportChatAccessIds.value)
+
+  for (const chatId of next) {
+    const chat = chats.value.find((item) => item.id === chatId)
+    // Do not drop session on refresh when chat list is temporarily incomplete.
+    if (!chat) {
+      continue
+    }
+    if (chat.chat_type !== 'support_chat') {
+      continue
+    }
+
+    if (resolveSupportTicketStatus(chat) === 'closed') {
+      next.delete(chatId)
+      hasChanges = true
+    }
+  }
+
+  if (!hasChanges) return
+  dealScopedSupportChatAccessIds.value = next
+  persistDealScopedSupportAccess()
 }
 
 function applySupportContextDraftIfNeeded() {
@@ -690,6 +847,7 @@ const isSupportChat = computed(() => {
 const canWriteToCurrentSupportChat = computed(() => {
   if (!isSupportChat.value) return true
   if (!selectedChatId.value) return false
+  if (resolveSupportTicketStatus(currentChat.value) === 'closed') return false
   return dealScopedSupportChatAccessIds.value.has(selectedChatId.value)
 })
 const isSupportAccessMissing = computed(() => (
@@ -808,6 +966,16 @@ const latestDealTimelinePaddingStyle = computed(() => {
 
   return {
     paddingTop: `${Math.max(baseTopPaddingPx, latestDealSummaryHeightPx.value + baseTopPaddingPx)}px`,
+  }
+})
+const composerOverlaySpacerStyle = computed(() => {
+  const fallbackHeightPx = isMobile.value ? 108 : 120
+  const measuredHeightPx = composerOverlayHeightPx.value > 0
+    ? Math.ceil(composerOverlayHeightPx.value + 8)
+    : fallbackHeightPx
+
+  return {
+    height: `${measuredHeightPx}px`,
   }
 })
 
@@ -937,6 +1105,32 @@ function reconnectLatestDealSummaryObserver() {
   })
   latestDealSummaryResizeObserver.observe(element)
   updateLatestDealSummaryHeight()
+}
+
+function updateComposerOverlayHeight() {
+  composerOverlayHeightPx.value = composerOverlayRef.value?.offsetHeight ?? 0
+}
+
+function reconnectComposerOverlayObserver() {
+  composerOverlayResizeObserver?.disconnect()
+  composerOverlayResizeObserver = null
+
+  if (typeof window === 'undefined' || typeof ResizeObserver === 'undefined') {
+    updateComposerOverlayHeight()
+    return
+  }
+
+  const element = composerOverlayRef.value
+  if (!element) {
+    composerOverlayHeightPx.value = 0
+    return
+  }
+
+  composerOverlayResizeObserver = new ResizeObserver(() => {
+    updateComposerOverlayHeight()
+  })
+  composerOverlayResizeObserver.observe(element)
+  updateComposerOverlayHeight()
 }
 
 function openChatProfile() {
@@ -1092,6 +1286,16 @@ watch(
 )
 
 watch(
+  () => composerOverlayRef.value,
+  () => {
+    void nextTick(() => {
+      reconnectComposerOverlayObserver()
+    })
+  },
+  { flush: 'post' },
+)
+
+watch(
   routeChatId,
   async (chatId) => {
     if (!chatId) return
@@ -1106,6 +1310,7 @@ watch(
 onMounted(async () => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
+  hydrateDealScopedSupportAccess()
 
   try {
     isPageLoading.value = true
@@ -1142,6 +1347,9 @@ onMounted(async () => {
 
     unsubscribeNewMessage = chatsService.onNewMessage(message => {
       resolveLocalPendingMessageEcho(message)
+      if (isSupportCaseClosedMessage(message)) {
+        markSupportCaseClosedLocally(message.chat_room_id)
+      }
       if (selectedChatId.value === message.chat_room_id) {
         if (!chatMessages.value.some(m => m.id === message.id)) {
           const shouldStickToBottom = isNearBottom()
@@ -1197,6 +1405,8 @@ onUnmounted(() => {
   unsubscribeMessagesRead?.()
   latestDealSummaryResizeObserver?.disconnect()
   latestDealSummaryResizeObserver = null
+  composerOverlayResizeObserver?.disconnect()
+  composerOverlayResizeObserver = null
   localPendingMessages.value.forEach(cleanupLocalPendingMessage)
   localPendingMessages.value = []
   clearDeferredBottomPinTimers()
@@ -1216,6 +1426,7 @@ onUnmounted(() => {
 
 async function loadChats() {
   chats.value = await chatsService.getChats()
+  syncSupportAccessWithChatStatuses()
   chatStore.setChats(chats.value)
 }
 
@@ -1226,6 +1437,7 @@ function applyIncomingChatUpdate(update: ChatUpdateSchema) {
   }
 
   const chat = chats.value[chatIndex]
+  const previousSupportStatus = resolveSupportTicketStatus(chat)
   const isActiveChat = selectedChatId.value === update.chat_id
   const unreadCount = isActiveChat ? 0 : update.unread_count
 
@@ -1245,6 +1457,32 @@ function applyIncomingChatUpdate(update: ChatUpdateSchema) {
     chat.unread_count = unreadCount
     if (isActiveChat && update.unread_count > 0) {
       void chatsService.markChatRead(update.chat_id)
+    }
+  }
+
+  if (chat) {
+    const statusCandidate = typeof update.support_ticket_status === 'string'
+      ? update.support_ticket_status
+      : typeof update.support_status === 'string'
+        ? update.support_status
+        : null
+
+    if (statusCandidate) {
+      const normalizedStatus = statusCandidate.trim().toLowerCase() === 'closed' ? 'closed' : 'open'
+      chat.support_ticket_status = normalizedStatus
+      chat.support_status = normalizedStatus
+    }
+    if (typeof update.is_closed === 'boolean') {
+      chat.is_closed = update.is_closed
+    }
+    if (typeof update.is_resolved === 'boolean') {
+      chat.is_resolved = update.is_resolved
+    }
+
+    const nextSupportStatus = resolveSupportTicketStatus(chat)
+    const didJustCloseCase = previousSupportStatus !== 'closed' && nextSupportStatus === 'closed'
+    if (chat.chat_type === 'support_chat' && didJustCloseCase) {
+      revokeDealScopedSupportAccess(chat.id)
     }
   }
 
@@ -1300,6 +1538,12 @@ function scrollToBottom() {
 
 function pinChatToBottom() {
   return bottomPin.pinFor(1200)
+}
+
+function handleSupportFaqUpdated() {
+  void nextTick(() => {
+    void bottomPin.pinFor(260)
+  })
 }
 
 function isNearBottom() {
@@ -1403,6 +1647,9 @@ async function loadChatMessages(
 
     const response = await chatsService.getChatMessages(chatId, 1, perPage.value)
     chatMessages.value = normalizeMessagesChronological(response.messages)
+    if (chatMessages.value.some(isSupportCaseClosedMessage)) {
+      markSupportCaseClosedLocally(chatId)
+    }
     latestDealMessage.value = response.latestDealMessage ?? getLatestPurchaseMessageFromMessages(chatMessages.value)
     if (resolvedLatestDealMessage.value) {
       scheduleDeferredDealSummaryMeasurement(chatId)
@@ -1741,16 +1988,22 @@ async function sendMessage(payload: { files: File[] }) {
                       <p class="text-[var(--text-muted)] font-light">{{ $t('pages.chats.selectChat') }}</p>
                     </div>
 
-                    <div v-if="selectedChatId && isSupportChat && isSupportAccessMissing" class="px-1.5 pb-4 lg:px-4">
-                      <SupportFaqAssistant :chat-id="selectedChatId" />
+                    <div v-if="selectedChatId && isSupportChat && isSupportAccessMissing" class="px-1.5 pb-32 md:pb-28 lg:px-4">
+                      <SupportFaqAssistant :chat-id="selectedChatId" @faq-updated="handleSupportFaqUpdated" />
                     </div>
+
                   </div>
                 </template>
 
-                <div v-if="selectedChatId" aria-hidden="true" class="h-[120px] w-full flex-none md:h-[108px]" />
+                <div
+                  v-if="selectedChatId"
+                  aria-hidden="true"
+                  class="w-full flex-none"
+                  :style="composerOverlaySpacerStyle"
+                />
               </div>
 
-              <div v-if="selectedChatId"
+              <div ref="composerOverlayRef" v-if="selectedChatId"
                 class="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-[var(--transparent)] px-1 pb-1 pt-0 md:pb-2">
                 <div v-if="lockReminderText" class="pointer-events-auto mx-1 mb-2 rounded-xl border px-3 py-2 text-sm"
                   :class="lockReminderType === 'sender'
