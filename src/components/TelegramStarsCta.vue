@@ -53,8 +53,13 @@ const canSubmit = computed(() => (
   && !pricingLoading.value
   && !isSubmitting.value
 ))
-const priceLabel = computed(() => formatCurrencyAmount(pricePerStarRub.value, { fromCurrency: 'RUB' }))
-const totalPriceLabel = computed(() => formatCurrencyAmount(totalPriceRub.value, { fromCurrency: 'RUB' }))
+const formatRubAmount = (amount: number) => formatCurrencyAmount(amount, {
+  fromCurrency: 'RUB',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+})
+const priceLabel = computed(() => formatRubAmount(pricePerStarRub.value))
+const totalPriceLabel = computed(() => formatRubAmount(totalPriceRub.value))
 const buttonText = computed(() => (
   isSubmitting.value
     ? t('pages.index.telegramStars.submitting')

@@ -33,6 +33,7 @@ const selectedRange = ref(30)
 const rangeOptions = [7, 30, 90, 180]
 const platformSettings = ref<PlatformSettings | null>(null)
 const persistedPlatformSettings = ref<PlatformSettings | null>(null)
+const telegramStarsPriceInput = ref('')
 const isPlatformSettingsLoading = ref(true)
 const isPlatformSettingsSaving = ref(false)
 const platformSettingsError = ref('')
@@ -144,6 +145,22 @@ const clonePlatformSettings = (value: PlatformSettings): PlatformSettings => ({
   ...value,
 })
 
+const normalizeDecimalInput = (value: string): string => (
+  value
+    .replace(',', '.')
+    .replace(/[^\d.]/g, '')
+    .replace(/(\..*)\./g, '$1')
+)
+
+const formatPriceInputValue = (value: number): string => {
+  if (!Number.isFinite(value) || value < 0) return ''
+  return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, '')
+}
+
+const syncTelegramStarsPriceInput = (value: number) => {
+  telegramStarsPriceInput.value = formatPriceInputValue(value)
+}
+
 const isValidCommissionValue = (value: unknown) => {
   if (value === '' || value === null || value === undefined) return false
   const parsed = Number(value)
@@ -210,6 +227,22 @@ const getEffectiveCommissionPayload = () => {
     vpn_quarter_price: Number(source.vpn_quarter_price),
     vpn_halfyear_price: Number(source.vpn_halfyear_price),
   }
+}
+
+const onTelegramStarsPriceInput = (event: Event) => {
+  const input = event.target as HTMLInputElement | null
+  const normalizedValue = normalizeDecimalInput(input?.value ?? '')
+  telegramStarsPriceInput.value = normalizedValue
+
+  if (!platformSettings.value) return
+
+  if (!normalizedValue) {
+    platformSettings.value.telegram_stars_price_rub = Number.NaN
+    return
+  }
+
+  const parsed = Number(normalizedValue)
+  platformSettings.value.telegram_stars_price_rub = Number.isFinite(parsed) ? parsed : Number.NaN
 }
 
 const getAbsoluteImageUrl = (imageUrl: string | null | undefined): string => {
@@ -569,6 +602,7 @@ const loadPlatformSettings = async () => {
   } else {
     platformSettings.value = clonePlatformSettings(data)
     persistedPlatformSettings.value = clonePlatformSettings(data)
+    syncTelegramStarsPriceInput(data.telegram_stars_price_rub)
     officialStoreHeroPreviewUrl.value = ''
     officialStoreHeroFile.value = null
   }
@@ -588,6 +622,7 @@ const updatePlatformSettings = async (payload: PlatformSettings) => {
   } else {
     platformSettings.value = clonePlatformSettings(updated)
     persistedPlatformSettings.value = clonePlatformSettings(updated)
+    syncTelegramStarsPriceInput(updated.telegram_stars_price_rub)
     platformSettingsSuccess.value = t('pages.admin.mainPage.platformSettingsSaved')
   }
 
@@ -696,6 +731,7 @@ const saveOfficialStoreHeroImage = async () => {
   } else {
     platformSettings.value = clonePlatformSettings(updated)
     persistedPlatformSettings.value = clonePlatformSettings(updated)
+    syncTelegramStarsPriceInput(updated.telegram_stars_price_rub)
     platformSettingsSuccess.value = t('pages.admin.mainPage.platformSettingsSaved')
     resetOfficialStoreHeroPicker()
   }
@@ -715,6 +751,7 @@ const deleteOfficialStoreHeroImage = async () => {
   } else {
     platformSettings.value = clonePlatformSettings(updated)
     persistedPlatformSettings.value = clonePlatformSettings(updated)
+    syncTelegramStarsPriceInput(updated.telegram_stars_price_rub)
     platformSettingsSuccess.value = t('pages.admin.mainPage.platformSettingsSaved')
     resetOfficialStoreHeroPicker()
   }
@@ -995,11 +1032,13 @@ watch(selectedRange, loadDashboard)
                     {{ t('pages.admin.mainPage.telegramStarsPriceLabel') }}
                   </span>
                   <input
-                    v-model.number="platformSettings.telegram_stars_price_rub"
-                    type="number"
+                    :value="telegramStarsPriceInput"
+                    type="text"
+                    inputmode="decimal"
                     min="0"
                     max="1000000"
                     step="0.01"
+                    @input="onTelegramStarsPriceInput"
                     class="mt-3 w-full rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] px-4 py-3 text-lg font-semibold text-[var(--text-title)] outline-none transition focus:border-[rgb(var(--palette-sky-400)/0.45)] focus:bg-[rgb(var(--palette-sky-400)/0.05)]"
                   >
                   <p class="mt-2 text-xs text-[var(--text-muted)]">
