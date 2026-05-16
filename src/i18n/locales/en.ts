@@ -815,7 +815,7 @@ const en = {
         title: "Buy stars",
         subtitle: "Buy Telegram Stars with instant charge from your remarket balance.",
         usernameLabel: "Telegram username",
-        usernamePlaceholder: "@username",
+        usernamePlaceholder: "{'@'}username",
         amountLabel: "Stars amount",
         amountPlaceholder: "100",
         totalLabel: "Total",

@@ -815,7 +815,7 @@ const ru = {
         title: "Купить звёзды",
         subtitle: "Покупка звёзд Telegram с моментальным списанием с баланса remarket.",
         usernameLabel: "Ник в Telegram",
-        usernamePlaceholder: "@username",
+        usernamePlaceholder: "{'@'}username",
         amountLabel: "Количество звёзд",
         amountPlaceholder: "100",
         totalLabel: "К оплате",
