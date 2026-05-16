@@ -62,6 +62,15 @@ export const useChatStore = defineStore('chat', {
       if (typeof update.support_ticket_status === 'string') {
         chat.support_ticket_status = update.support_ticket_status
       }
+      if (typeof update.support_status === 'string') {
+        chat.support_status = update.support_status
+      }
+      if (typeof update.is_closed === 'boolean') {
+        chat.is_closed = update.is_closed
+      }
+      if (typeof update.is_resolved === 'boolean') {
+        chat.is_resolved = update.is_resolved
+      }
     },
     resetUnread(chatId: string) {
       const chat = this.chats.find((c) => c.id === chatId)
