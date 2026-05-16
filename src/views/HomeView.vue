@@ -10,6 +10,7 @@ import HeroSection from '@/components/HeroSection.vue'
 import HeroBackground from '@/components/HeroBackground.vue'
 import ScopeVpnCta from '@/components/ScopeVpnCta.vue'
 import SteamTopUpCta from '@/components/SteamTopUpCta.vue'
+import TelegramStarsCta from '@/components/TelegramStarsCta.vue'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 import { useRoute, useRouter } from 'vue-router'
@@ -994,15 +995,17 @@ onBeforeUnmount(() => {
       class="relative z-20 flex min-h-screen w-full flex-col items-center px-1 pb-6 sm:px-2 lg:px-2"
       :class="user ? 'pt-14 md:pt-20' : 'pt-0'"
     >
-        <div class="mt-2 grid w-full items-stretch gap-3 lg:grid-cols-2">
+        <div class="mt-2 grid w-full items-stretch gap-3 md:grid-cols-2">
           <ScopeVpnCta />
           <SteamTopUpCta v-if="HOME_STEAM_TOPUP_ENABLED" />
         </div>
 
+        <TelegramStarsCta class="mt-3 w-full" />
+
         <OfficialProductsShowcase
           v-if="shouldShowOfficialHomeShowcase"
           :products="officialHomeProducts"
-          class="mt-3 w-full p-3"
+          class="mt-18 w-full p-3"
           @product-click="goToProductByModel"
           @view-all="router.push('/official')"
         />

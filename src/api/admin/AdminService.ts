@@ -124,6 +124,7 @@ export type PlatformSettings = {
   telegram_integration_enabled: boolean
   deal_commission_percent: number
   withdrawal_commission_percent: number
+  telegram_stars_price_rub: number
   vpn_month_price: number
   vpn_quarter_price: number
   vpn_halfyear_price: number
