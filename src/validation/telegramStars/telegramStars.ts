@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 export const TELEGRAM_STARS_USERNAME_PATTERN = /^[A-Za-z][A-Za-z0-9_]{4,31}$/
+export const TELEGRAM_STARS_MIN_AMOUNT = 50
 
 const telegramUsernameSchema = z
   .string()
@@ -17,7 +18,7 @@ export const telegramStarsPricingSchema = z.object({
 
 export const telegramStarsPurchaseInputSchema = z.object({
   telegram_username: telegramUsernameSchema,
-  telegram_stars_amount: z.number().int().positive().max(100000),
+  telegram_stars_amount: z.number().int().gte(TELEGRAM_STARS_MIN_AMOUNT).max(100000),
 }).strip()
 
 const telegramStarsOrderServiceSchema = z.object({

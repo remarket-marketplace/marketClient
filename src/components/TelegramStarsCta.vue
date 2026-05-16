@@ -13,7 +13,11 @@ import { useUserStore } from '@/stores/user'
 import { buildAuthModalLocation } from '@/utils/authRedirect'
 import { formatCurrencyAmount } from '@/utils/currency'
 import { getErrorMessage } from '@/utils/errorsMap'
-import { isValidTelegramStarsUsername, normalizeTelegramStarsUsername } from '@/validation/telegramStars/telegramStars'
+import {
+  TELEGRAM_STARS_MIN_AMOUNT,
+  isValidTelegramStarsUsername,
+  normalizeTelegramStarsUsername,
+} from '@/validation/telegramStars/telegramStars'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -40,7 +44,7 @@ const normalizedStarsAmount = computed<number | null>(() => {
 })
 const isUsernameValid = computed(() => isValidTelegramStarsUsername(telegramUsername.value))
 const isStarsAmountValid = computed(
-  () => normalizedStarsAmount.value !== null && normalizedStarsAmount.value > 0,
+  () => normalizedStarsAmount.value !== null && normalizedStarsAmount.value >= TELEGRAM_STARS_MIN_AMOUNT,
 )
 const totalPriceRub = computed(() => {
   if (!pricingEnabled.value || !isStarsAmountValid.value) return 0
@@ -189,7 +193,7 @@ onMounted(() => {
             class="telegram-stars-entry__input telegram-stars-entry__input--amount"
             type="number"
             inputmode="numeric"
-            min="1"
+            :min="TELEGRAM_STARS_MIN_AMOUNT"
             step="1"
             :placeholder="t('pages.index.telegramStars.amountPlaceholder')"
           />
