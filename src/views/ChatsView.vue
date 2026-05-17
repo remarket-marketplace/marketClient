@@ -195,6 +195,13 @@ const supportCaseClosedTextMarkers = [
   'case closed by administrator',
   'request closed by administrator',
 ] as const
+const supportCaseReopenedTextMarkers = [
+  'обращение переоткрыто администратором',
+  'обращение снова открыто',
+  'обращение открыто',
+  'case reopened by administrator',
+  'support case reopened',
+] as const
 
 function isSupportCaseClosedByText(text: string | null | undefined): boolean {
   if (typeof text !== 'string') return false
@@ -203,8 +210,15 @@ function isSupportCaseClosedByText(text: string | null | undefined): boolean {
   return supportCaseClosedTextMarkers.some((marker) => normalized.includes(marker))
 }
 
-function isSupportCaseClosedMessage(message: ChatMessageUnion): boolean {
-  if (message.message_type !== 'text_message') return false
+function isSupportCaseReopenedByText(text: string | null | undefined): boolean {
+  if (typeof text !== 'string') return false
+  const normalized = text.trim().toLowerCase()
+  if (!normalized) return false
+  return supportCaseReopenedTextMarkers.some((marker) => normalized.includes(marker))
+}
+
+function resolveSupportTicketStatusFromMessage(message: ChatMessageUnion): 'open' | 'closed' | null {
+  if (message.message_type !== 'text_message') return null
 
   const rawData = message.data as Record<string, unknown> | null | undefined
   const statusCandidates = [
@@ -215,19 +229,33 @@ function isSupportCaseClosedMessage(message: ChatMessageUnion): boolean {
 
   for (const candidate of statusCandidates) {
     if (typeof candidate !== 'string') continue
-    if (candidate.trim().toLowerCase() === 'closed') {
-      return true
+    const normalized = candidate.trim().toLowerCase()
+    if (normalized === 'closed' || normalized === 'open') {
+      return normalized
     }
   }
 
   if (typeof rawData?.is_closed === 'boolean') {
-    return rawData.is_closed
+    return rawData.is_closed ? 'closed' : 'open'
   }
   if (typeof rawData?.is_resolved === 'boolean') {
-    return rawData.is_resolved
+    return rawData.is_resolved ? 'closed' : 'open'
   }
 
-  return isSupportCaseClosedByText(message.text)
+  if (isSupportCaseClosedByText(message.text)) return 'closed'
+  if (isSupportCaseReopenedByText(message.text)) return 'open'
+  return null
+}
+
+function resolveSupportTicketStatusFromMessages(messages: ChatMessageUnion[]): 'open' | 'closed' | null {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index]
+    if (!message) continue
+    const status = resolveSupportTicketStatusFromMessage(message)
+    if (status) return status
+  }
+
+  return null
 }
 
 function markSupportCaseClosedLocally(chatId: string) {
@@ -250,6 +278,26 @@ function markSupportCaseClosedLocally(chatId: string) {
   })
 }
 
+function markSupportCaseOpenedLocally(chatId: string) {
+  const chat = chats.value.find((item) => item.id === chatId)
+  if (!chat || chat.chat_type !== 'support_chat') return
+
+  chat.support_ticket_status = 'open'
+  chat.support_status = 'open'
+  chat.is_closed = false
+  chat.is_resolved = false
+  grantDealScopedSupportAccess(chatId)
+
+  chatStore.updateChatFromSocket({
+    chat_id: chatId,
+    unread_count: chat.unread_count ?? 0,
+    support_ticket_status: 'open',
+    support_status: 'open',
+    is_closed: false,
+    is_resolved: false,
+  })
+}
+
 function syncSupportAccessWithChatStatuses() {
   let hasChanges = false
   const next = new Set(dealScopedSupportChatAccessIds.value)
@@ -261,6 +309,8 @@ function syncSupportAccessWithChatStatuses() {
       continue
     }
     if (chat.chat_type !== 'support_chat') {
+      next.delete(chatId)
+      hasChanges = true
       continue
     }
 
@@ -281,7 +331,7 @@ function applySupportContextDraftIfNeeded() {
   if (appliedSupportContextValue.value === context) return
   if (currentChat.value?.chat_type !== 'support_chat' || !selectedChatId.value) return
 
-  grantDealScopedSupportAccess(selectedChatId.value)
+  markSupportCaseOpenedLocally(selectedChatId.value)
 
   if (!newMessage.value.trim()) {
     newMessage.value = context
@@ -1347,8 +1397,11 @@ onMounted(async () => {
 
     unsubscribeNewMessage = chatsService.onNewMessage(message => {
       resolveLocalPendingMessageEcho(message)
-      if (isSupportCaseClosedMessage(message)) {
+      const supportStatusFromMessage = resolveSupportTicketStatusFromMessage(message)
+      if (supportStatusFromMessage === 'closed') {
         markSupportCaseClosedLocally(message.chat_room_id)
+      } else if (supportStatusFromMessage === 'open') {
+        markSupportCaseOpenedLocally(message.chat_room_id)
       }
       if (selectedChatId.value === message.chat_room_id) {
         if (!chatMessages.value.some(m => m.id === message.id)) {
@@ -1615,6 +1668,8 @@ async function loadChatMessages(
   chatId: string,
   options: { settleToBottomAfterRouteOpen?: boolean } = {},
 ) {
+  const openedFromDealSupportContext = supportContextFromQuery.value.length > 0
+
   if (selectedChatId.value === chatId) {
     if (isMobile.value) {
       mobileMode.value = 'chat'
@@ -1647,8 +1702,13 @@ async function loadChatMessages(
 
     const response = await chatsService.getChatMessages(chatId, 1, perPage.value)
     chatMessages.value = normalizeMessagesChronological(response.messages)
-    if (chatMessages.value.some(isSupportCaseClosedMessage)) {
+    const statusFromMessages = resolveSupportTicketStatusFromMessages(chatMessages.value)
+    if (openedFromDealSupportContext) {
+      markSupportCaseOpenedLocally(chatId)
+    } else if (statusFromMessages === 'closed') {
       markSupportCaseClosedLocally(chatId)
+    } else if (statusFromMessages === 'open') {
+      markSupportCaseOpenedLocally(chatId)
     }
     latestDealMessage.value = response.latestDealMessage ?? getLatestPurchaseMessageFromMessages(chatMessages.value)
     if (resolvedLatestDealMessage.value) {
@@ -1703,6 +1763,11 @@ function applySendLockState(errorCode?: string) {
   if (errorCode === 'MESSAGE_LIMIT_WAIT_FOR_SELLER_REPLY') {
     isMessageLimitLockedByServer.value = true
     sendErrorMessage.value = null
+    return
+  }
+
+  if (errorCode === 'SUPPORT_CASE_CLOSED') {
+    sendErrorMessage.value = t('pages.chats.supportDealOnlyNotice')
   }
 }
 

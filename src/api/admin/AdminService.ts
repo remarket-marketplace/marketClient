@@ -976,43 +976,53 @@ export const adminService = {
       return fallback
     }
 
-    try {
-      const response = await httpClient.patch(`/admin/chat/${chatId}/support-case-status`, {
-        status,
-        support_ticket_status: status,
-      })
+    const endpointCandidates = [
+      `/admin/chat/${chatId}/support-case-status`,
+      `/admin/chats/${chatId}/support-case-status`,
+    ] as const
 
-      const normalizedStatus = normalizeSupportTicketStatus(
-        (response.data ?? null) as Record<string, unknown> | null,
-        status,
-      )
+    for (let index = 0; index < endpointCandidates.length; index += 1) {
+      const endpoint = endpointCandidates[index]
+      if (!endpoint) continue
 
-      return {
-        success: true,
-        support_ticket_status: normalizedStatus,
-      }
-    } catch (e: unknown) {
-      const httpStatus = typeof e === 'object'
-        && e !== null
-        && 'response' in e
-        && typeof (e as { response?: { status?: unknown } }).response?.status === 'number'
-        ? (e as { response?: { status?: number } }).response?.status
-        : null
+      try {
+        const response = await httpClient.patch(endpoint, {
+          status,
+          support_ticket_status: status,
+        })
 
-      if (httpStatus === 404) {
-        console.warn(
-          'Support case status endpoint is unavailable on current backend, using optimistic local status update.',
+        const normalizedStatus = normalizeSupportTicketStatus(
+          (response.data ?? null) as Record<string, unknown> | null,
+          status,
         )
+
         return {
           success: true,
-          support_ticket_status: status,
+          support_ticket_status: normalizedStatus,
+        }
+      } catch (e: unknown) {
+        const httpStatus = typeof e === 'object'
+          && e !== null
+          && 'response' in e
+          && typeof (e as { response?: { status?: unknown } }).response?.status === 'number'
+          ? (e as { response?: { status?: number } }).response?.status
+          : null
+
+        const isLastEndpoint = index === endpointCandidates.length - 1
+        const shouldTryNext = httpStatus === 404 && !isLastEndpoint
+        if (shouldTryNext) {
+          continue
+        }
+
+        console.error('Error updating support case status', e)
+        return {
+          success: false,
         }
       }
+    }
 
-      console.error('Error updating support case status', e)
-      return {
-        success: false,
-      }
+    return {
+      success: false,
     }
   },
 
