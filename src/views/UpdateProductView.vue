@@ -356,7 +356,7 @@ async function updateProduct() {
   </div>
 
   <div v-else-if="productData" class="w-full h-full overflow-scroll no-scrollbar pb-16 md:pb-0">
-    <div class="mx-auto w-full max-w-4xl px-4 lg:px-0 lg:pt-6 pb-24 lg:pb-8 space-y-6">
+    <div class="mx-auto w-full pb-24 lg:pb-8 space-y-6">
       <div>
         <h1 class="text-2xl font-bold text-[var(--text-title)]">
           {{ $t('pages.forms.editProduct.title') }}

@@ -131,6 +131,9 @@ const en = {
     forLegalMatters: "For legal matters.",
     information: "Information",
     aboutUs: "About us",
+    tiktok: "TikTok",
+    intagram: "Instagram",
+    telegram: "Telegram",
     privacyPolicy: "Privacy policy",
     termsOfService: "Terms of service",
     tagline: "A modern platform for secure transactions between users.",
@@ -518,6 +521,9 @@ const en = {
     privacyPolicy: "Privacy policy",
     termsOfService: "Terms of service",
     marketRules: "Marketplace rules",
+    companyName: "Monitorson OÜ",
+    companyRegistryCode: "Registry code: 1725577",
+    companyAddress: "Registered address: Järva maakond, Türi vald, Türi linn, Aia tn 12, 72215, Estonia",
   },
 
   navigation: {
@@ -581,6 +587,7 @@ const en = {
     },
     privacyPolicyPage: {
       title: "Privacy policy",
+      updatedAt: "Current as of May 15, 2026",
       sections: [
         {
           title: "1. General provisions",
@@ -648,7 +655,8 @@ const en = {
     },
     termsOfServicePage: {
       title: "Terms of service",
-      supportLead: "10.1. For all questions, the user may contact support:",
+      updatedAt: "Current as of May 15, 2026",
+      supportLead: "10.4. For all questions, the user may contact support:",
       feedbackLead: "via the",
       feedbackLink: "feedback page",
       emailLead: "by email:",
@@ -755,7 +763,11 @@ const en = {
         },
         {
           title: "10. Contact information",
-          paragraphs: []
+          paragraphs: [
+            "10.1. The legal entity operating the service is Monitorson OÜ.",
+            "10.2. Registry code: 1725577.",
+            "10.3. Registered address: Järva maakond, Türi vald, Türi linn, Aia tn 12, 72215, Estonia."
+          ]
         },
         {
           accent: "By using the service, the user confirms that they have reviewed these Terms and accept them in full."
@@ -862,7 +874,7 @@ const en = {
     vpn: {
       eyebrow: "Scope VPN",
       title: "Scope VPN",
-      subtitle: "Your personal key to a freer internet. Fast servers, approved locations, 24/7 support.",
+      subtitle: "Fast servers, 24/7 support.",
       heroAction: "Choose period",
       trialAction: "Trial period",
       trialAuthHint: "Sign in to get the Scope VPN trial period.",
@@ -1067,6 +1079,7 @@ const en = {
 
     marketRules: {
       title: "Marketplace Rules",
+      updatedAt: "Current as of May 15, 2026",
       general: {
         title: "1. General Provisions",
         p1: "1.1. These Rules govern product listings, transaction flow, and user behavior on remarket.",
@@ -1374,6 +1387,7 @@ const en = {
       refundConfirmMessage: "Are you sure you want to refund this deal?",
       report: "Report",
       messagePlaceholder: "Enter message...",
+      faqInputPlaceholder: "Choose a question",
       today: "Today",
       yesterday: "Yesterday",
       waitReplyReminderSender: "To continue chatting, wait for the other user to reply.",
@@ -1398,6 +1412,7 @@ const en = {
       newAdminMessage: "New message from support",
       viewProduct: "View Product",
       productData: "Product data",
+      orderTotalLabel: "Order total",
       reported: "Reported",
       newDealStatus: "New deal status:",
       updateDealStatus: "New deal status",
@@ -1428,6 +1443,13 @@ const en = {
       sellerPendingInstructionText: "Send the product data or item to the buyer in chat. After delivery, click \"Confirm fulfillment\".",
       dealTimer: "In deal: {value}",
       autoConfirmTimer: "Auto-confirm in {value}",
+      autoConfirmTooltip: "Auto-confirm will happen in: {value}",
+      confirmReceiptHint: "Check product details before confirming receipt.",
+      dealProgress: {
+        paid: "Paid",
+        fulfilled: "Delivered",
+        confirmed: "Confirmed",
+      },
 
       pending: "Deal created. Waiting for fulfillment confirmation from the seller.",
       confirmed:
@@ -1440,6 +1462,7 @@ const en = {
       supportChat: "Support Chat",
       dealChat: "Deal",
       regularChat: "Chat",
+      supportDealOnlyNotice: "Live support is available only from a deal. You can use FAQ here.",
       emptySupport: "Hello! Here you can get support from our team",
       emptySupportDesc: "Write your question or issue, and our team will respond to you as soon as possible. We're here to help you 24/7!",
       priceOfferTitle: "Price offer",

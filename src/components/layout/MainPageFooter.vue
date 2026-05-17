@@ -8,14 +8,17 @@ function openCookieSettings() {
 
 <template>
   <footer
-    class="relative w-full px-4 md:px-6 lg:px-8 pt-12 pb-22 lg:pb-16 overflow-hidden border-t border-[rgb(var(--palette-dark-700))]"
-  >
+    class="relative w-full px-4 md:px-6 lg:px-8 pt-12 pb-22 lg:pb-16 overflow-hidden border-t border-[rgb(var(--palette-dark-700))]">
     <div class="absolute inset-0 w-full h-full z-0 pointer-events-none">
       <div class="absolute inset-0 bg-grid opacity-20"></div>
       <div class="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-[var(--transparent)]"></div>
 
-      <div class="absolute -left-20 bottom-10 w-[300px] h-[300px] bg-[rgb(var(--palette-blue-600)/0.1)] rounded-full blur-[80px]"></div>
-      <div class="absolute -right-20 top-10 w-[250px] h-[250px] bg-[rgb(var(--palette-cyan-500)/0.05)] rounded-full blur-[60px]"></div>
+      <div
+        class="absolute -left-20 bottom-10 w-[300px] h-[300px] bg-[rgb(var(--palette-blue-600)/0.1)] rounded-full blur-[80px]">
+      </div>
+      <div
+        class="absolute -right-20 top-10 w-[250px] h-[250px] bg-[rgb(var(--palette-cyan-500)/0.05)] rounded-full blur-[60px]">
+      </div>
     </div>
 
     <div class="relative z-10 max-w-7xl mx-auto">
@@ -34,22 +37,34 @@ function openCookieSettings() {
             <h4 class="font-semibold text-[var(--text-title)] text-lg mb-4">{{ $t('common.product', 'Продукт') }}</h4>
             <ul class="space-y-3">
               <li>
-                <a href="#" class="text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light">
+                <a href="#"
+                  class="text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light">
                   {{ $t('footer.features', 'Возможности') }}
                 </a>
               </li>
               <li>
-                <router-link
-                  :to="{ path: '/chats', query: { support: '1' } }"
-                  class="text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light"
-                >
+                <router-link to="/feedback"
+                  class="text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light">
                   {{ $t('footer.support', 'Поддержка') }}
                 </router-link>
               </li>
               <li>
-                <router-link to="/about" class="text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light">
+                <router-link to="/about"
+                  class="text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light">
                   {{ $t('common.aboutUs', 'О нас') }}
                 </router-link>
+              </li>
+              <li>
+                <a href="https://www.tiktok.com/@remarketgg"
+                  class="text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light">
+                  {{ $t('common.tiktok', 'Tiktok') }}
+                </a>
+              </li>
+              <li>
+                <a href="https://t.me/+0OkelnzdR5EwMDIy"
+                  class="text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light">
+                  {{ $t('common.telegram', 'telegram') }}
+                </a>
               </li>
             </ul>
           </div>
@@ -57,17 +72,20 @@ function openCookieSettings() {
             <h4 class="font-semibold text-[var(--text-title)] text-lg mb-4">{{ $t('common.support') }}</h4>
             <ul class="space-y-3">
               <li>
-                <a href="mailto:support@re-market.net" class="text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light">
+                <a href="mailto:support@re-market.net"
+                  class="text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light">
                   support@re-market.net
                 </a>
               </li>
               <li>
-                <router-link to="/feedback" class="text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light">
+                <router-link to="/feedback"
+                  class="text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light">
                   {{ $t('footer.feedback', 'Обратная связь') }}
                 </router-link>
               </li>
               <li>
-                <router-link to="/become-seller" class="text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light">
+                <router-link to="/become-seller"
+                  class="text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light">
                   {{ $t('footer.becomeSeller', 'Стать продавцом') }}
                 </router-link>
               </li>
@@ -77,31 +95,33 @@ function openCookieSettings() {
             <h4 class="font-semibold text-[var(--text-title)] text-lg mb-4">{{ $t('common.legal') }}</h4>
             <ul class="space-y-3">
               <li>
-                <router-link to="/privacy-policy" class="text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light">
+                <router-link to="/privacy-policy"
+                  class="text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light">
                   {{ $t('footer.privacyPolicy', 'Политика конфиденциальности') }}
                 </router-link>
               </li>
               <li>
-                <router-link to="/terms" class="text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light">
+                <router-link to="/terms"
+                  class="text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light">
                   {{ $t('footer.termsOfService', 'Условия использования') }}
                 </router-link>
               </li>
               <li>
-                <button
-                  type="button"
+                <button type="button"
                   class="bg-[var(--transparent)] p-0 text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light"
-                  @click="openCookieSettings"
-                >
+                  @click="openCookieSettings">
                   {{ $t('common.cookies.manage') }}
                 </button>
               </li>
               <li>
-                <router-link to="/rules" class="text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light">
+                <router-link to="/rules"
+                  class="text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light">
                   {{ $t('footer.marketRules', 'Правила площадки') }}
                 </router-link>
               </li>
               <li>
-                <a href="mailto:legal@re-market.net" class="text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light">
+                <a href="mailto:legal@re-market.net"
+                  class="text-[var(--text-muted)] hover:text-[var(--text-title)] transition-colors duration-300 font-light">
                   legal@re-market.net
                 </a>
               </li>
@@ -110,10 +130,20 @@ function openCookieSettings() {
         </div>
       </div>
 
-      <div class="h-px w-full bg-gradient-to-r from-[var(--transparent)] via-[rgb(var(--palette-gray-800))] to-[var(--transparent)] my-8"></div>
+      <div
+        class="h-px w-full bg-gradient-to-r from-[var(--transparent)] via-[rgb(var(--palette-gray-800))] to-[var(--transparent)] my-8">
+      </div>
 
-      <div class="flex flex-col md:flex-row justify-between items-center gap-6">
-        <div class="text-[var(--text-meta)] text-sm font-light">
+      <div class="flex flex-col md:flex-row justify-between items-start gap-6">
+        <div class="space-y-2 max-w-2xl">
+          <div class="text-[var(--text-meta)] text-sm font-light space-y-1">
+            <p>{{ $t('footer.companyName') }}</p>
+            <p>{{ $t('footer.companyRegistryCode') }}</p>
+            <p>{{ $t('footer.companyAddress') }}</p>
+          </div>
+        </div>
+
+        <div class="text-[var(--text-meta)] text-sm font-light md:text-right">
           © {{ new Date().getFullYear() }} remarket. {{ $t('common.rightsReserved') }}
         </div>
       </div>

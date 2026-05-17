@@ -38,6 +38,9 @@ watch(
           {{ $t('pages.marketRules.title') }}
         </h1>
       </div>
+      <p class="legal-updated text-sm sm:text-base">
+        {{ $t('pages.marketRules.updatedAt') }}
+      </p>
 
       <article class="mt-6 legal-copy text-[var(--text-body-strong)]">
         <section id="marketplace-general" class="legal-section">
@@ -161,6 +164,13 @@ watch(
 
 .legal-copy {
   font-family: 'Manrope', 'Segoe UI', Arial, sans-serif;
+}
+
+.legal-updated {
+  margin-top: 0.85rem;
+  color: var(--text-secondary);
+  font-family: 'Manrope', 'Segoe UI', Arial, sans-serif;
+  font-weight: 500;
 }
 
 .legal-section {

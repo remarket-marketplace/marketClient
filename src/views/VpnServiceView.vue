@@ -448,10 +448,13 @@ onMounted(() => {
   <section class="vpn-page relative left-1/2 right-1/2 -mt-14 ml-[-50vw] mr-[-50vw] min-h-[calc(100dvh-3.5rem)] w-screen overflow-hidden pt-14 text-[var(--text-primary-strong)]">
     <div class="vpn-page__grid pointer-events-none absolute inset-0"></div>
 
-    <div class="vpn-page__inner relative mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-6xl flex-col px-4 pb-14 pt-6 sm:px-6 lg:px-8">
+    <div class="relative mx-auto w-full px-4 pt-6 sm:px-4 lg:px-5">
       <div class="mb-6 flex items-center justify-between gap-4 md:mb-8">
         <BackButton />
       </div>
+    </div>
+
+    <div class="vpn-page__inner relative mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-[1220px] flex-col px-4 pb-14 sm:px-4 lg:px-5">
 
       <div class="vpn-hero-grid grid flex-1 items-center gap-x-10 gap-y-7">
         <div class="vpn-page__copy vpn-hero-text max-w-3xl">
@@ -484,7 +487,7 @@ onMounted(() => {
         </div>
         <p
           v-if="!user"
-          class="mt-3 text-sm leading-6 text-[var(--text-muted)]"
+          class="vpn-trial-hint mt-3 text-sm leading-6 text-[var(--text-muted)]"
         >
           {{ t('pages.vpn.trialAuthHint') }}
         </p>
@@ -515,7 +518,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="relative mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">
+    <div class="relative mx-auto w-full px-4 pb-16 sm:px-4 lg:px-5">
       <section class="grid gap-6 py-10 lg:grid-cols-[0.85fr_1.15fr]">
         <div>
           <p class="text-sm font-medium text-[var(--accent-text)]">{{ t('pages.vpn.featuresEyebrow') }}</p>
@@ -1093,64 +1096,84 @@ onMounted(() => {
 
 @media (max-width: 640px) {
   .vpn-page__inner {
-    padding-top: 1rem;
-    padding-bottom: 2.25rem;
+    min-height: auto;
+    padding-bottom: 2.75rem;
   }
 
   .vpn-hero-grid {
     grid-template-areas:
       "text visual"
+      "hint visual"
       "actions actions";
-    grid-template-columns: minmax(0, 1fr) clamp(10rem, 38vw, 12rem);
-    align-items: center;
-    column-gap: 0.75rem;
-    row-gap: 1.25rem;
+    grid-template-columns: minmax(0, 1fr) clamp(9rem, 35vw, 10.5rem);
+    align-items: start;
+    column-gap: 1rem;
+    row-gap: 0.9rem;
+  }
+
+  .vpn-page__copy {
+    align-self: center;
   }
 
   .vpn-page__copy h1 {
-    font-size: clamp(2.6rem, 14vw, 4.25rem);
+    max-width: 8rem;
+    font-size: clamp(2.6rem, 13vw, 3.6rem);
+    line-height: 0.9;
   }
 
   .vpn-page__copy p {
     margin-top: 0.875rem;
-    max-width: 18rem;
-    font-size: clamp(0.8125rem, 3.5vw, 0.95rem);
+    max-width: 11rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  .vpn-trial-hint {
+    grid-area: hint;
+    margin-top: -0.2rem;
+    max-width: 11rem;
+    font-size: 0.8125rem;
     line-height: 1.45;
   }
 
   .vpn-hero-actions {
+    grid-area: actions;
     width: 100%;
+    gap: 0.75rem;
   }
 
   .vpn-visual {
-    min-height: clamp(13rem, 52vw, 16rem);
+    min-height: 13.5rem;
+    width: 100%;
+    margin: 0;
+    align-self: start;
     overflow: visible;
   }
 
   .vpn-visual__logo {
     position: absolute !important;
-    left: auto !important;
-    right: -0.15rem;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    height: clamp(8rem, 34vw, 10rem) !important;
-    width: clamp(8rem, 34vw, 10rem) !important;
+    left: 50% !important;
+    right: auto !important;
+    top: 44% !important;
+    transform: translate(-50%, -50%) !important;
+    height: clamp(8.5rem, 30vw, 10rem) !important;
+    width: clamp(8.5rem, 30vw, 10rem) !important;
   }
 
   .vpn-node {
     position: absolute;
     display: inline-flex;
     flex-direction: row;
-    gap: 0.25rem;
+    gap: 0.3rem;
     min-width: max-content;
     max-width: none;
     width: auto;
     align-items: center;
     justify-content: center;
-    padding: 0.32rem 0.46rem;
+    padding: 0.38rem 0.56rem;
     border-color: rgb(var(--palette-dark-700));
     background: var(--vpn-solid-panel-bg);
-    font-size: 0.58rem;
+    font-size: 0.62rem;
     line-height: 1;
     text-align: left;
     box-shadow:
@@ -1164,24 +1187,24 @@ onMounted(() => {
   }
 
   .vpn-node--top {
-    left: 0.25rem;
-    top: 0.75rem;
-    transform: none !important;
+    left: 50%;
+    top: 0.1rem;
+    transform: translateX(-50%) !important;
     border-radius: 9999px;
   }
 
   .vpn-node--right {
-    right: -1rem;
-    top: 43%;
+    right: -0.35rem;
+    top: 52%;
     transform: translateY(-50%) !important;
     border-inline-width: 1px;
     border-radius: 9999px;
   }
 
   .vpn-node--bottom {
-    left: 0.25rem;
-    bottom: 0.75rem;
-    transform: none !important;
+    left: 50%;
+    bottom: 1.2rem;
+    transform: translateX(-50%) !important;
     border-radius: 9999px;
   }
 }

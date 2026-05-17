@@ -378,7 +378,7 @@ onBeforeUnmount(() => {
   <section class="steam-topup-page -mt-14 relative min-h-[calc(100dvh-3.5rem)] overflow-hidden pt-14">
     <div class="steam-topup-page__glow pointer-events-none absolute inset-x-0 -top-24 h-[44vh] opacity-80 blur-2xl" />
 
-    <div class="relative mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-5xl flex-col px-4 pb-14 pt-6 sm:px-6 lg:px-8">
+    <div class="relative mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full flex-col pb-14 pt-6">
       <div class="mb-10 flex items-center justify-between">
         <BackButton />
         <div class="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.03)] px-3 py-1.5 text-xs font-medium tracking-[0.18em] text-[var(--text-muted)] uppercase">

@@ -1015,7 +1015,7 @@ async function createProduct() {
     </div>
 
     <div class="lg:min-h-[calc(100dvh-3.5rem)] lg:overflow-y-auto no-scrollbar pb-6">
-      <div class="mx-auto w-full max-w-5xl space-y-6 px-4 lg:px-6 lg:pt-6" @keydown.capture.enter="handleWizardEnter">
+      <div class="mx-auto w-full space-y-6 lg:pt-6" @keydown.capture.enter="handleWizardEnter">
         <div class="hidden lg:block">
           <div class="flex gap-2">
             <BackButton />

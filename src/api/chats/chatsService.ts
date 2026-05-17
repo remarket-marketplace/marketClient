@@ -45,12 +45,29 @@ let heartbeatIntervalHandle: number | null = null;
 let onlineHandlerRegistered = false;
 let visibilityHandlerRegistered = false;
 
+async function emitSendMessageAck(payload: {
+  chat_id: string;
+  message: string;
+  is_admin_panel_message: boolean;
+}): Promise<{ success?: boolean; error_code?: string; message?: unknown }> {
+  return new Promise((resolve) => {
+    socket!.emit("send_message", payload, (response: any) => {
+      resolve(response ?? { success: true });
+    });
+  });
+}
+
 function parseChatUpdatePayload(data: any): ChatUpdateSchema | null {
   const chatId = typeof data?.chat_id === "string" ? data.chat_id : null;
   const unreadCount = typeof data?.unread_count === "number" ? data.unread_count : 0;
   const supportTicketStatus = typeof data?.support_ticket_status === "string"
     ? data.support_ticket_status
     : null;
+  const supportStatus = typeof data?.support_status === "string"
+    ? data.support_status
+    : null;
+  const isClosed = typeof data?.is_closed === "boolean" ? data.is_closed : undefined;
+  const isResolved = typeof data?.is_resolved === "boolean" ? data.is_resolved : undefined;
 
   if (!chatId) {
     return null;
@@ -74,6 +91,9 @@ function parseChatUpdatePayload(data: any): ChatUpdateSchema | null {
     last_message: lastMessage,
     unread_count: unreadCount,
     support_ticket_status: supportTicketStatus,
+    support_status: supportStatus,
+    is_closed: isClosed,
+    is_resolved: isResolved,
   };
 }
 
@@ -330,30 +350,35 @@ export const chatsService = {
     options?: { isAdminPanelMessage?: boolean },
   ): Promise<{ success: boolean; errorCode?: string; message?: ChatMessageUnion }> {
     if (!this.isConnected()) {
-      await new Promise((r) => setTimeout(r, 500));
-
-      if (!this.isConnected()) {
-        console.error("Socket not connected even after retry");
-        return { success: false, errorCode: "NETWORK_ERROR" };
-      }
+      await this.connectChatsWebsocket();
+      await new Promise((r) => setTimeout(r, 350));
+    }
+    if (!this.isConnected()) {
+      console.error("Socket not connected even after reconnect attempt");
+      return { success: false, errorCode: "NETWORK_ERROR" };
     }
 
     try {
-      const ack = await new Promise<{ success?: boolean; error_code?: string; message?: unknown }>(
-        (resolve) => {
-          socket!.emit(
-            "send_message",
-            {
-              chat_id: chatId,
-              message,
-              is_admin_panel_message: options?.isAdminPanelMessage === true,
-            },
-            (response: any) => {
-              resolve(response ?? { success: true });
-            }
-          );
+      await this.joinChat(chatId);
+
+      const payload = {
+        chat_id: chatId,
+        message,
+        is_admin_panel_message: options?.isAdminPanelMessage === true,
+      };
+
+      let ack = await emitSendMessageAck(payload);
+      if (
+        ack.success !== true
+        && (ack.error_code === "USER_NOT_CONNECTED" || ack.error_code === "NETWORK_ERROR")
+      ) {
+        await this.connectChatsWebsocket();
+        await new Promise((r) => setTimeout(r, 350));
+        if (this.isConnected()) {
+          await this.joinChat(chatId);
+          ack = await emitSendMessageAck(payload);
         }
-      );
+      }
 
       let parsedMessage: ChatMessageUnion | undefined
       if (ack.message) {

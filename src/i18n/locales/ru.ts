@@ -134,6 +134,9 @@ const ru = {
     forLegalMatters: "По юридическим вопросам.",
     information: "Информация",
     aboutUs: "О нас",
+    tiktok: "TikTok",
+    intagram: "Instagram",
+    telegram: "Telegram",
     privacyPolicy: "Политика конфиденциальности",
     termsOfService: "Условия использования",
     tagline: "Современная площадка для безопасных сделок между пользователями.",
@@ -518,6 +521,9 @@ const ru = {
     privacyPolicy: "Политика конфиденциальности",
     termsOfService: "Условия использования",
     marketRules: "Правила площадки",
+    companyName: "Monitorson OÜ",
+    companyRegistryCode: "Регистрационный номер: 1725577",
+    companyAddress: "Юридический адрес: Järva maakond, Türi vald, Türi linn, Aia tn 12, 72215, Estonia",
   },
 
   navigation: {
@@ -581,6 +587,7 @@ const ru = {
     },
     privacyPolicyPage: {
       title: "Политика конфиденциальности",
+      updatedAt: "Актуально на 15 мая 2026 года",
       sections: [
         {
           title: "1. Общие положения",
@@ -648,7 +655,8 @@ const ru = {
     },
     termsOfServicePage: {
       title: "Пользовательское соглашение",
-      supportLead: "10.1. По всем вопросам пользователь может обратиться в службу поддержки:",
+      updatedAt: "Актуально на 15 мая 2026 года",
+      supportLead: "10.4. По всем вопросам пользователь может обратиться в службу поддержки:",
       feedbackLead: "через",
       feedbackLink: "страницу обратной связи",
       emailLead: "по email:",
@@ -755,7 +763,11 @@ const ru = {
         },
         {
           title: "10. Контактная информация",
-          paragraphs: []
+          paragraphs: [
+            "10.1. Юридическое лицо сервиса: Monitorson OÜ.",
+            "10.2. Регистрационный номер: 1725577.",
+            "10.3. Юридический адрес: Järva maakond, Türi vald, Türi linn, Aia tn 12, 72215, Estonia."
+          ]
         },
         {
           accent: "Используя сервис, пользователь подтверждает, что ознакомлен с настоящим Соглашением и принимает его условия в полном объёме."
@@ -862,7 +874,7 @@ const ru = {
     vpn: {
       eyebrow: "Scope VPN",
       title: "Scope VPN",
-      subtitle: "Ваш персональный ключ к свободному интернету. Скоростные сервера, белые локации, поддержка 24/7.",
+      subtitle: "Скоростные сервера, поддержка 24/7.",
       heroAction: "Выбрать срок",
       trialAction: "Пробный период",
       trialAuthHint: "Авторизуйтесь, чтобы получить пробный период Scope VPN.",
@@ -1067,6 +1079,7 @@ const ru = {
 
     marketRules: {
       title: "Правила площадки",
+      updatedAt: "Актуально на 15 мая 2026 года",
       general: {
         title: "1. Общие положения",
         p1: "1.1. Настоящие Правила регулируют размещение товаров, проведение сделок и поведение пользователей на площадке remarket.",
@@ -1373,6 +1386,7 @@ const ru = {
       refundConfirmMessage: "Вы уверены что хотите сделать возврат по этой сделке?",
       report: "Пожаловаться",
       messagePlaceholder: "Введите сообщение...",
+      faqInputPlaceholder: "Выберите вопрос",
       today: "Сегодня",
       yesterday: "Вчера",
       waitReplyReminderSender: "Чтобы продолжить общение, дождитесь ответа собеседника.",
@@ -1397,6 +1411,7 @@ const ru = {
       newAdminMessage: "Новое сообщение от поддержки",
       viewProduct: "Посмотреть товар",
       productData: "Данные товара",
+      orderTotalLabel: "Итог",
       reported: "Жалоба отправлена",
       newDealStatus: "Новый статус сделки:",
       updateDealStatus: "Новый статус сделки",
@@ -1427,6 +1442,13 @@ const ru = {
       sellerPendingInstructionText: "Отправьте покупателю данные или товар в чате. После выдачи нажмите «Подтвердить выполнение».",
       dealTimer: "В сделке: {value}",
       autoConfirmTimer: "Автоподтверждение через {value}",
+      autoConfirmTooltip: "Автоподтверждение произойдет через: {value}",
+      confirmReceiptHint: "Проверьте данные товара перед подтверждением получения.",
+      dealProgress: {
+        paid: "Оплачен",
+        fulfilled: "Выдан",
+        confirmed: "Подтвержден",
+      },
       pending: "Сделка создана. Ожидается подтверждение выполнения от продавца.",
       confirmed: "Продавец подтвердил выполнение сделки.",
       disputed: "Покупатель объявил спор по сделке.",
@@ -1437,6 +1459,7 @@ const ru = {
       supportChat: "Чат поддержки",
       dealChat: "Сделка",
       regularChat: "Чат",
+      supportDealOnlyNotice: "Оператор поддержки доступен только из сделки. Здесь можно использовать FAQ.",
       emptySupport: "Привет! Здесь вы можете получить поддержку от команды",
       emptySupportDesc: "Напишите свой вопрос или проблему, и наша команда ответит вам как можно скорее. Мы готовы помочь вам 24/7!",
       priceOfferTitle: "Предложение цены",
