@@ -281,6 +281,15 @@ function getProductCategoryTrail(product: Product): string {
   return `${category} > ${subcategory}`;
 }
 
+function resolveProductImageUrl(product: Product): string | null {
+  const imageUrl = product.images[0]?.image_url;
+  if (!imageUrl) return null;
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return imageUrl;
+  }
+  return `${API_HOST}${imageUrl}`;
+}
+
 function normalizeValue(value: unknown): unknown {
   if (typeof value === 'string') {
     const trimmed = value.trim();
@@ -693,11 +702,21 @@ watch([searchQuery, sortBy, statusFilter], () => {
               <div class="flex-shrink-0">
                 <div class="relative">
                   <img
-                    :src="`${API_HOST}${product.images[0]?.image_url}`"
+                    v-if="resolveProductImageUrl(product)"
+                    :src="resolveProductImageUrl(product) || ''"
                     :alt="product.title"
                     class="w-12 h-12 sm:w-20 sm:h-20 rounded-lg object-cover border border-[rgb(var(--palette-white)/0.1)] cursor-pointer"
                     @click="navigateToProduct(product.id, product.slug)"
                   />
+                  <button
+                    v-else
+                    type="button"
+                    class="w-12 h-12 sm:w-20 sm:h-20 rounded-lg border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-dark-700)/0.55)] flex items-center justify-center text-[var(--text-muted)] cursor-pointer"
+                    @click="navigateToProduct(product.id, product.slug)"
+                    :aria-label="`${$t('common.view')}: ${product.title}`"
+                  >
+                    <Image class="w-4 h-4 sm:w-5 sm:h-5" />
+                  </button>
                 </div>
               </div>
 

@@ -523,6 +523,9 @@ export const productService = {
       if (productData.category_id)
         formData.append("category_id", productData.category_id);
       formData.append("auto_delivery", String(Boolean(productData.auto_delivery)));
+      if (typeof productData.is_official === "boolean") {
+        formData.append("is_official", String(productData.is_official));
+      }
       uploadedImages.forEach((image) => {
         formData.append("uploaded_images", image);
       });

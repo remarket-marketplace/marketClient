@@ -391,6 +391,15 @@ function handleStepClick(step: StepNumber): void {
   }
 }
 
+function toggleAutoDelivery(): void {
+  autoDelivery.value = !autoDelivery.value
+}
+
+function toggleOfficial(): void {
+  if (!canMarkProductOfficial.value) return
+  isOfficial.value = !isOfficial.value
+}
+
 // Price formatting
 const formatPrice = (value: number) => {
   return formatCurrencyAmount(value, {
@@ -1190,7 +1199,14 @@ async function createProduct() {
                 </div>
 
                 <div
-                  class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.4)] p-5 space-y-3">
+                  class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.4)] p-5 space-y-3 cursor-pointer transition-colors duration-150 hover:border-[rgb(var(--palette-blue-500)/0.5)] hover:bg-[rgb(var(--palette-dark-600)/0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-500)/0.45)]"
+                  role="button"
+                  tabindex="0"
+                  :aria-pressed="autoDelivery"
+                  @click="toggleAutoDelivery"
+                  @keydown.enter.prevent="toggleAutoDelivery"
+                  @keydown.space.prevent="toggleAutoDelivery"
+                >
                   <div class="flex items-center justify-between">
                     <div class="space-y-1">
                       <h4 class="text-sm font-semibold text-[var(--text-title)]">
@@ -1200,7 +1216,9 @@ async function createProduct() {
                         {{ $t('pages.forms.createProduct.autoDeliveryHint') }}
                       </p>
                     </div>
-                    <Checkbox v-model="autoDelivery" size="lg" />
+                    <div @click.stop @keydown.stop>
+                      <Checkbox v-model="autoDelivery" size="lg" />
+                    </div>
                   </div>
                   <div v-if="autoDelivery"
                     class="p-3 rounded-lg bg-[rgb(var(--palette-blue-900)/0.2)] border border-[rgb(var(--palette-blue-800)/0.3)]">
@@ -1211,8 +1229,16 @@ async function createProduct() {
                   </div>
                 </div>
 
-                <div v-if="canMarkProductOfficial"
-                  class="rounded-xl border border-[rgb(var(--palette-blue-700)/0.4)] bg-[rgb(var(--palette-blue-950)/0.2)] p-5 space-y-3">
+                <div
+                  v-if="canMarkProductOfficial"
+                  class="rounded-xl border border-[rgb(var(--palette-blue-700)/0.4)] bg-[rgb(var(--palette-blue-950)/0.2)] p-5 space-y-3 cursor-pointer transition-colors duration-150 hover:border-[rgb(var(--palette-blue-500)/0.65)] hover:bg-[rgb(var(--palette-blue-950)/0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-500)/0.45)]"
+                  role="button"
+                  tabindex="0"
+                  :aria-pressed="isOfficial"
+                  @click="toggleOfficial"
+                  @keydown.enter.prevent="toggleOfficial"
+                  @keydown.space.prevent="toggleOfficial"
+                >
                   <div class="flex items-center justify-between">
                     <div class="space-y-1">
                       <h4 class="text-sm font-semibold text-[var(--text-title)]">
@@ -1222,7 +1248,9 @@ async function createProduct() {
                         {{ $t('pages.forms.createProduct.officialProductHint') }}
                       </p>
                     </div>
-                    <Checkbox v-model="isOfficial" size="lg" />
+                    <div @click.stop @keydown.stop>
+                      <Checkbox v-model="isOfficial" size="lg" />
+                    </div>
                   </div>
                 </div>
 

@@ -32,6 +32,7 @@ const description = ref('')
 const price = ref<string | number>('')
 const productDataString = ref('')
 const autoDelivery = ref<boolean>(true)
+const isOfficial = ref<boolean>(false)
 const newImages = ref<File[]>([])
 const existingImages = ref<{ id: string; image_url: string }[]>([])
 const count = ref<number>()
@@ -94,6 +95,7 @@ function onProductDataInput(event: Event): void {
 const productId = computed(() => route.params.productId as string)
 
 const store = useUserStore()
+const canMarkProductOfficial = computed(() => store.user?.role === 'admin')
 
 const computedMaxNewFiles = computed(() => {
   const remainingExisting = existingImages.value.length
@@ -262,6 +264,7 @@ onMounted(async () => {
     price.value = convertCurrencyAmount(productData.value.price, 'RUB', selectedCurrency.value).toString()
     productDataString.value = productData.value.product_data_string ?? ''
     autoDelivery.value = productData.value.auto_delivery
+    isOfficial.value = canMarkProductOfficial.value ? Boolean(productData.value.is_official) : false
     existingImages.value = [...productData.value.images]
     count.value = productData.value.count
   } catch (err: any) {
@@ -288,12 +291,27 @@ watch(selectedCurrency, (nextCurrency, prevCurrency) => {
     : Math.round(converted).toString()
 })
 
+watch(canMarkProductOfficial, (allowed) => {
+  if (!allowed) {
+    isOfficial.value = false
+  }
+})
+
 function deleteExistingImage(id: string) {
   const index = existingImages.value.findIndex(img => img.id === id)
   if (index !== -1) {
     imagesToDelete.value.push(id)
     existingImages.value.splice(index, 1)
   }
+}
+
+function toggleAutoDelivery() {
+  autoDelivery.value = !autoDelivery.value
+}
+
+function toggleOfficial() {
+  if (!canMarkProductOfficial.value) return
+  isOfficial.value = !isOfficial.value
 }
 
 async function updateProduct() {
@@ -316,6 +334,7 @@ async function updateProduct() {
       category_id: productData.value!.category.id,
       count: countValue.value,
       auto_delivery: autoDelivery.value,
+      is_official: canMarkProductOfficial.value ? isOfficial.value : undefined,
     }
 
     const result = await productService.updateProduct(
@@ -503,7 +522,15 @@ async function updateProduct() {
           </div>
         </div>
 
-        <div class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.4)] p-4 space-y-3">
+        <div
+          class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.4)] p-4 space-y-3 cursor-pointer transition-colors duration-150 hover:border-[rgb(var(--palette-blue-500)/0.5)] hover:bg-[rgb(var(--palette-dark-600)/0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-500)/0.45)]"
+          role="button"
+          tabindex="0"
+          :aria-pressed="autoDelivery"
+          @click="toggleAutoDelivery"
+          @keydown.enter.prevent="toggleAutoDelivery"
+          @keydown.space.prevent="toggleAutoDelivery"
+        >
           <div class="flex items-center justify-between">
             <div class="space-y-1">
               <h4 class="text-sm font-semibold text-[var(--text-title)]">
@@ -513,13 +540,40 @@ async function updateProduct() {
                 {{ $t('pages.forms.createProduct.autoDeliveryHint') }}
               </p>
             </div>
-            <Checkbox v-model="autoDelivery" size="lg" />
+            <div @click.stop @keydown.stop>
+              <Checkbox v-model="autoDelivery" size="lg" />
+            </div>
           </div>
           <div v-if="autoDelivery" class="p-3 rounded-lg bg-[rgb(var(--palette-blue-900)/0.2)] border border-[rgb(var(--palette-blue-800)/0.3)]">
             <p class="text-xs text-[var(--text-link)] leading-relaxed flex items-start gap-2">
               <Info class="w-4 h-4 mt-0.5 flex-shrink-0" />
               {{ $t('pages.forms.createProduct.autoDeliveryEnabledHint') }}
             </p>
+          </div>
+        </div>
+
+        <div
+          v-if="canMarkProductOfficial"
+          class="rounded-xl border border-[rgb(var(--palette-blue-700)/0.4)] bg-[rgb(var(--palette-blue-950)/0.2)] p-4 space-y-3 cursor-pointer transition-colors duration-150 hover:border-[rgb(var(--palette-blue-500)/0.65)] hover:bg-[rgb(var(--palette-blue-950)/0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-500)/0.45)]"
+          role="button"
+          tabindex="0"
+          :aria-pressed="isOfficial"
+          @click="toggleOfficial"
+          @keydown.enter.prevent="toggleOfficial"
+          @keydown.space.prevent="toggleOfficial"
+        >
+          <div class="flex items-center justify-between">
+            <div class="space-y-1">
+              <h4 class="text-sm font-semibold text-[var(--text-title)]">
+                {{ $t('pages.forms.createProduct.officialProductTitle') }}
+              </h4>
+              <p class="text-xs text-[rgb(var(--text-accent-rgb)/0.85)] leading-relaxed">
+                {{ $t('pages.forms.createProduct.officialProductHint') }}
+              </p>
+            </div>
+            <div @click.stop @keydown.stop>
+              <Checkbox v-model="isOfficial" size="lg" />
+            </div>
           </div>
         </div>
 
