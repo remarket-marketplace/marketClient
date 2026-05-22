@@ -341,10 +341,17 @@ async function onPricePresetClick(preset: PricePreset) {
 
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
+const PRODUCT_REVEAL_STAGGER_MS = 55
 
 function goToProduct(productKey: string) {
   if (!productKey) return
   router.push({ path: `/product/${productKey}` })
+}
+
+function getProductRevealDelayStyle(index: number): Record<string, string> {
+  return {
+    transitionDelay: `${index * PRODUCT_REVEAL_STAGGER_MS}ms`,
+  }
 }
 
 function goToProductByModel(product: Product) {
@@ -1310,26 +1317,35 @@ onBeforeUnmount(() => {
           {{ t('pages.index.noProducts') }}
         </div>
 
-        <div
+        <TransitionGroup
           v-else-if="productCardViewMode === 'grid'"
+          name="home-product-reveal"
+          tag="div"
           class="products-grid grid gap-1 md:gap-2 mt-6 w-full"
         >
           <MainProductCard
-            v-for="product in products"
+            v-for="(product, index) in products"
             :key="product.id"
             :product="product"
+            :style="getProductRevealDelayStyle(index)"
             @click="goToProduct"
           />
-        </div>
+        </TransitionGroup>
 
-        <div v-else class="products-list mt-6 flex w-full flex-col gap-2 md:gap-3">
+        <TransitionGroup
+          v-else
+          name="home-product-reveal"
+          tag="div"
+          class="products-list mt-6 flex w-full flex-col gap-2 md:gap-3"
+        >
           <HomeProductListCard
-            v-for="product in products"
+            v-for="(product, index) in products"
             :key="product.id"
             :product="product"
+            :style="getProductRevealDelayStyle(index)"
             @click="goToProduct"
           />
-        </div>
+        </TransitionGroup>
     </div>
 
     <div ref="loadMoreTrigger" class="h-10"></div>
@@ -1591,5 +1607,21 @@ onBeforeUnmount(() => {
 
 .check-text {
   color: #E5E7EB
+}
+
+.home-product-reveal-enter-active {
+  transition: opacity 380ms ease, transform 380ms ease, filter 380ms ease;
+}
+
+.home-product-reveal-enter-from {
+  opacity: 0;
+  transform: translateY(9px) scale(0.98);
+  filter: blur(2px);
+}
+
+.home-product-reveal-enter-to {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
 }
 </style>

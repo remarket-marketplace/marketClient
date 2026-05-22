@@ -25,6 +25,7 @@ const API_HOST = import.meta.env.VITE_API_HOST
 const carouselRef = ref<HTMLElement | null>(null)
 const isCarouselAtStart = ref(true)
 const isCarouselAtEnd = ref(false)
+const STAGGER_STEP_MS = 90
 
 function resolveProductImageUrl(product: Product): string {
   const firstImage = product.images[0]?.image_url ?? ''
@@ -74,6 +75,12 @@ function scrollCarousel(direction: 'prev' | 'next') {
   })
 
   window.setTimeout(updateCarouselState, 320)
+}
+
+function getRevealDelayStyle(index: number): Record<string, string> {
+  return {
+    transitionDelay: `${index * STAGGER_STEP_MS}ms`,
+  }
 }
 
 watch(() => [props.products.length, props.loading], async () => {
@@ -159,35 +166,42 @@ onBeforeUnmount(() => {
           </div>
         </template>
 
-        <button
+        <TransitionGroup
           v-else
-          v-for="product in products"
-          :key="`official-showcase-${product.id}`"
-          type="button"
-          data-official-product-card
-          class="official-products-showcase__card w-[188px] shrink-0 snap-start text-left sm:w-[190px] lg:w-[196px]"
-          @click="emit('productClick', product)"
+          name="official-card-reveal"
+          tag="div"
+          class="contents"
         >
-          <div class="official-products-showcase__card-media relative aspect-square w-full overflow-hidden rounded-xl">
-            <img
-              v-if="resolveProductImageUrl(product)"
-              :src="resolveProductImageUrl(product)"
-              :alt="product.title"
-              class="h-full w-full object-cover object-center"
-            />
-            <div v-else class="flex h-full w-full items-center justify-center text-xs text-[var(--text-body)]">
-              {{ t('common.noImage') }}
+          <button
+            v-for="(product, index) in products"
+            :key="`official-showcase-${product.id}`"
+            type="button"
+            data-official-product-card
+            class="official-products-showcase__card w-[188px] shrink-0 snap-start text-left sm:w-[190px] lg:w-[196px]"
+            :style="getRevealDelayStyle(index)"
+            @click="emit('productClick', product)"
+          >
+            <div class="official-products-showcase__card-media relative aspect-square w-full overflow-hidden rounded-xl">
+              <img
+                v-if="resolveProductImageUrl(product)"
+                :src="resolveProductImageUrl(product)"
+                :alt="product.title"
+                class="h-full w-full object-cover object-center"
+              />
+              <div v-else class="flex h-full w-full items-center justify-center text-xs text-[var(--text-body)]">
+                {{ t('common.noImage') }}
+              </div>
             </div>
-          </div>
-          <div class="pt-2">
-            <p class="official-products-showcase__card-price text-[1.25rem] font-extrabold leading-none sm:text-[1.35rem]">
-              {{ formatOfficialPrice(product.price) }}
-            </p>
-            <p class="official-products-showcase__card-title mt-1 min-h-[2.5rem] text-[0.88rem] leading-5 sm:text-[0.94rem]">
-              {{ product.title }}
-            </p>
-          </div>
-        </button>
+            <div class="pt-2">
+              <p class="official-products-showcase__card-price text-[1.25rem] font-extrabold leading-none sm:text-[1.35rem]">
+                {{ formatOfficialPrice(product.price) }}
+              </p>
+              <p class="official-products-showcase__card-title mt-1 min-h-[2.5rem] text-[0.88rem] leading-5 sm:text-[0.94rem]">
+                {{ product.title }}
+              </p>
+            </div>
+          </button>
+        </TransitionGroup>
       </div>
     </div>
 
@@ -330,6 +344,22 @@ onBeforeUnmount(() => {
   50% {
     opacity: 0.82;
   }
+}
+
+.official-card-reveal-enter-active {
+  transition: opacity 420ms ease, transform 420ms ease, filter 420ms ease;
+}
+
+.official-card-reveal-enter-from {
+  opacity: 0;
+  transform: translateY(8px) scale(0.97);
+  filter: blur(2px);
+}
+
+.official-card-reveal-enter-to {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
 }
 
 @media (min-width: 640px) {
