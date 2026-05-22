@@ -91,11 +91,11 @@ function goToSeller() {
           </div>
         </div>
 
-        <div v-if="isOwner" class="flex w-full items-center justify-between gap-2">
+        <div v-if="isOwner" class="flex w-full items-center gap-2">
+          <ProductStatusTag :product-status="product.status" size="compact" />
           <div v-if="product.auto_delivery" class="inline-flex flex-shrink-0 items-center self-center">
             <AutoDeliveryTag />
           </div>
-          <ProductStatusTag :product-status="product.status" size="compact" />
         </div>
 
         <button
