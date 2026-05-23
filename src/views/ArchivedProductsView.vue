@@ -43,10 +43,102 @@ const filteredProducts = computed(() => {
 const loadingSkeletonCount = computed(() => (
   productCardViewMode.value === 'grid' ? 8 : 5
 ))
+const PRODUCT_REVEAL_STAGGER_MS = 55
+const API_HOST = import.meta.env.VITE_API_HOST
+const readyArchivedProductCardIds = ref<Record<string, true>>({})
+const archivedProductCardPreloads = new Map<string, Promise<void>>()
 
 function setProductCardViewMode(mode: ProductCardViewMode): void {
   if (productCardViewMode.value === mode) return
   productCardViewMode.value = mode
+}
+
+function getProductRevealDelayStyle(index: number): Record<string, string> {
+  return {
+    transitionDelay: `${index * PRODUCT_REVEAL_STAGGER_MS}ms`,
+  }
+}
+
+function isArchivedProductCardReady(productId: string): boolean {
+  return Boolean(readyArchivedProductCardIds.value[productId])
+}
+
+function markArchivedProductCardReady(productId: string): void {
+  if (readyArchivedProductCardIds.value[productId]) return
+  readyArchivedProductCardIds.value = {
+    ...readyArchivedProductCardIds.value,
+    [productId]: true,
+  }
+}
+
+function resolveProductCoverImageUrl(product: Product): string {
+  const coverImageUrl = product.images[0]?.image_url?.trim() ?? ''
+  if (!coverImageUrl) return ''
+  if (coverImageUrl.startsWith('http://') || coverImageUrl.startsWith('https://')) {
+    return coverImageUrl
+  }
+  return `${API_HOST}${coverImageUrl}`
+}
+
+function preloadArchivedProductCard(product: Product): Promise<void> {
+  if (readyArchivedProductCardIds.value[product.id]) {
+    return Promise.resolve()
+  }
+
+  const existingPreload = archivedProductCardPreloads.get(product.id)
+  if (existingPreload) {
+    return existingPreload
+  }
+
+  const coverImageUrl = resolveProductCoverImageUrl(product)
+  if (!coverImageUrl || typeof Image === 'undefined') {
+    markArchivedProductCardReady(product.id)
+    return Promise.resolve()
+  }
+
+  const preloadPromise = new Promise<void>((resolve) => {
+    const preloadImage = new Image()
+    let isSettled = false
+
+    const finishPreload = () => {
+      if (isSettled) return
+      isSettled = true
+      markArchivedProductCardReady(product.id)
+      archivedProductCardPreloads.delete(product.id)
+      resolve()
+    }
+
+    preloadImage.onload = finishPreload
+    preloadImage.onerror = finishPreload
+    preloadImage.src = coverImageUrl
+
+    if (preloadImage.complete) {
+      finishPreload()
+    }
+  })
+
+  archivedProductCardPreloads.set(product.id, preloadPromise)
+  return preloadPromise
+}
+
+function syncArchivedProductCardReadiness(nextProducts: Product[]): void {
+  const nextReadyState: Record<string, true> = {}
+
+  nextProducts.forEach((product) => {
+    if (readyArchivedProductCardIds.value[product.id]) {
+      nextReadyState[product.id] = true
+      return
+    }
+
+    void preloadArchivedProductCard(product)
+  })
+
+  readyArchivedProductCardIds.value = nextReadyState
+}
+
+function setVisibleArchivedProducts(nextProducts: Product[], append = false): void {
+  products.value = append ? [...products.value, ...nextProducts] : nextProducts
+  syncArchivedProductCardReadiness(products.value)
 }
 
 function restoreProductCardViewModeFromStorage(): void {
@@ -78,14 +170,14 @@ async function loadArchivedProducts(page = 1, append = false) {
       'archive',
     )
 
-    products.value = append ? [...products.value, ...response.products] : response.products
+    setVisibleArchivedProducts(response.products, append)
     total.value = response.total
     totalPages.value = response.totalPages
     currentPage.value = page
   } catch (error) {
     console.error('Failed to load archived products', error)
     if (!append) {
-      products.value = []
+      setVisibleArchivedProducts([])
       total.value = 0
       totalPages.value = 1
       currentPage.value = 1
@@ -222,22 +314,46 @@ onMounted(async () => {
       v-else-if="productCardViewMode === 'grid'"
       class="products-grid grid gap-1 md:gap-2 w-full"
     >
-      <ProfileProductCard
-        v-for="product in filteredProducts"
+      <div
+        v-for="(product, index) in filteredProducts"
         :key="product.id"
-        :product="product"
-        :is-owner="true"
-        @click="goToProduct"
-      />
+      >
+        <Transition name="archived-product-reveal" mode="out-in">
+          <ProfileProductCard
+            v-if="isArchivedProductCardReady(product.id)"
+            :product="product"
+            :is-owner="true"
+            :style="getProductRevealDelayStyle(index)"
+            @click="goToProduct"
+          />
+          <div
+            v-else
+            :style="getProductRevealDelayStyle(index)"
+            class="h-64 animate-pulse rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.7)]"
+          ></div>
+        </Transition>
+      </div>
     </div>
 
     <div v-else class="w-full flex flex-col gap-2">
-      <HomeProductListCard
-        v-for="product in filteredProducts"
+      <div
+        v-for="(product, index) in filteredProducts"
         :key="product.id"
-        :product="product"
-        @click="goToProduct"
-      />
+      >
+        <Transition name="archived-product-reveal" mode="out-in">
+          <HomeProductListCard
+            v-if="isArchivedProductCardReady(product.id)"
+            :product="product"
+            :style="getProductRevealDelayStyle(index)"
+            @click="goToProduct"
+          />
+          <div
+            v-else
+            :style="getProductRevealDelayStyle(index)"
+            class="h-[118px] animate-pulse rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.7)] sm:h-[134px]"
+          ></div>
+        </Transition>
+      </div>
     </div>
 
     <div v-if="currentPage < totalPages" class="flex justify-center mt-6">
@@ -279,6 +395,22 @@ onMounted(async () => {
 
 .products-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.archived-product-reveal-enter-active {
+  transition: opacity 0.38s ease, transform 0.38s ease, filter 0.38s ease;
+}
+
+.archived-product-reveal-enter-from {
+  opacity: 0;
+  transform: translateY(14px) scale(0.985);
+  filter: blur(10px);
+}
+
+.archived-product-reveal-enter-to {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
 }
 
 @media (min-width: 680px) {
