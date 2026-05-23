@@ -107,6 +107,7 @@ const similarProductsLoadingSkeletonCount = computed(() => (
     : 3
 ))
 const PRODUCT_REVEAL_STAGGER_MS = 55
+const PRODUCT_CARD_PRELOAD_TIMEOUT_MS = 1800
 const readySimilarProductCardIds = ref<Record<string, true>>({})
 const similarProductCardPreloads = new Map<string, Promise<void>>()
 const shouldShowOfficialRemarketCarousel = computed(() =>
@@ -310,10 +311,17 @@ function preloadSimilarProductCard(product: Product): Promise<void> {
     const finishPreload = () => {
       if (isSettled) return
       isSettled = true
+      window.clearTimeout(fallbackTimer)
+      preloadImage.onload = null
+      preloadImage.onerror = null
       markSimilarProductCardReady(product.id)
       similarProductCardPreloads.delete(product.id)
       resolve()
     }
+
+    const fallbackTimer = window.setTimeout(() => {
+      finishPreload()
+    }, PRODUCT_CARD_PRELOAD_TIMEOUT_MS)
 
     preloadImage.onload = finishPreload
     preloadImage.onerror = finishPreload

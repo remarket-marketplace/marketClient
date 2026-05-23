@@ -44,6 +44,7 @@ const loadingSkeletonCount = computed(() => (
   productCardViewMode.value === 'grid' ? 8 : 5
 ))
 const PRODUCT_REVEAL_STAGGER_MS = 55
+const PRODUCT_CARD_PRELOAD_TIMEOUT_MS = 1800
 const API_HOST = import.meta.env.VITE_API_HOST
 const readyArchivedProductCardIds = ref<Record<string, true>>({})
 const archivedProductCardPreloads = new Map<string, Promise<void>>()
@@ -103,10 +104,17 @@ function preloadArchivedProductCard(product: Product): Promise<void> {
     const finishPreload = () => {
       if (isSettled) return
       isSettled = true
+      window.clearTimeout(fallbackTimer)
+      preloadImage.onload = null
+      preloadImage.onerror = null
       markArchivedProductCardReady(product.id)
       archivedProductCardPreloads.delete(product.id)
       resolve()
     }
+
+    const fallbackTimer = window.setTimeout(() => {
+      finishPreload()
+    }, PRODUCT_CARD_PRELOAD_TIMEOUT_MS)
 
     preloadImage.onload = finishPreload
     preloadImage.onerror = finishPreload
