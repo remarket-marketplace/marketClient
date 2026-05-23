@@ -63,6 +63,7 @@ const loadingSkeletonCount = computed(() => (
     : Math.min(perPage.value, 12)
 ))
 const PRODUCT_REVEAL_STAGGER_MS = 55
+const PRODUCT_CARD_PRELOAD_TIMEOUT_MS = 1800
 const readyCategoryProductCardIds = ref<Record<string, true>>({})
 const categoryProductCardPreloads = new Map<string, Promise<void>>()
 
@@ -345,10 +346,17 @@ function preloadCategoryProductCard(product: Product): Promise<void> {
     const finishPreload = () => {
       if (isSettled) return
       isSettled = true
+      window.clearTimeout(fallbackTimer)
+      preloadImage.onload = null
+      preloadImage.onerror = null
       markCategoryProductCardReady(product.id)
       categoryProductCardPreloads.delete(product.id)
       resolve()
     }
+
+    const fallbackTimer = window.setTimeout(() => {
+      finishPreload()
+    }, PRODUCT_CARD_PRELOAD_TIMEOUT_MS)
 
     preloadImage.onload = finishPreload
     preloadImage.onerror = finishPreload

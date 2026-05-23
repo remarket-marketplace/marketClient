@@ -342,6 +342,7 @@ async function onPricePresetClick(preset: PricePreset) {
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 const PRODUCT_REVEAL_STAGGER_MS = 55
+const PRODUCT_CARD_PRELOAD_TIMEOUT_MS = 1800
 const readyHomeProductCardIds = ref<Record<string, true>>({})
 const homeProductCardPreloads = new Map<string, Promise<void>>()
 
@@ -400,10 +401,17 @@ function preloadHomeProductCard(product: Product): Promise<void> {
     const finishPreload = () => {
       if (isSettled) return
       isSettled = true
+      window.clearTimeout(fallbackTimer)
+      preloadImage.onload = null
+      preloadImage.onerror = null
       markHomeProductCardReady(product.id)
       homeProductCardPreloads.delete(product.id)
       resolve()
     }
+
+    const fallbackTimer = window.setTimeout(() => {
+      finishPreload()
+    }, PRODUCT_CARD_PRELOAD_TIMEOUT_MS)
 
     preloadImage.onload = finishPreload
     preloadImage.onerror = finishPreload
