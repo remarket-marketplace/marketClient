@@ -7,6 +7,7 @@ import AutoDeliveryTag from '@/components/AutoDeliveryTag.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
 import UserRating from '@/components/UserRating.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
+import { resolveApiMediaUrl } from '@/utils/mediaUrl'
 import { buildProductKey } from '@/utils/urlKeys'
 import { ImageOff } from 'lucide-vue-next'
 
@@ -22,7 +23,6 @@ const emit = defineEmits<{
   click: [productKey: string]
 }>()
 
-const API_HOST = import.meta.env.VITE_API_HOST
 const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
 const productPath = computed(() => `/product/${buildProductKey(props.product)}`)
 const shouldShowSellerRating = computed(() => props.product.seller.rating > 0)
@@ -33,7 +33,9 @@ const suppressNextCardClick = ref(false)
 const brokenImageUrls = ref<Record<string, true>>({})
 const currentImageUrl = computed(() => {
   if (!props.product.images.length) return ''
-  return `${API_HOST}${props.product.images[activeImageIndex.value]?.image_url ?? props.product.images[0]?.image_url ?? ''}`
+  return resolveApiMediaUrl(
+    props.product.images[activeImageIndex.value]?.image_url ?? props.product.images[0]?.image_url ?? '',
+  )
 })
 const hasVisibleImage = computed(() => (
   Boolean(currentImageUrl.value) && !brokenImageUrls.value[currentImageUrl.value]

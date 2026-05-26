@@ -1,10 +1,15 @@
 import axios from "axios";
 import { ZodError } from "zod";
 import { httpClient } from "..";
-import { ProductSchema, type Product } from "@/validation/product/product";
+import { type Product } from "@/validation/product/product";
 import { CategorySchema, type Category } from "@/validation/category/category";
 import { ErrorHandler, type ApiError } from "../errorHandler";
 import { PRODUCT_IMAGE_MIME_TYPES } from "@/utils/imageUpload";
+import {
+  parseOptionalProduct,
+  parseProduct,
+  parseProductList,
+} from "./productTransform";
 
 const UPLOAD_REQUEST_TIMEOUT_MS = 120000;
 const DIRECT_UPLOAD_SUPPORTED_CONTENT_TYPES = PRODUCT_IMAGE_MIME_TYPES;
@@ -217,22 +222,12 @@ export const productService = {
         },
       });
       return {
-        products: response.data.products.map((product: any) => {
-          const transformedProduct = {
-            ...product,
-            images: product.images.map((img: any) => ({
-              ...img,
-              url: img.url || img.image_url || "",
-            })),
-          };
-          return ProductSchema.parse(transformedProduct);
-        }),
+        products: parseProductList(response.data.products, "getAllProducts"),
         totalPages: response.data.total_pages,
         currentPage: response.data.page || page,
         total: response.data.total,
       };
     } catch (e) {
-      if (e instanceof ZodError) console.error(e.issues);
       return { products: [], totalPages: 1, currentPage: 1, total: 0 };
     }
   },
@@ -256,22 +251,12 @@ export const productService = {
         },
       });
       return {
-        products: response.data.products.map((product: any) => {
-          const transformedProduct = {
-            ...product,
-            images: product.images.map((img: any) => ({
-              ...img,
-              url: img.url || img.image_url || "",
-            })),
-          };
-          return ProductSchema.parse(transformedProduct);
-        }),
+        products: parseProductList(response.data.products, "getPopularProducts"),
         totalPages: response.data.total_pages,
         currentPage: response.data.page || page,
         total: response.data.total,
       };
     } catch (e) {
-      if (e instanceof ZodError) console.error(e.issues);
       return { products: [], totalPages: 1, currentPage: 1, total: 0 };
     }
   },
@@ -279,19 +264,11 @@ export const productService = {
   async getProductById(id: string) {
     try {
       const response = await httpClient.get(`/products/${id}`);
-      const transformedProduct = {
-        ...response.data,
-        images: response.data.images.map((img: any) => ({
-          ...img,
-          url: img.url || img.image_url || "",
-        })),
-      };
-      return ProductSchema.parse(transformedProduct);
+      return parseOptionalProduct(response.data, "getProductById");
     } catch (e) {
       if (axios.isAxiosError(e) && e.response?.status === 404) {
         throw e;
       }
-      if (e instanceof ZodError) console.error(e.issues);
       return null;
     }
   },
@@ -299,16 +276,8 @@ export const productService = {
   async getProductEditDataById(id: string) {
     try {
       const response = await httpClient.get(`/products/${id}`);
-      const transformedProduct = {
-        ...response.data,
-        images: response.data.images.map((img: any) => ({
-          ...img,
-          url: img.url || img.image_url || "",
-        })),
-      };
-      return ProductSchema.parse(transformedProduct);
+      return parseOptionalProduct(response.data, "getProductEditDataById");
     } catch (e) {
-      if (e instanceof ZodError) console.error(e.issues);
       return null;
     }
   },
@@ -332,22 +301,15 @@ export const productService = {
       );
 
       return {
-        products: response.data.products.map((product: any) => {
-          const transformedProduct = {
-            ...product,
-            images: product.images.map((img: any) => ({
-              ...img,
-              url: img.url || img.image_url || "",
-            })),
-          };
-          return ProductSchema.parse(transformedProduct);
-        }),
+        products: parseProductList(
+          response.data.products,
+          "getProductsByCategory",
+        ),
         totalPages: response.data.total_pages,
         currentPage: response.data.page || page,
         total: response.data.total,
       };
     } catch (e) {
-      if (e instanceof ZodError) console.error(e.issues);
       return { products: [], totalPages: 1, currentPage: 1, total: 0 };
     }
   },
@@ -355,18 +317,8 @@ export const productService = {
   async getProductsCategoryFilter(game: string, category: string) {
     try {
       const response = await httpClient.get(`/products/${game}/${category}`);
-      return response.data.map((product: any) => {
-        const transformedProduct = {
-          ...product,
-          images: product.images.map((img: any) => ({
-            ...img,
-            url: img.url || img.image_url || "",
-          })),
-        };
-        return ProductSchema.parse(transformedProduct);
-      });
+      return parseProductList(response.data, "getProductsCategoryFilter");
     } catch (e) {
-      if (e instanceof ZodError) console.error(e.issues);
       return [];
     }
   },
@@ -485,7 +437,7 @@ export const productService = {
         },
         timeout: UPLOAD_REQUEST_TIMEOUT_MS,
       });
-      return ProductSchema.parse(response.data);
+      return parseProduct(response.data);
     } catch (error) {
       console.error("Ошибка создания товара:", error);
       throw error;
@@ -648,16 +600,8 @@ export const productService = {
   async getProductByChatId(chatId: string) {
     try {
       const response = await httpClient.get(`/products/get/chat/${chatId}`);
-      const transformedProduct = {
-        ...response.data,
-        images: response.data.images.map((img: any) => ({
-          ...img,
-          url: img.url || img.image_url || "",
-        })),
-      };
-      return ProductSchema.parse(transformedProduct);
+      return parseOptionalProduct(response.data, "getProductByChatId");
     } catch (e) {
-      if (e instanceof ZodError) console.error(e.issues);
       return null;
     }
   },
@@ -732,22 +676,12 @@ export const productService = {
       });
 
       return {
-        products: response.data.products.map((product: any) => {
-          const transformedProduct = {
-            ...product,
-            images: product.images.map((img: any) => ({
-              ...img,
-              url: img.url || img.image_url || "",
-            })),
-          };
-          return ProductSchema.parse(transformedProduct);
-        }),
+        products: parseProductList(response.data.products, "searchProducts"),
         currentPage: response.data.page || page,
         totalPages: response.data.total_pages,
         total: response.data.total,
       };
     } catch (e) {
-      if (e instanceof ZodError) console.error(e.issues);
       return { products: [], currentPage: 1, totalPages: 1, total: 0 };
     }
   },
@@ -755,18 +689,8 @@ export const productService = {
   async getUserProducts(userId: string) {
     try {
       const response = await httpClient.get(`/products/user/${userId}`);
-      return response.data.map((product: any) => {
-        const transformedProduct = {
-          ...product,
-          images: product.images.map((img: any) => ({
-            ...img,
-            url: img.url || img.image_url || "",
-          })),
-        };
-        return ProductSchema.parse(transformedProduct);
-      });
+      return parseProductList(response.data, "getUserProducts");
     } catch (e) {
-      if (e instanceof ZodError) console.error(e.issues);
       return [];
     }
   },
@@ -793,16 +717,10 @@ export const productService = {
         },
       );
 
-      const products = response.data.products.map((product: any) => {
-        const transformedProduct = {
-          ...product,
-          images: product.images.map((img: any) => ({
-            ...img,
-            url: img.url || img.image_url || "",
-          })),
-        };
-        return ProductSchema.parse(transformedProduct);
-      });
+      const products = parseProductList(
+        response.data.products,
+        "getUserProductsByUsername",
+      );
 
       return {
         products,
@@ -878,17 +796,10 @@ export const productService = {
 
       const productsData = response.data.products || response.data || [];
 
-      const favoriteProducts = productsData.map((product: any) => {
-        const transformedProduct = {
-          ...product,
-          images:
-            product.images?.map((img: any) => ({
-              ...img,
-              url: img.url || img.image_url || "",
-            })) || [],
-        };
-        return ProductSchema.parse(transformedProduct);
-      });
+      const favoriteProducts = parseProductList(
+        productsData,
+        "getFavoritesProducts",
+      );
 
       return {
         favoriteProducts,

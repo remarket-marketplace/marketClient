@@ -8,6 +8,7 @@ import ProductStatusTag from './ProductStatusTag.vue'
 import AutoDeliveryTag from './AutoDeliveryTag.vue'
 import StyledUsername from './StyledUsername.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
+import { resolveApiMediaUrl } from '@/utils/mediaUrl'
 import { buildProductKey } from '@/utils/urlKeys'
 import { ImageOff } from 'lucide-vue-next'
 
@@ -25,7 +26,6 @@ const emit = defineEmits<{
   click: [productKey: string]
 }>()
 
-const API_HOST = import.meta.env.VITE_API_HOST
 const shouldShowSellerRating = computed(() => props.product.seller.rating > 0)
 const activeImageIndex = ref(0)
 const touchStartX = ref(0)
@@ -49,7 +49,9 @@ const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
 const productPath = computed(() => `/product/${buildProductKey(props.product)}`)
 const currentImageUrl = computed(() => {
   if (!props.product.images.length) return ''
-  return `${API_HOST}${props.product.images[activeImageIndex.value]?.image_url ?? props.product.images[0]?.image_url ?? ''}`
+  return resolveApiMediaUrl(
+    props.product.images[activeImageIndex.value]?.image_url ?? props.product.images[0]?.image_url ?? '',
+  )
 })
 const hasVisibleImage = computed(() => (
   Boolean(currentImageUrl.value) && !brokenImageUrls.value[currentImageUrl.value]
