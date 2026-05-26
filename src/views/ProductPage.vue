@@ -106,6 +106,10 @@ const similarProductsLoadingSkeletonCount = computed(() => (
     ? 4
     : 3
 ))
+const PRODUCT_REVEAL_STAGGER_MS = 55
+const PRODUCT_CARD_PRELOAD_TIMEOUT_MS = 1800
+const readySimilarProductCardIds = ref<Record<string, true>>({})
+const similarProductCardPreloads = new Map<string, Promise<void>>()
 const shouldShowOfficialRemarketCarousel = computed(() =>
   isOfficialProductsLoading.value || officialProducts.value.length > 0
 )
@@ -257,6 +261,101 @@ function setProductCardViewMode(mode: ProductCardViewMode): void {
   productCardViewMode.value = mode
 }
 
+function getProductRevealDelayStyle(index: number): Record<string, string> {
+  return {
+    transitionDelay: `${index * PRODUCT_REVEAL_STAGGER_MS}ms`,
+  }
+}
+
+function isSimilarProductCardReady(productId: string): boolean {
+  return Boolean(readySimilarProductCardIds.value[productId])
+}
+
+function markSimilarProductCardReady(productId: string): void {
+  if (readySimilarProductCardIds.value[productId]) return
+  readySimilarProductCardIds.value = {
+    ...readySimilarProductCardIds.value,
+    [productId]: true,
+  }
+}
+
+function resolveProductCoverImageUrl(product: Product): string {
+  const coverImageUrl = product.images[0]?.image_url?.trim() ?? ''
+  if (!coverImageUrl) return ''
+  if (coverImageUrl.startsWith('http://') || coverImageUrl.startsWith('https://')) {
+    return coverImageUrl
+  }
+  return `${API_HOST}${coverImageUrl}`
+}
+
+function preloadSimilarProductCard(product: Product): Promise<void> {
+  if (readySimilarProductCardIds.value[product.id]) {
+    return Promise.resolve()
+  }
+
+  const existingPreload = similarProductCardPreloads.get(product.id)
+  if (existingPreload) {
+    return existingPreload
+  }
+
+  const coverImageUrl = resolveProductCoverImageUrl(product)
+  if (!coverImageUrl || typeof Image === 'undefined') {
+    markSimilarProductCardReady(product.id)
+    return Promise.resolve()
+  }
+
+  const preloadPromise = new Promise<void>((resolve) => {
+    const preloadImage = new Image()
+    let isSettled = false
+
+    const finishPreload = () => {
+      if (isSettled) return
+      isSettled = true
+      window.clearTimeout(fallbackTimer)
+      preloadImage.onload = null
+      preloadImage.onerror = null
+      markSimilarProductCardReady(product.id)
+      similarProductCardPreloads.delete(product.id)
+      resolve()
+    }
+
+    const fallbackTimer = window.setTimeout(() => {
+      finishPreload()
+    }, PRODUCT_CARD_PRELOAD_TIMEOUT_MS)
+
+    preloadImage.onload = finishPreload
+    preloadImage.onerror = finishPreload
+    preloadImage.src = coverImageUrl
+
+    if (preloadImage.complete) {
+      finishPreload()
+    }
+  })
+
+  similarProductCardPreloads.set(product.id, preloadPromise)
+  return preloadPromise
+}
+
+function syncSimilarProductCardReadiness(nextProducts: Product[]): void {
+  const nextReadyState: Record<string, true> = {}
+
+  nextProducts.forEach((product) => {
+    if (readySimilarProductCardIds.value[product.id]) {
+      nextReadyState[product.id] = true
+      return
+    }
+
+    void preloadSimilarProductCard(product)
+  })
+
+  readySimilarProductCardIds.value = nextReadyState
+}
+
+function setVisibleSimilarProducts(nextProducts: Product[]): void {
+  similarProducts.value = nextProducts
+  syncSimilarProductCardReadiness(similarProducts.value)
+}
+
 function restoreProductCardViewModeFromStorage(): void {
   if (typeof window === 'undefined') return
   const saved = window.localStorage.getItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY)
@@ -303,13 +402,13 @@ async function loadCategoryBreadcrumb(
 
 async function loadSimilarProducts(baseProduct: Product) {
   if (!baseProduct.category.is_active || baseProduct.parent_category?.is_active === false) {
-    similarProducts.value = []
+    setVisibleSimilarProducts([])
     return
   }
 
   const categoryKey = buildCategoryKey(baseProduct.category)
   if (!categoryKey) {
-    similarProducts.value = []
+    setVisibleSimilarProducts([])
     return
   }
 
@@ -351,7 +450,7 @@ async function loadSimilarProducts(baseProduct: Product) {
     nextPage += 1
   }
 
-  similarProducts.value = collected.slice(0, SIMILAR_PRODUCTS_LIMIT)
+  setVisibleSimilarProducts(collected.slice(0, SIMILAR_PRODUCTS_LIMIT))
   isSimilarProductsLoading.value = false
 }
 
@@ -410,6 +509,7 @@ async function loadProductData() {
   selectedImage.value = null
   parentCategory.value = null
   similarProducts.value = []
+  readySimilarProductCardIds.value = {}
   officialProducts.value = []
   isOfficialProductsLoading.value = false
 
@@ -1240,20 +1340,44 @@ onUnmounted(() => {
               v-else-if="similarProducts.length && productCardViewMode === 'grid'"
               class="similar-products-grid grid w-full gap-2"
             >
-              <MainProductCard
-                v-for="similarProduct in similarProducts"
+              <div
+                v-for="(similarProduct, index) in similarProducts"
                 :key="similarProduct.id"
-                :product="similarProduct"
-                @click="goToProductPage"
-              />
+              >
+                <Transition name="similar-product-reveal" mode="out-in">
+                  <MainProductCard
+                    v-if="isSimilarProductCardReady(similarProduct.id)"
+                    :product="similarProduct"
+                    :style="getProductRevealDelayStyle(index)"
+                    @click="goToProductPage"
+                  />
+                  <div
+                    v-else
+                    :style="getProductRevealDelayStyle(index)"
+                    class="h-64 animate-pulse rounded-lg bg-[rgb(var(--palette-dark-600))]"
+                  ></div>
+                </Transition>
+              </div>
             </div>
             <div v-else-if="similarProducts.length" class="w-full flex flex-col gap-2">
-              <HomeProductListCard
-                v-for="similarProduct in similarProducts"
+              <div
+                v-for="(similarProduct, index) in similarProducts"
                 :key="similarProduct.id"
-                :product="similarProduct"
-                @click="goToProductPage"
-              />
+              >
+                <Transition name="similar-product-reveal" mode="out-in">
+                  <HomeProductListCard
+                    v-if="isSimilarProductCardReady(similarProduct.id)"
+                    :product="similarProduct"
+                    :style="getProductRevealDelayStyle(index)"
+                    @click="goToProductPage"
+                  />
+                  <div
+                    v-else
+                    :style="getProductRevealDelayStyle(index)"
+                    class="h-[118px] animate-pulse rounded-lg bg-[rgb(var(--palette-dark-600))] sm:h-[134px]"
+                  ></div>
+                </Transition>
+              </div>
             </div>
           </div>
         </section>
@@ -1516,6 +1640,22 @@ onUnmounted(() => {
 
 .similar-products-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.similar-product-reveal-enter-active {
+  transition: opacity 0.38s ease, transform 0.38s ease, filter 0.38s ease;
+}
+
+.similar-product-reveal-enter-from {
+  opacity: 0;
+  transform: translateY(14px) scale(0.985);
+  filter: blur(10px);
+}
+
+.similar-product-reveal-enter-to {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
 }
 
 @media (min-width: 680px) {

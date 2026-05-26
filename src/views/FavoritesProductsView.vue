@@ -33,10 +33,110 @@ const filteredProducts = computed(() => {
 const loadingSkeletonCount = computed(() => (
   productCardViewMode.value === 'grid' ? 8 : 5
 ))
+const PRODUCT_REVEAL_STAGGER_MS = 55
+const PRODUCT_CARD_PRELOAD_TIMEOUT_MS = 1800
+const API_HOST = import.meta.env.VITE_API_HOST
+const readyFavoriteProductCardIds = ref<Record<string, true>>({})
+const favoriteProductCardPreloads = new Map<string, Promise<void>>()
 
 function setProductCardViewMode(mode: ProductCardViewMode): void {
   if (productCardViewMode.value === mode) return
   productCardViewMode.value = mode
+}
+
+function getProductRevealDelayStyle(index: number): Record<string, string> {
+  return {
+    transitionDelay: `${index * PRODUCT_REVEAL_STAGGER_MS}ms`,
+  }
+}
+
+function isFavoriteProductCardReady(productId: string): boolean {
+  return Boolean(readyFavoriteProductCardIds.value[productId])
+}
+
+function markFavoriteProductCardReady(productId: string): void {
+  if (readyFavoriteProductCardIds.value[productId]) return
+  readyFavoriteProductCardIds.value = {
+    ...readyFavoriteProductCardIds.value,
+    [productId]: true,
+  }
+}
+
+function resolveProductCoverImageUrl(product: Product): string {
+  const coverImageUrl = product.images[0]?.image_url?.trim() ?? ''
+  if (!coverImageUrl) return ''
+  if (coverImageUrl.startsWith('http://') || coverImageUrl.startsWith('https://')) {
+    return coverImageUrl
+  }
+  return `${API_HOST}${coverImageUrl}`
+}
+
+function preloadFavoriteProductCard(product: Product): Promise<void> {
+  if (readyFavoriteProductCardIds.value[product.id]) {
+    return Promise.resolve()
+  }
+
+  const existingPreload = favoriteProductCardPreloads.get(product.id)
+  if (existingPreload) {
+    return existingPreload
+  }
+
+  const coverImageUrl = resolveProductCoverImageUrl(product)
+  if (!coverImageUrl || typeof Image === 'undefined') {
+    markFavoriteProductCardReady(product.id)
+    return Promise.resolve()
+  }
+
+  const preloadPromise = new Promise<void>((resolve) => {
+    const preloadImage = new Image()
+    let isSettled = false
+
+    const finishPreload = () => {
+      if (isSettled) return
+      isSettled = true
+      window.clearTimeout(fallbackTimer)
+      preloadImage.onload = null
+      preloadImage.onerror = null
+      markFavoriteProductCardReady(product.id)
+      favoriteProductCardPreloads.delete(product.id)
+      resolve()
+    }
+
+    const fallbackTimer = window.setTimeout(() => {
+      finishPreload()
+    }, PRODUCT_CARD_PRELOAD_TIMEOUT_MS)
+
+    preloadImage.onload = finishPreload
+    preloadImage.onerror = finishPreload
+    preloadImage.src = coverImageUrl
+
+    if (preloadImage.complete) {
+      finishPreload()
+    }
+  })
+
+  favoriteProductCardPreloads.set(product.id, preloadPromise)
+  return preloadPromise
+}
+
+function syncFavoriteProductCardReadiness(nextProducts: Product[]): void {
+  const nextReadyState: Record<string, true> = {}
+
+  nextProducts.forEach((product) => {
+    if (readyFavoriteProductCardIds.value[product.id]) {
+      nextReadyState[product.id] = true
+      return
+    }
+
+    void preloadFavoriteProductCard(product)
+  })
+
+  readyFavoriteProductCardIds.value = nextReadyState
+}
+
+function setVisibleFavoriteProducts(nextProducts: Product[]): void {
+  products.value = nextProducts
+  syncFavoriteProductCardReadiness(products.value)
 }
 
 function restoreProductCardViewModeFromStorage(): void {
@@ -50,7 +150,7 @@ onMounted(async () => {
   try {
     isLoading.value = true
     const result = await productService.getFavoritesProducts()
-    products.value = result.favoriteProducts
+    setVisibleFavoriteProducts(result.favoriteProducts)
   } catch (e) {
     console.error('Failed to load favorite products', e)
   } finally {
@@ -59,9 +159,9 @@ onMounted(async () => {
 })
 
 function onProductRemoved(productId: string) {
-  products.value = products.value.filter(
+  setVisibleFavoriteProducts(products.value.filter(
     product => product.id !== productId
-  )
+  ))
 }
 
 function goToProduct(productKey: string) {
@@ -195,24 +295,45 @@ watch(productCardViewMode, (mode) => {
       class="products-grid grid gap-1 md:gap-2 w-full"
     >
       <div
-        v-for="product in filteredProducts"
+        v-for="(product, index) in filteredProducts"
         :key="product.id"
         class="bg-[rgb(var(--palette-dark-600))] border border-[rgb(var(--palette-dark-700))] rounded-xl overflow-hidden hover:border-[rgb(var(--palette-dark-500))] transition-all duration-200"
       >
-        <FavoriteProductCard 
-          :product="product" 
-          :is-owner="product.is_owner || false" 
-          @removed="onProductRemoved" 
-        />
+        <Transition name="favorite-product-reveal" mode="out-in">
+          <FavoriteProductCard
+            v-if="isFavoriteProductCardReady(product.id)"
+            :product="product"
+            :is-owner="product.is_owner || false"
+            :style="getProductRevealDelayStyle(index)"
+            @removed="onProductRemoved"
+          />
+          <div
+            v-else
+            :style="getProductRevealDelayStyle(index)"
+            class="h-64 animate-pulse rounded-xl bg-[rgb(var(--palette-dark-600)/0.7)]"
+          ></div>
+        </Transition>
       </div>
     </div>
     <div v-else class="w-full flex flex-col gap-2">
-      <HomeProductListCard
-        v-for="product in filteredProducts"
+      <div
+        v-for="(product, index) in filteredProducts"
         :key="product.id"
-        :product="product"
-        @click="goToProduct"
-      />
+      >
+        <Transition name="favorite-product-reveal" mode="out-in">
+          <HomeProductListCard
+            v-if="isFavoriteProductCardReady(product.id)"
+            :product="product"
+            :style="getProductRevealDelayStyle(index)"
+            @click="goToProduct"
+          />
+          <div
+            v-else
+            :style="getProductRevealDelayStyle(index)"
+            class="h-[118px] animate-pulse rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.7)] sm:h-[134px]"
+          ></div>
+        </Transition>
+      </div>
     </div>
 
   </div>
@@ -240,6 +361,22 @@ watch(productCardViewMode, (mode) => {
 
 .products-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.favorite-product-reveal-enter-active {
+  transition: opacity 0.38s ease, transform 0.38s ease, filter 0.38s ease;
+}
+
+.favorite-product-reveal-enter-from {
+  opacity: 0;
+  transform: translateY(14px) scale(0.985);
+  filter: blur(10px);
+}
+
+.favorite-product-reveal-enter-to {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
 }
 
 @media (min-width: 680px) {

@@ -342,6 +342,9 @@ async function onPricePresetClick(preset: PricePreset) {
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 const PRODUCT_REVEAL_STAGGER_MS = 55
+const PRODUCT_CARD_PRELOAD_TIMEOUT_MS = 1800
+const readyHomeProductCardIds = ref<Record<string, true>>({})
+const homeProductCardPreloads = new Map<string, Promise<void>>()
 
 function goToProduct(productKey: string) {
   if (!productKey) return
@@ -352,6 +355,95 @@ function getProductRevealDelayStyle(index: number): Record<string, string> {
   return {
     transitionDelay: `${index * PRODUCT_REVEAL_STAGGER_MS}ms`,
   }
+}
+
+function isHomeProductCardReady(productId: string): boolean {
+  return Boolean(readyHomeProductCardIds.value[productId])
+}
+
+function markHomeProductCardReady(productId: string): void {
+  if (readyHomeProductCardIds.value[productId]) return
+  readyHomeProductCardIds.value = {
+    ...readyHomeProductCardIds.value,
+    [productId]: true,
+  }
+}
+
+function resolveProductCoverImageUrl(product: Product): string {
+  const coverImageUrl = product.images[0]?.image_url?.trim() ?? ''
+  if (!coverImageUrl) return ''
+  if (coverImageUrl.startsWith('http://') || coverImageUrl.startsWith('https://')) {
+    return coverImageUrl
+  }
+  return `${API_HOST}${coverImageUrl}`
+}
+
+function preloadHomeProductCard(product: Product): Promise<void> {
+  if (readyHomeProductCardIds.value[product.id]) {
+    return Promise.resolve()
+  }
+
+  const existingPreload = homeProductCardPreloads.get(product.id)
+  if (existingPreload) {
+    return existingPreload
+  }
+
+  const coverImageUrl = resolveProductCoverImageUrl(product)
+  if (!coverImageUrl || typeof Image === 'undefined') {
+    markHomeProductCardReady(product.id)
+    return Promise.resolve()
+  }
+
+  const preloadPromise = new Promise<void>((resolve) => {
+    const preloadImage = new Image()
+    let isSettled = false
+
+    const finishPreload = () => {
+      if (isSettled) return
+      isSettled = true
+      window.clearTimeout(fallbackTimer)
+      preloadImage.onload = null
+      preloadImage.onerror = null
+      markHomeProductCardReady(product.id)
+      homeProductCardPreloads.delete(product.id)
+      resolve()
+    }
+
+    const fallbackTimer = window.setTimeout(() => {
+      finishPreload()
+    }, PRODUCT_CARD_PRELOAD_TIMEOUT_MS)
+
+    preloadImage.onload = finishPreload
+    preloadImage.onerror = finishPreload
+    preloadImage.src = coverImageUrl
+
+    if (preloadImage.complete) {
+      finishPreload()
+    }
+  })
+
+  homeProductCardPreloads.set(product.id, preloadPromise)
+  return preloadPromise
+}
+
+function syncHomeProductCardReadiness(nextProducts: Product[]): void {
+  const nextReadyState: Record<string, true> = {}
+
+  nextProducts.forEach((product) => {
+    if (readyHomeProductCardIds.value[product.id]) {
+      nextReadyState[product.id] = true
+      return
+    }
+
+    void preloadHomeProductCard(product)
+  })
+
+  readyHomeProductCardIds.value = nextReadyState
+}
+
+function setVisibleHomeProducts(nextProducts: Product[], append = false): void {
+  products.value = append ? [...products.value, ...nextProducts] : nextProducts
+  syncHomeProductCardReadiness(products.value)
 }
 
 function goToProductByModel(product: Product) {
@@ -654,7 +746,7 @@ async function searchProductsByQuery(query: string, page = 1, append = false) {
     perPage.value,
     getProductFiltersParams(),
   )
-  products.value = append ? [...products.value, ...res.products] : res.products
+  setVisibleHomeProducts(res.products, append)
   currentPage.value = res.currentPage
   totalPages.value = res.totalPages
   isSearchPagination.value = true
@@ -673,7 +765,7 @@ async function loadProducts(page = 1, append = false) {
     perPage.value,
     getProductFiltersParams(),
   )
-  products.value = append ? [...products.value, ...res.products] : res.products
+  setVisibleHomeProducts(res.products, append)
   currentPage.value = res.currentPage
   totalPages.value = res.totalPages
   isServerPagination.value = true
@@ -692,7 +784,7 @@ async function loadCategoryProducts(categoryId: string, page = 1, append = false
     perPage.value,
     getProductFiltersParams(),
   )
-  products.value = append ? [...products.value, ...res.products] : res.products
+  setVisibleHomeProducts(res.products, append)
   currentPage.value = res.currentPage
   totalPages.value = res.totalPages
   isServerPagination.value = true
@@ -874,7 +966,7 @@ async function applyProductFilters() {
       perPage.value,
       getProductFiltersParams(),
     )
-    products.value = res.products
+    setVisibleHomeProducts(res.products)
     currentPage.value = res.currentPage
     totalPages.value = res.totalPages
     isSearchPagination.value = true
@@ -1317,35 +1409,51 @@ onBeforeUnmount(() => {
           {{ t('pages.index.noProducts') }}
         </div>
 
-        <TransitionGroup
+        <div
           v-else-if="productCardViewMode === 'grid'"
-          name="home-product-reveal"
-          tag="div"
           class="products-grid grid gap-1 md:gap-2 mt-6 w-full"
         >
-          <MainProductCard
-            v-for="(product, index) in products"
-            :key="product.id"
-            :product="product"
-            :style="getProductRevealDelayStyle(index)"
-            @click="goToProduct"
-          />
-        </TransitionGroup>
+          <template v-for="(product, index) in products" :key="product.id">
+            <Transition name="home-product-reveal" mode="out-in">
+              <MainProductCard
+                v-if="isHomeProductCardReady(product.id)"
+                :key="product.id"
+                :product="product"
+                :style="getProductRevealDelayStyle(index)"
+                @click="goToProduct"
+              />
+              <div
+                v-else
+                :key="`${product.id}-skeleton`"
+                class="animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-600))] h-64"
+                aria-hidden="true"
+              />
+            </Transition>
+          </template>
+        </div>
 
-        <TransitionGroup
+        <div
           v-else
-          name="home-product-reveal"
-          tag="div"
           class="products-list mt-6 flex w-full flex-col gap-2 md:gap-3"
         >
-          <HomeProductListCard
-            v-for="(product, index) in products"
-            :key="product.id"
-            :product="product"
-            :style="getProductRevealDelayStyle(index)"
-            @click="goToProduct"
-          />
-        </TransitionGroup>
+          <template v-for="(product, index) in products" :key="product.id">
+            <Transition name="home-product-reveal" mode="out-in">
+              <HomeProductListCard
+                v-if="isHomeProductCardReady(product.id)"
+                :key="product.id"
+                :product="product"
+                :style="getProductRevealDelayStyle(index)"
+                @click="goToProduct"
+              />
+              <div
+                v-else
+                :key="`${product.id}-skeleton`"
+                class="animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-600))] h-[118px] sm:h-[134px]"
+                aria-hidden="true"
+              />
+            </Transition>
+          </template>
+        </div>
     </div>
 
     <div ref="loadMoreTrigger" class="h-10"></div>

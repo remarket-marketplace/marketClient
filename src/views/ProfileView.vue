@@ -156,6 +156,15 @@ const tabsRef = ref<HTMLElement | null>(null)
 type ProductCardViewMode = 'grid' | 'list'
 const PRODUCT_CARD_VIEW_MODE_STORAGE_KEY = 'home_product_card_view_mode'
 const productCardViewMode = ref<ProductCardViewMode>('grid')
+const loadingSkeletonCount = computed(() => (
+  productCardViewMode.value === 'grid'
+    ? perPage.value
+    : Math.min(perPage.value, 12)
+))
+const PRODUCT_REVEAL_STAGGER_MS = 55
+const PRODUCT_CARD_PRELOAD_TIMEOUT_MS = 1800
+const readyProfileProductCardIds = ref<Record<string, true>>({})
+const profileProductCardPreloads = new Map<string, Promise<void>>()
 
 // Пагинация для товаров
 const products = ref<Product[]>([])
@@ -206,6 +215,101 @@ function resolveProfileMediaUrl(rawUrl?: string | null): string {
   return `${API_HOST}${normalizedUrl}`
 }
 
+function getProductRevealDelayStyle(index: number): Record<string, string> {
+  return {
+    transitionDelay: `${index * PRODUCT_REVEAL_STAGGER_MS}ms`,
+  }
+}
+
+function isProfileProductCardReady(productId: string): boolean {
+  return Boolean(readyProfileProductCardIds.value[productId])
+}
+
+function markProfileProductCardReady(productId: string): void {
+  if (readyProfileProductCardIds.value[productId]) return
+  readyProfileProductCardIds.value = {
+    ...readyProfileProductCardIds.value,
+    [productId]: true,
+  }
+}
+
+function resolveProductCoverImageUrl(product: Product): string {
+  const coverImageUrl = product.images[0]?.image_url?.trim() ?? ''
+  if (!coverImageUrl) return ''
+  if (coverImageUrl.startsWith('http://') || coverImageUrl.startsWith('https://')) {
+    return coverImageUrl
+  }
+  return `${API_HOST}${coverImageUrl}`
+}
+
+function preloadProfileProductCard(product: Product): Promise<void> {
+  if (readyProfileProductCardIds.value[product.id]) {
+    return Promise.resolve()
+  }
+
+  const existingPreload = profileProductCardPreloads.get(product.id)
+  if (existingPreload) {
+    return existingPreload
+  }
+
+  const coverImageUrl = resolveProductCoverImageUrl(product)
+  if (!coverImageUrl || typeof Image === 'undefined') {
+    markProfileProductCardReady(product.id)
+    return Promise.resolve()
+  }
+
+  const preloadPromise = new Promise<void>((resolve) => {
+    const preloadImage = new Image()
+    let isSettled = false
+
+    const finishPreload = () => {
+      if (isSettled) return
+      isSettled = true
+      window.clearTimeout(fallbackTimer)
+      preloadImage.onload = null
+      preloadImage.onerror = null
+      markProfileProductCardReady(product.id)
+      profileProductCardPreloads.delete(product.id)
+      resolve()
+    }
+
+    const fallbackTimer = window.setTimeout(() => {
+      finishPreload()
+    }, PRODUCT_CARD_PRELOAD_TIMEOUT_MS)
+
+    preloadImage.onload = finishPreload
+    preloadImage.onerror = finishPreload
+    preloadImage.src = coverImageUrl
+
+    if (preloadImage.complete) {
+      finishPreload()
+    }
+  })
+
+  profileProductCardPreloads.set(product.id, preloadPromise)
+  return preloadPromise
+}
+
+function syncProfileProductCardReadiness(nextProducts: Product[]): void {
+  const nextReadyState: Record<string, true> = {}
+
+  nextProducts.forEach((product) => {
+    if (readyProfileProductCardIds.value[product.id]) {
+      nextReadyState[product.id] = true
+      return
+    }
+
+    void preloadProfileProductCard(product)
+  })
+
+  readyProfileProductCardIds.value = nextReadyState
+}
+
+function setVisibleProfileProducts(nextProducts: Product[], append = false): void {
+  products.value = append ? [...products.value, ...nextProducts] : nextProducts
+  syncProfileProductCardReadiness(products.value)
+}
+
 async function loadProfileData() {
   try {
     const data = await profileService.getUserProfileData(username.value)
@@ -240,11 +344,7 @@ async function loadUserProducts(page = 1, append = false) {
       perPage.value
     )
 
-    if (append) {
-      products.value = [...products.value, ...res.products]
-    } else {
-      products.value = res.products
-    }
+    setVisibleProfileProducts(res.products, append)
 
     currentPageProducts.value = page
     totalProducts.value = res.total
@@ -984,8 +1084,19 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
             <div class="space-y-4">
               <!-- Products Tab -->
               <div v-if="activeTab === 'products'">
-                <div v-if="isLoadingProducts && !products.length" class="w-full flex items-center justify-center py-12">
-                  <Loader />
+                <div
+                  v-if="isLoadingProducts && !products.length"
+                  class="mt-6 w-full"
+                  :class="productCardViewMode === 'grid'
+                    ? 'profile-products-grid grid gap-1 md:gap-2'
+                    : 'flex flex-col gap-2'"
+                >
+                  <div
+                    v-for="n in loadingSkeletonCount"
+                    :key="n"
+                    class="animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-600))]"
+                    :class="productCardViewMode === 'grid' ? 'h-64' : 'h-[118px] sm:h-[134px]'"
+                  />
                 </div>
 
                 <div v-else-if="products.length === 0" class="text-center py-12">
@@ -1024,12 +1135,45 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
                 <div v-if="products.length && productCardViewMode === 'grid'"
                   class="profile-products-grid grid gap-1 md:gap-2 mt-6 w-full">
-                  <ProfileProductCard v-for="product in products" :key="product.id" :product="product"
-                    :is-owner="isOwner" hide-description @click="goToProduct" />
+                  <template v-for="(product, index) in products" :key="product.id">
+                    <Transition name="profile-product-reveal" mode="out-in">
+                      <ProfileProductCard
+                        v-if="isProfileProductCardReady(product.id)"
+                        :key="product.id"
+                        :product="product"
+                        :is-owner="isOwner"
+                        hide-description
+                        :style="getProductRevealDelayStyle(index)"
+                        @click="goToProduct"
+                      />
+                      <div
+                        v-else
+                        :key="`${product.id}-skeleton`"
+                        class="h-64 animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-600))]"
+                        aria-hidden="true"
+                      />
+                    </Transition>
+                  </template>
                 </div>
                 <div v-else-if="products.length" class="mt-6 w-full flex flex-col gap-2">
-                  <HomeProductListCard v-for="product in products" :key="product.id" :product="product" hide-description
-                    @click="goToProduct" />
+                  <template v-for="(product, index) in products" :key="product.id">
+                    <Transition name="profile-product-reveal" mode="out-in">
+                      <HomeProductListCard
+                        v-if="isProfileProductCardReady(product.id)"
+                        :key="product.id"
+                        :product="product"
+                        hide-description
+                        :style="getProductRevealDelayStyle(index)"
+                        @click="goToProduct"
+                      />
+                      <div
+                        v-else
+                        :key="`${product.id}-skeleton`"
+                        class="h-[118px] animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-600))] sm:h-[134px]"
+                        aria-hidden="true"
+                      />
+                    </Transition>
+                  </template>
                 </div>
 
                 <div v-if="currentPageProducts < totalPagesProducts" class="flex justify-center mt-6">
@@ -1289,6 +1433,22 @@ input[type="number"] {
 
 .profile-qr-card {
   box-shadow: 0 20px 50px rgb(var(--palette-black) / 0.2);
+}
+
+.profile-product-reveal-enter-active {
+  transition: opacity 380ms ease, transform 380ms ease, filter 380ms ease;
+}
+
+.profile-product-reveal-enter-from {
+  opacity: 0;
+  transform: translateY(9px) scale(0.98);
+  filter: blur(2px);
+}
+
+.profile-product-reveal-enter-to {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
 }
 
 .profile-products-grid {

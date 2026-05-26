@@ -277,7 +277,6 @@ async function loadOfficialProducts(page = 1, append = false) {
       { isOfficialOnly: true },
     )
     if (requestId !== officialProductsRequestId) return
-
     setVisibleOfficialProducts(response.products, append)
     officialProductsTotal.value = response.total
     currentPage.value = response.currentPage
