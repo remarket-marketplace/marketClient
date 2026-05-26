@@ -1,6 +1,5 @@
 import { ZodError } from "zod";
 import { httpClient } from "..";
-import { ProductSchema } from "@/validation/product/product";
 import { CategorySchema } from "@/validation/category/category";
 import { UserReadSchema } from "@/validation/user/userRead";
 import { DealSchema, DealsListSchema, type Deal } from "@/validation/deal/deal";
@@ -33,6 +32,7 @@ import {
   type CreateAdminPromoCodePayload as CreateAdminPromoCodePayloadModel,
   type UpdateAdminPromoCodePayload as UpdateAdminPromoCodePayloadModel,
 } from "@/validation/promoCode/adminPromoCode";
+import { parseProductList } from "@/api/product/productTransform";
 
 export type AdminPayment = AdminPaymentModel
 export type AdminWithdrawalOrder = AdminWithdrawalOrderModel
@@ -323,16 +323,10 @@ export const adminService = {
           per_page: perPage,
         },
       });
-      const products = response.data.products.map((product: any) => {
-        const transformedProduct = {
-          ...product,
-          images: product.images.map((img: any) => ({
-            ...img,
-            url: img.url || img.image_url || "",
-          })),
-        };
-        return ProductSchema.parse(transformedProduct);
-      });
+      const products = parseProductList(
+        response.data.products,
+        "getAdminProductList",
+      );
       return {
         products,
         currentPage: page,
@@ -340,9 +334,6 @@ export const adminService = {
         total: response.data.total,
       };
     } catch (e) {
-      if (e instanceof ZodError) {
-        console.error(e.issues);
-      }
       return {
         products: [],
         currentPage: 1,

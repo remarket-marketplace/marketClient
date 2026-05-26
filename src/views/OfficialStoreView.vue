@@ -8,14 +8,13 @@ import type { Product } from '@/validation/product/product'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import { resolveApiMediaUrl } from '@/utils/mediaUrl'
 import { buildCategoryKey, extractIdFromSlugKey } from '@/utils/urlKeys'
 import { ChevronRight } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
-const API_HOST = import.meta.env.VITE_API_HOST
-
 const rootCategories = ref<Category[]>([])
 const selectedRootCategory = ref<Category | null>(null)
 const officialProducts = ref<Product[]>([])
@@ -32,6 +31,8 @@ const PRODUCT_REVEAL_STAGGER_MS = 55
 const PRODUCT_CARD_PRELOAD_TIMEOUT_MS = 1800
 const readyOfficialProductCardIds = ref<Record<string, true>>({})
 const officialProductCardPreloads = new Map<string, Promise<void>>()
+let officialProductsRequestId = 0
+let ignoreNextGameCategoryWatcher = false
 
 function isVisibleCategory(category: Category): boolean {
   return category.is_active
@@ -79,11 +80,7 @@ function findCategoryByQueryKey(categories: Category[], rawKey: string): Categor
 }
 
 function resolveCategoryBannerUrl(imageUrl: string | null | undefined): string {
-  if (!imageUrl) return ''
-  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-    return imageUrl
-  }
-  return `${API_HOST}${imageUrl}`
+  return resolveApiMediaUrl(imageUrl)
 }
 
 const selectedCategoryForProducts = computed<Category | null>(() =>
@@ -136,12 +133,7 @@ function markOfficialProductCardReady(productId: string): void {
 }
 
 function resolveProductCoverImageUrl(product: Product): string {
-  const coverImageUrl = product.images[0]?.image_url?.trim() ?? ''
-  if (!coverImageUrl) return ''
-  if (coverImageUrl.startsWith('http://') || coverImageUrl.startsWith('https://')) {
-    return coverImageUrl
-  }
-  return `${API_HOST}${coverImageUrl}`
+  return resolveApiMediaUrl(product.images[0]?.image_url ?? '')
 }
 
 function preloadOfficialProductCard(product: Product): Promise<void> {
@@ -175,9 +167,7 @@ function preloadOfficialProductCard(product: Product): Promise<void> {
       resolve()
     }
 
-    const fallbackTimer = window.setTimeout(() => {
-      finishPreload()
-    }, PRODUCT_CARD_PRELOAD_TIMEOUT_MS)
+    const fallbackTimer = window.setTimeout(finishPreload, PRODUCT_CARD_PRELOAD_TIMEOUT_MS)
 
     preloadImage.onload = finishPreload
     preloadImage.onerror = finishPreload
@@ -233,6 +223,7 @@ async function syncRouteQueryWithSelection() {
 
   delete nextQuery.subcategoryId
 
+  ignoreNextGameCategoryWatcher = true
   isSyncingRouteQuery.value = true
   try {
     await router.replace({ path: '/official', query: nextQuery })
@@ -263,6 +254,7 @@ async function applySelectionFromRouteQuery() {
 }
 
 async function loadOfficialProducts(page = 1, append = false) {
+  const requestId = ++officialProductsRequestId
   const targetCategory = selectedCategoryForProducts.value
   if (!targetCategory) {
     officialProducts.value = []
@@ -284,13 +276,16 @@ async function loadOfficialProducts(page = 1, append = false) {
       perPage.value,
       { isOfficialOnly: true },
     )
+    if (requestId !== officialProductsRequestId) return
     setVisibleOfficialProducts(response.products, append)
     officialProductsTotal.value = response.total
     currentPage.value = response.currentPage
     totalPages.value = response.totalPages
   } finally {
-    isLoadingMore.value = false
-    isProductsLoading.value = false
+    if (requestId === officialProductsRequestId) {
+      isLoadingMore.value = false
+      isProductsLoading.value = false
+    }
   }
 }
 
@@ -318,6 +313,10 @@ async function loadMoreProducts() {
 watch(
   () => route.query.gameCategoryId,
   async () => {
+    if (ignoreNextGameCategoryWatcher) {
+      ignoreNextGameCategoryWatcher = false
+      return
+    }
     if (isSyncingRouteQuery.value || !rootCategories.value.length) return
     await applySelectionFromRouteQuery()
     await loadOfficialProducts(1, false)
