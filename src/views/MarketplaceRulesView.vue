@@ -3,12 +3,14 @@ import { nextTick, onMounted, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import BackButton from '@/components/navigation/BackButton.vue'
-import { formatDateInRussian } from '@/utils/dateFormatter'
+import { formatDateInRussian, formatDateInEnglish } from '@/utils/dateFormatter'
 
 const route = useRoute()
-const { $t } = useI18n()
+const { $t, locale } = useI18n()
 
-const formattedDate = computed(() => formatDateInRussian())
+const formattedDate = computed(() => 
+  locale.value.startsWith('ru') ? formatDateInRussian() : formatDateInEnglish()
+)
 
 function scrollToActiveHash() {
   if (!route.hash) return

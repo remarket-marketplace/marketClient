@@ -2,9 +2,9 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BackButton from '@/components/navigation/BackButton.vue'
-import { formatDateInRussian } from '@/utils/dateFormatter'
+import { formatDateInRussian, formatDateInEnglish } from '@/utils/dateFormatter'
 
-const { t, tm } = useI18n()
+const { t, tm, locale } = useI18n()
 
 type LegalSection = {
   title?: string
@@ -13,7 +13,9 @@ type LegalSection = {
 }
 
 const sections = computed(() => tm('pages.privacyPolicyPage.sections') as LegalSection[])
-const formattedDate = computed(() => formatDateInRussian())
+const formattedDate = computed(() => 
+  locale.value.startsWith('ru') ? formatDateInRussian() : formatDateInEnglish()
+)
 </script>
 
 <template>
