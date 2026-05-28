@@ -88,13 +88,6 @@ const withdrawWalletAddressNormalized = computed(() => withdrawWalletAddress.val
 
 const withdrawMethodOptions = computed(() => [
   {
-    id: 'crypto' as const,
-    title: t('pages.wallet.withdrawMethodCrypto'),
-    hint: t('pages.wallet.withdrawMethodCryptoHint'),
-    icon: WalletIcon,
-    disabled: false,
-  },
-  {
     id: 'card' as const,
     title: t('pages.wallet.withdrawMethodCard'),
     hint: t('pages.wallet.withdrawMethodSoon'),
@@ -1372,7 +1365,7 @@ const typeLabel = (type: string) => {
         <label class="block text-sm font-medium text-[var(--text-body)]">
           {{ $t('pages.wallet.withdrawMethod') }}
         </label>
-        <div class="grid grid-cols-2 gap-2">
+        <div class="w-full">
           <button
             v-for="option in withdrawMethodOptions"
             :key="option.id"

@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { nextTick, onMounted, watch } from 'vue'
+import { nextTick, onMounted, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import BackButton from '@/components/navigation/BackButton.vue'
+import { formatDateInRussian } from '@/utils/dateFormatter'
 
 const route = useRoute()
+const { $t } = useI18n()
+
+const formattedDate = computed(() => formatDateInRussian())
 
 function scrollToActiveHash() {
   if (!route.hash) return
@@ -39,7 +44,7 @@ watch(
         </h1>
       </div>
       <p class="legal-updated text-sm sm:text-base">
-        {{ $t('pages.marketRules.updatedAt') }}
+        {{ $t('pages.marketRules.updatedAt', { date: formattedDate }) }}
       </p>
 
       <article class="mt-6 legal-copy text-[var(--text-body-strong)]">

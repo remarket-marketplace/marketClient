@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BackButton from '@/components/navigation/BackButton.vue'
+import { formatDateInRussian } from '@/utils/dateFormatter'
 
 const { t, tm } = useI18n()
 
@@ -12,6 +13,7 @@ type LegalSection = {
 }
 
 const sections = computed(() => tm('pages.privacyPolicyPage.sections') as LegalSection[])
+const formattedDate = computed(() => formatDateInRussian())
 </script>
 
 <template>
@@ -24,7 +26,7 @@ const sections = computed(() => tm('pages.privacyPolicyPage.sections') as LegalS
         </h1>
       </div>
       <p class="legal-updated text-sm sm:text-base">
-        {{ t('pages.privacyPolicyPage.updatedAt') }}
+        {{ t('pages.privacyPolicyPage.updatedAt', { date: formattedDate }) }}
       </p>
 
       <article class="mt-6 legal-copy text-[var(--text-body-strong)]">
