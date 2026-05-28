@@ -1392,8 +1392,8 @@ const typeLabel = (type: string) => {
           </button>
         </div>
       </div>
-
-      <div class="space-y-2">
+      
+      <!-- <div class="space-y-2">
         <label class="block text-sm font-medium text-[var(--text-body)]">
           {{ $t('pages.wallet.withdrawWalletAddress') }}
         </label>
@@ -1416,7 +1416,7 @@ const typeLabel = (type: string) => {
         <p v-if="withdrawWalletAddressValidationMessage" class="text-xs text-[var(--text-danger)]">
           {{ withdrawWalletAddressValidationMessage }}
         </p>
-      </div>
+      </div> -->
 
       <div
         v-if="Number.isFinite(withdrawAmountInRub) && withdrawAmountInRub > 0"
