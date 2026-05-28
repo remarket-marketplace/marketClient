@@ -61,6 +61,10 @@ const loadingSkeletonCount = computed(() => (
     ? perPage.value
     : Math.min(perPage.value, 12)
 ))
+const PRODUCT_REVEAL_STAGGER_MS = 55
+const PRODUCT_CARD_PRELOAD_TIMEOUT_MS = 1800
+const readyCategoryProductCardIds = ref<Record<string, true>>({})
+const categoryProductCardPreloads = new Map<string, Promise<void>>()
 
 function sortCategoriesByActiveProductsCount(categories: Category[]): Category[] {
   return [...categories].sort((a, b) => {
@@ -270,6 +274,101 @@ function goToProduct(productKey: string) {
   router.push({ path: `/product/${productKey}` })
 }
 
+function getProductRevealDelayStyle(index: number): Record<string, string> {
+  return {
+    transitionDelay: `${index * PRODUCT_REVEAL_STAGGER_MS}ms`,
+  }
+}
+
+function isCategoryProductCardReady(productId: string): boolean {
+  return Boolean(readyCategoryProductCardIds.value[productId])
+}
+
+function markCategoryProductCardReady(productId: string): void {
+  if (readyCategoryProductCardIds.value[productId]) return
+  readyCategoryProductCardIds.value = {
+    ...readyCategoryProductCardIds.value,
+    [productId]: true,
+  }
+}
+
+function resolveProductCoverImageUrl(product: Product): string {
+  const coverImageUrl = product.images[0]?.image_url?.trim() ?? ''
+  if (!coverImageUrl) return ''
+  if (coverImageUrl.startsWith('http://') || coverImageUrl.startsWith('https://')) {
+    return coverImageUrl
+  }
+  return `${API_HOST}${coverImageUrl}`
+}
+
+function preloadCategoryProductCard(product: Product): Promise<void> {
+  if (readyCategoryProductCardIds.value[product.id]) {
+    return Promise.resolve()
+  }
+
+  const existingPreload = categoryProductCardPreloads.get(product.id)
+  if (existingPreload) {
+    return existingPreload
+  }
+
+  const coverImageUrl = resolveProductCoverImageUrl(product)
+  if (!coverImageUrl || typeof Image === 'undefined') {
+    markCategoryProductCardReady(product.id)
+    return Promise.resolve()
+  }
+
+  const preloadPromise = new Promise<void>((resolve) => {
+    const preloadImage = new Image()
+    let isSettled = false
+
+    const finishPreload = () => {
+      if (isSettled) return
+      isSettled = true
+      window.clearTimeout(fallbackTimer)
+      preloadImage.onload = null
+      preloadImage.onerror = null
+      markCategoryProductCardReady(product.id)
+      categoryProductCardPreloads.delete(product.id)
+      resolve()
+    }
+
+    const fallbackTimer = window.setTimeout(() => {
+      finishPreload()
+    }, PRODUCT_CARD_PRELOAD_TIMEOUT_MS)
+
+    preloadImage.onload = finishPreload
+    preloadImage.onerror = finishPreload
+    preloadImage.src = coverImageUrl
+
+    if (preloadImage.complete) {
+      finishPreload()
+    }
+  })
+
+  categoryProductCardPreloads.set(product.id, preloadPromise)
+  return preloadPromise
+}
+
+function syncCategoryProductCardReadiness(nextProducts: Product[]): void {
+  const nextReadyState: Record<string, true> = {}
+
+  nextProducts.forEach((product) => {
+    if (readyCategoryProductCardIds.value[product.id]) {
+      nextReadyState[product.id] = true
+      return
+    }
+
+    void preloadCategoryProductCard(product)
+  })
+
+  readyCategoryProductCardIds.value = nextReadyState
+}
+
+function setVisibleCategoryProducts(nextProducts: Product[], append = false): void {
+  products.value = append ? [...products.value, ...nextProducts] : nextProducts
+  syncCategoryProductCardReadiness(products.value)
+}
+
 function goToProductByModel(product: Product) {
   const productKey = buildProductKey(product)
   if (!productKey) return
@@ -469,7 +568,7 @@ async function loadCategoryProducts(page = 1, append = false) {
       excludeOfficial: true,
     },
   )
-  products.value = append ? [...products.value, ...response.products] : response.products
+  setVisibleCategoryProducts(response.products, append)
   currentPage.value = response.currentPage
   totalPages.value = response.totalPages
 
@@ -513,7 +612,7 @@ async function loadCategoryPageData() {
   if (!categoryKey.value) return
   await loadCategoryMeta()
   if (!category.value) {
-    products.value = []
+    setVisibleCategoryProducts([])
     officialProducts.value = []
     officialProductsSourceCategory.value = null
     isProductsLoading.value = false
@@ -1276,20 +1375,42 @@ onBeforeUnmount(() => {
           v-else-if="productCardViewMode === 'grid'"
           class="products-grid grid gap-1 md:gap-2 mt-6 w-full"
         >
-          <MainProductCard
-            v-for="product in products"
-            :key="product.id"
-            :product="product"
-            @click="goToProduct"
-          />
+          <template v-for="(product, index) in products" :key="product.id">
+            <Transition name="category-product-reveal" mode="out-in">
+              <MainProductCard
+                v-if="isCategoryProductCardReady(product.id)"
+                :key="product.id"
+                :product="product"
+                :style="getProductRevealDelayStyle(index)"
+                @click="goToProduct"
+              />
+              <div
+                v-else
+                :key="`${product.id}-skeleton`"
+                class="h-64 animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-600))]"
+                aria-hidden="true"
+              />
+            </Transition>
+          </template>
         </div>
         <div v-else class="mt-6 w-full flex flex-col gap-2">
-          <HomeProductListCard
-            v-for="product in products"
-            :key="product.id"
-            :product="product"
-            @click="goToProduct"
-          />
+          <template v-for="(product, index) in products" :key="product.id">
+            <Transition name="category-product-reveal" mode="out-in">
+              <HomeProductListCard
+                v-if="isCategoryProductCardReady(product.id)"
+                :key="product.id"
+                :product="product"
+                :style="getProductRevealDelayStyle(index)"
+                @click="goToProduct"
+              />
+              <div
+                v-else
+                :key="`${product.id}-skeleton`"
+                class="h-[118px] animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-600))] sm:h-[134px]"
+                aria-hidden="true"
+              />
+            </Transition>
+          </template>
         </div>
       </div>
     </div>
@@ -1357,6 +1478,22 @@ onBeforeUnmount(() => {
 .subcategory-pill:focus-visible {
   border-color: rgb(var(--palette-blue-400) / 0.58);
   box-shadow: inset 0 0 0 1px rgb(var(--palette-blue-400) / 0.2), inset 0 0 14px rgb(var(--palette-blue-500) / 0.2);
+}
+
+.category-product-reveal-enter-active {
+  transition: opacity 380ms ease, transform 380ms ease, filter 380ms ease;
+}
+
+.category-product-reveal-enter-from {
+  opacity: 0;
+  transform: translateY(9px) scale(0.98);
+  filter: blur(2px);
+}
+
+.category-product-reveal-enter-to {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
 }
 
 .products-grid {

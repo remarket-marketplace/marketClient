@@ -8,14 +8,13 @@ import type { Product } from '@/validation/product/product'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import { resolveApiMediaUrl } from '@/utils/mediaUrl'
 import { buildCategoryKey, extractIdFromSlugKey } from '@/utils/urlKeys'
 import { ChevronRight } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
-const API_HOST = import.meta.env.VITE_API_HOST
-
 const rootCategories = ref<Category[]>([])
 const selectedRootCategory = ref<Category | null>(null)
 const officialProducts = ref<Product[]>([])
@@ -28,6 +27,12 @@ const isCategoryLoading = ref(true)
 const isProductsLoading = ref(true)
 const isLoadingMore = ref(false)
 const isSyncingRouteQuery = ref(false)
+const PRODUCT_REVEAL_STAGGER_MS = 55
+const PRODUCT_CARD_PRELOAD_TIMEOUT_MS = 1800
+const readyOfficialProductCardIds = ref<Record<string, true>>({})
+const officialProductCardPreloads = new Map<string, Promise<void>>()
+let officialProductsRequestId = 0
+let ignoreNextGameCategoryWatcher = false
 
 function isVisibleCategory(category: Category): boolean {
   return category.is_active
@@ -75,11 +80,7 @@ function findCategoryByQueryKey(categories: Category[], rawKey: string): Categor
 }
 
 function resolveCategoryBannerUrl(imageUrl: string | null | undefined): string {
-  if (!imageUrl) return ''
-  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-    return imageUrl
-  }
-  return `${API_HOST}${imageUrl}`
+  return resolveApiMediaUrl(imageUrl)
 }
 
 const selectedCategoryForProducts = computed<Category | null>(() =>
@@ -113,6 +114,94 @@ function goToProduct(productKey: string) {
   router.push({ path: `/product/${productKey}` })
 }
 
+function getProductRevealDelayStyle(index: number): Record<string, string> {
+  return {
+    transitionDelay: `${index * PRODUCT_REVEAL_STAGGER_MS}ms`,
+  }
+}
+
+function isOfficialProductCardReady(productId: string): boolean {
+  return Boolean(readyOfficialProductCardIds.value[productId])
+}
+
+function markOfficialProductCardReady(productId: string): void {
+  if (readyOfficialProductCardIds.value[productId]) return
+  readyOfficialProductCardIds.value = {
+    ...readyOfficialProductCardIds.value,
+    [productId]: true,
+  }
+}
+
+function resolveProductCoverImageUrl(product: Product): string {
+  return resolveApiMediaUrl(product.images[0]?.image_url ?? '')
+}
+
+function preloadOfficialProductCard(product: Product): Promise<void> {
+  if (readyOfficialProductCardIds.value[product.id]) {
+    return Promise.resolve()
+  }
+
+  const existingPreload = officialProductCardPreloads.get(product.id)
+  if (existingPreload) {
+    return existingPreload
+  }
+
+  const coverImageUrl = resolveProductCoverImageUrl(product)
+  if (!coverImageUrl || typeof Image === 'undefined') {
+    markOfficialProductCardReady(product.id)
+    return Promise.resolve()
+  }
+
+  const preloadPromise = new Promise<void>((resolve) => {
+    const preloadImage = new Image()
+    let isSettled = false
+
+    const finishPreload = () => {
+      if (isSettled) return
+      isSettled = true
+      window.clearTimeout(fallbackTimer)
+      preloadImage.onload = null
+      preloadImage.onerror = null
+      markOfficialProductCardReady(product.id)
+      officialProductCardPreloads.delete(product.id)
+      resolve()
+    }
+
+    const fallbackTimer = window.setTimeout(finishPreload, PRODUCT_CARD_PRELOAD_TIMEOUT_MS)
+
+    preloadImage.onload = finishPreload
+    preloadImage.onerror = finishPreload
+    preloadImage.src = coverImageUrl
+
+    if (preloadImage.complete) {
+      finishPreload()
+    }
+  })
+
+  officialProductCardPreloads.set(product.id, preloadPromise)
+  return preloadPromise
+}
+
+function syncOfficialProductCardReadiness(nextProducts: Product[]): void {
+  const nextReadyState: Record<string, true> = {}
+
+  nextProducts.forEach((product) => {
+    if (readyOfficialProductCardIds.value[product.id]) {
+      nextReadyState[product.id] = true
+      return
+    }
+
+    void preloadOfficialProductCard(product)
+  })
+
+  readyOfficialProductCardIds.value = nextReadyState
+}
+
+function setVisibleOfficialProducts(nextProducts: Product[], append = false): void {
+  officialProducts.value = append ? [...officialProducts.value, ...nextProducts] : nextProducts
+  syncOfficialProductCardReadiness(officialProducts.value)
+}
+
 function goHome() {
   router.push('/')
 }
@@ -134,6 +223,7 @@ async function syncRouteQueryWithSelection() {
 
   delete nextQuery.subcategoryId
 
+  ignoreNextGameCategoryWatcher = true
   isSyncingRouteQuery.value = true
   try {
     await router.replace({ path: '/official', query: nextQuery })
@@ -164,6 +254,7 @@ async function applySelectionFromRouteQuery() {
 }
 
 async function loadOfficialProducts(page = 1, append = false) {
+  const requestId = ++officialProductsRequestId
   const targetCategory = selectedCategoryForProducts.value
   if (!targetCategory) {
     officialProducts.value = []
@@ -185,15 +276,16 @@ async function loadOfficialProducts(page = 1, append = false) {
       perPage.value,
       { isOfficialOnly: true },
     )
-    officialProducts.value = append
-      ? [...officialProducts.value, ...response.products]
-      : response.products
+    if (requestId !== officialProductsRequestId) return
+    setVisibleOfficialProducts(response.products, append)
     officialProductsTotal.value = response.total
     currentPage.value = response.currentPage
     totalPages.value = response.totalPages
   } finally {
-    isLoadingMore.value = false
-    isProductsLoading.value = false
+    if (requestId === officialProductsRequestId) {
+      isLoadingMore.value = false
+      isProductsLoading.value = false
+    }
   }
 }
 
@@ -221,6 +313,10 @@ async function loadMoreProducts() {
 watch(
   () => route.query.gameCategoryId,
   async () => {
+    if (ignoreNextGameCategoryWatcher) {
+      ignoreNextGameCategoryWatcher = false
+      return
+    }
     if (isSyncingRouteQuery.value || !rootCategories.value.length) return
     await applySelectionFromRouteQuery()
     await loadOfficialProducts(1, false)
@@ -324,12 +420,24 @@ onMounted(async () => {
           v-else
           class="official-products-grid grid gap-2"
         >
-          <MainProductCard
-            v-for="product in officialProducts"
+          <div
+            v-for="(product, index) in officialProducts"
             :key="`official-product-${product.id}`"
-            :product="product"
-            @click="goToProduct"
-          />
+          >
+            <Transition name="official-product-reveal" mode="out-in">
+              <MainProductCard
+                v-if="isOfficialProductCardReady(product.id)"
+                :product="product"
+                :style="getProductRevealDelayStyle(index)"
+                @click="goToProduct"
+              />
+              <div
+                v-else
+                :style="getProductRevealDelayStyle(index)"
+                class="h-64 animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-600))]"
+              ></div>
+            </Transition>
+          </div>
         </div>
 
         <div v-if="canLoadMore" class="mt-6 flex justify-center">
@@ -395,6 +503,22 @@ onMounted(async () => {
 
 .official-products-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.official-product-reveal-enter-active {
+  transition: opacity 0.38s ease, transform 0.38s ease, filter 0.38s ease;
+}
+
+.official-product-reveal-enter-from {
+  opacity: 0;
+  transform: translateY(14px) scale(0.985);
+  filter: blur(10px);
+}
+
+.official-product-reveal-enter-to {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
 }
 
 @media (min-width: 640px) {

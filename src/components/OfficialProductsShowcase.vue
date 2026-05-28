@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Product } from '@/validation/product/product'
 import { formatCurrencyAmount } from '@/utils/currency'
+import { resolveApiMediaUrl } from '@/utils/mediaUrl'
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -20,20 +21,13 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const API_HOST = import.meta.env.VITE_API_HOST
-
 const carouselRef = ref<HTMLElement | null>(null)
 const isCarouselAtStart = ref(true)
 const isCarouselAtEnd = ref(false)
 const STAGGER_STEP_MS = 90
 
 function resolveProductImageUrl(product: Product): string {
-  const firstImage = product.images[0]?.image_url ?? ''
-  if (!firstImage) return ''
-  if (firstImage.startsWith('http://') || firstImage.startsWith('https://')) {
-    return firstImage
-  }
-  return `${API_HOST}${firstImage}`
+  return resolveApiMediaUrl(product.images[0]?.image_url ?? '')
 }
 
 function formatOfficialPrice(price: number): string {
