@@ -1079,7 +1079,7 @@ onBeforeUnmount(() => {
   <section class="relative w-full flex flex-col items-center">
     <div
       class="relative z-20 flex min-h-screen w-full flex-col items-center px-1 pb-6 sm:px-2 lg:px-2"
-      :class="user ? 'pt-14 md:pt-20' : 'pt-8 md:pt-12'"
+      :class="user ? 'pt-14 md:pt-20' : 'pt-14 md:pt-20'"
     >
         <TelegramStarsCta class="mt-2 w-full" :show-steam-link="HOME_STEAM_TOPUP_ENABLED" />
 
