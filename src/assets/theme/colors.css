@@ -303,8 +303,6 @@
   /* Controls and editors */
   --color-picker-hue-gradient: linear-gradient(90deg, #ff0000 0%, #ffff00 16.66%, #00ff00 33.33%, #00ffff 50%, #0000ff 66.66%, #ff00ff 83.33%, #ff0000 100%); /* Hue spectrum for custom color editor. */
   --admin-table-sticky-bg: rgb(var(--palette-navy-850) / 0.95); /* Sticky admin table header background. */
-  --vpn-device-slider-fill: rgb(var(--palette-cyan-300)); /* VPN device slider selected track fill. */
-  --vpn-device-progress: 0%; /* Default VPN device slider progress before inline value is applied. */
 
   /* Scrollbars */
   --scrollbar-track: rgb(var(--palette-gray-800)); /* Scrollbar track background. */

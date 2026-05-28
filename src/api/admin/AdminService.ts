@@ -79,35 +79,6 @@ export type PartnerStats = {
   deals_by_status: DashboardStatusBreakdown[]
 }
 
-export type ScopeVpnPartnerStats = {
-  trial_count: number
-  purchase_count: number
-  total_orders: number
-  total_purchase_amount: number
-  average_purchase_amount: number
-  orders_by_status: DashboardStatusBreakdown[]
-  orders_by_plan: Array<{
-    plan: string
-    count: number
-    revenue: number
-  }>
-}
-
-export type ScopeVpnPartnerMessageSettings = {
-  partner_message_ru: string
-  partner_message_en: string
-}
-
-export type ScopeVpnPricingItem = {
-  months: number
-  devices: number
-  price: number
-}
-
-export type ScopeVpnPricingResponse = {
-  prices: ScopeVpnPricingItem[]
-}
-
 export type ActivityLogFilters = {
   user_id?: string
   username?: string
@@ -125,9 +96,6 @@ export type PlatformSettings = {
   deal_commission_percent: number
   withdrawal_commission_percent: number
   telegram_stars_price_rub: number
-  vpn_month_price: number
-  vpn_quarter_price: number
-  vpn_halfyear_price: number
   official_store_hero_image_url?: string | null
 }
 
@@ -257,60 +225,6 @@ export const adminService = {
       return response.data as PartnerStats;
     } catch (e) {
       console.error("Failed to load partner fortnite stats", e);
-      return null;
-    }
-  },
-
-  async getScopeVpnPartnerStats(): Promise<ScopeVpnPartnerStats | null> {
-    try {
-      const response = await httpClient.get("/admin/partners/vpn-stats");
-      return response.data as ScopeVpnPartnerStats;
-    } catch (e) {
-      console.error("Failed to load Scope VPN partner stats", e);
-      return null;
-    }
-  },
-
-  async getScopeVpnPartnerMessageSettings(): Promise<ScopeVpnPartnerMessageSettings | null> {
-    try {
-      const response = await httpClient.get("/admin/partners/vpn-message-settings");
-      return response.data as ScopeVpnPartnerMessageSettings;
-    } catch (e) {
-      console.error("Failed to load Scope VPN partner message settings", e);
-      return null;
-    }
-  },
-
-  async updateScopeVpnPartnerMessageSettings(
-    payload: ScopeVpnPartnerMessageSettings,
-  ): Promise<ScopeVpnPartnerMessageSettings | null> {
-    try {
-      const response = await httpClient.patch("/admin/partners/vpn-message-settings", payload);
-      return response.data as ScopeVpnPartnerMessageSettings;
-    } catch (e) {
-      console.error("Failed to update Scope VPN partner message settings", e);
-      return null;
-    }
-  },
-
-  async getScopeVpnPartnerPricing(): Promise<ScopeVpnPricingResponse | null> {
-    try {
-      const response = await httpClient.get("/admin/partners/vpn-pricing");
-      return response.data as ScopeVpnPricingResponse;
-    } catch (e) {
-      console.error("Failed to load Scope VPN pricing", e);
-      return null;
-    }
-  },
-
-  async updateScopeVpnPartnerPricing(
-    payload: ScopeVpnPricingResponse,
-  ): Promise<ScopeVpnPricingResponse | null> {
-    try {
-      const response = await httpClient.patch("/admin/partners/vpn-pricing", payload);
-      return response.data as ScopeVpnPricingResponse;
-    } catch (e) {
-      console.error("Failed to update Scope VPN pricing", e);
       return null;
     }
   },

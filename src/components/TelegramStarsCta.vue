@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { Icon } from '@iconify/vue'
+import { ArrowRight } from 'lucide-vue-next'
 import axios from 'axios'
 
 import TheInput from '@/components/TheInput.vue'
@@ -24,6 +25,12 @@ const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 const { user } = storeToRefs(userStore)
+
+withDefaults(defineProps<{
+  showSteamLink?: boolean
+}>(), {
+  showSteamLink: false,
+})
 
 const telegramUsername = ref('')
 const telegramStarsAmount = ref('')
@@ -48,7 +55,9 @@ const isStarsAmountValid = computed(
 )
 const totalPriceRub = computed(() => {
   if (!pricingEnabled.value || !isStarsAmountValid.value) return 0
-  return Number((normalizedStarsAmount.value * pricePerStarRub.value).toFixed(2))
+  const starsAmount = normalizedStarsAmount.value
+  if (starsAmount === null) return 0
+  return Number((starsAmount * pricePerStarRub.value).toFixed(2))
 })
 const canSubmit = computed(() => (
   pricingEnabled.value
@@ -200,6 +209,15 @@ onMounted(() => {
         </label>
 
         <div class="telegram-stars-entry__actions col-span-2 self-center md:col-span-2 md:w-full xl:col-auto xl:w-auto xl:justify-self-end">
+          <RouterLink
+            v-if="showSteamLink"
+            to="/steam-topup"
+            class="telegram-stars-entry__steam-link"
+          >
+            <span>Пополнение Steam</span>
+            <ArrowRight class="h-4 w-4" stroke-width="1.9" />
+          </RouterLink>
+
           <TheButton
             :button-text="buttonText"
             :sended="isSubmitting"
@@ -288,8 +306,43 @@ onMounted(() => {
     inset 0 1px 0 rgb(var(--palette-white) / 0.18),
     0 16px 40px rgb(24 171 255 / 0.22);
 }
+
+.telegram-stars-entry__steam-link {
+  display: inline-flex;
+  min-height: 2.65rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 1px solid rgb(var(--palette-white) / 0.12);
+  border-radius: 9999px;
+  background: rgb(var(--palette-white) / 0.05);
+  padding: 0.72rem 1rem;
+  color: rgb(var(--palette-gray-100));
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+
+.telegram-stars-entry__steam-link:hover {
+  border-color: rgb(102 192 244 / 0.34);
+  background: rgb(102 192 244 / 0.12);
+  color: var(--white-solid);
+}
+
 @media (min-width: 768px) and (max-width: 1279px) {
+  .telegram-stars-entry__actions {
+    display: grid;
+    gap: 0.7rem;
+  }
+
   .telegram-stars-entry__actions :deep(button) {
+    min-height: 2.9rem;
+    width: 100%;
+  }
+
+  .telegram-stars-entry__steam-link {
     min-height: 2.9rem;
     width: 100%;
   }
@@ -306,6 +359,25 @@ onMounted(() => {
     width: 100%;
     min-width: 0;
     border-radius: 1rem;
+  }
+
+  .telegram-stars-entry__actions {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .telegram-stars-entry__steam-link {
+    min-height: 2.8rem;
+    width: 100%;
+    border-radius: 1rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .telegram-stars-entry__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
   }
 }
 </style>

@@ -32,15 +32,6 @@ const STATIC_ROUTE_META = {
     title: 'Официальные товары — remarket',
     description: 'Официальные цифровые товары и услуги на remarket.',
   },
-  '/vpn': {
-    title: 'Scope VPN — быстрый VPN от remarket',
-    description: 'Подключите Scope VPN: быстрые серверы, разные сроки подписки и удобная покупка на remarket.',
-  },
-  '/remarket-vpn': {
-    title: 'Scope VPN — быстрый VPN от remarket',
-    description: 'Подключите Scope VPN: быстрые серверы, разные сроки подписки и удобная покупка на remarket.',
-    canonicalPath: '/vpn',
-  },
   '/become-seller': {
     title: 'Как начать продавать — remarket',
     description: 'Короткий гид по продаже цифровых товаров, правилам сделок и безопасности на remarket.',
@@ -71,7 +62,6 @@ const STATIC_ROUTE_META = {
 const STATIC_SITEMAP_PATHS = [
   '/',
   '/official',
-  '/vpn',
   '/become-seller',
   '/about',
   '/rules',
@@ -106,7 +96,6 @@ const STATIC_KNOWN_PATHS = new Set([
   '/admin/activity-logs',
   '/admin/categories/create',
   '/partner/fortnite-stats',
-  '/partner/vpn-stats',
   '/wallet',
   '/steam-topup',
   '/settings',

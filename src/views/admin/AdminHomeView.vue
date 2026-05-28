@@ -179,9 +179,6 @@ const commissionSettingsValid = computed(() => {
     isValidCommissionValue(platformSettings.value.deal_commission_percent)
     && isValidCommissionValue(platformSettings.value.withdrawal_commission_percent)
     && isValidPriceValue(platformSettings.value.telegram_stars_price_rub)
-    && isValidPriceValue(platformSettings.value.vpn_month_price)
-    && isValidPriceValue(platformSettings.value.vpn_quarter_price)
-    && isValidPriceValue(platformSettings.value.vpn_halfyear_price)
   )
 })
 
@@ -194,12 +191,6 @@ const commissionSettingsDirty = computed(() => {
       !== Number(persistedPlatformSettings.value.withdrawal_commission_percent)
     || Number(platformSettings.value.telegram_stars_price_rub)
       !== Number(persistedPlatformSettings.value.telegram_stars_price_rub)
-    || Number(platformSettings.value.vpn_month_price)
-      !== Number(persistedPlatformSettings.value.vpn_month_price)
-    || Number(platformSettings.value.vpn_quarter_price)
-      !== Number(persistedPlatformSettings.value.vpn_quarter_price)
-    || Number(platformSettings.value.vpn_halfyear_price)
-      !== Number(persistedPlatformSettings.value.vpn_halfyear_price)
   )
 })
 
@@ -213,9 +204,6 @@ const getEffectiveCommissionPayload = () => {
       deal_commission_percent: 0,
       withdrawal_commission_percent: 0,
       telegram_stars_price_rub: 0,
-      vpn_month_price: 0,
-      vpn_quarter_price: 0,
-      vpn_halfyear_price: 0,
     }
   }
 
@@ -223,9 +211,6 @@ const getEffectiveCommissionPayload = () => {
     deal_commission_percent: Number(source.deal_commission_percent),
     withdrawal_commission_percent: Number(source.withdrawal_commission_percent),
     telegram_stars_price_rub: Number(source.telegram_stars_price_rub),
-    vpn_month_price: Number(source.vpn_month_price),
-    vpn_quarter_price: Number(source.vpn_quarter_price),
-    vpn_halfyear_price: Number(source.vpn_halfyear_price),
   }
 }
 
@@ -1046,56 +1031,6 @@ watch(selectedRange, loadDashboard)
                   </p>
                 </label>
 
-                <label class="admin-surface-panel rounded-xl p-3">
-                  <span class="text-xs uppercase tracking-[0.18em] text-[var(--text-meta)]">
-                    {{ t('pages.admin.mainPage.vpnMonthPriceLabel') }}
-                  </span>
-                  <input
-                    v-model.number="platformSettings.vpn_month_price"
-                    type="number"
-                    min="0"
-                    max="1000000"
-                    step="0.01"
-                    class="mt-3 w-full rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] px-4 py-3 text-lg font-semibold text-[var(--text-title)] outline-none transition focus:border-[rgb(var(--palette-sky-400)/0.45)] focus:bg-[rgb(var(--palette-sky-400)/0.05)]"
-                  >
-                  <p class="mt-2 text-xs text-[var(--text-muted)]">
-                    {{ t('pages.admin.mainPage.vpnPriceHint') }}
-                  </p>
-                </label>
-
-                <label class="admin-surface-panel rounded-xl p-3">
-                  <span class="text-xs uppercase tracking-[0.18em] text-[var(--text-meta)]">
-                    {{ t('pages.admin.mainPage.vpnQuarterPriceLabel') }}
-                  </span>
-                  <input
-                    v-model.number="platformSettings.vpn_quarter_price"
-                    type="number"
-                    min="0"
-                    max="1000000"
-                    step="0.01"
-                    class="mt-3 w-full rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] px-4 py-3 text-lg font-semibold text-[var(--text-title)] outline-none transition focus:border-[rgb(var(--palette-sky-400)/0.45)] focus:bg-[rgb(var(--palette-sky-400)/0.05)]"
-                  >
-                  <p class="mt-2 text-xs text-[var(--text-muted)]">
-                    {{ t('pages.admin.mainPage.vpnPriceHint') }}
-                  </p>
-                </label>
-
-                <label class="admin-surface-panel rounded-xl p-3">
-                  <span class="text-xs uppercase tracking-[0.18em] text-[var(--text-meta)]">
-                    {{ t('pages.admin.mainPage.vpnHalfyearPriceLabel') }}
-                  </span>
-                  <input
-                    v-model.number="platformSettings.vpn_halfyear_price"
-                    type="number"
-                    min="0"
-                    max="1000000"
-                    step="0.01"
-                    class="mt-3 w-full rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] px-4 py-3 text-lg font-semibold text-[var(--text-title)] outline-none transition focus:border-[rgb(var(--palette-sky-400)/0.45)] focus:bg-[rgb(var(--palette-sky-400)/0.05)]"
-                  >
-                  <p class="mt-2 text-xs text-[var(--text-muted)]">
-                    {{ t('pages.admin.mainPage.vpnPriceHint') }}
-                  </p>
-                </label>
               </div>
 
               <p class="mt-3 text-xs text-[var(--text-meta)]">

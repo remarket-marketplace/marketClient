@@ -43,11 +43,6 @@ const { user } = storeToRefs(store)
 const { unreadDialogTotal } = storeToRefs(chatStore)
 const signInFromCurrentLocation = computed(() => buildAuthModalLocation(route))
 
-const getPartnerType = () => {
-    if (user.value?.partner_type) return user.value.partner_type
-    return user.value?.username?.toLowerCase() === 'scopevpn' ? 'vpn' : 'raika'
-}
-
 function checkDesktop() {
     isDesktop.value = window.innerWidth >= 768
 }
@@ -151,15 +146,11 @@ const navItems = computed(() => {
     }
 
     if (user.value?.role === 'partner') {
-        const partnerType = getPartnerType()
-        const partnerRoute = partnerType === 'vpn'
-            ? '/partner/vpn-stats'
-            : '/partner/fortnite-stats'
         items.push({
             id: 'partner-stats',
             title: t('common.partner'),
             icon: BarChart3,
-            to: partnerRoute,
+            to: '/partner/fortnite-stats',
             partner: true
         })
     }
@@ -207,15 +198,11 @@ const mobileNavItems = computed(() => {
     }
 
     if (user.value?.role === 'partner') {
-        const partnerType = getPartnerType()
-        const partnerRoute = partnerType === 'vpn'
-            ? '/partner/vpn-stats'
-            : '/partner/fortnite-stats'
         items.push({
             id: 'partner-stats',
             title: t('common.partner'),
             icon: BarChart3,
-            to: partnerRoute,
+            to: '/partner/fortnite-stats',
             partner: true
         })
     }

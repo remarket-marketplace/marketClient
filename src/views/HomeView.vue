@@ -6,10 +6,6 @@ import MainProductCard from '@/components/mainProductCard.vue'
 import HomeProductListCard from '@/components/HomeProductListCard.vue'
 import OfficialProductsShowcase from '@/components/OfficialProductsShowcase.vue'
 import Title from '@/components/Title.vue'
-import HeroSection from '@/components/HeroSection.vue'
-import HeroBackground from '@/components/HeroBackground.vue'
-import ScopeVpnCta from '@/components/ScopeVpnCta.vue'
-import SteamTopUpCta from '@/components/SteamTopUpCta.vue'
 import TelegramStarsCta from '@/components/TelegramStarsCta.vue'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
@@ -27,7 +23,7 @@ import type {
 import { isValidSteamTopUpAccount, normalizeSteamTopUpAccount } from '@/validation/steamTopup/steamTopup'
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ChevronRight, Folder, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
+import { ArrowRight, ChevronRight, Folder, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
 import axios from 'axios'
 import {
   convertCurrencyAmount,
@@ -986,33 +982,19 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <HeroSection v-if="!user" />
-
   <div id="catalog-start" class="scroll-mt-24"></div>
 
   <section class="relative w-full flex flex-col items-center">
     <div
-      v-if="user"
-      class="pointer-events-none absolute top-0 left-1/2 right-1/2 ml-[-50vw] mr-[-50vw] h-[70vh] w-screen z-0"
-    >
-      <HeroBackground />
-    </div>
-
-    <div
       class="relative z-20 flex min-h-screen w-full flex-col items-center px-1 pb-6 sm:px-2 lg:px-2"
-      :class="user ? 'pt-14 md:pt-20' : 'pt-0'"
+      :class="user ? 'pt-14 md:pt-20' : 'pt-8 md:pt-12'"
     >
-        <div class="mt-2 grid w-full items-stretch gap-3 md:grid-cols-2">
-          <ScopeVpnCta />
-          <SteamTopUpCta v-if="HOME_STEAM_TOPUP_ENABLED" />
-        </div>
-
-        <TelegramStarsCta class="mt-3 w-full" />
+        <TelegramStarsCta class="mt-2 w-full" :show-steam-link="HOME_STEAM_TOPUP_ENABLED" />
 
         <OfficialProductsShowcase
           v-if="shouldShowOfficialHomeShowcase"
           :products="officialHomeProducts"
-          class="mt-18 w-full p-3"
+          class="mt-2 w-full p-3"
           @product-click="goToProductByModel"
           @view-all="router.push('/official')"
         />

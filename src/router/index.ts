@@ -235,13 +235,7 @@ const routes: RouteRecordRaw[] = [
       path: "/partner/fortnite-stats",
       name: "partner fortnite stats",
       component: () => import("@/views/partner/PartnerFortniteStatsView.vue"),
-      meta: { requiredPartner: true, partnerType: 'raika' },
-    },
-    {
-      path: "/partner/vpn-stats",
-      name: "partner vpn stats",
-      component: () => import("@/views/partner/PartnerScopeVpnStatsView.vue"),
-      meta: { requiredPartner: true, partnerType: 'vpn' },
+      meta: { requiredPartner: true },
     },
     {
       path: "/wallet",
@@ -254,12 +248,6 @@ const routes: RouteRecordRaw[] = [
       name: "steam topup",
       component: () => import("@/views/SteamTopUpView.vue"),
       meta: { requiredAuthorized: true },
-    },
-    {
-      path: "/vpn",
-      alias: "/remarket-vpn",
-      name: "scope vpn",
-      component: () => import("@/views/VpnServiceView.vue"),
     },
     {
       path: "/settings",
@@ -315,12 +303,6 @@ const routes: RouteRecordRaw[] = [
       component: () => import("@/views/NotAccess.vue"),
     },
   ]
-
-const getPartnerType = (user: { partner_type?: string | null; username?: string | null } | null | undefined) => {
-  if (!user) return null
-  if (user.partner_type) return user.partner_type
-  return user.username?.toLowerCase() === 'scopevpn' ? 'vpn' : 'raika'
-}
 
 export function createAppRouter(isSSR = false) {
   const history = isSSR ? createMemoryHistory() : createWebHistory(import.meta.env.BASE_URL)
@@ -402,8 +384,6 @@ export function createAppRouter(isSSR = false) {
     const navigationStore = useNavigationStore()
     const userStore = useUserStore()
     const { requiredAdmin, requiredAuthorized, requiredGuest, requiredPartner } = to.meta
-    const partnerType = to.meta.partnerType as string | undefined
-
     navigationStore.startRoutePending()
 
     if (!requiredAdmin && !requiredAuthorized && !requiredGuest && !requiredPartner) {
@@ -447,12 +427,6 @@ export function createAppRouter(isSSR = false) {
       }
       // Check if user is partner and has correct partner type
       if (user.role === 'partner') {
-        const actualPartnerType = getPartnerType(user)
-        
-        if (partnerType && actualPartnerType !== partnerType) {
-          // Partner trying to access wrong panel
-          return '/not-access'
-        }
         return true
       }
       // Not a partner or admin
