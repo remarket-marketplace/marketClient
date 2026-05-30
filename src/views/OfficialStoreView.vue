@@ -28,9 +28,6 @@ const isProductsLoading = ref(true)
 const isLoadingMore = ref(false)
 const isSyncingRouteQuery = ref(false)
 const PRODUCT_REVEAL_STAGGER_MS = 55
-const PRODUCT_CARD_PRELOAD_TIMEOUT_MS = 1800
-const readyOfficialProductCardIds = ref<Record<string, true>>({})
-const officialProductCardPreloads = new Map<string, Promise<void>>()
 let officialProductsRequestId = 0
 let ignoreNextGameCategoryWatcher = false
 
@@ -120,86 +117,8 @@ function getProductRevealDelayStyle(index: number): Record<string, string> {
   }
 }
 
-function isOfficialProductCardReady(productId: string): boolean {
-  return Boolean(readyOfficialProductCardIds.value[productId])
-}
-
-function markOfficialProductCardReady(productId: string): void {
-  if (readyOfficialProductCardIds.value[productId]) return
-  readyOfficialProductCardIds.value = {
-    ...readyOfficialProductCardIds.value,
-    [productId]: true,
-  }
-}
-
-function resolveProductCoverImageUrl(product: Product): string {
-  return resolveApiMediaUrl(product.images[0]?.image_url ?? '')
-}
-
-function preloadOfficialProductCard(product: Product): Promise<void> {
-  if (readyOfficialProductCardIds.value[product.id]) {
-    return Promise.resolve()
-  }
-
-  const existingPreload = officialProductCardPreloads.get(product.id)
-  if (existingPreload) {
-    return existingPreload
-  }
-
-  const coverImageUrl = resolveProductCoverImageUrl(product)
-  if (!coverImageUrl || typeof Image === 'undefined') {
-    markOfficialProductCardReady(product.id)
-    return Promise.resolve()
-  }
-
-  const preloadPromise = new Promise<void>((resolve) => {
-    const preloadImage = new Image()
-    let isSettled = false
-
-    const finishPreload = () => {
-      if (isSettled) return
-      isSettled = true
-      window.clearTimeout(fallbackTimer)
-      preloadImage.onload = null
-      preloadImage.onerror = null
-      markOfficialProductCardReady(product.id)
-      officialProductCardPreloads.delete(product.id)
-      resolve()
-    }
-
-    const fallbackTimer = window.setTimeout(finishPreload, PRODUCT_CARD_PRELOAD_TIMEOUT_MS)
-
-    preloadImage.onload = finishPreload
-    preloadImage.onerror = finishPreload
-    preloadImage.src = coverImageUrl
-
-    if (preloadImage.complete) {
-      finishPreload()
-    }
-  })
-
-  officialProductCardPreloads.set(product.id, preloadPromise)
-  return preloadPromise
-}
-
-function syncOfficialProductCardReadiness(nextProducts: Product[]): void {
-  const nextReadyState: Record<string, true> = {}
-
-  nextProducts.forEach((product) => {
-    if (readyOfficialProductCardIds.value[product.id]) {
-      nextReadyState[product.id] = true
-      return
-    }
-
-    void preloadOfficialProductCard(product)
-  })
-
-  readyOfficialProductCardIds.value = nextReadyState
-}
-
 function setVisibleOfficialProducts(nextProducts: Product[], append = false): void {
   officialProducts.value = append ? [...officialProducts.value, ...nextProducts] : nextProducts
-  syncOfficialProductCardReadiness(officialProducts.value)
 }
 
 function goHome() {
@@ -424,18 +343,12 @@ onMounted(async () => {
             v-for="(product, index) in officialProducts"
             :key="`official-product-${product.id}`"
           >
-            <Transition name="official-product-reveal" mode="out-in">
+            <Transition name="official-product-reveal" appear>
               <MainProductCard
-                v-if="isOfficialProductCardReady(product.id)"
                 :product="product"
                 :style="getProductRevealDelayStyle(index)"
                 @click="goToProduct"
               />
-              <div
-                v-else
-                :style="getProductRevealDelayStyle(index)"
-                class="h-64 animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-600))]"
-              ></div>
             </Transition>
           </div>
         </div>

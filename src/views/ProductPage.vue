@@ -107,9 +107,6 @@ const similarProductsLoadingSkeletonCount = computed(() => (
     : 3
 ))
 const PRODUCT_REVEAL_STAGGER_MS = 55
-const PRODUCT_CARD_PRELOAD_TIMEOUT_MS = 1800
-const readySimilarProductCardIds = ref<Record<string, true>>({})
-const similarProductCardPreloads = new Map<string, Promise<void>>()
 const shouldShowOfficialRemarketCarousel = computed(() =>
   isOfficialProductsLoading.value || officialProducts.value.length > 0
 )
@@ -267,93 +264,8 @@ function getProductRevealDelayStyle(index: number): Record<string, string> {
   }
 }
 
-function isSimilarProductCardReady(productId: string): boolean {
-  return Boolean(readySimilarProductCardIds.value[productId])
-}
-
-function markSimilarProductCardReady(productId: string): void {
-  if (readySimilarProductCardIds.value[productId]) return
-  readySimilarProductCardIds.value = {
-    ...readySimilarProductCardIds.value,
-    [productId]: true,
-  }
-}
-
-function resolveProductCoverImageUrl(product: Product): string {
-  const coverImageUrl = product.images[0]?.image_url?.trim() ?? ''
-  if (!coverImageUrl) return ''
-  if (coverImageUrl.startsWith('http://') || coverImageUrl.startsWith('https://')) {
-    return coverImageUrl
-  }
-  return `${API_HOST}${coverImageUrl}`
-}
-
-function preloadSimilarProductCard(product: Product): Promise<void> {
-  if (readySimilarProductCardIds.value[product.id]) {
-    return Promise.resolve()
-  }
-
-  const existingPreload = similarProductCardPreloads.get(product.id)
-  if (existingPreload) {
-    return existingPreload
-  }
-
-  const coverImageUrl = resolveProductCoverImageUrl(product)
-  if (!coverImageUrl || typeof Image === 'undefined') {
-    markSimilarProductCardReady(product.id)
-    return Promise.resolve()
-  }
-
-  const preloadPromise = new Promise<void>((resolve) => {
-    const preloadImage = new Image()
-    let isSettled = false
-
-    const finishPreload = () => {
-      if (isSettled) return
-      isSettled = true
-      window.clearTimeout(fallbackTimer)
-      preloadImage.onload = null
-      preloadImage.onerror = null
-      markSimilarProductCardReady(product.id)
-      similarProductCardPreloads.delete(product.id)
-      resolve()
-    }
-
-    const fallbackTimer = window.setTimeout(() => {
-      finishPreload()
-    }, PRODUCT_CARD_PRELOAD_TIMEOUT_MS)
-
-    preloadImage.onload = finishPreload
-    preloadImage.onerror = finishPreload
-    preloadImage.src = coverImageUrl
-
-    if (preloadImage.complete) {
-      finishPreload()
-    }
-  })
-
-  similarProductCardPreloads.set(product.id, preloadPromise)
-  return preloadPromise
-}
-
-function syncSimilarProductCardReadiness(nextProducts: Product[]): void {
-  const nextReadyState: Record<string, true> = {}
-
-  nextProducts.forEach((product) => {
-    if (readySimilarProductCardIds.value[product.id]) {
-      nextReadyState[product.id] = true
-      return
-    }
-
-    void preloadSimilarProductCard(product)
-  })
-
-  readySimilarProductCardIds.value = nextReadyState
-}
-
 function setVisibleSimilarProducts(nextProducts: Product[]): void {
   similarProducts.value = nextProducts
-  syncSimilarProductCardReadiness(similarProducts.value)
 }
 
 function restoreProductCardViewModeFromStorage(): void {
@@ -509,7 +421,6 @@ async function loadProductData() {
   selectedImage.value = null
   parentCategory.value = null
   similarProducts.value = []
-  readySimilarProductCardIds.value = {}
   officialProducts.value = []
   isOfficialProductsLoading.value = false
 
@@ -1344,18 +1255,12 @@ onUnmounted(() => {
                 v-for="(similarProduct, index) in similarProducts"
                 :key="similarProduct.id"
               >
-                <Transition name="similar-product-reveal" mode="out-in">
+                <Transition name="similar-product-reveal" appear>
                   <MainProductCard
-                    v-if="isSimilarProductCardReady(similarProduct.id)"
                     :product="similarProduct"
                     :style="getProductRevealDelayStyle(index)"
                     @click="goToProductPage"
                   />
-                  <div
-                    v-else
-                    :style="getProductRevealDelayStyle(index)"
-                    class="h-64 animate-pulse rounded-lg bg-[rgb(var(--palette-dark-600))]"
-                  ></div>
                 </Transition>
               </div>
             </div>
@@ -1364,18 +1269,12 @@ onUnmounted(() => {
                 v-for="(similarProduct, index) in similarProducts"
                 :key="similarProduct.id"
               >
-                <Transition name="similar-product-reveal" mode="out-in">
+                <Transition name="similar-product-reveal" appear>
                   <HomeProductListCard
-                    v-if="isSimilarProductCardReady(similarProduct.id)"
                     :product="similarProduct"
                     :style="getProductRevealDelayStyle(index)"
                     @click="goToProductPage"
                   />
-                  <div
-                    v-else
-                    :style="getProductRevealDelayStyle(index)"
-                    class="h-[118px] animate-pulse rounded-lg bg-[rgb(var(--palette-dark-600))] sm:h-[134px]"
-                  ></div>
                 </Transition>
               </div>
             </div>

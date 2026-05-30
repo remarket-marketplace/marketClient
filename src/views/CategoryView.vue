@@ -62,9 +62,6 @@ const loadingSkeletonCount = computed(() => (
     : Math.min(perPage.value, 12)
 ))
 const PRODUCT_REVEAL_STAGGER_MS = 55
-const PRODUCT_CARD_PRELOAD_TIMEOUT_MS = 1800
-const readyCategoryProductCardIds = ref<Record<string, true>>({})
-const categoryProductCardPreloads = new Map<string, Promise<void>>()
 
 function sortCategoriesByActiveProductsCount(categories: Category[]): Category[] {
   return [...categories].sort((a, b) => {
@@ -280,93 +277,8 @@ function getProductRevealDelayStyle(index: number): Record<string, string> {
   }
 }
 
-function isCategoryProductCardReady(productId: string): boolean {
-  return Boolean(readyCategoryProductCardIds.value[productId])
-}
-
-function markCategoryProductCardReady(productId: string): void {
-  if (readyCategoryProductCardIds.value[productId]) return
-  readyCategoryProductCardIds.value = {
-    ...readyCategoryProductCardIds.value,
-    [productId]: true,
-  }
-}
-
-function resolveProductCoverImageUrl(product: Product): string {
-  const coverImageUrl = product.images[0]?.image_url?.trim() ?? ''
-  if (!coverImageUrl) return ''
-  if (coverImageUrl.startsWith('http://') || coverImageUrl.startsWith('https://')) {
-    return coverImageUrl
-  }
-  return `${API_HOST}${coverImageUrl}`
-}
-
-function preloadCategoryProductCard(product: Product): Promise<void> {
-  if (readyCategoryProductCardIds.value[product.id]) {
-    return Promise.resolve()
-  }
-
-  const existingPreload = categoryProductCardPreloads.get(product.id)
-  if (existingPreload) {
-    return existingPreload
-  }
-
-  const coverImageUrl = resolveProductCoverImageUrl(product)
-  if (!coverImageUrl || typeof Image === 'undefined') {
-    markCategoryProductCardReady(product.id)
-    return Promise.resolve()
-  }
-
-  const preloadPromise = new Promise<void>((resolve) => {
-    const preloadImage = new Image()
-    let isSettled = false
-
-    const finishPreload = () => {
-      if (isSettled) return
-      isSettled = true
-      window.clearTimeout(fallbackTimer)
-      preloadImage.onload = null
-      preloadImage.onerror = null
-      markCategoryProductCardReady(product.id)
-      categoryProductCardPreloads.delete(product.id)
-      resolve()
-    }
-
-    const fallbackTimer = window.setTimeout(() => {
-      finishPreload()
-    }, PRODUCT_CARD_PRELOAD_TIMEOUT_MS)
-
-    preloadImage.onload = finishPreload
-    preloadImage.onerror = finishPreload
-    preloadImage.src = coverImageUrl
-
-    if (preloadImage.complete) {
-      finishPreload()
-    }
-  })
-
-  categoryProductCardPreloads.set(product.id, preloadPromise)
-  return preloadPromise
-}
-
-function syncCategoryProductCardReadiness(nextProducts: Product[]): void {
-  const nextReadyState: Record<string, true> = {}
-
-  nextProducts.forEach((product) => {
-    if (readyCategoryProductCardIds.value[product.id]) {
-      nextReadyState[product.id] = true
-      return
-    }
-
-    void preloadCategoryProductCard(product)
-  })
-
-  readyCategoryProductCardIds.value = nextReadyState
-}
-
 function setVisibleCategoryProducts(nextProducts: Product[], append = false): void {
   products.value = append ? [...products.value, ...nextProducts] : nextProducts
-  syncCategoryProductCardReadiness(products.value)
 }
 
 function goToProductByModel(product: Product) {
@@ -1376,38 +1288,24 @@ onBeforeUnmount(() => {
           class="products-grid grid gap-1 md:gap-2 mt-6 w-full"
         >
           <template v-for="(product, index) in products" :key="product.id">
-            <Transition name="category-product-reveal" mode="out-in">
+            <Transition name="category-product-reveal" appear>
               <MainProductCard
-                v-if="isCategoryProductCardReady(product.id)"
                 :key="product.id"
                 :product="product"
                 :style="getProductRevealDelayStyle(index)"
                 @click="goToProduct"
-              />
-              <div
-                v-else
-                :key="`${product.id}-skeleton`"
-                class="h-64 animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-600))]"
-                aria-hidden="true"
               />
             </Transition>
           </template>
         </div>
         <div v-else class="mt-6 w-full flex flex-col gap-2">
           <template v-for="(product, index) in products" :key="product.id">
-            <Transition name="category-product-reveal" mode="out-in">
+            <Transition name="category-product-reveal" appear>
               <HomeProductListCard
-                v-if="isCategoryProductCardReady(product.id)"
                 :key="product.id"
                 :product="product"
                 :style="getProductRevealDelayStyle(index)"
                 @click="goToProduct"
-              />
-              <div
-                v-else
-                :key="`${product.id}-skeleton`"
-                class="h-[118px] animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-600))] sm:h-[134px]"
-                aria-hidden="true"
               />
             </Transition>
           </template>

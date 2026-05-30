@@ -34,10 +34,6 @@ const loadingSkeletonCount = computed(() => (
   productCardViewMode.value === 'grid' ? 8 : 5
 ))
 const PRODUCT_REVEAL_STAGGER_MS = 55
-const PRODUCT_CARD_PRELOAD_TIMEOUT_MS = 1800
-const API_HOST = import.meta.env.VITE_API_HOST
-const readyFavoriteProductCardIds = ref<Record<string, true>>({})
-const favoriteProductCardPreloads = new Map<string, Promise<void>>()
 
 function setProductCardViewMode(mode: ProductCardViewMode): void {
   if (productCardViewMode.value === mode) return
@@ -50,93 +46,8 @@ function getProductRevealDelayStyle(index: number): Record<string, string> {
   }
 }
 
-function isFavoriteProductCardReady(productId: string): boolean {
-  return Boolean(readyFavoriteProductCardIds.value[productId])
-}
-
-function markFavoriteProductCardReady(productId: string): void {
-  if (readyFavoriteProductCardIds.value[productId]) return
-  readyFavoriteProductCardIds.value = {
-    ...readyFavoriteProductCardIds.value,
-    [productId]: true,
-  }
-}
-
-function resolveProductCoverImageUrl(product: Product): string {
-  const coverImageUrl = product.images[0]?.image_url?.trim() ?? ''
-  if (!coverImageUrl) return ''
-  if (coverImageUrl.startsWith('http://') || coverImageUrl.startsWith('https://')) {
-    return coverImageUrl
-  }
-  return `${API_HOST}${coverImageUrl}`
-}
-
-function preloadFavoriteProductCard(product: Product): Promise<void> {
-  if (readyFavoriteProductCardIds.value[product.id]) {
-    return Promise.resolve()
-  }
-
-  const existingPreload = favoriteProductCardPreloads.get(product.id)
-  if (existingPreload) {
-    return existingPreload
-  }
-
-  const coverImageUrl = resolveProductCoverImageUrl(product)
-  if (!coverImageUrl || typeof Image === 'undefined') {
-    markFavoriteProductCardReady(product.id)
-    return Promise.resolve()
-  }
-
-  const preloadPromise = new Promise<void>((resolve) => {
-    const preloadImage = new Image()
-    let isSettled = false
-
-    const finishPreload = () => {
-      if (isSettled) return
-      isSettled = true
-      window.clearTimeout(fallbackTimer)
-      preloadImage.onload = null
-      preloadImage.onerror = null
-      markFavoriteProductCardReady(product.id)
-      favoriteProductCardPreloads.delete(product.id)
-      resolve()
-    }
-
-    const fallbackTimer = window.setTimeout(() => {
-      finishPreload()
-    }, PRODUCT_CARD_PRELOAD_TIMEOUT_MS)
-
-    preloadImage.onload = finishPreload
-    preloadImage.onerror = finishPreload
-    preloadImage.src = coverImageUrl
-
-    if (preloadImage.complete) {
-      finishPreload()
-    }
-  })
-
-  favoriteProductCardPreloads.set(product.id, preloadPromise)
-  return preloadPromise
-}
-
-function syncFavoriteProductCardReadiness(nextProducts: Product[]): void {
-  const nextReadyState: Record<string, true> = {}
-
-  nextProducts.forEach((product) => {
-    if (readyFavoriteProductCardIds.value[product.id]) {
-      nextReadyState[product.id] = true
-      return
-    }
-
-    void preloadFavoriteProductCard(product)
-  })
-
-  readyFavoriteProductCardIds.value = nextReadyState
-}
-
 function setVisibleFavoriteProducts(nextProducts: Product[]): void {
   products.value = nextProducts
-  syncFavoriteProductCardReadiness(products.value)
 }
 
 function restoreProductCardViewModeFromStorage(): void {
@@ -299,19 +210,13 @@ watch(productCardViewMode, (mode) => {
         :key="product.id"
         class="bg-[rgb(var(--palette-dark-600))] border border-[rgb(var(--palette-dark-700))] rounded-xl overflow-hidden hover:border-[rgb(var(--palette-dark-500))] transition-all duration-200"
       >
-        <Transition name="favorite-product-reveal" mode="out-in">
+        <Transition name="favorite-product-reveal" appear>
           <FavoriteProductCard
-            v-if="isFavoriteProductCardReady(product.id)"
             :product="product"
             :is-owner="product.is_owner || false"
             :style="getProductRevealDelayStyle(index)"
             @removed="onProductRemoved"
           />
-          <div
-            v-else
-            :style="getProductRevealDelayStyle(index)"
-            class="h-64 animate-pulse rounded-xl bg-[rgb(var(--palette-dark-600)/0.7)]"
-          ></div>
         </Transition>
       </div>
     </div>
@@ -320,18 +225,12 @@ watch(productCardViewMode, (mode) => {
         v-for="(product, index) in filteredProducts"
         :key="product.id"
       >
-        <Transition name="favorite-product-reveal" mode="out-in">
+        <Transition name="favorite-product-reveal" appear>
           <HomeProductListCard
-            v-if="isFavoriteProductCardReady(product.id)"
             :product="product"
             :style="getProductRevealDelayStyle(index)"
             @click="goToProduct"
           />
-          <div
-            v-else
-            :style="getProductRevealDelayStyle(index)"
-            class="h-[118px] animate-pulse rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.7)] sm:h-[134px]"
-          ></div>
         </Transition>
       </div>
     </div>

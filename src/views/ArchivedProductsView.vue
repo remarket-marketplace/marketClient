@@ -44,10 +44,6 @@ const loadingSkeletonCount = computed(() => (
   productCardViewMode.value === 'grid' ? 8 : 5
 ))
 const PRODUCT_REVEAL_STAGGER_MS = 55
-const PRODUCT_CARD_PRELOAD_TIMEOUT_MS = 1800
-const API_HOST = import.meta.env.VITE_API_HOST
-const readyArchivedProductCardIds = ref<Record<string, true>>({})
-const archivedProductCardPreloads = new Map<string, Promise<void>>()
 
 function setProductCardViewMode(mode: ProductCardViewMode): void {
   if (productCardViewMode.value === mode) return
@@ -60,93 +56,8 @@ function getProductRevealDelayStyle(index: number): Record<string, string> {
   }
 }
 
-function isArchivedProductCardReady(productId: string): boolean {
-  return Boolean(readyArchivedProductCardIds.value[productId])
-}
-
-function markArchivedProductCardReady(productId: string): void {
-  if (readyArchivedProductCardIds.value[productId]) return
-  readyArchivedProductCardIds.value = {
-    ...readyArchivedProductCardIds.value,
-    [productId]: true,
-  }
-}
-
-function resolveProductCoverImageUrl(product: Product): string {
-  const coverImageUrl = product.images[0]?.image_url?.trim() ?? ''
-  if (!coverImageUrl) return ''
-  if (coverImageUrl.startsWith('http://') || coverImageUrl.startsWith('https://')) {
-    return coverImageUrl
-  }
-  return `${API_HOST}${coverImageUrl}`
-}
-
-function preloadArchivedProductCard(product: Product): Promise<void> {
-  if (readyArchivedProductCardIds.value[product.id]) {
-    return Promise.resolve()
-  }
-
-  const existingPreload = archivedProductCardPreloads.get(product.id)
-  if (existingPreload) {
-    return existingPreload
-  }
-
-  const coverImageUrl = resolveProductCoverImageUrl(product)
-  if (!coverImageUrl || typeof Image === 'undefined') {
-    markArchivedProductCardReady(product.id)
-    return Promise.resolve()
-  }
-
-  const preloadPromise = new Promise<void>((resolve) => {
-    const preloadImage = new Image()
-    let isSettled = false
-
-    const finishPreload = () => {
-      if (isSettled) return
-      isSettled = true
-      window.clearTimeout(fallbackTimer)
-      preloadImage.onload = null
-      preloadImage.onerror = null
-      markArchivedProductCardReady(product.id)
-      archivedProductCardPreloads.delete(product.id)
-      resolve()
-    }
-
-    const fallbackTimer = window.setTimeout(() => {
-      finishPreload()
-    }, PRODUCT_CARD_PRELOAD_TIMEOUT_MS)
-
-    preloadImage.onload = finishPreload
-    preloadImage.onerror = finishPreload
-    preloadImage.src = coverImageUrl
-
-    if (preloadImage.complete) {
-      finishPreload()
-    }
-  })
-
-  archivedProductCardPreloads.set(product.id, preloadPromise)
-  return preloadPromise
-}
-
-function syncArchivedProductCardReadiness(nextProducts: Product[]): void {
-  const nextReadyState: Record<string, true> = {}
-
-  nextProducts.forEach((product) => {
-    if (readyArchivedProductCardIds.value[product.id]) {
-      nextReadyState[product.id] = true
-      return
-    }
-
-    void preloadArchivedProductCard(product)
-  })
-
-  readyArchivedProductCardIds.value = nextReadyState
-}
-
 function setVisibleArchivedProducts(nextProducts: Product[], append = false): void {
   products.value = append ? [...products.value, ...nextProducts] : nextProducts
-  syncArchivedProductCardReadiness(products.value)
 }
 
 function restoreProductCardViewModeFromStorage(): void {
@@ -326,19 +237,13 @@ onMounted(async () => {
         v-for="(product, index) in filteredProducts"
         :key="product.id"
       >
-        <Transition name="archived-product-reveal" mode="out-in">
+        <Transition name="archived-product-reveal" appear>
           <ProfileProductCard
-            v-if="isArchivedProductCardReady(product.id)"
             :product="product"
             :is-owner="true"
             :style="getProductRevealDelayStyle(index)"
             @click="goToProduct"
           />
-          <div
-            v-else
-            :style="getProductRevealDelayStyle(index)"
-            class="h-64 animate-pulse rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.7)]"
-          ></div>
         </Transition>
       </div>
     </div>
@@ -348,18 +253,12 @@ onMounted(async () => {
         v-for="(product, index) in filteredProducts"
         :key="product.id"
       >
-        <Transition name="archived-product-reveal" mode="out-in">
+        <Transition name="archived-product-reveal" appear>
           <HomeProductListCard
-            v-if="isArchivedProductCardReady(product.id)"
             :product="product"
             :style="getProductRevealDelayStyle(index)"
             @click="goToProduct"
           />
-          <div
-            v-else
-            :style="getProductRevealDelayStyle(index)"
-            class="h-[118px] animate-pulse rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.7)] sm:h-[134px]"
-          ></div>
         </Transition>
       </div>
     </div>
