@@ -903,11 +903,13 @@ onBeforeUnmount(() => {
               <img
                 :src="categoryBannerUrl"
                 :alt="category.name"
-                class="absolute inset-0 h-full w-full object-cover object-center"
+                class="absolute inset-0 h-full w-full object-cover object-[center_28%] sm:object-[center_32%] lg:object-[center_36%]"
               />
             </template>
             <div v-else class="absolute inset-0 category-hero-fallback"></div>
-            <div class="absolute inset-0 bg-[rgb(var(--palette-black)/0.42)]"></div>
+            <div
+              class="absolute inset-0 bg-gradient-to-r from-[rgb(var(--palette-black)/0.34)] via-[rgb(var(--palette-black)/0.18)] to-[rgb(var(--palette-black)/0.08)]"
+            ></div>
             <div class="category-hero-bottom-fade"></div>
 
             <div class="relative z-10 flex h-full flex-col justify-end p-3 sm:p-5">
@@ -1338,11 +1340,12 @@ onBeforeUnmount(() => {
   left: 0;
   right: 0;
   bottom: -1px;
-  height: 92px;
+  height: 56px;
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    var(--background-color) 90%
+    rgb(var(--palette-black) / 0.06) 62%,
+    var(--background-color) 100%
   );
 }
 
