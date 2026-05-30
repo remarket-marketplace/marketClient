@@ -10,6 +10,7 @@ import { formatCurrencyAmount } from '@/utils/currency'
 import { resolveApiMediaUrl } from '@/utils/mediaUrl'
 import { buildProductKey } from '@/utils/urlKeys'
 import { ImageOff } from 'lucide-vue-next'
+import { useCardImageReveal } from '@/composables/useCardImageReveal'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -37,12 +38,14 @@ const currentImageUrl = computed(() => {
     props.product.images[activeImageIndex.value]?.image_url ?? props.product.images[0]?.image_url ?? '',
   )
 })
+const { imageElement, isImageLoaded, markImageLoaded, markImagePending } = useCardImageReveal(currentImageUrl)
 const hasVisibleImage = computed(() => (
   Boolean(currentImageUrl.value) && !brokenImageUrls.value[currentImageUrl.value]
 ))
 
 function markCurrentImageBroken(): void {
   if (!currentImageUrl.value) return
+  markImagePending()
   brokenImageUrls.value = {
     ...brokenImageUrls.value,
     [currentImageUrl.value]: true,
@@ -129,13 +132,23 @@ function handleImageTouchEnd(event: TouchEvent) {
       <Transition name="image-fade" mode="out-in">
         <img
           v-if="hasVisibleImage"
+          ref="imageElement"
           :key="currentImageUrl"
           :src="currentImageUrl"
-          class="h-full w-full object-cover"
+          class="h-full w-full object-cover transition-opacity duration-300"
+          :class="isImageLoaded ? 'opacity-100' : 'opacity-0'"
           alt="product image"
+          loading="lazy"
+          decoding="async"
+          @load="markImageLoaded"
           @error="markCurrentImageBroken"
         />
       </Transition>
+      <div
+        v-if="hasVisibleImage && !isImageLoaded"
+        class="pointer-events-none absolute inset-0 animate-pulse bg-[rgb(var(--palette-dark-700)/0.72)]"
+        aria-hidden="true"
+      />
       <div
         v-if="product.images.length > 1 && hasVisibleImage"
         class="touch-dots pointer-events-none absolute inset-x-2 bottom-2 z-10 flex items-center justify-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100"

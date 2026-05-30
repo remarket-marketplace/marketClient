@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Product } from '@/validation/product/product'
 import { useI18n } from 'vue-i18n'
@@ -9,7 +9,9 @@ import AutoDeliveryTag from './AutoDeliveryTag.vue'
 import StyledUsername from './StyledUsername.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
 import { buildProductKey } from '@/utils/urlKeys'
-
+import { resolveApiMediaUrl } from '@/utils/mediaUrl'
+import { ImageOff } from 'lucide-vue-next'
+import { useCardImageReveal } from '@/composables/useCardImageReveal'
 const { t } = useI18n()
 const router = useRouter()
 
@@ -23,17 +25,96 @@ const emit = defineEmits<{
   click: [productKey: string]
 }>()
 
-const API_HOST = import.meta.env.VITE_API_HOST
 const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
 const shouldShowSellerRating = computed(() => props.product.seller.rating > 0)
+const activeImageIndex = ref(0)
+const touchStartX = ref(0)
+const touchStartY = ref(0)
+const suppressNextCardClick = ref(false)
+const brokenImageUrls = ref<Record<string, true>>({})
+const currentImageUrl = computed(() => {
+  if (!props.product.images.length) return ''
+  return resolveApiMediaUrl(
+    props.product.images[activeImageIndex.value]?.image_url ?? props.product.images[0]?.image_url ?? '',
+  )
+})
+const { imageElement, isImageLoaded, markImageLoaded, markImagePending } = useCardImageReveal(currentImageUrl)
+const hasVisibleImage = computed(() => (
+  Boolean(currentImageUrl.value) && !brokenImageUrls.value[currentImageUrl.value]
+))
 
 function onClick() {
+  if (suppressNextCardClick.value) {
+    suppressNextCardClick.value = false
+    return
+  }
   emit('click', buildProductKey(props.product))
 }
 
 function goToSeller() {
   if (props.isOwner) return
   router.push(`/user/${props.product.seller.username}`)
+}
+
+function markCurrentImageBroken(): void {
+  if (!currentImageUrl.value) return
+  markImagePending()
+  brokenImageUrls.value = {
+    ...brokenImageUrls.value,
+    [currentImageUrl.value]: true,
+  }
+}
+
+function handleImagePointerMove(event: PointerEvent) {
+  if (event.pointerType === 'touch') return
+  const imageCount = props.product.images.length
+  if (imageCount <= 1) return
+
+  const target = event.currentTarget as HTMLElement | null
+  if (!target) return
+
+  const rect = target.getBoundingClientRect()
+  if (rect.width <= 0) return
+
+  const relativeX = Math.min(Math.max(event.clientX - rect.left, 0), rect.width)
+  const ratio = relativeX / rect.width
+  const mappedIndex = Math.min(imageCount - 1, Math.floor(ratio * imageCount))
+  activeImageIndex.value = mappedIndex
+}
+
+function resetActiveImage(event?: PointerEvent) {
+  if (event?.pointerType === 'touch') return
+  activeImageIndex.value = 0
+}
+
+function handleImageTouchStart(event: TouchEvent) {
+  const touch = event.touches[0]
+  if (!touch) return
+  touchStartX.value = touch.clientX
+  touchStartY.value = touch.clientY
+}
+
+function handleImageTouchEnd(event: TouchEvent) {
+  const touch = event.changedTouches[0]
+  if (!touch) return
+  const imageCount = props.product.images.length
+  if (imageCount <= 1) return
+
+  const deltaX = touch.clientX - touchStartX.value
+  const deltaY = touch.clientY - touchStartY.value
+  const horizontalThreshold = 24
+
+  if (Math.abs(deltaX) < horizontalThreshold || Math.abs(deltaX) <= Math.abs(deltaY)) return
+
+  event.preventDefault()
+  suppressNextCardClick.value = true
+
+  if (deltaX < 0) {
+    activeImageIndex.value = (activeImageIndex.value + 1) % imageCount
+    return
+  }
+
+  activeImageIndex.value = (activeImageIndex.value - 1 + imageCount) % imageCount
 }
 </script>
 
@@ -42,15 +123,47 @@ function goToSeller() {
     class="profile-product-card flex h-full cursor-pointer flex-col rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-900))] transition duration-200 hover:border-[rgb(var(--palette-dark-500))] hover:shadow-xl"
     @click="onClick"
   >
-    <div class="profile-product-media profile-product-image-surface relative m-1 mb-2 aspect-square w-auto overflow-hidden rounded-xl border-[0.5px] border-[rgb(var(--palette-dark-600)/0.7)]">
-      <img
-        v-if="product.images.length"
-        :src="`${API_HOST}${product.images[0]?.image_url}`"
-        class="h-full w-full object-cover"
-        alt="product image"
+    <div
+      class="profile-product-media profile-product-image-surface group relative m-1 mb-2 aspect-square w-auto overflow-hidden rounded-xl border-[0.5px] border-[rgb(var(--palette-dark-600)/0.7)]"
+      @pointermove="handleImagePointerMove"
+      @pointerleave="resetActiveImage"
+      @touchstart="handleImageTouchStart"
+      @touchend="handleImageTouchEnd"
+    >
+      <Transition name="image-fade" mode="out-in">
+        <img
+          v-if="hasVisibleImage"
+          ref="imageElement"
+          :key="currentImageUrl"
+          :src="currentImageUrl"
+          class="h-full w-full object-cover transition-opacity duration-300"
+          :class="isImageLoaded ? 'opacity-100' : 'opacity-0'"
+          alt="product image"
+          loading="lazy"
+          decoding="async"
+          @load="markImageLoaded"
+          @error="markCurrentImageBroken"
+        />
+      </Transition>
+      <div
+        v-if="hasVisibleImage && !isImageLoaded"
+        class="pointer-events-none absolute inset-0 animate-pulse bg-[rgb(var(--palette-dark-700)/0.72)]"
+        aria-hidden="true"
       />
-      <div v-else class="flex h-full w-full items-center justify-center text-sm text-[var(--text-body)]">
-        {{ t('common.noImage') }}
+      <div
+        v-if="product.images.length > 1 && hasVisibleImage"
+        class="touch-dots pointer-events-none absolute inset-x-2 bottom-2 z-10 flex items-center justify-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+      >
+        <span
+          v-for="(_, index) in product.images"
+          :key="`dot-${product.id}-${index}`"
+          class="h-1.5 rounded-full transition-all duration-150"
+          :class="index === activeImageIndex ? 'w-4 bg-[rgb(var(--palette-white)/0.95)]' : 'w-1.5 bg-[rgb(var(--palette-white)/0.55)]'"
+        />
+      </div>
+      <div v-else class="flex h-full w-full flex-col items-center justify-center gap-2 text-[var(--text-body)]">
+        <ImageOff class="h-7 w-7 text-[var(--text-meta)]" />
+        <span class="text-sm">{{ t('common.noImage') }}</span>
       </div>
     </div>
 
@@ -141,6 +254,22 @@ function goToSeller() {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.image-fade-enter-active,
+.image-fade-leave-active {
+  transition: opacity 0.18s ease;
+}
+
+.image-fade-enter-from,
+.image-fade-leave-to {
+  opacity: 0;
+}
+
+@media (hover: none) {
+  .touch-dots {
+    opacity: 1;
+  }
 }
 
 .profile-product-image-surface {
