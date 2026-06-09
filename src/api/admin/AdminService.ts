@@ -106,6 +106,7 @@ export type AdminUpdateUserPayload = {
   description?: string
   has_frozen_balance?: boolean
   is_banned?: boolean
+  is_referal?: boolean
   rating?: number
   role?: "user" | "admin" | "partner"
   nickname_style_id?: string

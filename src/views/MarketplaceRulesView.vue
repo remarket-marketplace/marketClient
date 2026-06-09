@@ -6,7 +6,7 @@ import BackButton from '@/components/navigation/BackButton.vue'
 import { formatDateInRussian, formatDateInEnglish } from '@/utils/dateFormatter'
 
 const route = useRoute()
-const { $t, locale } = useI18n()
+const { t, locale } = useI18n()
 
 const formattedDate = computed(() => 
   locale.value.startsWith('ru') ? formatDateInRussian() : formatDateInEnglish()
@@ -42,42 +42,42 @@ watch(
       <div class="flex items-center gap-2">
         <BackButton />
         <h1 class="legal-title text-3xl sm:text-4xl text-mainText">
-          {{ $t('pages.marketRules.title') }}
+          {{ t('pages.marketRules.title') }}
         </h1>
       </div>
       <p class="legal-updated text-sm sm:text-base">
-        {{ $t('pages.marketRules.updatedAt', { date: formattedDate }) }}
+        {{ t('pages.marketRules.updatedAt', { date: formattedDate }) }}
       </p>
 
       <article class="mt-6 legal-copy text-[var(--text-body-strong)]">
         <section id="marketplace-general" class="legal-section">
-          <h2 class="legal-heading text-mainText">{{ $t('pages.marketRules.general.title') }}</h2>
-          <p class="legal-paragraph">{{ $t('pages.marketRules.general.p1') }}</p>
-          <p class="legal-paragraph">{{ $t('pages.marketRules.general.p2') }}</p>
-          <p class="legal-paragraph">{{ $t('pages.marketRules.general.p3') }}</p>
+          <h2 class="legal-heading text-mainText">{{ t('pages.marketRules.general.title') }}</h2>
+          <p class="legal-paragraph">{{ t('pages.marketRules.general.p1') }}</p>
+          <p class="legal-paragraph">{{ t('pages.marketRules.general.p2') }}</p>
+          <p class="legal-paragraph">{{ t('pages.marketRules.general.p3') }}</p>
         </section>
 
         <section id="marketplace-products-scope" class="legal-section">
-          <h2 class="legal-heading text-mainText">{{ $t('pages.marketRules.productsScope.title') }}</h2>
-          <p class="legal-paragraph">{{ $t('pages.marketRules.productsScope.p1') }}</p>
-          <p class="legal-paragraph">{{ $t('pages.marketRules.productsScope.p2') }}</p>
+          <h2 class="legal-heading text-mainText">{{ t('pages.marketRules.productsScope.title') }}</h2>
+          <p class="legal-paragraph">{{ t('pages.marketRules.productsScope.p1') }}</p>
+          <p class="legal-paragraph">{{ t('pages.marketRules.productsScope.p2') }}</p>
           <ul class="legal-list">
-            <li>{{ $t('pages.marketRules.productsScope.banned1') }}</li>
-            <li>{{ $t('pages.marketRules.productsScope.banned2') }}</li>
-            <li>{{ $t('pages.marketRules.productsScope.banned3') }}</li>
-            <li>{{ $t('pages.marketRules.productsScope.banned4') }}</li>
-            <li>{{ $t('pages.marketRules.productsScope.banned5') }}</li>
-            <li>{{ $t('pages.marketRules.productsScope.banned6') }}</li>
+            <li>{{ t('pages.marketRules.productsScope.banned1') }}</li>
+            <li>{{ t('pages.marketRules.productsScope.banned2') }}</li>
+            <li>{{ t('pages.marketRules.productsScope.banned3') }}</li>
+            <li>{{ t('pages.marketRules.productsScope.banned4') }}</li>
+            <li>{{ t('pages.marketRules.productsScope.banned5') }}</li>
+            <li>{{ t('pages.marketRules.productsScope.banned6') }}</li>
           </ul>
-          <p class="legal-paragraph">{{ $t('pages.marketRules.productsScope.p3') }}</p>
+          <p class="legal-paragraph">{{ t('pages.marketRules.productsScope.p3') }}</p>
         </section>
 
         <section id="marketplace-listings" class="legal-section">
-          <h2 class="legal-heading text-mainText">{{ $t('pages.marketRules.listings.title') }}</h2>
-          <p class="legal-paragraph">{{ $t('pages.marketRules.listings.p1') }}</p>
+          <h2 class="legal-heading text-mainText">{{ t('pages.marketRules.listings.title') }}</h2>
+          <p class="legal-paragraph">{{ t('pages.marketRules.listings.p1') }}</p>
           <ul class="legal-list">
-            <li>{{ $t('pages.marketRules.listings.item1') }}</li>
-            <li>{{ $t('pages.marketRules.listings.item2') }}</li>
+            <li>{{ t('pages.marketRules.listings.item1') }}</li>
+            <li>{{ t('pages.marketRules.listings.item2') }}</li>
             <li>{{ $t('pages.marketRules.listings.item3') }}</li>
             <li>{{ $t('pages.marketRules.listings.item4') }}</li>
           </ul>

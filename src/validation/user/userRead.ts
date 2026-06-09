@@ -18,6 +18,7 @@ export const UserReadSchema = z.object({
   id: z.string(),
   email: z.string().email(),
   username: z.string().min(4).max(32),
+  is_referal: z.boolean().optional().transform((value) => value ?? false),
   nickname_style_id: nicknameStyleIdSchema,
   balance: z.number().nonnegative(),
   avatar_url: z.string().or(z.literal('')),
@@ -48,6 +49,14 @@ export type UserRead = z.infer<typeof UserReadSchema>
 
 export const ProfileDataSchema = UserReadSchema
 export type ProfileData = UserRead
+
+export const ReferralSummarySchema = z.object({
+  is_referal: z.boolean().optional().transform((value) => value ?? false),
+  referral_code: z.string().min(1),
+  invited_users_count: z.number().int().nonnegative(),
+})
+
+export type ReferralSummary = z.infer<typeof ReferralSummarySchema>
 
 export const PublicProfileDataSchema = z.object({
   id: z.string(),

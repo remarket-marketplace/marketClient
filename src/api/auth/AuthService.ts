@@ -105,7 +105,8 @@ export const authService = {
   async signUp(
     email: string,
     username: string,
-    code: string
+    code: string,
+    referralCode?: string | null,
   ) {
     chatsService.disconnect();
     const response = await httpClient.post(
@@ -114,6 +115,7 @@ export const authService = {
         email,
         username,
         email_code: code,
+        referral_code: referralCode ?? null,
       }
     );
     const userData = UserReadSchema.parse(response.data);
