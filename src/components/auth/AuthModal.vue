@@ -34,6 +34,7 @@ const isSubmitting = ref(false)
 const errorMessage = ref('')
 const email = ref('')
 const username = ref('')
+const referralCode = ref('')
 const emailError = ref('')
 const usernameError = ref('')
 const captchaToken = ref('')
@@ -122,6 +123,7 @@ function resetState() {
   errorMessage.value = ''
   email.value = ''
   username.value = ''
+  referralCode.value = typeof route.query.ref === 'string' ? route.query.ref.trim().toUpperCase() : ''
   emailError.value = ''
   usernameError.value = ''
   signInStage.value = 'email'
@@ -377,7 +379,7 @@ async function completeSignUp() {
   const redirectTarget = afterAuthRedirect.value
 
   try {
-    await authService.signUp(email.value, username.value, code)
+    await authService.signUp(email.value, username.value, code, referralCode.value || null)
     finishAuth(redirectTarget)
   } catch (error) {
     errorMessage.value = resolveRequestError(error)
@@ -438,6 +440,10 @@ watch(() => props.isOpen, (isOpen) => {
 
 watch(() => props.mode, () => {
   resetState()
+})
+
+watch(() => route.query.ref, (value) => {
+  referralCode.value = typeof value === 'string' ? value.trim().toUpperCase() : ''
 })
 
 onBeforeUnmount(() => {
@@ -567,6 +573,17 @@ onBeforeUnmount(() => {
           @input="emailError = ''"
         />
         <p v-if="emailError" class="mt-1 text-xs leading-4 text-[var(--danger-text-soft)]">{{ emailError }}</p>
+      </div>
+
+      <div>
+        <label for="auth-signup-referral" class="mb-1 block text-sm text-text-secondary">{{ t('pages.auth.signUp.referralCode') }}</label>
+        <TheInput
+          id="auth-signup-referral"
+          v-model="referralCode"
+          type="text"
+          :maxlength="32"
+          autocomplete="off"
+        />
       </div>
 
       <Captcha :key="captchaRenderKey" @verified="(token: string) => captchaToken = token" />

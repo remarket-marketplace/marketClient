@@ -381,6 +381,7 @@ const en = {
     USERNAME_ALREADY_EXISTS: "Username already exist",
     USER_WITH_THIS_EMAIL_ALREADY_EXISTS: "Email already taken",
     USER_WITH_THIS_USERNAME_ALREADY_EXISTS: "Username already taken",
+    REFERRAL_CODE_NOT_FOUND: "Referral code not found",
     EMAIL_ALREADY_EXISTS: "Email already exists",
     RECIPIENT_IS_BANNED: "Cannot send message: user is banned",
     NOT_ENOUGH_BALANCE: "Not enough balance",
@@ -1216,6 +1217,7 @@ const en = {
         legalTerms: "terms of service",
         legalAnd: "and",
         legalPrivacy: "privacy policy",
+        referralCode: "Referral code",
       },
       signIn: {
         title: "Sign In",
@@ -1555,6 +1557,8 @@ const en = {
       nicknameStylesHint: "Nickname styles and profile background",
       notificationsMenu: "Notifications",
       notificationsHint: "Notification channels",
+      referralMenu: "Referrals",
+      referralHint: "Your code and invited users",
       changePassword: "Change Password",
       changePasswordHint: "Change your password to secure your account",
       passwordlessTitle: "Email code sign-in",
@@ -2099,6 +2103,23 @@ const en = {
         confirmNewPasswordPlaceholder: "Confirm new password",
         passwordFieldsRequired: "Fill in both new password fields",
         passwordsDoNotMatch: "New password and confirmation do not match",
+        referralEnabled: "Referral status enabled",
+      },
+
+      referralPage: {
+        eyebrow: "Partner link",
+        title: "Referral program",
+        subtitle: "Share your code or link so invited users are attached to your account.",
+        yourCode: "Your code",
+        copyCode: "Copy code",
+        invitedUsers: "Invited users",
+        invitedUsersHint: "This counts users who registered with your code.",
+        yourLink: "Your link",
+        copyLink: "Copy link",
+        copied: "Copied",
+        copyError: "Failed to copy",
+        loadError: "Failed to load referral data",
+        notEnabled: "Referral status is not enabled for your account yet. An admin can activate it in the admin panel.",
       },
 
       addCategory: {

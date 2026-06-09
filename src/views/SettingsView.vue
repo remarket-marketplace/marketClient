@@ -1008,6 +1008,21 @@ onUnmounted(() => {
                   <p class="mt-0.5 text-xs leading-4 text-[var(--text-body)]">{{ $t('pages.settingsPage.notificationsHint') }}</p>
                 </div>
               </button>
+
+              <button
+                v-if="user?.is_referal"
+                type="button"
+                class="w-full flex items-start gap-3 rounded-lg border border-[color:var(--transparent)] p-3 text-left transition hover:bg-[rgb(var(--palette-dark-700)/0.6)]"
+                @click="router.push({ name: 'referral' })"
+              >
+                <div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--palette-dark-700))] overflow-visible">
+                  <Send class="h-4 w-4 shrink-0 text-[var(--text-link)]" />
+                </div>
+                <div class="min-w-0">
+                  <h3 class="font-semibold leading-5 text-[var(--text-title)]">{{ $t('pages.settingsPage.referralMenu') }}</h3>
+                  <p class="mt-0.5 text-xs leading-4 text-[var(--text-body)]">{{ $t('pages.settingsPage.referralHint') }}</p>
+                </div>
+              </button>
             </div>
 
             <div

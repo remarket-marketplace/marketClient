@@ -256,6 +256,12 @@ const routes: RouteRecordRaw[] = [
       meta: { requiredAuthorized: true },
     },
     {
+      path: "/referral",
+      name: "referral",
+      component: () => import("@/views/ReferralView.vue"),
+      meta: { requiredAuthorized: true },
+    },
+    {
       path: "/payment/success",
       name: "success payment",
       component: () => import("@/views/PaymentSuccessView.vue"),

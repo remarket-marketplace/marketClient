@@ -41,6 +41,7 @@ const rating = ref('');
 const isBanned = ref(false);
 const role = ref<'user' | 'admin' | 'partner'>('user');
 const hasFrozenBalance = ref(false);
+const isReferal = ref(false);
 const nicknameStyleId = ref('default');
 const profileBackgroundUnlocked = ref(false);
 const twoFactorEnabled = ref(false);
@@ -104,6 +105,7 @@ async function loadUser() {
       isBanned.value = userData.is_banned;
       role.value = userData.role;
       hasFrozenBalance.value = userData.has_frozen_balance;
+      isReferal.value = userData.is_referal || false;
       nicknameStyleId.value = userData.nickname_style_id || 'default';
       profileBackgroundUnlocked.value = userData.profile_background_unlocked || false;
       twoFactorEnabled.value = userData.two_factor_enabled || false;
@@ -199,6 +201,7 @@ async function saveUser() {
       is_banned: isBanned.value,
       role: role.value,
       has_frozen_balance: hasFrozenBalance.value,
+      is_referal: isReferal.value,
       nickname_style_id: normalizedNicknameStyleId,
       profile_background_unlocked: profileBackgroundUnlocked.value,
       two_factor_enabled: twoFactorEnabled.value,
@@ -224,6 +227,7 @@ async function saveUser() {
     isBanned.value = updateResponse.is_banned;
     role.value = updateResponse.role;
     hasFrozenBalance.value = updateResponse.has_frozen_balance;
+    isReferal.value = updateResponse.is_referal || false;
     nicknameStyleId.value = updateResponse.nickname_style_id || 'default';
     profileBackgroundUnlocked.value = updateResponse.profile_background_unlocked || false;
     currentProfileBackgroundUrl.value = updateResponse.profile_background_url || '';
@@ -512,6 +516,10 @@ watch(profileBackgroundUnlocked, (value) => {
                     <label class="flex items-center gap-2 py-1">
                       <Checkbox v-model="hasFrozenBalance" />
                       <span class="text-sm text-mainText">{{ $t('pages.admin.editUser.frozenBalance') }}</span>
+                    </label>
+                    <label class="flex items-center gap-2 py-1">
+                      <Checkbox v-model="isReferal" />
+                      <span class="text-sm text-mainText">{{ $t('pages.admin.editUser.referralEnabled') }}</span>
                     </label>
                   </div>
 

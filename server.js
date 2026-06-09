@@ -169,6 +169,22 @@ function normalizeText(value, maxLength = 180) {
     .slice(0, maxLength)
 }
 
+function formatProductPrice(value, currency = 'RUB') {
+  const amount = Number(value)
+  if (!Number.isFinite(amount)) return ''
+
+  try {
+    return new Intl.NumberFormat('ru-RU', {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+      maximumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+    }).format(amount)
+  } catch {
+    return currency === 'RUB' ? `${amount} ₽` : `${amount} ${currency}`
+  }
+}
+
 function xmlEscape(value) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -235,8 +251,18 @@ function renderHeadTags(seo) {
   const type = escapeHtml(seo.meta.type)
   const canonical = escapeHtml(seo.meta.canonical)
   const robots = seo.noindex ? 'noindex, nofollow' : 'index, follow'
+  const productPrice = seo.meta.price != null ? escapeHtml(seo.meta.price) : ''
+  const productPriceCurrency = seo.meta.priceCurrency ? escapeHtml(seo.meta.priceCurrency) : ''
+  const productAvailability = seo.meta.availability ? escapeHtml(seo.meta.availability) : ''
   const jsonLd = seo.jsonLd?.length
     ? seo.jsonLd.map((entry) => `<script type="application/ld+json">${safeJsonLd(entry)}</script>`).join('\n')
+    : ''
+  const productTags = seo.meta.type === 'product'
+    ? `
+    <meta property="product:price:amount" content="${productPrice}">
+    <meta property="product:price:currency" content="${productPriceCurrency}">
+    <meta property="product:availability" content="${productAvailability}">
+  `
     : ''
 
   return `
@@ -256,6 +282,7 @@ function renderHeadTags(seo) {
     <meta name="twitter:description" content="${description}">
     <meta name="twitter:image" content="${image}">
     <meta name="twitter:image:alt" content="${imageAlt}">
+    ${productTags}
     ${jsonLd}
   `
 }
@@ -330,7 +357,11 @@ async function buildSeo(url, reqHost, reqProto = 'http') {
         const data = await res.json()
         const img = data.images?.[0]?.image_url || data.images?.[0]?.url
         const productTitle = normalizeText(data.title, 120)
-        const productDescription = normalizeText(data.description, 180)
+        const productPrice = formatProductPrice(data.price, 'RUB')
+        const rawProductDescription = productPrice
+          ? `Цена: ${productPrice}. ${String(data.description || '').trim()}`
+          : data.description
+        const productDescription = normalizeText(rawProductDescription, 180)
         const canonicalProductPath = `/product/${buildProductKey(data) || seo.pathParts[1]}`
         const canonical = buildCanonicalUrl(canonicalProductPath, reqHost, reqProto)
         const category = data.parent_category || data.category
@@ -343,13 +374,18 @@ async function buildSeo(url, reqHost, reqProto = 'http') {
         breadcrumbs.push({ name: productTitle || 'Товар', url: canonical })
 
         seo.meta = {
-          title: productTitle ? `${productTitle} — купить на remarket` : seo.meta.title,
+          title: productTitle
+            ? `${productTitle}${productPrice ? ` • ${productPrice}` : ''} — купить на remarket`
+            : seo.meta.title,
           description: productDescription || seo.meta.description,
           image: img ? toAbsolute(img) : seo.meta.image,
           imageAlt: productTitle || 'Product image',
           url: canonical,
           canonical,
           type: 'product',
+          price: Number.isFinite(Number(data.price)) ? Number(data.price) : null,
+          priceCurrency: 'RUB',
+          availability: data.is_sold ? 'out of stock' : 'in stock',
         }
         seo.jsonLd.push(
           {
