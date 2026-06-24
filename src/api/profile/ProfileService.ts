@@ -2,7 +2,9 @@ import axios from "axios";
 import {
   ProfileDataSchema,
   PublicProfileDataSchema,
+  ReferralSummarySchema,
   UserReadSchema,
+  type ReferralSummary,
   type UserRead,
   type ProfileData,
   type PublicProfileData,
@@ -136,6 +138,16 @@ export const profileService = {
         subscriptions: [],
         total: 0,
       };
+    }
+  },
+
+  async getReferralSummary(): Promise<ReferralSummary | null> {
+    try {
+      const response = await httpClient.get("/users/referral-summary");
+      return ReferralSummarySchema.parse(response.data);
+    } catch (error) {
+      console.error("Ошибка загрузки реферальных данных:", error);
+      return null;
     }
   },
 };

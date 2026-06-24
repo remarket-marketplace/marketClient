@@ -6,7 +6,7 @@ import { ShoppingBag, Headphones, Image as ImageIcon } from 'lucide-vue-next';
 import UserAvatar from '@/components/UserAvatar.vue';
 import StyledUsername from '@/components/StyledUsername.vue';
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const props = defineProps<{
     chat: ChatListItem,
@@ -37,7 +37,24 @@ const formattedLastMessage = computed((): string | null => {
             // Check if this is an admin message
             const last = props.chat.last_message as any
             const dataKey = last.data?.i18n_key
-            if (dataKey) {
+            const scopeVpnMessageRu = typeof last.data?.scope_vpn_partner_message_ru === 'string'
+                ? last.data.scope_vpn_partner_message_ru.trim()
+                : ''
+            const scopeVpnMessageEn = typeof last.data?.scope_vpn_partner_message_en === 'string'
+                ? last.data.scope_vpn_partner_message_en.trim()
+                : ''
+            if (scopeVpnMessageRu || scopeVpnMessageEn) {
+                text = locale.value.startsWith('ru')
+                    ? (scopeVpnMessageRu || scopeVpnMessageEn)
+                    : (scopeVpnMessageEn || scopeVpnMessageRu)
+            } else if (last.data?.scope_vpn_order_id && typeof last.data?.subscription_url === 'string') {
+                if (last.data?.is_trial) {
+                    text = t('pages.chats.scopeVpn.trialTitle')
+                } else {
+                    const days = Number(last.data?.duration_days) || ''
+                    text = t('pages.chats.scopeVpn.paidTitle', { days })
+                }
+            } else if (dataKey) {
                 const prefix = t(String(dataKey))
                 const reason = last.data?.reason || ''
                 text = `${prefix} ${reason}`.trim()
@@ -52,7 +69,7 @@ const formattedLastMessage = computed((): string | null => {
             text = t('pages.chats.imageMessage')
             break
         case "update_deal_status_message":
-            text = t('pages.chats.updateDealStatus')
+            text = t(`pages.chats.${props.chat.last_message.new_status}`)
             break
         case "review_message":
             text = t('pages.chats.newReview')
@@ -93,7 +110,7 @@ const unreadCount = computed(() => props.chat.unread_count ?? 0)
 // Вычисляемое свойство для цвета имени
 const displayNameColor = computed(() => {
     if (isSupportChat.value && !props.showSupportAsUser) {
-        return 'text-blue-500'
+        return 'text-[var(--text-link)]'
     }
     return 'text-mainText'
 })
@@ -168,7 +185,7 @@ onMounted(() => {
 <template>
     <div
         :key="chat.id"
-        :class="['flex cursor-pointer items-center gap-3 py-3 px-4 transition hover:bg-dark-800/50 group', !isMobile && isSelected ? 'bg-dark-800/50' : '']"
+        :class="['flex cursor-pointer items-center gap-3 py-3 px-4 transition hover:bg-[rgb(var(--palette-dark-800)/0.5)] group', !isMobile && isSelected ? 'bg-[rgb(var(--palette-dark-800)/0.5)]' : '']"
         @click="$emit('loadChatMessages', chat.id)"
     >
         <div class="flex-shrink-0 relative">
@@ -176,16 +193,16 @@ onMounted(() => {
                 <!-- Support chat with icon -->
                 <div
                     v-if="isSupportChat && !showSupportAsUser"
-                    class="h-12 w-12 flex items-center justify-center rounded-full bg-blue-500/20 border-2 border-blue-500/30"
+                    class="h-12 w-12 flex items-center justify-center rounded-full bg-[rgb(var(--palette-blue-500)/0.2)] border-2 border-[rgb(var(--palette-blue-500)/0.3)]"
                 >
-                    <Headphones class="w-6 h-6 text-blue-400" />
+                    <Headphones class="w-6 h-6 text-[var(--text-link)]" />
                 </div>
                 <!-- Regular chat avatar (or support chat in admin mode) -->
                 <template v-else>
                     <UserAvatar
                         :avatar-url="displayAvatarUrl"
                         :alt="displayName"
-                        class="h-12 w-12 border-2 border-dark-600 rounded-full object-cover"
+                        class="h-12 w-12 border-2 border-[rgb(var(--palette-dark-600))] rounded-full object-cover"
                     />
                 </template>
             </div>
@@ -194,14 +211,14 @@ onMounted(() => {
             <div
                 class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full"
                 :class="{
-                    'bg-green-500 border-1 border-dark-800': isUserOnline,
-                    'bg-gray-500 border-1 border-dark-800': !isUserOnline,
-                    'border-dark-800': !isSelected || isMobile
+                    'bg-[rgb(var(--palette-green-500))] border-1 border-[rgb(var(--palette-dark-800))]': isUserOnline,
+                    'bg-[rgb(var(--palette-gray-500))] border-1 border-[rgb(var(--palette-dark-800))]': !isUserOnline,
+                    'border-[rgb(var(--palette-dark-800))]': !isSelected || isMobile
                 }"
             >
                 <div 
                     v-if="isUserOnline"
-                    class="w-full h-full bg-green-500 rounded-full opacity-75"
+                    class="w-full h-full bg-[rgb(var(--palette-green-500))] rounded-full opacity-75"
                 ></div>
             </div>
         </div>
@@ -225,14 +242,14 @@ onMounted(() => {
                     </div>
                     <span
                         v-if="unreadCount > 0"
-                        class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-red-500 text-white text-[11px] font-semibold"
+                        class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-[rgb(var(--palette-red-500))] text-[var(--text-title)] text-[11px] font-semibold"
                     >
                         {{ unreadCount > 99 ? '99+' : unreadCount }}
                     </span>
                 </div>
                 <span 
                     v-if="chat.last_message?.created_at" 
-                    class="flex-shrink-0 text-xs text-gray-500 whitespace-nowrap"
+                    class="flex-shrink-0 text-xs text-[var(--text-meta)] whitespace-nowrap group-hover:text-[var(--text-hover-muted)]"
                 >
                     {{ lastMessageDateLabel }}
                 </span>
@@ -242,13 +259,13 @@ onMounted(() => {
                 <p 
                     class="truncate text-sm flex-1 min-w-0"
                     :class="{
-                        'text-blue-500 font-light': chat.last_message?.message_type === 'purchase_message'
+                        'text-[var(--text-link)] font-light': chat.last_message?.message_type === 'purchase_message'
                         || chat.last_message?.message_type === 'price_offer_message'
                         || chat.last_message?.message_type === 'image_message'
                         || chat.last_message?.message_type === 'update_deal_status_message'
                         || chat.last_message?.message_type === 'review_message'
                         || isAdminMessage,
-                        'text-gray-500': chat.last_message?.message_type === 'text_message' && !isAdminMessage
+                        'text-[var(--text-meta)] group-hover:text-[var(--text-hover-muted)]': chat.last_message?.message_type === 'text_message' && !isAdminMessage
                     }"
                 >
                     <!-- Message type icon -->
@@ -280,10 +297,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.group:hover .text-gray-500 {
-    color: var(--text-hover-muted);
-}
-
 .min-w-0 {
     min-width: 0;
 }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import NewPurchaseMessage from './NewPurchaseMessage.vue'
 import PriceOfferMessage from './PriceOfferMessage.vue'
 import type { Product } from '@/validation/product/product'
@@ -8,6 +9,7 @@ import TextMessage from './TextMessage.vue'
 import DealStatusMessage from './DealStatusMessage.vue'
 import ReviewMessage from './ReviewMessage.vue'
 import ImageMessage from './ImageMessage.vue'
+import { formatChatTime } from '@/utils/chatDate'
 
 // ===== TYPE GUARDS =====
 function isTextMessage(msg: ChatMessageUnion): msg is Extract<ChatMessageUnion, { message_type: 'text_message' }> {
@@ -29,6 +31,14 @@ function isPriceOfferMessage(msg: ChatMessageUnion): msg is Extract<ChatMessageU
   return msg.message_type === 'price_offer_message'
 }
 
+function getSenderLabel(message: Extract<ChatMessageUnion, { message_type: 'text_message' | 'image_message' }>): string | undefined {
+  if (message.message_type === 'text_message' && message.is_admin_message) {
+    return undefined
+  }
+
+  return props.senderLabels?.[message.sender_id]
+}
+
 const props = defineProps<{
   message: ChatMessageUnion
   user: any
@@ -40,6 +50,7 @@ const props = defineProps<{
   dealStatusOverrides?: Record<string, string>
   reviewedDealIds?: string[]
 }>()
+const { locale } = useI18n()
 
 const textMessage = computed(() => isTextMessage(props.message) ? props.message : null)
 const imageMessage = computed(() => isImageMessage(props.message) ? props.message : null)
@@ -83,16 +94,7 @@ const messageAlignment = computed(() => {
 })
 
 function formatDate(dateInput: string | Date): string {
-  if (!dateInput) return '';
-  
-  const date = typeof dateInput === 'string' 
-    ? new Date(dateInput) 
-    : dateInput;
-  
-  return date.toLocaleString('ru-RU', { 
-    hour: '2-digit', 
-    minute: '2-digit',
-  });
+  return formatChatTime(dateInput, locale.value)
 }
 </script>
 
@@ -100,7 +102,13 @@ function formatDate(dateInput: string | Date): string {
   <div class="max-w-full min-w-0" :class="messageAlignment">
     <!-- PRODUCT MESSAGE -->
     <div v-if="product && !isDealStatus && dealId">
-      <NewPurchaseMessage :product="product" :deal-id="dealId" :deal-status="dealStatus" :has_review="hasReview" />
+      <NewPurchaseMessage
+        :product="product"
+        :deal-id="dealId"
+        :deal-status="dealStatus"
+        :has_review="hasReview"
+        :created-at="props.message.created_at"
+      />
     </div>
 
     <!-- TEXT MESSAGE -->
@@ -111,7 +119,7 @@ function formatDate(dateInput: string | Date): string {
       :formatDate="formatDate"
       :showAdminBadge="showAdminBadge"
       :chat-participant-ids="props.chatParticipantIds"
-      :sender-label="props.senderLabels?.[textMessage.sender_id]"
+      :sender-label="getSenderLabel(textMessage)"
       :sender-role="props.senderRoles?.[textMessage.sender_id]"
       :force-show-sender="props.forceShowSender"
     />
@@ -121,14 +129,18 @@ function formatDate(dateInput: string | Date): string {
       :image-message="imageMessage"
       :user="user"
       :format-date="formatDate"
-      :sender-label="props.senderLabels?.[imageMessage.sender_id]"
+      :sender-label="getSenderLabel(imageMessage)"
       :force-show-sender="props.forceShowSender"
     />
 
     <!-- DEAL STATUS MESSAGE -->
     <DealStatusMessage v-else-if="isDealStatus" :message="(props.message as Extract<ChatMessageUnion, { message_type: 'update_deal_status_message' }>)" :product="product" :formatDate="formatDate" />
 
-    <ReviewMessage v-else-if="isDealReviewMessage" :review="(props.message as Extract<ChatMessageUnion, { message_type: 'review_message' }>).review" :formatDate="formatDate"/>
+    <ReviewMessage
+      v-else-if="isDealReviewMessage"
+      :message="(props.message as Extract<ChatMessageUnion, { message_type: 'review_message' }>)"
+      :formatDate="formatDate"
+    />
 
     <PriceOfferMessage
       v-else-if="isPriceOffer"

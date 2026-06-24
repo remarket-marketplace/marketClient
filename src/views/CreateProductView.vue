@@ -6,6 +6,7 @@ import CustomSelect from '@/components/CustomSelect.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import FileUploader from '@/components/FileUploader.vue'
 import FortniteAccountFields from '@/components/FortniteAccountFields.vue'
+import AppModal from '@/components/AppModal.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import type { Category } from '@/validation/category/category'
@@ -18,7 +19,6 @@ import {
   AlertCircle,
   X,
   RotateCcw,
-  ShieldCheck,
 } from 'lucide-vue-next'
 import BackButton from '@/components/navigation/BackButton.vue'
 import Checkbox from '@/components/Checkbox.vue'
@@ -40,6 +40,7 @@ import { getErrorMessage } from '@/utils/errorsMap'
 import {
   buildFortniteAccountPayload,
   createEmptyFortniteAccountForm,
+  FORTNITE_ACCOUNT_MANUAL_CREATE_ALLOWED_FIELDS,
   fortniteAccountDetailsToForm,
   isAccountsSubcategory,
   isFortniteAccountsCategory,
@@ -76,6 +77,7 @@ const createdProduct = ref<{ id: string; slug: string } | null>(null)
 const showCreatedProductModal = ref(false)
 const commissionInterest = ref<number | null>(null)
 const autoDelivery = ref<boolean>(true)
+const isOfficial = ref<boolean>(false)
 const isLoadingDraft = ref(false)
 const isRaikaDraftApplied = ref(false)
 const draftImages = ref<string[]>([])
@@ -118,16 +120,24 @@ const selectedCategory = computed(() => (
 const selectedSubcategory = computed(() => (
   subcategories.value.find(subcategory => subcategory.id === selectedSubcategoryId.value) ?? null
 ))
+const canMarkProductOfficial = computed(() => store.user?.role === 'admin')
+const hasValidSelectedCategory = computed(() => Boolean(selectedCategory.value))
+const hasValidSelectedSubcategory = computed(() => Boolean(selectedSubcategory.value))
 const shouldShowFortniteAccountForm = computed(() => isFortniteAccountsCategory({
   parentCategory: selectedCategory.value,
   subcategory: selectedSubcategory.value,
 }))
-const fortniteAccountPayload = computed(() => buildFortniteAccountPayload(fortniteAccountForm.value))
+const fortniteAccountPayload = computed(() => buildFortniteAccountPayload(
+  fortniteAccountForm.value,
+  isRaikaDraftApplied.value
+    ? undefined
+    : { allowedFields: FORTNITE_ACCOUNT_MANUAL_CREATE_ALLOWED_FIELDS },
+))
 
 const PRODUCT_LIMITS = {
-  title: { min: 10, max: 50 },
+  title: { min: 10, max: 80 },
   description: { min: 10, max: 1200 },
-  productData: { min: 10, max: 128 },
+  productData: { min: 10, max: 300 },
   count: { min: 1, max: 5000 },
   images: { min: 1, max: 10 },
 }
@@ -145,6 +155,34 @@ let draftAutosaveTimer: ReturnType<typeof window.setTimeout> | null = null
 function getMultipartTransportLength(value: string): number {
   // Multipart form payload normalizes LF to CRLF, so backend sees this length.
   return value.replace(/\r?\n/g, '\r\n').length
+}
+
+function limitMultipartTransportLength(value: string, maxLength: number): string {
+  let result = ''
+  let length = 0
+
+  for (const char of value) {
+    const charLength = getMultipartTransportLength(char)
+    if (length + charLength > maxLength) break
+    result += char
+    length += charLength
+  }
+
+  return result
+}
+
+function onProductDataInput(event: Event): void {
+  const textarea = event.target as HTMLTextAreaElement | null
+  if (!textarea) return
+
+  const limitedValue = limitMultipartTransportLength(
+    textarea.value,
+    PRODUCT_LIMITS.productData.max,
+  )
+  if (textarea.value !== limitedValue) {
+    textarea.value = limitedValue
+  }
+  productData.value = limitedValue
 }
 
 const totalImagesCount = computed(() => draftImages.value.length + images.value.length)
@@ -216,7 +254,8 @@ const imagesCountValid = computed(() => (
 ))
 
 const step1Valid = computed(() => (
-  Boolean(selectedCategoryId.value && selectedSubcategoryId.value)
+  hasValidSelectedCategory.value
+  && hasValidSelectedSubcategory.value
 ))
 const step2Valid = computed(() => (
   titleLengthValid.value
@@ -230,12 +269,12 @@ const step4Valid = computed(() => priceValid.value && countValid.value)
 // Calculate seller's final amount
 const totalPriceInRub = computed(() => priceValueRub.value * countValue.value)
 const commissionAmountInRub = computed(() => {
-  if (!commissionInterest.value) return 0
+  if (commissionInterest.value === null) return 0
   return totalPriceInRub.value * (commissionInterest.value / 100)
 })
 
 const sellerAmount = computed(() => {
-  if (!price.value || !commissionInterest.value) return 0
+  if (!price.value || commissionInterest.value === null) return 0
   return Math.max(0, totalPriceInRub.value - commissionAmountInRub.value)
 })
 
@@ -308,6 +347,34 @@ function goToNextStep(): void {
   setCurrentStep((currentStep.value + 1) as StepNumber)
 }
 
+function handleWizardEnter(event: KeyboardEvent): void {
+  if (currentStep.value === TOTAL_STEPS || sended.value) {
+    return
+  }
+
+  if (event.isComposing || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) {
+    return
+  }
+
+  const target = event.target
+  if (!(target instanceof HTMLElement)) {
+    return
+  }
+
+  if (
+    target instanceof HTMLTextAreaElement
+    || target instanceof HTMLButtonElement
+    || target instanceof HTMLAnchorElement
+    || target instanceof HTMLSelectElement
+    || target.isContentEditable
+  ) {
+    return
+  }
+
+  event.preventDefault()
+  goToNextStep()
+}
+
 function handleStepClick(step: StepNumber): void {
   if (step === currentStep.value) {
     return
@@ -322,6 +389,15 @@ function handleStepClick(step: StepNumber): void {
   if (invalidStep) {
     setCurrentStep(invalidStep)
   }
+}
+
+function toggleAutoDelivery(): void {
+  autoDelivery.value = !autoDelivery.value
+}
+
+function toggleOfficial(): void {
+  if (!canMarkProductOfficial.value) return
+  isOfficial.value = !isOfficial.value
 }
 
 // Price formatting
@@ -346,10 +422,10 @@ const priceRangeMaxLabel = computed(() => formatPriceRangeBound(priceInputMax.va
 
 const stepIssues = computed<Record<StepNumber, string[]>>(() => ({
   1: [
-    ...(!selectedCategoryId.value
+    ...(!hasValidSelectedCategory.value
       ? [t('pages.forms.createProduct.validationCategoryRequired')]
       : []),
-    ...(!selectedSubcategoryId.value
+    ...(!hasValidSelectedSubcategory.value
       ? [t('pages.forms.createProduct.validationSubcategoryRequired')]
       : []),
   ],
@@ -440,6 +516,7 @@ const hasAnyFormData = computed(() => (
   || images.value.length > 0
   || draftImages.value.length > 0
   || !autoDelivery.value
+  || isOfficial.value
   || isRaikaDraftApplied.value
 ))
 
@@ -536,14 +613,22 @@ const formattedDraftSavedAt = computed(() => {
 async function loadSubcategoriesForCategory(categoryId: string): Promise<void> {
   if (!categoryId) {
     subcategories.value = []
+    selectedSubcategoryId.value = ''
     return
   }
 
   try {
-    const subcategoriesData = await categoryService.getSubcategories(categoryId)
-    subcategories.value = subcategoriesData.categories
+    const subcategoriesData = await categoryService.getSubcategoriesFlat(categoryId)
+    subcategories.value = subcategoriesData.filter(
+      (subcategory: Category) => subcategory.is_active,
+    )
+    if (!subcategories.value.some(subcategory => subcategory.id === selectedSubcategoryId.value)) {
+      selectedSubcategoryId.value = ''
+    }
   } catch (err) {
     console.error('Error loading subcategories:', err)
+    subcategories.value = []
+    selectedSubcategoryId.value = ''
     errorMessage.value = t('pages.forms.createProduct.errorLoadingSubcategories')
   }
 }
@@ -573,6 +658,7 @@ function buildCreateProductDraftPayload(): CreateProductDraftPayload {
     fortniteAccountDetails: { ...fortniteAccountForm.value },
     count: count.value,
     autoDelivery: autoDelivery.value,
+    isOfficial: isOfficial.value,
     images: [...images.value],
     currentStep: currentStep.value,
   }
@@ -640,7 +726,13 @@ async function restoreSavedCreateProductDraft(): Promise<void> {
     selectedCategoryId.value = savedDraft.selectedCategoryId
     selectedSubcategoryId.value = ''
     await loadSubcategoriesForCategory(savedDraft.selectedCategoryId)
-    selectedSubcategoryId.value = savedDraft.selectedSubcategoryId
+    if (
+      subcategories.value.some(
+        subcategory => subcategory.id === savedDraft.selectedSubcategoryId,
+      )
+    ) {
+      selectedSubcategoryId.value = savedDraft.selectedSubcategoryId
+    }
     title.value = savedDraft.title
     description.value = savedDraft.description
     price.value = savedDraft.price
@@ -651,6 +743,7 @@ async function restoreSavedCreateProductDraft(): Promise<void> {
     images.value = savedDraft.images
     count.value = savedDraft.count
     autoDelivery.value = savedDraft.autoDelivery
+    isOfficial.value = canMarkProductOfficial.value ? savedDraft.isOfficial : false
     currentStep.value = savedDraft.currentStep
     showStepIssues.value = false
     lastDraftSavedAt.value = savedDraft.updatedAt || null
@@ -680,10 +773,15 @@ onMounted(async () => {
     }
 
     await store.fetchUser()
-    const categoriesData = await categoryService.getAllCategories()
-    categories.value = categoriesData.categories
+    const categoriesData = await categoryService.getAllCategoriesFlat()
+    categories.value = categoriesData.filter(
+      (category: Category) => category.is_active,
+    )
     const commission = await productService.getCommissionInterest()
-    commissionInterest.value = Number(commission)
+    const normalizedCommission = Number(commission)
+    commissionInterest.value = Number.isFinite(normalizedCommission)
+      ? normalizedCommission
+      : null
   } catch (err) {
     console.error('Error loading data for product creation:', err)
     errorMessage.value = t('common.error')
@@ -737,6 +835,12 @@ watch(selectedCurrency, (nextCurrency, prevCurrency) => {
     : Math.round(converted).toString()
 })
 
+watch(canMarkProductOfficial, (allowed) => {
+  if (!allowed) {
+    isOfficial.value = false
+  }
+})
+
 watch(
   [
     selectedCategoryId,
@@ -749,6 +853,7 @@ watch(
     images,
     count,
     autoDelivery,
+    isOfficial,
     currentStep,
   ],
   () => {
@@ -795,6 +900,7 @@ function clearForm() {
   draftImages.value = []
   count.value = 1
   autoDelivery.value = true
+  isOfficial.value = false
   errorMessage.value = ''
   isRaikaDraftApplied.value = false
   currentStep.value = 1
@@ -848,9 +954,11 @@ async function createProduct() {
       price_currency: selectedCurrency.value,
       product_data: autoDelivery.value ? normalizedProductData.value : undefined,
       fortnite_account_details: shouldShowFortniteAccountForm.value ? fortniteAccountPayload.value : undefined,
-      category_id: selectedSubcategoryId.value,
+      draft_id: draftId.value || undefined,
+      category_id: selectedSubcategory.value?.id ?? '',
       count: countValue.value,
       auto_delivery: autoDelivery.value,
+      is_official: canMarkProductOfficial.value ? isOfficial.value : false,
       draft_images: draftImages.value,
     }
 
@@ -903,116 +1011,85 @@ async function createProduct() {
     <div class="mb-6 lg:hidden px-4 pt-4">
       <div class="flex gap-2">
         <BackButton />
-        <h1 class="text-2xl font-bold text-white">
+        <h1 class="text-2xl font-bold text-[var(--text-title)]">
           {{ $t('pages.forms.createProduct.title') }}
         </h1>
       </div>
-      <p class="mt-2 text-sm text-gray-400">
+      <p class="mt-2 text-sm text-[var(--text-muted)]">
         {{ $t('pages.forms.createProduct.subtitle') }}
       </p>
-      <p class="mt-2 text-xs text-blue-300">
+      <p class="mt-2 text-xs text-[var(--text-link)]">
         {{ $t('pages.forms.createProduct.stepProgress', { current: currentStep, total: TOTAL_STEPS }) }}
       </p>
     </div>
 
     <div class="lg:min-h-[calc(100dvh-3.5rem)] lg:overflow-y-auto no-scrollbar pb-6">
-      <div class="mx-auto w-full max-w-5xl px-4 lg:px-6 lg:pt-6 space-y-6">
+      <div class="mx-auto w-full space-y-6 lg:pt-6" @keydown.capture.enter="handleWizardEnter">
         <div class="hidden lg:block">
           <div class="flex gap-2">
             <BackButton />
-            <h1 class="text-2xl font-bold text-white">
+            <h1 class="text-2xl font-bold text-[var(--text-title)]">
               {{ $t('pages.forms.createProduct.title') }}
             </h1>
           </div>
-          <p class="mt-2 text-sm text-gray-400">
-            {{ $t('pages.forms.createProduct.subtitle') }}
-          </p>
-          <p class="mt-2 text-xs text-blue-300">
-            {{ $t('pages.forms.createProduct.stepProgress', { current: currentStep, total: TOTAL_STEPS }) }}
-          </p>
         </div>
 
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div v-if="isStandardCreateFlow" class="space-y-1">
-            <p class="text-xs text-gray-400">
-              {{ $t('pages.forms.createProduct.draftAutosaveHint') }}
-            </p>
-            <p v-if="formattedDraftSavedAt" class="text-xs text-blue-300">
-              {{ $t('pages.forms.createProduct.draftSavedAt', { time: formattedDraftSavedAt }) }}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            :disabled="sended || !hasAnyFormData"
-            class="inline-flex items-center gap-1.5 rounded-md border border-dark-600 bg-dark-700/40 px-3 py-1.5 text-xs font-medium text-gray-300 transition-colors hover:border-dark-500 hover:bg-dark-700/70 hover:text-white disabled:opacity-45 disabled:cursor-not-allowed"
-            :class="!isStandardCreateFlow ? 'sm:ml-auto' : ''"
-            :title="$t('pages.forms.createProduct.clearFormHint')"
-            @click="clearForm"
-          >
+        <div class="flex justify-end">
+          <button type="button" :disabled="sended || !hasAnyFormData"
+            class="inline-flex items-center gap-1.5 rounded-md border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.4)] px-3 py-1.5 text-xs font-medium text-[var(--text-body)] transition-colors hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-700)/0.7)] hover:text-[var(--text-title)] disabled:opacity-45 disabled:cursor-not-allowed"
+            :class="!isStandardCreateFlow ? 'sm:ml-auto' : ''" :title="$t('pages.forms.createProduct.clearFormHint')"
+            @click="clearForm">
             <RotateCcw class="w-3.5 h-3.5" />
             {{ $t('pages.forms.createProduct.clearForm') }}
           </button>
         </div>
 
-        <div
-          v-if="isStandardCreateFlow && restoredDraftNoticeVisible"
-          class="rounded-xl border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-100"
-        >
+        <div v-if="isStandardCreateFlow && restoredDraftNoticeVisible"
+          class="rounded-xl borer border-[rgb(var(--palette-blue-500)/0.3)] bg-[rgb(var(--palette-blue-500)/0.1)] px-4 py-3 text-sm text-[var(--text-accent-strong)]">
           {{ $t('pages.forms.createProduct.draftRestoredNotice') }}
         </div>
 
-        <div class="rounded-xl border border-dark-700 bg-dark-600/30 p-3 lg:p-4">
+        <div
+          class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.3)] p-3 lg:p-4">
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
-            <button
-              v-for="step in stepTabs"
-              :key="step.id"
-              type="button"
+            <button v-for="step in stepTabs" :key="step.id" type="button"
               class="group flex items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-left transition-colors"
               :class="[
                 currentStep === step.id
-                  ? 'border-blue-500 bg-blue-900/20'
-                  : 'border-dark-700 bg-dark-600/40 hover:border-dark-500',
+                  ? 'border-[rgb(var(--palette-blue-500))] bg-[rgb(var(--palette-blue-900)/0.2)]'
+                  : 'border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.4)] hover:border-[rgb(var(--palette-dark-500))]',
                 !canAccessStep(step.id) ? 'opacity-60' : '',
-              ]"
-              @click="handleStepClick(step.id)"
-            >
+              ]" @click="handleStepClick(step.id)">
               <div class="flex items-center gap-2 min-w-0">
                 <span
                   class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
                   :class="[
                     currentStep === step.id
-                      ? 'bg-blue-500 text-white'
+                      ? 'bg-[rgb(var(--palette-blue-500))] text-[var(--text-title)]'
                       : step.isValid
-                        ? 'bg-green-500 text-white'
-                        : 'bg-dark-700 text-gray-300',
-                  ]"
-                >
+                        ? 'bg-[rgb(var(--palette-green-500))] text-[var(--text-title)]'
+                        : 'bg-[rgb(var(--palette-dark-700))] text-[var(--text-body)]',
+                  ]">
                   {{ step.id }}
                 </span>
-                <p class="truncate text-xs lg:text-sm font-medium text-white">
+                <p class="truncate text-xs lg:text-sm font-medium text-[var(--text-title)]">
                   {{ step.shortTitle }}
                 </p>
               </div>
 
-              <Check
-                v-if="step.isValid"
-                class="h-4 w-4 shrink-0 text-green-400"
-              />
+              <Check v-if="step.isValid" class="h-4 w-4 shrink-0 text-[var(--text-success-strong)]" />
             </button>
           </div>
         </div>
 
         <Transition :name="stepTransitionName" mode="out-in">
-          <section
-            :key="currentStep"
-            class="rounded-xl border border-dark-700 bg-dark-600/30 p-4 lg:p-6 space-y-6"
-          >
+          <section :key="currentStep"
+            class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.3)] p-4 lg:p-6 space-y-6">
             <header class="space-y-2">
-              <h2 class="text-lg lg:text-xl font-semibold text-white">
+              <h2 class="text-lg lg:text-xl font-semibold text-[var(--text-title)]">
                 {{ stepHeader.title }}
               </h2>
-              <p class="text-sm text-gray-400">
+              <p class="text-sm text-[var(--text-muted)]">
                 {{ stepHeader.description }}
               </p>
             </header>
@@ -1020,54 +1097,45 @@ async function createProduct() {
             <template v-if="currentStep === 1">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-2">
-                  <label class="text-sm font-medium text-gray-300">
+                  <label class="text-sm font-medium text-[var(--text-body)]">
                     {{ $t('common.category') }}
-                    <span class="text-xs text-red-400 ml-1">*</span>
+                    <span class="text-xs text-[var(--text-danger)] ml-1">*</span>
                   </label>
-                  <CustomSelect
-                    v-model="selectedCategoryId"
-                    :options="categoryOptions"
-                    :placeholder="t('pages.forms.createProduct.selectCategory')"
-                    searchable
-                    class="w-full"
-                  />
+                  <CustomSelect v-model="selectedCategoryId" :options="categoryOptions"
+                    :placeholder="t('pages.forms.createProduct.selectCategory')" searchable class="w-full"
+                    :disabled="!isStandardCreateFlow" />
                 </div>
 
                 <div class="space-y-2">
-                  <label class="text-sm font-medium text-gray-300">
+                  <label class="text-sm font-medium text-[var(--text-body)]">
                     {{ $t('common.subcategory') }}
-                    <span class="text-xs text-red-400 ml-1">*</span>
+                    <span class="text-xs text-[var(--text-danger)] ml-1">*</span>
                   </label>
-                  <CustomSelect
-                    v-model="selectedSubcategoryId"
-                    :options="subcategoryOptions"
-                    :placeholder="t('pages.forms.createProduct.selectSubcategory')"
-                    searchable
-                    class="w-full"
-                    :disabled="!selectedCategoryId || !subcategoryOptions.length"
-                  />
+                  <CustomSelect v-model="selectedSubcategoryId" :options="subcategoryOptions"
+                    :placeholder="t('pages.forms.createProduct.selectSubcategory')" searchable class="w-full"
+                    :disabled="!isStandardCreateFlow || !selectedCategoryId || !subcategoryOptions.length" />
                 </div>
               </div>
+
+              <p v-if="!isStandardCreateFlow" class="text-xs leading-relaxed text-[var(--text-link)]">
+                {{ $t('pages.forms.createProduct.raikaCategoryLockedHint') }}
+              </p>
             </template>
 
             <template v-else-if="currentStep === 2">
               <div class="space-y-6">
                 <div class="space-y-2">
-                  <label for="title" class="text-sm font-medium text-gray-300">
+                  <label for="title" class="text-sm font-medium text-[var(--text-body)]">
                     {{ $t('pages.forms.createProduct.productName') }}
-                    <span class="text-xs text-red-400 ml-1">*</span>
+                    <span class="text-xs text-[var(--text-danger)] ml-1">*</span>
                   </label>
-                  <input
-                    id="title"
-                    v-model="title"
-                    type="text"
-                    :maxlength="PRODUCT_LIMITS.title.max"
+                  <input id="title" v-model="title" type="text" :maxlength="PRODUCT_LIMITS.title.max"
                     :minlength="PRODUCT_LIMITS.title.min"
                     :placeholder="$t('pages.forms.createProduct.productNamePlaceholder')"
-                    class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-3 text-sm text-white outline-none placeholder-gray-500"
-                  />
+                    class="w-full rounded-lg bg-[rgb(var(--palette-dark-600))] border border-[rgb(var(--palette-dark-700))] px-4 py-3 text-sm text-[var(--text-title)] outline-none placeholder-[var(--text-placeholder)]" />
                   <div class="flex items-center justify-between gap-3">
-                    <p class="text-xs" :class="titleLengthValid ? 'text-gray-400' : 'text-red-400'">
+                    <p class="text-xs"
+                      :class="titleLengthValid ? 'text-[var(--text-muted)]' : 'text-[var(--text-danger)]'">
                       {{
                         t('pages.forms.createProduct.validationTitleLength', {
                           min: PRODUCT_LIMITS.title.min,
@@ -1075,28 +1143,24 @@ async function createProduct() {
                         })
                       }}
                     </p>
-                    <p class="text-xs text-gray-400 text-right">
+                    <p class="text-xs text-[var(--text-muted)] text-right">
                       {{ title.length }}/{{ PRODUCT_LIMITS.title.max }}
                     </p>
                   </div>
                 </div>
 
                 <div class="space-y-2">
-                  <label for="description" class="text-sm font-medium text-gray-300">
+                  <label for="description" class="text-sm font-medium text-[var(--text-body)]">
                     {{ $t('common.description') }}
-                    <span class="text-xs text-red-400 ml-1">*</span>
+                    <span class="text-xs text-[var(--text-danger)] ml-1">*</span>
                   </label>
-                  <textarea
-                    id="description"
-                    v-model="description"
-                    rows="8"
-                    :maxlength="PRODUCT_LIMITS.description.max"
+                  <textarea id="description" v-model="description" rows="8" :maxlength="PRODUCT_LIMITS.description.max"
                     :minlength="PRODUCT_LIMITS.description.min"
                     :placeholder="$t('pages.forms.createProduct.descriptionPlaceholder')"
-                    class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-3 text-sm outline-none text-white placeholder-gray-500 resize-none"
-                  ></textarea>
+                    class="w-full rounded-lg bg-[rgb(var(--palette-dark-600))] border border-[rgb(var(--palette-dark-700))] px-4 py-3 text-sm outline-none text-[var(--text-title)] placeholder-[var(--text-placeholder)] resize-none"></textarea>
                   <div class="flex items-center justify-between gap-3">
-                    <p class="text-xs" :class="descriptionLengthValid ? 'text-gray-400' : 'text-red-400'">
+                    <p class="text-xs"
+                      :class="descriptionLengthValid ? 'text-[var(--text-muted)]' : 'text-[var(--text-danger)]'">
                       {{
                         t('pages.forms.createProduct.validationDescriptionLength', {
                           min: PRODUCT_LIMITS.description.min,
@@ -1104,79 +1168,112 @@ async function createProduct() {
                         })
                       }}
                     </p>
-                    <p class="text-xs text-gray-400 text-right">
+                    <p class="text-xs text-[var(--text-muted)] text-right">
                       {{ normalizedDescriptionLength }}/{{ PRODUCT_LIMITS.description.max }}
                     </p>
                   </div>
                 </div>
 
-                <div
-                  v-if="shouldShowFortniteAccountForm"
-                  class="rounded-xl border border-dark-700 bg-dark-600/40 p-5 space-y-4"
-                >
+                <div v-if="shouldShowFortniteAccountForm"
+                  class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.4)] p-5 space-y-4">
                   <div class="space-y-1">
-                    <h4 class="text-sm font-semibold text-white">
+                    <h4 class="text-sm font-semibold text-[var(--text-title)]">
                       {{ $t('pages.forms.createProduct.fortniteAccountDetailsTitle') }}
                     </h4>
-                    <p class="text-xs text-gray-400 leading-relaxed">
-                      {{ $t('pages.forms.createProduct.fortniteAccountDetailsHint') }}
+                    <p class="text-xs text-[var(--text-muted)] leading-relaxed">
+                      {{
+                        isRaikaDraftApplied
+                          ? $t('pages.forms.createProduct.fortniteAccountDetailsLockedHint')
+                          : $t('pages.forms.createProduct.fortniteAccountDetailsHint')
+                      }}
                     </p>
                   </div>
 
-                  <FortniteAccountFields v-model="fortniteAccountForm" />
+                  <FortniteAccountFields v-model="fortniteAccountForm" mode="manual-create"
+                    :disabled="isRaikaDraftApplied" />
 
-                  <p
-                    class="text-xs"
-                    :class="fortniteAccountDataValid ? 'text-gray-400' : 'text-red-400'"
-                  >
+                  <p class="text-xs"
+                    :class="fortniteAccountDataValid ? 'text-[var(--text-muted)]' : 'text-[var(--text-danger)]'">
                     {{ $t('pages.forms.createProduct.validationFortniteAccountDetailsRequired') }}
                   </p>
                 </div>
 
-                <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-5 space-y-3">
+                <div
+                  class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.4)] p-5 space-y-3 cursor-pointer transition-colors duration-150 hover:border-[rgb(var(--palette-blue-500)/0.5)] hover:bg-[rgb(var(--palette-dark-600)/0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-500)/0.45)]"
+                  role="button"
+                  tabindex="0"
+                  :aria-pressed="autoDelivery"
+                  @click="toggleAutoDelivery"
+                  @keydown.enter.prevent="toggleAutoDelivery"
+                  @keydown.space.prevent="toggleAutoDelivery"
+                >
                   <div class="flex items-center justify-between">
                     <div class="space-y-1">
-                      <h4 class="text-sm font-semibold text-white">
+                      <h4 class="text-sm font-semibold text-[var(--text-title)]">
                         {{ $t('pages.forms.createProduct.autoDelivery') }}
                       </h4>
-                      <p class="text-xs text-gray-400 leading-relaxed">
+                      <p class="text-xs text-[var(--text-muted)] leading-relaxed">
                         {{ $t('pages.forms.createProduct.autoDeliveryHint') }}
                       </p>
                     </div>
-                    <Checkbox v-model="autoDelivery" size="lg" />
+                    <div @click.stop @keydown.stop>
+                      <Checkbox v-model="autoDelivery" size="lg" />
+                    </div>
                   </div>
-                  <div v-if="autoDelivery" class="p-3 rounded-lg bg-blue-900/20 border border-blue-800/30">
-                    <p class="text-xs text-blue-300 leading-relaxed flex items-start gap-2">
+                  <div v-if="autoDelivery"
+                    class="p-3 rounded-lg bg-[rgb(var(--palette-blue-900)/0.2)] border border-[rgb(var(--palette-blue-800)/0.3)]">
+                    <p class="text-xs text-[var(--text-link)] leading-relaxed flex items-start gap-2">
                       <Info class="w-4 h-4 mt-0.5 flex-shrink-0" />
                       {{ $t('pages.forms.createProduct.autoDeliveryEnabledHint') }}
                     </p>
                   </div>
                 </div>
 
+                <div
+                  v-if="canMarkProductOfficial"
+                  class="rounded-xl border border-[rgb(var(--palette-blue-700)/0.4)] bg-[rgb(var(--palette-blue-950)/0.2)] p-5 space-y-3 cursor-pointer transition-colors duration-150 hover:border-[rgb(var(--palette-blue-500)/0.65)] hover:bg-[rgb(var(--palette-blue-950)/0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--palette-blue-500)/0.45)]"
+                  role="button"
+                  tabindex="0"
+                  :aria-pressed="isOfficial"
+                  @click="toggleOfficial"
+                  @keydown.enter.prevent="toggleOfficial"
+                  @keydown.space.prevent="toggleOfficial"
+                >
+                  <div class="flex items-center justify-between">
+                    <div class="space-y-1">
+                      <h4 class="text-sm font-semibold text-[var(--text-title)]">
+                        {{ $t('pages.forms.createProduct.officialProductTitle') }}
+                      </h4>
+                      <p class="text-xs text-[rgb(var(--text-accent-rgb)/0.85)] leading-relaxed">
+                        {{ $t('pages.forms.createProduct.officialProductHint') }}
+                      </p>
+                    </div>
+                    <div @click.stop @keydown.stop>
+                      <Checkbox v-model="isOfficial" size="lg" />
+                    </div>
+                  </div>
+                </div>
+
                 <div v-if="autoDelivery" class="space-y-2">
                   <div class="flex items-center gap-2">
-                    <label for="productData" class="text-sm font-medium text-gray-300">
+                    <label for="productData" class="text-sm font-medium text-[var(--text-body)]">
                       {{ $t('pages.forms.createProduct.productData') }}
-                      <span class="text-xs text-red-400 ml-1">*</span>
+                      <span class="text-xs text-[var(--text-danger)] ml-1">*</span>
                     </label>
-                    <div class="flex items-center gap-1 text-xs text-blue-400">
+                    <div class="flex items-center gap-1 text-xs text-[var(--text-link)]">
                       <Info class="w-3 h-3" />
                       <span>{{ $t('pages.forms.createProduct.productDataHint') }}</span>
                     </div>
                   </div>
 
-                  <textarea
-                    id="productData"
-                    v-model="productData"
-                    rows="6"
-                    :maxlength="PRODUCT_LIMITS.productData.max"
-                    :minlength="PRODUCT_LIMITS.productData.min"
+                  <textarea id="productData" v-model="productData" rows="6" :minlength="PRODUCT_LIMITS.productData.min"
                     :placeholder="$t('pages.forms.createProduct.productDataPlaceholder')"
-                    class="w-full rounded-lg bg-dark-600 border border-dark-700 px-4 py-3 text-sm outline-none text-white placeholder-gray-500 resize-none font-mono"
-                  ></textarea>
+                    class="w-full rounded-lg bg-[rgb(var(--palette-dark-600))] border border-[rgb(var(--palette-dark-700))] px-4 py-3 text-sm outline-none text-[var(--text-title)] placeholder-[var(--text-placeholder)] resize-none font-mono"
+                    @input="onProductDataInput"></textarea>
 
                   <div class="flex items-center justify-between gap-3">
-                    <p class="text-xs" :class="productDataLengthValid ? 'text-gray-400' : 'text-red-400'">
+                    <p class="text-xs"
+                      :class="productDataLengthValid ? 'text-[var(--text-muted)]' : 'text-[var(--text-danger)]'">
                       {{
                         t('pages.forms.createProduct.validationProductDataLength', {
                           min: PRODUCT_LIMITS.productData.min,
@@ -1184,16 +1281,14 @@ async function createProduct() {
                         })
                       }}
                     </p>
-                    <p class="text-xs text-gray-400 text-right">
+                    <p class="text-xs text-[var(--text-muted)] text-right">
                       {{ normalizedProductDataLength }}/{{ PRODUCT_LIMITS.productData.max }}
                     </p>
                   </div>
                 </div>
 
-                <div
-                  v-else
-                  class="rounded-lg border border-emerald-700/40 bg-emerald-900/20 p-3 text-xs text-emerald-200"
-                >
+                <div v-else
+                  class="rounded-lg border border-[rgb(var(--palette-emerald-700)/0.4)] bg-[rgb(var(--palette-emerald-900)/0.2)] p-3 text-xs text-[var(--text-success)]">
                   {{ $t('pages.forms.createProduct.manualDeliveryInfo') }}
                 </div>
               </div>
@@ -1201,42 +1296,35 @@ async function createProduct() {
 
             <template v-else-if="currentStep === 3">
               <div class="space-y-5">
-                <div v-if="isLoadingDraft" class="rounded-lg border border-dark-700 bg-dark-600/30 p-3">
-                  <p class="text-sm text-gray-400">
+                <div v-if="isLoadingDraft"
+                  class="rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.3)] p-3">
+                  <p class="text-sm text-[var(--text-muted)]">
                     {{ $t('pages.forms.createProduct.loadingDraft') }}
                   </p>
                 </div>
 
                 <div v-if="draftImages.length > 0" class="space-y-3">
                   <div class="flex items-center justify-between">
-                    <label class="text-sm font-medium text-gray-300">
+                    <label class="text-sm font-medium text-[var(--text-body)]">
                       {{ $t('pages.forms.editProduct.currentImages') }}
-                      <span class="text-xs text-red-400 ml-1">*</span>
+                      <span class="text-xs text-[var(--text-danger)] ml-1">*</span>
                     </label>
-                    <span class="text-xs text-gray-400">
+                    <span class="text-xs text-[var(--text-muted)]">
                       {{ totalImagesCount }}/{{ PRODUCT_LIMITS.images.max }}
                     </span>
                   </div>
 
                   <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                    <div
-                      v-for="(image, index) in draftImages"
-                      :key="`${image}-${index}`"
-                      class="group relative aspect-square rounded-lg overflow-hidden border border-dark-700 bg-dark-600 transition-all duration-200 hover:border-red-500"
-                    >
-                      <img
-                        :src="`${API_HOST}${image}`"
-                        :alt="'Draft image'"
-                        class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
+                    <div v-for="(image, index) in draftImages" :key="`${image}-${index}`"
+                      class="group relative aspect-square rounded-lg overflow-hidden border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] transition-all duration-200 hover:border-[rgb(var(--palette-blue-500)/0.4)]">
+                      <img :src="`${API_HOST}${image}`" :alt="'Draft image'"
+                        class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
 
-                      <div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200 flex items-center justify-center">
-                        <button
-                          type="button"
-                          @click="removeDraftImage(index)"
-                          class="opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-all duration-200"
-                          :title="$t('common.delete')"
-                        >
+                      <div
+                        class="absolute inset-0 bg-[rgb(var(--palette-black)/0)] group-hover:bg-[rgb(var(--palette-black)/0.4)] transition-all duration-200 flex items-center justify-center">
+                        <button type="button" @click="removeDraftImage(index)"
+                          class="rounded-full border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-dark-900)/0.9)] p-2 text-[var(--text-body-strong)] opacity-0 transition-all duration-200 group-hover:opacity-100 hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-dark-900))] hover:text-[var(--text-title)]"
+                          :title="$t('common.delete')">
                           <X class="w-4 h-4" />
                         </button>
                       </div>
@@ -1244,31 +1332,17 @@ async function createProduct() {
                   </div>
                 </div>
 
-                <FileUploader
-                  v-model="images"
-                  :max-files="maxUploadedImages"
-                  :hint="$t('pages.forms.createProduct.imageHint')"
-                />
+                <FileUploader v-model="images" :max-files="maxUploadedImages" />
 
-                <div
-                  v-if="isRaikaDraftApplied"
-                  class="rounded-lg border border-emerald-700/40 bg-emerald-900/20 p-3 text-xs text-emerald-200"
-                >
+                <div v-if="isRaikaDraftApplied"
+                  class="rounded-lg border border-[rgb(var(--palette-emerald-700)/0.4)] bg-[rgb(var(--palette-emerald-900)/0.2)] p-3 text-xs text-[var(--text-success)]">
                   <p class="flex flex-wrap items-center gap-1.5">
-                    <img
-                      :src="RAIKA_LOGO_URL"
-                      alt="Raika logo"
-                      class="h-4 w-4 rounded-sm object-contain shrink-0"
-                      loading="lazy"
-                    />
+                    <img :src="RAIKA_LOGO_URL" alt="Raika logo" class="h-4 w-4 rounded-sm object-contain shrink-0"
+                      loading="lazy" />
                     <span>
                       {{ $t('pages.forms.createProduct.raikaVerifiedPrefix') }}
-                      <a
-                        :href="RAIKA_BOT_URL"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="underline decoration-emerald-300/60 underline-offset-2 hover:text-emerald-100 transition-colors"
-                      >
+                      <a :href="RAIKA_BOT_URL" target="_blank" rel="noopener noreferrer"
+                        class="underline decoration-[rgb(var(--palette-emerald-300)/0.6)] underline-offset-2 hover:text-[var(--text-success)] transition-colors">
                         {{ $t('pages.forms.createProduct.raikaName') }}
                       </a>
                     </span>
@@ -1282,31 +1356,21 @@ async function createProduct() {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div class="space-y-3">
                     <div class="flex h-6 items-center justify-between">
-                      <label for="price" class="text-sm font-medium text-gray-300">
+                      <label for="price" class="text-sm font-medium text-[var(--text-body)]">
                         {{ $t('common.price') }}
-                        <span class="text-xs text-red-400 ml-1">*</span>
+                        <span class="text-xs text-[var(--text-danger)] ml-1">*</span>
                       </label>
-                      <div class="flex items-center gap-2">
-                        <Calculator class="w-4 h-4 text-blue-400" />
-                        <span class="text-xs text-gray-400">{{ currencySymbol }}</span>
-                      </div>
                     </div>
                     <div class="relative">
-                      <input
-                        id="price"
-                        v-model.number="price"
-                        type="number"
-                        :min="priceInputMin"
-                        :max="priceInputMax"
-                        :step="priceInputStep"
-                        :placeholder="$t('pages.forms.createProduct.pricePlaceholder')"
-                        class="h-12 w-full rounded-lg border border-dark-700 bg-dark-600 px-4 pr-16 text-base font-semibold text-white outline-none"
-                      />
-                      <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 text-sm font-medium">
+                      <input id="price" v-model.number="price" type="number" :min="priceInputMin" :max="priceInputMax"
+                        :step="priceInputStep" :placeholder="$t('pages.forms.createProduct.pricePlaceholder')"
+                        class="h-12 w-full rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] px-4 pr-16 text-base font-semibold text-[var(--text-title)] outline-none" />
+                      <div
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] text-sm font-medium">
                         {{ currencySymbol }}
                       </div>
                     </div>
-                    <p class="text-xs" :class="priceValid ? 'text-gray-400' : 'text-red-400'">
+                    <p class="text-xs" :class="priceValid ? 'text-[var(--text-muted)]' : 'text-[var(--text-danger)]'">
                       {{
                         t('pages.forms.createProduct.validationPriceRange', {
                           min: priceRangeMinLabel,
@@ -1318,26 +1382,19 @@ async function createProduct() {
 
                   <div class="space-y-3">
                     <div class="flex h-6 items-center">
-                      <label for="count" class="text-sm font-medium text-gray-300">
+                      <label for="count" class="text-sm font-medium text-[var(--text-body)]">
                         {{ $t('pages.forms.createProduct.count') }}
                       </label>
                     </div>
                     <div class="relative">
-                      <input
-                        id="count"
-                        v-model.number="count"
-                        type="number"
-                        :min="PRODUCT_LIMITS.count.min"
-                        :max="PRODUCT_LIMITS.count.max"
-                        step="1"
-                        inputmode="numeric"
-                        class="h-12 w-full rounded-lg border border-dark-700 bg-dark-600 px-4 pr-20 text-base font-semibold text-white outline-none"
-                      />
-                      <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                      <input id="count" v-model.number="count" type="number" :min="PRODUCT_LIMITS.count.min"
+                        :max="PRODUCT_LIMITS.count.max" step="1" inputmode="numeric"
+                        class="h-12 w-full rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] px-4 pr-20 text-base font-semibold text-[var(--text-title)] outline-none" />
+                      <div class="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-sm">
                         {{ $t('common.items') }}
                       </div>
                     </div>
-                    <p class="text-xs" :class="countValid ? 'text-gray-400' : 'text-red-400'">
+                    <p class="text-xs" :class="countValid ? 'text-[var(--text-muted)]' : 'text-[var(--text-danger)]'">
                       {{
                         t('pages.forms.createProduct.validationCountRange', {
                           min: PRODUCT_LIMITS.count.min,
@@ -1348,57 +1405,54 @@ async function createProduct() {
                   </div>
                 </div>
 
-                <div class="rounded-xl border border-dark-700 bg-dark-600/40 p-5 space-y-4">
-                  <h3 class="text-sm font-semibold text-white flex items-center gap-2">
-                    <Percent class="w-4 h-4 text-blue-400" />
+                <div
+                  class="rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.4)] p-5 space-y-4">
+                  <h3 class="text-sm font-semibold text-[var(--text-title)] flex items-center gap-2">
+                    <Percent class="w-4 h-4 text-[var(--text-link)]" />
                     {{ $t('pages.forms.createProduct.calculations') }}
                   </h3>
 
                   <div class="space-y-3">
                     <div class="flex items-center justify-between">
-                      <span class="text-sm text-gray-400">{{ $t('pages.forms.createProduct.totalPrice') }}:</span>
-                      <span class="text-sm font-medium text-white">
+                      <span class="text-sm text-[var(--text-muted)]">{{ $t('pages.forms.createProduct.totalPrice')
+                        }}:</span>
+                      <span class="text-sm font-medium text-[var(--text-title)]">
                         {{ formatPrice(totalPriceInRub) }}
                       </span>
                     </div>
 
                     <div class="flex items-center justify-between">
-                      <span class="text-sm text-gray-400">
+                      <span class="text-sm text-[var(--text-muted)]">
                         {{ $t('pages.forms.createProduct.commission') }}:
-                        <span v-if="commissionInterest" class="text-blue-400 ml-1">
+                        <span v-if="commissionInterest !== null" class="text-[var(--text-link)] ml-1">
                           ({{ commissionInterest }}%)
                         </span>
                       </span>
-                      <span class="text-sm font-medium text-red-400">
+                      <span class="text-sm font-medium text-[var(--text-danger)]">
                         -{{ formatPrice(commissionAmountInRub) }}
                       </span>
                     </div>
 
-                    <div class="border-t border-dark-600 my-2"></div>
+                    <div class="border-t border-[rgb(var(--palette-dark-600))] my-2"></div>
 
                     <div class="flex items-center justify-between">
-                      <span class="text-sm font-medium text-gray-300">
+                      <span class="text-sm font-medium text-[var(--text-body)]">
                         {{ $t('pages.forms.createProduct.sellerReceives') }}:
                       </span>
-                      <span class="text-lg font-bold text-green-400">
+                      <span class="text-lg font-bold text-[var(--text-success-strong)]">
                         {{ formatPrice(sellerAmount) }}
                       </span>
                     </div>
                   </div>
-
-                  <div v-if="commissionInterest" class="mt-4 p-3 rounded-lg bg-blue-900/20 border border-blue-800/30">
-                    <p class="text-xs text-blue-300 leading-relaxed">
-                      {{ $t('pages.forms.createProduct.commissionNote', { percent: commissionInterest }) }}
-                    </p>
-                  </div>
                 </div>
 
-                <div class="text-xs text-gray-400 space-y-2">
-                  <div class="flex items-start gap-2 p-3 bg-dark-700/30 rounded-lg">
-                    <AlertCircle class="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+                <div class="text-xs text-[var(--text-muted)] space-y-2">
+                  <div class="flex items-start gap-2 p-3 bg-[rgb(var(--palette-dark-700)/0.3)] rounded-lg">
+                    <AlertCircle class="w-4 h-4 text-[var(--text-warning-strong)] mt-0.5 flex-shrink-0" />
                     <p>
                       {{ $t('pages.forms.createProduct.termsNote') }}
-                      <router-link to="/terms" class="text-blue-400 hover:text-blue-300 hover:underline transition-colors">
+                      <router-link to="/terms"
+                        class="text-[var(--text-link)] hover:text-[var(--text-link)] hover:underline transition-colors">
                         {{ $t('pages.forms.createProduct.termsLink') }}
                       </router-link>
                     </p>
@@ -1411,59 +1465,40 @@ async function createProduct() {
 
         <ErrorBanner v-if="errorMessage" :message="errorMessage" />
 
-        <div
-          v-if="showCurrentStepIssues"
-          class="rounded-lg border border-amber-700/40 bg-amber-900/15 p-3"
-        >
-          <p class="text-xs text-amber-200 font-medium mb-2">
+        <div v-if="showCurrentStepIssues"
+          class="rounded-lg border border-[rgb(var(--palette-amber-700)/0.4)] bg-[rgb(var(--palette-amber-900)/0.15)] p-3">
+          <p class="text-xs text-[var(--text-warning)] font-medium mb-2">
             {{ t('pages.forms.createProduct.stepValidationTitle') }}
           </p>
           <ul class="space-y-1">
-            <li
-              v-for="issue in currentStepIssues"
-              :key="issue"
-              class="text-xs text-amber-300"
-            >
+            <li v-for="issue in currentStepIssues" :key="issue" class="text-xs text-[var(--text-warning-strong)]">
               • {{ issue }}
             </li>
           </ul>
         </div>
 
         <div class="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 pb-6">
-          <button
-            type="button"
-            class="rounded-lg border border-dark-700 bg-dark-600/40 px-4 py-3 text-sm font-semibold text-gray-200 transition-colors duration-200 hover:border-dark-500 hover:bg-dark-600"
-            :disabled="currentStep === 1 || sended"
-            @click="goToPreviousStep"
-          >
+          <button type="button"
+            class="rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.4)] px-4 py-3 text-sm font-semibold text-[var(--text-body-strong)] transition-colors duration-200 hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-600))]"
+            :disabled="currentStep === 1 || sended" @click="goToPreviousStep">
             {{ $t('pages.forms.createProduct.previousStep') }}
           </button>
 
-          <button
-            v-if="currentStep < TOTAL_STEPS"
-            type="button"
-            class="market-btn market-btn-primary rounded-lg px-4 py-3 text-sm text-mainText"
-            :disabled="sended"
-            @click="goToNextStep"
-          >
+          <button v-if="currentStep < TOTAL_STEPS" type="button"
+            class="market-btn market-btn-primary rounded-lg px-4 py-3 text-sm text-mainText" :disabled="sended"
+            @click="goToNextStep">
             {{ $t('pages.forms.createProduct.nextStep') }}
           </button>
 
-          <button
-            v-else
-            type="button"
-            :disabled="sended || !isFormValid"
-            class="market-btn market-btn-primary rounded-lg px-4 py-3 text-sm text-mainText"
-            @click="createProduct"
-          >
+          <button v-else type="button" :disabled="sended || !isFormValid"
+            class="market-btn market-btn-primary rounded-lg px-4 py-3 text-sm text-mainText" @click="createProduct">
             <span v-if="sended" class="flex items-center justify-center gap-2">
-              <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg class="animate-spin h-4 w-4 text-[var(--text-title)]" xmlns="http://www.w3.org/2000/svg" fill="none"
+                viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path
-                  class="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
+                <path class="opacity-75" fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
               </svg>
               {{ $t('pages.forms.createProduct.creating') }}
             </span>
@@ -1475,62 +1510,35 @@ async function createProduct() {
       </div>
     </div>
 
-    <div
-      v-if="showCreatedProductModal"
-      class="app-modal-overlay z-[120]"
-    >
-      <div class="absolute inset-0 bg-black/75 backdrop-blur-sm" @click="goToProfileAfterCreate"></div>
-      <div class="relative z-10 flex min-h-full items-center justify-center px-4 py-8">
-        <div class="product-created-modal w-full max-w-lg overflow-hidden rounded-[28px] border border-white/10">
-          <div class="relative overflow-hidden px-6 py-7 sm:px-8 sm:py-8">
-            <div class="product-created-modal__hero absolute inset-0"></div>
-            <div class="relative space-y-6">
-              <div class="product-created-modal__icon inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-blue-400/18 bg-blue-500/10 text-blue-200">
-                <ShieldCheck class="h-7 w-7" />
-              </div>
-
-              <div class="space-y-3">
-                <div class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">
-                  {{ $t('common.productStatuses.moderation') }}
-                </div>
-                <h3 class="text-2xl font-semibold tracking-tight text-white sm:text-[2rem]">
-                  {{ $t('pages.forms.createProduct.successTitle') }}
-                </h3>
-                <p class="text-sm leading-6 text-gray-300 sm:text-[15px]">
-                  {{ $t('pages.forms.createProduct.successMessage') }}
-                </p>
-              </div>
-
-              <div class="product-created-modal__summary rounded-2xl border border-white/8 p-4">
-                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
-                  {{ $t('pages.forms.createProduct.successHintLabel') }}
-                </p>
-                <p class="mt-2 text-sm leading-6 text-gray-300">
-                  {{ $t('pages.forms.createProduct.successHint') }}
-                </p>
-              </div>
-
-              <div class="flex flex-col gap-3 sm:flex-row">
-                <button
-                  type="button"
-                  class="market-primary-surface market-primary-hover inline-flex flex-1 items-center justify-center rounded-2xl px-5 py-3.5 text-sm font-semibold text-white transition-colors duration-200"
-                  @click="goToCreatedProduct"
-                >
-                  {{ $t('pages.forms.createProduct.goToProduct') }}
-                </button>
-                <button
-                  type="button"
-                    class="inline-flex flex-1 items-center justify-center rounded-2xl border border-white/12 bg-white/[0.04] px-5 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:border-white/20 hover:bg-white/[0.07]"
-                    @click="goToProfileAfterCreate"
-                >
-                  {{ $t('pages.forms.createProduct.goToProfile') }}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+    <AppModal :is-open="showCreatedProductModal" :eyebrow="$t('common.productStatuses.moderation')"
+      :title="$t('pages.forms.createProduct.successTitle')"
+      :description="$t('pages.forms.createProduct.successMessage')" size="xl" title-scale="hero"
+      :show-close-button="false" body-class="space-y-7 sm:space-y-8" @cancel="goToProfileAfterCreate">
+      <div
+        class="rounded-[1.4rem] border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.03)] px-5 py-4 sm:px-6 sm:py-5">
+        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--text-meta)]">
+          {{ $t('pages.forms.createProduct.successHintLabel') }}
+        </p>
+        <p class="mt-3 break-words text-[15px] leading-8 text-[var(--text-body)]">
+          {{ $t('pages.forms.createProduct.successHint') }}
+        </p>
       </div>
-    </div>
+
+      <template #footer>
+        <div class="flex flex-col gap-3 sm:flex-row">
+          <button type="button"
+            class="market-primary-surface market-primary-hover inline-flex min-h-14 flex-1 items-center justify-center rounded-[1.15rem] px-5 py-4 text-base font-semibold text-[var(--text-title)] transition-colors duration-200"
+            @click="goToCreatedProduct">
+            {{ $t('pages.forms.createProduct.goToProduct') }}
+          </button>
+          <button type="button"
+            class="inline-flex min-h-14 flex-1 items-center justify-center rounded-[1.15rem] border border-[rgb(var(--palette-white)/0.12)] bg-[rgb(var(--palette-white)/0.04)] px-5 py-4 text-base font-semibold text-[var(--text-title)] transition-colors duration-200 hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.07)]"
+            @click="goToProfileAfterCreate">
+            {{ $t('pages.forms.createProduct.goToProfile') }}
+          </button>
+        </div>
+      </template>
+    </AppModal>
   </div>
 </template>
 
@@ -1563,22 +1571,5 @@ input[type="number"] {
 .wizard-step-back-enter-from {
   opacity: 0;
   transform: translateX(-16px);
-}
-
-.product-created-modal {
-  background: var(--modal-surface-strong);
-  box-shadow: var(--modal-surface-strong-shadow);
-}
-
-.product-created-modal__hero {
-  background: var(--product-created-hero-bg);
-}
-
-.product-created-modal__icon {
-  box-shadow: var(--product-created-badge-shadow);
-}
-
-.product-created-modal__summary {
-  background: var(--overlay-white-03);
 }
 </style>

@@ -2,8 +2,9 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BackButton from '@/components/navigation/BackButton.vue'
+import { formatDateInRussian, formatDateInEnglish } from '@/utils/dateFormatter'
 
-const { t, tm } = useI18n()
+const { t, tm, locale } = useI18n()
 
 type LegalSection = {
   title?: string
@@ -12,6 +13,9 @@ type LegalSection = {
 }
 
 const sections = computed(() => tm('pages.privacyPolicyPage.sections') as LegalSection[])
+const formattedDate = computed(() => 
+  locale.value.startsWith('ru') ? formatDateInRussian() : formatDateInEnglish()
+)
 </script>
 
 <template>
@@ -23,8 +27,11 @@ const sections = computed(() => tm('pages.privacyPolicyPage.sections') as LegalS
           {{ t('pages.privacyPolicyPage.title') }}
         </h1>
       </div>
+      <p class="legal-updated text-sm sm:text-base">
+        {{ t('pages.privacyPolicyPage.updatedAt', { date: formattedDate }) }}
+      </p>
 
-      <article class="mt-6 legal-copy text-gray-200">
+      <article class="mt-6 legal-copy text-[var(--text-body-strong)]">
         <section
           v-for="(section, index) in sections"
           :key="`${index}-${section.title ?? 'section'}`"
@@ -68,6 +75,13 @@ const sections = computed(() => tm('pages.privacyPolicyPage.sections') as LegalS
 
 .legal-copy {
   font-family: 'Manrope', 'Segoe UI', Arial, sans-serif;
+}
+
+.legal-updated {
+  margin-top: 0.85rem;
+  color: var(--text-secondary);
+  font-family: 'Manrope', 'Segoe UI', Arial, sans-serif;
+  font-weight: 500;
 }
 
 .legal-section {

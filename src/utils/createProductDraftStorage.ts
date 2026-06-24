@@ -12,6 +12,7 @@ export interface CreateProductDraftPayload {
   fortniteAccountDetails: FortniteAccountFormState
   count: number | ''
   autoDelivery: boolean
+  isOfficial: boolean
   images: File[]
   currentStep: CreateProductDraftStep
 }
@@ -80,6 +81,7 @@ function parseDraftMeta(rawValue: string | null): CreateProductDraftMeta | null 
           },
       count: typeof parsed.count === 'number' || parsed.count === '' ? parsed.count : 1,
       autoDelivery: parsed.autoDelivery !== false,
+      isOfficial: parsed.isOfficial === true,
       currentStep: isDraftStep(parsed.currentStep) ? parsed.currentStep : 1,
     }
   } catch {
@@ -193,6 +195,7 @@ export async function loadCreateProductDraft(
     fortniteAccountDetails: meta.fortniteAccountDetails,
     count: meta.count,
     autoDelivery: meta.autoDelivery,
+    isOfficial: meta.isOfficial,
     images,
     currentStep: meta.currentStep,
   }
@@ -217,6 +220,7 @@ export async function saveCreateProductDraft(
     fortniteAccountDetails: payload.fortniteAccountDetails,
     count: payload.count,
     autoDelivery: payload.autoDelivery,
+    isOfficial: payload.isOfficial,
     currentStep: payload.currentStep,
   }
 

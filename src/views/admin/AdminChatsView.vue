@@ -19,6 +19,7 @@ import CustomSelect from '@/components/CustomSelect.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
 import { createBottomPinController } from '@/utils/chatScroll'
+import { getChatTimelineSpacingClass } from '@/utils/chatTimelineSpacing'
 
 const route = useRoute()
 const router = useRouter()
@@ -35,6 +36,7 @@ const hasMoreChats = ref(true)
 
 // Состояние сообщений
 const chatMessages = ref<ChatMessageUnion[]>([])
+const liveDealStatusOverrides = ref<Record<string, string>>({})
 const selectedChatId = ref<string | null>(null)
 const messageContainerRef = ref<HTMLElement | null>(null)
 const bottomPin = createBottomPinController(() => messageContainerRef.value)
@@ -69,6 +71,7 @@ const floatingDateTopOffsetPx = 8
 const floatingDateMergeStartDistancePx = 56
 const floatingDateMergeEndDistancePx = 8
 const floatingDateMaxOffsetPx = 14
+const isSupportCaseStatusUpdating = ref(false)
 
 // Все чаты для админа - только support_chat типы
 const searchQuery = ref('')
@@ -132,6 +135,121 @@ const currentChat = computed(() =>
     chats.value.find(chat => chat.id === selectedChatId.value) || null
 )
 
+function resolveSupportTicketStatus(chat: ChatListItem | null | undefined): 'open' | 'closed' {
+    if (!chat) return 'open'
+
+    const statusCandidates = [
+        chat.support_ticket_status,
+        chat.support_status,
+    ]
+
+    for (const candidate of statusCandidates) {
+        if (typeof candidate !== 'string') continue
+        const normalized = candidate.trim().toLowerCase()
+        if (normalized === 'closed' || normalized === 'open') {
+            return normalized
+        }
+    }
+
+    if (typeof chat.is_closed === 'boolean') {
+        return chat.is_closed ? 'closed' : 'open'
+    }
+
+    if (typeof chat.is_resolved === 'boolean') {
+        return chat.is_resolved ? 'closed' : 'open'
+    }
+
+    return 'open'
+}
+
+const currentSupportTicketStatus = computed<'open' | 'closed'>(() => {
+    return resolveSupportTicketStatus(currentChat.value)
+})
+const isCurrentSupportCaseClosed = computed(() => currentSupportTicketStatus.value === 'closed')
+
+const supportCaseClosedTextMarkers = [
+    'обращение закрыто администратором',
+    'обращение закрыто',
+    'жалоба успешно обработана',
+    'support case closed',
+    'case closed by administrator',
+    'request closed by administrator',
+] as const
+
+const supportCaseReopenedTextMarkers = [
+    'обращение переоткрыто администратором',
+    'обращение снова открыто',
+    'обращение открыто',
+    'case reopened by administrator',
+    'support case reopened',
+] as const
+
+function resolveSupportTicketStatusFromMessage(message: ChatMessageUnion): 'open' | 'closed' | null {
+    if (message.message_type !== 'text_message') return null
+
+    const rawData = message.data as Record<string, unknown> | null | undefined
+    const statusCandidates = [
+        rawData?.support_ticket_status,
+        rawData?.support_status,
+        rawData?.status,
+    ]
+
+    for (const candidate of statusCandidates) {
+        if (typeof candidate !== 'string') continue
+        const normalized = candidate.trim().toLowerCase()
+        if (normalized === 'closed' || normalized === 'open') {
+            return normalized
+        }
+    }
+
+    if (typeof rawData?.is_closed === 'boolean') {
+        return rawData.is_closed ? 'closed' : 'open'
+    }
+    if (typeof rawData?.is_resolved === 'boolean') {
+        return rawData.is_resolved ? 'closed' : 'open'
+    }
+
+    const normalizedText = message.text.trim().toLowerCase()
+    if (!normalizedText) return null
+
+    if (supportCaseClosedTextMarkers.some((marker) => normalizedText.includes(marker))) {
+        return 'closed'
+    }
+    if (supportCaseReopenedTextMarkers.some((marker) => normalizedText.includes(marker))) {
+        return 'open'
+    }
+
+    return null
+}
+
+function resolveSupportTicketStatusFromMessages(messages: ChatMessageUnion[]): 'open' | 'closed' | null {
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+        const message = messages[index]
+        if (!message) continue
+        const status = resolveSupportTicketStatusFromMessage(message)
+        if (status) return status
+
+        // If there is user activity after explicit "closed", treat case as reopened.
+        if (
+            (message.message_type === 'text_message' || message.message_type === 'image_message')
+            && typeof message.sender_id === 'string'
+        ) {
+            if (user.value?.id && message.sender_id === user.value.id) {
+                continue
+            }
+            return 'open'
+        }
+    }
+    return null
+}
+
+function applyResolvedSupportStatusToChat(chat: ChatListItem, status: 'open' | 'closed') {
+    chat.support_ticket_status = status
+    chat.support_status = status
+    chat.is_closed = status === 'closed'
+    chat.is_resolved = status === 'closed'
+}
+
 type PriceOfferChatMessage = Extract<ChatMessageUnion, { message_type: 'price_offer_message' }>
 
 function getMessageTimestamp(message: ChatMessageUnion): number {
@@ -143,6 +261,12 @@ function getMessageTimestamp(message: ChatMessageUnion): number {
 
 function normalizeMessagesChronological(messages: ChatMessageUnion[]): ChatMessageUnion[] {
     return [...messages].sort((a, b) => getMessageTimestamp(a) - getMessageTimestamp(b))
+}
+
+function isDealStatusUpdateMessage(
+    message: ChatMessageUnion,
+): message is Extract<ChatMessageUnion, { message_type: 'update_deal_status_message' }> {
+    return message.message_type === 'update_deal_status_message'
 }
 
 function mergePriceOfferTimelineMessage(
@@ -163,6 +287,10 @@ function normalizeTimelineServerMessages(messages: ChatMessageUnion[]): ChatMess
     const priceOfferIndexById = new Map<string, number>()
 
     for (const message of messages) {
+        if (isDealStatusUpdateMessage(message)) {
+            continue
+        }
+
         if (message.message_type !== 'price_offer_message') {
             normalizedMessages.push(message)
             continue
@@ -194,6 +322,7 @@ type ChatTimelineItem = {
     dateKey: string | null
     dateLabel: string | null
     showDateDivider: boolean
+    spacingClass: string
 }
 
 const msPerDay = 24 * 60 * 60 * 1000
@@ -269,15 +398,13 @@ const dealStatusOverrides = computed<Record<string, string>>(() => {
     for (const message of chatMessages.value) {
         if (message.message_type === 'purchase_message') {
             statuses[message.deal_id] = statuses[message.deal_id] ?? message.deal_status
-            continue
-        }
-
-        if (message.message_type === 'update_deal_status_message') {
-            statuses[message.deal_id] = message.new_status
         }
     }
 
-    return statuses
+    return {
+        ...statuses,
+        ...liveDealStatusOverrides.value,
+    }
 })
 
 const reviewedDealIds = computed<string[]>(() => {
@@ -307,6 +434,7 @@ const chatTimelineItems = computed<ChatTimelineItem[]>(() => {
             dateKey,
             dateLabel,
             showDateDivider,
+            spacingClass: getChatTimelineSpacingClass(normalizedTimelineMessages.value, index),
         }
     })
 })
@@ -540,6 +668,7 @@ const checkMobile = () => {
 }
 
 let unsubscribeNewMessage: (() => void) | null = null
+let unsubscribeDealStatusUpdate: (() => void) | null = null
 let unsubscribeChatUpdated: (() => void) | null = null
 
 onMounted(async () => {
@@ -585,9 +714,31 @@ onMounted(async () => {
                     void chatsService.markChatRead(update.chat_id)
                 }
             }
+
+            const statusCandidate = typeof update.support_ticket_status === 'string'
+                ? update.support_ticket_status
+                : typeof update.support_status === 'string'
+                    ? update.support_status
+                    : null
+
+            if (statusCandidate && statusCandidate.trim()) {
+                const normalizedStatus = statusCandidate.trim().toLowerCase() === 'closed' ? 'closed' : 'open'
+                applyResolvedSupportStatusToChat(chat, normalizedStatus)
+            } else if (typeof update.is_closed === 'boolean') {
+                applyResolvedSupportStatusToChat(chat, update.is_closed ? 'closed' : 'open')
+            } else if (typeof update.is_resolved === 'boolean') {
+                applyResolvedSupportStatusToChat(chat, update.is_resolved ? 'closed' : 'open')
+            }
         })
 
         unsubscribeNewMessage = chatsService.onNewMessage(message => {
+            const chat = chats.value.find((item) => item.id === message.chat_room_id)
+            if (chat?.chat_type === 'support_chat') {
+                const statusFromMessage = resolveSupportTicketStatusFromMessage(message)
+                if (statusFromMessage) {
+                    applyResolvedSupportStatusToChat(chat, statusFromMessage)
+                }
+            }
             if (selectedChatId.value === message.chat_room_id) {
                 if (!chatMessages.value.some(m => m.id === message.id)) {
                     const shouldStickToBottom = isNearBottom()
@@ -602,6 +753,13 @@ onMounted(async () => {
                     if (activeChat) activeChat.unread_count = 0
                     void chatsService.markChatRead(message.chat_room_id)
                 }
+            }
+        })
+        unsubscribeDealStatusUpdate = chatsService.onDealStatusUpdate(message => {
+            if (selectedChatId.value !== message.chat_room_id) return
+            liveDealStatusOverrides.value = {
+                ...liveDealStatusOverrides.value,
+                [message.deal_id]: message.new_status,
             }
         })
 
@@ -626,6 +784,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
     unsubscribeNewMessage?.()
+    unsubscribeDealStatusUpdate?.()
     unsubscribeChatUpdated?.()
     clearDeferredBottomPinTimers()
     bottomPin.stop()
@@ -648,6 +807,7 @@ watch(selectedChatId, () => {
     floatingDateLabel.value = null
     resetFloatingDateMergeVisuals()
     isFloatingDateVisible.value = false
+    liveDealStatusOverrides.value = {}
     clearDeferredBottomPinTimers()
     if (floatingDateHideTimerId !== null) {
         clearTimeout(floatingDateHideTimerId)
@@ -855,15 +1015,22 @@ async function loadChatMessages(
         hasUserScrolledAwayFromTop.value = false
         previousMessageScrollTop.value = 0
         chatMessages.value = []
+        liveDealStatusOverrides.value = {}
         messagesCurrentPage.value = 1
         hasMoreMessages.value = true
 
         await chatsService.joinChat(chatId)
         selectedChatId.value = chatId
         updateUrlChatId(chatId)
-
         const response = await chatsService.getChatMessages(chatId, 1, messagesPerPage.value)
         chatMessages.value = normalizeMessagesChronological(response.messages)
+        const statusFromMessages = resolveSupportTicketStatusFromMessages(chatMessages.value)
+        if (statusFromMessages) {
+            const activeChat = chats.value.find((item) => item.id === chatId)
+            if (activeChat?.chat_type === 'support_chat') {
+                applyResolvedSupportStatusToChat(activeChat, statusFromMessages)
+            }
+        }
         messagesTotalPages.value = response.totalPages
         hasMoreMessages.value = 1 < messagesTotalPages.value
         scheduleFloatingDateLabelUpdate()
@@ -940,16 +1107,39 @@ async function sendMessage(payload: { files: File[] }) {
         })
     }
 }
+
+async function toggleSupportCaseStatus() {
+    if (!selectedChatId.value || !currentChat.value || isSupportCaseStatusUpdating.value) return
+    if (isCurrentSupportCaseClosed.value) return
+
+    isSupportCaseStatusUpdating.value = true
+    const nextStatus: 'open' | 'closed' = 'closed'
+    const result = await adminService.updateSupportCaseStatus(selectedChatId.value, nextStatus)
+
+    if (!result.success) {
+        errorMessage.value = 'Не удалось изменить статус кейса.'
+        isSupportCaseStatusUpdating.value = false
+        return
+    }
+
+    const updatedStatus = result.support_ticket_status === 'closed' ? 'closed' : 'open'
+    currentChat.value.support_ticket_status = updatedStatus
+    currentChat.value.support_status = updatedStatus
+    currentChat.value.is_closed = updatedStatus === 'closed'
+    currentChat.value.is_resolved = updatedStatus === 'closed'
+    errorMessage.value = null
+    isSupportCaseStatusUpdating.value = false
+}
 </script>
 
 <template>
     <!-- Добавляем md:pt-6 обратно -->
     <div class="h-full w-full flex flex-col overscroll-none md:pt-6">
-        <div v-if="isLoading && chats.length === 0" class="flex flex-1 items-center justify-center text-gray-300">
+        <div v-if="isLoading && chats.length === 0" class="flex flex-1 items-center justify-center text-[var(--text-body)]">
             <Loader />
         </div>
 
-        <div v-else-if="errorMessage" class="flex flex-1 items-center justify-center text-red-500">
+        <div v-else-if="errorMessage" class="flex flex-1 items-center justify-center text-[var(--text-danger)]">
             {{ errorMessage }}
         </div>
 
@@ -958,14 +1148,14 @@ async function sendMessage(payload: { files: File[] }) {
             <div v-if="!isMobile || (isMobile && mobileMode === 'chats')"
                 class="h-full lg:max-w-sm flex flex-col md:pr-5 transition-all duration-300 min-h-0" :class="[
                     isMobile && mobileMode === 'chats'
-                        ? 'fixed inset-x-0 bottom-0 top-14 z-10 w-full bg-background'
+                        ? 'fixed inset-x-0 top-14 bottom-0 z-10 w-full bg-background'
                         : 'w-3/12',
                 ]">
-                <div class="h-full flex flex-col border-dark-600 lg:border-1 md:rounded-3xl">
+                <div class="admin-surface-panel h-full flex flex-col md:rounded-3xl">
                     <div v-if="isMobile" class="px-4 pt-3">
                         <button
                             type="button"
-                            class="inline-flex items-center gap-2 rounded-lg border border-dark-700 bg-dark-700/40 px-3 py-2 text-xs text-gray-200"
+                            class="admin-surface-soft inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-[var(--text-body-strong)]"
                             @click="goToAdminHome"
                         >
                             <ArrowLeft class="h-4 w-4" />
@@ -1026,7 +1216,7 @@ async function sendMessage(payload: { files: File[] }) {
                             </div>
                         </div>
                         <div v-else class="h-full w-full flex items-center justify-center">
-                            <p class="text-sm text-gray-400 font-light">
+                            <p class="text-sm text-[var(--text-muted)] font-light">
                                 {{ $t('pages.admin.noSupportChats') }}
                             </p>
                         </div>
@@ -1036,46 +1226,61 @@ async function sendMessage(payload: { files: File[] }) {
 
             <!-- chat window -->
             <div v-if="!isMobile || (isMobile && mobileMode === 'chat')"
-                class="h-full flex flex-1 min-h-0 transition-all duration-300" :class="[
+                class="flex flex-1 min-h-0 transition-all duration-300" :class="[
                     isMobile && mobileMode === 'chat'
                         ? 'fixed inset-x-0 bottom-0 top-14 z-10 w-full bg-background'
-                        : 'flex-1 min-w-0 border-1 border-dark-400 rounded-3xl',
+                        : 'flex-1 w-9/12 overflow-hidden rounded-3xl border border-[rgb(var(--palette-dark-400))]',
                 ]">
-                <div class="h-full w-full flex flex-col min-h-0 px-2 md:rounded-xl">
-                    <div class="flex flex-1 flex-col min-h-0 w-full">
+                <div class="flex w-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-2 md:rounded-xl">
+                    <div class="flex w-full min-w-0 flex-1 flex-col min-h-0">
                         <!-- chat title -->
                         <div v-if="currentChat"
-                            class="flex items-center gap-2 sticky top-0 bg-background px-2 py-2 lg:py-3 lg:px-3 z-10 lg:border-b border-dark-700">
-                            <button v-if="isMobile" class="text-xl font-bold flex-shrink-0" @click="backToChats">
+                            class="sticky top-0 z-10 mx-1 flex items-center gap-2 bg-background px-2 py-1.5 lg:mx-2 lg:border-b lg:border-[rgb(var(--palette-dark-700))] lg:px-3 lg:py-3">
+                            <button v-if="isMobile" class="flex h-7 w-7 flex-shrink-0 items-center justify-center" @click="backToChats">
                                 <ArrowLeft />
                             </button>
                             <button
                                 type="button"
-                                class="flex items-center gap-3 flex-1 min-w-0 text-left rounded-lg transition cursor-pointer bg-transparent border-0 p-0 focus:outline-none"
+                                class="flex items-center gap-3 flex-1 min-w-0 text-left rounded-lg transition cursor-pointer bg-[var(--transparent)] border-0 p-0 focus:outline-none"
                                 @click="openChatProfile"
                             >
-                                <div class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
+                                <div class="h-7 w-7 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
                                     <UserAvatar
                                         :avatar-url="currentChat?.another_user.avatar_url"
                                         :alt="currentChat?.another_user.username || ''"
-                                        class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-dark-600 rounded-full object-cover"
+                                        class="h-7 w-7 lg:h-10 lg:w-10 border-2 border-[rgb(var(--palette-dark-600))] rounded-full object-cover"
                                     />
                                 </div>
-                                <div class="flex min-w-0 flex-col">
+                                <div class="flex min-w-0 flex-col justify-center">
                                     <div class="w-full min-w-0 truncate">
                                         <StyledUsername
                                             :username="currentChat?.another_user.username || ''"
                                             :style-id="currentChat?.another_user.nickname_style_id"
-                                            class="text-lg font-semibold"
+                                            class="text-base font-semibold leading-tight lg:text-lg"
                                         />
                                     </div>
-                                    <p v-if="currentChat?.another_user.is_active" class="text-xs text-green-500">
+                                    <p v-if="currentChat?.another_user.is_active" class="text-xs text-[var(--text-success-strong)]">
                                         {{ $t('common.online') }}
                                     </p>
-                                    <p v-else class="text-xs text-gray-500">
+                                    <p v-else class="text-xs text-[var(--text-meta)]">
                                         {{ $t('common.offline') }}
                                     </p>
                                 </div>
+                            </button>
+                            <span
+                                v-if="isCurrentSupportCaseClosed"
+                                class="inline-flex h-8 flex-shrink-0 items-center rounded-lg border border-[rgb(var(--palette-green-500)/0.35)] bg-[rgb(var(--palette-green-500)/0.14)] px-3 text-xs font-semibold text-[var(--text-success-strong)] lg:h-9 lg:text-sm"
+                            >
+                                Жалоба успешно обработана
+                            </span>
+                            <button
+                                v-else
+                                type="button"
+                                class="h-8 flex-shrink-0 rounded-lg bg-[rgb(var(--palette-red-600)/0.16)] px-3 text-xs font-semibold text-[var(--text-danger)] transition hover:bg-[rgb(var(--palette-red-600)/0.24)] disabled:opacity-60 lg:h-9 lg:text-sm"
+                                :disabled="isSupportCaseStatusUpdating"
+                                @click="toggleSupportCaseStatus"
+                            >
+                                {{ isSupportCaseStatusUpdating ? 'Сохраняем...' : 'Закрыть кейс' }}
                             </button>
                         </div>
 
@@ -1096,14 +1301,15 @@ async function sendMessage(payload: { files: File[] }) {
                                 </div>
 
                                 <template v-else>
-                                    <div :class="isChatPinning ? 'opacity-0 pointer-events-none' : 'opacity-100'">
+                                    <div :class="isChatPinning ? 'h-full opacity-0 pointer-events-none' : 'h-full opacity-100'">
                                         <div v-if="isLoadingMoreMessages" class="flex justify-center py-2">
                                             <Loader size="sm" />
                                         </div>
 
-                                        <div v-if="chatTimelineItems.length > 0" class="flex flex-1 flex-col justify-start min-h-0">
-                                            <div class="flex flex-col pt-2 pb-18">
+                                        <div v-if="chatTimelineItems.length > 0" class="flex min-w-0 flex-1 flex-col justify-start">
+                                            <div class="flex min-w-0 flex-col pb-18">
                                                 <template v-for="item in chatTimelineItems" :key="item.message.id">
+<<<<<<< HEAD
                                                     <div
                                                         v-if="item.showDateDivider && item.dateLabel"
                                                         class="flex justify-center py-2"
@@ -1111,12 +1317,16 @@ async function sendMessage(payload: { files: File[] }) {
                                                         :data-chat-date-key="item.dateKey ?? ''"
                                                     >
                                                         <span class="rounded-full border border-dark-600/70 bg-dark-900/70 px-3 py-1 text-xs font-medium text-mainText/90">
+=======
+                                                    <div v-if="item.showDateDivider && item.dateLabel" class="flex justify-center py-2">
+                                                        <span class="admin-surface-soft rounded-full px-3 py-1 text-xs font-medium text-mainText/90">
+>>>>>>> dev
                                                             {{ item.dateLabel }}
                                                         </span>
                                                     </div>
 
                                                     <div
-                                                        class="mb-3"
+                                                        :class="item.spacingClass"
                                                         :data-chat-message-index="item.index"
                                                         :data-chat-date-key="item.dateKey ?? ''"
                                                     >
@@ -1134,12 +1344,12 @@ async function sendMessage(payload: { files: File[] }) {
 
                                         <div v-else-if="selectedChatId != null && chatMessages.length === 0"
                                             class="h-full w-full flex items-center justify-center">
-                                            <p class="text-gray-400 font-light">{{ $t("pages.chats.emptyMessages") }}</p>
+                                            <p class="text-[var(--text-muted)] font-light">{{ $t("pages.chats.emptyMessages") }}</p>
                                         </div>
 
                                         <div v-else-if="selectedChatId === null"
                                             class="h-full w-full flex items-center justify-center">
-                                            <p class="text-gray-400 font-light">{{ $t('pages.admin.selectSupportChat') }}</p>
+                                            <p class="text-[var(--text-muted)] font-light">{{ $t('pages.admin.selectSupportChat') }}</p>
                                         </div>
                                     </div>
                                 </template>
@@ -1147,15 +1357,13 @@ async function sendMessage(payload: { files: File[] }) {
                                 <div
                                     v-if="selectedChatId"
                                     aria-hidden="true"
-                                    class="w-full flex-none md:h-[108px]"
-                                    :class="isMobile ? 'h-[180px]' : 'h-[124px]'"
+                                    class="h-[120px] w-full flex-none md:h-[108px]"
                                 />
                             </div>
 
                             <div
                                 v-if="selectedChatId"
-                                class="pointer-events-none absolute inset-x-0 z-20 bg-transparent px-1 pb-2 pt-0 md:bottom-0"
-                                :class="isMobile ? 'bottom-14' : 'bottom-0'"
+                                class="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-[var(--transparent)] px-1 pb-1 pt-0 md:pb-2"
                             >
                                 <div class="pointer-events-auto">
                                     <SendMessageBar

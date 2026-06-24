@@ -41,6 +41,7 @@ const rating = ref('');
 const isBanned = ref(false);
 const role = ref<'user' | 'admin' | 'partner'>('user');
 const hasFrozenBalance = ref(false);
+const isReferal = ref(false);
 const nicknameStyleId = ref('default');
 const profileBackgroundUnlocked = ref(false);
 const twoFactorEnabled = ref(false);
@@ -104,6 +105,7 @@ async function loadUser() {
       isBanned.value = userData.is_banned;
       role.value = userData.role;
       hasFrozenBalance.value = userData.has_frozen_balance;
+      isReferal.value = userData.is_referal || false;
       nicknameStyleId.value = userData.nickname_style_id || 'default';
       profileBackgroundUnlocked.value = userData.profile_background_unlocked || false;
       twoFactorEnabled.value = userData.two_factor_enabled || false;
@@ -199,6 +201,7 @@ async function saveUser() {
       is_banned: isBanned.value,
       role: role.value,
       has_frozen_balance: hasFrozenBalance.value,
+      is_referal: isReferal.value,
       nickname_style_id: normalizedNicknameStyleId,
       profile_background_unlocked: profileBackgroundUnlocked.value,
       two_factor_enabled: twoFactorEnabled.value,
@@ -224,6 +227,7 @@ async function saveUser() {
     isBanned.value = updateResponse.is_banned;
     role.value = updateResponse.role;
     hasFrozenBalance.value = updateResponse.has_frozen_balance;
+    isReferal.value = updateResponse.is_referal || false;
     nicknameStyleId.value = updateResponse.nickname_style_id || 'default';
     profileBackgroundUnlocked.value = updateResponse.profile_background_unlocked || false;
     currentProfileBackgroundUrl.value = updateResponse.profile_background_url || '';
@@ -347,22 +351,22 @@ watch(profileBackgroundUnlocked, (value) => {
           </button>
         </div>
 
-        <div v-if="isLoading" class="flex h-40 items-center justify-center rounded-xl bg-dark-600/25">
-          <Loader2 class="h-7 w-7 animate-spin text-blue-400" />
+        <div v-if="isLoading" class="admin-surface-soft flex h-40 items-center justify-center rounded-xl">
+          <Loader2 class="h-7 w-7 animate-spin text-[var(--text-link)]" />
           <span class="ml-3 text-text-secondary">{{ $t('common.loading') }}</span>
         </div>
 
         <form v-else class="space-y-8" @submit.prevent="saveUser">
           <div class="grid grid-cols-1 gap-8 lg:grid-cols-[300px,1fr]">
-            <section class="space-y-4">
-              <h2 class="text-sm font-semibold tracking-wide text-gray-300 uppercase">
+            <section class="admin-surface-panel space-y-4 rounded-2xl p-5">
+              <h2 class="text-sm font-semibold tracking-wide text-[var(--text-body)] uppercase">
                 {{ $t('pages.admin.editUser.avatarLabel') }}
               </h2>
               <div class="flex items-center gap-3">
                 <img
                   :src="avatarPreviewUrl"
                   :alt="$t('pages.admin.editUser.avatarLabel')"
-                  class="h-16 w-16 rounded-full border border-dark-500 object-cover"
+                  class="h-16 w-16 rounded-full border border-[rgb(var(--palette-white)/0.1)] object-cover"
                 />
                 <div class="min-w-0">
                   <p class="truncate text-sm font-medium text-mainText">{{ username || '-' }}</p>
@@ -392,11 +396,11 @@ watch(profileBackgroundUnlocked, (value) => {
                 :max-files="1"
                 :label="$t('pages.admin.editUser.newAvatarLabel')"
               />
-              <p v-if="removeAvatarAfterSave && avatarFiles.length === 0" class="text-xs text-orange-300">
+              <p v-if="removeAvatarAfterSave && avatarFiles.length === 0" class="text-xs text-[var(--text-warning-strong)]">
                 {{ $t('pages.admin.editUser.avatarWillBeRemoved') }}
               </p>
 
-              <div v-if="user" class="pt-2 text-sm space-y-2 border-t border-dark-700/70">
+              <div v-if="user" class="pt-2 text-sm space-y-2 border-t border-[rgb(var(--palette-white)/0.08)]">
                 <div class="flex items-center justify-between gap-2">
                   <span class="text-text-secondary">{{ $t('common.memberSince') }}</span>
                   <span class="text-mainText">{{ new Date(user.created_at).toLocaleDateString('ru-RU') }}</span>
@@ -409,8 +413,8 @@ watch(profileBackgroundUnlocked, (value) => {
             </section>
 
             <section class="space-y-8">
-              <div class="space-y-4">
-                <h2 class="text-sm font-semibold tracking-wide text-gray-300 uppercase">
+              <div class="admin-surface-panel space-y-4 rounded-2xl p-5">
+                <h2 class="text-sm font-semibold tracking-wide text-[var(--text-body)] uppercase">
                   {{ $t('common.account') }}
                 </h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -450,7 +454,7 @@ watch(profileBackgroundUnlocked, (value) => {
                     id="description"
                     v-model="description"
                     :placeholder="$t('common.description')"
-                    class="w-full max-h-32 px-3 py-2 rounded-lg bg-dark-600 text-mainText placeholder-text-secondary focus:outline-none focus:ring-1 focus:ring-blue-500/70 transition-colors resize-none"
+                    class="admin-input-surface w-full max-h-32 px-3 py-2 rounded-lg text-mainText placeholder-text-secondary transition-colors resize-none"
                     rows="4"
                     :maxlength="500"
                   />
@@ -460,8 +464,8 @@ watch(profileBackgroundUnlocked, (value) => {
                 </div>
               </div>
 
-              <div class="space-y-4">
-                <h2 class="text-sm font-semibold tracking-wide text-gray-300 uppercase">
+              <div class="admin-surface-panel space-y-4 rounded-2xl p-5">
+                <h2 class="text-sm font-semibold tracking-wide text-[var(--text-body)] uppercase">
                   {{ $t('common.settings') }}
                 </h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -503,8 +507,8 @@ watch(profileBackgroundUnlocked, (value) => {
                       <span
                         class="inline-flex rounded-full border px-2 py-1 text-xs font-medium"
                         :class="user?.is_active
-                          ? 'border-green-500/30 bg-green-500/15 text-green-400'
-                          : 'border-gray-500/30 bg-gray-500/15 text-gray-400'"
+                          ? 'border-[rgb(var(--palette-green-500)/0.3)] bg-[rgb(var(--palette-green-500)/0.15)] text-[var(--text-success-strong)]'
+                          : 'border-[rgb(var(--palette-gray-500)/0.3)] bg-[rgb(var(--palette-gray-500)/0.15)] text-[var(--text-muted)]'"
                       >
                         {{ user?.is_active ? $t('common.online') : $t('common.offline') }}
                       </span>
@@ -512,6 +516,10 @@ watch(profileBackgroundUnlocked, (value) => {
                     <label class="flex items-center gap-2 py-1">
                       <Checkbox v-model="hasFrozenBalance" />
                       <span class="text-sm text-mainText">{{ $t('pages.admin.editUser.frozenBalance') }}</span>
+                    </label>
+                    <label class="flex items-center gap-2 py-1">
+                      <Checkbox v-model="isReferal" />
+                      <span class="text-sm text-mainText">{{ $t('pages.admin.editUser.referralEnabled') }}</span>
                     </label>
                   </div>
 
@@ -536,8 +544,8 @@ watch(profileBackgroundUnlocked, (value) => {
                 </div>
               </div>
 
-              <div class="space-y-4">
-                <h2 class="text-sm font-semibold tracking-wide text-gray-300 uppercase">
+              <div class="admin-surface-panel space-y-4 rounded-2xl p-5">
+                <h2 class="text-sm font-semibold tracking-wide text-[var(--text-body)] uppercase">
                   {{ $t('pages.admin.editUser.securityTitle') }}
                 </h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -575,7 +583,7 @@ watch(profileBackgroundUnlocked, (value) => {
                       {{ $t('pages.admin.editUser.backgroundPreview') }}
                     </p>
                     <div
-                      class="h-20 rounded-lg border border-dark-700 bg-dark-700/35"
+                      class="admin-surface-soft h-20 rounded-lg"
                       :style="profileBackgroundPreviewStyle"
                     />
                     <div class="flex flex-wrap items-center gap-2">
@@ -603,7 +611,7 @@ watch(profileBackgroundUnlocked, (value) => {
                     />
                     <p
                       v-if="removeProfileBackgroundAfterSave && profileBackgroundFiles.length === 0"
-                      class="text-xs text-orange-300"
+                      class="text-xs text-[var(--text-warning-strong)]"
                     >
                       {{ $t('pages.admin.editUser.backgroundWillBeRemoved') }}
                     </p>
@@ -611,8 +619,8 @@ watch(profileBackgroundUnlocked, (value) => {
                 </div>
               </div>
 
-              <div class="space-y-4">
-                <h2 class="text-sm font-semibold tracking-wide text-gray-300 uppercase">
+              <div class="admin-surface-panel space-y-4 rounded-2xl p-5">
+                <h2 class="text-sm font-semibold tracking-wide text-[var(--text-body)] uppercase">
                   {{ $t('pages.admin.editUser.passwordResetTitle') }}
                 </h2>
                 <p class="text-xs text-text-secondary">

@@ -14,13 +14,16 @@ import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from 'lucide-vue-next'
 import { adminService } from '@/api/admin/AdminService'
 import UserAvatar from '@/components/UserAvatar.vue'
+import StyledUsername from '@/components/StyledUsername.vue'
 import { createBottomPinController } from '@/utils/chatScroll'
+import { getChatTimelineSpacingClass } from '@/utils/chatTimelineSpacing'
 
 const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
 const chatMessages = ref<ChatMessageUnion[]>([])
+const liveDealStatusOverrides = ref<Record<string, string>>({})
 const messageContainerRef = ref<HTMLElement | null>(null)
 const bottomPin = createBottomPinController(() => messageContainerRef.value)
 const isLoading = ref(false)
@@ -45,16 +48,23 @@ const topLoadThresholdPx = 8
 const bottomAutoScrollThresholdPx = 120
 const previousMessageScrollTop = ref(0)
 const hasUserScrolledAwayFromTop = ref(false)
+const isMobile = ref(false)
 
 // Информация о чате
 const currentChatId = ref<string | null>(null)
-const currentChatData = ref<{ username: string; avatar_url: string | null; is_active: boolean } | null>(null)
+const currentChatData = ref<{
+    username: string
+    avatar_url: string | null
+    is_active: boolean
+    nickname_style_id?: string | null
+} | null>(null)
 
 type ChatParticipantData = {
     id: string
     username: string
     avatar_url: string | null
     is_active: boolean
+    nickname_style_id?: string | null
 }
 
 type ChatParticipantsData = {
@@ -65,11 +75,56 @@ type ChatParticipantsData = {
 }
 
 const chatParticipants = ref<ChatParticipantsData | null>(null)
+
+const chatHeaderParticipants = computed<ChatParticipantData[]>(() => {
+    const participants = chatParticipants.value
+    if (!participants) return []
+
+    return [
+        participants.buyer,
+        participants.seller,
+        participants.support_user,
+    ].filter((participant): participant is ChatParticipantData => Boolean(participant))
+})
+
+function getPrimaryChatParticipant() {
+    return chatParticipants.value?.buyer
+        ?? chatParticipants.value?.seller
+        ?? chatParticipants.value?.support_user
+        ?? null
+}
+
+function resolveSenderDisplayName(senderId: string): string {
+    const participants = chatParticipants.value
+    const matchedParticipant = [
+        participants?.buyer,
+        participants?.seller,
+        participants?.support_user,
+    ].find(participant => participant?.id === senderId)
+
+    if (matchedParticipant?.username) {
+        return matchedParticipant.username
+    }
+
+    if (senderId === user.value?.id) {
+        return t('common.admin')
+    }
+
+    return getPrimaryChatParticipant()?.username || currentChatData.value?.username || t('common.user')
+}
+
 const senderLabels = computed<Record<string, string>>(() => {
     const labels: Record<string, string> = {}
-    if (chatParticipants.value?.buyer) labels[chatParticipants.value.buyer.id] = `${chatParticipants.value.buyer.username} (${t('common.buyer')})`
-    if (chatParticipants.value?.seller) labels[chatParticipants.value.seller.id] = `${chatParticipants.value.seller.username} (${t('common.seller')})`
-    if (chatParticipants.value?.support_user) labels[chatParticipants.value.support_user.id] = `${chatParticipants.value.support_user.username} (${t('common.admin')})`
+    if (chatParticipants.value?.buyer) labels[chatParticipants.value.buyer.id] = chatParticipants.value.buyer.username
+    if (chatParticipants.value?.seller) labels[chatParticipants.value.seller.id] = chatParticipants.value.seller.username
+    if (chatParticipants.value?.support_user) labels[chatParticipants.value.support_user.id] = t('common.admin')
+
+    for (const message of chatMessages.value) {
+        if ('sender_id' in message && !labels[message.sender_id]) {
+            labels[message.sender_id] = resolveSenderDisplayName(message.sender_id)
+        }
+    }
+
     return labels
 })
 const senderRoles = computed<Record<string, 'buyer' | 'seller' | 'admin'>>(() => {
@@ -88,6 +143,7 @@ type ChatTimelineItem = {
     dateKey: string | null
     dateLabel: string | null
     showDateDivider: boolean
+    spacingClass: string
 }
 
 const msPerDay = 24 * 60 * 60 * 1000
@@ -101,6 +157,12 @@ function getMessageTimestamp(message: ChatMessageUnion): number {
 
 function normalizeMessagesChronological(messages: ChatMessageUnion[]): ChatMessageUnion[] {
     return [...messages].sort((a, b) => getMessageTimestamp(a) - getMessageTimestamp(b))
+}
+
+function isDealStatusUpdateMessage(
+    message: ChatMessageUnion,
+): message is Extract<ChatMessageUnion, { message_type: 'update_deal_status_message' }> {
+    return message.message_type === 'update_deal_status_message'
 }
 
 function mergePriceOfferTimelineMessage(
@@ -121,6 +183,10 @@ function normalizeTimelineServerMessages(messages: ChatMessageUnion[]): ChatMess
     const priceOfferIndexById = new Map<string, number>()
 
     for (const message of messages) {
+        if (isDealStatusUpdateMessage(message)) {
+            continue
+        }
+
         if (message.message_type !== 'price_offer_message') {
             normalizedMessages.push(message)
             continue
@@ -217,15 +283,13 @@ const dealStatusOverrides = computed<Record<string, string>>(() => {
     for (const message of chatMessages.value) {
         if (message.message_type === 'purchase_message') {
             statuses[message.deal_id] = statuses[message.deal_id] ?? message.deal_status
-            continue
-        }
-
-        if (message.message_type === 'update_deal_status_message') {
-            statuses[message.deal_id] = message.new_status
         }
     }
 
-    return statuses
+    return {
+        ...statuses,
+        ...liveDealStatusOverrides.value,
+    }
 })
 
 const reviewedDealIds = computed<string[]>(() => {
@@ -255,6 +319,7 @@ const chatTimelineItems = computed<ChatTimelineItem[]>(() => {
             dateKey,
             dateLabel,
             showDateDivider,
+            spacingClass: getChatTimelineSpacingClass(normalizedTimelineMessages.value, index),
         }
     })
 })
@@ -372,10 +437,15 @@ function resolveCurrentChatData(participants: ChatParticipantsData) {
             username: `${buyer.username} / ${seller.username}`,
             avatar_url: null,
             is_active: buyer.is_active || seller.is_active,
+            nickname_style_id: buyer.nickname_style_id ?? seller.nickname_style_id ?? null,
         }
     }
 
     return buyer || seller || supportUser
+}
+
+function checkMobile() {
+    isMobile.value = window.innerWidth < 768
 }
 
 function clearDeferredBottomPinTimers() {
@@ -411,6 +481,7 @@ function scheduleDeferredBottomPin(chatId: string) {
 
 
 let unsubscribeNewMessage: (() => void) | null = null
+let unsubscribeDealStatusUpdate: (() => void) | null = null
 let unsubscribeMessagesRead: (() => void) | null = null
 
 function applyMessagesReadUpdate(update: MessagesReadPayload) {
@@ -430,6 +501,9 @@ function applyMessagesReadUpdate(update: MessagesReadPayload) {
 }
 
 onMounted(async () => {
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
     try {
         isLoading.value = true
         await store.fetchUser()
@@ -452,6 +526,13 @@ onMounted(async () => {
                 }
             }
         })
+        unsubscribeDealStatusUpdate = chatsService.onDealStatusUpdate(message => {
+            if (currentChatId.value !== message.chat_room_id) return
+            liveDealStatusOverrides.value = {
+                ...liveDealStatusOverrides.value,
+                [message.deal_id]: message.new_status,
+            }
+        })
         unsubscribeMessagesRead = chatsService.onMessagesRead(applyMessagesReadUpdate)
 
         const chatId = route.params.chatId as string
@@ -467,6 +548,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
     unsubscribeNewMessage?.()
+    unsubscribeDealStatusUpdate?.()
     unsubscribeMessagesRead?.()
     clearDeferredBottomPinTimers()
     bottomPin.stop()
@@ -478,11 +560,14 @@ onUnmounted(() => {
         clearTimeout(floatingDateHideTimerId)
         floatingDateHideTimerId = null
     }
+    window.removeEventListener('resize', checkMobile)
 })
 
 watch(currentChatId, () => {
     floatingDateLabel.value = null
     isFloatingDateVisible.value = false
+    liveDealStatusOverrides.value = {}
+    chatParticipants.value = null
     clearDeferredBottomPinTimers()
     if (floatingDateHideTimerId !== null) {
         clearTimeout(floatingDateHideTimerId)
@@ -604,9 +689,11 @@ async function loadChatMessages(
         hasUserScrolledAwayFromTop.value = false
         previousMessageScrollTop.value = 0
         chatMessages.value = []
+        liveDealStatusOverrides.value = {}
         currentPage.value = 1
         hasMoreMessages.value = true
         currentChatData.value = null
+        chatParticipants.value = null
 
         await chatsService.joinChat(chatId)
         currentChatId.value = chatId
@@ -619,6 +706,7 @@ async function loadChatMessages(
                     username: resolved.username,
                     avatar_url: resolved.avatar_url,
                     is_active: resolved.is_active,
+                    nickname_style_id: resolved.nickname_style_id ?? null,
                 }
             }
         }
@@ -627,6 +715,7 @@ async function loadChatMessages(
                 username: t('common.user'),
                 avatar_url: null,
                 is_active: false,
+                nickname_style_id: null,
             }
         }
 
@@ -707,50 +796,85 @@ async function sendMessage(payload: { files: File[] }) {
 
 <template>
     <div class="h-full w-full flex flex-col md:pt-6">
-        <div v-if="isLoading" class="flex flex-1 items-center justify-center text-gray-300">
+        <div v-if="isLoading" class="flex flex-1 items-center justify-center text-[var(--text-body)]">
             <Loader />
         </div>
 
-        <div v-else-if="errorMessage" class="flex flex-1 items-center justify-center text-red-500">
+        <div v-else-if="errorMessage" class="flex flex-1 items-center justify-center text-[var(--text-danger)]">
             {{ errorMessage }}
         </div>
 
         <div v-else class="w-full flex flex-1 overflow-hidden">
-            <div class="flex flex-1 transition-all duration-300 min-h-0 border-1 border-dark-400 rounded-3xl">
-                <div class="flex flex-1 flex-col px-2 md:rounded-xl w-full min-h-0">
-                    <div class="flex flex-grow flex-col overflow-hidden w-full">
+            <div
+                class="flex flex-1 min-h-0 transition-all duration-300"
+                :class="isMobile
+                    ? 'fixed inset-x-0 bottom-0 top-14 z-10 w-full bg-background'
+                    : 'w-full flex-1 min-w-0 overflow-hidden rounded-3xl border border-[rgb(var(--palette-dark-400))]'"
+            >
+                <div
+                    class="flex w-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-2 md:rounded-xl"
+                >
+                    <div class="flex w-full min-w-0 flex-grow flex-col overflow-hidden">
                         <div v-if="currentChatData"
-                            class="flex items-center gap-2 sticky top-0 bg-background px-2 py-2 lg:py-3 lg:px-3 z-10 lg:border-b border-dark-700">
-                            <button class="text-xl font-bold flex-shrink-0" @click="router.back()">
+                            class="sticky top-0 z-10 mx-1 flex items-center gap-2 bg-background px-2 py-1.5 lg:mx-2 lg:border-b lg:border-[rgb(var(--palette-dark-700))] lg:px-3 lg:py-3">
+                            <button class="flex h-7 w-7 flex-shrink-0 items-center justify-center" @click="router.back()">
                                 <ArrowLeft />
                             </button>
-                            <div class="flex items-center gap-3 flex-1">
-                                <div class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
+                            <div class="flex w-full min-w-0 items-center gap-3 flex-1">
+                                <div class="h-7 w-7 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
                                     <UserAvatar
                                         :avatar-url="currentChatData.avatar_url"
                                         :alt="currentChatData.username"
-                                        class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-dark-600 rounded-full object-cover"
+                                        class="h-7 w-7 lg:h-10 lg:w-10 border-2 border-[rgb(var(--palette-dark-600))] rounded-full object-cover"
                                     />
                                 </div>
-                                <div class="flex flex-col truncate flex-1">
-                                    <p class="truncate text-mainText font-semibold text-lg">
-                                        {{ currentChatData.username }}
-                                    </p>
-                                    <p v-if="currentChatData.is_active" class="text-xs text-green-500">
-                                        {{ $t('common.online') }}
-                                    </p>
-                                    <p v-else class="text-xs text-gray-500">
-                                        {{ $t('common.offline') }}
+                                <div
+                                    v-if="chatHeaderParticipants.length > 0"
+                                    class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5"
+                                >
+                                    <div
+                                        v-for="participant in chatHeaderParticipants"
+                                        :key="participant.id"
+                                        class="min-w-0 max-w-[12rem] border-r border-[rgb(var(--palette-dark-600))] pr-3 last:border-r-0 last:pr-0"
+                                    >
+                                        <div class="w-full min-w-0 truncate">
+                                            <StyledUsername
+                                                :username="participant.username"
+                                                :style-id="participant.nickname_style_id ?? 'default'"
+                                                class="text-sm font-semibold leading-tight lg:text-base"
+                                            />
+                                        </div>
+                                        <p
+                                            class="mt-0.5 text-[11px] leading-none"
+                                            :class="participant.is_active ? 'text-[var(--text-success-strong)]' : 'text-[var(--text-meta)]'"
+                                        >
+                                            {{ participant.is_active ? $t('common.online') : $t('common.offline') }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div v-else class="flex min-w-0 flex-col justify-center">
+                                    <div class="w-full min-w-0 truncate">
+                                        <StyledUsername
+                                            :username="currentChatData.username"
+                                            :style-id="currentChatData.nickname_style_id ?? 'default'"
+                                            class="text-base font-semibold leading-tight lg:text-lg"
+                                        />
+                                    </div>
+                                    <p
+                                        class="text-xs"
+                                        :class="currentChatData.is_active ? 'text-[var(--text-success-strong)]' : 'text-[var(--text-meta)]'"
+                                    >
+                                        {{ currentChatData.is_active ? $t('common.online') : $t('common.offline') }}
                                     </p>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="relative flex-1 min-h-0 overflow-hidden">
+                        <div class="relative flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden">
                             <FloatingDateHeader :label="isFloatingDateVisible ? floatingDateLabel : null" />
                             <div
                                 ref="messageContainerRef"
-                                class="h-full overflow-y-auto pb-2"
+                                class="no-scrollbar flex flex-1 min-h-0 min-w-0 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain pb-2"
                                 @scroll="handleScroll"
                                 @wheel.passive="cancelChatPinning"
                                 @touchstart.passive="cancelChatPinning"
@@ -761,22 +885,22 @@ async function sendMessage(payload: { files: File[] }) {
                                 </div>
 
                                 <template v-else>
-                                    <div :class="isChatPinning ? 'opacity-0 pointer-events-none' : 'opacity-100'">
+                                    <div :class="isChatPinning ? 'h-full opacity-0 pointer-events-none' : 'h-full opacity-100'">
                                         <div v-if="isLoadingMoreMessages" class="flex justify-center py-2">
                                             <Loader size="sm" />
                                         </div>
 
-                                        <div v-if="chatTimelineItems.length > 0" class="flex flex-1 flex-col justify-start">
-                                            <div class="flex flex-col pt-2 pb-18">
+                                        <div v-if="chatTimelineItems.length > 0" class="flex min-w-0 flex-1 flex-col justify-start">
+                                            <div class="flex min-w-0 flex-col pb-18">
                                                 <template v-for="item in chatTimelineItems" :key="item.message.id">
                                                     <div v-if="item.showDateDivider && item.dateLabel" class="flex justify-center py-2">
-                                                        <span class="rounded-full border border-dark-600/70 bg-dark-900/70 px-3 py-1 text-xs font-medium text-mainText/90">
+                                                        <span class="rounded-full border border-[rgb(var(--palette-dark-600)/0.7)] bg-[rgb(var(--palette-dark-900)/0.7)] px-3 py-1 text-xs font-medium text-mainText/90">
                                                             {{ item.dateLabel }}
                                                         </span>
                                                     </div>
 
                                                     <div
-                                                        class="mb-3"
+                                                        :class="item.spacingClass"
                                                         :data-chat-message-index="item.index"
                                                         :data-chat-date-key="item.dateKey ?? ''"
                                                     >
@@ -797,21 +921,32 @@ async function sendMessage(payload: { files: File[] }) {
 
                                         <div v-else-if="currentChatId != null && chatMessages.length === 0"
                                             class="h-full w-full flex items-center justify-center">
-                                            <p class="text-gray-400 font-light">{{ $t("pages.chats.emptyMessages") }}</p>
+                                            <p class="text-[var(--text-muted)] font-light">{{ $t("pages.chats.emptyMessages") }}</p>
                                         </div>
 
                                         <div v-else class="h-full w-full flex items-center justify-center">
-                                            <p class="text-gray-400 font-light">{{ $t('pages.chats.selectChat') }}</p>
-                                        </div>
-
-                                        <div v-if="currentChatId" class="sticky bottom-0 z-20 mt-2 bg-transparent pb-1 pt-2">
-                                            <SendMessageBar
-                                                v-model:newMessage="newMessage"
-                                                @sendMessage="sendMessage"
-                                            />
+                                            <p class="text-[var(--text-muted)] font-light">{{ $t('pages.chats.selectChat') }}</p>
                                         </div>
                                     </div>
                                 </template>
+
+                                <div
+                                    v-if="currentChatId"
+                                    aria-hidden="true"
+                                    class="h-[120px] w-full flex-none md:h-[108px]"
+                                />
+                            </div>
+
+                            <div
+                                v-if="currentChatId"
+                                class="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-[var(--transparent)] px-1 pb-1 pt-0 md:pb-2"
+                            >
+                                <div class="pointer-events-auto">
+                                    <SendMessageBar
+                                        v-model:newMessage="newMessage"
+                                        @sendMessage="sendMessage"
+                                    />
+                                </div>
                             </div>
 
                             <div

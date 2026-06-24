@@ -4,13 +4,12 @@ import { productService } from '@/api/product/ProductService'
 import { steamTopupService } from '@/api/steamTopup/steamTopupService'
 import MainProductCard from '@/components/mainProductCard.vue'
 import HomeProductListCard from '@/components/HomeProductListCard.vue'
-import SearchField from '@/components/SearchField.vue'
+import OfficialProductsShowcase from '@/components/OfficialProductsShowcase.vue'
 import Title from '@/components/Title.vue'
-import HeroSection from '@/components/HeroSection.vue'
-import HeroBackground from '@/components/HeroBackground.vue'
+import TelegramStarsCta from '@/components/TelegramStarsCta.vue'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import type { ProductsFilterParams } from '@/api/product/ProductService'
 import type { Category } from '@/validation/category/category'
 import type { Product } from '@/validation/product/product'
@@ -24,7 +23,7 @@ import type {
 import { isValidSteamTopUpAccount, normalizeSteamTopUpAccount } from '@/validation/steamTopup/steamTopup'
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ChevronRight, Folder, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
+import { ArrowRight, ChevronRight, Folder, LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-vue-next'
 import axios from 'axios'
 import {
   convertCurrencyAmount,
@@ -32,11 +31,12 @@ import {
   getCurrencySymbol,
   preferredCurrency,
 } from '@/utils/currency'
-import { buildCategoryKey } from '@/utils/urlKeys'
+import { buildCategoryKey, buildProductKey } from '@/utils/urlKeys'
 import { getErrorMessage } from '@/utils/errorsMap'
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 const API_HOST = import.meta.env.VITE_API_HOST
 const HOME_STEAM_TOPUP_ENABLED = import.meta.env.VITE_STEAM_TOPUP_ENABLED !== 'false'
 const userStore = useUserStore()
@@ -57,11 +57,7 @@ const categoryTotalPages = ref(1)
 const subCategoryPage = ref(1)
 const subCategoryTotalPages = ref(1)
 const categoriesPerPage = ref(30)
-const searchQuery = ref('')
-const searchableCategories = ref<Category[]>([])
-const isSearchDropdownOpen = ref(false)
-const searchDropdownHighlightedIndex = ref(-1)
-const searchDropdownRef = ref<HTMLElement | null>(null)
+const searchQuery = ref(getRouteSearchQuery())
 const isServerPagination = ref(true)
 const isCategoryPagination = ref(false)
 const isLoadingMore = ref(false)
@@ -76,23 +72,23 @@ const minPriceFilter = ref('')
 const maxPriceFilter = ref('')
 const onlineSellersOnly = ref(false)
 const autoDeliveryOnly = ref(false)
+const sellersWithReviewsOnly = ref(false)
 const isFiltersOpen = ref(false)
 type ProductCardViewMode = 'grid' | 'list'
 const PRODUCT_CARD_VIEW_MODE_STORAGE_KEY = 'home_product_card_view_mode'
 const productCardViewMode = ref<ProductCardViewMode>('grid')
+const CATEGORY_PLACEHOLDER_COUNT = 8
 const loadingSkeletonCount = computed(() => (
   productCardViewMode.value === 'grid'
     ? perPage.value
     : Math.min(perPage.value, 12)
 ))
-const normalizedSearchQuery = computed(() => searchQuery.value.trim().toLowerCase())
-const categorySearchResults = computed(() => {
-  if (normalizedSearchQuery.value.length < 1) return []
-  return searchableCategories.value
-    .filter((category) => category.name.toLowerCase().includes(normalizedSearchQuery.value))
-    .slice(0, 8)
-})
-const hasCategorySearchResults = computed(() => categorySearchResults.value.length > 0)
+const brokenCategoryImages = ref<Record<string, true>>({})
+const officialHomeProducts = ref<Product[]>([])
+const isOfficialHomeLoading = ref(false)
+const shouldShowOfficialHomeShowcase = computed(() => (
+  !isOfficialHomeLoading.value && officialHomeProducts.value.length > 0
+))
 const areCategoriesExpanded = ref(false)
 const shouldShowCategoryExpandButton = computed(() => (
   mainCategories.value.length > 8 || categoryTotalPages.value > 1
@@ -106,6 +102,17 @@ function restoreProductCardViewModeFromStorage(): void {
   if (typeof window === 'undefined') return
   const saved = window.localStorage.getItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY)
   productCardViewMode.value = saved === 'list' ? 'list' : 'grid'
+}
+
+function isCategoryImageAvailable(categoryId: string, imageUrl: string | null): boolean {
+  return Boolean(imageUrl) && !brokenCategoryImages.value[categoryId]
+}
+
+function markCategoryImageBroken(categoryId: string): void {
+  brokenCategoryImages.value = {
+    ...brokenCategoryImages.value,
+    [categoryId]: true,
+  }
 }
 
 type SteamAmountMode = 'denomination' | 'quantity'
@@ -224,24 +231,23 @@ function filterVisibleCategories(categories: Category[]): Category[] {
   return categories.filter(isVisibleCategory)
 }
 
-function sortCategoriesByActiveProductsCount(categories: Category[]): Category[] {
-  return [...categories].sort((a, b) => {
-    const countDiff = (b.active_products_count ?? 0) - (a.active_products_count ?? 0)
-    if (countDiff !== 0) return countDiff
-    return a.name.localeCompare(b.name)
+function normalizeRouteSearchQuery(value: unknown): string {
+  if (Array.isArray(value)) return typeof value[0] === 'string' ? value[0] : ''
+  return typeof value === 'string' ? value : ''
+}
+
+function getRouteSearchQuery(): string {
+  return normalizeRouteSearchQuery(route.query.search).trim()
+}
+
+function mergeUniqueCategories(currentCategories: Category[], nextCategories: Category[]): Category[] {
+  const seenCategoryIds = new Set(currentCategories.map((category) => category.id))
+  const uniqueNextCategories = nextCategories.filter((category) => {
+    if (seenCategoryIds.has(category.id)) return false
+    seenCategoryIds.add(category.id)
+    return true
   })
-}
-
-function isVisibleProduct(product: Product): boolean {
-  return (
-    product.status === 'active'
-    && product.category?.is_active
-    && !product.seller?.is_banned
-  )
-}
-
-function filterVisibleProducts(productsList: Product[]): Product[] {
-  return productsList.filter(isVisibleProduct)
+  return [...currentCategories, ...uniqueNextCategories]
 }
 
 function formatPrice(value: number): string {
@@ -307,7 +313,8 @@ const hasPriceFilter = computed(() =>
 const activeProductFiltersCount = computed(() =>
   Number(hasPriceFilter.value)
   + Number(onlineSellersOnly.value)
-  + Number(autoDeliveryOnly.value),
+  + Number(autoDeliveryOnly.value)
+  + Number(sellersWithReviewsOnly.value),
 )
 
 function isPricePresetActive(preset: PricePreset): boolean {
@@ -330,73 +337,33 @@ async function onPricePresetClick(preset: PricePreset) {
 
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
-let onDocumentClickForSearchDropdown: ((event: MouseEvent) => void) | null = null
+const PRODUCT_REVEAL_STAGGER_MS = 55
 
 function goToProduct(productKey: string) {
   if (!productKey) return
   router.push({ path: `/product/${productKey}` })
 }
 
+function getProductRevealDelayStyle(index: number): Record<string, string> {
+  return {
+    transitionDelay: `${index * PRODUCT_REVEAL_STAGGER_MS}ms`,
+  }
+}
+
+function setVisibleHomeProducts(nextProducts: Product[], append = false): void {
+  products.value = append ? [...products.value, ...nextProducts] : nextProducts
+}
+
+function goToProductByModel(product: Product) {
+  const productKey = buildProductKey(product)
+  if (!productKey) return
+  goToProduct(productKey)
+}
+
 function goToCategoryPage(category: Category) {
-  isSearchDropdownOpen.value = false
-  searchDropdownHighlightedIndex.value = -1
   const categoryKey = buildCategoryKey(category)
   if (!categoryKey) return
   router.push({ path: `/category/${categoryKey}` })
-}
-
-function openSearchDropdown() {
-  if (!normalizedSearchQuery.value || !hasCategorySearchResults.value) return
-  isSearchDropdownOpen.value = true
-  if (searchDropdownHighlightedIndex.value < 0) {
-    searchDropdownHighlightedIndex.value = 0
-  }
-}
-
-function closeSearchDropdown() {
-  isSearchDropdownOpen.value = false
-  searchDropdownHighlightedIndex.value = -1
-}
-
-function moveSearchDropdownHighlight(direction: 1 | -1) {
-  const total = categorySearchResults.value.length
-  if (!total) {
-    searchDropdownHighlightedIndex.value = -1
-    return
-  }
-  if (!isSearchDropdownOpen.value) {
-    openSearchDropdown()
-    return
-  }
-  const current = searchDropdownHighlightedIndex.value < 0 ? 0 : searchDropdownHighlightedIndex.value
-  searchDropdownHighlightedIndex.value = (current + direction + total) % total
-}
-
-function onSearchDropdownKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape') {
-    closeSearchDropdown()
-    return
-  }
-
-  if (event.key === 'ArrowDown') {
-    event.preventDefault()
-    moveSearchDropdownHighlight(1)
-    return
-  }
-
-  if (event.key === 'ArrowUp') {
-    event.preventDefault()
-    moveSearchDropdownHighlight(-1)
-    return
-  }
-
-  if (event.key === 'Enter' && isSearchDropdownOpen.value) {
-    if (searchDropdownHighlightedIndex.value < 0) return
-    const category = categorySearchResults.value[searchDropdownHighlightedIndex.value]
-    if (!category) return
-    event.preventDefault()
-    goToCategoryPage(category)
-  }
 }
 
 function resolveCategoryImageUrl(imageUrl: string | null): string {
@@ -405,6 +372,37 @@ function resolveCategoryImageUrl(imageUrl: string | null): string {
     return imageUrl
   }
   return `${API_HOST}${imageUrl}`
+}
+
+async function loadOfficialHomeProducts() {
+  isOfficialHomeLoading.value = true
+  officialHomeProducts.value = []
+
+  try {
+    const overview = await productService.getOfficialStoreOverview()
+    const categories = (overview?.categories ?? []).filter((category) => category.is_active)
+    if (!categories.length) return
+
+    const categoryProducts = await Promise.all(
+      categories.map(async (category) => {
+        const categoryKey = buildCategoryKey(category) || category.id
+        const response = await productService.getProductsByCategory(
+          categoryKey,
+          1,
+          1,
+          { isOfficialOnly: true },
+        )
+        const product = response.products[0]
+        return product ?? null
+      }),
+    )
+
+    officialHomeProducts.value = categoryProducts.filter(
+      (item): item is Product => item !== null,
+    )
+  } finally {
+    isOfficialHomeLoading.value = false
+  }
 }
 
 function resolveSteamErrorMessage(error: unknown): string {
@@ -436,11 +434,12 @@ function buildSteamPayOrderPayload(): SteamTopUpPayOrderPayload {
 
 function buildSteamCreatePaymentPayload(): SteamTopUpCreatePaymentPayload | null {
   if (!steamIsAccountValid.value) return null
-  const amountRub = Number.parseFloat(steamQuantity.value)
-  if (!Number.isFinite(amountRub) || amountRub <= 0) return null
+  const amount = Number.parseFloat(steamQuantity.value)
+  if (!Number.isFinite(amount) || amount <= 0) return null
   return {
     account: steamNormalizedAccount.value,
-    amount_rub: amountRub,
+    amount,
+    currency: steamCheckoutCurrency.value,
   }
 }
 
@@ -588,7 +587,12 @@ async function submitSteamTopUpPayment() {
 
   try {
     const response = await steamTopupService.createPayment(payload)
-    window.location.href = response.payment_url
+    if (response.payment_url) {
+      window.location.href = response.payment_url
+      return
+    }
+    await userStore.fetchUser()
+    steamSuccess.value = t('pages.index.steamTopUp.orderPaid')
   } catch (error) {
     steamError.value = resolveSteamErrorMessage(error)
     steamSuccess.value = ''
@@ -631,31 +635,33 @@ async function confirmSteamCheckout() {
   }
 }
 
-let searchTimeout: ReturnType<typeof setTimeout> | null = null
 let filterTimeout: ReturnType<typeof setTimeout> | null = null
 
-function debouncedSearch() {
-  if (searchTimeout) clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(async () => {
-    if (!searchQuery.value.trim()) {
-      await resetAllFilters()
-      return
-    }
-    isProductsLoading.value = true
-    const res = await productService.searchProducts(
-      searchQuery.value.trim(),
-      1,
-      perPage.value,
-      getProductFiltersParams(),
-    )
-    products.value = filterVisibleProducts(res.products)
-    currentPage.value = res.currentPage
-    totalPages.value = res.totalPages
-    isSearchPagination.value = true
-    isCategoryPagination.value = false
-    isServerPagination.value = false
-    isProductsLoading.value = false
-  }, 300)
+async function searchProductsByQuery(query: string, page = 1, append = false) {
+  const trimmedQuery = query.trim()
+  if (!trimmedQuery) {
+    await resetAllFilters()
+    return
+  }
+
+  if (append && isLoadingMore.value) return
+  isLoadingMore.value = append
+  if (!append) isProductsLoading.value = true
+
+  const res = await productService.searchProducts(
+    trimmedQuery,
+    page,
+    perPage.value,
+    getProductFiltersParams(),
+  )
+  setVisibleHomeProducts(res.products, append)
+  currentPage.value = res.currentPage
+  totalPages.value = res.totalPages
+  isSearchPagination.value = true
+  isCategoryPagination.value = false
+  isServerPagination.value = false
+  isLoadingMore.value = false
+  isProductsLoading.value = false
 }
 
 async function loadProducts(page = 1, append = false) {
@@ -667,8 +673,7 @@ async function loadProducts(page = 1, append = false) {
     perPage.value,
     getProductFiltersParams(),
   )
-  const visibleProducts = filterVisibleProducts(res.products)
-  products.value = append ? [...products.value, ...visibleProducts] : visibleProducts
+  setVisibleHomeProducts(res.products, append)
   currentPage.value = res.currentPage
   totalPages.value = res.totalPages
   isServerPagination.value = true
@@ -687,8 +692,7 @@ async function loadCategoryProducts(categoryId: string, page = 1, append = false
     perPage.value,
     getProductFiltersParams(),
   )
-  const visibleProducts = filterVisibleProducts(res.products)
-  products.value = append ? [...products.value, ...visibleProducts] : visibleProducts
+  setVisibleHomeProducts(res.products, append)
   currentPage.value = res.currentPage
   totalPages.value = res.totalPages
   isServerPagination.value = true
@@ -701,15 +705,7 @@ async function loadMoreProducts() {
   if (currentPage.value >= totalPages.value) return
   const nextPage = currentPage.value + 1
   if (isSearchPagination.value) {
-    const res = await productService.searchProducts(
-      searchQuery.value.trim(),
-      nextPage,
-      perPage.value,
-      getProductFiltersParams(),
-    )
-    products.value = [...products.value, ...filterVisibleProducts(res.products)]
-    currentPage.value = res.currentPage
-    totalPages.value = res.totalPages
+    await searchProductsByQuery(searchQuery.value, nextPage, true)
     return
   }
   if (isCategoryPagination.value) {
@@ -722,21 +718,19 @@ async function loadMoreProducts() {
 
 async function loadMainCategories(page = 1, append = false) {
   if (!append) isCategoriesLoading.value = true
-  const res = await categoryService.getAllCategories(page, categoriesPerPage.value)
-  const visibleMainCategories = sortCategoriesByActiveProductsCount(
-    filterVisibleCategories(res.categories).filter((category) => !category.parent_id),
-  )
-  mainCategories.value = append
-    ? sortCategoriesByActiveProductsCount([...mainCategories.value, ...visibleMainCategories])
-    : visibleMainCategories
-  categoryPage.value = res.currentPage
-  categoryTotalPages.value = res.totalPages
-  isCategoriesLoading.value = false
-}
+  try {
+    const res = await categoryService.getAllCategories(page, categoriesPerPage.value)
+    const visibleMainCategories = filterVisibleCategories(res.categories)
+      .filter((category) => !category.parent_id)
 
-async function loadSearchableCategories() {
-  const categories = await categoryService.getAllCategoriesFlat(100, 20)
-  searchableCategories.value = filterVisibleCategories(categories)
+    mainCategories.value = append
+      ? mergeUniqueCategories(mainCategories.value, visibleMainCategories)
+      : visibleMainCategories
+    categoryPage.value = res.currentPage
+    categoryTotalPages.value = res.totalPages
+  } finally {
+    if (!append) isCategoriesLoading.value = false
+  }
 }
 
 async function loadMoreMainCategories() {
@@ -831,8 +825,10 @@ function getProductFiltersParams(): ProductsFilterParams {
   return {
     minPrice,
     maxPrice,
+    sellersWithReviewsOnly: sellersWithReviewsOnly.value,
     onlineSellersOnly: onlineSellersOnly.value,
     autoDeliveryOnly: autoDeliveryOnly.value,
+    excludeOfficial: true,
   }
 }
 
@@ -840,6 +836,7 @@ function clearProductFilters() {
   clearPriceFilters()
   onlineSellersOnly.value = false
   autoDeliveryOnly.value = false
+  sellersWithReviewsOnly.value = false
 }
 
 function clearPriceFilters() {
@@ -862,6 +859,11 @@ async function toggleAutoDeliveryOnlyFilter() {
   await applyProductFilters()
 }
 
+async function toggleSellersWithReviewsOnlyFilter() {
+  sellersWithReviewsOnly.value = !sellersWithReviewsOnly.value
+  await applyProductFilters()
+}
+
 async function applyProductFilters() {
   const query = searchQuery.value.trim()
   if (query) {
@@ -872,7 +874,7 @@ async function applyProductFilters() {
       perPage.value,
       getProductFiltersParams(),
     )
-    products.value = filterVisibleProducts(res.products)
+    setVisibleHomeProducts(res.products)
     currentPage.value = res.currentPage
     totalPages.value = res.totalPages
     isSearchPagination.value = true
@@ -944,63 +946,52 @@ watch(productCardViewMode, (mode) => {
   window.localStorage.setItem(PRODUCT_CARD_VIEW_MODE_STORAGE_KEY, mode)
 })
 
-watch([normalizedSearchQuery, hasCategorySearchResults], ([query, hasResults]) => {
-  if (!query || !hasResults) {
-    closeSearchDropdown()
-    return
-  }
-  isSearchDropdownOpen.value = true
-  if (searchDropdownHighlightedIndex.value < 0) {
-    searchDropdownHighlightedIndex.value = 0
-  }
-})
+watch(
+  () => route.query.search,
+  async (value) => {
+    const nextQuery = normalizeRouteSearchQuery(value).trim()
+    if (nextQuery === searchQuery.value.trim()) return
+
+    searchQuery.value = nextQuery
+    if (nextQuery) {
+      selectedMainCategoryId.value = ''
+      selectedSubCategoryId.value = ''
+      subCategories.value = []
+      await searchProductsByQuery(nextQuery, 1, false)
+      return
+    }
+
+    if (isSearchPagination.value) {
+      await resetAllFilters()
+    }
+  },
+)
 
 onMounted(async () => {
   restoreProductCardViewModeFromStorage()
   await Promise.all([
-    loadProducts(),
+    searchQuery.value ? searchProductsByQuery(searchQuery.value, 1, false) : loadProducts(),
     loadMainCategories(),
-    loadSearchableCategories(),
+    loadOfficialHomeProducts(),
   ])
   observer = new IntersectionObserver((entries) => { if (entries[0]!.isIntersecting) loadMoreProducts() }, { rootMargin: '300px' })
   if (loadMoreTrigger.value) observer.observe(loadMoreTrigger.value)
-  onDocumentClickForSearchDropdown = (event: MouseEvent) => {
-    const target = event.target as Node | null
-    if (!target) return
-    if (searchDropdownRef.value?.contains(target)) return
-    closeSearchDropdown()
-  }
-  document.addEventListener('click', onDocumentClickForSearchDropdown)
 })
 
 onBeforeUnmount(() => {
-  if (searchTimeout) clearTimeout(searchTimeout)
   if (filterTimeout) clearTimeout(filterTimeout)
   observer?.disconnect()
-  if (onDocumentClickForSearchDropdown) {
-    document.removeEventListener('click', onDocumentClickForSearchDropdown)
-    onDocumentClickForSearchDropdown = null
-  }
 })
 
 </script>
 
 <template>
-  <HeroSection v-if="!user" />
-
   <div id="catalog-start" class="scroll-mt-24"></div>
 
   <section class="relative w-full flex flex-col items-center">
     <div
-      v-if="user"
-      class="pointer-events-none absolute top-0 left-1/2 right-1/2 ml-[-50vw] mr-[-50vw] h-[70vh] w-screen z-0"
-    >
-      <HeroBackground />
-    </div>
-
-    <div
       class="relative z-20 flex min-h-screen w-full flex-col items-center px-1 pb-6 sm:px-2 lg:px-2"
-      :class="user ? 'pt-20' : 'pt-6'"
+      :class="user ? 'pt-14 md:pt-20' : 'pt-14 md:pt-20'"
     >
         <div class="w-full lg:max-w-2xl">
           <button
@@ -1044,127 +1035,129 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <div
-          v-if="hasCategorySearchResults && isSearchDropdownOpen"
-          class="mt-2 w-full rounded-2xl border border-white/10 bg-[rgba(20,20,30,0.66)] p-2 shadow-[0_16px_38px_rgba(0,0,0,0.4)] backdrop-blur-xl lg:max-w-2xl"
-        >
-          <p class="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-400/85">
-            {{ t('pages.index.categoriesFound') }}
-          </p>
-          <button
-            v-for="(category, index) in categorySearchResults"
-            :key="`search-category-${category.id}`"
-            type="button"
-            class="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm text-white transition duration-200"
-            :class="{
-              'bg-blue-400/15': searchDropdownHighlightedIndex === index,
-              'hover:bg-white/8': searchDropdownHighlightedIndex !== index,
-            }"
-            @mouseenter="searchDropdownHighlightedIndex = index"
-            @click="goToCategoryPage(category)"
-          >
-            <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-dark-800/80">
-              <img
-                v-if="category.image_url"
-                :src="resolveCategoryImageUrl(category.image_url)"
-                :alt="category.name"
-                class="h-5 w-5 rounded object-cover"
-              />
-              <Folder v-else class="h-4 w-4 text-gray-400" />
-            </span>
-            <span class="truncate text-sm leading-5">{{ category.name }}</span>
-          </button>
-        </div>
+        <TelegramStarsCta class="mt-2 w-full" :show-steam-link="HOME_STEAM_TOPUP_ENABLED" />
+
+        <OfficialProductsShowcase
+          v-if="shouldShowOfficialHomeShowcase"
+          :products="officialHomeProducts"
+          class="mt-2 w-full p-3"
+          @product-click="goToProductByModel"
+          @view-all="router.push('/official')"
+        />
 
         <div class="mt-10 w-full sm:mt-16">
           <Title :text="t('common.categories')" />
 
-          <div v-if="isCategoriesLoading" class="flex gap-2 overflow-x-auto sm:gap-3">
-            <div v-for="n in 5" :key="n" class="h-16 w-16 bg-dark-600 animate-pulse rounded-lg sm:h-20 sm:w-20" />
-          </div>
-
-          <div v-else class="w-full">
-            <div class="relative">
+          <transition name="home-categories-fade" mode="out-in">
+            <div
+              v-if="isCategoriesLoading"
+              key="categories-loading"
+              class="home-categories-loading-row"
+              aria-hidden="true"
+            >
               <div
-                v-if="!areCategoriesExpanded"
-                class="w-full overflow-hidden"
+                v-for="n in CATEGORY_PLACEHOLDER_COUNT"
+                :key="`category-placeholder-${n}`"
+                class="home-category-skeleton"
               >
-                <div class="flex min-w-max gap-2 py-1.5 sm:gap-3 sm:py-2">
-                  <button
-                    v-for="cat in mainCategories"
-                    :key="cat.id"
-                    type="button"
-                    @click="onMainCategoryClick(cat)"
-                    class="flex-shrink-0 cursor-pointer flex flex-col items-center p-1.5 rounded-lg transition sm:p-2"
-                  >
-                    <div class="h-12 w-12 flex items-center justify-center bg-dark-700 rounded-lg overflow-hidden border border-white/5 shadow-inner sm:h-16 sm:w-16">
-                      <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="w-full h-full object-cover" />
-                      <Folder v-else class="h-6 w-6 text-gray-400 sm:h-8 sm:w-8" />
-                    </div>
-                    <span class="home-category-label mt-1.5 sm:mt-2">{{ cat.name }}</span>
-                  </button>
+                <div class="home-category-skeleton-thumb"></div>
+                <div class="home-category-skeleton-label"></div>
+              </div>
+            </div>
+
+            <div v-else key="categories-loaded" class="w-full">
+              <div class="relative">
+                <div
+                  v-if="!areCategoriesExpanded"
+                  class="w-full overflow-hidden"
+                >
+                  <div class="home-categories-row">
+                    <button
+                      v-for="cat in mainCategories"
+                      :key="cat.id"
+                      type="button"
+                      @click="onMainCategoryClick(cat)"
+                      class="home-category-button flex-shrink-0"
+                    >
+                      <div class="home-category-thumb">
+                        <img
+                          v-if="isCategoryImageAvailable(cat.id, cat.image_url)"
+                          :src="resolveCategoryImageUrl(cat.image_url)"
+                          class="home-category-image"
+                          @error="markCategoryImageBroken(cat.id)"
+                        />
+                        <Folder v-else class="h-6 w-6 text-[var(--text-muted)] sm:h-8 sm:w-8" />
+                      </div>
+                      <span class="home-category-label mt-1.5 sm:mt-2">{{ cat.name }}</span>
+                    </button>
+                  </div>
                 </div>
+
+                <button
+                  v-if="shouldShowCategoryExpandButton && !areCategoriesExpanded"
+                  type="button"
+                  class="home-category-expand-btn market-primary-surface market-primary-hover absolute right-1 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[rgb(var(--palette-blue-400)/0.25)] text-[var(--text-title)] ring-4 ring-[rgb(var(--palette-dark-800)/0.55)] transition disabled:cursor-default disabled:opacity-60 sm:h-12 sm:w-12"
+                  :aria-expanded="areCategoriesExpanded"
+                  :aria-label="areCategoriesExpanded ? t('pages.index.collapseCategories') : t('pages.index.expandCategories')"
+                  :title="areCategoriesExpanded ? t('pages.index.collapseCategories') : t('pages.index.expandCategories')"
+                  :disabled="isExpandingCategories"
+                  @click="toggleCategoriesExpanded"
+                >
+                  <ChevronRight
+                    class="h-5 w-5 transition-transform duration-200 sm:h-6 sm:w-6"
+                    :class="areCategoriesExpanded ? 'rotate-90' : ''"
+                  />
+                </button>
               </div>
 
-              <button
-                v-if="shouldShowCategoryExpandButton && !areCategoriesExpanded"
-                type="button"
-                class="market-primary-surface market-primary-hover absolute right-1 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-blue-400/25 text-white shadow-[0_10px_24px_rgba(0,0,0,0.32)] ring-4 ring-dark-800/55 transition disabled:cursor-default disabled:opacity-60 sm:h-12 sm:w-12"
-                :aria-expanded="areCategoriesExpanded"
-                :aria-label="areCategoriesExpanded ? t('pages.index.collapseCategories') : t('pages.index.expandCategories')"
-                :title="areCategoriesExpanded ? t('pages.index.collapseCategories') : t('pages.index.expandCategories')"
-                :disabled="isExpandingCategories"
-                @click="toggleCategoriesExpanded"
+              <div
+                v-if="areCategoriesExpanded"
+                class="home-expanded-categories-grid mt-2"
               >
-                <ChevronRight
-                  class="h-5 w-5 transition-transform duration-200 sm:h-6 sm:w-6"
-                  :class="areCategoriesExpanded ? 'rotate-90' : ''"
-                />
-              </button>
-            </div>
+                <button
+                  v-for="cat in mainCategories"
+                  :key="cat.id"
+                  type="button"
+                  @click="onMainCategoryClick(cat)"
+                  class="home-category-button home-expanded-category-card"
+                >
+                  <div class="home-category-thumb">
+                    <img
+                      v-if="isCategoryImageAvailable(cat.id, cat.image_url)"
+                      :src="resolveCategoryImageUrl(cat.image_url)"
+                      class="home-category-image"
+                      @error="markCategoryImageBroken(cat.id)"
+                    />
+                    <Folder v-else class="h-6 w-6 text-[var(--text-muted)] sm:h-8 sm:w-8" />
+                  </div>
+                  <span class="home-category-label mt-1.5 sm:mt-2">
+                    {{ cat.name }}
+                  </span>
+                </button>
 
-            <div
-              v-if="areCategoriesExpanded"
-              class="mt-2 grid sm:grid-cols-6 grid-cols-6 md:grid-cols-8 lg:grid-cols-12 xl:grid-cols-15 gap-1"
-            >
-              <button
-                v-for="cat in mainCategories"
-                :key="cat.id"
-                type="button"
-                @click="onMainCategoryClick(cat)"
-                class="cursor-pointer flex min-w-0 flex-col items-center rounded-lg p-1 transition hover:bg-dark-700/25 sm:p-1.5"
-              >
-                <div class="h-12 w-12 flex items-center justify-center bg-dark-700 rounded-lg overflow-hidden border border-white/5 shadow-inner sm:h-16 sm:w-16">
-                  <img v-if="cat.image_url" :src="`${API_HOST}${cat.image_url}`" class="w-full h-full object-cover" />
-                  <Folder v-else class="h-6 w-6 text-gray-400 sm:h-8 sm:w-8" />
-                </div>
-                <span class="home-category-label mt-1.5 sm:mt-2">
-                  {{ cat.name }}
-                </span>
-              </button>
-
-              <button
-                v-if="shouldShowCategoryExpandButton"
-                type="button"
-                class="flex min-w-0 flex-col items-center rounded-lg p-1 text-white transition disabled:cursor-default disabled:opacity-60 sm:p-1.5"
-                :aria-expanded="areCategoriesExpanded"
-                :aria-label="t('pages.index.collapseCategories')"
-                :title="t('pages.index.collapseCategories')"
-                :disabled="isExpandingCategories"
-                @click="toggleCategoriesExpanded"
-              >
-                <div class="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 sm:h-16 sm:w-16">
-                  <ChevronRight class="h-5 w-5 rotate-270 sm:h-6 sm:w-6" />
-                </div>
-                <span class="mt-1.5 w-full break-words text-center text-xs font-medium leading-tight sm:mt-2 sm:text-sm">
-                  {{ t('pages.index.collapseCategoriesShort') }}
-                </span>
-              </button>
+                <button
+                  v-if="shouldShowCategoryExpandButton"
+                  type="button"
+                  class="home-expanded-category-card flex w-full flex-col items-center rounded-lg p-1 text-[var(--text-title)] transition disabled:cursor-default disabled:opacity-60 sm:p-1.5"
+                  :aria-expanded="areCategoriesExpanded"
+                  :aria-label="t('pages.index.collapseCategories')"
+                  :title="t('pages.index.collapseCategories')"
+                  :disabled="isExpandingCategories"
+                  @click="toggleCategoriesExpanded"
+                >
+                  <div class="flex h-12 w-12 items-center justify-center rounded-full border border-[rgb(var(--palette-white)/0.1)] sm:h-16 sm:w-16">
+                    <ChevronRight class="h-5 w-5 rotate-270 sm:h-6 sm:w-6" />
+                  </div>
+                  <span class="home-category-label mt-1.5 sm:mt-2">
+                    {{ t('pages.index.collapseCategoriesShort') }}
+                  </span>
+                </button>
+              </div>
             </div>
-          </div>
+          </transition>
         </div>
 
-        <Title class="mt-12 w-full" :text="t('common.products')" />
+        <Title class="mt-12 w-full check-text" :text="t('common.products')" />
 
         <div class="mt-4 w-full">
           <div class="flex flex-wrap items-center justify-between gap-2">
@@ -1172,8 +1165,8 @@ onBeforeUnmount(() => {
               type="button"
               class="inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-semibold transition"
               :class="isFiltersOpen
-                ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
-                : 'border-dark-600 bg-dark-700/40 text-gray-300 hover:border-dark-500 hover:bg-dark-700/55'"
+                ? 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-500)/0.1)] text-[var(--text-accent)]'
+                : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.4)] text-[var(--text-body)] hover:border-[rgb(var(--palette-dark-500))] hover:bg-[rgb(var(--palette-dark-700)/0.55)]'"
               :aria-expanded="isFiltersOpen"
               :aria-label="t('pages.index.filtersTitle')"
               :title="t('pages.index.filtersTitle')"
@@ -1183,14 +1176,14 @@ onBeforeUnmount(() => {
               <span>{{ t('pages.index.filtersTitle') }}</span>
               <span
                 v-if="activeProductFiltersCount > 0"
-                class="inline-flex min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[11px] text-white"
+                class="inline-flex min-w-5 items-center justify-center rounded-full bg-[rgb(var(--palette-blue-600))] px-1.5 text-[11px] text-[var(--text-title)]"
               >
                 {{ activeProductFiltersCount }}
               </span>
             </button>
 
             <div
-              class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-dark-600 bg-dark-700/40 p-0.5"
+              class="inline-flex h-9 items-center gap-0.5 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.4)] p-0.5"
               role="group"
               :aria-label="t('pages.index.viewSwitcherLabel')"
             >
@@ -1198,8 +1191,8 @@ onBeforeUnmount(() => {
                 type="button"
                 class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
                 :class="productCardViewMode === 'grid'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+                  ? 'bg-[rgb(var(--palette-blue-600))] text-[var(--text-title)]'
+                  : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[var(--text-title)]'"
                 :title="t('pages.index.viewGrid')"
                 @click="setProductCardViewMode('grid')"
               >
@@ -1211,8 +1204,8 @@ onBeforeUnmount(() => {
                 type="button"
                 class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition sm:px-2.5 sm:text-xs"
                 :class="productCardViewMode === 'list'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-300 hover:bg-dark-700/60 hover:text-white'"
+                  ? 'bg-[rgb(var(--palette-blue-600))] text-[var(--text-title)]'
+                  : 'text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[var(--text-title)]'"
                 :title="t('pages.index.viewList')"
                 @click="setProductCardViewMode('list')"
               >
@@ -1230,7 +1223,7 @@ onBeforeUnmount(() => {
             leave-from-class="opacity-100 translate-y-0"
             leave-to-class="opacity-0 -translate-y-1"
           >
-            <div v-if="isFiltersOpen" class="mt-3 w-full rounded-2xl border border-dark-700 bg-dark-600/25 p-4 md:p-5">
+            <div v-if="isFiltersOpen" class="mt-3 w-full rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.25)] p-4 md:p-5">
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <div class="flex flex-wrap gap-2">
                   <button
@@ -1239,8 +1232,8 @@ onBeforeUnmount(() => {
                     type="button"
                     class="rounded-full border px-3 py-1.5 text-xs font-semibold transition"
                     :class="isPricePresetActive(preset)
-                      ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
-                      : 'border-dark-600 bg-dark-700/30 text-gray-300 hover:bg-dark-700/50 hover:text-white'"
+                      ? 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-500)/0.1)] text-[var(--text-accent)]'
+                      : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.5)] hover:text-[var(--text-title)]'"
                     @click="onPricePresetClick(preset)"
                   >
                     {{ preset.label }}
@@ -1250,7 +1243,7 @@ onBeforeUnmount(() => {
                 <button
                   v-if="activeProductFiltersCount > 0"
                   type="button"
-                  class="text-xs font-semibold text-gray-400 transition hover:text-white"
+                  class="text-xs font-semibold text-[var(--text-muted)] transition hover:text-[var(--text-title)]"
                   @click="resetProductFilters"
                 >
                   {{ t('pages.index.resetFilters') }}
@@ -1262,8 +1255,8 @@ onBeforeUnmount(() => {
                   type="button"
                   class="rounded-full border px-3 py-2 text-xs font-semibold transition"
                   :class="onlineSellersOnly
-                    ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
-                    : 'border-dark-600 bg-dark-700/30 text-gray-300 hover:bg-dark-700/50 hover:text-white'"
+                    ? 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-500)/0.1)] text-[var(--text-accent)]'
+                    : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.5)] hover:text-[var(--text-title)]'"
                   :aria-pressed="onlineSellersOnly"
                   @click="toggleOnlineSellersOnlyFilter"
                 >
@@ -1274,45 +1267,57 @@ onBeforeUnmount(() => {
                   type="button"
                   class="rounded-full border px-3 py-2 text-xs font-semibold transition"
                   :class="autoDeliveryOnly
-                    ? 'border-blue-400/40 bg-blue-500/10 text-blue-200'
-                    : 'border-dark-600 bg-dark-700/30 text-gray-300 hover:bg-dark-700/50 hover:text-white'"
+                    ? 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-500)/0.1)] text-[var(--text-accent)]'
+                    : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.5)] hover:text-[var(--text-title)]'"
                   :aria-pressed="autoDeliveryOnly"
                   @click="toggleAutoDeliveryOnlyFilter"
                 >
                   {{ t('pages.index.autoDeliveryOnly') }}
                 </button>
+
+                <button
+                  type="button"
+                  class="rounded-full border px-3 py-2 text-xs font-semibold transition"
+                  :class="sellersWithReviewsOnly
+                    ? 'border-[rgb(var(--palette-blue-400)/0.4)] bg-[rgb(var(--palette-blue-500)/0.1)] text-[var(--text-accent)]'
+                    : 'border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.5)] hover:text-[var(--text-title)]'"
+                  :aria-pressed="sellersWithReviewsOnly"
+                  @click="toggleSellersWithReviewsOnlyFilter"
+                >
+                  {{ t('pages.index.sellersWithReviewsOnly') }}
+                </button>
               </div>
 
               <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-                <label class="rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2.5 transition focus-within:border-blue-400/40 focus-within:bg-dark-700/55">
-                  <span class="block text-xs text-gray-400">{{ t('pages.index.priceFrom') }}</span>
+                <label class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2.5 transition focus-within:border-[rgb(var(--palette-blue-400)/0.4)] focus-within:bg-[rgb(var(--palette-dark-700)/0.55)]">
+                  <span class="block text-xs text-[var(--text-muted)]">{{ t('pages.index.priceFrom') }}</span>
                   <div class="mt-1.5 flex items-center gap-2">
                     <input
                       v-model="minPriceFilter"
                       type="number"
                       min="0"
                       inputmode="decimal"
-                      class="w-full bg-transparent text-sm text-white outline-none placeholder-gray-500"
+                      class="w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none placeholder-[var(--text-placeholder)]"
                       :placeholder="t('pages.index.priceFrom')"
                       @input="debouncedApplyProductFilters"
                     />
-                    <span class="text-xs font-semibold text-gray-400">{{ currencySymbol }}</span>
+                    <span class="text-xs font-semibold text-[var(--text-muted)]">{{ currencySymbol }}</span>
                   </div>
                 </label>
 
-                <label class="rounded-xl border border-dark-600 bg-dark-700/30 px-3 py-2.5 transition focus-within:border-blue-400/40 focus-within:bg-dark-700/55">
-                  <span class="block text-xs text-gray-400">{{ t('pages.index.priceTo') }}</span>
+                <label class="rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.3)] px-3 py-2.5 transition focus-within:border-[rgb(var(--palette-blue-400)/0.4)] focus-within:bg-[rgb(var(--palette-dark-700)/0.55)]">
+                  <span class="block text-xs text-[var(--text-muted)]">{{ t('pages.index.priceTo') }}</span>
                   <div class="mt-1.5 flex items-center gap-2">
                     <input
                       v-model="maxPriceFilter"
                       type="number"
                       min="0"
                       inputmode="decimal"
-                      class="w-full bg-transparent text-sm text-white outline-none placeholder-gray-500"
+                      class="w-full bg-[var(--transparent)] text-sm text-[var(--text-title)] outline-none placeholder-[var(--text-placeholder)]"
                       :placeholder="t('pages.index.priceTo')"
                       @input="debouncedApplyProductFilters"
                     />
-                    <span class="text-xs font-semibold text-gray-400">{{ currencySymbol }}</span>
+                    <span class="text-xs font-semibold text-[var(--text-muted)]">{{ currencySymbol }}</span>
                   </div>
                 </label>
               </div>
@@ -1331,12 +1336,12 @@ onBeforeUnmount(() => {
           <div
             v-for="n in loadingSkeletonCount"
             :key="n"
-            class="animate-pulse rounded-2xl bg-dark-600"
+            class="animate-pulse rounded-2xl bg-[rgb(var(--palette-dark-600))]"
             :class="productCardViewMode === 'grid' ? 'h-64' : 'h-[118px] sm:h-[134px]'"
           />
         </div>
 
-        <div v-else-if="products.length === 0" class="text-center text-gray-400 py-20">
+        <div v-else-if="products.length === 0" class="text-center text-[var(--text-muted)] py-20">
           {{ t('pages.index.noProducts') }}
         </div>
 
@@ -1344,21 +1349,32 @@ onBeforeUnmount(() => {
           v-else-if="productCardViewMode === 'grid'"
           class="products-grid grid gap-1 md:gap-2 mt-6 w-full"
         >
-          <MainProductCard
-            v-for="product in products"
-            :key="product.id"
-            :product="product"
-            @click="goToProduct"
-          />
+          <template v-for="(product, index) in products" :key="product.id">
+            <Transition name="home-product-reveal" appear>
+              <MainProductCard
+                :key="product.id"
+                :product="product"
+                :style="getProductRevealDelayStyle(index)"
+                @click="goToProduct"
+              />
+            </Transition>
+          </template>
         </div>
 
-        <div v-else class="products-list mt-6 flex w-full flex-col gap-2 md:gap-3">
-          <HomeProductListCard
-            v-for="product in products"
-            :key="product.id"
-            :product="product"
-            @click="goToProduct"
-          />
+        <div
+          v-else
+          class="products-list mt-6 flex w-full flex-col gap-2 md:gap-3"
+        >
+          <template v-for="(product, index) in products" :key="product.id">
+            <Transition name="home-product-reveal" appear>
+              <HomeProductListCard
+                :key="product.id"
+                :product="product"
+                :style="getProductRevealDelayStyle(index)"
+                @click="goToProduct"
+              />
+            </Transition>
+          </template>
         </div>
     </div>
 
@@ -1443,24 +1459,107 @@ onBeforeUnmount(() => {
   background-size: 0.85rem 0.85rem;
 }
 
-.home-search-glass :deep(input) {
-  border: 1px solid var(--home-search-glass-border);
-  padding-left: 0.75rem !important;
-  background: var(--home-search-glass-bg);
-  backdrop-filter: blur(10px) saturate(115%);
-  -webkit-backdrop-filter: blur(10px) saturate(115%);
-  box-shadow: var(--home-search-glass-shadow);
-  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+.home-categories-fade-enter-active,
+.home-categories-fade-leave-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
 }
 
-.home-search-glass :deep(input:focus) {
-  border-color: var(--home-search-glass-focus-border);
-  box-shadow: var(--home-search-glass-focus-shadow);
+.home-categories-fade-enter-from,
+.home-categories-fade-leave-to {
+  opacity: 0;
+  transform: translateY(0.25rem);
 }
 
-.home-search-glass :deep(svg) {
-  display: none;
-  color: var(--home-search-glass-icon);
+.home-categories-loading-row {
+  display: flex;
+  min-height: 5.25rem;
+  gap: 0.5rem;
+  overflow: hidden;
+  padding: 0.375rem 0 0.5rem;
+}
+
+.home-categories-row {
+  display: flex;
+  min-width: max-content;
+  gap: 0.25rem;
+  padding: 0.375rem 0 0.5rem;
+}
+
+.home-category-skeleton,
+.home-category-button {
+  display: flex;
+  width: 3.75rem;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 0.75rem;
+  padding: 0.375rem;
+}
+
+.home-category-button {
+  cursor: pointer;
+  transition: background-color 0.18s ease, transform 0.18s ease;
+}
+
+.home-category-button:hover {
+  background: rgb(var(--palette-white) / 0.035);
+  transform: translateY(-1px);
+}
+
+.home-category-thumb,
+.home-category-skeleton-thumb {
+  display: flex;
+  height: 3rem;
+  width: 3rem;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  background: rgb(var(--palette-dark-700));
+}
+
+.home-category-skeleton-thumb {
+  border: 1px solid rgb(var(--palette-white) / 0.06);
+  box-shadow: inset 0 1px 0 rgb(var(--palette-white) / 0.04);
+}
+
+.home-category-image {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+
+.home-category-skeleton-thumb,
+.home-category-skeleton-label {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(
+      100deg,
+      rgb(var(--palette-white) / 0.035) 0%,
+      rgb(var(--palette-white) / 0.095) 42%,
+      rgb(var(--palette-white) / 0.035) 76%
+    ),
+    rgb(var(--palette-dark-700));
+  background-size: 220% 100%;
+  animation: home-category-shimmer 1.25s ease-in-out infinite;
+}
+
+.home-category-skeleton-label {
+  margin-top: 0.55rem;
+  height: 0.5rem;
+  width: 2.4rem;
+  border-radius: 999px;
+}
+
+@keyframes home-category-shimmer {
+  0% {
+    background-position: 120% 0;
+  }
+
+  100% {
+    background-position: -120% 0;
+  }
 }
 
 .home-category-label {
@@ -1472,14 +1571,87 @@ onBeforeUnmount(() => {
   font-size: 0.6875rem;
   line-height: 1.15;
   font-weight: 500;
-  -webkit-mask-image: linear-gradient(to right, #000 0%, #000 78%, transparent 100%);
-  mask-image: linear-gradient(to right, #000 0%, #000 78%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, rgb(var(--palette-black)) 0%, rgb(var(--palette-black)) 78%, transparent 100%);
+  mask-image: linear-gradient(to right, rgb(var(--palette-black)) 0%, rgb(var(--palette-black)) 78%, transparent 100%);
+}
+
+.home-category-expand-btn {
+  box-shadow: 0 10px 24px rgb(var(--palette-black) / 0.32);
+}
+
+.home-expanded-categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(3.75rem, 1fr));
+  gap: 0.25rem;
+  align-items: start;
+}
+
+.home-expanded-category-card {
+  max-width: 3.75rem;
+  justify-self: center;
 }
 
 @media (min-width: 640px) {
+  .home-categories-loading-row {
+    min-height: 6.75rem;
+    gap: 0.75rem;
+    padding: 0.5rem 0 0.625rem;
+  }
+
+  .home-categories-row {
+    gap: 0.5rem;
+    padding: 0.5rem 0 0.625rem;
+  }
+
+  .home-category-skeleton,
+  .home-category-button {
+    width: 5rem;
+    padding: 0.5rem;
+  }
+
+  .home-category-thumb,
+  .home-category-skeleton-thumb {
+    height: 4rem;
+    width: 4rem;
+  }
+
+  .home-category-skeleton-label {
+    height: 0.625rem;
+    width: 3.2rem;
+  }
+
   .home-category-label {
     width: 4rem;
     font-size: 0.75rem;
   }
+
+  .home-expanded-categories-grid {
+    grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr));
+    gap: 0.5rem;
+  }
+
+  .home-expanded-category-card {
+    max-width: 5rem;
+  }
+}
+
+.check-text {
+  color: #E5E7EB
+}
+
+.home-product-reveal-enter-active {
+  transition: opacity 380ms ease, transform 380ms ease, filter 380ms ease;
+}
+
+.home-product-reveal-enter-from {
+  opacity: 0;
+  transform: translateY(9px) scale(0.98);
+  filter: blur(2px);
+}
+
+.home-product-reveal-enter-to {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
 }
 </style>

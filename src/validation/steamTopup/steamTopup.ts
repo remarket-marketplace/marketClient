@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 export const STEAM_TOPUP_ACCOUNT_PATTERN = /^[a-z0-9]{3,15}$/
+export type SteamTopUpCurrency = string
 
 export function normalizeSteamTopUpAccount(account: string): string {
   return account.trim().toLowerCase()
@@ -86,16 +87,30 @@ export const steamTopUpPayOrderSchema = z.object({
 
 export const steamTopUpPayOrderInputSchema = z.object({
   payment_method: z.literal('lava').default('lava'),
-  promo_code: z.string().trim().min(3).max(64).optional(),
+  promo_code: z.string().trim().min(3).max(64).transform((value) => value.toUpperCase()).optional(),
 }).strip()
 
 export const steamTopUpCreatePaymentSchema = z.object({
   account: z.string(),
   charged_amount_rub: z.number(),
-  payment_url: z.string().url(),
+  user_balance_after_rub: z.number().nullable().optional(),
+  discount_amount_rub: z.number().optional(),
+  applied_promo_code: z.string().nullable().optional(),
+  promo_discount_percent: z.number().nullable().optional(),
+  payment_url: z.string().url().nullable().optional(),
   payment_status: z.string(),
   provider: z.string(),
   provider_tx_id: z.string(),
+}).strip()
+
+export const steamTopUpPrecheckSchema = z.object({
+  account: z.string(),
+  selected_currency: z.string(),
+  selected_service_id: z.number().int().positive(),
+  is_match: z.boolean(),
+  detected_currency: z.string().nullable().optional(),
+  detected_region: z.string().nullable().optional(),
+  message: z.string().nullable().optional(),
 }).strip()
 
 const steamTopUpAccountSchema = z
@@ -129,8 +144,15 @@ export const steamTopUpCreateOrderSchema = z.object({
 
 export const steamTopUpCreatePaymentInputSchema = z.object({
   account: steamTopUpAccountSchema,
-  amount_rub: z.number().positive(),
-  promo_code: z.string().trim().min(3).max(64).optional(),
+  amount: z.number().positive(),
+  currency: z.string().trim().min(3).max(16).transform((value) => value.toUpperCase()),
+  promo_code: z.string().trim().min(3).max(64).transform((value) => value.toUpperCase()).optional(),
+}).strip()
+
+export const steamTopUpPrecheckInputSchema = z.object({
+  account: steamTopUpAccountSchema,
+  currency: z.string().trim().min(3).max(16).transform((value) => value.toUpperCase()),
+  amount: z.number().positive(),
 }).strip()
 
 export type SteamTopUpService = z.infer<typeof steamTopUpServiceSchema>
@@ -141,3 +163,19 @@ export type SteamTopUpPayOrderPayload = z.infer<typeof steamTopUpPayOrderInputSc
 export type SteamTopUpCreateOrderPayload = z.infer<typeof steamTopUpCreateOrderSchema>
 export type SteamTopUpCreatePaymentResponse = z.infer<typeof steamTopUpCreatePaymentSchema>
 export type SteamTopUpCreatePaymentPayload = z.infer<typeof steamTopUpCreatePaymentInputSchema>
+export type SteamTopUpPrecheckPayload = z.infer<typeof steamTopUpPrecheckInputSchema>
+export type SteamTopUpPrecheckResponse = z.infer<typeof steamTopUpPrecheckSchema>
+
+export function normalizeSteamTopUpServiceCurrency(
+  currency: string | null | undefined,
+): SteamTopUpCurrency | null {
+  if (!currency) return null
+  return currency.trim().toUpperCase() || null
+}
+
+export function findSteamTopUpServiceByCurrency(
+  services: SteamTopUpService[],
+  currency: SteamTopUpCurrency,
+): SteamTopUpService | null {
+  return services.find((service) => normalizeSteamTopUpServiceCurrency(service.currency) === currency) ?? null
+}

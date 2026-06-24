@@ -1,6 +1,5 @@
 import { ZodError } from "zod";
 import { httpClient } from "..";
-import { ProductSchema } from "@/validation/product/product";
 import { CategorySchema } from "@/validation/category/category";
 import { UserReadSchema } from "@/validation/user/userRead";
 import { DealSchema, DealsListSchema, type Deal } from "@/validation/deal/deal";
@@ -33,6 +32,7 @@ import {
   type CreateAdminPromoCodePayload as CreateAdminPromoCodePayloadModel,
   type UpdateAdminPromoCodePayload as UpdateAdminPromoCodePayloadModel,
 } from "@/validation/promoCode/adminPromoCode";
+import { parseProductList } from "@/api/product/productTransform";
 
 export type AdminPayment = AdminPaymentModel
 export type AdminWithdrawalOrder = AdminWithdrawalOrderModel
@@ -93,6 +93,10 @@ export type PlatformSettings = {
   registration_enabled: boolean
   product_creation_enabled: boolean
   telegram_integration_enabled: boolean
+  deal_commission_percent: number
+  withdrawal_commission_percent: number
+  telegram_stars_price_rub: number
+  official_store_hero_image_url?: string | null
 }
 
 export type AdminUpdateUserPayload = {
@@ -102,6 +106,7 @@ export type AdminUpdateUserPayload = {
   description?: string
   has_frozen_balance?: boolean
   is_banned?: boolean
+  is_referal?: boolean
   rating?: number
   role?: "user" | "admin" | "partner"
   nickname_style_id?: string
@@ -173,6 +178,36 @@ export const adminService = {
     }
   },
 
+  async uploadOfficialStoreHeroImage(file: File): Promise<PlatformSettings | null> {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await httpClient.patch(
+        "/admin/platform-settings/official-store-hero",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+      return response.data as PlatformSettings;
+    } catch (e) {
+      console.error("Failed to upload official store hero image", e);
+      return null;
+    }
+  },
+
+  async deleteOfficialStoreHeroImage(): Promise<PlatformSettings | null> {
+    try {
+      const response = await httpClient.delete("/admin/platform-settings/official-store-hero");
+      return response.data as PlatformSettings;
+    } catch (e) {
+      console.error("Failed to delete official store hero image", e);
+      return null;
+    }
+  },
+
   async getPartnerStats(game: PartnerGame): Promise<PartnerStats | null> {
     try {
       const response = await httpClient.get("/admin/partners/stats", {
@@ -203,16 +238,10 @@ export const adminService = {
           per_page: perPage,
         },
       });
-      const products = response.data.products.map((product: any) => {
-        const transformedProduct = {
-          ...product,
-          images: product.images.map((img: any) => ({
-            ...img,
-            url: img.url || img.image_url || "",
-          })),
-        };
-        return ProductSchema.parse(transformedProduct);
-      });
+      const products = parseProductList(
+        response.data.products,
+        "getAdminProductList",
+      );
       return {
         products,
         currentPage: page,
@@ -220,9 +249,6 @@ export const adminService = {
         total: response.data.total,
       };
     } catch (e) {
-      if (e instanceof ZodError) {
-        console.error(e.issues);
-      }
       return {
         products: [],
         currentPage: 1,
@@ -428,10 +454,14 @@ export const adminService = {
     }
   },
 
-  async getAllDeals(page: number, perPage: number) {
+  async getAllDeals(page: number, perPage: number, status?: string) {
     try {
       const response = await httpClient.get("/admin/deals", {
-        params: { page, per_page: perPage },
+        params: {
+          page,
+          per_page: perPage,
+          ...(status ? { status } : {}),
+        },
       });
       return DealsListSchema.parse(response.data);
     } catch (e) {
@@ -509,6 +539,69 @@ export const adminService = {
     }
   },
 
+  async getAdminCategories(page = 1, perPage = 30) {
+    try {
+      const response = await httpClient.get("/admin/categories", {
+        params: {
+          page,
+          per_page: perPage,
+        },
+      });
+
+      return {
+        categories: response.data.categories.map((cat: unknown) =>
+          CategorySchema.parse(cat),
+        ),
+        currentPage: page,
+        totalPages: response.data.total_pages,
+      };
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error(e.issues);
+        return {
+          categories: [],
+          currentPage: 1,
+          totalPages: 1,
+        };
+      }
+
+      throw e;
+    }
+  },
+
+  async getAdminSubcategories(parentId: string, page = 1, perPage = 20) {
+    try {
+      const response = await httpClient.get(
+        `/admin/categories/subcategories/${parentId}`,
+        {
+          params: {
+            page,
+            per_page: perPage,
+          },
+        },
+      );
+
+      return {
+        categories: response.data.categories.map((cat: unknown) =>
+          CategorySchema.parse(cat),
+        ),
+        currentPage: response.data.current_page || page,
+        totalPages: response.data.total_pages,
+      };
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error(e.issues);
+        return {
+          categories: [],
+          currentPage: 1,
+          totalPages: 1,
+        };
+      }
+
+      throw e;
+    }
+  },
+
   async getCategoryData(categoryId: string) {
     //
     // get category data
@@ -517,7 +610,51 @@ export const adminService = {
       const response = await httpClient.get(`/admin/category/${categoryId}`);
       return CategorySchema.parse(response.data);
     } catch (e) {
-      return false;
+      if (e instanceof ZodError) {
+        console.error(e.issues);
+        return false;
+      }
+
+      throw e;
+    }
+  },
+
+  async createCategoryData(
+    nameRu: string,
+    nameEn: string,
+    description: string,
+    newImage: File | null,
+    newBanner: File | null,
+    parentId?: string | null,
+  ) {
+    try {
+      const normalizedNameRu = nameRu.trim()
+      const normalizedNameEn = nameEn.trim()
+      const normalizedDescription = description.trim()
+      const formData = new FormData()
+
+      formData.append('name_ru', normalizedNameRu)
+      formData.append('name_en', normalizedNameEn)
+      formData.append('description', normalizedDescription)
+      if (newImage) {
+        formData.append('uploaded_image', newImage)
+      }
+      if (newBanner) {
+        formData.append('uploaded_banner', newBanner)
+      }
+      if (parentId) {
+        formData.append('parent_category_id', parentId)
+      }
+
+      const response = await httpClient.post('/admin/category', formData)
+      return CategorySchema.parse(response.data)
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error(e.issues)
+        return false
+      }
+
+      throw e
     }
   },
 
@@ -553,16 +690,12 @@ export const adminService = {
       const response = await httpClient.put(`/admin/category/${categoryId}`, formData);
       return CategorySchema.parse(response.data);
     } catch (e) {
-      return false;
-    }
-  },
+      if (e instanceof ZodError) {
+        console.error(e.issues);
+        return false;
+      }
 
-  async deleteCategory(categoryId: string) {
-    try {
-      const response = await httpClient.delete(`/admin/category/${categoryId}`);
-      return response.status === 200;
-    } catch (e) {
-      return false;
+      throw e;
     }
   },
 
@@ -656,18 +789,147 @@ export const adminService = {
     }
   },
 
+  async getAdminComplaints(page = 1, perPage = 20) {
+    try {
+      const response = await httpClient.get('/admin/complaints', {
+        params: {
+          page,
+          per_page: perPage,
+        },
+      })
+
+      const parsed = AdminFeedbackListSchema.parse(response.data)
+
+      return {
+        feedbacks: parsed.feedbacks,
+        currentPage: page,
+        totalPages: parsed.total_pages,
+        total: parsed.total,
+      }
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error('Admin complaints validation error:', e.issues)
+      } else {
+        console.error('Error fetching admin complaints:', e)
+      }
+
+      return {
+        feedbacks: [],
+        currentPage: 1,
+        totalPages: 1,
+        total: 0,
+      }
+    }
+  },
+
+  async getAdminComplaintById(complaintId: string): Promise<AdminFeedback | null> {
+    try {
+      const response = await httpClient.get(`/admin/complaints/${complaintId}`)
+      return AdminFeedbackSchema.parse(response.data)
+    } catch (e) {
+      if (e instanceof ZodError) {
+        console.error('Admin complaint validation error:', e.issues)
+      } else {
+        console.error('Error fetching admin complaint by id:', e)
+      }
+      return null
+    }
+  },
+
   async getChatParticipants(chatId: string) {
     try {
       const response = await httpClient.get(`/admin/chat/${chatId}/participants`)
       return response.data as {
         id: string
-        buyer: { id: string; username: string; avatar_url: string | null; is_active: boolean } | null
-        seller: { id: string; username: string; avatar_url: string | null; is_active: boolean } | null
-        support_user: { id: string; username: string; avatar_url: string | null; is_active: boolean } | null
+        buyer: { id: string; username: string; nickname_style_id?: string | null; avatar_url: string | null; is_active: boolean } | null
+        seller: { id: string; username: string; nickname_style_id?: string | null; avatar_url: string | null; is_active: boolean } | null
+        support_user: { id: string; username: string; nickname_style_id?: string | null; avatar_url: string | null; is_active: boolean } | null
       }
     } catch (e) {
       console.error('Error fetching chat participants', e)
       return null
+    }
+  },
+
+  async updateSupportCaseStatus(chatId: string, status: 'open' | 'closed') {
+    const normalizeSupportTicketStatus = (
+      payload: Record<string, unknown> | null | undefined,
+      fallback: 'open' | 'closed',
+    ): 'open' | 'closed' => {
+      if (!payload) return fallback
+
+      const statusCandidates = [
+        payload.support_ticket_status,
+        payload.support_status,
+        payload.status,
+      ]
+
+      for (const candidate of statusCandidates) {
+        if (typeof candidate !== 'string') continue
+        const normalized = candidate.trim().toLowerCase()
+        if (normalized === 'closed' || normalized === 'open') {
+          return normalized
+        }
+      }
+
+      if (typeof payload.is_closed === 'boolean') {
+        return payload.is_closed ? 'closed' : 'open'
+      }
+
+      if (typeof payload.is_resolved === 'boolean') {
+        return payload.is_resolved ? 'closed' : 'open'
+      }
+
+      return fallback
+    }
+
+    const endpointCandidates = [
+      `/admin/chat/${chatId}/support-case-status`,
+      `/admin/chats/${chatId}/support-case-status`,
+    ] as const
+
+    for (let index = 0; index < endpointCandidates.length; index += 1) {
+      const endpoint = endpointCandidates[index]
+      if (!endpoint) continue
+
+      try {
+        const response = await httpClient.patch(endpoint, {
+          status,
+          support_ticket_status: status,
+        })
+
+        const normalizedStatus = normalizeSupportTicketStatus(
+          (response.data ?? null) as Record<string, unknown> | null,
+          status,
+        )
+
+        return {
+          success: true,
+          support_ticket_status: normalizedStatus,
+        }
+      } catch (e: unknown) {
+        const httpStatus = typeof e === 'object'
+          && e !== null
+          && 'response' in e
+          && typeof (e as { response?: { status?: unknown } }).response?.status === 'number'
+          ? (e as { response?: { status?: number } }).response?.status
+          : null
+
+        const isLastEndpoint = index === endpointCandidates.length - 1
+        const shouldTryNext = httpStatus === 404 && !isLastEndpoint
+        if (shouldTryNext) {
+          continue
+        }
+
+        console.error('Error updating support case status', e)
+        return {
+          success: false,
+        }
+      }
+    }
+
+    return {
+      success: false,
     }
   },
 
@@ -946,6 +1208,24 @@ export const adminService = {
       return true
     } catch (e) {
       console.error("Error deactivating promo code:", e)
+      return false
+    }
+  },
+
+  async sendUsersBroadcast(
+    emailSubject: string,
+    emailText: string,
+    includeAdmins: boolean,
+  ): Promise<boolean> {
+    try {
+      const response = await httpClient.post("/admin/users-broadcast", {
+        email_subject: emailSubject,
+        email_text: emailText,
+        include_admins: includeAdmins,
+      })
+      return response.status === 200
+    } catch (e) {
+      console.error("Error sending broadcast:", e)
       return false
     }
   },

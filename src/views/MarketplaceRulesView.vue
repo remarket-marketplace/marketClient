@@ -1,5 +1,39 @@
 <script setup lang="ts">
+import { nextTick, onMounted, watch, computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import BackButton from '@/components/navigation/BackButton.vue'
+import { formatDateInRussian, formatDateInEnglish } from '@/utils/dateFormatter'
+
+const route = useRoute()
+const { t, locale } = useI18n()
+
+const formattedDate = computed(() => 
+  locale.value.startsWith('ru') ? formatDateInRussian() : formatDateInEnglish()
+)
+
+function scrollToActiveHash() {
+  if (!route.hash) return
+
+  const targetElement = document.getElementById(route.hash.slice(1))
+  targetElement?.scrollIntoView({
+    block: 'start',
+    behavior: 'smooth',
+  })
+}
+
+onMounted(async () => {
+  await nextTick()
+  scrollToActiveHash()
+})
+
+watch(
+  () => route.hash,
+  async () => {
+    await nextTick()
+    scrollToActiveHash()
+  },
+)
 </script>
 
 <template>
@@ -8,45 +42,48 @@ import BackButton from '@/components/navigation/BackButton.vue'
       <div class="flex items-center gap-2">
         <BackButton />
         <h1 class="legal-title text-3xl sm:text-4xl text-mainText">
-          {{ $t('pages.marketRules.title') }}
+          {{ t('pages.marketRules.title') }}
         </h1>
       </div>
+      <p class="legal-updated text-sm sm:text-base">
+        {{ t('pages.marketRules.updatedAt', { date: formattedDate }) }}
+      </p>
 
-      <article class="mt-6 legal-copy text-gray-200">
-        <section class="legal-section">
-          <h2 class="legal-heading text-mainText">{{ $t('pages.marketRules.general.title') }}</h2>
-          <p class="legal-paragraph">{{ $t('pages.marketRules.general.p1') }}</p>
-          <p class="legal-paragraph">{{ $t('pages.marketRules.general.p2') }}</p>
-          <p class="legal-paragraph">{{ $t('pages.marketRules.general.p3') }}</p>
+      <article class="mt-6 legal-copy text-[var(--text-body-strong)]">
+        <section id="marketplace-general" class="legal-section">
+          <h2 class="legal-heading text-mainText">{{ t('pages.marketRules.general.title') }}</h2>
+          <p class="legal-paragraph">{{ t('pages.marketRules.general.p1') }}</p>
+          <p class="legal-paragraph">{{ t('pages.marketRules.general.p2') }}</p>
+          <p class="legal-paragraph">{{ t('pages.marketRules.general.p3') }}</p>
         </section>
 
-        <section class="legal-section">
-          <h2 class="legal-heading text-mainText">{{ $t('pages.marketRules.productsScope.title') }}</h2>
-          <p class="legal-paragraph">{{ $t('pages.marketRules.productsScope.p1') }}</p>
-          <p class="legal-paragraph">{{ $t('pages.marketRules.productsScope.p2') }}</p>
+        <section id="marketplace-products-scope" class="legal-section">
+          <h2 class="legal-heading text-mainText">{{ t('pages.marketRules.productsScope.title') }}</h2>
+          <p class="legal-paragraph">{{ t('pages.marketRules.productsScope.p1') }}</p>
+          <p class="legal-paragraph">{{ t('pages.marketRules.productsScope.p2') }}</p>
           <ul class="legal-list">
-            <li>{{ $t('pages.marketRules.productsScope.banned1') }}</li>
-            <li>{{ $t('pages.marketRules.productsScope.banned2') }}</li>
-            <li>{{ $t('pages.marketRules.productsScope.banned3') }}</li>
-            <li>{{ $t('pages.marketRules.productsScope.banned4') }}</li>
-            <li>{{ $t('pages.marketRules.productsScope.banned5') }}</li>
-            <li>{{ $t('pages.marketRules.productsScope.banned6') }}</li>
+            <li>{{ t('pages.marketRules.productsScope.banned1') }}</li>
+            <li>{{ t('pages.marketRules.productsScope.banned2') }}</li>
+            <li>{{ t('pages.marketRules.productsScope.banned3') }}</li>
+            <li>{{ t('pages.marketRules.productsScope.banned4') }}</li>
+            <li>{{ t('pages.marketRules.productsScope.banned5') }}</li>
+            <li>{{ t('pages.marketRules.productsScope.banned6') }}</li>
           </ul>
-          <p class="legal-paragraph">{{ $t('pages.marketRules.productsScope.p3') }}</p>
+          <p class="legal-paragraph">{{ t('pages.marketRules.productsScope.p3') }}</p>
         </section>
 
-        <section class="legal-section">
-          <h2 class="legal-heading text-mainText">{{ $t('pages.marketRules.listings.title') }}</h2>
-          <p class="legal-paragraph">{{ $t('pages.marketRules.listings.p1') }}</p>
+        <section id="marketplace-listings" class="legal-section">
+          <h2 class="legal-heading text-mainText">{{ t('pages.marketRules.listings.title') }}</h2>
+          <p class="legal-paragraph">{{ t('pages.marketRules.listings.p1') }}</p>
           <ul class="legal-list">
-            <li>{{ $t('pages.marketRules.listings.item1') }}</li>
-            <li>{{ $t('pages.marketRules.listings.item2') }}</li>
+            <li>{{ t('pages.marketRules.listings.item1') }}</li>
+            <li>{{ t('pages.marketRules.listings.item2') }}</li>
             <li>{{ $t('pages.marketRules.listings.item3') }}</li>
             <li>{{ $t('pages.marketRules.listings.item4') }}</li>
           </ul>
         </section>
 
-        <section class="legal-section">
+        <section id="marketplace-moderation" class="legal-section">
           <h2 class="legal-heading text-mainText">{{ $t('pages.marketRules.moderation.title') }}</h2>
           <p class="legal-paragraph">{{ $t('pages.marketRules.moderation.p1') }}</p>
           <ul class="legal-list">
@@ -59,7 +96,7 @@ import BackButton from '@/components/navigation/BackButton.vue'
           <p class="legal-paragraph">{{ $t('pages.marketRules.moderation.p2') }}</p>
         </section>
 
-        <section class="legal-section">
+        <section id="marketplace-deals" class="legal-section">
           <h2 class="legal-heading text-mainText">{{ $t('pages.marketRules.deals.title') }}</h2>
           <p class="legal-paragraph">{{ $t('pages.marketRules.deals.p1') }}</p>
           <ul class="legal-list">
@@ -69,7 +106,7 @@ import BackButton from '@/components/navigation/BackButton.vue'
           </ul>
         </section>
 
-        <section class="legal-section">
+        <section id="marketplace-refunds" class="legal-section">
           <h2 class="legal-heading text-mainText">{{ $t('pages.marketRules.refunds.title') }}</h2>
           <p class="legal-paragraph">{{ $t('pages.marketRules.refunds.p1') }}</p>
           <p class="legal-paragraph">{{ $t('pages.marketRules.refunds.p2') }}</p>
@@ -82,7 +119,7 @@ import BackButton from '@/components/navigation/BackButton.vue'
           <p class="legal-paragraph legal-accent">{{ $t('pages.marketRules.refunds.p3') }}</p>
         </section>
 
-        <section class="legal-section">
+        <section id="marketplace-enforcement" class="legal-section">
           <h2 class="legal-heading text-mainText">{{ $t('pages.marketRules.enforcement.title') }}</h2>
           <p class="legal-paragraph">{{ $t('pages.marketRules.enforcement.p1') }}</p>
           <ul class="legal-list">
@@ -92,7 +129,7 @@ import BackButton from '@/components/navigation/BackButton.vue'
           </ul>
         </section>
 
-        <section class="legal-section">
+        <section id="marketplace-contacts" class="legal-section">
           <h2 class="legal-heading text-mainText">{{ $t('pages.marketRules.contacts.title') }}</h2>
           <p class="legal-paragraph">{{ $t('pages.marketRules.contacts.p1') }}</p>
           <ul class="legal-list">
@@ -136,9 +173,17 @@ import BackButton from '@/components/navigation/BackButton.vue'
   font-family: 'Manrope', 'Segoe UI', Arial, sans-serif;
 }
 
+.legal-updated {
+  margin-top: 0.85rem;
+  color: var(--text-secondary);
+  font-family: 'Manrope', 'Segoe UI', Arial, sans-serif;
+  font-weight: 500;
+}
+
 .legal-section {
   margin-top: 1.6rem;
   padding-top: 1.6rem;
+  scroll-margin-top: 6rem;
 }
 
 .legal-section + .legal-section {

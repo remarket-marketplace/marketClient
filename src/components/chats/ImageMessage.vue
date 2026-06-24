@@ -77,7 +77,7 @@ const readStatusTitle = computed(() => {
 
 const readStatusClass = computed(() => {
   if (!props.imageMessage || !isOwnMessage.value) return ''
-  return props.imageMessage.is_read ? 'text-sky-300' : 'text-gray-300/85'
+  return props.imageMessage.is_read ? 'text-[var(--text-link)]' : 'text-[rgb(var(--text-body-rgb)/0.85)]'
 })
 
 const selectedModalImageUrl = ref<string | null>(null)
@@ -153,7 +153,7 @@ function handleModalImageError() {
     :class="messageAlignmentClass"
   >
     <div v-if="senderLabel || forceShowSender" class="mb-1 flex items-center gap-2">
-      <span class="rounded-full border border-dark-600 bg-dark-700/80 px-2 py-0.5 text-[11px] font-semibold text-gray-200">
+      <span class="rounded-full border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-700)/0.8)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-body-strong)]">
         {{ senderLabel || $t('common.user') }}
       </span>
     </div>
@@ -164,19 +164,19 @@ function handleModalImageError() {
           v-for="(imageUrl, index) in resolvedImageUrls"
           :key="`${imageUrl}_${index}`"
           type="button"
-          class="relative block w-full overflow-hidden rounded-lg border border-white/15 bg-dark-700/70"
+          class="relative block w-full overflow-hidden rounded-lg border border-[rgb(var(--palette-white)/0.15)] bg-[rgb(var(--palette-dark-700)/0.7)]"
           :class="hasSingleImage ? 'min-h-[120px]' : 'aspect-square'"
           @click="openImageModal(imageUrl)"
         >
           <div
             v-if="isImageLoading(imageUrl, index)"
-            class="absolute inset-0 z-10 flex items-center justify-center bg-dark-700/75"
+            class="absolute inset-0 z-10 flex items-center justify-center bg-[rgb(var(--palette-dark-700)/0.75)]"
           >
             <Loader size="sm" />
           </div>
           <div
             v-else-if="isImageError(imageUrl, index)"
-            class="absolute inset-0 z-10 flex items-center justify-center bg-dark-700/80 px-2 text-center text-xs text-gray-300"
+            class="absolute inset-0 z-10 flex items-center justify-center bg-[rgb(var(--palette-dark-700)/0.8)] px-2 text-center text-xs text-[var(--text-body)]"
           >
             {{ t('common.noImage') }}
           </div>
@@ -193,7 +193,7 @@ function handleModalImageError() {
     </div>
     <p v-else class="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{{ imageMessage.text }}</p>
 
-    <div class="mt-1 flex w-full items-center justify-end gap-2 text-xs text-gray-300">
+    <div class="mt-1 flex w-full items-center justify-end gap-2 text-xs text-[var(--text-body)]">
       <span>{{ formatDate(imageMessage.created_at) }}</span>
       <span
         v-if="isOwnMessage"
@@ -221,7 +221,7 @@ function handleModalImageError() {
   <Teleport to="body">
     <div
       v-if="selectedModalImageUrl"
-      class="fixed inset-0 z-50 flex cursor-pointer items-center justify-center bg-black/90 p-4 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex cursor-pointer items-center justify-center bg-[rgb(var(--palette-black)/0.9)] p-4 backdrop-blur-sm"
       @click="closeImageModal"
     >
       <div class="relative mx-auto flex h-full w-full max-w-7xl items-center justify-center" @click.stop>
@@ -233,7 +233,7 @@ function handleModalImageError() {
         </div>
         <div
           v-if="modalImageError"
-          class="absolute inset-0 z-10 flex items-center justify-center px-4 text-center text-sm text-gray-300"
+          class="absolute inset-0 z-10 flex items-center justify-center px-4 text-center text-sm text-[var(--text-body)]"
         >
           {{ t('common.noImage') }}
         </div>
@@ -249,7 +249,7 @@ function handleModalImageError() {
 
         <button
           type="button"
-          class="absolute right-4 top-4 rounded-full bg-black/50 p-2 text-white transition-all duration-200 hover:bg-black/70 hover:text-gray-300"
+          class="absolute right-4 top-4 rounded-full bg-[rgb(var(--palette-black)/0.5)] p-2 text-[var(--text-title)] transition-all duration-200 hover:bg-[rgb(var(--palette-black)/0.7)] hover:text-[var(--text-body)]"
           @click="closeImageModal"
         >
           <X class="h-6 w-6" />

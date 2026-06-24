@@ -143,10 +143,10 @@ function clearAll() {
     <!-- Заголовок и счетчик -->
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <label class="text-sm font-medium text-gray-300">
+        <label class="text-sm font-medium text-[var(--text-body)]">
           {{ label || $t('common.images') }}
         </label>
-        <span v-if="maxFiles" class="text-xs text-gray-400">
+        <span v-if="maxFiles" class="text-xs text-[var(--text-muted)]">
           ({{ filesCount }}/{{ maxFiles }})
         </span>
       </div>
@@ -154,7 +154,7 @@ function clearAll() {
         v-if="filesCount > 0"
         type="button"
         @click="clearAll"
-        class="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors"
+        class="flex items-center gap-1 text-xs text-[var(--text-body)] transition-colors hover:text-[var(--text-title)]"
       >
         <X class="w-3 h-3" />
         {{ $t('components.fileUploader.clearAll') }}
@@ -177,7 +177,7 @@ function clearAll() {
       <div
         v-for="(item, index) in previews"
         :key="item.id"
-        class="group relative rounded-lg overflow-hidden border border-dark-700 bg-dark-600 transition-all duration-200 hover:border-blue-500"
+        class="group relative rounded-lg overflow-hidden border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] transition-all duration-200 hover:border-[rgb(var(--palette-blue-500))]"
         :class="isSingleFileMode ? 'w-full' : 'aspect-square'"
       >
         <img 
@@ -188,7 +188,7 @@ function clearAll() {
         />
         
         <!-- Номер изображения -->
-        <div class="absolute top-2 left-2 bg-black/60 text-white text-xs font-medium px-2 py-1 rounded">
+        <div class="absolute top-2 left-2 bg-[rgb(var(--palette-black)/0.6)] text-[var(--text-title)] text-xs font-medium px-2 py-1 rounded">
           {{ index + 1 }}
         </div>
         
@@ -196,14 +196,14 @@ function clearAll() {
         <button
           type="button"
           @click.stop="removeImage(index)"
-          class="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white p-1.5 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100"
+          class="absolute top-2 right-2 rounded-full border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-dark-900)/0.9)] p-1.5 text-[var(--text-body-strong)] transition-all duration-200 opacity-0 group-hover:opacity-100 hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-dark-900))] hover:text-[var(--text-title)]"
           :title="$t('common.delete')"
         >
           <Trash2 class="w-3.5 h-3.5" />
         </button>
         
         <!-- Затемнение при наведении -->
-        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 pointer-events-none"></div>
+        <div class="absolute inset-0 bg-[rgb(var(--palette-black)/0)] group-hover:bg-[rgb(var(--palette-black)/0.2)] transition-all duration-200 pointer-events-none"></div>
       </div>
 
       <!-- Кнопка загрузки (показывается если есть свободные слоты) -->
@@ -230,28 +230,28 @@ function clearAll() {
           class="w-full h-full flex flex-col items-center justify-center rounded-lg border-2 border-dashed transition-all duration-200 p-3 sm:p-4"
           :class="[
             isDragging 
-              ? 'border-blue-500 bg-blue-500/10' 
-              : 'border-dark-700 hover:border-blue-500 hover:bg-blue-500/5',
+              ? 'border-[rgb(var(--palette-blue-500))] bg-[rgb(var(--palette-blue-500)/0.1)]'
+              : 'border-[rgb(var(--palette-dark-700))] hover:border-[rgb(var(--palette-blue-500))] hover:bg-[rgb(var(--palette-blue-500)/0.05)]',
             isSingleFileMode ? 'min-h-32' : ''
           ]"
           :title="$t('components.fileUploader.upload')"
         >
           <!-- Иконка -->
           <div class="mb-2 sm:mb-3">
-            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-dark-700 flex items-center justify-center">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[rgb(var(--palette-dark-700))] flex items-center justify-center">
               <Upload 
                 class="w-5 h-5 sm:w-6 sm:h-6" 
-                :class="isDragging ? 'text-blue-400' : 'text-gray-400'" 
+                :class="isDragging ? 'text-[var(--text-link)]' : 'text-[var(--text-muted)]'"
               />
             </div>
           </div>
           
           <!-- Текст -->
           <div class="text-center leading-tight">
-            <span class="text-xs sm:text-sm font-medium block break-words" :class="isDragging ? 'text-blue-400' : 'text-gray-400'">
+            <span class="text-xs sm:text-sm font-medium block break-words" :class="isDragging ? 'text-[var(--text-link)]' : 'text-[var(--text-muted)]'">
               {{ $t('components.fileUploader.addPhoto') }}
             </span>
-            <span v-if="isSingleFileMode" class="text-xs text-gray-500 mt-1 block">
+            <span v-if="isSingleFileMode" class="text-xs text-[var(--text-meta)] mt-1 block">
               {{ $t('components.fileUploader.singleFileHint') }}
             </span>
           </div>
@@ -259,23 +259,15 @@ function clearAll() {
       </div>
     </div>
 
-    <!-- Хинт под кнопкой -->
-    <div v-if="hint" class="text-xs text-gray-400">
-      {{ hint }}
-    </div>
     
     <!-- Сообщение об ошибке -->
-    <div v-if="errorMessage" class="text-sm text-red-500 mt-2 flex items-center gap-2">
-      <div class="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+    <div v-if="errorMessage" class="text-sm text-[var(--text-danger)] mt-2 flex items-center gap-2">
+      <div class="w-1.5 h-1.5 rounded-full bg-[rgb(var(--palette-red-500))]"></div>
       {{ errorMessage }}
     </div>
 
     <!-- Информация о поддерживаемых форматах -->
-    <div class="text-xs text-gray-400 flex items-center gap-1">
-      <Image class="w-3 h-3" />
-      {{ $t('components.fileUploader.supportOnlyImages') }}
-    </div>
-    <div class="text-xs text-gray-400">
+    <div class="text-xs text-[var(--text-muted)]">
       {{ $t('components.fileUploader.pasteHint') }}
     </div>
   </div>

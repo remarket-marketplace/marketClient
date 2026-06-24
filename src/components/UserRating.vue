@@ -47,7 +47,7 @@ const ratingTone = computed(() => {
   >
     <span
       :class="props.variant === 'detail'
-        ? 'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/10'
+        ? 'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[rgb(var(--palette-white)/0.1)]'
         : 'flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full'"
       :style="{ color: ratingTone }"
     >
@@ -59,19 +59,19 @@ const ratingTone = computed(() => {
       />
     </span>
 
-    <span class="whitespace-nowrap font-semibold leading-none tabular-nums text-white">
+    <span class="whitespace-nowrap font-semibold leading-none tabular-nums text-[var(--text-title)]">
       {{ formattedRating }}
     </span>
 
     <template v-if="props.variant === 'detail'">
-      <span class="whitespace-nowrap text-stone-400/82">/ 5</span>
+      <span class="whitespace-nowrap text-[var(--text-tertiary)]">/ 5</span>
       <span
         v-if="formattedReviewCount !== null"
-        class="hidden h-1 w-1 rounded-full bg-white/18 sm:inline-block"
+        class="hidden h-1 w-1 rounded-full bg-[rgb(var(--palette-white)/0.18)] sm:inline-block"
       />
       <span
         v-if="formattedReviewCount !== null"
-        class="whitespace-nowrap text-stone-400/82"
+        class="whitespace-nowrap text-[var(--text-tertiary)]"
       >
         {{ formattedReviewCount }} {{ props.reviewLabel }}
       </span>

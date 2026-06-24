@@ -8,7 +8,10 @@ import ProductStatusTag from './ProductStatusTag.vue'
 import AutoDeliveryTag from './AutoDeliveryTag.vue'
 import StyledUsername from './StyledUsername.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
+import { resolveApiMediaUrl } from '@/utils/mediaUrl'
 import { buildProductKey } from '@/utils/urlKeys'
+import { ImageOff } from 'lucide-vue-next'
+import { useCardImageReveal } from '@/composables/useCardImageReveal'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -24,12 +27,12 @@ const emit = defineEmits<{
   click: [productKey: string]
 }>()
 
-const API_HOST = import.meta.env.VITE_API_HOST
 const shouldShowSellerRating = computed(() => props.product.seller.rating > 0)
 const activeImageIndex = ref(0)
 const touchStartX = ref(0)
 const touchStartY = ref(0)
 const suppressNextCardClick = ref(false)
+const brokenImageUrls = ref<Record<string, true>>({})
 
 function onClick() {
   if (suppressNextCardClick.value) {
@@ -44,10 +47,26 @@ function goToSeller() {
 }
 
 const formattedPrice = computed(() => formatCurrencyAmount(props.product.price))
+const productPath = computed(() => `/product/${buildProductKey(props.product)}`)
 const currentImageUrl = computed(() => {
   if (!props.product.images.length) return ''
-  return `${API_HOST}${props.product.images[activeImageIndex.value]?.image_url ?? props.product.images[0]?.image_url ?? ''}`
+  return resolveApiMediaUrl(
+    props.product.images[activeImageIndex.value]?.image_url ?? props.product.images[0]?.image_url ?? '',
+  )
 })
+const { imageElement, isImageLoaded, markImageLoaded, markImagePending } = useCardImageReveal(currentImageUrl)
+const hasVisibleImage = computed(() => (
+  Boolean(currentImageUrl.value) && !brokenImageUrls.value[currentImageUrl.value]
+))
+
+function markCurrentImageBroken(): void {
+  if (!currentImageUrl.value) return
+  markImagePending()
+  brokenImageUrls.value = {
+    ...brokenImageUrls.value,
+    [currentImageUrl.value]: true,
+  }
+}
 
 function handleImagePointerMove(event: PointerEvent) {
   if (event.pointerType === 'touch') return
@@ -104,11 +123,11 @@ function handleImageTouchEnd(event: TouchEvent) {
 
 <template>
   <div
-    class="flex flex-col cursor-pointer border border-dark-700 rounded-2xl hover:shadow-xl hover:border-dark-500 transition duration-200 bg-dark-900 h-full"
+    class="flex flex-col cursor-pointer border border-[rgb(var(--palette-dark-700))] rounded-2xl hover:shadow-xl hover:border-[rgb(var(--palette-dark-500))] transition duration-200 bg-[rgb(var(--palette-dark-900))] h-full"
     @click="onClick">
     <!-- Image -->
     <div
-      class="product-card-image-surface group relative m-1 mb-2 aspect-square w-auto overflow-hidden rounded-xl flex-shrink-0 border-[0.5px] border-dark-600/70"
+      class="product-card-image-surface group relative m-1 mb-2 aspect-square w-auto overflow-hidden rounded-xl flex-shrink-0 border-[0.5px] border-[rgb(var(--palette-dark-600)/0.7)]"
       @pointermove="handleImagePointerMove"
       @pointerleave="resetActiveImage"
       @touchstart="handleImageTouchStart"
@@ -116,26 +135,38 @@ function handleImageTouchEnd(event: TouchEvent) {
     >
       <Transition name="image-fade" mode="out-in">
         <img
-          v-if="product.images.length"
+          v-if="hasVisibleImage"
+          ref="imageElement"
           :key="currentImageUrl"
           :src="currentImageUrl"
-          class="w-full h-full object-cover"
+          class="h-full w-full object-cover transition-opacity duration-300"
+          :class="isImageLoaded ? 'opacity-100' : 'opacity-0'"
           alt="product image"
+          loading="lazy"
+          decoding="async"
+          @load="markImageLoaded"
+          @error="markCurrentImageBroken"
         />
       </Transition>
       <div
-        v-if="product.images.length > 1"
+        v-if="hasVisibleImage && !isImageLoaded"
+        class="pointer-events-none absolute inset-0 animate-pulse bg-[rgb(var(--palette-dark-700)/0.72)]"
+        aria-hidden="true"
+      />
+      <div
+        v-if="product.images.length > 1 && hasVisibleImage"
         class="touch-dots pointer-events-none absolute inset-x-2 bottom-2 z-10 flex items-center justify-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100"
       >
         <span
           v-for="(_, index) in product.images"
           :key="`dot-${product.id}-${index}`"
           class="h-1.5 rounded-full transition-all duration-150"
-          :class="index === activeImageIndex ? 'w-4 bg-white/95' : 'w-1.5 bg-white/55'"
+          :class="index === activeImageIndex ? 'w-4 bg-[rgb(var(--palette-white)/0.95)]' : 'w-1.5 bg-[rgb(var(--palette-white)/0.55)]'"
         />
       </div>
-      <div v-else class="w-full h-full flex items-center justify-center text-sm text-gray-300">
-        {{ t('common.noImage') }}
+      <div v-else class="flex h-full w-full flex-col items-center justify-center gap-2 text-[var(--text-body)]">
+        <ImageOff class="h-7 w-7 text-[var(--text-meta)]" />
+        <span class="text-sm">{{ t('common.noImage') }}</span>
       </div>
       <div v-if="showStatusTag" class="pointer-events-none absolute right-2 top-2 z-10">
         <ProductStatusTag :product-status="product.status" />
@@ -145,10 +176,16 @@ function handleImageTouchEnd(event: TouchEvent) {
     <div class="px-3 pb-3 flex flex-1 flex-col">
       <!-- Title -->
       <h3 class="product-title text-sm md:text-base font-semibold text-mainText leading-[1.125rem] md:leading-5 mb-2 h-[2.25rem] md:h-[2.5rem] flex-shrink-0">
-        {{ product.title }}
+        <RouterLink
+          :to="productPath"
+          class="hover:text-[var(--text-link)]"
+          @click.stop
+        >
+          {{ product.title }}
+        </RouterLink>
       </h3>
 
-      <hr class="border-dark-700 opacity-80 mb-2 flex-shrink-0" />
+      <hr class="border-[rgb(var(--palette-dark-700))] opacity-80 mb-2 flex-shrink-0" />
 
       <!-- Bottom section with seller and button -->
       <div class="mt-auto flex w-full flex-col gap-2">
@@ -166,7 +203,7 @@ function handleImageTouchEnd(event: TouchEvent) {
             />
           </button>
 
-          <span v-if="product.seller.is_active" class="w-2 h-2 rounded-full bg-green-500 flex-shrink-0 self-center" title="Online" />
+          <span v-if="product.seller.is_active" class="w-2 h-2 rounded-full bg-[rgb(var(--palette-green-500))] flex-shrink-0 self-center" title="Online" />
 
           <!-- Rating -->
           <div v-if="shouldShowSellerRating" class="inline-flex flex-shrink-0 items-center self-center">
@@ -180,8 +217,8 @@ function handleImageTouchEnd(event: TouchEvent) {
 
         <!-- Buy button -->
         <button
-          class="market-primary-surface market-primary-hover group relative w-full flex-shrink-0 cursor-pointer overflow-hidden whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-semibold text-white transition sm:px-3 sm:py-2 sm:text-sm"
-          @click="onClick">
+          class="market-primary-surface market-primary-hover group relative w-full flex-shrink-0 cursor-pointer overflow-hidden whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-semibold text-[var(--text-title)] transition sm:px-3 sm:py-2 sm:text-sm"
+          @click.stop="onClick">
           <span class="block text-center tabular-nums transition-all duration-200 group-hover:-translate-y-full group-hover:opacity-0">
             {{ formattedPrice }}
           </span>

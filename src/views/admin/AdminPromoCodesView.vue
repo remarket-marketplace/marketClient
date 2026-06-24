@@ -235,6 +235,12 @@ const requiredErrors = computed(() => ({
   lifetimeValue: submitAttempted.value && hasLifetime.value && !normalizedLifetimeValue.value,
 }))
 
+const activeFiltersCount = computed(() => (
+  Number(Boolean(searchQuery.value.trim()))
+  + Number(statusFilter.value !== 'all')
+  + Number(appliesToFilter.value !== 'all')
+))
+
 function getApiErrorDetail(error: unknown): unknown {
   if (!error || typeof error !== 'object') return error
   const response = (error as { response?: { data?: { detail?: unknown } } }).response
@@ -290,6 +296,12 @@ async function loadPromos() {
   } finally {
     isLoading.value = false
   }
+}
+
+function resetPromoFilters() {
+  searchQuery.value = ''
+  statusFilter.value = 'all'
+  appliesToFilter.value = 'all'
 }
 
 function buildPayload(): CreateAdminPromoCodePayload | null {
@@ -426,20 +438,31 @@ onMounted(async () => {
     <div class="flex items-center gap-2">
       <BackButton />
       <div>
-        <h1 class="text-xl sm:text-2xl font-bold text-mainText">Промокоды</h1>
-        <p class="text-xs sm:text-sm text-gray-400">Универсальные промокоды для платежных сценариев</p>
+        <h1 class="text-xl sm:text-2xl font-bold text-mainText">{{ t('pages.admin.steamTopupsPage.title') }}</h1>
+        <p class="text-xs sm:text-sm text-[var(--text-muted)]">{{ t('pages.admin.steamTopupsPage.subtitle') }}</p>
       </div>
     </div>
 
+<<<<<<< HEAD
     <div class="promo-create-panel rounded-xl border border-dark-700 bg-dark-700/30 p-4 sm:p-5 space-y-4">
       <div class="flex flex-col gap-1">
         <h2 class="text-base font-semibold text-mainText">Создать промокод</h2>
         <p class="text-xs text-gray-400">Поля, отмеченные <span class="text-red-300">*</span>, обязательны.</p>
+=======
+    <div class="admin-surface-panel promo-create-panel rounded-[1.5rem] p-4 sm:p-5 space-y-4">
+      <div class="flex flex-col gap-1">
+        <h2 class="text-base font-semibold text-mainText">Создать промокод</h2>
+        <p class="text-xs text-[var(--text-muted)]">Поля, отмеченные <span class="text-[var(--text-danger)]">*</span>, обязательны.</p>
+>>>>>>> dev
       </div>
 
       <div
         ref="basicSectionRef"
+<<<<<<< HEAD
         class="promo-section rounded-lg border border-dark-700/80 bg-dark-600/40 p-4 space-y-4"
+=======
+        class="admin-surface-soft promo-section rounded-[1.2rem] p-4 space-y-4"
+>>>>>>> dev
         :class="{ 'promo-section--invalid': invalidSectionKey === 'basic' }"
       >
         <div class="promo-section__head">
@@ -447,17 +470,26 @@ onMounted(async () => {
         </div>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div class="field space-y-1.5">
+<<<<<<< HEAD
             <label class="field__label text-xs font-medium text-gray-300">
+=======
+            <label class="field__label text-xs font-medium text-[var(--text-body)]">
+>>>>>>> dev
               Код промокода <span class="field__required">*</span>
             </label>
             <input
               ref="codeInputRef"
               v-model.trim="code"
+<<<<<<< HEAD
               class="form-control h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
+=======
+              class="form-control admin-input-surface h-10 w-full rounded-lg px-3 text-sm text-mainText"
+>>>>>>> dev
               :class="{ 'form-control--error': requiredErrors.code }"
               placeholder="Например, CODE2026"
             />
             <p v-if="requiredErrors.code" class="field__error">Введите код промокода.</p>
+<<<<<<< HEAD
             <p class="field__hint text-xs text-gray-500">Уникальный код без пробелов по краям.</p>
           </div>
 
@@ -479,6 +511,29 @@ onMounted(async () => {
 
           <div class="field space-y-1.5">
             <label class="field__label text-xs font-medium text-gray-300">
+=======
+            <p class="field__hint text-xs text-[var(--text-meta)]">Уникальный код без пробелов по краям.</p>
+          </div>
+
+          <div class="field space-y-1.5">
+            <label class="field__label text-xs font-medium text-[var(--text-body)]">
+              Сценарий <span class="field__required">*</span>
+            </label>
+            <CustomSelect v-model="appliesTo" :options="createAppliesToOptions" />
+            <p class="field__hint text-xs text-[var(--text-meta)]">Где можно применить промокод.</p>
+          </div>
+
+          <div class="field space-y-1.5">
+            <label class="field__label text-xs font-medium text-[var(--text-body)]">
+              Тип скидки <span class="field__required">*</span>
+            </label>
+            <CustomSelect v-model="discountType" :options="discountTypeOptions" />
+            <p class="field__hint text-xs text-[var(--text-meta)]">Процент от суммы или фиксированная сумма.</p>
+          </div>
+
+          <div class="field space-y-1.5">
+            <label class="field__label text-xs font-medium text-[var(--text-body)]">
+>>>>>>> dev
               Скидка <span class="field__required">*</span>
             </label>
             <input
@@ -487,28 +542,45 @@ onMounted(async () => {
               type="number"
               step="0.01"
               min="0.01"
+<<<<<<< HEAD
               class="form-control h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
+=======
+              class="form-control admin-input-surface h-10 w-full rounded-lg px-3 text-sm text-mainText"
+>>>>>>> dev
               :class="{ 'form-control--error': requiredErrors.discountValue }"
               placeholder="Введите значение"
             />
             <p v-if="requiredErrors.discountValue" class="field__error">Укажите значение скидки больше 0.</p>
+<<<<<<< HEAD
             <p class="field__hint text-xs text-gray-500">Число больше 0.</p>
+=======
+            <p class="field__hint text-xs text-[var(--text-meta)]">Число больше 0.</p>
+>>>>>>> dev
           </div>
         </div>
       </div>
 
+<<<<<<< HEAD
       <div class="promo-section rounded-lg border border-dark-700/80 bg-dark-600/40 p-4 space-y-4">
+=======
+      <div class="admin-surface-soft promo-section rounded-[1.2rem] p-4 space-y-4">
+>>>>>>> dev
         <div class="promo-section__head">
           <h3 class="promo-section__title">2. Ограничения</h3>
         </div>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div class="field space-y-1.5">
+<<<<<<< HEAD
             <label class="field__label text-xs font-medium text-gray-300">Минимальная сумма заказа</label>
+=======
+            <label class="field__label text-xs font-medium text-[var(--text-body)]">Минимальная сумма заказа</label>
+>>>>>>> dev
             <input
               v-model.trim="minOrderAmount"
               type="number"
               step="0.01"
               min="0"
+<<<<<<< HEAD
               class="form-control h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
               placeholder="Например, 500"
             />
@@ -517,11 +589,22 @@ onMounted(async () => {
 
           <div class="field space-y-1.5">
             <label class="field__label text-xs font-medium text-gray-300">Всего использований</label>
+=======
+              class="form-control admin-input-surface h-10 w-full rounded-lg px-3 text-sm text-mainText"
+              placeholder="Например, 500"
+            />
+            <p class="field__hint text-xs text-[var(--text-meta)]">От какой суммы код будет работать.</p>
+          </div>
+
+          <div class="field space-y-1.5">
+            <label class="field__label text-xs font-medium text-[var(--text-body)]">Всего использований</label>
+>>>>>>> dev
             <input
               v-model.trim="totalUsageLimit"
               type="number"
               step="1"
               min="1"
+<<<<<<< HEAD
               class="form-control h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
               placeholder="Оставьте пустым без лимита"
             />
@@ -530,6 +613,16 @@ onMounted(async () => {
 
           <div class="field space-y-1.5">
             <label class="field__label text-xs font-medium text-gray-300">
+=======
+              class="form-control admin-input-surface h-10 w-full rounded-lg px-3 text-sm text-mainText"
+              placeholder="Оставьте пустым без лимита"
+            />
+            <p class="field__hint text-xs text-[var(--text-meta)]">Общий лимит для всех пользователей.</p>
+          </div>
+
+          <div class="field space-y-1.5">
+            <label class="field__label text-xs font-medium text-[var(--text-body)]">
+>>>>>>> dev
               На 1 пользователя <span class="field__required">*</span>
             </label>
             <input
@@ -537,6 +630,7 @@ onMounted(async () => {
               type="number"
               step="1"
               min="1"
+<<<<<<< HEAD
               class="form-control h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
               placeholder="Минимум 1"
             />
@@ -545,42 +639,63 @@ onMounted(async () => {
 
           <div v-if="showMaxDiscount" class="field space-y-1.5">
             <label class="field__label text-xs font-medium text-gray-300">Максимальная скидка</label>
+=======
+              class="form-control admin-input-surface h-10 w-full rounded-lg px-3 text-sm text-mainText"
+              placeholder="Минимум 1"
+            />
+            <p class="field__hint text-xs text-[var(--text-meta)]">Сколько раз один человек может применить код.</p>
+          </div>
+
+          <div v-if="showMaxDiscount" class="field space-y-1.5">
+            <label class="field__label text-xs font-medium text-[var(--text-body)]">Максимальная скидка</label>
+>>>>>>> dev
             <input
               v-model.trim="maxDiscountAmount"
               type="number"
               step="0.01"
               min="0.01"
+<<<<<<< HEAD
               class="form-control h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
               placeholder="Например, 300"
             />
             <p class="field__hint text-xs text-gray-500">Потолок скидки при процентном типе.</p>
+=======
+              class="form-control admin-input-surface h-10 w-full rounded-lg px-3 text-sm text-mainText"
+              placeholder="Например, 300"
+            />
+            <p class="field__hint text-xs text-[var(--text-meta)]">Потолок скидки при процентном типе.</p>
+>>>>>>> dev
           </div>
         </div>
-        <p v-if="!showMaxDiscount" class="text-xs text-gray-500">
+        <p v-if="!showMaxDiscount" class="text-xs text-[var(--text-meta)]">
           Для фиксированной скидки максимум не нужен.
         </p>
       </div>
 
       <div
         ref="lifetimeSectionRef"
+<<<<<<< HEAD
         class="promo-section rounded-lg border border-dark-700/80 bg-dark-600/40 p-4 space-y-4"
+=======
+        class="admin-surface-soft promo-section rounded-[1.2rem] p-4 space-y-4"
+>>>>>>> dev
         :class="{ 'promo-section--invalid': invalidSectionKey === 'lifetime' }"
       >
         <div class="flex items-center justify-between gap-2">
           <h3 class="promo-section__title">3. Срок действия</h3>
           <span
             class="rounded-full border px-2 py-0.5 text-[11px]"
-            :class="hasLifetime ? 'border-blue-500/40 bg-blue-500/10 text-blue-200' : 'border-dark-700 bg-dark-700/60 text-gray-400'"
+            :class="hasLifetime ? 'border-[rgb(var(--palette-blue-500)/0.25)] bg-[rgb(var(--palette-blue-500)/0.08)] text-[var(--text-accent)]' : 'border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] text-[var(--text-muted)]'"
           >
             {{ hasLifetime ? 'Ограничен' : 'Бессрочный' }}
           </span>
         </div>
 
-        <div class="rounded-lg border border-dark-700 bg-dark-700/35 px-3 py-3">
+        <div class="admin-surface-soft rounded-lg px-3 py-3">
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div class="space-y-0.5">
               <p class="text-sm text-mainText">Ограничить сроком</p>
-              <p class="text-xs text-gray-500">Промокод выключится автоматически после срока.</p>
+              <p class="text-xs text-[var(--text-meta)]">Промокод выключится автоматически после срока.</p>
             </div>
             <div class="segmented-toggle segmented-toggle-blue" role="group" aria-label="Ограничение срока">
               <span class="segmented-toggle__thumb" :class="!hasLifetime ? 'segmented-toggle__thumb--right' : ''" />
@@ -609,7 +724,11 @@ onMounted(async () => {
         <div v-if="hasLifetime" class="space-y-3">
           <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div class="field space-y-1.5">
+<<<<<<< HEAD
               <label class="field__label text-xs font-medium text-gray-300">
+=======
+              <label class="field__label text-xs font-medium text-[var(--text-body)]">
+>>>>>>> dev
                 Срок жизни <span class="field__required">*</span>
               </label>
               <input
@@ -618,11 +737,16 @@ onMounted(async () => {
                 type="number"
                 step="1"
                 min="1"
+<<<<<<< HEAD
                 class="form-control h-10 w-full rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText"
+=======
+                class="form-control admin-input-surface h-10 w-full rounded-lg px-3 text-sm text-mainText"
+>>>>>>> dev
                 :class="{ 'form-control--error': requiredErrors.lifetimeValue }"
                 placeholder="Например, 1"
               />
               <p v-if="requiredErrors.lifetimeValue" class="field__error">Укажите срок больше 0.</p>
+<<<<<<< HEAD
               <p class="field__hint text-xs text-gray-500">Целое число больше 0.</p>
             </div>
 
@@ -630,19 +754,28 @@ onMounted(async () => {
               <label class="field__label text-xs font-medium text-gray-300">Единица срока</label>
               <CustomSelect v-model="lifetimeUnit" :options="lifetimeUnitOptions" />
               <p class="field__hint text-xs text-gray-500">Минуты, часы или дни.</p>
+=======
+              <p class="field__hint text-xs text-[var(--text-meta)]">Целое число больше 0.</p>
+            </div>
+
+            <div class="field space-y-1.5">
+              <label class="field__label text-xs font-medium text-[var(--text-body)]">Единица срока</label>
+              <CustomSelect v-model="lifetimeUnit" :options="lifetimeUnitOptions" />
+              <p class="field__hint text-xs text-[var(--text-meta)]">Минуты, часы или дни.</p>
+>>>>>>> dev
             </div>
           </div>
 
           <div class="space-y-1.5">
-            <p class="text-xs font-medium text-gray-300">Быстрый выбор</p>
+            <p class="text-xs font-medium text-[var(--text-body)]">Быстрый выбор</p>
             <div class="flex flex-wrap gap-2">
               <button
                 v-for="preset in lifetimePresets"
                 :key="preset.label"
                 type="button"
-                class="rounded-md border border-dark-600 bg-dark-700/45 px-2.5 py-1 text-xs text-gray-200 transition hover:border-blue-400/45 hover:text-mainText"
+                class="rounded-md border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] px-2.5 py-1 text-xs text-[var(--text-body-strong)] transition hover:border-[rgb(var(--palette-blue-400)/0.35)] hover:bg-[rgb(var(--palette-white)/0.05)] hover:text-mainText"
                 :class="Number(lifetimeValue) === preset.value && lifetimeUnit === preset.unit
-                  ? 'border-blue-500/60 bg-blue-500/12 text-blue-200'
+                  ? 'border-[rgb(var(--palette-blue-500)/0.6)] bg-[rgb(var(--palette-blue-500)/0.12)] text-[var(--text-accent)]'
                   : ''"
                 @click="applyLifetimePreset(preset.value, preset.unit)"
               >
@@ -651,36 +784,40 @@ onMounted(async () => {
             </div>
           </div>
 
-          <div class="rounded-lg border border-dark-700 bg-dark-700/30 px-3 py-2">
-            <p class="text-xs text-gray-400">{{ lifetimeSummary }}</p>
+          <div class="admin-surface-soft rounded-lg px-3 py-2">
+            <p class="text-xs text-[var(--text-muted)]">{{ lifetimeSummary }}</p>
             <p class="text-sm text-mainText">
               Истечет:
-              <span class="font-medium text-blue-200">{{ lifetimeEndsPreview }}</span>
+              <span class="font-medium text-[var(--text-accent)]">{{ lifetimeEndsPreview }}</span>
             </p>
           </div>
         </div>
 
-        <p v-else class="text-xs text-gray-500">
+        <p v-else class="text-xs text-[var(--text-meta)]">
           Если не ограничивать сроком, промокод действует бессрочно.
         </p>
       </div>
 
+<<<<<<< HEAD
       <div class="promo-section rounded-lg border border-dark-700/80 bg-dark-600/40 p-4 space-y-4">
+=======
+      <div class="admin-surface-soft promo-section rounded-[1.2rem] p-4 space-y-4">
+>>>>>>> dev
         <div class="flex items-center justify-between gap-2">
           <h3 class="promo-section__title">4. Статус и создание</h3>
           <span
             class="rounded-full border px-2 py-0.5 text-[11px]"
-            :class="isActive ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200' : 'border-dark-700 bg-dark-700/60 text-gray-400'"
+            :class="isActive ? 'border-[rgb(var(--palette-emerald-500)/0.25)] bg-[rgb(var(--palette-emerald-500)/0.08)] text-[var(--text-success)]' : 'border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] text-[var(--text-muted)]'"
           >
             {{ isActive ? 'Активен' : 'Выключен' }}
           </span>
         </div>
 
-        <div class="rounded-lg border border-dark-700 bg-dark-700/35 px-3 py-3">
+        <div class="admin-surface-soft rounded-lg px-3 py-3">
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div class="space-y-0.5">
               <p class="text-sm text-mainText">Сделать промокод активным</p>
-              <p class="text-xs text-gray-500">{{ activationSummary }}</p>
+              <p class="text-xs text-[var(--text-meta)]">{{ activationSummary }}</p>
             </div>
             <div class="segmented-toggle segmented-toggle-emerald" role="group" aria-label="Статус промокода">
               <span class="segmented-toggle__thumb" :class="!isActive ? 'segmented-toggle__thumb--right' : ''" />
@@ -707,6 +844,7 @@ onMounted(async () => {
         </div>
 
         <div class="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_260px]">
+<<<<<<< HEAD
           <div class="preview-card rounded-lg border border-blue-500/35 bg-blue-500/10 px-3 py-3">
             <p class="preview-card__label text-[11px] uppercase tracking-wide text-blue-200/90">Предпросмотр</p>
             <p class="text-sm text-mainText">{{ promoPreview }}</p>
@@ -714,6 +852,15 @@ onMounted(async () => {
 
           <div class="action-card rounded-lg border border-dark-700 bg-dark-700/35 p-3 space-y-2">
             <p class="text-xs text-gray-400">Действие</p>
+=======
+          <div class="preview-card admin-surface-soft rounded-lg px-3 py-3">
+            <p class="preview-card__label text-[11px] uppercase tracking-wide text-[rgb(var(--text-accent-rgb)/0.9)]">Предпросмотр</p>
+            <p class="text-sm text-mainText">{{ promoPreview }}</p>
+          </div>
+
+          <div class="action-card admin-surface-soft rounded-lg p-3 space-y-2">
+            <p class="text-xs text-[var(--text-muted)]">Действие</p>
+>>>>>>> dev
             <button
               type="button"
               class="admin-btn admin-btn-primary admin-btn-sm w-full justify-center action-card__button"
@@ -722,43 +869,75 @@ onMounted(async () => {
             >
               {{ isSubmitting ? 'Создаем...' : 'Создать' }}
             </button>
-            <p class="text-[11px] text-gray-500">Обязательные поля: код, тип и значение скидки.</p>
+            <p class="text-[11px] text-[var(--text-meta)]">Обязательные поля: код, тип и значение скидки.</p>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="rounded-xl border border-dark-700 bg-dark-700/30 p-4 sm:p-5 space-y-3">
-      <div>
-        <h2 class="text-sm font-semibold text-mainText">Список промокодов</h2>
-        <p class="text-xs text-gray-400">Поиск и фильтры</p>
+    <div class="admin-surface-panel promo-list-panel rounded-[1.5rem] p-4 sm:p-5 space-y-4">
+      <div class="promo-list-panel__head">
+        <div>
+          <h2 class="text-sm font-semibold text-mainText">Список промокодов</h2>
+          <p class="text-xs text-[var(--text-muted)]">Поиск и фильтры</p>
+        </div>
+        <button
+          type="button"
+          class="promo-list-panel__reset text-xs"
+          :disabled="activeFiltersCount === 0"
+          @click="resetPromoFilters"
+        >
+          Сбросить
+        </button>
       </div>
-      <SearchField v-model="searchQuery" placeholder="Поиск по коду" />
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <CustomSelect v-model="statusFilter" :options="statusOptions" />
-        <CustomSelect v-model="appliesToFilter" :options="appliesToOptions" />
+      <div class="admin-surface-soft rounded-lg p-3 space-y-3">
+        <div class="field space-y-1.5">
+          <label class="field__label text-xs font-medium text-[var(--text-body)]">Поиск по коду</label>
+          <SearchField v-model="searchQuery" placeholder="Например, SPRING2026" />
+          <p class="field__hint text-xs text-[var(--text-meta)]">Поиск срабатывает по части кода.</p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="field space-y-1.5">
+            <label class="field__label text-xs font-medium text-[var(--text-body)]">Статус</label>
+            <CustomSelect v-model="statusFilter" :options="statusOptions" />
+          </div>
+          <div class="field space-y-1.5">
+            <label class="field__label text-xs font-medium text-[var(--text-body)]">Сценарий</label>
+            <CustomSelect v-model="appliesToFilter" :options="appliesToOptions" />
+          </div>
+        </div>
+      </div>
+      <div class="promo-filter-meta text-xs text-[var(--text-muted)]">
+        Активных фильтров: <span class="text-mainText">{{ activeFiltersCount }}</span>
       </div>
     </div>
 
     <Transition name="fade-slide">
+<<<<<<< HEAD
       <p v-if="errorMessage" class="state-banner state-banner--error rounded-lg border border-red-500/35 bg-red-500/10 px-3 py-2 text-sm text-red-300">{{ errorMessage }}</p>
     </Transition>
     <Transition name="fade-slide">
       <p v-if="!errorMessage && successMessage" class="state-banner state-banner--success rounded-lg border border-emerald-500/35 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">{{ successMessage }}</p>
+=======
+      <p v-if="errorMessage" class="state-banner state-banner--error rounded-lg border border-[rgb(var(--palette-red-500)/0.35)] bg-[rgb(var(--palette-red-500)/0.1)] px-3 py-2 text-sm text-[var(--text-danger)]">{{ errorMessage }}</p>
+    </Transition>
+    <Transition name="fade-slide">
+      <p v-if="!errorMessage && successMessage" class="state-banner state-banner--success rounded-lg border border-[rgb(var(--palette-emerald-500)/0.35)] bg-[rgb(var(--palette-emerald-500)/0.1)] px-3 py-2 text-sm text-[var(--text-success)]">{{ successMessage }}</p>
+>>>>>>> dev
     </Transition>
 
     <div class="space-y-3">
       <div v-if="isLoading" class="flex h-32 items-center justify-center">
-        <Loader2 class="h-6 w-6 animate-spin text-blue-500" />
+        <Loader2 class="h-6 w-6 animate-spin text-[var(--text-link)]" />
       </div>
-      <article v-for="promo in promos" :key="promo.id" class="rounded-xl border border-dark-700 bg-dark-600 p-3 sm:p-4">
+      <article v-for="promo in promos" :key="promo.id" class="admin-surface-card rounded-[1.4rem] p-3 sm:p-4">
         <div class="flex items-center justify-between gap-2">
           <div class="font-semibold text-mainText">{{ promo.code }}</div>
           <button class="admin-btn admin-btn-outline admin-btn-sm" @click="togglePromo(promo)">
             {{ promo.is_active ? 'Деактивировать' : 'Активировать' }}
           </button>
         </div>
-        <div class="mt-2 text-sm text-gray-300 grid grid-cols-1 sm:grid-cols-2 gap-1">
+        <div class="mt-2 text-sm text-[var(--text-body)] grid grid-cols-1 sm:grid-cols-2 gap-1">
           <p>Тип: {{ formatDiscountType(promo.discount_type) }}</p>
           <p>Скидка: {{ formatDiscountValue(promo.discount_value, promo.discount_type) }}</p>
           <p>Сценарий: {{ formatScenario(promo.applies_to) }}</p>
@@ -768,7 +947,7 @@ onMounted(async () => {
           <p>Действует до: {{ formatPromoLifetime(promo.ends_at) }}</p>
         </div>
       </article>
-      <p class="text-xs text-gray-500">Всего: {{ total }} | Страниц: {{ totalPages }}</p>
+      <p class="text-xs text-[var(--text-meta)]">Всего: {{ total }} | Страниц: {{ totalPages }}</p>
     </div>
   </section>
 </template>
@@ -786,11 +965,16 @@ input[type='number'] {
 }
 
 .promo-create-panel {
+<<<<<<< HEAD
   background-image: linear-gradient(180deg, rgb(19 23 32 / 0.44), rgb(17 20 29 / 0.2));
+=======
+  background-image: none;
+>>>>>>> dev
 }
 
 .promo-section {
   position: relative;
+<<<<<<< HEAD
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.02);
 }
 
@@ -801,12 +985,23 @@ input[type='number'] {
   border-radius: 10px;
   pointer-events: none;
   box-shadow: 0 0 0 1px rgb(255 255 255 / 0.015);
+=======
+}
+
+.promo-section::after {
+  content: none;
+>>>>>>> dev
 }
 
 .promo-section--invalid {
   animation: subtleShake 320ms ease;
+<<<<<<< HEAD
   border-color: rgb(248 113 113 / 0.75);
   box-shadow: 0 0 0 1px rgb(248 113 113 / 0.22);
+=======
+  border-color: rgb(var(--palette-red-400) / 0.75);
+  box-shadow: 0 0 0 1px rgb(var(--palette-red-400) / 0.22);
+>>>>>>> dev
 }
 
 .promo-section__head {
@@ -820,7 +1015,11 @@ input[type='number'] {
   line-height: 1.2;
   font-weight: 700;
   letter-spacing: 0.01em;
+<<<<<<< HEAD
   color: rgb(241 245 249);
+=======
+  color: rgb(var(--palette-slate-100));
+>>>>>>> dev
 }
 
 .field__label {
@@ -832,17 +1031,29 @@ input[type='number'] {
 }
 
 .field__required {
+<<<<<<< HEAD
   color: rgb(252 165 165);
+=======
+  color: rgb(var(--palette-red-300));
+>>>>>>> dev
   font-weight: 700;
 }
 
 .field__hint {
   line-height: 1.35;
+<<<<<<< HEAD
   color: rgb(148 163 184 / 0.78);
 }
 
 .field__error {
   color: rgb(252 165 165);
+=======
+  color: rgb(var(--palette-slate-400) / 0.78);
+}
+
+.field__error {
+  color: rgb(var(--palette-red-300));
+>>>>>>> dev
   font-size: 12px;
   animation: fadeSlideIn 180ms ease-out;
 }
@@ -854,11 +1065,16 @@ input[type='number'] {
 }
 
 .form-control:hover {
+<<<<<<< HEAD
   border-color: rgb(100 116 139 / 0.85);
+=======
+  border-color: rgb(var(--palette-slate-500) / 0.85);
+>>>>>>> dev
 }
 
 .form-control:focus-visible {
   outline: none;
+<<<<<<< HEAD
   border-color: rgb(59 130 246 / 0.95);
   box-shadow: 0 0 0 3px rgb(37 99 235 / 0.24);
   background-color: rgb(30 41 59 / 0.28);
@@ -867,13 +1083,28 @@ input[type='number'] {
 .form-control--error {
   border-color: rgb(248 113 113 / 0.78);
   box-shadow: 0 0 0 1px rgb(248 113 113 / 0.2);
+=======
+  border-color: rgb(var(--palette-white) / 0.14);
+  box-shadow: 0 0 0 1px rgb(var(--palette-white) / 0.04);
+  background-color: rgb(var(--palette-white) / 0.04);
+}
+
+.form-control--error {
+  border-color: rgb(var(--palette-red-400) / 0.78);
+  box-shadow: 0 0 0 1px rgb(var(--palette-red-400) / 0.2);
+>>>>>>> dev
 }
 
 .preview-card {
   position: relative;
   padding-left: 44px;
+<<<<<<< HEAD
   border-color: rgb(59 130 246 / 0.38);
   background-image: linear-gradient(140deg, rgb(37 99 235 / 0.2), rgb(30 64 175 / 0.08));
+=======
+  border-color: rgb(var(--palette-blue-500) / 0.2);
+  background-image: none;
+>>>>>>> dev
 }
 
 .preview-card::before {
@@ -884,8 +1115,13 @@ input[type='number'] {
   width: 20px;
   height: 20px;
   border-radius: 9999px;
+<<<<<<< HEAD
   background: rgb(96 165 250 / 0.3);
   box-shadow: inset 0 0 0 1px rgb(147 197 253 / 0.7);
+=======
+  background: rgb(var(--palette-blue-400) / 0.3);
+  box-shadow: inset 0 0 0 1px rgb(var(--palette-blue-300) / 0.7);
+>>>>>>> dev
 }
 
 .preview-card__label {
@@ -893,7 +1129,11 @@ input[type='number'] {
 }
 
 .action-card {
+<<<<<<< HEAD
   background-image: linear-gradient(180deg, rgb(31 41 55 / 0.4), rgb(17 24 39 / 0.36));
+=======
+  background-image: none;
+>>>>>>> dev
 }
 
 .action-card__button {
@@ -901,16 +1141,63 @@ input[type='number'] {
   font-weight: 600;
 }
 
+<<<<<<< HEAD
+=======
+.promo-list-panel {
+  background-image: none;
+}
+
+.promo-list-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.promo-list-panel__reset {
+  height: 30px;
+  border-radius: 9px;
+  border: 1px solid rgb(var(--palette-white) / 0.08);
+  background: rgb(var(--palette-white) / 0.03);
+  color: rgb(var(--palette-slate-300) / 0.92);
+  padding: 0 10px;
+  transition: border-color 140ms ease, color 140ms ease, background-color 140ms ease, opacity 140ms ease;
+}
+
+.promo-list-panel__reset:hover:not(:disabled) {
+  border-color: rgb(var(--palette-white) / 0.12);
+  color: rgb(var(--palette-slate-100));
+  background: rgb(var(--palette-white) / 0.05);
+}
+
+.promo-list-panel__reset:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.promo-filter-meta {
+  letter-spacing: 0.01em;
+}
+
+>>>>>>> dev
 .state-banner {
   animation: fadeSlideIn 220ms ease-out;
 }
 
 .state-banner--error {
+<<<<<<< HEAD
   box-shadow: 0 8px 20px rgb(127 29 29 / 0.18);
 }
 
 .state-banner--success {
   box-shadow: 0 8px 20px rgb(6 78 59 / 0.18);
+=======
+  box-shadow: none;
+}
+
+.state-banner--success {
+  box-shadow: none;
+>>>>>>> dev
 }
 
 .fade-slide-enter-active,
@@ -973,7 +1260,7 @@ input[type='number'] {
   width: calc(50% - 4px);
   height: calc(100% - 8px);
   border-radius: 10px;
-  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 240ms ease, background 240ms ease;
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 240ms ease, background-color 240ms ease;
 }
 
 .segmented-toggle__thumb--right {
@@ -1018,5 +1305,12 @@ input[type='number'] {
   .promo-section__title {
     font-size: 15px;
   }
+<<<<<<< HEAD
+=======
+
+  .promo-list-panel {
+    padding: 20px;
+  }
+>>>>>>> dev
 }
 </style>

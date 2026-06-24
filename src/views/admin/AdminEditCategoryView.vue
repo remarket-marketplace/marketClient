@@ -1,21 +1,21 @@
 <script setup lang="ts">
 import { adminService } from '@/api/admin/AdminService'
+import ErrorBanner from '@/components/ErrorBanner.vue'
+import SuccessMessage from '@/components/SuccessMessage.vue'
+import FileUploader from '@/components/FileUploader.vue'
+import Checkbox from '@/components/Checkbox.vue'
+import BackButton from '@/components/navigation/BackButton.vue'
+import { getErrorMessage } from '@/utils/errorsMap'
 import type { z } from 'zod'
 import {
   CategorySchema,
-  CATEGORY_NAME_MAX_LENGTH,
   CATEGORY_DESCRIPTION_MAX_LENGTH,
+  CATEGORY_NAME_MAX_LENGTH,
 } from '@/validation/category/category'
-import { onMounted, ref, computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import ErrorBanner from '@/components/ErrorBanner.vue'
-import SuccessMessage from '@/components/SuccessMessage.vue'
-import TheInput from '@/components/TheInput.vue'
-import Checkbox from '@/components/Checkbox.vue'
-import FileUploader from '@/components/FileUploader.vue'
-import { Loader2, X } from 'lucide-vue-next'
-import BackButton from '@/components/navigation/BackButton.vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ImagePlus, Layers3, Loader2, ShieldCheck, X } from 'lucide-vue-next'
 
 type CategoryRead = z.infer<typeof CategorySchema>
 
@@ -25,7 +25,7 @@ const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
-const categoryId = route.params.id as string
+const categoryId = computed(() => String(route.params.id ?? ''))
 
 const category = ref<CategoryRead | null>(null)
 const isLoading = ref(true)
@@ -36,46 +36,52 @@ const successMessage = ref('')
 const nameRu = ref('')
 const nameEn = ref('')
 const description = ref('')
-const isActive = ref<boolean>(false)
-
+const isActive = ref(false)
 const existingImage = ref<string | null>(null)
-const newImage = ref<File[]>([])
 const existingBanner = ref<string | null>(null)
+const newImage = ref<File[]>([])
 const newBanner = ref<File[]>([])
+
 const isSubcategory = computed(() => Boolean(category.value?.parent_id))
+const hasImage = computed(() => Boolean(existingImage.value || newImage.value.length > 0))
+const normalizedNameRu = computed(() => nameRu.value.trim())
+const normalizedNameEn = computed(() => nameEn.value.trim())
+const normalizedDescription = computed(() => description.value.trim())
 
-const hasImage = computed(() => {
-  return !!existingImage.value || newImage.value.length > 0
-})
+function getApiErrorDetail(error: unknown): unknown {
+  if (!error || typeof error !== 'object') return error
+  const response = (error as { response?: { data?: { detail?: unknown } } }).response
+  return response?.data?.detail ?? error
+}
 
-watch(newImage, (files) => {
-  if (files.length > 0) {
-    existingImage.value = null
+function toAssetUrl(path: string | null): string {
+  if (!path) return ''
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path
   }
-})
-
-watch(newBanner, (files) => {
-  if (files.length > 0) {
-    existingBanner.value = null
-  }
-})
+  return `${API_HOST}${path}`
+}
 
 async function loadCategory() {
   try {
     isLoading.value = true
+    errorMessage.value = ''
 
-    const data = await adminService.getCategoryData(categoryId)
-    if (!data) return
+    const data = await adminService.getCategoryData(categoryId.value)
+    if (!data) {
+      errorMessage.value = t('pages.admin.editCategory.errorLoading')
+      return
+    }
 
     category.value = data
     nameRu.value = data.name_ru
     nameEn.value = data.name_en
     description.value = data.description ?? ''
+    isActive.value = data.is_active
     existingImage.value = data.image_url
     existingBanner.value = data.banner_url ?? null
-    isActive.value = data.is_active
-  } catch (e) {
-    console.error(e)
+  } catch (error) {
+    console.error('Failed to load category:', error)
     errorMessage.value = t('pages.admin.editCategory.errorLoading')
   } finally {
     isLoading.value = false
@@ -83,7 +89,7 @@ async function loadCategory() {
 }
 
 function cancel() {
-  router.push('/admin/categories')
+  void router.push('/admin/categories')
 }
 
 function deleteImage() {
@@ -91,43 +97,48 @@ function deleteImage() {
 }
 
 async function saveCategory() {
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  if (!normalizedNameRu.value || !normalizedNameEn.value) {
+    errorMessage.value = t('pages.admin.editCategory.nameRequired')
+    return
+  }
+
+  if (!isSubcategory.value && !hasImage.value) {
+    errorMessage.value = t('pages.admin.editCategory.imageRequired')
+    return
+  }
+
   try {
     isSaving.value = true
-    errorMessage.value = ''
-    const normalizedNameRu = nameRu.value.trim()
-    const normalizedNameEn = nameEn.value.trim()
-    const normalizedDescription = description.value.trim()
-
-    if (!normalizedNameRu || !normalizedNameEn) {
-      errorMessage.value = t('pages.admin.editCategory.nameRequired')
-      return
-    }
-
-    if (!isSubcategory.value && !hasImage.value) {
-      errorMessage.value = t('pages.admin.editCategory.imageRequired')
-      return
-    }
-
-    const success = await adminService.updateCategoryData(
-      categoryId,
-      normalizedNameRu,
-      normalizedNameEn,
-      normalizedDescription,
+    const updatedCategory = await adminService.updateCategoryData(
+      categoryId.value,
+      normalizedNameRu.value,
+      normalizedNameEn.value,
+      normalizedDescription.value,
       isActive.value,
       newImage.value[0] ?? null,
       newBanner.value[0] ?? null,
     )
 
-    if (!success) {
+    if (!updatedCategory) {
       errorMessage.value = t('pages.admin.editCategory.errorSaving')
       return
     }
 
+    category.value = updatedCategory
+    existingImage.value = updatedCategory.image_url
+    existingBanner.value = updatedCategory.banner_url ?? null
+    newImage.value = []
+    newBanner.value = []
     successMessage.value = t('common.saved')
-    setTimeout(() => router.push('/admin/categories'), 1000)
-  } catch (e) {
-    console.error(e)
-    errorMessage.value = t('pages.admin.editCategory.errorSaving')
+    window.setTimeout(() => {
+      void router.push('/admin/categories')
+    }, 1000)
+  } catch (error) {
+    console.error('Failed to save category:', error)
+    errorMessage.value = getErrorMessage(getApiErrorDetail(error), t)
   } finally {
     isSaving.value = false
   }
@@ -137,124 +148,208 @@ onMounted(loadCategory)
 </script>
 
 <template>
-  <div class=" h-full w-full flex flex-col items-center overflow-scroll pb-36 pt-3 md:pt-4">
-    <div class="w-full">
-      <BackButton/>
-    </div>
-    <div class="max-w-md w-full border border-dark-700 rounded-2xl bg-background p-6 sm:p-8 space-y-6">
-      <div class="text-center">
-        <div class="flex gap-2">
-          <h1 class="text-2xl sm:text-3xl font-bold text-mainText">
-            {{ $t('pages.admin.editCategory.title') }}
-          </h1>
-        </div>
-        <p v-if="category" class="text-text-secondary mt-2">
+  <section class="h-full w-full overflow-scroll no-scrollbar pb-20">
+    <div class="mx-auto w-full max-w-[1280px] px-4 py-4 lg:px-6 lg:py-6">
+      <div class="mb-5">
+        <BackButton />
+      </div>
+
+      <div class="space-y-2">
+        <h1 class="text-3xl font-semibold tracking-tight text-[var(--text-title)] lg:text-4xl">
+          {{ $t('pages.admin.editCategory.title') }}
+        </h1>
+        <p v-if="category" class="max-w-2xl text-sm leading-6 text-[var(--text-muted)]">
           {{ $t('pages.admin.editCategory.editing') }}: {{ category.name }}
         </p>
       </div>
 
-      <div v-if="isLoading" class="flex items-center justify-center h-32">
-        <Loader2 class="h-6 w-6 animate-spin text-blue-500" />
-        <span class="ml-3 text-text-secondary">{{ $t('common.loading') }}</span>
+      <div v-if="isLoading" class="flex min-h-[320px] items-center justify-center">
+        <div class="inline-flex items-center gap-3 text-[var(--text-muted)]">
+          <Loader2 class="h-5 w-5 animate-spin" />
+          <span>{{ $t('common.loading') }}</span>
+        </div>
       </div>
 
-      <form v-else @submit.prevent="saveCategory" class="space-y-4">
-
-        <div>
-          <label class="mb-1 block text-sm text-text-secondary">
-            {{ $t('common.nameRu') }}
-          </label>
-          <TheInput v-model="nameRu" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" required />
-        </div>
-
-        <div>
-          <label class="mb-1 block text-sm text-text-secondary">
-            {{ $t('common.nameEn') }}
-          </label>
-          <TheInput v-model="nameEn" type="text" :maxlength="CATEGORY_NAME_MAX_LENGTH" required />
-        </div>
-
-        <div>
-          <label class="mb-1 block text-sm text-text-secondary">
-            {{ $t('common.description') }}
-          </label>
-          <textarea v-model="description" rows="3" :maxlength="CATEGORY_DESCRIPTION_MAX_LENGTH"
-            class="w-full max-h-28 px-3 py-2 border border-dark-700 rounded-lg bg-dark-600 text-mainText resize-none" />
-        </div>
-
-        <div v-if="!isSubcategory">
-          <label class="mb-2 block text-sm text-text-secondary">
-            {{ $t('common.image') }}
-          </label>
-
-          <div v-if="existingImage" class="relative w-32 h-32 mb-3">
-            <img :src="`${API_HOST}${existingImage}`"
-              class="w-full h-full object-cover rounded-lg border border-dark-600" />
-            <button type="button" @click="deleteImage"
-              class="absolute -top-2 -right-2 w-5 h-5 bg-red-600 rounded-full flex items-center justify-center">
-              <X class="w-3 h-3 text-white" />
-            </button>
+      <form v-else class="mt-8 space-y-6" @submit.prevent="saveCategory">
+        <section class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.3)] p-4 lg:p-5">
+          <div class="mb-5 flex items-start justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-semibold text-[var(--text-title)]">
+                {{ $t('pages.admin.categoryCreate.generalSection') }}
+              </h2>
+              <p class="mt-1 text-sm text-[var(--text-muted)]">
+                {{ $t('pages.admin.categoryCreate.generalSectionHint') }}
+              </p>
+            </div>
+            <Layers3 class="mt-1 h-5 w-5 text-[var(--text-link)]" />
           </div>
 
-          <p v-else class="text-sm text-text-secondary mb-2">
-            {{ $t('pages.admin.editCategory.noImage') }}
-          </p>
+          <div class="grid gap-4 md:grid-cols-2">
+            <label class="space-y-2">
+              <span class="text-sm font-medium text-[var(--text-body)]">
+                {{ $t('common.nameRu') }}
+              </span>
+              <input
+                v-model="nameRu"
+                type="text"
+                :maxlength="CATEGORY_NAME_MAX_LENGTH"
+                required
+                class="h-12 w-full rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] px-4 text-sm text-[var(--text-title)] outline-none"
+                :placeholder="$t('pages.admin.categoriesPage.nameRuPlaceholder')"
+              />
+            </label>
 
-          <FileUploader v-model="newImage" :max-files="1" />
-
-          <p v-if="!hasImage" class="text-sm text-red-500 mt-2">
-            {{ $t('pages.admin.editCategory.imageRequired') }}
-          </p>
-        </div>
-
-        <div v-if="!isSubcategory">
-          <label class="mb-2 block text-sm text-text-secondary">
-            {{ $t('common.banner') }}
-          </label>
-
-          <div v-if="existingBanner" class="relative w-full h-28 mb-3 overflow-hidden rounded-lg border border-dark-600">
-            <img :src="`${API_HOST}${existingBanner}`"
-              class="w-full h-full object-cover" />
+            <label class="space-y-2">
+              <span class="text-sm font-medium text-[var(--text-body)]">
+                {{ $t('common.nameEn') }}
+              </span>
+              <input
+                v-model="nameEn"
+                type="text"
+                :maxlength="CATEGORY_NAME_MAX_LENGTH"
+                required
+                class="h-12 w-full rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] px-4 text-sm text-[var(--text-title)] outline-none"
+                :placeholder="$t('pages.admin.categoriesPage.nameEnPlaceholder')"
+              />
+            </label>
           </div>
 
-          <p v-else class="text-sm text-text-secondary mb-2">
-            {{ $t('common.noImage') }}
-          </p>
-
-          <FileUploader v-model="newBanner" :max-files="1" />
-        </div>
-
-        <div class="flex items-center gap-3">
-          <Checkbox v-model="isActive" />
-          <label class="text-sm text-text-secondary">
-            {{ $t('common.isActive') }}
+          <label class="mt-4 block space-y-2">
+            <span class="text-sm font-medium text-[var(--text-body)]">
+              {{ $t('common.description') }}
+            </span>
+            <textarea
+              v-model="description"
+              rows="6"
+              :maxlength="CATEGORY_DESCRIPTION_MAX_LENGTH"
+              class="w-full rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] px-4 py-3 text-sm text-[var(--text-title)] outline-none"
+              :placeholder="$t('pages.admin.categoryCreate.descriptionPlaceholder')"
+            />
           </label>
-        </div>
+        </section>
 
-        <div v-if="category" class="border-t border-dark-700 pt-4 text-sm space-y-2">
-          <div class="flex justify-between">
-            <span class="text-text-secondary">ID</span>
-            <span class="font-mono text-xs text-mainText">{{ category.id }}</span>
+        <section
+          v-if="!isSubcategory"
+          class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.3)] p-4 lg:p-5"
+        >
+          <div class="mb-5 flex items-start justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-semibold text-[var(--text-title)]">
+                {{ $t('pages.admin.categoryCreate.mediaSection') }}
+              </h2>
+              <p class="mt-1 text-sm text-[var(--text-muted)]">
+                {{ $t('pages.admin.categoryCreate.mediaSectionHint') }}
+              </p>
+            </div>
+            <ImagePlus class="mt-1 h-5 w-5 text-[var(--text-link)]" />
           </div>
-        </div>
+
+          <div class="space-y-5">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between gap-3">
+                <label class="text-sm font-medium text-[var(--text-body)]">
+                  {{ $t('common.image') }}
+                  <span class="ml-1 text-xs text-[var(--text-danger)]">*</span>
+                </label>
+                <span class="text-xs" :class="hasImage ? 'text-[var(--text-muted)]' : 'text-[var(--text-danger)]'">
+                  {{ hasImage ? $t('common.selected') : $t('pages.admin.editCategory.imageRequired') }}
+                </span>
+              </div>
+
+              <div
+                v-if="existingImage"
+                class="relative overflow-hidden rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.4)]"
+              >
+                <img :src="toAssetUrl(existingImage)" class="h-52 w-full object-cover" />
+                <button
+                  type="button"
+                  class="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-[rgb(var(--palette-black)/0.65)] text-[var(--text-title)]"
+                  @click="deleteImage"
+                >
+                  <X class="h-4 w-4" />
+                </button>
+              </div>
+
+              <p v-else class="text-sm text-text-secondary">
+                {{ $t('pages.admin.editCategory.noImage') }}
+              </p>
+
+              <FileUploader v-model="newImage" :max-files="1" />
+            </div>
+
+            <div class="space-y-3">
+              <label class="text-sm font-medium text-[var(--text-body)]">
+                {{ $t('common.banner') }}
+              </label>
+
+              <div
+                v-if="existingBanner"
+                class="overflow-hidden rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.4)]"
+              >
+                <img :src="toAssetUrl(existingBanner)" class="h-44 w-full object-cover" />
+              </div>
+
+              <p v-else class="text-sm text-text-secondary">
+                {{ $t('common.noImage') }}
+              </p>
+
+              <FileUploader v-model="newBanner" :max-files="1" />
+            </div>
+          </div>
+        </section>
+
+        <section class="rounded-2xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600)/0.3)] p-4 lg:p-5">
+          <div class="mb-5 flex items-start justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-semibold text-[var(--text-title)]">
+                {{ $t('pages.admin.categoryEdit.visibilitySection') }}
+              </h2>
+              <p class="mt-1 text-sm text-[var(--text-muted)]">
+                {{ $t('pages.admin.categoryEdit.visibilityHint') }}
+              </p>
+            </div>
+            <ShieldCheck class="mt-1 h-5 w-5 text-[var(--text-link)]" />
+          </div>
+
+          <label class="flex items-center justify-between gap-4 rounded-xl border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.4)] px-4 py-3">
+            <div class="space-y-1">
+              <span class="block text-sm font-medium text-[var(--text-title)]">
+                {{ $t('common.isActive') }}
+              </span>
+              <span class="block text-xs text-[var(--text-muted)]">
+                {{ $t('pages.admin.categoryEdit.visibilityToggleHint') }}
+              </span>
+            </div>
+            <Checkbox v-model="isActive" />
+          </label>
+        </section>
 
         <ErrorBanner :message="errorMessage" />
         <SuccessMessage v-if="successMessage" :success-message="successMessage" />
 
-        <div class="flex gap-3 pt-4">
-          <button type="button" @click="cancel" class="admin-btn flex-1"
-            :disabled="isSaving">
+        <div class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            class="market-btn market-btn-secondary min-w-[180px] rounded-xl px-5 py-3"
+            :disabled="isSaving"
+            @click="cancel"
+          >
             {{ $t('common.cancel') }}
           </button>
 
-          <button type="submit" :disabled="isSaving || (!isSubcategory && !hasImage)"
-            class="admin-btn admin-btn-primary flex-1">
-            <Loader2 v-if="isSaving" class="h-4 w-4 animate-spin" />
-            {{ isSaving ? $t('common.loading') : $t('common.save') }}
+          <button
+            type="submit"
+            class="market-btn market-btn-primary min-w-[220px] rounded-xl px-5 py-3"
+            :disabled="isSaving || (!isSubcategory && !hasImage)"
+          >
+            <span v-if="isSaving" class="inline-flex items-center gap-2">
+              <Loader2 class="h-4 w-4 animate-spin" />
+              {{ $t('common.loading') }}
+            </span>
+            <span v-else>{{ $t('common.save') }}</span>
           </button>
         </div>
-
       </form>
     </div>
-  </div>
+  </section>
 </template>

@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { ArrowUpFromLine, Check, Copy, Loader2, SlidersHorizontal } from 'lucide-vue-next'
+import { ArrowUpFromLine, Check, Copy, Loader2 } from 'lucide-vue-next'
 import {
   adminService,
   type AdminWithdrawalOrder,
@@ -10,7 +10,6 @@ import {
 } from '@/api/admin/AdminService'
 import BackButton from '@/components/navigation/BackButton.vue'
 import SearchField from '@/components/SearchField.vue'
-import CustomSelect from '@/components/CustomSelect.vue'
 import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import { formatCurrencyAmount, preferredCurrency } from '@/utils/currency'
 
@@ -20,7 +19,6 @@ const router = useRouter()
 const orders = ref<AdminWithdrawalOrder[]>([])
 const isLoading = ref(true)
 const isLoadingMore = ref(false)
-const isFiltersVisible = ref(false)
 const errorMessage = ref('')
 const currentPage = ref(1)
 const totalPages = ref(1)
@@ -30,6 +28,8 @@ const perPage = 20
 const searchQuery = ref('')
 const statusFilter = ref<'all' | WithdrawalOrderStatus>('all')
 const sortFilter = ref<'newest' | 'oldest' | 'user_asc' | 'user_desc' | 'amount_desc' | 'amount_asc' | 'status_asc' | 'status_desc'>('newest')
+type WithdrawalColumn = 'user' | 'amount' | 'payout' | 'balance' | 'status' | 'created'
+const hoveredColumn = ref<WithdrawalColumn | null>(null)
 
 const moderationModalOpen = ref(false)
 const orderToModerate = ref<AdminWithdrawalOrder | null>(null)
@@ -42,24 +42,12 @@ let filterDebounce: ReturnType<typeof setTimeout> | null = null
 
 const selectedCurrency = computed(() => preferredCurrency.value)
 const hasMore = computed(() => currentPage.value < totalPages.value)
-
-const statusOptions = computed(() => [
-  { value: 'all', label: t('common.all') },
-  { value: 'pending', label: t('pages.admin.withdrawalsPage.statusPending') },
-  { value: 'confirmed', label: t('pages.admin.withdrawalsPage.statusConfirmed') },
-  { value: 'canceled', label: t('pages.admin.withdrawalsPage.statusCanceled') },
-])
-
-const sortOptions = computed(() => [
-  { value: 'newest', label: t('common.sortOptions.newest') },
-  { value: 'oldest', label: t('common.sortOptions.oldest') },
-  { value: 'user_asc', label: t('pages.admin.withdrawalsPage.sortUserAsc') },
-  { value: 'user_desc', label: t('pages.admin.withdrawalsPage.sortUserDesc') },
-  { value: 'amount_desc', label: t('common.sortOptions.priceHigh') },
-  { value: 'amount_asc', label: t('common.sortOptions.priceLow') },
-  { value: 'status_asc', label: t('common.sortOptions.statusAsc') },
-  { value: 'status_desc', label: t('common.sortOptions.statusDesc') },
-])
+const pendingCount = computed(() => orders.value.filter((order) => order.status === 'pending').length)
+const hasActiveFilters = computed(() => (
+  Boolean(searchQuery.value.trim())
+  || statusFilter.value !== 'all'
+  || sortFilter.value !== 'newest'
+))
 
 function buildFilters() {
   return {
@@ -67,6 +55,22 @@ function buildFilters() {
     user_query: searchQuery.value.trim() || undefined,
     sort: sortFilter.value,
   }
+}
+
+function resetFilters() {
+  searchQuery.value = ''
+  statusFilter.value = 'all'
+  sortFilter.value = 'newest'
+}
+
+function setHoveredColumn(column: WithdrawalColumn | null) {
+  hoveredColumn.value = column
+}
+
+function getColumnHighlightClass(column: WithdrawalColumn): string {
+  return hoveredColumn.value === column
+    ? 'rounded-lg bg-[rgb(var(--palette-sky-400)/0.1)] ring-1 ring-[rgb(var(--palette-sky-400)/0.25)]'
+    : ''
 }
 
 function formatMoney(amount: number): string {
@@ -101,9 +105,9 @@ function getStatusLabel(status: WithdrawalOrderStatus): string {
 
 function getStatusBadgeClass(status: WithdrawalOrderStatus): string {
   const map: Record<WithdrawalOrderStatus, string> = {
-    pending: 'border-amber-400/25 bg-amber-400/10 text-amber-100',
-    confirmed: 'border-emerald-400/25 bg-emerald-400/10 text-emerald-100',
-    canceled: 'border-rose-400/25 bg-rose-400/10 text-rose-100',
+    pending: 'border-[rgb(var(--palette-amber-400)/0.25)] bg-[rgb(var(--palette-amber-400)/0.1)] text-[var(--text-warning)]',
+    confirmed: 'border-[rgb(var(--palette-emerald-400)/0.25)] bg-[rgb(var(--palette-emerald-400)/0.1)] text-[var(--text-success)]',
+    canceled: 'border-[rgb(var(--palette-rose-400)/0.25)] bg-[rgb(var(--palette-rose-400)/0.1)] text-[var(--text-danger-soft)]',
   }
   return map[status]
 }
@@ -122,6 +126,24 @@ async function copyCardNumber(order: AdminWithdrawalOrder) {
   } catch {
     copiedOrderId.value = null
   }
+}
+
+async function copyOrderId(order: AdminWithdrawalOrder) {
+  try {
+    await navigator.clipboard.writeText(order.id)
+    copiedOrderId.value = `id-${order.id}`
+    setTimeout(() => {
+      if (copiedOrderId.value === `id-${order.id}`) copiedOrderId.value = null
+    }, 1400)
+  } catch {
+    copiedOrderId.value = null
+  }
+}
+
+function formatShortId(value: string): string {
+  if (!value) return '-'
+  if (value.length <= 16) return value
+  return `${value.slice(0, 8)}…${value.slice(-8)}`
 }
 
 function openModerationModal(order: AdminWithdrawalOrder, status: 'confirmed' | 'canceled') {
@@ -207,68 +229,106 @@ watch(
         <BackButton />
         <div>
           <h1 class="text-xl font-bold text-mainText sm:text-2xl">{{ $t('pages.admin.withdrawalsPage.title') }}</h1>
-          <p class="text-xs text-gray-400 sm:text-sm">{{ $t('pages.admin.withdrawalsPage.subtitle') }}</p>
+          <p class="text-xs text-[var(--text-muted)] sm:text-sm">{{ $t('pages.admin.withdrawalsPage.subtitle') }}</p>
         </div>
       </div>
 
       <div class="flex items-center gap-2">
-        <button
-          type="button"
-          class="admin-btn admin-btn-sm text-xs"
-          @click="isFiltersVisible = !isFiltersVisible"
-        >
-          <SlidersHorizontal class="h-3.5 w-3.5" />
-          {{ isFiltersVisible ? $t('pages.admin.activityLogs.hideFilters') : $t('pages.admin.activityLogs.showFilters') }}
-        </button>
-
-        <div class="inline-flex items-center gap-2 text-xs text-text-secondary sm:text-base">
+        <div class="inline-flex items-center gap-2 text-xs text-text-secondary sm:text-sm">
           <ArrowUpFromLine class="h-4 w-4" />
           <span>{{ $t('common.total') }} {{ total }}</span>
         </div>
+        <span class="inline-flex items-center rounded-full border border-[rgb(var(--palette-amber-400)/0.2)] bg-[rgb(var(--palette-amber-400)/0.1)] px-2.5 py-1 text-xs font-medium text-[var(--text-warning)]">
+          {{ $t('pages.admin.withdrawalsPage.statusPending') }}: {{ pendingCount }}
+        </span>
       </div>
     </div>
 
-    <div
-      v-if="isFiltersVisible"
-      class="admin-withdrawals-filter-panel grid gap-2 rounded-[1.5rem] border border-white/8 p-3"
-    >
+    <div class="grid gap-2 rounded-[1.5rem] border border-[rgb(var(--palette-white)/0.08)] p-3">
+      <div class="flex flex-nowrap items-center gap-2 overflow-x-auto pb-1">
+        <button
+          type="button"
+          class="admin-btn admin-btn-sm shrink-0 text-xs"
+          :class="statusFilter === 'all' ? 'admin-btn-primary' : 'admin-btn-ghost'"
+          @click="statusFilter = 'all'"
+        >
+          {{ $t('common.all') }}
+        </button>
+        <button
+          type="button"
+          class="admin-btn admin-btn-sm shrink-0 text-xs"
+          :class="statusFilter === 'pending' ? 'admin-btn-primary' : 'admin-btn-ghost'"
+          @click="statusFilter = 'pending'"
+        >
+          {{ $t('pages.admin.withdrawalsPage.statusPending') }}
+        </button>
+        <button
+          type="button"
+          class="admin-btn admin-btn-sm shrink-0 text-xs"
+          :class="statusFilter === 'confirmed' ? 'admin-btn-primary' : 'admin-btn-ghost'"
+          @click="statusFilter = 'confirmed'"
+        >
+          {{ $t('pages.admin.withdrawalsPage.statusConfirmed') }}
+        </button>
+        <button
+          type="button"
+          class="admin-btn admin-btn-sm shrink-0 text-xs"
+          :class="statusFilter === 'canceled' ? 'admin-btn-primary' : 'admin-btn-ghost'"
+          @click="statusFilter = 'canceled'"
+        >
+          {{ $t('pages.admin.withdrawalsPage.statusCanceled') }}
+        </button>
+        <button
+          type="button"
+          class="admin-btn admin-btn-sm shrink-0 text-xs"
+          :class="sortFilter === 'amount_asc' ? 'admin-btn-primary' : 'admin-btn-ghost'"
+          @click="sortFilter = 'amount_asc'"
+        >
+          {{ $t('pages.admin.withdrawalsPage.amountShort') }} ↑
+        </button>
+        <button
+          type="button"
+          class="admin-btn admin-btn-sm shrink-0 text-xs"
+          :class="sortFilter === 'amount_desc' ? 'admin-btn-primary' : 'admin-btn-ghost'"
+          @click="sortFilter = 'amount_desc'"
+        >
+          {{ $t('pages.admin.withdrawalsPage.amountShort') }} ↓
+        </button>
+        <button
+          v-if="hasActiveFilters"
+          type="button"
+          class="admin-btn admin-btn-sm admin-btn-ghost shrink-0 text-xs"
+          @click="resetFilters"
+        >
+          {{ $t('common.reset') }}
+        </button>
+      </div>
+
       <SearchField
         v-model="searchQuery"
         :placeholder="$t('pages.admin.withdrawalsPage.searchPlaceholder')"
       />
-
-      <div class="grid gap-2 sm:grid-cols-2">
-        <CustomSelect
-          v-model="statusFilter"
-          :options="statusOptions"
-          :placeholder="$t('pages.admin.withdrawalsPage.statusFilter')"
-        />
-        <CustomSelect
-          v-model="sortFilter"
-          :options="sortOptions"
-          :placeholder="$t('common.sortBy')"
-        />
-      </div>
     </div>
 
     <div class="min-h-0 flex-1 overflow-hidden">
-      <div class="grid grid-cols-[1.2fr_0.9fr_0.9fr_0.8fr_0.9fr] gap-4 border-b border-white/8 px-5 py-4 text-[11px] uppercase tracking-[0.24em] text-gray-500 max-lg:hidden">
-        <span>{{ $t('common.username') }}</span>
-        <span>{{ $t('pages.admin.withdrawalsPage.amount') }}</span>
-        <span>{{ $t('pages.admin.withdrawalsPage.balance') }}</span>
-        <span>{{ $t('common.status') }}</span>
-        <span>{{ $t('pages.admin.withdrawalsPage.createdAt') }}</span>
+      <div class="sticky top-0 z-10 grid grid-cols-[1.2fr_0.8fr_0.8fr_0.9fr_0.8fr_0.9fr] gap-4 border-b border-[rgb(var(--palette-white)/0.08)] bg-[var(--admin-table-sticky-bg)] px-5 py-4 text-[11px] uppercase tracking-[0.24em] text-[var(--text-meta)] backdrop-blur max-lg:hidden">
+        <span :class="['px-2 py-1 transition-colors', getColumnHighlightClass('user')]">{{ $t('common.username') }}</span>
+        <span :class="['px-2 py-1 transition-colors', getColumnHighlightClass('amount')]">{{ $t('pages.admin.withdrawalsPage.amount') }}</span>
+        <span :class="['px-2 py-1 transition-colors', getColumnHighlightClass('payout')]">{{ $t('pages.admin.withdrawalsPage.payoutAmount') }}</span>
+        <span :class="['px-2 py-1 transition-colors', getColumnHighlightClass('balance')]">{{ $t('pages.admin.withdrawalsPage.balance') }}</span>
+        <span :class="['px-2 py-1 transition-colors', getColumnHighlightClass('status')]">{{ $t('common.status') }}</span>
+        <span :class="['px-2 py-1 transition-colors', getColumnHighlightClass('created')]">{{ $t('pages.admin.withdrawalsPage.createdAt') }}</span>
       </div>
 
       <div v-if="isLoading" class="flex h-40 items-center justify-center">
-        <Loader2 class="h-6 w-6 animate-spin text-blue-400" />
+        <Loader2 class="h-6 w-6 animate-spin text-[var(--text-link)]" />
       </div>
 
-      <div v-else-if="errorMessage" class="flex h-40 items-center justify-center px-6 text-sm text-rose-300">
+      <div v-else-if="errorMessage" class="flex h-40 items-center justify-center px-6 text-sm text-[var(--text-danger)]">
         {{ errorMessage }}
       </div>
 
-      <div v-else-if="orders.length === 0" class="flex h-40 items-center justify-center px-6 text-sm text-gray-400">
+      <div v-else-if="orders.length === 0" class="flex h-40 items-center justify-center px-6 text-sm text-[var(--text-muted)]">
         {{ $t('pages.admin.withdrawalsPage.empty') }}
       </div>
 
@@ -276,64 +336,107 @@ watch(
         <article
           v-for="order in orders"
           :key="order.id"
-          class="group mb-3 rounded-[1.4rem] border border-white/8 p-4 transition-all duration-200 hover:border-white/12 sm:p-5"
+          class="group mb-3 rounded-[1.4rem] border border-[rgb(var(--palette-white)/0.08)] p-4 transition-all duration-200 hover:border-[rgb(var(--palette-white)/0.12)] sm:p-5"
+          @mouseleave="setHoveredColumn(null)"
         >
-          <div class="grid gap-4 lg:grid-cols-[1.2fr_0.9fr_0.9fr_0.8fr_0.9fr] lg:items-center">
-            <div class="min-w-0">
+          <div class="grid gap-4 lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.9fr_0.8fr_0.9fr] lg:items-center">
+            <div
+              :class="['min-w-0 px-2 py-1 transition-colors', getColumnHighlightClass('user')]"
+              @mouseenter="setHoveredColumn('user')"
+            >
               <div class="flex items-center gap-3">
-                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-sky-400/18 bg-sky-400/10 text-sky-100">
+                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[rgb(var(--palette-sky-400)/0.18)] bg-[rgb(var(--palette-sky-400)/0.1)] text-[var(--text-accent-strong)]">
                   <ArrowUpFromLine class="h-4.5 w-4.5" />
                 </div>
                 <div class="min-w-0">
                   <button
                     type="button"
-                    class="truncate text-left text-sm font-semibold text-white transition-colors hover:text-sky-200"
+                    class="truncate text-left text-sm font-semibold text-[var(--text-title)] transition-colors hover:text-[var(--text-accent)]"
                     @click="openUserProfile(order.username)"
                   >
                     {{ order.username }}
                   </button>
-                  <div class="mt-1 text-xs text-gray-500">
-                    ID {{ order.id }}
-                  </div>
-                  <div class="mt-1 flex items-center gap-2 text-xs text-gray-500">
-                    <span>{{ order.masked_card_number }}</span>
+                  <div class="mt-1 flex items-center justify-between gap-2 text-xs text-[var(--text-meta)]">
+                    <span class="min-w-0 truncate" :title="order.id">ID {{ formatShortId(order.id) }}</span>
                     <button
                       type="button"
-                      class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-gray-300 transition-colors hover:border-white/20 hover:text-white"
+                      class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body)] transition-colors hover:border-[rgb(var(--palette-white)/0.2)] hover:text-[var(--text-title)]"
+                      @click="copyOrderId(order)"
+                      :title="copiedOrderId === `id-${order.id}` ? $t('common.copied') : $t('common.copy')"
+                    >
+                      <component :is="copiedOrderId === `id-${order.id}` ? Check : Copy" class="h-3 w-3" />
+                    </button>
+                  </div>
+                  <div class="mt-1 flex items-center justify-between gap-2 text-xs text-[var(--text-meta)]">
+                    <span class="min-w-0 truncate">{{ order.masked_card_number }}</span>
+                    <button
+                      type="button"
+                      class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body)] transition-colors hover:border-[rgb(var(--palette-white)/0.2)] hover:text-[var(--text-title)]"
                       @click="copyCardNumber(order)"
+                      :title="copiedOrderId === order.id ? $t('common.copied') : $t('common.copy')"
                     >
                       <component :is="copiedOrderId === order.id ? Check : Copy" class="h-3 w-3" />
-                      {{ copiedOrderId === order.id ? $t('common.copied') : $t('common.copy') }}
                     </button>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div>
-              <div class="text-xs uppercase tracking-[0.18em] text-gray-500 lg:hidden">{{ $t('pages.admin.withdrawalsPage.amount') }}</div>
-              <div class="text-base font-semibold text-white">{{ formatMoney(order.amount) }}</div>
+            <div
+              :class="['px-2 py-1 transition-colors', getColumnHighlightClass('amount')]"
+              @mouseenter="setHoveredColumn('amount')"
+            >
+              <div class="text-xs uppercase tracking-[0.18em] text-[var(--text-meta)] lg:hidden">{{ $t('pages.admin.withdrawalsPage.amount') }}</div>
+              <div class="text-base font-semibold text-[var(--text-title)]">{{ formatMoney(order.amount) }}</div>
             </div>
 
-            <div>
-              <div class="text-xs uppercase tracking-[0.18em] text-gray-500 lg:hidden">{{ $t('pages.admin.withdrawalsPage.balance') }}</div>
-              <div class="text-base font-medium text-gray-100">{{ formatMoney(order.current_balance) }}</div>
+            <div
+              :class="['px-2 py-1 transition-colors', getColumnHighlightClass('payout')]"
+              @mouseenter="setHoveredColumn('payout')"
+            >
+              <div class="text-xs uppercase tracking-[0.18em] text-[var(--text-meta)] lg:hidden">{{ $t('pages.admin.withdrawalsPage.payoutAmount') }}</div>
+              <div class="text-base font-semibold text-[var(--text-success)]">
+                {{ formatMoney(order.payout_amount ?? order.amount) }}
+              </div>
+              <div
+                v-if="typeof order.commission_amount === 'number' && order.commission_amount > 0"
+                class="mt-1 text-xs text-[var(--text-meta)]"
+              >
+                {{ $t('pages.admin.withdrawalsPage.commissionShort', {
+                  amount: formatMoney(order.commission_amount),
+                  percent: order.commission_percent ?? 0,
+                }) }}
+              </div>
             </div>
 
-            <div>
-              <div class="text-xs uppercase tracking-[0.18em] text-gray-500 lg:hidden">{{ $t('common.status') }}</div>
+            <div
+              :class="['px-2 py-1 transition-colors', getColumnHighlightClass('balance')]"
+              @mouseenter="setHoveredColumn('balance')"
+            >
+              <div class="text-xs uppercase tracking-[0.18em] text-[var(--text-meta)] lg:hidden">{{ $t('pages.admin.withdrawalsPage.balance') }}</div>
+              <div class="text-base font-medium text-[var(--text-heading)]">{{ formatMoney(order.current_balance) }}</div>
+            </div>
+
+            <div
+              :class="['px-2 py-1 transition-colors', getColumnHighlightClass('status')]"
+              @mouseenter="setHoveredColumn('status')"
+            >
+              <div class="text-xs uppercase tracking-[0.18em] text-[var(--text-meta)] lg:hidden">{{ $t('common.status') }}</div>
               <span :class="['inline-flex min-h-9 items-center rounded-full border px-3 py-1.5 text-sm font-medium', getStatusBadgeClass(order.status)]">
                 {{ getStatusLabel(order.status) }}
               </span>
             </div>
 
-            <div>
-              <div class="text-xs uppercase tracking-[0.18em] text-gray-500 lg:hidden">{{ $t('pages.admin.withdrawalsPage.createdAt') }}</div>
-              <div class="text-sm text-gray-200">{{ formatDate(order.created_at) }}</div>
+            <div
+              :class="['px-2 py-1 transition-colors', getColumnHighlightClass('created')]"
+              @mouseenter="setHoveredColumn('created')"
+            >
+              <div class="text-xs uppercase tracking-[0.18em] text-[var(--text-meta)] lg:hidden">{{ $t('pages.admin.withdrawalsPage.createdAt') }}</div>
+              <div class="text-sm text-[var(--text-body-strong)]">{{ formatDate(order.created_at) }}</div>
             </div>
           </div>
 
-          <div v-if="order.status === 'pending'" class="mt-4 flex flex-wrap gap-2 border-t border-white/8 pt-4">
+          <div v-if="order.status === 'pending'" class="mt-3 flex flex-wrap justify-end gap-2">
             <button
               type="button"
               class="admin-btn admin-btn-success admin-btn-sm text-xs"
@@ -362,7 +465,7 @@ watch(
           </button>
 
           <div v-else-if="isLoadingMore" class="flex items-center justify-center py-2">
-            <Loader2 class="h-5 w-5 animate-spin text-blue-500" />
+            <Loader2 class="h-5 w-5 animate-spin text-[var(--text-link)]" />
           </div>
         </div>
       </div>
@@ -381,14 +484,14 @@ watch(
   >
     <template #body>
       <div class="space-y-3">
-        <div class="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm text-gray-300">
+        <div class="rounded-2xl border border-[rgb(var(--palette-white)/0.08)] bg-[rgb(var(--palette-white)/0.03)] px-4 py-3 text-sm text-[var(--text-body)]">
           <div>{{ orderToModerate?.username }}</div>
-          <div class="mt-1 text-xs text-gray-500">{{ orderToModerate?.masked_card_number }}</div>
+          <div class="mt-1 text-xs text-[var(--text-meta)]">{{ orderToModerate?.masked_card_number }}</div>
         </div>
         <textarea
           v-model="moderationReason"
           rows="3"
-          class="w-full rounded-2xl border border-dark-700 bg-dark-700/40 px-3 py-2 text-sm text-mainText focus:border-blue-500 focus:outline-none"
+          class="admin-input-surface w-full rounded-2xl px-3 py-2 text-sm text-mainText"
           :placeholder="$t('pages.admin.withdrawalsPage.moderationReasonPlaceholder')"
         />
       </div>

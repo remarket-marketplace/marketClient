@@ -3,8 +3,10 @@ import {
   ChatMessageUnionSchema,
   ChatUpdateSchema,
   MessagesReadSchema,
+  ProductMessageSchema,
   type ChatMessageUnion,
   type MessagesReadPayload,
+  type PurchaseMessage,
 } from "@/validation/chat/chatMessage";
 import type { Socket } from "socket.io-client";
 import { io } from "socket.io-client";
@@ -22,6 +24,8 @@ import {
 let socket: Socket | null = null;
 
 type MessageCallback = (message: ChatMessageUnion) => void;
+type DealStatusUpdateMessage = Extract<ChatMessageUnion, { message_type: "update_deal_status_message" }>;
+type DealStatusUpdateCallback = (message: DealStatusUpdateMessage) => void;
 type ChatUpdatedCallback = (data: ChatUpdateSchema) => void;
 type ChatNotificationCallback = (data: ChatUpdateSchema) => void;
 type MessagesReadCallback = (data: MessagesReadPayload) => void;
@@ -30,6 +34,7 @@ type NotificationCreatedCallback = (data: InboxNotification) => void;
 const WS_API_HOST = import.meta.env.VITE_WS_API_HOST;
 
 const newMessageCallbacks: MessageCallback[] = [];
+const dealStatusUpdateCallbacks: DealStatusUpdateCallback[] = [];
 const chatUpdatedCallbacks: ChatUpdatedCallback[] = [];
 const chatNotificationCallbacks: ChatNotificationCallback[] = [];
 const messagesReadCallbacks: MessagesReadCallback[] = [];
@@ -39,6 +44,58 @@ let lastSubscribedChatId: string | null = null;
 let heartbeatIntervalHandle: number | null = null;
 let onlineHandlerRegistered = false;
 let visibilityHandlerRegistered = false;
+
+async function emitSendMessageAck(payload: {
+  chat_id: string;
+  message: string;
+  is_admin_panel_message: boolean;
+}): Promise<{ success?: boolean; error_code?: string; message?: unknown }> {
+  return new Promise((resolve) => {
+    socket!.emit("send_message", payload, (response: any) => {
+      resolve(response ?? { success: true });
+    });
+  });
+}
+
+function parseChatUpdatePayload(data: any): ChatUpdateSchema | null {
+  const chatId = typeof data?.chat_id === "string" ? data.chat_id : null;
+  const unreadCount = typeof data?.unread_count === "number" ? data.unread_count : 0;
+  const supportTicketStatus = typeof data?.support_ticket_status === "string"
+    ? data.support_ticket_status
+    : null;
+  const supportStatus = typeof data?.support_status === "string"
+    ? data.support_status
+    : null;
+  const isClosed = typeof data?.is_closed === "boolean" ? data.is_closed : undefined;
+  const isResolved = typeof data?.is_resolved === "boolean" ? data.is_resolved : undefined;
+
+  if (!chatId) {
+    return null;
+  }
+
+  const rawLastMessage = data?.last_message
+    ? data.last_message.message ?? data.last_message
+    : undefined;
+
+  let lastMessage: ChatMessageUnion | undefined;
+  if (rawLastMessage) {
+    try {
+      lastMessage = ChatMessageUnionSchema.parse(rawLastMessage);
+    } catch (error) {
+      console.warn("Skipping invalid chat_updated last_message payload", error, rawLastMessage);
+    }
+  }
+
+  return {
+    chat_id: chatId,
+    last_message: lastMessage,
+    unread_count: unreadCount,
+    support_ticket_status: supportTicketStatus,
+    support_status: supportStatus,
+    is_closed: isClosed,
+    is_resolved: isResolved,
+  };
+}
 
 export const chatsService = {
   async getChats() {
@@ -124,6 +181,13 @@ export const chatsService = {
         try {
           const payload = data.message ?? data;
           const validated = ChatMessageUnionSchema.parse(payload);
+          if (validated.message_type === "update_deal_status_message") {
+            dealStatusUpdateCallbacks.forEach((cb) => cb(validated));
+            if (validated.new_status === "disputed") {
+              newMessageCallbacks.forEach((cb) => cb(validated));
+            }
+            return;
+          }
           newMessageCallbacks.forEach((cb) => cb(validated));
         } catch (e) {
           console.error("Error validating new message:", e);
@@ -131,39 +195,21 @@ export const chatsService = {
       });
 
       socket.on("chat_updated", (data: any) => {
-        try {
-          const lastMsg = data.last_message
-            ? data.last_message.message ?? data.last_message
-            : undefined;
-          const validated: ChatUpdateSchema = {
-            chat_id: data.chat_id,
-            last_message: lastMsg
-              ? ChatMessageUnionSchema.parse(lastMsg)
-              : undefined,
-            unread_count: data.unread_count || 0,
-          };
-          chatUpdatedCallbacks.forEach((cb) => cb(validated));
-        } catch (e) {
-          console.error("Error validating chat update:", e);
+        const validated = parseChatUpdatePayload(data);
+        if (!validated) {
+          console.error("Error validating chat update:", data);
+          return;
         }
+        chatUpdatedCallbacks.forEach((cb) => cb(validated));
       });
 
       socket.on("chat_notification", (data: any) => {
-        try {
-          const lastMsg = data.last_message
-            ? data.last_message.message ?? data.last_message
-            : undefined;
-          const validated: ChatUpdateSchema = {
-            chat_id: data.chat_id,
-            last_message: lastMsg
-              ? ChatMessageUnionSchema.parse(lastMsg)
-              : undefined,
-            unread_count: data.unread_count || 0,
-          };
-          chatNotificationCallbacks.forEach((cb) => cb(validated));
-        } catch (e) {
-          console.error("Error validating chat notification:", e);
+        const validated = parseChatUpdatePayload(data);
+        if (!validated) {
+          console.error("Error validating chat notification:", data);
+          return;
         }
+        chatNotificationCallbacks.forEach((cb) => cb(validated));
       });
 
       socket.on("messages_read", (data: any) => {
@@ -212,6 +258,7 @@ export const chatsService = {
     perPage: number
   ): Promise<{
     messages: ChatMessageUnion[];
+    latestDealMessage: PurchaseMessage | null;
     totalPages: number;
     currentPage: number;
     total: number;
@@ -224,9 +271,13 @@ export const chatsService = {
         },
       });
       const messages = ChatArrayUnionSchema.parse(response.data.messages);
+      const latestDealMessage = response.data.latest_deal_message
+        ? ProductMessageSchema.parse(response.data.latest_deal_message)
+        : null;
 
       return {
         messages: messages.reverse(),
+        latestDealMessage,
         totalPages: response.data.total_pages,
         currentPage: response.data.page || page,
         total: response.data.total,
@@ -234,6 +285,7 @@ export const chatsService = {
     } catch (e) {
       return {
         messages: [],
+        latestDealMessage: null,
         totalPages: 0,
         currentPage: page,
         total: 0,
@@ -257,6 +309,7 @@ export const chatsService = {
     perPage: number
   ): Promise<{
     messages: ChatMessageUnion[];
+    latestDealMessage: PurchaseMessage | null;
     totalPages: number;
     currentPage: number;
     total: number;
@@ -269,9 +322,13 @@ export const chatsService = {
         },
       });
       const messages = ChatArrayUnionSchema.parse(response.data.messages);
+      const latestDealMessage = response.data.latest_deal_message
+        ? ProductMessageSchema.parse(response.data.latest_deal_message)
+        : null;
 
       return {
         messages: messages.reverse(),
+        latestDealMessage,
         totalPages: response.data.total_pages,
         currentPage: response.data.page || page,
         total: response.data.total,
@@ -279,6 +336,7 @@ export const chatsService = {
     } catch (e) {
       return {
         messages: [],
+        latestDealMessage: null,
         totalPages: 0,
         currentPage: page,
         total: 0,
@@ -292,30 +350,35 @@ export const chatsService = {
     options?: { isAdminPanelMessage?: boolean },
   ): Promise<{ success: boolean; errorCode?: string; message?: ChatMessageUnion }> {
     if (!this.isConnected()) {
-      await new Promise((r) => setTimeout(r, 500));
-
-      if (!this.isConnected()) {
-        console.error("Socket not connected even after retry");
-        return { success: false, errorCode: "NETWORK_ERROR" };
-      }
+      await this.connectChatsWebsocket();
+      await new Promise((r) => setTimeout(r, 350));
+    }
+    if (!this.isConnected()) {
+      console.error("Socket not connected even after reconnect attempt");
+      return { success: false, errorCode: "NETWORK_ERROR" };
     }
 
     try {
-      const ack = await new Promise<{ success?: boolean; error_code?: string; message?: unknown }>(
-        (resolve) => {
-          socket!.emit(
-            "send_message",
-            {
-              chat_id: chatId,
-              message,
-              is_admin_panel_message: options?.isAdminPanelMessage === true,
-            },
-            (response: any) => {
-              resolve(response ?? { success: true });
-            }
-          );
+      await this.joinChat(chatId);
+
+      const payload = {
+        chat_id: chatId,
+        message,
+        is_admin_panel_message: options?.isAdminPanelMessage === true,
+      };
+
+      let ack = await emitSendMessageAck(payload);
+      if (
+        ack.success !== true
+        && (ack.error_code === "USER_NOT_CONNECTED" || ack.error_code === "NETWORK_ERROR")
+      ) {
+        await this.connectChatsWebsocket();
+        await new Promise((r) => setTimeout(r, 350));
+        if (this.isConnected()) {
+          await this.joinChat(chatId);
+          ack = await emitSendMessageAck(payload);
         }
-      );
+      }
 
       let parsedMessage: ChatMessageUnion | undefined
       if (ack.message) {
@@ -423,6 +486,18 @@ export const chatsService = {
     };
   },
 
+  onDealStatusUpdate(cb: DealStatusUpdateCallback | null) {
+    if (cb === null) {
+      dealStatusUpdateCallbacks.length = 0;
+      return () => {};
+    }
+    dealStatusUpdateCallbacks.push(cb);
+    return () => {
+      const idx = dealStatusUpdateCallbacks.indexOf(cb);
+      if (idx !== -1) dealStatusUpdateCallbacks.splice(idx, 1);
+    };
+  },
+
   onChatUpdated(cb: ChatUpdatedCallback | null) {
     if (cb === null) {
       chatUpdatedCallbacks.length = 0;
@@ -475,6 +550,7 @@ export const chatsService = {
     socket?.disconnect();
     socket = null;
     newMessageCallbacks.length = 0;
+    dealStatusUpdateCallbacks.length = 0;
     chatUpdatedCallbacks.length = 0;
     chatNotificationCallbacks.length = 0;
     messagesReadCallbacks.length = 0;

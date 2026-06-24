@@ -1,98 +1,93 @@
 <script setup lang="ts">
-import { ArrowRight, Sparkles } from 'lucide-vue-next'
-import { useRouter } from 'vue-router'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useUserStore } from '@/stores/user'
-import { storeToRefs } from 'pinia'
 import HeroBackground from '@/components/HeroBackground.vue'
+import heroSceneSrc from '@/assets/images/banner.png'
 
-const router = useRouter()
 const { t } = useI18n()
 
-const scrollToCatalog = () => {
-  const catalogElement = document.getElementById('catalog-start')
-  if (catalogElement) {
-    catalogElement.scrollIntoView({ behavior: 'smooth' })
-  }
-}
-const store = useUserStore()
-const { user } = storeToRefs(store)
+const heroBackgroundStyle = computed(() => ({
+  backgroundImage: `var(--hero-banner-image-gradient), url(${heroSceneSrc})`,
+}))
+
+const highlights = computed(() => ([
+  t('hero.highlights.protection'),
+  t('hero.highlights.sellers'),
+]))
 </script>
 
 <template>
-  <div class="relative left-1/2 right-1/2 ml-[-50vw] mr-[-50vw] w-screen min-h-[70vh] flex flex-col items-center justify-center overflow-hidden">
-    <div class="absolute inset-0 h-full w-full z-0">
-      <HeroBackground />
-    </div>
+  <section class="relative w-full pt-[clamp(4.15rem,6vw,5.15rem)] pb-0 max-[767px]:pt-[3.5rem]">
+    <div
+      class="relative isolate overflow-hidden rounded-[1.9rem] border border-[rgb(var(--palette-white)/0.08)] bg-[var(--hero-banner-bg)] bg-cover bg-[center_right] min-[768px]:min-h-[31rem] min-[768px]:[background-position:68%_center] max-[767px]:rounded-[1.5rem] max-[767px]:bg-[center_center]"
+      :style="heroBackgroundStyle"
+    >
+      <HeroBackground class="absolute inset-0 z-0 opacity-34" :masked="false" />
+      <div
+        class="pointer-events-none absolute left-[-8rem] top-24 z-[1] h-96 w-96 rounded-full bg-[rgb(var(--palette-blue-500)/0.18)] blur-[80px]"
+        aria-hidden="true"
+      ></div>
+      <div
+        class="pointer-events-none absolute bottom-12 right-[-4rem] z-[1] h-80 w-80 rounded-full bg-[rgb(var(--palette-indigo-500)/0.16)] blur-[80px]"
+        aria-hidden="true"
+      ></div>
+      <div class="pointer-events-none absolute inset-0 z-[1] bg-[var(--hero-banner-overlay-desktop)] max-[767px]:bg-[var(--hero-banner-overlay-mobile)]"></div>
 
-    <div class="relative z-20 px-4 max-w-5xl mx-auto text-center flex flex-col items-center py-20">
-      
-      <div class="mb-8 inline-flex items-center px-4 py-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-md animate-fade-in-up">
-        <Sparkles class="w-4 h-4 text-blue-400 mr-2" />
-        <span class="text-xs font-semibold text-blue-100 uppercase tracking-[0.2em]">{{ t('hero.badge') }}</span>
+      <div class="relative z-[2] h-full px-5 pt-[clamp(2.75rem,5vw,4rem)] pb-[clamp(2rem,4vw,2.75rem)] sm:px-6 lg:px-8 min-[1400px]:px-10 max-[767px]:px-4 max-[767px]:pt-5 max-[767px]:pb-5">
+        <div class="grid items-start gap-7 min-[1100px]:grid-cols-[minmax(0,35rem)_minmax(16rem,1fr)] min-[1100px]:gap-8">
+          <div class="max-w-[36rem] min-[1100px]:pb-[0.15rem] max-[767px]:max-w-[20.5rem]">
+            <h1 class="animate-fade-in-up mt-5 text-[clamp(2.55rem,5.5vw,4.45rem)] leading-[0.92] font-bold tracking-[-0.05em] text-[var(--text-title)] max-[767px]:mt-0 max-[767px]:max-w-[18.75rem] max-[767px]:text-[clamp(2rem,9vw,3rem)] max-[767px]:leading-[0.94] [animation-delay:0.12s]">
+              <span>{{ t('hero.titleLead') }}</span>
+              <span class="mt-[0.3rem] block bg-gradient-to-br from-[rgb(var(--palette-white))] via-[rgb(var(--palette-blue-200))] to-[rgb(var(--palette-cyan-300))] bg-clip-text text-[var(--text-transparent)]">
+                {{ t('hero.titleAccent') }}
+              </span>
+            </h1>
+
+            <p class="animate-fade-in-up mt-[1.15rem] max-w-[32rem] text-[clamp(0.98rem,1.35vw,1.06rem)] leading-[1.55] text-[rgb(var(--text-body-rgb)/0.94)] max-[767px]:mt-3 max-[767px]:max-w-[19rem] max-[767px]:text-[0.8rem] max-[767px]:leading-[1.34] [animation-delay:0.24s]">
+              {{ t('hero.description') }}
+            </p>
+
+            <ul class="animate-fade-in-up mt-[1.1rem] flex flex-wrap gap-x-[1.15rem] gap-y-[0.85rem] p-0 max-[767px]:mt-3 max-[767px]:max-w-[19rem] max-[767px]:flex-col max-[767px]:gap-x-0 max-[767px]:gap-y-2 [animation-delay:0.24s]">
+              <li
+                v-for="highlight in highlights"
+                :key="highlight"
+                class="inline-flex items-start gap-[0.55rem] text-[0.88rem] leading-[1.35] text-[rgb(var(--text-body-strong-rgb)/0.92)] max-[767px]:gap-2 max-[767px]:text-[0.76rem] max-[767px]:leading-[1.3]"
+              >
+                <span class="mt-[0.26rem] h-[0.42rem] w-[0.42rem] shrink-0 rounded-full bg-[rgb(var(--palette-cyan-300))] shadow-[var(--hero-bullet-shadow)]"></span>
+                <span>{{ highlight }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
-
-      <h1 class="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight text-white mb-8 animate-fade-in-up animation-delay-100 drop-shadow-2xl">
-        <span class="bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50">
-          {{ t('hero.mainTitle') }}
-        </span>
-        <br />
-        <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500 animate-gradient-x">
-          {{ t('hero.mainTitleGradient') }}
-        </span>
-      </h1>
-
-      <p class="text-lg md:text-2xl text-gray-400 max-w-2xl mb-12 animate-fade-in-up animation-delay-200 leading-relaxed font-light">
-        {{ t('hero.description') }}
-      </p>
-
-      <div class="flex flex-col sm:flex-row gap-5 animate-fade-in-up animation-delay-300 w-full sm:w-auto px-6">
-        <button 
-          @click="scrollToCatalog"
-          class="hero-primary-btn market-primary-surface market-primary-hover group relative overflow-hidden rounded-xl px-10 py-4 font-bold text-white transition-colors duration-300"
-        >
-          <span class="relative flex items-center justify-center text-lg">
-            {{ t('hero.exploreCatalog') }}
-            <ArrowRight class="w-5 h-5 ml-2" />
-          </span>
-        </button>
-
-        <button
-            @click="router.push(user && user.username ? '/product/create' : '/signin')"
-            class="px-10 py-4 bg-white/5 text-white border border-white/10 font-bold rounded-xl hover:bg-white/10 transition-colors duration-300 backdrop-blur-md text-lg"
-        >
-          {{ t('hero.startSelling') }}
-        </button>
-      </div>
-
     </div>
-  </div>
+  </section>
 </template>
 
 <style scoped>
-.animate-gradient-x {
-  background-size: 200% 200%;
-  animation: gradient-x 5s ease infinite;
-}
-
-@keyframes gradient-x {
-  0% { background-position: 0% 50% }
-  50% { background-position: 100% 50% }
-  100% { background-position: 0% 50% }
-}
-
 .animate-fade-in-up {
-  animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeInUp 0.95s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   opacity: 0;
-  transform: translateY(30px);
+  transform: translateY(28px);
 }
 
-.animation-delay-100 { animation-delay: 0.15s; }
-.animation-delay-200 { animation-delay: 0.3s; }
-.animation-delay-300 { animation-delay: 0.45s; }
+@media (max-width: 767px) {
+  .animate-fade-in-up {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

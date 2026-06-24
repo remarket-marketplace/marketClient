@@ -3,6 +3,12 @@ import type { InboxNotification } from "@/validation/user/inboxNotifications"
 import { defineStore } from "pinia"
 
 const INBOX_PAGE_SIZE = 60
+const INBOX_CLEARED_BEFORE_STORAGE_KEY = "remarket_inbox_cleared_before_v1"
+const CHAT_MESSAGE_NOTIFICATION_EVENT_TYPES = new Set([
+  "new_chat_message",
+  "new_support_message",
+  "new_image_message",
+])
 
 function toTimestamp(value: string | undefined): number {
   if (!value) return 0
@@ -14,6 +20,50 @@ function countUnread(items: InboxNotification[]): number {
   return items.reduce((total, item) => total + (item.is_read ? 0 : 1), 0)
 }
 
+function shouldShowInNotificationsInbox(item: InboxNotification): boolean {
+  return !CHAT_MESSAGE_NOTIFICATION_EVENT_TYPES.has(item.event_type)
+}
+
+function readClearedBeforeMap(): Record<string, string> {
+  if (typeof window === "undefined") return {}
+  const raw = window.localStorage.getItem(INBOX_CLEARED_BEFORE_STORAGE_KEY)
+  if (!raw) return {}
+  try {
+    const parsed = JSON.parse(raw)
+    return typeof parsed === "object" && parsed !== null ? parsed as Record<string, string> : {}
+  } catch {
+    return {}
+  }
+}
+
+function writeClearedBeforeMap(value: Record<string, string>) {
+  if (typeof window === "undefined") return
+  window.localStorage.setItem(INBOX_CLEARED_BEFORE_STORAGE_KEY, JSON.stringify(value))
+}
+
+function getClearedBeforeTimestamp(userId: string): number {
+  const map = readClearedBeforeMap()
+  const value = map[userId]
+  if (!value) return 0
+  return toTimestamp(value)
+}
+
+function setClearedBeforeTimestamp(userId: string, isoDate: string) {
+  const map = readClearedBeforeMap()
+  map[userId] = isoDate
+  writeClearedBeforeMap(map)
+}
+
+function filterNotificationsByClearedBefore(
+  items: InboxNotification[],
+  clearedBeforeTimestamp: number,
+): InboxNotification[] {
+  return items.filter((item) => (
+    shouldShowInNotificationsInbox(item)
+    && (!clearedBeforeTimestamp || toTimestamp(item.created_at) > clearedBeforeTimestamp)
+  ))
+}
+
 export const useNotificationStore = defineStore("notification", {
   state: () => ({
     currentUserId: null as string | null,
@@ -21,6 +71,7 @@ export const useNotificationStore = defineStore("notification", {
     unreadTotal: 0,
     total: 0,
     totalPages: 0,
+    clearedBeforeTimestamp: 0,
     isLoaded: false,
     isLoading: false,
   }),
@@ -36,6 +87,7 @@ export const useNotificationStore = defineStore("notification", {
       this.unreadTotal = 0
       this.total = 0
       this.totalPages = 0
+      this.clearedBeforeTimestamp = getClearedBeforeTimestamp(userId)
       this.isLoaded = false
       this.isLoading = false
     },
@@ -46,6 +98,7 @@ export const useNotificationStore = defineStore("notification", {
       this.unreadTotal = 0
       this.total = 0
       this.totalPages = 0
+      this.clearedBeforeTimestamp = 0
       this.isLoaded = false
       this.isLoading = false
     },
@@ -61,10 +114,14 @@ export const useNotificationStore = defineStore("notification", {
         if (!response.success || !response.data) {
           return
         }
-        this.items = response.data.notifications
-        this.unreadTotal = response.data.unread_total
-        this.total = response.data.total
-        this.totalPages = response.data.total_pages
+        const filteredItems = filterNotificationsByClearedBefore(
+          response.data.notifications,
+          this.clearedBeforeTimestamp,
+        )
+        this.items = filteredItems
+        this.unreadTotal = countUnread(filteredItems)
+        this.total = filteredItems.length
+        this.totalPages = filteredItems.length > 0 ? 1 : 0
         this.isLoaded = true
       } finally {
         this.isLoading = false
@@ -74,6 +131,13 @@ export const useNotificationStore = defineStore("notification", {
     pushRealtimeNotification(payload: unknown) {
       const parsed = notificationsService.parseNotificationPayload(payload)
       if (!parsed) return
+      if (!shouldShowInNotificationsInbox(parsed)) return
+      if (
+        this.clearedBeforeTimestamp
+        && toTimestamp(parsed.created_at) <= this.clearedBeforeTimestamp
+      ) {
+        return
+      }
 
       const existingIndex = this.items.findIndex((item) => item.id === parsed.id)
       if (existingIndex === -1) {
@@ -111,6 +175,22 @@ export const useNotificationStore = defineStore("notification", {
       if (!changed) return
 
       this.unreadTotal = 0
+      await notificationsService.markAllNotificationsAsRead()
+    },
+
+    async clearInbox() {
+      if (!this.currentUserId) return
+
+      const clearedAtIso = new Date().toISOString()
+      this.clearedBeforeTimestamp = toTimestamp(clearedAtIso)
+      setClearedBeforeTimestamp(this.currentUserId, clearedAtIso)
+
+      this.items = []
+      this.unreadTotal = 0
+      this.total = 0
+      this.totalPages = 0
+      this.isLoaded = true
+
       await notificationsService.markAllNotificationsAsRead()
     },
   },

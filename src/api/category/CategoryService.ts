@@ -4,6 +4,30 @@ import { CategorySchema } from "@/validation/category/category";
 import type { Category } from "@/validation/category/category";
 
 export const categoryService = {
+  async getAllPaginatedCategories<TCategory extends Category>(
+    loader: (page: number, perPage: number) => Promise<{
+      categories: TCategory[]
+      currentPage: number
+      totalPages: number
+    }>,
+    perPage = 100,
+    maxPages = 50,
+  ) {
+    const allCategories: TCategory[] = [];
+    let page = 1;
+    let totalPages = 1;
+
+    while (page <= totalPages && page <= maxPages) {
+      const response = await loader(page, perPage);
+      allCategories.push(...response.categories);
+      totalPages = response.totalPages;
+      page += 1;
+    }
+
+    const uniqueById = new Map(allCategories.map((category) => [category.id, category]));
+    return Array.from(uniqueById.values());
+  },
+
   async getCategoryById(categoryId: string) {
     try {
       const response = await httpClient.get(`/categories/${categoryId}`);
@@ -64,19 +88,11 @@ export const categoryService = {
   },
 
   async getAllCategoriesFlat(perPage = 100, maxPages = 20) {
-    const allCategories: Category[] = [];
-    let page = 1;
-    let totalPages = 1;
-
-    while (page <= totalPages && page <= maxPages) {
-      const response = await this.getAllCategories(page, perPage);
-      allCategories.push(...response.categories);
-      totalPages = response.totalPages;
-      page += 1;
-    }
-
-    const uniqueById = new Map(allCategories.map((category) => [category.id, category]));
-    return Array.from(uniqueById.values());
+    return this.getAllPaginatedCategories(
+      (page, pageSize) => this.getAllCategories(page, pageSize),
+      perPage,
+      maxPages,
+    );
   },
 
   async getSubcategories(parentId: string, page = 1, perPage = 20) {
@@ -109,6 +125,14 @@ export const categoryService = {
         totalPages: 1,
       };
     }
+  },
+
+  async getSubcategoriesFlat(parentId: string, perPage = 100, maxPages = 50) {
+    return this.getAllPaginatedCategories(
+      (page, pageSize) => this.getSubcategories(parentId, page, pageSize),
+      perPage,
+      maxPages,
+    );
   },
 
   async AddCategory(
