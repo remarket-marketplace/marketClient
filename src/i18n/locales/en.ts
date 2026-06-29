@@ -736,7 +736,8 @@ const en = {
             "7.4. To request a refund review, the user must contact support within 48 hours from the moment of payment.",
             "7.5. Refund requests are reviewed within up to 48 hours from the moment of contact.",
             "7.6. If approved, the refund is processed within 72 hours.",
-            "7.7. The user confirms they will not initiate a chargeback through payment systems without first contacting the service support team."
+            "7.7. Refunds are made only to the payment details and via the payment method that were used for the original payment.",
+            "7.8. The user confirms they will not initiate a chargeback through payment systems without first contacting the service support team."
           ],
           list: [
             "the service was not provided due to a technical fault of the platform;",
