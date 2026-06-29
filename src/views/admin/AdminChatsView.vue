@@ -1309,18 +1309,8 @@ async function toggleSupportCaseStatus() {
                                         <div v-if="chatTimelineItems.length > 0" class="flex min-w-0 flex-1 flex-col justify-start">
                                             <div class="flex min-w-0 flex-col pb-18">
                                                 <template v-for="item in chatTimelineItems" :key="item.message.id">
-<<<<<<< HEAD
-                                                    <div
-                                                        v-if="item.showDateDivider && item.dateLabel"
-                                                        class="flex justify-center py-2"
-                                                        data-chat-date-divider
-                                                        :data-chat-date-key="item.dateKey ?? ''"
-                                                    >
-                                                        <span class="rounded-full border border-dark-600/70 bg-dark-900/70 px-3 py-1 text-xs font-medium text-mainText/90">
-=======
                                                     <div v-if="item.showDateDivider && item.dateLabel" class="flex justify-center py-2">
                                                         <span class="admin-surface-soft rounded-full px-3 py-1 text-xs font-medium text-mainText/90">
->>>>>>> dev
                                                             {{ item.dateLabel }}
                                                         </span>
                                                     </div>

@@ -86,7 +86,6 @@ const topLoadThresholdPx = 8
 const previousMessageScrollTop = ref(0)
 const hasUserScrolledAwayFromTop = ref(false)
 const bottomAutoScrollThresholdPx = 120
-const floatingDateTopOffsetPx = 8
 const floatingDateMergeStartDistancePx = 56
 const floatingDateMergeEndDistancePx = 8
 const floatingDateMaxOffsetPx = 14
@@ -808,7 +807,7 @@ function updateFloatingDateMergeVisuals(container: HTMLElement, dateKey: string 
   if (!nearestVisibleDivider) return
 
   const dividerTop = nearestVisibleDivider.getBoundingClientRect().top
-  const floatingTop = containerTop + floatingDateTopOffsetPx
+  const floatingTop = containerTop + floatingDateTopOffsetPx.value
   const distanceToDivider = dividerTop - floatingTop
   const range = floatingDateMergeStartDistancePx - floatingDateMergeEndDistancePx
   if (range <= 0) return
