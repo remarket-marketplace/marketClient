@@ -993,9 +993,9 @@ onBeforeUnmount(() => {
       class="relative z-20 flex min-h-screen w-full flex-col items-center px-1 pb-6 sm:px-2 lg:px-2"
       :class="user ? 'pt-14 md:pt-20' : 'pt-14 md:pt-20'"
     >
-        <div class="w-full lg:max-w-2xl">
-          <TelegramStarsCta class="mb-3 w-full" :show-steam-link="HOME_STEAM_TOPUP_ENABLED" />
+        <TelegramStarsCta class="mb-3 w-full" :show-steam-link="HOME_STEAM_TOPUP_ENABLED" />
 
+        <div class="w-full lg:max-w-2xl">
           <div
             ref="searchDropdownRef"
             class="w-full"
