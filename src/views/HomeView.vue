@@ -994,32 +994,8 @@ onBeforeUnmount(() => {
       :class="user ? 'pt-14 md:pt-20' : 'pt-14 md:pt-20'"
     >
         <div class="w-full lg:max-w-2xl">
-          <button
-            v-if="HOME_STEAM_TOPUP_ENABLED"
-            type="button"
-            class="steam-promo-chip mb-3 inline-flex w-auto self-start items-center justify-start gap-2 rounded-xl border p-2 pr-3 text-left"
-            :class="steamPromoChipWrapperClass"
-            @click="goToSteamTopUpPage"
-          >
-            <div class="flex items-center gap-2">
-              <span
-                class="steam-promo-chip__icon inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border shadow-inner"
-                :class="steamPromoIconClass"
-              >
-                <Icon icon="mdi:steam" class="h-6 w-6" />
-              </span>
-              <span
-                class="steam-promo-chip__badge inline-flex h-6 min-w-9 items-center justify-center rounded-md border px-2 text-xs font-semibold leading-none"
-                :class="steamPromoBadgeClass"
-              >
-                5%
-              </span>
-            </div>
-            <div class="min-w-0 flex-1 text-right sm:hidden">
-              <div class="text-sm font-semibold text-white">{{ t('pages.index.steamTopUp.title') }}</div>
-              <div class="truncate text-xs text-gray-400">{{ t('pages.index.steamTopUp.subtitle') }}</div>
-            </div>
-          </button>
+          <TelegramStarsCta class="mb-3 w-full" :show-steam-link="HOME_STEAM_TOPUP_ENABLED" />
+
           <div
             ref="searchDropdownRef"
             class="w-full"
@@ -1034,8 +1010,6 @@ onBeforeUnmount(() => {
             />
           </div>
         </div>
-
-        <TelegramStarsCta class="mt-2 w-full" :show-steam-link="HOME_STEAM_TOPUP_ENABLED" />
 
         <OfficialProductsShowcase
           v-if="shouldShowOfficialHomeShowcase"
