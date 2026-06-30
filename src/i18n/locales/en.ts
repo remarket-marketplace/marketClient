@@ -518,9 +518,6 @@ const en = {
     privacyPolicy: "Privacy policy",
     termsOfService: "Terms of service",
     marketRules: "Marketplace rules",
-    companyName: "Monitorson OÜ",
-    companyRegistryCode: "Registry code: 1725577",
-    companyAddress: "Registered address: Järva maakond, Türi vald, Türi linn, Aia tn 12, 72215, Estonia",
   },
 
   navigation: {

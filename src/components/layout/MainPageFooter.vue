@@ -135,14 +135,6 @@ function openCookieSettings() {
       </div>
 
       <div class="flex flex-col md:flex-row justify-between items-start gap-6">
-        <div class="space-y-2 max-w-2xl">
-          <div class="text-[var(--text-meta)] text-sm font-light space-y-1">
-            <p>{{ $t('footer.companyName') }}</p>
-            <p>{{ $t('footer.companyRegistryCode') }}</p>
-            <p>{{ $t('footer.companyAddress') }}</p>
-          </div>
-        </div>
-
         <div class="text-[var(--text-meta)] text-sm font-light md:text-right">
           © {{ new Date().getFullYear() }} remarket. {{ $t('common.rightsReserved') }}
         </div>

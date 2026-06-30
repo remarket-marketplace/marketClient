@@ -518,9 +518,6 @@ const ru = {
     privacyPolicy: "Политика конфиденциальности",
     termsOfService: "Условия использования",
     marketRules: "Правила площадки",
-    companyName: "Monitorson OÜ",
-    companyRegistryCode: "Регистрационный номер: 1725577",
-    companyAddress: "Юридический адрес: Järva maakond, Türi vald, Türi linn, Aia tn 12, 72215, Estonia",
   },
 
   navigation: {
