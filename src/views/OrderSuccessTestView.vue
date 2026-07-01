@@ -149,11 +149,13 @@ async function loadAfterPaymentData() {
 
   let result = requestedChatId
     ? await chatsService.getChatMessages(requestedChatId, 1, 20)
+    // TODO: [DEAD_API] endpoint не существует на бэкенде, требует ручного решения
     : await chatsService.getChatMessagesByDealId(requestedDealId!, 1, 20)
 
   if (requestedDealId && !result.latestDealMessage) {
     for (let attempt = 0; attempt < 3; attempt += 1) {
       await new Promise((resolve) => setTimeout(resolve, 700))
+      // TODO: [DEAD_API] endpoint не существует на бэкенде, требует ручного решения
       const retried = await chatsService.getChatMessagesByDealId(requestedDealId, 1, 20)
       if (retried.latestDealMessage) {
         result = retried

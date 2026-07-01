@@ -151,18 +151,6 @@ export const authService = {
     }
   },
 
-  async getMyUserId() {
-    try {
-      const response = await httpClient.get("/auth/get-my-user-id");
-      return response.data;
-    } catch (e) {
-      if (e instanceof ZodError) {
-        console.error(e.issues);
-      }
-      return false;
-    }
-  },
-
   async pingOnlineStatus() {
     await httpClient.patch("/users/ping-online");
   },

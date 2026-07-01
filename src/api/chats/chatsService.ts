@@ -303,7 +303,8 @@ export const chatsService = {
     }
   },
 
-    async getChatMessagesByDealId(
+  // TODO: [DEAD_API] endpoint не существует на бэкенде, требует ручного решения
+  async getChatMessagesByDealId(
     dealId: string,
     page: number,
     perPage: number

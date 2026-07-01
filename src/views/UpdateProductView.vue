@@ -256,6 +256,7 @@ onMounted(async () => {
       return
     }
 
+    // TODO: [DEAD_API] endpoint не существует на бэкенде, требует ручного решения
     const commission = await productService.getCommissionInterest()
     commissionInterest.value = Number(commission)
 

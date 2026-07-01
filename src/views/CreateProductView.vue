@@ -777,6 +777,7 @@ onMounted(async () => {
     categories.value = categoriesData.filter(
       (category: Category) => category.is_active,
     )
+    // TODO: [DEAD_API] endpoint не существует на бэкенде, требует ручного решения
     const commission = await productService.getCommissionInterest()
     const normalizedCommission = Number(commission)
     commissionInterest.value = Number.isFinite(normalizedCommission)

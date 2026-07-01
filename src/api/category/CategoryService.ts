@@ -42,20 +42,6 @@ export const categoryService = {
     }
   },
 
-  async getCategory(game_id: string) {
-    try {
-      const response = await httpClient.get(`/categories/game/${game_id}`);
-      return response.data.map((category: any) =>
-        CategorySchema.parse(category)
-      );
-    } catch (e) {
-      if (e instanceof ZodError) {
-        console.error(e.issues);
-      }
-      return [];
-    }
-  },
-
   async getAllCategories(page = 1, perPage = 30) {
     try {
       const response = await httpClient.get("/categories/", {

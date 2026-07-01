@@ -314,15 +314,6 @@ export const productService = {
     }
   },
 
-  async getProductsCategoryFilter(game: string, category: string) {
-    try {
-      const response = await httpClient.get(`/products/${game}/${category}`);
-      return parseProductList(response.data, "getProductsCategoryFilter");
-    } catch (e) {
-      return [];
-    }
-  },
-
   async createProduct(productData: any, uploadedImages: File[] = []) {
     try {
       const draftImagesFromPayload: string[] = Array.isArray(productData.draft_images)
@@ -510,17 +501,6 @@ export const productService = {
     }
   },
 
-  async approveProduct(productId: string) {
-    try {
-      const response = await httpClient.post("/products/approve", {
-        product_id: productId,
-      });
-      return response.status === 200;
-    } catch {
-      return false;
-    }
-  },
-
   async buyProduct(
     productId: string,
   ): Promise<{ success: boolean; chatId?: string; error?: ApiError }> {
@@ -594,15 +574,6 @@ export const productService = {
         success: false,
         error: apiError,
       };
-    }
-  },
-
-  async getProductByChatId(chatId: string) {
-    try {
-      const response = await httpClient.get(`/products/get/chat/${chatId}`);
-      return parseOptionalProduct(response.data, "getProductByChatId");
-    } catch (e) {
-      return null;
     }
   },
 
@@ -747,21 +718,6 @@ export const productService = {
     }
   },
 
-  async addProductToFavorite(product_id: string) {
-    //
-    // add product to favorite
-    //
-    try {
-      const response = await httpClient.patch("/products/to-favorite", {
-        product_id: product_id,
-      });
-      return response.status === 200;
-    } catch (e) {
-      return false;
-    }
-  },
-
-
   async addProductLike(product_id: string) {
     //
     // add product like
@@ -817,6 +773,7 @@ export const productService = {
     }
   },
 
+  // TODO: [DEAD_API] endpoint не существует на бэкенде, требует ручного решения
   async getCommissionInterest() {
     //
     // get committion insterest
