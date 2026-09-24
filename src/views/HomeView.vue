@@ -6,10 +6,9 @@ import MainProductCard from '@/components/mainProductCard.vue'
 import HomeProductListCard from '@/components/HomeProductListCard.vue'
 import OfficialProductsShowcase from '@/components/OfficialProductsShowcase.vue'
 import Title from '@/components/Title.vue'
-import TelegramStarsCta from '@/components/TelegramStarsCta.vue'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router'
 import type { ProductsFilterParams } from '@/api/product/ProductService'
 import type { Category } from '@/validation/category/category'
 import type { Product } from '@/validation/product/product'
@@ -336,6 +335,7 @@ async function onPricePresetClick(preset: PricePreset) {
 }
 
 const loadMoreTrigger = ref<HTMLElement | null>(null)
+const searchDropdownRef = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 const PRODUCT_REVEAL_STAGGER_MS = 55
 
@@ -795,6 +795,32 @@ async function resetAllFilters() {
   await loadProducts(1, false)
 }
 
+function buildHomeSearchRouteQuery(value: string): LocationQueryRaw {
+  const trimmedValue = value.trim()
+  const nextQuery: LocationQueryRaw = { ...route.query }
+  if (trimmedValue) {
+    nextQuery.search = trimmedValue
+  } else {
+    delete nextQuery.search
+  }
+  return nextQuery
+}
+
+function syncHomeSearchRoute(value: string, replace = true): void {
+  const nextQuery = buildHomeSearchRouteQuery(value)
+  const currentQuery = getRouteSearchQuery()
+  const nextSearch = typeof nextQuery.search === 'string' ? nextQuery.search : ''
+
+  if (route.path === '/' && currentQuery === nextSearch) return
+
+  const location = { path: '/', query: nextQuery }
+  if (replace && route.path === '/') {
+    void router.replace(location)
+    return
+  }
+  void router.push(location)
+}
+
 function parseFilterNumber(value: string | number | null | undefined): number | undefined {
   if (value === null || value === undefined) return undefined
 
@@ -902,6 +928,32 @@ function debouncedApplyProductFilters() {
   }, 300)
 }
 
+function openSearchDropdown(): void {
+  if (!searchDropdownRef.value) return
+}
+
+function onSearchDropdownKeydown(event: KeyboardEvent): void {
+  if (event.key === 'Escape') {
+    searchQuery.value = searchQuery.value.trim()
+    return
+  }
+
+  if (event.key !== 'Enter') return
+  event.preventDefault()
+  if (filterTimeout) clearTimeout(filterTimeout)
+  syncHomeSearchRoute(searchQuery.value, false)
+  void searchProductsByQuery(searchQuery.value, 1, false)
+}
+
+function debouncedSearch(value: string): void {
+  searchQuery.value = value
+  if (filterTimeout) clearTimeout(filterTimeout)
+  filterTimeout = setTimeout(() => {
+    syncHomeSearchRoute(value)
+    void searchProductsByQuery(value, 1, false)
+  }, 300)
+}
+
 function toggleFiltersVisibility() {
   isFiltersOpen.value = !isFiltersOpen.value
 }
@@ -993,8 +1045,6 @@ onBeforeUnmount(() => {
       class="relative z-20 flex min-h-screen w-full flex-col items-center px-1 pb-6 sm:px-2 lg:px-2"
       :class="user ? 'pt-14 md:pt-20' : 'pt-14 md:pt-20'"
     >
-        <TelegramStarsCta class="mb-3 w-full" :show-steam-link="HOME_STEAM_TOPUP_ENABLED" />
-
         <div class="w-full lg:max-w-2xl">
           <div
             ref="searchDropdownRef"
