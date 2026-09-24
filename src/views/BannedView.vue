@@ -64,39 +64,39 @@ function goHome() {
   <section class="banned-shell banned-shell-fullbleed relative w-full overflow-hidden px-4 py-6 sm:py-8">
     <div class="pointer-events-none absolute inset-0 z-0">
       <div class="absolute inset-0 bg-background"></div>
-      <div class="absolute inset-0 bg-[radial-gradient(65%_45%_at_50%_0%,rgba(59,130,246,0.08),transparent_75%)]"></div>
+      <div class="banned-shell__glow absolute inset-0"></div>
       <div class="absolute inset-0 noise-overlay-bg opacity-10 mix-blend-soft-light"></div>
     </div>
 
     <div class="relative z-10 mx-auto flex h-full w-full max-w-2xl items-center">
-      <div class="w-full rounded-2xl border border-dark-600/90 bg-dark-800/80 p-6 shadow-[0_18px_50px_-28px_rgb(0_0_0_/_0.9)] backdrop-blur-sm sm:p-8">
+      <div class="banned-card w-full rounded-2xl border border-[rgb(var(--palette-dark-600)/0.9)] bg-[rgb(var(--palette-dark-800)/0.8)] p-6 backdrop-blur-sm sm:p-8">
         <div class="flex items-center gap-3">
-          <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-red-500/25 bg-red-500/10">
-            <ShieldAlert class="h-5 w-5 text-red-300/90" />
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-[rgb(var(--palette-red-500)/0.25)] bg-[rgb(var(--palette-red-500)/0.1)]">
+            <ShieldAlert class="h-5 w-5 text-[rgb(var(--text-danger-rgb)/0.9)]" />
           </div>
-          <h1 class="text-2xl font-semibold leading-tight text-white sm:text-3xl">
+          <h1 class="text-2xl font-semibold leading-tight text-[var(--text-title)] sm:text-3xl">
             {{ $t('pages.bannedPage.title') }}
           </h1>
         </div>
 
-        <p class="mt-5 leading-relaxed text-gray-300/95 sm:text-lg">
+        <p class="mt-5 leading-relaxed text-[rgb(var(--text-body-rgb)/0.95)] sm:text-lg">
           {{ $t('pages.bannedPage.description') }}
         </p>
 
-        <div class="mt-6 rounded-xl border border-dark-600 bg-dark-900/70 p-4 sm:p-5">
-          <p class="text-xs uppercase tracking-[0.14em] text-gray-400/85">{{ $t('common.reason') }}</p>
-          <p class="mt-2 whitespace-pre-wrap break-words text-base leading-relaxed text-gray-100">
+        <div class="mt-6 rounded-xl border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-900)/0.7)] p-4 sm:p-5">
+          <p class="text-xs uppercase tracking-[0.14em] text-[rgb(var(--text-muted-rgb)/0.85)]">{{ $t('common.reason') }}</p>
+          <p class="mt-2 whitespace-pre-wrap break-words text-base leading-relaxed text-[var(--text-heading)]">
             {{ displayReason }}
           </p>
         </div>
 
-        <p class="mt-5 text-sm leading-relaxed text-gray-400">
+        <p class="mt-5 text-sm leading-relaxed text-[var(--text-muted)]">
           {{ $t('pages.bannedPage.contactHint') }}
         </p>
 
         <div class="mt-6 flex">
           <button
-            class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-blue-700"
+            class="market-primary-surface market-primary-hover inline-flex items-center justify-center rounded-lg px-5 py-2.5 text-sm font-semibold text-[var(--text-title)] transition-colors duration-200"
             @click="goHome"
           >
             {{ $t('pages.bannedPage.goHome') }}
@@ -121,5 +121,13 @@ function goHome() {
   margin-left: -50vw;
   margin-right: -50vw;
   max-width: 100vw;
+}
+
+.banned-shell__glow {
+  background: var(--page-hero-radial-blue);
+}
+
+.banned-card {
+  box-shadow: 0 18px 50px -28px rgb(var(--palette-black) / 0.9);
 }
 </style>

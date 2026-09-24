@@ -106,9 +106,9 @@ onBeforeUnmount(() => {
   font-weight: 300;
   line-height: 1.1;
   letter-spacing: -0.022em;
-  color: rgb(184 186 192 / 0.92);
+  color: var(--auth-welcome-text);
   text-wrap: balance;
-  text-shadow: 0 10px 24px rgb(0 0 0 / 0.24);
+  text-shadow: 0 10px 24px var(--auth-welcome-shadow);
 }
 
 .typing-caret {
@@ -117,7 +117,7 @@ onBeforeUnmount(() => {
   height: 0.92em;
   margin-left: 0.06em;
   border-radius: 1px;
-  background-color: rgb(203 204 210 / 0.82);
+  background-color: var(--auth-welcome-caret);
   vertical-align: -0.08em;
   animation: typing-caret-blink 0.75s steps(1, end) infinite;
 }

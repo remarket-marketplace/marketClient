@@ -1,0 +1,26 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEV_HOST }}
+          username: ${{ secrets.DEV_USER }}
+          key: ${{ secrets.DEV_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            cd ~/marketClient
+            git fetch origin
+            git checkout dev
+            git pull --ff-only origin dev
+            printf '2\n' | ./run.sh

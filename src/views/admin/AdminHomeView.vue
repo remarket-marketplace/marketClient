@@ -16,7 +16,7 @@ import {
   Users,
 } from 'lucide-vue-next'
 import type { ApexOptions } from 'apexcharts'
-import { computed, onMounted, ref, shallowRef, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatCurrencyAmount } from '@/utils/currency'
 
@@ -32,36 +32,77 @@ const isError = ref(false)
 const selectedRange = ref(30)
 const rangeOptions = [7, 30, 90, 180]
 const platformSettings = ref<PlatformSettings | null>(null)
+const persistedPlatformSettings = ref<PlatformSettings | null>(null)
+const telegramStarsPriceInput = ref('')
 const isPlatformSettingsLoading = ref(true)
 const isPlatformSettingsSaving = ref(false)
 const platformSettingsError = ref('')
 const platformSettingsSuccess = ref('')
+const officialStoreHeroFile = ref<File | null>(null)
+const officialStoreHeroPreviewUrl = ref<string>('')
+const isOfficialStoreHeroSaving = ref(false)
 const pendingPlatformToggle = ref<{
   key: 'registration_enabled' | 'product_creation_enabled' | 'telegram_integration_enabled'
   nextValue: boolean
 } | null>(null)
 
-const CHART_COLORS = {
-  axisText: '#9ca3af',
-  legendText: '#e5e7eb',
-  gridBorder: 'rgba(255, 255, 255, 0.08)',
-  revenue: '#0ea5e9',
-  users: '#a855f7',
-  statusPending: '#f59e0b',
-  statusConfirmed: '#22d3ee',
-  statusCompleted: '#22c55e',
-  statusDisputed: '#fb7185',
-  statusCancelled: '#94a3b8',
-  statusRefunded: '#f97316',
-  statusDefault: '#60a5fa',
-  topCategories: '#34d399',
+const CHART_FALLBACK_TOKENS = {
+  axisText: '--palette-gray-400',
+  legendText: '--palette-gray-200',
+  gridBorder: '--palette-slate-500',
+  revenue: '--palette-sky-500',
+  users: '--palette-purple-500',
+  statusPending: '--palette-amber-500',
+  statusConfirmed: '--palette-cyan-400',
+  statusCompleted: '--palette-green-500',
+  statusDisputed: '--palette-rose-400',
+  statusCancelled: '--palette-slate-400',
+  statusRefunded: '--palette-orange-500',
+  statusDefault: '--palette-blue-400',
+  topCategories: '--palette-emerald-400',
 } as const
 
+function normalizeApexColor(value: string, fallback: string): string {
+  const parse = (input: string): [number, number, number] | null => {
+    const normalized = input.trim()
+    if (!normalized || normalized.includes('var(')) return null
+
+    const hex = normalized.match(/^#([a-f\d]{3}|[a-f\d]{6})$/i)
+    if (hex) {
+      const source = hex[1] ?? ''
+      if (!source) return null
+      if (source.length === 3) {
+        return source.split('').map((part) => Number.parseInt(`${part}${part}`, 16)) as [number, number, number]
+      }
+      return [
+        Number.parseInt(source.slice(0, 2), 16),
+        Number.parseInt(source.slice(2, 4), 16),
+        Number.parseInt(source.slice(4, 6), 16),
+      ]
+    }
+
+    const rgbLike = normalized.match(/^rgba?\((.+)\)$/i)
+    const body = rgbLike?.[1] ?? normalized
+    const numbers = body.match(/[\d.]+/g)
+    if (!numbers || numbers.length < 3) return null
+
+    const r = Math.max(0, Math.min(255, Math.round(Number(numbers[0]))))
+    const g = Math.max(0, Math.min(255, Math.round(Number(numbers[1]))))
+    const b = Math.max(0, Math.min(255, Math.round(Number(numbers[2]))))
+    if (!Number.isFinite(r) || !Number.isFinite(g) || !Number.isFinite(b)) return null
+    return [r, g, b]
+  }
+
+  const rgb = parse(value) ?? parse(fallback) ?? [96, 165, 250]
+  return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`
+}
+
 const cssVar = (token: string, fallback: string) => {
-  if (typeof window === 'undefined') return fallback
-  const value = window.getComputedStyle(document.documentElement).getPropertyValue(token).trim()
-  if (!value || value.includes('var(')) return fallback
-  return value
+  if (typeof window === 'undefined') return normalizeApexColor('', '')
+  const styles = window.getComputedStyle(document.documentElement)
+  const value = styles.getPropertyValue(token).trim()
+  const fallbackValue = styles.getPropertyValue(fallback).trim() || styles.getPropertyValue('--palette-blue-500').trim()
+  return normalizeApexColor(value, fallbackValue)
 }
 
 const formatCurrency = (value: number) =>
@@ -87,11 +128,156 @@ const calcTrend = (series?: { value: number }[]): Trend => {
   return { diff, percent, isUp: diff > 0, isFlat: diff === 0 }
 }
 
+const toSafeNumber = (value: unknown, fallback = 0) => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+const toSafeString = (value: unknown, fallback: string) => {
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (trimmed) return trimmed
+  }
+  return fallback
+}
+
+const clonePlatformSettings = (value: PlatformSettings): PlatformSettings => ({
+  ...value,
+})
+
+const normalizeDecimalInput = (value: string): string => (
+  value
+    .replace(',', '.')
+    .replace(/[^\d.]/g, '')
+    .replace(/(\..*)\./g, '$1')
+)
+
+const formatPriceInputValue = (value: number): string => {
+  if (!Number.isFinite(value) || value < 0) return ''
+  return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, '')
+}
+
+const syncTelegramStarsPriceInput = (value: number) => {
+  telegramStarsPriceInput.value = formatPriceInputValue(value)
+}
+
+const isValidCommissionValue = (value: unknown) => {
+  if (value === '' || value === null || value === undefined) return false
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed >= 0 && parsed <= 100
+}
+
+const isValidPriceValue = (value: unknown) => {
+  if (value === '' || value === null || value === undefined) return false
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed >= 0 && parsed <= 1_000_000
+}
+
+const commissionSettingsValid = computed(() => {
+  if (!platformSettings.value) return false
+  return (
+    isValidCommissionValue(platformSettings.value.deal_commission_percent)
+    && isValidCommissionValue(platformSettings.value.withdrawal_commission_percent)
+    && isValidPriceValue(platformSettings.value.telegram_stars_price_rub)
+  )
+})
+
+const commissionSettingsDirty = computed(() => {
+  if (!platformSettings.value || !persistedPlatformSettings.value) return false
+  return (
+    Number(platformSettings.value.deal_commission_percent)
+      !== Number(persistedPlatformSettings.value.deal_commission_percent)
+    || Number(platformSettings.value.withdrawal_commission_percent)
+      !== Number(persistedPlatformSettings.value.withdrawal_commission_percent)
+    || Number(platformSettings.value.telegram_stars_price_rub)
+      !== Number(persistedPlatformSettings.value.telegram_stars_price_rub)
+  )
+})
+
+const getEffectiveCommissionPayload = () => {
+  const source = commissionSettingsValid.value
+    ? platformSettings.value
+    : persistedPlatformSettings.value
+
+  if (!source) {
+    return {
+      deal_commission_percent: 0,
+      withdrawal_commission_percent: 0,
+      telegram_stars_price_rub: 0,
+    }
+  }
+
+  return {
+    deal_commission_percent: Number(source.deal_commission_percent),
+    withdrawal_commission_percent: Number(source.withdrawal_commission_percent),
+    telegram_stars_price_rub: Number(source.telegram_stars_price_rub),
+  }
+}
+
+const onTelegramStarsPriceInput = (event: Event) => {
+  const input = event.target as HTMLInputElement | null
+  const normalizedValue = normalizeDecimalInput(input?.value ?? '')
+  telegramStarsPriceInput.value = normalizedValue
+
+  if (!platformSettings.value) return
+
+  if (!normalizedValue) {
+    platformSettings.value.telegram_stars_price_rub = Number.NaN
+    return
+  }
+
+  const parsed = Number(normalizedValue)
+  platformSettings.value.telegram_stars_price_rub = Number.isFinite(parsed) ? parsed : Number.NaN
+}
+
+const getAbsoluteImageUrl = (imageUrl: string | null | undefined): string => {
+  const normalized = String(imageUrl ?? '').trim()
+  if (!normalized) return ''
+  if (normalized.startsWith('http://') || normalized.startsWith('https://')) return normalized
+  const apiHost = (import.meta.env.VITE_API_HOST || '').replace(/\/$/, '')
+  return apiHost ? `${apiHost}${normalized.startsWith('/') ? '' : '/'}${normalized}` : normalized
+}
+
+const officialStoreHeroDisplayUrl = computed(() => {
+  if (officialStoreHeroPreviewUrl.value) return officialStoreHeroPreviewUrl.value
+  return getAbsoluteImageUrl(platformSettings.value?.official_store_hero_image_url ?? '')
+})
+
 const revenueTrend = computed(() => calcTrend(dashboardData.value?.revenue_by_day))
 const usersTrend = computed(() => calcTrend(dashboardData.value?.new_users_by_day))
 
-const dealsStatus = computed(() => dashboardData.value?.deals_by_status ?? [])
-const topCategories = computed(() => dashboardData.value?.top_categories ?? [])
+const dealsStatus = computed(() => {
+  const rows = dashboardData.value?.deals_by_status
+  if (!Array.isArray(rows)) return []
+
+  return rows.map((row) => ({
+    status: toSafeString((row as any)?.status, 'unknown').toLowerCase(),
+    count: Math.max(0, Math.round(toSafeNumber((row as any)?.count, 0))),
+  }))
+})
+
+const topCategories = computed(() => {
+  const rows = dashboardData.value?.top_categories
+  if (!Array.isArray(rows)) return []
+
+  return rows.map((row) => ({
+    category_id: String((row as any)?.category_id ?? ''),
+    category_name: toSafeString((row as any)?.category_name, t('common.notSpecified')),
+    parent_category_name: typeof (row as any)?.parent_category_name === 'string'
+      ? (row as any).parent_category_name.trim()
+      : '',
+    total_sales: Math.max(0, toSafeNumber((row as any)?.total_sales, 0)),
+    total_deals: Math.max(0, Math.round(toSafeNumber((row as any)?.total_deals, 0))),
+  }))
+})
+
+const formatCategoryPath = (categoryName: string, parentCategoryName?: string) => {
+  const safeCategoryName = toSafeString(categoryName, t('common.notSpecified'))
+  const safeParentCategoryName = toSafeString(parentCategoryName, '')
+  return safeParentCategoryName
+    ? `${safeParentCategoryName}/${safeCategoryName}`
+    : safeCategoryName
+}
 
 const avgCheck = computed(() => {
   if (!dashboardData.value || !dashboardData.value.count_of_deals) return 0
@@ -102,9 +288,14 @@ const getStatusCount = (status: string) =>
   dealsStatus.value.find(item => item.status === status)?.count ?? 0
 
 const revenueSeries = computed(() => {
-  const revenue = dashboardData.value?.revenue_by_day ?? []
-  const users = dashboardData.value?.new_users_by_day ?? []
-  const toTimestamp = (rawDate: string) => {
+  const revenue = Array.isArray(dashboardData.value?.revenue_by_day)
+    ? dashboardData.value.revenue_by_day
+    : []
+  const users = Array.isArray(dashboardData.value?.new_users_by_day)
+    ? dashboardData.value.new_users_by_day
+    : []
+  const toTimestamp = (rawDate: unknown) => {
+    if (typeof rawDate !== 'string') return Date.now()
     const parsed = Date.parse(rawDate)
     return Number.isFinite(parsed) ? parsed : Date.now()
   }
@@ -112,22 +303,22 @@ const revenueSeries = computed(() => {
     {
       name: t('pages.admin.mainPage.revenue'),
       type: 'area',
-      data: revenue.map(point => [toTimestamp(point.date), Number(point.value || 0)]),
+      data: revenue.map(point => [toTimestamp((point as any)?.date), toSafeNumber((point as any)?.value, 0)]),
     },
     {
       name: t('pages.admin.mainPage.newUsers'),
       type: 'line',
-      data: users.map(point => [toTimestamp(point.date), Number(point.value || 0)]),
+      data: users.map(point => [toTimestamp((point as any)?.date), toSafeNumber((point as any)?.value, 0)]),
     },
   ]
 })
 
 const revenueOptions = computed<ApexOptions>(() => {
-  const axisText = cssVar('--chart-axis-text', CHART_COLORS.axisText)
-  const legendText = cssVar('--chart-legend-text', CHART_COLORS.legendText)
-  const gridBorder = cssVar('--chart-grid-border', CHART_COLORS.gridBorder)
-  const revenueColor = cssVar('--chart-series-revenue', CHART_COLORS.revenue)
-  const usersColor = cssVar('--chart-series-users', CHART_COLORS.users)
+  const axisText = cssVar('--chart-axis-text', CHART_FALLBACK_TOKENS.axisText)
+  const legendText = cssVar('--chart-legend-text', CHART_FALLBACK_TOKENS.legendText)
+  const gridBorder = cssVar('--chart-grid-border', CHART_FALLBACK_TOKENS.gridBorder)
+  const revenueColor = cssVar('--chart-series-revenue', CHART_FALLBACK_TOKENS.revenue)
+  const usersColor = cssVar('--chart-series-users', CHART_FALLBACK_TOKENS.users)
 
   return {
     chart: {
@@ -135,6 +326,7 @@ const revenueOptions = computed<ApexOptions>(() => {
       toolbar: { show: false },
       background: 'transparent',
       foreColor: axisText,
+      fontFamily: 'Outfit, sans-serif',
     },
     dataLabels: { enabled: false },
     stroke: { curve: 'smooth', width: [3, 2.4] },
@@ -210,8 +402,8 @@ const revenueOptions = computed<ApexOptions>(() => {
 })
 
 const statusOptions = computed<ApexOptions>(() => {
-  const axisText = cssVar('--chart-axis-text', CHART_COLORS.axisText)
-  const gridBorder = cssVar('--chart-grid-border', CHART_COLORS.gridBorder)
+  const axisText = cssVar('--chart-axis-text', CHART_FALLBACK_TOKENS.axisText)
+  const gridBorder = cssVar('--chart-grid-border', CHART_FALLBACK_TOKENS.gridBorder)
   const statuses = dealsStatus.value
   const categories = statuses.map((s) => {
     const translated = t(`common.dealStatuses.${s.status}`)
@@ -219,17 +411,22 @@ const statusOptions = computed<ApexOptions>(() => {
     return String(label)
   })
   const colorsMap: Record<string, string> = {
-    pending: cssVar('--chart-status-pending', CHART_COLORS.statusPending),
-    confirmed: cssVar('--chart-status-confirmed', CHART_COLORS.statusConfirmed),
-    completed: cssVar('--chart-status-completed', CHART_COLORS.statusCompleted),
-    disputed: cssVar('--chart-status-disputed', CHART_COLORS.statusDisputed),
-    cancelled: cssVar('--chart-status-cancelled', CHART_COLORS.statusCancelled),
-    refunded: cssVar('--chart-status-refunded', CHART_COLORS.statusRefunded),
+    pending: cssVar('--chart-status-pending', CHART_FALLBACK_TOKENS.statusPending),
+    confirmed: cssVar('--chart-status-confirmed', CHART_FALLBACK_TOKENS.statusConfirmed),
+    completed: cssVar('--chart-status-completed', CHART_FALLBACK_TOKENS.statusCompleted),
+    disputed: cssVar('--chart-status-disputed', CHART_FALLBACK_TOKENS.statusDisputed),
+    cancelled: cssVar('--chart-status-cancelled', CHART_FALLBACK_TOKENS.statusCancelled),
+    refunded: cssVar('--chart-status-refunded', CHART_FALLBACK_TOKENS.statusRefunded),
   }
-  const fallbackColor = cssVar('--chart-status-default', CHART_COLORS.statusDefault)
+  const fallbackColor = cssVar('--chart-status-default', CHART_FALLBACK_TOKENS.statusDefault)
   const colors = statuses.map(s => colorsMap[s.status] || fallbackColor)
   return {
-    chart: { type: 'bar' as const, toolbar: { show: false }, foreColor: axisText },
+    chart: {
+      type: 'bar' as const,
+      toolbar: { show: false },
+      foreColor: axisText,
+      fontFamily: 'Outfit, sans-serif',
+    },
     plotOptions: {
       bar: {
         columnWidth: '50%',
@@ -267,13 +464,18 @@ const statusSeries = computed(() => [
 ])
 
 const topCategoriesOptions = computed<ApexOptions>(() => {
-  const axisText = cssVar('--chart-axis-text', CHART_COLORS.axisText)
-  const legendText = cssVar('--chart-legend-text', CHART_COLORS.legendText)
-  const gridBorder = cssVar('--chart-grid-border', CHART_COLORS.gridBorder)
-  const seriesColor = cssVar('--chart-series-top-categories', CHART_COLORS.topCategories)
+  const axisText = cssVar('--chart-axis-text', CHART_FALLBACK_TOKENS.axisText)
+  const legendText = cssVar('--chart-legend-text', CHART_FALLBACK_TOKENS.legendText)
+  const gridBorder = cssVar('--chart-grid-border', CHART_FALLBACK_TOKENS.gridBorder)
+  const seriesColor = cssVar('--chart-series-top-categories', CHART_FALLBACK_TOKENS.topCategories)
 
   return {
-    chart: { type: 'bar' as const, toolbar: { show: false }, foreColor: axisText },
+    chart: {
+      type: 'bar' as const,
+      toolbar: { show: false },
+      foreColor: axisText,
+      fontFamily: 'Outfit, sans-serif',
+    },
     plotOptions: {
       bar: {
         horizontal: true,
@@ -287,7 +489,7 @@ const topCategoriesOptions = computed<ApexOptions>(() => {
       style: { colors: [legendText] },
     },
     xaxis: {
-      categories: topCategories.value.map(c => String(c.category_name || t('common.notSpecified'))),
+      categories: topCategories.value.map(c => formatCategoryPath(c.category_name, c.parent_category_name)),
       labels: { style: { colors: axisText } },
     },
     colors: [seriesColor],
@@ -295,6 +497,14 @@ const topCategoriesOptions = computed<ApexOptions>(() => {
     tooltip: {
       theme: 'dark',
       style: { fontSize: '12px', fontFamily: 'Outfit, sans-serif' },
+      x: {
+        formatter: (_value: string, opts: any) => {
+          const index = Number(opts?.dataPointIndex ?? -1)
+          const category = topCategories.value[index]
+          if (!category) return t('common.notSpecified')
+          return formatCategoryPath(category.category_name, category.parent_category_name)
+        },
+      },
       y: { formatter: (val: number) => formatCurrency(val) },
     },
   }
@@ -318,7 +528,7 @@ const summaryCards = computed(() => {
       trend: revenueTrend.value,
       sublabel: t('pages.admin.mainPage.lastDays', { days: selectedRange.value }),
       icon: DollarSign,
-      gradient: 'from-cyan-500/80 to-blue-500/70',
+      tone: 'text-[var(--text-link)]',
     },
     {
       id: 'deals',
@@ -326,7 +536,7 @@ const summaryCards = computed(() => {
       value: formatNumber(data.count_of_deals),
       sublabel: t('pages.admin.mainPage.disputesActive', { count: formatNumber(data.active_disputes) }),
       icon: Activity,
-      gradient: 'from-emerald-500/80 to-lime-500/70',
+      tone: 'text-[var(--text-success)]',
     },
     {
       id: 'users',
@@ -335,7 +545,7 @@ const summaryCards = computed(() => {
       trend: usersTrend.value,
       sublabel: t('pages.admin.mainPage.lastDays', { days: selectedRange.value }),
       icon: Users,
-      gradient: 'from-violet-500/80 to-indigo-500/70',
+      tone: 'text-[var(--text-accent)]',
     },
     {
       id: 'products',
@@ -343,7 +553,7 @@ const summaryCards = computed(() => {
       value: formatNumber(data.count_of_products),
       sublabel: t('pages.admin.mainPage.onModeration', { count: formatNumber(data.moderation_products) }),
       icon: Package,
-      gradient: 'from-amber-500/80 to-orange-500/70',
+      tone: 'text-[var(--text-warning-strong)]',
     },
     {
       id: 'avg-check',
@@ -351,7 +561,7 @@ const summaryCards = computed(() => {
       value: formatCurrency(avgCheck.value),
       sublabel: t('pages.admin.mainPage.perDeal'),
       icon: AlertTriangle,
-      gradient: 'from-sky-500/80 to-cyan-500/70',
+      tone: 'text-[var(--text-link)]',
     },
   ]
 })
@@ -375,7 +585,11 @@ const loadPlatformSettings = async () => {
   if (!data) {
     platformSettingsError.value = t('pages.admin.mainPage.platformSettingsLoadError')
   } else {
-    platformSettings.value = data
+    platformSettings.value = clonePlatformSettings(data)
+    persistedPlatformSettings.value = clonePlatformSettings(data)
+    syncTelegramStarsPriceInput(data.telegram_stars_price_rub)
+    officialStoreHeroPreviewUrl.value = ''
+    officialStoreHeroFile.value = null
   }
   isPlatformSettingsLoading.value = false
 }
@@ -391,7 +605,9 @@ const updatePlatformSettings = async (payload: PlatformSettings) => {
   if (!updated) {
     platformSettingsError.value = t('pages.admin.mainPage.platformSettingsSaveError')
   } else {
-    platformSettings.value = updated
+    platformSettings.value = clonePlatformSettings(updated)
+    persistedPlatformSettings.value = clonePlatformSettings(updated)
+    syncTelegramStarsPriceInput(updated.telegram_stars_price_rub)
     platformSettingsSuccess.value = t('pages.admin.mainPage.platformSettingsSaved')
   }
 
@@ -456,8 +672,76 @@ const confirmPlatformToggle = async () => {
   await updatePlatformSettings({
     ...platformSettings.value,
     [key]: nextValue,
+    ...getEffectiveCommissionPayload(),
   })
   pendingPlatformToggle.value = null
+}
+
+const saveCommissionSettings = async () => {
+  if (!platformSettings.value || !commissionSettingsValid.value) return
+  await updatePlatformSettings({
+    ...platformSettings.value,
+    ...getEffectiveCommissionPayload(),
+  })
+}
+
+const resetOfficialStoreHeroPicker = () => {
+  officialStoreHeroFile.value = null
+  officialStoreHeroPreviewUrl.value = ''
+}
+
+const onOfficialStoreHeroFileChange = (event: Event) => {
+  const input = event.target as HTMLInputElement | null
+  const file = input?.files?.[0] ?? null
+  if (!file) {
+    resetOfficialStoreHeroPicker()
+    return
+  }
+  if (officialStoreHeroPreviewUrl.value.startsWith('blob:')) {
+    URL.revokeObjectURL(officialStoreHeroPreviewUrl.value)
+  }
+  officialStoreHeroFile.value = file
+  officialStoreHeroPreviewUrl.value = URL.createObjectURL(file)
+}
+
+const saveOfficialStoreHeroImage = async () => {
+  if (!officialStoreHeroFile.value || isOfficialStoreHeroSaving.value) return
+  isOfficialStoreHeroSaving.value = true
+  platformSettingsError.value = ''
+  platformSettingsSuccess.value = ''
+
+  const updated = await adminService.uploadOfficialStoreHeroImage(officialStoreHeroFile.value)
+  if (!updated) {
+    platformSettingsError.value = t('pages.admin.mainPage.platformSettingsSaveError')
+  } else {
+    platformSettings.value = clonePlatformSettings(updated)
+    persistedPlatformSettings.value = clonePlatformSettings(updated)
+    syncTelegramStarsPriceInput(updated.telegram_stars_price_rub)
+    platformSettingsSuccess.value = t('pages.admin.mainPage.platformSettingsSaved')
+    resetOfficialStoreHeroPicker()
+  }
+
+  isOfficialStoreHeroSaving.value = false
+}
+
+const deleteOfficialStoreHeroImage = async () => {
+  if (isOfficialStoreHeroSaving.value) return
+  isOfficialStoreHeroSaving.value = true
+  platformSettingsError.value = ''
+  platformSettingsSuccess.value = ''
+
+  const updated = await adminService.deleteOfficialStoreHeroImage()
+  if (!updated) {
+    platformSettingsError.value = t('pages.admin.mainPage.platformSettingsSaveError')
+  } else {
+    platformSettings.value = clonePlatformSettings(updated)
+    persistedPlatformSettings.value = clonePlatformSettings(updated)
+    syncTelegramStarsPriceInput(updated.telegram_stars_price_rub)
+    platformSettingsSuccess.value = t('pages.admin.mainPage.platformSettingsSaved')
+    resetOfficialStoreHeroPicker()
+  }
+
+  isOfficialStoreHeroSaving.value = false
 }
 
 onMounted(async () => {
@@ -467,6 +751,12 @@ onMounted(async () => {
   }
   await Promise.all([loadDashboard(), loadPlatformSettings()])
 })
+
+onBeforeUnmount(() => {
+  if (officialStoreHeroPreviewUrl.value.startsWith('blob:')) {
+    URL.revokeObjectURL(officialStoreHeroPreviewUrl.value)
+  }
+})
 watch(selectedRange, loadDashboard)
 </script>
 
@@ -474,15 +764,15 @@ watch(selectedRange, loadDashboard)
   <section class="h-full w-full flex flex-col gap-4 overflow-hidden pb-6 pt-3 md:pt-4">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div class="space-y-1">
-        <p class="text-xs uppercase tracking-[0.2em] text-gray-400">
+        <p class="text-xs uppercase tracking-[0.2em] text-[var(--text-muted)]">
           {{ t('pages.admin.mainPage.title') }}
         </p>
-        <h1 class="text-2xl font-semibold text-white">
+        <h1 class="text-2xl font-semibold text-[var(--text-title)]">
           {{ t('pages.admin.mainPage.overview') }}
         </h1>
       </div>
 
-      <div class="flex items-center gap-2 bg-dark-600 border border-dark-700 rounded-xl p-1">
+      <div class="admin-surface-soft flex items-center gap-2 rounded-xl p-1">
         <button
           v-for="range in rangeOptions"
           :key="range"
@@ -501,18 +791,18 @@ watch(selectedRange, loadDashboard)
 
     <div
       v-else-if="isError"
-      class="rounded-2xl border border-red-500/40 bg-red-500/10 text-red-200 px-4 py-3 text-sm"
+      class="rounded-2xl border border-[rgb(var(--palette-red-500)/0.4)] bg-[rgb(var(--palette-red-500)/0.1)] text-[var(--text-danger-soft)] px-4 py-3 text-sm"
     >
       {{ t('pages.admin.mainPage.loadError') }}
     </div>
 
     <div v-else class="flex flex-col gap-5 overflow-y-auto pb-8">
-      <div class="rounded-2xl border border-dark-700 bg-dark-600 p-4">
+      <div class="admin-surface-panel rounded-2xl p-4">
         <div class="mb-3">
-          <p class="text-sm font-semibold text-gray-200">
+          <p class="text-sm font-semibold text-[var(--text-body-strong)]">
             {{ t('pages.admin.mainPage.platformSettingsTitle') }}
           </p>
-          <p class="mt-1 text-xs text-gray-400">
+          <p class="mt-1 text-xs text-[var(--text-muted)]">
             {{ t('pages.admin.mainPage.platformSettingsHint') }}
           </p>
         </div>
@@ -524,31 +814,31 @@ watch(selectedRange, loadDashboard)
         <template v-else>
           <div
             v-if="platformSettingsError"
-            class="mb-3 rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200"
+            class="mb-3 rounded-xl border border-[rgb(var(--palette-red-500)/0.4)] bg-[rgb(var(--palette-red-500)/0.1)] px-3 py-2 text-sm text-[var(--text-danger-soft)]"
           >
             {{ platformSettingsError }}
           </div>
 
           <div
             v-if="platformSettingsSuccess"
-            class="mb-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200"
+            class="mb-3 rounded-xl border border-[rgb(var(--palette-emerald-500)/0.3)] bg-[rgb(var(--palette-emerald-500)/0.1)] px-3 py-2 text-sm text-[var(--text-success)]"
           >
             {{ platformSettingsSuccess }}
           </div>
 
-          <div v-if="platformSettings" class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
-              <p class="text-sm text-gray-200 font-medium">
+          <div v-if="platformSettings" class="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
+            <div class="admin-surface-soft rounded-xl p-3">
+              <p class="text-sm text-[var(--text-body-strong)] font-medium">
                 {{ t('pages.admin.mainPage.registrationToggleLabel') }}
               </p>
-              <p class="mt-1 text-xs text-gray-400">
+              <p class="mt-1 text-xs text-[var(--text-muted)]">
                 {{ t('pages.admin.mainPage.registrationToggleHint') }}
               </p>
               <button
                 class="mt-3 rounded-lg border px-3 py-2 text-xs font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
                 :class="platformSettings.registration_enabled
-                  ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25'
-                  : 'border-red-500/40 bg-red-500/15 text-red-200 hover:bg-red-500/25'"
+                  ? 'border-[rgb(var(--palette-blue-500)/0.4)] bg-[rgb(var(--palette-blue-600)/0.8)] text-[var(--text-title)] hover:bg-[rgb(var(--palette-blue-500))]'
+                  : 'border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body-strong)] hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)]'"
                 :disabled="isPlatformSettingsSaving"
                 @click="openRegistrationToggleConfirm"
               >
@@ -560,18 +850,18 @@ watch(selectedRange, loadDashboard)
               </button>
             </div>
 
-            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
-              <p class="text-sm text-gray-200 font-medium">
+            <div class="admin-surface-soft rounded-xl p-3">
+              <p class="text-sm text-[var(--text-body-strong)] font-medium">
                 {{ t('pages.admin.mainPage.productCreationToggleLabel') }}
               </p>
-              <p class="mt-1 text-xs text-gray-400">
+              <p class="mt-1 text-xs text-[var(--text-muted)]">
                 {{ t('pages.admin.mainPage.productCreationToggleHint') }}
               </p>
               <button
                 class="mt-3 rounded-lg border px-3 py-2 text-xs font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
                 :class="platformSettings.product_creation_enabled
-                  ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25'
-                  : 'border-red-500/40 bg-red-500/15 text-red-200 hover:bg-red-500/25'"
+                  ? 'border-[rgb(var(--palette-blue-500)/0.4)] bg-[rgb(var(--palette-blue-600)/0.8)] text-[var(--text-title)] hover:bg-[rgb(var(--palette-blue-500))]'
+                  : 'border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body-strong)] hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)]'"
                 :disabled="isPlatformSettingsSaving"
                 @click="openProductCreationToggleConfirm"
               >
@@ -583,18 +873,18 @@ watch(selectedRange, loadDashboard)
               </button>
             </div>
 
-            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
-              <p class="text-sm text-gray-200 font-medium">
+            <div class="admin-surface-soft rounded-xl p-3">
+              <p class="text-sm text-[var(--text-body-strong)] font-medium">
                 {{ t('pages.admin.mainPage.telegramIntegrationToggleLabel') }}
               </p>
-              <p class="mt-1 text-xs text-gray-400">
+              <p class="mt-1 text-xs text-[var(--text-muted)]">
                 {{ t('pages.admin.mainPage.telegramIntegrationToggleHint') }}
               </p>
               <button
                 class="mt-3 rounded-lg border px-3 py-2 text-xs font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
                 :class="platformSettings.telegram_integration_enabled
-                  ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25'
-                  : 'border-red-500/40 bg-red-500/15 text-red-200 hover:bg-red-500/25'"
+                  ? 'border-[rgb(var(--palette-blue-500)/0.4)] bg-[rgb(var(--palette-blue-600)/0.8)] text-[var(--text-title)] hover:bg-[rgb(var(--palette-blue-500))]'
+                  : 'border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.04)] text-[var(--text-body-strong)] hover:border-[rgb(var(--palette-white)/0.2)] hover:bg-[rgb(var(--palette-white)/0.08)] hover:text-[var(--text-title)]'"
                 :disabled="isPlatformSettingsSaving"
                 @click="openTelegramIntegrationToggleConfirm"
               >
@@ -605,34 +895,175 @@ watch(selectedRange, loadDashboard)
                 }}
               </button>
             </div>
+
+            <div class="admin-surface-soft rounded-xl p-4 md:col-span-2 2xl:col-span-3">
+              <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div class="max-w-2xl">
+                  <p class="text-sm text-[var(--text-body-strong)] font-medium">
+                    Баннер официального магазина
+                  </p>
+                  <p class="mt-1 text-xs text-[var(--text-muted)]">
+                    Этот баннер показывается вверху страницы official store и не меняется при переключении категорий.
+                  </p>
+                </div>
+              </div>
+
+              <div class="mt-4 grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+                <div class="h-40 overflow-hidden rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-black)/0.4)]">
+                  <img
+                    v-if="officialStoreHeroDisplayUrl"
+                    :src="officialStoreHeroDisplayUrl"
+                    alt="Official store hero"
+                    class="h-full w-full object-cover"
+                  >
+                  <div
+                    v-else
+                    class="flex h-full w-full items-center justify-center text-xs text-[var(--text-muted)]"
+                  >
+                    Баннер не установлен
+                  </div>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    class="w-full rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] px-3 py-2 text-sm text-[var(--text-body-strong)] file:mr-3 file:rounded-lg file:border-0 file:bg-[rgb(var(--palette-blue-600)/0.8)] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[var(--text-title)] hover:file:bg-[rgb(var(--palette-blue-500))]"
+                    :disabled="isOfficialStoreHeroSaving"
+                    @change="onOfficialStoreHeroFileChange"
+                  >
+
+                  <div class="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      class="admin-btn admin-btn-primary"
+                      :disabled="!officialStoreHeroFile || isOfficialStoreHeroSaving"
+                      @click="saveOfficialStoreHeroImage"
+                    >
+                      {{ isOfficialStoreHeroSaving ? 'Сохраняем...' : 'Сохранить баннер' }}
+                    </button>
+
+                    <button
+                      type="button"
+                      class="admin-btn"
+                      :disabled="!platformSettings?.official_store_hero_image_url || isOfficialStoreHeroSaving"
+                      @click="deleteOfficialStoreHeroImage"
+                    >
+                      Удалить баннер
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="admin-surface-soft rounded-xl p-4 md:col-span-2 2xl:col-span-3">
+              <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div class="max-w-2xl">
+                  <p class="text-sm text-[var(--text-body-strong)] font-medium">
+                    {{ t('pages.admin.mainPage.financeSettingsTitle') }}
+                  </p>
+                  <p class="mt-1 text-xs text-[var(--text-muted)]">
+                    {{ t('pages.admin.mainPage.financeSettingsHint') }}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  class="admin-btn admin-btn-primary shrink-0"
+                  :disabled="!commissionSettingsDirty || !commissionSettingsValid || isPlatformSettingsSaving"
+                  @click="saveCommissionSettings"
+                >
+                  {{ t('pages.admin.mainPage.saveFinanceSettings') }}
+                </button>
+              </div>
+
+              <div class="mt-4 grid gap-3 md:grid-cols-2 2xl:grid-cols-6">
+                <label class="admin-surface-panel rounded-xl p-3">
+                  <span class="text-xs uppercase tracking-[0.18em] text-[var(--text-meta)]">
+                    {{ t('pages.admin.mainPage.dealCommissionLabel') }}
+                  </span>
+                  <input
+                    v-model.number="platformSettings.deal_commission_percent"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    class="mt-3 w-full rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] px-4 py-3 text-lg font-semibold text-[var(--text-title)] outline-none transition focus:border-[rgb(var(--palette-sky-400)/0.45)] focus:bg-[rgb(var(--palette-sky-400)/0.05)]"
+                  >
+                  <p class="mt-2 text-xs text-[var(--text-muted)]">
+                    {{ t('pages.admin.mainPage.dealCommissionHint') }}
+                  </p>
+                </label>
+
+                <label class="admin-surface-panel rounded-xl p-3">
+                  <span class="text-xs uppercase tracking-[0.18em] text-[var(--text-meta)]">
+                    {{ t('pages.admin.mainPage.withdrawalCommissionLabel') }}
+                  </span>
+                  <input
+                    v-model.number="platformSettings.withdrawal_commission_percent"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    class="mt-3 w-full rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] px-4 py-3 text-lg font-semibold text-[var(--text-title)] outline-none transition focus:border-[rgb(var(--palette-sky-400)/0.45)] focus:bg-[rgb(var(--palette-sky-400)/0.05)]"
+                  >
+                  <p class="mt-2 text-xs text-[var(--text-muted)]">
+                    {{ t('pages.admin.mainPage.withdrawalCommissionHint') }}
+                  </p>
+                </label>
+
+                <label class="admin-surface-panel rounded-xl p-3">
+                  <span class="text-xs uppercase tracking-[0.18em] text-[var(--text-meta)]">
+                    {{ t('pages.admin.mainPage.telegramStarsPriceLabel') }}
+                  </span>
+                  <input
+                    :value="telegramStarsPriceInput"
+                    type="text"
+                    inputmode="decimal"
+                    min="0"
+                    max="1000000"
+                    step="0.01"
+                    @input="onTelegramStarsPriceInput"
+                    class="mt-3 w-full rounded-xl border border-[rgb(var(--palette-white)/0.1)] bg-[rgb(var(--palette-white)/0.03)] px-4 py-3 text-lg font-semibold text-[var(--text-title)] outline-none transition focus:border-[rgb(var(--palette-sky-400)/0.45)] focus:bg-[rgb(var(--palette-sky-400)/0.05)]"
+                  >
+                  <p class="mt-2 text-xs text-[var(--text-muted)]">
+                    {{ t('pages.admin.mainPage.telegramStarsPriceHint') }}
+                  </p>
+                </label>
+
+              </div>
+
+              <p class="mt-3 text-xs text-[var(--text-meta)]">
+                {{ t('pages.admin.mainPage.financeSettingsSnapshotHint') }}
+              </p>
+            </div>
           </div>
         </template>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
         <div
           v-for="card in summaryCards"
           :key="card.id"
-          class="relative overflow-hidden rounded-2xl border border-dark-700 bg-dark-600 p-4 transition-colors hover:border-dark-500"
+          class="admin-surface-card relative overflow-hidden rounded-2xl p-4"
         >
           <div class="flex items-center justify-between gap-3">
             <div class="space-y-1">
-              <p class="text-sm text-gray-400">{{ card.label }}</p>
-              <p class="text-2xl font-semibold text-white leading-tight">{{ card.value }}</p>
+              <p class="text-sm text-[var(--text-muted)]">{{ card.label }}</p>
+              <p class="text-2xl font-semibold text-[var(--text-title)] leading-tight">{{ card.value }}</p>
             </div>
             <div
-              class="h-12 w-12 flex items-center justify-center rounded-xl bg-gradient-to-br"
-              :class="card.gradient"
+              class="admin-surface-soft h-12 w-12 flex items-center justify-center rounded-xl"
             >
-              <component :is="card.icon" class="text-white" :size="22" />
+              <component :is="card.icon" :class="card.tone" :size="22" />
             </div>
           </div>
 
-          <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-gray-400">
+          <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
             <div
               v-if="card.trend"
               class="flex items-center gap-1 rounded-lg px-2 py-1"
-              :class="card.trend.isFlat ? 'bg-white/5 text-gray-300' : card.trend.isUp ? 'bg-emerald-500/10 text-emerald-300' : 'bg-red-500/10 text-red-300'"
+              :class="card.trend.isFlat ? 'bg-[rgb(var(--palette-white)/0.05)] text-[var(--text-body)]' : card.trend.isUp ? 'bg-[rgb(var(--palette-emerald-500)/0.1)] text-[var(--text-success)]' : 'bg-[rgb(var(--palette-red-500)/0.1)] text-[var(--text-danger)]'"
             >
               <component
                 :is="card.trend.isFlat ? Activity : card.trend.isUp ? ArrowUpRight : ArrowDownRight"
@@ -640,19 +1071,19 @@ watch(selectedRange, loadDashboard)
               />
               <span>{{ card.trend.percent.toFixed(1) }}% {{ t('pages.admin.mainPage.vsPrevDay') }}</span>
             </div>
-            <span class="text-gray-400">{{ card.sublabel }}</span>
+            <span class="text-[var(--text-muted)]">{{ card.sublabel }}</span>
           </div>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <div class="xl:col-span-2 rounded-2xl border border-dark-700 bg-dark-600 p-4">
+      <div class="grid grid-cols-1 gap-4 2xl:grid-cols-12">
+        <div class="admin-surface-panel rounded-2xl p-4 2xl:col-span-8">
           <div class="flex items-center justify-between mb-3">
             <div>
-              <p class="text-sm text-gray-300 font-semibold">
+              <p class="text-sm text-[var(--text-body)] font-semibold">
                 {{ t('pages.admin.mainPage.chartTitleRevenue') }}
               </p>
-              <p class="text-xs text-gray-500">{{ t('pages.admin.mainPage.lastDays', { days: selectedRange }) }}</p>
+              <p class="text-xs text-[var(--text-meta)]">{{ t('pages.admin.mainPage.lastDays', { days: selectedRange }) }}</p>
             </div>
           </div>
           <component
@@ -663,14 +1094,14 @@ watch(selectedRange, loadDashboard)
             :options="revenueOptions"
             :series="revenueSeries"
           />
-          <div v-else class="flex h-[320px] items-center justify-center text-gray-500 text-sm">
+          <div v-else class="flex h-[320px] items-center justify-center text-[var(--text-meta)] text-sm">
             {{ t('pages.admin.mainPage.chartsLoading') }}
           </div>
         </div>
 
-        <div class="rounded-2xl border border-dark-700 bg-dark-600 p-4">
+        <div class="admin-surface-panel rounded-2xl p-4 2xl:col-span-4">
           <div class="flex items-center justify-between mb-3">
-            <p class="text-sm text-gray-300 font-semibold">
+            <p class="text-sm text-[var(--text-body)] font-semibold">
               {{ t('pages.admin.mainPage.dealsByStatus') }}
             </p>
           </div>
@@ -682,16 +1113,16 @@ watch(selectedRange, loadDashboard)
             :options="statusOptions"
             :series="statusSeries"
           />
-          <div v-else class="flex h-[320px] items-center justify-center text-gray-500 text-sm">
+          <div v-else class="flex h-[320px] items-center justify-center text-[var(--text-meta)] text-sm">
             {{ t('pages.admin.mainPage.chartsLoading') }}
           </div>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div class="rounded-2xl border border-dark-700 bg-dark-600 p-4">
+      <div class="grid grid-cols-1 gap-4 2xl:grid-cols-12">
+        <div class="admin-surface-panel rounded-2xl p-4 2xl:col-span-7">
           <div class="flex items-center justify-between mb-3">
-            <p class="text-sm text-gray-300 font-semibold">
+            <p class="text-sm text-[var(--text-body)] font-semibold">
               {{ t('pages.admin.mainPage.topCategories') }}
             </p>
           </div>
@@ -704,45 +1135,45 @@ watch(selectedRange, loadDashboard)
               :options="topCategoriesOptions"
               :series="topCategoriesSeries"
             />
-            <div v-else class="flex h-[320px] items-center justify-center text-gray-500 text-sm">
+            <div v-else class="flex h-[320px] items-center justify-center text-[var(--text-meta)] text-sm">
               {{ t('pages.admin.mainPage.chartsLoading') }}
             </div>
           </div>
-          <div v-else class="flex h-[320px] items-center justify-center text-gray-500 text-sm">
+          <div v-else class="flex h-[320px] items-center justify-center text-[var(--text-meta)] text-sm">
             {{ t('pages.admin.mainPage.noCategories') }}
           </div>
         </div>
 
-        <div class="rounded-2xl border border-dark-700 bg-dark-600 p-4">
-          <p class="text-sm text-gray-300 font-semibold mb-3">
+        <div class="admin-surface-panel rounded-2xl p-4 2xl:col-span-5">
+          <p class="text-sm text-[var(--text-body)] font-semibold mb-3">
             {{ t('pages.admin.mainPage.quickStats') }}
           </p>
-          <div class="grid grid-cols-2 gap-3">
-            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
-              <p class="text-xs text-gray-400 mb-1">{{ t('common.dealStatuses.pending') }}</p>
-              <p class="text-xl font-semibold text-white">{{ formatNumber(getStatusCount('pending')) }}</p>
+          <div class="grid grid-cols-2 gap-3 2xl:grid-cols-3">
+            <div class="admin-surface-soft rounded-xl p-3">
+              <p class="text-xs text-[var(--text-muted)] mb-1">{{ t('common.dealStatuses.pending') }}</p>
+              <p class="text-xl font-semibold text-[var(--text-title)]">{{ formatNumber(getStatusCount('pending')) }}</p>
             </div>
-            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
-              <p class="text-xs text-gray-400 mb-1">{{ t('common.dealStatuses.completed') }}</p>
-              <p class="text-xl font-semibold text-white">{{ formatNumber(getStatusCount('completed')) }}</p>
+            <div class="admin-surface-soft rounded-xl p-3">
+              <p class="text-xs text-[var(--text-muted)] mb-1">{{ t('common.dealStatuses.completed') }}</p>
+              <p class="text-xl font-semibold text-[var(--text-title)]">{{ formatNumber(getStatusCount('completed')) }}</p>
             </div>
-            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
-              <p class="text-xs text-gray-400 mb-1">{{ t('common.dealStatuses.refunded') }}</p>
-              <p class="text-xl font-semibold text-white">{{ formatNumber(getStatusCount('refunded')) }}</p>
+            <div class="admin-surface-soft rounded-xl p-3">
+              <p class="text-xs text-[var(--text-muted)] mb-1">{{ t('common.dealStatuses.refunded') }}</p>
+              <p class="text-xl font-semibold text-[var(--text-title)]">{{ formatNumber(getStatusCount('refunded')) }}</p>
             </div>
-            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
-              <p class="text-xs text-gray-400 mb-1">{{ t('common.dealStatuses.disputed') }}</p>
-              <p class="text-xl font-semibold text-white">{{ formatNumber(getStatusCount('disputed')) }}</p>
+            <div class="admin-surface-soft rounded-xl p-3">
+              <p class="text-xs text-[var(--text-muted)] mb-1">{{ t('common.dealStatuses.disputed') }}</p>
+              <p class="text-xl font-semibold text-[var(--text-title)]">{{ formatNumber(getStatusCount('disputed')) }}</p>
             </div>
           </div>
           <div class="mt-4 grid grid-cols-2 gap-3">
-            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
-              <p class="text-xs text-gray-400 mb-1">{{ t('pages.admin.mainPage.activeDisputes') }}</p>
-              <p class="text-xl font-semibold text-white">{{ formatNumber(dashboardData?.active_disputes ?? 0) }}</p>
+            <div class="admin-surface-soft rounded-xl p-3">
+              <p class="text-xs text-[var(--text-muted)] mb-1">{{ t('pages.admin.mainPage.activeDisputes') }}</p>
+              <p class="text-xl font-semibold text-[var(--text-title)]">{{ formatNumber(dashboardData?.active_disputes ?? 0) }}</p>
             </div>
-            <div class="rounded-xl border border-dark-600 bg-dark-700 p-3">
-              <p class="text-xs text-gray-400 mb-1">{{ t('pages.admin.mainPage.onModeration', { count: '' }) }}</p>
-              <p class="text-xl font-semibold text-white">{{ formatNumber(dashboardData?.moderation_products ?? 0) }}</p>
+            <div class="admin-surface-soft rounded-xl p-3">
+              <p class="text-xs text-[var(--text-muted)] mb-1">{{ t('pages.admin.mainPage.onModeration', { count: '' }) }}</p>
+              <p class="text-xl font-semibold text-[var(--text-title)]">{{ formatNumber(dashboardData?.moderation_products ?? 0) }}</p>
             </div>
           </div>
         </div>

@@ -42,10 +42,12 @@ export const DealStatusMessageSchema = BaseMessageSchema.extend({
   message_type: z.literal('update_deal_status_message'),
   product: ProductSchema,
   new_status: z.string(),
+  deal_id: z.uuid(),
 })
 
 export const ReviewMessageSchema = BaseMessageSchema.extend({
   message_type: z.literal('review_message'),
+  product: ProductSchema,
   review: ReviewSchema,
 })
 
@@ -76,6 +78,10 @@ export const ChatUpdateSchema = z.object({
   chat_id: z.string(),
   last_message: ChatMessageUnionSchema.optional(),
   unread_count: z.number(),
+  support_ticket_status: z.string().nullable().optional(),
+  support_status: z.string().nullable().optional(),
+  is_closed: z.boolean().optional(),
+  is_resolved: z.boolean().optional(),
 })
 
 export const MessagesReadSchema = z.object({
@@ -89,5 +95,6 @@ export const ChatArrayUnionSchema = z.array(ChatMessageUnionSchema)
 export type ChatMessageUnion = z.infer<typeof ChatMessageUnionSchema>
 export type ChatUpdateSchema = z.infer<typeof ChatUpdateSchema>
 export type MessagesReadPayload = z.infer<typeof MessagesReadSchema>
+export type PurchaseMessage = z.infer<typeof ProductMessageSchema>
 
 export type DealStatusMessageSchema = z.infer<typeof DealStatusMessageSchema>

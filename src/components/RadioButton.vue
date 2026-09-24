@@ -40,18 +40,18 @@ function onChange() {
     <!-- Кастомный UI -->
     <span
       class="w-5 h-5 rounded-full border flex items-center justify-center transition-all duration-200
-             focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 focus-within:ring-offset-dark-600"
+             focus-within:ring-2 focus-within:ring-[rgb(var(--palette-blue-500))] focus-within:ring-offset-2 focus-within:ring-offset-[rgb(var(--palette-dark-600))]"
       :class="[
         disabled
-          ? 'bg-dark-700 border-dark-600'
+          ? 'bg-[rgb(var(--palette-dark-700))] border-[rgb(var(--palette-dark-600))]'
           : modelValue === value
-            ? 'border-blue-600'
-            : 'bg-dark-600 border-dark-700 hover:border-blue-500'
+            ? 'border-[rgb(var(--palette-blue-600))]'
+            : 'bg-[rgb(var(--palette-dark-600))] border-[rgb(var(--palette-dark-700))] hover:border-[rgb(var(--palette-blue-500))]'
       ]"
     >
       <span
         v-if="modelValue === value"
-        class="w-2.5 h-2.5 rounded-full bg-blue-600"
+        class="w-2.5 h-2.5 rounded-full bg-[rgb(var(--palette-blue-600))]"
       />
     </span>
 

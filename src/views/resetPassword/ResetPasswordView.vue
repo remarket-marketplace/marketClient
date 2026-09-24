@@ -9,6 +9,7 @@ import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import Loader from '@/components/Loader.vue'
+import { buildAuthModalLocation } from '@/utils/authRedirect'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -53,11 +54,11 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="h-full w-full flex items-center justify-center bg-background px-4">
+  <div class="w-full min-h-[calc(100dvh-7rem)] md:min-h-[calc(100dvh-3.5rem)] flex items-center justify-center bg-background px-4">
     <Loader v-if="tokenIsNotExpired === null" />
 
     <div v-if="tokenIsNotExpired === true"
-      class="max-w-sm w-full border border-dark-700 rounded-2xl bg-background p-8 backdrop-blur-md space-y-6">
+      class="max-w-sm w-full border border-[rgb(var(--palette-dark-700))] rounded-2xl bg-background p-8 backdrop-blur-md space-y-6">
       <h1 class="text-center text-3xl text-mainText font-bold">
         {{ $t('pages.resetPassword.enterNewPassword') }}
       </h1>
@@ -79,7 +80,7 @@ onMounted(async () => {
       </div>
 
       <p class="text-center text-sm text-text-secondaryDark">
-        <router-link to="/signin" class="text-text-link hover:underline">
+        <router-link :to="buildAuthModalLocation(route)" class="text-text-link hover:underline">
           {{ $t('common.backToSignIn') }}
         </router-link>
       </p>
