@@ -16,5 +16,5 @@ const sizeClass = computed(() => {
 </script>
 
 <template>
-  <LoaderCircle :class="`${sizeClass} animate-spin text-blue-500`" />
+  <LoaderCircle :class="`${sizeClass} animate-spin text-[var(--text-link)]`" />
 </template>

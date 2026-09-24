@@ -49,7 +49,7 @@ const formattedLastMessage = computed((): string | null => {
             text = t('pages.chats.imageMessage')
             break
         case "update_deal_status_message":
-            text = t('pages.chats.updateDealStatus')
+            text = t(`pages.chats.${props.chat.last_message.new_status}`)
             break
         case "review_message":
             text = t('pages.chats.newReview')
@@ -75,6 +75,55 @@ const checkMobile = () => {
     isMobile.value = window.innerWidth < 768
 }
 
+const WEEKDAY_SHORT_RU = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'] as const
+
+function startOfDay(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+function startOfWeekMonday(date: Date): Date {
+    const day = date.getDay()
+    const diff = day === 0 ? -6 : 1 - day
+    const monday = new Date(date)
+    monday.setDate(date.getDate() + diff)
+    return startOfDay(monday)
+}
+
+function formatChatListDateLabel(rawDate: string): string {
+    const date = new Date(rawDate)
+    if (Number.isNaN(date.getTime())) return ''
+
+    const now = new Date()
+    const todayStart = startOfDay(now)
+    const messageDayStart = startOfDay(date)
+    const diffDays = Math.round((todayStart.getTime() - messageDayStart.getTime()) / 86400000)
+
+    if (diffDays === 0) {
+        return new Intl.DateTimeFormat('ru-RU', {
+            hour: '2-digit',
+            minute: '2-digit',
+        }).format(date)
+    }
+    if (diffDays === 1) return 'Вчера'
+
+    const weekStart = startOfWeekMonday(now)
+    if (messageDayStart >= weekStart && messageDayStart <= todayStart) {
+        return WEEKDAY_SHORT_RU[date.getDay()] ?? ''
+    }
+
+    return new Intl.DateTimeFormat('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: '2-digit',
+    }).format(date)
+}
+
+const lastMessageDateLabel = computed(() => {
+    const createdAt = props.chat.last_message?.created_at
+    if (!createdAt) return ''
+    return formatChatListDateLabel(createdAt)
+})
+
 onMounted(() => {
     checkMobile()
     window.addEventListener('resize', checkMobile)
@@ -84,7 +133,7 @@ onMounted(() => {
 <template>
     <div
         :key="chat.id"
-        :class="['flex cursor-pointer items-center gap-3 py-3 px-4 transition hover:bg-dark-800/50 group', !isMobile && isSelected ? 'bg-dark-800/50' : '']"
+        :class="['flex cursor-pointer items-center gap-3 py-3 px-4 transition hover:bg-[rgb(var(--palette-dark-800)/0.5)] group', !isMobile && isSelected ? 'bg-[rgb(var(--palette-dark-800)/0.5)]' : '']"
         @click="$emit('loadChatMessages', chat.id)"
     >
         <div class="flex-shrink-0 relative">
@@ -94,14 +143,14 @@ onMounted(() => {
                     v-if="!isSupportChat"
                     :avatar-url="chat.another_user.avatar_url"
                     :alt="chat.another_user.username"
-                    class="h-12 w-12 border-2 border-dark-600 rounded-full object-cover"
+                    class="h-12 w-12 border-2 border-[rgb(var(--palette-dark-600))] rounded-full object-cover"
                 />
                 <!-- Support icon -->
                 <div
                     v-else
-                    class="h-12 w-12 flex items-center justify-center rounded-full bg-blue-500/20 border-2 border-blue-500/30"
+                    class="h-12 w-12 flex items-center justify-center rounded-full bg-[rgb(var(--palette-blue-500)/0.2)] border-2 border-[rgb(var(--palette-blue-500)/0.3)]"
                 >
-                    <Headphones class="w-6 h-6 text-blue-400" />
+                    <Headphones class="w-6 h-6 text-[var(--text-link)]" />
                 </div>
             </div>
             
@@ -109,14 +158,14 @@ onMounted(() => {
             <div
                 class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full"
                 :class="{
-                    'bg-green-500 border-1 border-dark-800': isUserOnline,
-                    'bg-gray-500 border-1 border-dark-800': !isUserOnline,
-                    'border-dark-800': !isSelected || isMobile
+                    'bg-[rgb(var(--palette-green-500))] border-1 border-[rgb(var(--palette-dark-800))]': isUserOnline,
+                    'bg-[rgb(var(--palette-gray-500))] border-1 border-[rgb(var(--palette-dark-800))]': !isUserOnline,
+                    'border-[rgb(var(--palette-dark-800))]': !isSelected || isMobile
                 }"
             >
                 <div 
                     v-if="isUserOnline"
-                    class="w-full h-full bg-green-500 rounded-full animate-ping opacity-75"
+                    class="w-full h-full bg-[rgb(var(--palette-green-500))] rounded-full opacity-75"
                 ></div>
             </div>
         </div>
@@ -127,7 +176,7 @@ onMounted(() => {
                     <!-- Show "Support" for support chats -->
                     <p 
                         v-if="isSupportChat"
-                        class="truncate font-semibold text-base text-blue-500"
+                        class="truncate font-semibold text-base text-[var(--text-link)]"
                     >
                         {{ t('pages.chats.support') }}
                     </p>
@@ -142,9 +191,9 @@ onMounted(() => {
                 </div>
                 <span 
                     v-if="chat.last_message?.created_at" 
-                    class="flex-shrink-0 text-xs text-gray-500 whitespace-nowrap"
+                    class="flex-shrink-0 text-xs text-[var(--text-meta)] whitespace-nowrap group-hover:text-[var(--text-hover-muted)]"
                 >
-                    {{new Date(chat.last_message.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}}
+                    {{ lastMessageDateLabel }}
                 </span>
             </div>
 
@@ -152,12 +201,12 @@ onMounted(() => {
                 <p 
                     class="truncate text-sm flex-1 min-w-0"
                     :class="{
-                        'text-blue-500 font-light': chat.last_message?.message_type === 'purchase_message'
+                        'text-[var(--text-link)] font-light': chat.last_message?.message_type === 'purchase_message'
                         || chat.last_message?.message_type === 'price_offer_message'
                         || chat.last_message?.message_type === 'image_message'
                         || chat.last_message?.message_type === 'update_deal_status_message'
                         || chat.last_message?.message_type === 'review_message',
-                        'text-gray-500': chat.last_message?.message_type === 'text_message'
+                        'text-[var(--text-meta)] group-hover:text-[var(--text-hover-muted)]': chat.last_message?.message_type === 'text_message'
                     }"
                 >
                     <!-- Message type icon -->
@@ -184,10 +233,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.group:hover .text-gray-500 {
-    color: var(--text-hover-muted);
-}
-
 .min-w-0 {
     min-width: 0;
 }
@@ -207,7 +252,4 @@ onMounted(() => {
     }
 }
 
-.animate-ping {
-    animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
-}
 </style>

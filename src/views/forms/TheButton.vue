@@ -2,7 +2,8 @@
 
 defineProps<{
     buttonText: string,
-    sended: boolean
+    sended: boolean,
+    disabled?: boolean
 }>()
 
 
@@ -11,8 +12,8 @@ defineProps<{
 <template>
     <button
         type="submit"
-        :disabled="sended"
-        class="w-full rounded-lg bg-button-main py-2 px-2 text-mainText font-semibold transition-colors duration-200 hover:bg-blue-700"
+        :disabled="sended || disabled"
+        class="market-btn market-btn-primary w-full rounded-lg px-2 py-2 text-mainText disabled:cursor-not-allowed disabled:opacity-60"
         >
         {{ buttonText }}
     </button>

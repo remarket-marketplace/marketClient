@@ -2,6 +2,7 @@
 import { chatsService } from '@/api/chats/chatsService'
 import ChatItem from '@/components/chats/ChatItem.vue'
 import ChatMessage from '@/components/chats/ChatMessage.vue'
+import FloatingDateHeader from '@/components/chats/FloatingDateHeader.vue'
 import SendMessageBar from '@/components/chats/SendMessageBar.vue'
 import Loader from '@/components/Loader.vue'
 import { useUserStore } from '@/stores/user'
@@ -18,10 +19,11 @@ import CustomSelect from '@/components/CustomSelect.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import StyledUsername from '@/components/StyledUsername.vue'
 import { createBottomPinController } from '@/utils/chatScroll'
+import { getChatTimelineSpacingClass } from '@/utils/chatTimelineSpacing'
 
 const route = useRoute()
 const router = useRouter()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 // Состояние списка чатов
 const chats = ref<ChatListItem[]>([])
@@ -34,6 +36,7 @@ const hasMoreChats = ref(true)
 
 // Состояние сообщений
 const chatMessages = ref<ChatMessageUnion[]>([])
+const liveDealStatusOverrides = ref<Record<string, string>>({})
 const selectedChatId = ref<string | null>(null)
 const messageContainerRef = ref<HTMLElement | null>(null)
 const bottomPin = createBottomPinController(() => messageContainerRef.value)
@@ -48,6 +51,13 @@ const mobileMode = ref<'chats' | 'chat'>(typeof route.query.chatId === 'string' 
 const store = useUserStore()
 const user = ref<UserRead | null>(null)
 const newMessage = ref('')
+const floatingDateLabel = ref<string | null>(null)
+const floatingDateOpacity = ref(1)
+const floatingDateOffsetY = ref(0)
+const isFloatingDateVisible = ref(false)
+let floatingDateRafId: number | null = null
+let floatingDateHideTimerId: number | null = null
+let deferredBottomPinTimeoutIds: number[] = []
 
 const messagesCurrentPage = ref(1)
 const messagesTotalPages = ref(0)
@@ -57,6 +67,11 @@ const topLoadThresholdPx = 8
 const bottomAutoScrollThresholdPx = 120
 const previousMessageScrollTop = ref(0)
 const hasUserScrolledAwayFromTop = ref(false)
+const floatingDateTopOffsetPx = 8
+const floatingDateMergeStartDistancePx = 56
+const floatingDateMergeEndDistancePx = 8
+const floatingDateMaxOffsetPx = 14
+const isSupportCaseStatusUpdating = ref(false)
 
 // Все чаты для админа - только support_chat типы
 const searchQuery = ref('')
@@ -120,11 +135,459 @@ const currentChat = computed(() =>
     chats.value.find(chat => chat.id === selectedChatId.value) || null
 )
 
+function resolveSupportTicketStatus(chat: ChatListItem | null | undefined): 'open' | 'closed' {
+    if (!chat) return 'open'
+
+    const statusCandidates = [
+        chat.support_ticket_status,
+        chat.support_status,
+    ]
+
+    for (const candidate of statusCandidates) {
+        if (typeof candidate !== 'string') continue
+        const normalized = candidate.trim().toLowerCase()
+        if (normalized === 'closed' || normalized === 'open') {
+            return normalized
+        }
+    }
+
+    if (typeof chat.is_closed === 'boolean') {
+        return chat.is_closed ? 'closed' : 'open'
+    }
+
+    if (typeof chat.is_resolved === 'boolean') {
+        return chat.is_resolved ? 'closed' : 'open'
+    }
+
+    return 'open'
+}
+
+const currentSupportTicketStatus = computed<'open' | 'closed'>(() => {
+    return resolveSupportTicketStatus(currentChat.value)
+})
+const isCurrentSupportCaseClosed = computed(() => currentSupportTicketStatus.value === 'closed')
+
+const supportCaseClosedTextMarkers = [
+    'обращение закрыто администратором',
+    'обращение закрыто',
+    'жалоба успешно обработана',
+    'support case closed',
+    'case closed by administrator',
+    'request closed by administrator',
+] as const
+
+const supportCaseReopenedTextMarkers = [
+    'обращение переоткрыто администратором',
+    'обращение снова открыто',
+    'обращение открыто',
+    'case reopened by administrator',
+    'support case reopened',
+] as const
+
+function resolveSupportTicketStatusFromMessage(message: ChatMessageUnion): 'open' | 'closed' | null {
+    if (message.message_type !== 'text_message') return null
+
+    const rawData = message.data as Record<string, unknown> | null | undefined
+    const statusCandidates = [
+        rawData?.support_ticket_status,
+        rawData?.support_status,
+        rawData?.status,
+    ]
+
+    for (const candidate of statusCandidates) {
+        if (typeof candidate !== 'string') continue
+        const normalized = candidate.trim().toLowerCase()
+        if (normalized === 'closed' || normalized === 'open') {
+            return normalized
+        }
+    }
+
+    if (typeof rawData?.is_closed === 'boolean') {
+        return rawData.is_closed ? 'closed' : 'open'
+    }
+    if (typeof rawData?.is_resolved === 'boolean') {
+        return rawData.is_resolved ? 'closed' : 'open'
+    }
+
+    const normalizedText = message.text.trim().toLowerCase()
+    if (!normalizedText) return null
+
+    if (supportCaseClosedTextMarkers.some((marker) => normalizedText.includes(marker))) {
+        return 'closed'
+    }
+    if (supportCaseReopenedTextMarkers.some((marker) => normalizedText.includes(marker))) {
+        return 'open'
+    }
+
+    return null
+}
+
+function resolveSupportTicketStatusFromMessages(messages: ChatMessageUnion[]): 'open' | 'closed' | null {
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+        const message = messages[index]
+        if (!message) continue
+        const status = resolveSupportTicketStatusFromMessage(message)
+        if (status) return status
+
+        // If there is user activity after explicit "closed", treat case as reopened.
+        if (
+            (message.message_type === 'text_message' || message.message_type === 'image_message')
+            && typeof message.sender_id === 'string'
+        ) {
+            if (user.value?.id && message.sender_id === user.value.id) {
+                continue
+            }
+            return 'open'
+        }
+    }
+    return null
+}
+
+function applyResolvedSupportStatusToChat(chat: ChatListItem, status: 'open' | 'closed') {
+    chat.support_ticket_status = status
+    chat.support_status = status
+    chat.is_closed = status === 'closed'
+    chat.is_resolved = status === 'closed'
+}
+
+type PriceOfferChatMessage = Extract<ChatMessageUnion, { message_type: 'price_offer_message' }>
+
 function getMessageTimestamp(message: ChatMessageUnion): number {
     const createdAt = message.created_at
     if (!createdAt) return 0
     const timestamp = new Date(createdAt).getTime()
     return Number.isFinite(timestamp) ? timestamp : 0
+}
+
+function normalizeMessagesChronological(messages: ChatMessageUnion[]): ChatMessageUnion[] {
+    return [...messages].sort((a, b) => getMessageTimestamp(a) - getMessageTimestamp(b))
+}
+
+function isDealStatusUpdateMessage(
+    message: ChatMessageUnion,
+): message is Extract<ChatMessageUnion, { message_type: 'update_deal_status_message' }> {
+    return message.message_type === 'update_deal_status_message'
+}
+
+function mergePriceOfferTimelineMessage(
+    firstMessage: PriceOfferChatMessage,
+    latestMessage: PriceOfferChatMessage,
+): PriceOfferChatMessage {
+    return {
+        ...firstMessage,
+        ...latestMessage,
+        id: firstMessage.id,
+        created_at: firstMessage.created_at,
+        offer_message: latestMessage.offer_message ?? firstMessage.offer_message,
+    }
+}
+
+function normalizeTimelineServerMessages(messages: ChatMessageUnion[]): ChatMessageUnion[] {
+    const normalizedMessages: ChatMessageUnion[] = []
+    const priceOfferIndexById = new Map<string, number>()
+
+    for (const message of messages) {
+        if (isDealStatusUpdateMessage(message)) {
+            continue
+        }
+
+        if (message.message_type !== 'price_offer_message') {
+            normalizedMessages.push(message)
+            continue
+        }
+
+        const existingIndex = priceOfferIndexById.get(message.offer_id)
+        if (existingIndex === undefined) {
+            priceOfferIndexById.set(message.offer_id, normalizedMessages.length)
+            normalizedMessages.push(message)
+            continue
+        }
+
+        const existingMessage = normalizedMessages[existingIndex]
+        if (!existingMessage || existingMessage.message_type !== 'price_offer_message') {
+            priceOfferIndexById.set(message.offer_id, normalizedMessages.length)
+            normalizedMessages.push(message)
+            continue
+        }
+
+        normalizedMessages[existingIndex] = mergePriceOfferTimelineMessage(existingMessage, message)
+    }
+
+    return normalizedMessages
+}
+
+type ChatTimelineItem = {
+    message: ChatMessageUnion
+    index: number
+    dateKey: string | null
+    dateLabel: string | null
+    showDateDivider: boolean
+    spacingClass: string
+}
+
+const msPerDay = 24 * 60 * 60 * 1000
+
+function toLocalDayStart(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+function toDateKey(date: Date): string {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+}
+
+function parseMessageDateKey(message: ChatMessageUnion): string | null {
+    const parsed = new Date(message.created_at)
+    if (Number.isNaN(parsed.getTime())) return null
+
+    const messageDayStart = toLocalDayStart(parsed)
+    const todayStart = toLocalDayStart(new Date())
+
+    if (messageDayStart.getTime() > todayStart.getTime()) return null
+    return toDateKey(messageDayStart)
+}
+
+function formatDateLabelByKey(dateKey: string): string | null {
+    const [yearStr, monthStr, dayStr] = dateKey.split('-')
+    const year = Number(yearStr)
+    const month = Number(monthStr)
+    const day = Number(dayStr)
+    if (!year || !month || !day) return null
+
+    const date = new Date(year, month - 1, day)
+    if (Number.isNaN(date.getTime())) return null
+
+    const todayStart = toLocalDayStart(new Date())
+    const diffDays = Math.round((todayStart.getTime() - date.getTime()) / msPerDay)
+    const localeCode = locale.value.startsWith('ru') ? 'ru-RU' : 'en-US'
+
+    if (diffDays === 0) return capitalizeDateLabel(t('pages.chats.today'))
+    if (diffDays === 1) return capitalizeDateLabel(t('pages.chats.yesterday'))
+    if (diffDays < 0) return null
+
+    const formatted = new Intl.DateTimeFormat(localeCode, { day: 'numeric', month: 'long' }).format(date)
+    return capitalizeDateLabel(formatted)
+}
+
+function capitalizeDateLabel(label: string): string {
+    const localeCode = locale.value.startsWith('ru') ? 'ru-RU' : 'en-US'
+
+    return label
+        .split(' ')
+        .map((token) => {
+            const firstLetterIndex = token.search(/[A-Za-zА-Яа-яЁё]/)
+            if (firstLetterIndex === -1) return token
+
+            const prefix = token.slice(0, firstLetterIndex)
+            const first = token.charAt(firstLetterIndex).toLocaleUpperCase(localeCode)
+            const rest = token.slice(firstLetterIndex + 1)
+            return `${prefix}${first}${rest}`
+        })
+        .join(' ')
+}
+
+const normalizedTimelineMessages = computed<ChatMessageUnion[]>(() => (
+    normalizeTimelineServerMessages(chatMessages.value)
+))
+
+const dealStatusOverrides = computed<Record<string, string>>(() => {
+    const statuses: Record<string, string> = {}
+
+    for (const message of chatMessages.value) {
+        if (message.message_type === 'purchase_message') {
+            statuses[message.deal_id] = statuses[message.deal_id] ?? message.deal_status
+        }
+    }
+
+    return {
+        ...statuses,
+        ...liveDealStatusOverrides.value,
+    }
+})
+
+const reviewedDealIds = computed<string[]>(() => {
+    const ids = new Set<string>()
+
+    for (const message of chatMessages.value) {
+        if (message.message_type === 'review_message') {
+            ids.add(message.review.deal_id)
+        }
+    }
+
+    return Array.from(ids)
+})
+
+const chatTimelineItems = computed<ChatTimelineItem[]>(() => {
+    let previousDateKey: string | null = null
+
+    return normalizedTimelineMessages.value.map((message, index) => {
+        const dateKey = parseMessageDateKey(message)
+        const dateLabel = dateKey ? formatDateLabelByKey(dateKey) : null
+        const showDateDivider = Boolean(dateLabel && dateKey !== previousDateKey)
+        previousDateKey = dateKey
+
+        return {
+            message,
+            index,
+            dateKey,
+            dateLabel,
+            showDateDivider,
+            spacingClass: getChatTimelineSpacingClass(normalizedTimelineMessages.value, index),
+        }
+    })
+})
+
+const floatingDateDisplayLabel = computed(() => {
+    if (!floatingDateLabel.value) return null
+    if (isMobile.value) return floatingDateLabel.value
+    return isFloatingDateVisible.value ? floatingDateLabel.value : null
+})
+
+function resetFloatingDateMergeVisuals() {
+    floatingDateOpacity.value = 1
+    floatingDateOffsetY.value = 0
+}
+
+function clamp(value: number, min: number, max: number): number {
+    return Math.min(max, Math.max(min, value))
+}
+
+function updateFloatingDateMergeVisuals(container: HTMLElement, dateKey: string | null) {
+    resetFloatingDateMergeVisuals()
+    if (!isMobile.value || !dateKey) return
+
+    const containerTop = container.getBoundingClientRect().top
+    const dividerNodes = container.querySelectorAll<HTMLElement>(
+        `[data-chat-date-divider][data-chat-date-key="${dateKey}"]`
+    )
+    if (!dividerNodes.length) return
+
+    let nearestVisibleDivider: HTMLElement | null = null
+    let nearestTop = Number.POSITIVE_INFINITY
+
+    for (const divider of dividerNodes) {
+        const rect = divider.getBoundingClientRect()
+        if (rect.bottom <= containerTop + 1) continue
+        if (rect.top < nearestTop) {
+            nearestVisibleDivider = divider
+            nearestTop = rect.top
+        }
+    }
+
+    if (!nearestVisibleDivider) return
+
+    const dividerTop = nearestVisibleDivider.getBoundingClientRect().top
+    const floatingTop = containerTop + floatingDateTopOffsetPx
+    const distanceToDivider = dividerTop - floatingTop
+    const range = floatingDateMergeStartDistancePx - floatingDateMergeEndDistancePx
+    if (range <= 0) return
+
+    const progress = clamp(
+        (distanceToDivider - floatingDateMergeEndDistancePx) / range,
+        0,
+        1
+    )
+
+    floatingDateOpacity.value = progress
+    floatingDateOffsetY.value = (1 - progress) * floatingDateMaxOffsetPx
+}
+
+function updateFloatingDateLabel() {
+    const container = messageContainerRef.value
+    if (
+        !container
+        || !selectedChatId.value
+        || isChatLoading.value
+        || isChatPinning.value
+        || chatTimelineItems.value.length === 0
+    ) {
+        floatingDateLabel.value = null
+        resetFloatingDateMergeVisuals()
+        return
+    }
+
+    const messageNodes = container.querySelectorAll<HTMLElement>('[data-chat-message-index]')
+    if (!messageNodes.length) {
+        floatingDateLabel.value = null
+        resetFloatingDateMergeVisuals()
+        return
+    }
+
+    const containerTop = container.getBoundingClientRect().top
+    let activeIndex: number | null = null
+    let activeNode: HTMLElement | null = null
+
+    for (let i = 0; i < messageNodes.length; i++) {
+        const node = messageNodes[i]
+        if (!node) continue
+        const rect = node.getBoundingClientRect()
+        if (rect.bottom > containerTop + 1) {
+            const index = Number(node.dataset.chatMessageIndex)
+            if (Number.isFinite(index)) {
+                activeIndex = index
+                activeNode = node
+            }
+            break
+        }
+    }
+
+    if (activeIndex === null) {
+        const lastNode = messageNodes[messageNodes.length - 1]
+        const lastIndex = Number(lastNode?.dataset.chatMessageIndex)
+        if (Number.isFinite(lastIndex)) {
+            activeIndex = lastIndex
+            activeNode = lastNode ?? null
+        }
+    }
+
+    const activeItem = activeIndex !== null ? chatTimelineItems.value[activeIndex] : null
+    if (!activeItem?.dateLabel) {
+        floatingDateLabel.value = null
+        resetFloatingDateMergeVisuals()
+        return
+    }
+
+    // Prevent overlap with the inline date divider when it is already visible at the top.
+    if (!isMobile.value && activeNode && activeItem.showDateDivider) {
+        const activeNodeTop = activeNode.getBoundingClientRect().top
+        const isDividerVisibleNearTop = activeNodeTop <= containerTop + 44
+        if (isDividerVisibleNearTop) {
+            floatingDateLabel.value = null
+            resetFloatingDateMergeVisuals()
+            return
+        }
+    }
+
+    updateFloatingDateMergeVisuals(container, activeItem.dateKey)
+    if (isMobile.value && floatingDateOpacity.value <= 0.02) {
+        floatingDateLabel.value = null
+        return
+    }
+
+    floatingDateLabel.value = activeItem.dateLabel
+}
+
+function scheduleFloatingDateLabelUpdate() {
+    if (floatingDateRafId !== null) return
+    floatingDateRafId = requestAnimationFrame(() => {
+        floatingDateRafId = null
+        updateFloatingDateLabel()
+    })
+}
+
+function showFloatingDateTemporarily() {
+    if (!selectedChatId.value || chatTimelineItems.value.length === 0) return
+    isFloatingDateVisible.value = true
+
+    if (floatingDateHideTimerId !== null) {
+        clearTimeout(floatingDateHideTimerId)
+    }
+    floatingDateHideTimerId = window.setTimeout(() => {
+        isFloatingDateVisible.value = false
+        floatingDateHideTimerId = null
+    }, 900)
 }
 
 function shouldApplyLastMessage(
@@ -165,11 +628,47 @@ function backToChats() {
     }
 }
 
+function clearDeferredBottomPinTimers() {
+    for (const timeoutId of deferredBottomPinTimeoutIds) {
+        clearTimeout(timeoutId)
+    }
+    deferredBottomPinTimeoutIds = []
+}
+
+function syncScrollStateFromContainer() {
+    const container = messageContainerRef.value
+    if (!container) return
+    previousMessageScrollTop.value = container.scrollTop
+    hasUserScrolledAwayFromTop.value = container.scrollTop > topLoadThresholdPx
+}
+
+function scheduleDeferredBottomPin(chatId: string) {
+    clearDeferredBottomPinTimers()
+
+    const delays = [120, 260, 420, 680, 960]
+    for (const delay of delays) {
+        const timeoutId = window.setTimeout(async () => {
+            if (selectedChatId.value !== chatId) return
+            await nextTick()
+            bottomPin.scrollNow()
+            syncScrollStateFromContainer()
+            scheduleFloatingDateLabelUpdate()
+        }, delay)
+
+        deferredBottomPinTimeoutIds.push(timeoutId)
+    }
+}
+
+function goToAdminHome() {
+    router.push('/admin')
+}
+
 const checkMobile = () => {
     isMobile.value = window.innerWidth < 768
 }
 
 let unsubscribeNewMessage: (() => void) | null = null
+let unsubscribeDealStatusUpdate: (() => void) | null = null
 let unsubscribeChatUpdated: (() => void) | null = null
 
 onMounted(async () => {
@@ -215,9 +714,31 @@ onMounted(async () => {
                     void chatsService.markChatRead(update.chat_id)
                 }
             }
+
+            const statusCandidate = typeof update.support_ticket_status === 'string'
+                ? update.support_ticket_status
+                : typeof update.support_status === 'string'
+                    ? update.support_status
+                    : null
+
+            if (statusCandidate && statusCandidate.trim()) {
+                const normalizedStatus = statusCandidate.trim().toLowerCase() === 'closed' ? 'closed' : 'open'
+                applyResolvedSupportStatusToChat(chat, normalizedStatus)
+            } else if (typeof update.is_closed === 'boolean') {
+                applyResolvedSupportStatusToChat(chat, update.is_closed ? 'closed' : 'open')
+            } else if (typeof update.is_resolved === 'boolean') {
+                applyResolvedSupportStatusToChat(chat, update.is_resolved ? 'closed' : 'open')
+            }
         })
 
         unsubscribeNewMessage = chatsService.onNewMessage(message => {
+            const chat = chats.value.find((item) => item.id === message.chat_room_id)
+            if (chat?.chat_type === 'support_chat') {
+                const statusFromMessage = resolveSupportTicketStatusFromMessage(message)
+                if (statusFromMessage) {
+                    applyResolvedSupportStatusToChat(chat, statusFromMessage)
+                }
+            }
             if (selectedChatId.value === message.chat_room_id) {
                 if (!chatMessages.value.some(m => m.id === message.id)) {
                     const shouldStickToBottom = isNearBottom()
@@ -234,6 +755,13 @@ onMounted(async () => {
                 }
             }
         })
+        unsubscribeDealStatusUpdate = chatsService.onDealStatusUpdate(message => {
+            if (selectedChatId.value !== message.chat_room_id) return
+            liveDealStatusOverrides.value = {
+                ...liveDealStatusOverrides.value,
+                [message.deal_id]: message.new_status,
+            }
+        })
 
         await loadChats()
 
@@ -241,7 +769,7 @@ onMounted(async () => {
         if (chatIdFromQuery) {
             const exists = await ensureChatLoaded(chatIdFromQuery)
             if (exists) {
-                await loadChatMessages(chatIdFromQuery)
+                await loadChatMessages(chatIdFromQuery, { settleToBottomAfterRouteOpen: true })
             } else if (isMobile.value) {
                 mobileMode.value = 'chats'
                 updateUrlChatId(null)
@@ -256,14 +784,67 @@ onMounted(async () => {
 
 onUnmounted(() => {
     unsubscribeNewMessage?.()
+    unsubscribeDealStatusUpdate?.()
     unsubscribeChatUpdated?.()
+    clearDeferredBottomPinTimers()
     bottomPin.stop()
+    if (floatingDateRafId !== null) {
+        cancelAnimationFrame(floatingDateRafId)
+        floatingDateRafId = null
+    }
+    if (floatingDateHideTimerId !== null) {
+        clearTimeout(floatingDateHideTimerId)
+        floatingDateHideTimerId = null
+    }
     window.removeEventListener('resize', checkMobile)
 })
 
 watch([searchQuery, sortBy, presenceFilter, unreadFilter], () => {
     if (chatsContainerRef.value) chatsContainerRef.value.scrollTop = 0
 })
+
+watch(selectedChatId, () => {
+    floatingDateLabel.value = null
+    resetFloatingDateMergeVisuals()
+    isFloatingDateVisible.value = false
+    liveDealStatusOverrides.value = {}
+    clearDeferredBottomPinTimers()
+    if (floatingDateHideTimerId !== null) {
+        clearTimeout(floatingDateHideTimerId)
+        floatingDateHideTimerId = null
+    }
+})
+
+watch(
+    () => route.query.chatId,
+    async (chatIdQuery) => {
+        const chatId = typeof chatIdQuery === 'string' ? chatIdQuery : null
+        if (!chatId) return
+        if (selectedChatId.value === chatId) return
+        if (isLoading.value) return
+
+        const exists = await ensureChatLoaded(chatId)
+        if (!exists) return
+
+        await loadChatMessages(chatId, { settleToBottomAfterRouteOpen: true })
+    }
+)
+
+watch(
+    () => [
+        chatTimelineItems.value.length,
+        selectedChatId.value,
+        locale.value,
+        isChatLoading.value,
+        isChatPinning.value,
+    ],
+    () => {
+        void nextTick(() => {
+            scheduleFloatingDateLabelUpdate()
+        })
+    },
+    { flush: 'post' }
+)
 
 // Загрузка чатов с пагинацией
 async function loadChats() {
@@ -364,6 +945,8 @@ function cancelChatPinning() {
 
 async function handleMessagesScroll() {
     const el = messageContainerRef.value
+    scheduleFloatingDateLabelUpdate()
+    showFloatingDateTemporarily()
     if (!el || isChatLoading.value || isChatPinning.value || isLoadingMoreMessages.value || !hasMoreMessages.value) return
 
     const currentScrollTop = el.scrollTop
@@ -394,7 +977,7 @@ async function loadMoreMessages() {
     )
 
     if (response.messages.length) {
-        chatMessages.value.unshift(...response.messages)
+        chatMessages.value.unshift(...normalizeMessagesChronological(response.messages))
         messagesCurrentPage.value++
         messagesTotalPages.value = response.totalPages
         hasMoreMessages.value = messagesCurrentPage.value < messagesTotalPages.value
@@ -403,6 +986,7 @@ async function loadMoreMessages() {
             el.scrollTop = el.scrollHeight - oldHeight
             previousMessageScrollTop.value = el.scrollTop
         }
+        scheduleFloatingDateLabelUpdate()
     } else {
         hasMoreMessages.value = false
     }
@@ -410,7 +994,18 @@ async function loadMoreMessages() {
     isLoadingMoreMessages.value = false
 }
 
-async function loadChatMessages(chatId: string) {
+async function loadChatMessages(
+    chatId: string,
+    options: { settleToBottomAfterRouteOpen?: boolean } = {},
+) {
+    if (selectedChatId.value === chatId) {
+        if (isMobile.value) {
+            mobileMode.value = 'chat'
+        }
+        return
+    }
+
+    clearDeferredBottomPinTimers()
     isLoading.value = true
     isChatLoading.value = true
     isChatPinning.value = false
@@ -420,17 +1015,25 @@ async function loadChatMessages(chatId: string) {
         hasUserScrolledAwayFromTop.value = false
         previousMessageScrollTop.value = 0
         chatMessages.value = []
+        liveDealStatusOverrides.value = {}
         messagesCurrentPage.value = 1
         hasMoreMessages.value = true
 
         await chatsService.joinChat(chatId)
         selectedChatId.value = chatId
         updateUrlChatId(chatId)
-
         const response = await chatsService.getChatMessages(chatId, 1, messagesPerPage.value)
-        chatMessages.value = response.messages
+        chatMessages.value = normalizeMessagesChronological(response.messages)
+        const statusFromMessages = resolveSupportTicketStatusFromMessages(chatMessages.value)
+        if (statusFromMessages) {
+            const activeChat = chats.value.find((item) => item.id === chatId)
+            if (activeChat?.chat_type === 'support_chat') {
+                applyResolvedSupportStatusToChat(activeChat, statusFromMessages)
+            }
+        }
         messagesTotalPages.value = response.totalPages
         hasMoreMessages.value = 1 < messagesTotalPages.value
+        scheduleFloatingDateLabelUpdate()
 
         const chat = chats.value.find(c => c.id === chatId)
         if (chat) chat.unread_count = 0
@@ -454,6 +1057,10 @@ async function loadChatMessages(chatId: string) {
                 if (container) {
                     previousMessageScrollTop.value = container.scrollTop
                     hasUserScrolledAwayFromTop.value = container.scrollTop > topLoadThresholdPx
+                }
+                scheduleFloatingDateLabelUpdate()
+                if (options.settleToBottomAfterRouteOpen) {
+                    scheduleDeferredBottomPin(chatId)
                 }
             } finally {
                 isChatPinning.value = false
@@ -479,6 +1086,10 @@ async function sendMessage(payload: { files: File[] }) {
         )
         if (!textResult.success) return
 
+        if (textResult.message && !chatMessages.value.some(m => m.id === textResult.message?.id)) {
+            chatMessages.value.push(textResult.message)
+        }
+
         newMessage.value = ''
         hasSentAnyMessage = true
     }
@@ -496,16 +1107,39 @@ async function sendMessage(payload: { files: File[] }) {
         })
     }
 }
+
+async function toggleSupportCaseStatus() {
+    if (!selectedChatId.value || !currentChat.value || isSupportCaseStatusUpdating.value) return
+    if (isCurrentSupportCaseClosed.value) return
+
+    isSupportCaseStatusUpdating.value = true
+    const nextStatus: 'open' | 'closed' = 'closed'
+    const result = await adminService.updateSupportCaseStatus(selectedChatId.value, nextStatus)
+
+    if (!result.success) {
+        errorMessage.value = 'Не удалось изменить статус кейса.'
+        isSupportCaseStatusUpdating.value = false
+        return
+    }
+
+    const updatedStatus = result.support_ticket_status === 'closed' ? 'closed' : 'open'
+    currentChat.value.support_ticket_status = updatedStatus
+    currentChat.value.support_status = updatedStatus
+    currentChat.value.is_closed = updatedStatus === 'closed'
+    currentChat.value.is_resolved = updatedStatus === 'closed'
+    errorMessage.value = null
+    isSupportCaseStatusUpdating.value = false
+}
 </script>
 
 <template>
     <!-- Добавляем md:pt-6 обратно -->
     <div class="h-full w-full flex flex-col overscroll-none md:pt-6">
-        <div v-if="isLoading && chats.length === 0" class="flex flex-1 items-center justify-center text-gray-300">
+        <div v-if="isLoading && chats.length === 0" class="flex flex-1 items-center justify-center text-[var(--text-body)]">
             <Loader />
         </div>
 
-        <div v-else-if="errorMessage" class="flex flex-1 items-center justify-center text-red-500">
+        <div v-else-if="errorMessage" class="flex flex-1 items-center justify-center text-[var(--text-danger)]">
             {{ errorMessage }}
         </div>
 
@@ -514,14 +1148,20 @@ async function sendMessage(payload: { files: File[] }) {
             <div v-if="!isMobile || (isMobile && mobileMode === 'chats')"
                 class="h-full lg:max-w-sm flex flex-col md:pr-5 transition-all duration-300 min-h-0" :class="[
                     isMobile && mobileMode === 'chats'
-                        ? 'fixed inset-0 z-10 w-full bg-background'
+                        ? 'fixed inset-x-0 top-14 bottom-0 z-10 w-full bg-background'
                         : 'w-3/12',
                 ]">
-                <!-- Восстанавливаем pt-16 для мобильной версии -->
-                <div class="h-full flex flex-col border-dark-600 lg:border-1 md:rounded-3xl" :class="{
-                    'pb-20': isMobile && mobileMode === 'chats',
-                    'pt-16': isMobile && mobileMode === 'chats',
-                }">
+                <div class="admin-surface-panel h-full flex flex-col md:rounded-3xl">
+                    <div v-if="isMobile" class="px-4 pt-3">
+                        <button
+                            type="button"
+                            class="admin-surface-soft inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-[var(--text-body-strong)]"
+                            @click="goToAdminHome"
+                        >
+                            <ArrowLeft class="h-4 w-4" />
+                            <span>{{ $t('common.back') }}</span>
+                        </button>
+                    </div>
                     <p class="my-4 text-2xl px-4 text-mainText font-semibold">
                         {{ $t('pages.admin.supportChats.supportChats') }}
                     </p>
@@ -576,7 +1216,7 @@ async function sendMessage(payload: { files: File[] }) {
                             </div>
                         </div>
                         <div v-else class="h-full w-full flex items-center justify-center">
-                            <p class="text-sm text-gray-400 font-light">
+                            <p class="text-sm text-[var(--text-muted)] font-light">
                                 {{ $t('pages.admin.noSupportChats') }}
                             </p>
                         </div>
@@ -586,54 +1226,71 @@ async function sendMessage(payload: { files: File[] }) {
 
             <!-- chat window -->
             <div v-if="!isMobile || (isMobile && mobileMode === 'chat')"
-                class="h-full flex flex-1 min-h-0 transition-all duration-300" :class="[
+                class="flex flex-1 min-h-0 transition-all duration-300" :class="[
                     isMobile && mobileMode === 'chat'
-                        ? 'fixed inset-0 z-10 w-full bg-background'
-                        : 'flex-1 min-w-0 border-1 border-dark-400 rounded-3xl',
+                        ? 'fixed inset-x-0 bottom-0 top-14 z-10 w-full bg-background'
+                        : 'flex-1 w-9/12 overflow-hidden rounded-3xl border border-[rgb(var(--palette-dark-400))]',
                 ]">
-                <div class="h-full w-full flex flex-col min-h-0 px-2 md:rounded-xl" :class="{
-                    'pb-16': isMobile && mobileMode === 'chat',
-                    'pt-16': isMobile && mobileMode === 'chat',
-                }">
-                    <div class="flex flex-1 flex-col min-h-0 w-full">
+                <div class="flex w-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-2 md:rounded-xl">
+                    <div class="flex w-full min-w-0 flex-1 flex-col min-h-0">
                         <!-- chat title -->
                         <div v-if="currentChat"
-                            class="flex items-center gap-2 sticky top-0 bg-background px-2 py-2 lg:py-3 lg:px-3 z-10 lg:border-b border-dark-700">
-                            <button v-if="isMobile" class="text-xl font-bold flex-shrink-0" @click="backToChats">
+                            class="sticky top-0 z-10 mx-1 flex items-center gap-2 bg-background px-2 py-1.5 lg:mx-2 lg:border-b lg:border-[rgb(var(--palette-dark-700))] lg:px-3 lg:py-3">
+                            <button v-if="isMobile" class="flex h-7 w-7 flex-shrink-0 items-center justify-center" @click="backToChats">
                                 <ArrowLeft />
                             </button>
                             <button
                                 type="button"
-                                class="flex items-center gap-3 flex-1 min-w-0 text-left rounded-lg transition cursor-pointer bg-transparent border-0 p-0 focus:outline-none"
+                                class="flex items-center gap-3 flex-1 min-w-0 text-left rounded-lg transition cursor-pointer bg-[var(--transparent)] border-0 p-0 focus:outline-none"
                                 @click="openChatProfile"
                             >
-                                <div class="h-8 w-8 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
+                                <div class="h-7 w-7 lg:h-10 lg:w-10 flex items-center justify-center flex-shrink-0">
                                     <UserAvatar
                                         :avatar-url="currentChat?.another_user.avatar_url"
                                         :alt="currentChat?.another_user.username || ''"
-                                        class="h-8 w-8 lg:h-10 lg:w-10 border-2 border-dark-600 rounded-full object-cover"
+                                        class="h-7 w-7 lg:h-10 lg:w-10 border-2 border-[rgb(var(--palette-dark-600))] rounded-full object-cover"
                                     />
                                 </div>
-                                <div class="flex min-w-0 flex-col">
+                                <div class="flex min-w-0 flex-col justify-center">
                                     <div class="w-full min-w-0 truncate">
                                         <StyledUsername
                                             :username="currentChat?.another_user.username || ''"
                                             :style-id="currentChat?.another_user.nickname_style_id"
-                                            class="text-lg font-semibold"
+                                            class="text-base font-semibold leading-tight lg:text-lg"
                                         />
                                     </div>
-                                    <p v-if="currentChat?.another_user.is_active" class="text-xs text-green-500">
+                                    <p v-if="currentChat?.another_user.is_active" class="text-xs text-[var(--text-success-strong)]">
                                         {{ $t('common.online') }}
                                     </p>
-                                    <p v-else class="text-xs text-gray-500">
+                                    <p v-else class="text-xs text-[var(--text-meta)]">
                                         {{ $t('common.offline') }}
                                     </p>
                                 </div>
+                            </button>
+                            <span
+                                v-if="isCurrentSupportCaseClosed"
+                                class="inline-flex h-8 flex-shrink-0 items-center rounded-lg border border-[rgb(var(--palette-green-500)/0.35)] bg-[rgb(var(--palette-green-500)/0.14)] px-3 text-xs font-semibold text-[var(--text-success-strong)] lg:h-9 lg:text-sm"
+                            >
+                                Жалоба успешно обработана
+                            </span>
+                            <button
+                                v-else
+                                type="button"
+                                class="h-8 flex-shrink-0 rounded-lg bg-[rgb(var(--palette-red-600)/0.16)] px-3 text-xs font-semibold text-[var(--text-danger)] transition hover:bg-[rgb(var(--palette-red-600)/0.24)] disabled:opacity-60 lg:h-9 lg:text-sm"
+                                :disabled="isSupportCaseStatusUpdating"
+                                @click="toggleSupportCaseStatus"
+                            >
+                                {{ isSupportCaseStatusUpdating ? 'Сохраняем...' : 'Закрыть кейс' }}
                             </button>
                         </div>
 
                         <!-- message -->
                         <div class="relative flex flex-1 min-h-0 flex-col overflow-hidden">
+                            <FloatingDateHeader
+                                :label="floatingDateDisplayLabel"
+                                :opacity="floatingDateOpacity"
+                                :offset-y="floatingDateOffsetY"
+                            />
                             <div ref="messageContainerRef" class="flex-1 min-h-0 overflow-y-auto overscroll-y-contain pb-2"
                                 @scroll="handleMessagesScroll"
                                 @wheel.passive="cancelChatPinning"
@@ -644,37 +1301,66 @@ async function sendMessage(payload: { files: File[] }) {
                                 </div>
 
                                 <template v-else>
-                                    <div :class="isChatPinning ? 'opacity-0 pointer-events-none' : 'opacity-100'">
+                                    <div :class="isChatPinning ? 'h-full opacity-0 pointer-events-none' : 'h-full opacity-100'">
                                         <div v-if="isLoadingMoreMessages" class="flex justify-center py-2">
                                             <Loader size="sm" />
                                         </div>
 
-                                        <div v-if="chatMessages.length > 0" class="flex flex-1 flex-col justify-start min-h-0">
-                                            <div class="flex flex-col gap-3 py-2">
-                                                <ChatMessage v-for="message in chatMessages" :key="message.id" :message="message"
-                                                    :user="user" :showAdminBadge="false" />
+                                        <div v-if="chatTimelineItems.length > 0" class="flex min-w-0 flex-1 flex-col justify-start">
+                                            <div class="flex min-w-0 flex-col pb-18">
+                                                <template v-for="item in chatTimelineItems" :key="item.message.id">
+                                                    <div v-if="item.showDateDivider && item.dateLabel" class="flex justify-center py-2">
+                                                        <span class="admin-surface-soft rounded-full px-3 py-1 text-xs font-medium text-mainText/90">
+                                                            {{ item.dateLabel }}
+                                                        </span>
+                                                    </div>
+
+                                                    <div
+                                                        :class="item.spacingClass"
+                                                        :data-chat-message-index="item.index"
+                                                        :data-chat-date-key="item.dateKey ?? ''"
+                                                    >
+                                                        <ChatMessage
+                                                            :message="item.message"
+                                                            :user="user"
+                                                            :showAdminBadge="false"
+                                                            :deal-status-overrides="dealStatusOverrides"
+                                                            :reviewed-deal-ids="reviewedDealIds"
+                                                        />
+                                                    </div>
+                                                </template>
                                             </div>
                                         </div>
 
                                         <div v-else-if="selectedChatId != null && chatMessages.length === 0"
                                             class="h-full w-full flex items-center justify-center">
-                                            <p class="text-gray-400 font-light">{{ $t("pages.chats.emptyMessages") }}</p>
+                                            <p class="text-[var(--text-muted)] font-light">{{ $t("pages.chats.emptyMessages") }}</p>
                                         </div>
 
                                         <div v-else-if="selectedChatId === null"
                                             class="h-full w-full flex items-center justify-center">
-                                            <p class="text-gray-400 font-light">{{ $t('pages.admin.selectSupportChat') }}</p>
+                                            <p class="text-[var(--text-muted)] font-light">{{ $t('pages.admin.selectSupportChat') }}</p>
                                         </div>
                                     </div>
                                 </template>
+
+                                <div
+                                    v-if="selectedChatId"
+                                    aria-hidden="true"
+                                    class="h-[120px] w-full flex-none md:h-[108px]"
+                                />
                             </div>
 
-                            <div v-if="selectedChatId" class="z-20 mt-2 bg-transparent pb-1 pt-2">
-                                <SendMessageBar
-                                    v-model:newMessage="newMessage"
-                                    @sendMessage="sendMessage"
-                                    class="flex-none"
-                                />
+                            <div
+                                v-if="selectedChatId"
+                                class="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-[var(--transparent)] px-1 pb-1 pt-0 md:pb-2"
+                            >
+                                <div class="pointer-events-auto">
+                                    <SendMessageBar
+                                        v-model:newMessage="newMessage"
+                                        @sendMessage="sendMessage"
+                                    />
+                                </div>
                             </div>
 
                             <div

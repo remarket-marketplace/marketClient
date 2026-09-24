@@ -8,19 +8,19 @@ const props = defineProps<{
 const statusClass = computed(() => {
     switch (props.dealStatus) {
         case 'pending':
-            return 'text-amber-400 bg-amber-400/10 border-amber-400/20';
+            return 'text-[var(--text-warning-strong)] bg-[rgb(var(--palette-amber-400)/0.1)] border-[rgb(var(--palette-amber-400)/0.2)]';
         case 'confirmed':
-            return 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
+            return 'text-[var(--text-success-strong)] bg-[rgb(var(--palette-emerald-400)/0.1)] border-[rgb(var(--palette-emerald-400)/0.2)]';
         case 'disputed':
-            return 'text-orange-400 bg-orange-400/10 border-orange-400/20';
+            return 'text-[var(--text-warning-strong)] bg-[rgb(var(--palette-orange-400)/0.1)] border-[rgb(var(--palette-orange-400)/0.2)]';
         case 'completed':
-            return 'text-blue-400 bg-blue-400/10 border-blue-400/20';
+            return 'text-[var(--text-link)] bg-[rgb(var(--palette-blue-400)/0.1)] border-[rgb(var(--palette-blue-400)/0.2)]';
         case 'cancelled':
-            return 'text-red-400 bg-red-400/10 border-red-400/20';
+            return 'text-[var(--text-danger)] bg-[rgb(var(--palette-red-400)/0.1)] border-[rgb(var(--palette-red-400)/0.2)]';
         case 'refunded':
-            return 'text-purple-400 bg-purple-400/10 border-purple-400/20';
+            return 'text-[var(--text-link)] bg-[rgb(var(--palette-purple-400)/0.1)] border-[rgb(var(--palette-purple-400)/0.2)]';
         default:
-            return 'text-gray-400 bg-gray-400/10 border-gray-400/20';
+            return 'text-[var(--text-muted)] bg-[rgb(var(--palette-gray-400)/0.1)] border-[rgb(var(--palette-gray-400)/0.2)]';
     }
 })
 

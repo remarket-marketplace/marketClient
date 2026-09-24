@@ -53,16 +53,16 @@ const iconSizeClasses = {
         sizeClasses[size],
         'flex items-center justify-center rounded border transition-all duration-200',
         disabled
-          ? 'bg-dark-700 border-dark-600'
+          ? 'bg-[rgb(var(--palette-dark-700))] border-[rgb(var(--palette-dark-600))]'
           : modelValue
-            ? 'bg-blue-600 border-blue-600'
-            : 'bg-dark-600 border-dark-700 hover:border-blue-500'
+            ? 'bg-[rgb(var(--palette-blue-600))] border-[rgb(var(--palette-blue-600))]'
+            : 'bg-[rgb(var(--palette-dark-600))] border-[rgb(var(--palette-dark-700))] hover:border-[rgb(var(--palette-blue-500))]'
       ]"
     >
       <Check 
         v-if="modelValue" 
         :class="iconSizeClasses[size]" 
-        class="text-white stroke-[3]" 
+        class="text-[var(--text-title)] stroke-[3]"
       />
     </span>
   </div>

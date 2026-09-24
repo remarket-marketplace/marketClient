@@ -4,67 +4,119 @@ import {
   Users,
   Package,
   ShoppingCart,
+  CreditCard,
+  ArrowUpFromLine,
+  TicketPercent,
   Folder,
   MessageCircle,
   MessageSquareText,
-  History
+  Flag,
+  History,
+  Menu,
+  X,
+  ArrowLeft,
+  Shield,
+  Mail,
 } from 'lucide-vue-next'
-
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
-import { storeToRefs } from 'pinia'
 import SelectLanguage from '@/components/SelectLanguage.vue'
 import SelectCurrency from '@/components/SelectCurrency.vue'
+import type { FunctionalComponent } from 'vue'
+import type { LucideProps } from 'lucide-vue-next'
 
-const store = useUserStore()
+interface NavItem {
+  id: string
+  title: string
+  to: string
+  icon: FunctionalComponent<LucideProps, {}, any, {}>
+  exact?: boolean
+}
+
+interface NavGroup {
+  id: string
+  title: string
+  items: NavItem[]
+}
+
 const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 
-const isDesktop = ref(true)
-const { user } = storeToRefs(store)
+const isDesktop = ref(false)
+const mobileSidebarOpen = ref(false)
 
 function checkDesktop() {
-  isDesktop.value = window.innerWidth >= 768
-}
-
-const isActiveRoute = (item: any) => {
-  const currentPath = route.path
-
-  if (item.to === '/admin') {
-    return currentPath === '/admin'
+  isDesktop.value = window.innerWidth >= 1024
+  if (isDesktop.value) {
+    mobileSidebarOpen.value = false
   }
-
-  return currentPath.startsWith(item.to)
 }
 
-const isActiveRouteMobile = (item: any) => {
-  return isActiveRoute(item)
+function toggleMobileSidebar() {
+  mobileSidebarOpen.value = !mobileSidebarOpen.value
 }
 
-onMounted(async () => {
-  checkDesktop()
-  window.addEventListener('resize', checkDesktop)
-})
+function closeMobileSidebar() {
+  mobileSidebarOpen.value = false
+}
 
-onUnmounted(() => {
-  window.removeEventListener('resize', checkDesktop)
-})
+function pickNavItems(items: NavItem[], ids: string[]): NavItem[] {
+  return ids
+    .map(id => items.find(item => item.id === id))
+    .filter((item): item is NavItem => Boolean(item))
+}
 
-const navItems = computed(() => [
+const navItems = computed<NavItem[]>(() => [
   {
     id: 'dashboard',
     title: t('navigation.admin.main'),
     icon: BarChart3,
-    to: '/admin'
+    to: '/admin',
+    exact: true,
   },
   {
     id: 'users',
     title: t('navigation.admin.users'),
     icon: Users,
-    to: '/admin/users'
+    to: '/admin/users',
+  },
+  {
+    id: 'products',
+    title: t('navigation.admin.products'),
+    icon: Package,
+    to: '/admin/products',
+  },
+  {
+    id: 'deals',
+    title: t('navigation.admin.deals'),
+    icon: ShoppingCart,
+    to: '/admin/deals',
+  },
+  {
+    id: 'payments',
+    title: t('navigation.admin.payments'),
+    icon: CreditCard,
+    to: '/admin/payments',
+  },
+  {
+    id: 'withdrawals',
+    title: t('navigation.admin.withdrawals'),
+    icon: ArrowUpFromLine,
+    to: '/admin/withdrawals',
+  },
+  {
+    id: 'promo-codes',
+    title: t('pages.admin.steamTopupsPage.title'),
+    icon: TicketPercent,
+    to: '/admin/promo-codes',
+  },
+  {
+    id: 'categories',
+    title: t('navigation.admin.categories'),
+    icon: Folder,
+    to: '/admin/categories',
   },
   {
     id: 'chats',
@@ -79,119 +131,249 @@ const navItems = computed(() => [
     to: '/admin/feedback',
   },
   {
+    id: 'complaints',
+    title: t('navigation.admin.complaints'),
+    icon: Flag,
+    to: '/admin/complaints',
+  },
+  {
     id: 'activity-logs',
     title: t('navigation.admin.activityLogs'),
     icon: History,
     to: '/admin/activity-logs',
   },
   {
-    id: 'products',
-    title: t('navigation.admin.products'),
-    icon: Package,
-    to: '/admin/products',
-  },
-  {
-    id: 'deals',
-    title: t('navigation.admin.deals'),
-    icon: ShoppingCart,
-    to: '/admin/deals'
-  },
-  {
-    id: 'categories',
-    title: t('navigation.admin.categories'),
-    icon: Folder,
-    to: '/admin/categories',
+    id: 'broadcast',
+    title: t('navigation.admin.broadcast'),
+    icon: Mail,
+    to: '/admin/broadcast',
   },
 ])
+
+const navGroups = computed<NavGroup[]>(() => {
+  const items = navItems.value
+
+  return [
+    {
+      id: 'overview',
+      title: t('navigation.admin.sections.overview'),
+      items: pickNavItems(items, ['dashboard']),
+    },
+    {
+      id: 'management',
+      title: t('navigation.admin.sections.management'),
+      items: pickNavItems(items, ['users', 'products', 'deals', 'payments', 'withdrawals', 'promo-codes', 'categories']),
+    },
+    {
+      id: 'communication',
+      title: t('navigation.admin.sections.communication'),
+      items: pickNavItems(items, ['chats', 'feedback', 'complaints', 'activity-logs', 'broadcast']),
+    },
+  ]
+})
+
+function isActiveRoute(item: NavItem): boolean {
+  const currentPath = route.path
+
+  if (item.exact) {
+    return currentPath === item.to
+  }
+
+  return currentPath.startsWith(item.to)
+}
+
+const currentNavTitle = computed(() => {
+  const active = navItems.value.find(item => isActiveRoute(item))
+  return active?.title ?? t('navigation.admin.main')
+})
+
+watch(
+  () => route.path,
+  () => {
+    if (!isDesktop.value) {
+      closeMobileSidebar()
+    }
+  },
+)
+
+onMounted(() => {
+  checkDesktop()
+  window.addEventListener('resize', checkDesktop)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkDesktop)
+})
 </script>
 
 <template>
-  <div class="h-full-dvh w-screen flex flex-col bg-background text-mainText overflow-hidden">
-    <header
-      class="fixed inset-x-0 top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
-    >
-      <div class="mx-auto w-full 2xl:w-1/2">
-        <div class="mx-auto h-14 w-full flex items-center justify-between px-2 lg:px-4">
-          <div class="flex items-center gap-4">
-            <div class="flex flex-shrink-0 cursor-pointer items-center gap-2 text-xl text-mainText font-semibold"
-              @click="router.push('/admin')">
-              <p>remarket</p>
-              <p class="text-gray-300 font-light">Admin</p>
-            </div>
+  <div class="h-full-dvh w-screen bg-background text-mainText overflow-hidden">
+    <div class="h-full flex">
+      <aside class="hidden lg:flex w-80 shrink-0 border-r border-[rgb(var(--palette-dark-700)/0.8)] bg-[rgb(var(--palette-dark-900)/0.4)]">
+        <div class="h-full w-full flex flex-col p-4">
+          <div class="rounded-xl border border-[rgb(var(--palette-dark-700)/0.8)] bg-[rgb(var(--palette-dark-800)/0.5)] p-3">
+            <button
+              type="button"
+              class="flex w-full items-center justify-between rounded-lg px-2 py-2 text-left transition-colors hover:bg-[rgb(var(--palette-dark-700)/0.6)]"
+              @click="router.push('/admin')"
+            >
+              <div class="flex items-center gap-2">
+                <Shield class="h-5 w-5 text-[var(--text-link)]" />
+                <div>
+                  <p class="text-sm font-semibold text-[var(--text-title)]">remarket</p>
+                  <p class="text-xs text-[var(--text-muted)]">Admin Panel</p>
+                </div>
+              </div>
+            </button>
 
-            <div class="flex items-center">
-              <div class="h-4 w-px bg-gray-700"></div>
-              <router-link to="/"
-                class="flex items-center gap-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800/50 px-2 md:px-3 py-1.5 rounded-lg transition-all duration-300 group">
-                <svg class="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-0.5" fill="none"
-                  stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                <span class="hidden md:inline">{{ t('navigation.admin.backToSite') }}</span>
-              </router-link>
-            </div>
+            <button
+              type="button"
+              class="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.5)] px-3 py-2 text-xs text-[var(--text-body)] transition-colors hover:text-[var(--text-title)] hover:bg-[rgb(var(--palette-dark-700))]"
+              @click="router.push('/')"
+            >
+              <ArrowLeft class="h-4 w-4" />
+              {{ t('navigation.admin.backToSite') }}
+            </button>
           </div>
 
-          <div class="flex min-w-0 flex-1 items-center justify-end gap-3 sm:gap-4">
-            <div class="hidden min-w-0 flex-1 md:block">
-              <div class="w-full overflow-x-auto no-scrollbar">
-                <nav class="ml-auto flex min-w-full w-max items-center justify-end gap-6 pr-1">
-                  <router-link v-for="item in navItems" :key="item.id" :to="item.to"
-                    class="flex shrink-0 items-center gap-1 text-sm text-mainText hover:text-gray-300 transition-all duration-300 relative group"
-                    :class="{
-                      'text-white': isActiveRoute(item),
-                      'text-gray-400': !isActiveRoute(item)
-                    }">
-                    <component :is="item.icon" class="text-xl transition-colors duration-300 group-hover:text-white"
-                      :class="isActiveRoute(item) ? 'text-white' : 'text-gray-400'" :size="20" stroke-width="1.5" />
-                    <span class="ml-1 transition-colors duration-300 group-hover:text-white whitespace-nowrap">
-                      {{ item.title }}
-                    </span>
-                  </router-link>
-                </nav>
+          <div class="mt-4 min-h-0 flex-1 overflow-y-auto pr-1 no-scrollbar space-y-5">
+            <section
+              v-for="group in navGroups"
+              :key="group.id"
+              class="space-y-2"
+            >
+              <p class="px-2 text-[11px] uppercase tracking-wide text-[var(--text-meta)]">
+                {{ group.title }}
+              </p>
+
+              <nav class="space-y-1">
+                <router-link
+                  v-for="item in group.items"
+                  :key="item.id"
+                  :to="item.to"
+                  class="group flex items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors"
+                  :class="isActiveRoute(item)
+                    ? 'border-[rgb(var(--palette-blue-500)/0.7)] bg-[rgb(var(--palette-blue-900)/0.2)] text-[var(--text-title)]'
+                    : 'border-[color:var(--transparent)] text-[var(--text-body)] hover:border-[rgb(var(--palette-dark-600))] hover:bg-[rgb(var(--palette-dark-700)/0.45)] hover:text-[var(--text-title)]'"
+                >
+                  <component
+                    :is="item.icon"
+                    class="h-4.5 w-4.5 shrink-0"
+                    :class="isActiveRoute(item) ? 'text-[var(--text-accent)]' : 'text-[var(--text-muted)] group-hover:text-[var(--text-body-strong)]'"
+                  />
+                  <span class="truncate">{{ item.title }}</span>
+                </router-link>
+              </nav>
+            </section>
+          </div>
+
+        </div>
+      </aside>
+
+      <Transition name="fade">
+        <div
+          v-if="mobileSidebarOpen"
+          class="fixed inset-0 z-40 bg-[rgb(var(--palette-black)/0.5)] lg:hidden"
+          @click="closeMobileSidebar"
+        />
+      </Transition>
+
+      <Transition name="slide-left">
+        <aside
+          v-if="mobileSidebarOpen"
+          class="fixed left-0 top-0 z-50 h-full w-80 max-w-[86vw] border-r border-[rgb(var(--palette-dark-700)/0.8)] bg-[rgb(var(--palette-dark-900)/0.95)] p-4 lg:hidden"
+        >
+          <div class="h-full flex flex-col">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <Shield class="h-5 w-5 text-[var(--text-link)]" />
+                <p class="text-sm font-semibold text-[var(--text-title)]">Admin Menu</p>
               </div>
+              <button
+                type="button"
+                class="rounded-md p-1.5 text-[var(--text-body)] hover:bg-[rgb(var(--palette-dark-700)/0.6)] hover:text-[var(--text-title)]"
+                @click="closeMobileSidebar"
+              >
+                <X class="h-5 w-5" />
+              </button>
             </div>
 
-            <div class="shrink-0 flex items-center gap-3">
+            <button
+              type="button"
+              class="mt-3 inline-flex items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.5)] px-3 py-2 text-xs text-[var(--text-body)] transition-colors hover:text-[var(--text-title)] hover:bg-[rgb(var(--palette-dark-700))]"
+              @click="router.push('/')"
+            >
+              <ArrowLeft class="h-4 w-4" />
+              {{ t('navigation.admin.backToSite') }}
+            </button>
+
+            <div class="mt-4 min-h-0 flex-1 overflow-y-auto pr-1 no-scrollbar space-y-5">
+              <section
+                v-for="group in navGroups"
+                :key="group.id"
+                class="space-y-2"
+              >
+                <p class="px-2 text-[11px] uppercase tracking-wide text-[var(--text-meta)]">
+                  {{ group.title }}
+                </p>
+                <nav class="space-y-1">
+                  <router-link
+                    v-for="item in group.items"
+                    :key="item.id"
+                    :to="item.to"
+                    class="group flex items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors"
+                    :class="isActiveRoute(item)
+                      ? 'border-[rgb(var(--palette-blue-500)/0.7)] bg-[rgb(var(--palette-blue-900)/0.2)] text-[var(--text-title)]'
+                      : 'border-[color:var(--transparent)] text-[var(--text-body)] hover:border-[rgb(var(--palette-dark-600))] hover:bg-[rgb(var(--palette-dark-700)/0.45)] hover:text-[var(--text-title)]'"
+                    @click="closeMobileSidebar"
+                  >
+                    <component
+                      :is="item.icon"
+                      class="h-4.5 w-4.5 shrink-0"
+                      :class="isActiveRoute(item) ? 'text-[var(--text-accent)]' : 'text-[var(--text-muted)] group-hover:text-[var(--text-body-strong)]'"
+                    />
+                    <span class="truncate">{{ item.title }}</span>
+                  </router-link>
+                </nav>
+              </section>
+            </div>
+
+          </div>
+        </aside>
+      </Transition>
+
+      <div class="flex min-w-0 flex-1 flex-col">
+        <header class="h-14 shrink-0 border-b border-[rgb(var(--palette-dark-700)/0.7)] bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/65">
+          <div class="h-full flex items-center justify-between px-3 lg:px-5">
+            <div class="flex items-center gap-3 min-w-0">
+              <button
+                type="button"
+                class="inline-flex lg:hidden items-center justify-center rounded-md border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-700)/0.4)] p-2 text-[var(--text-body-strong)]"
+                @click="toggleMobileSidebar"
+              >
+                <Menu class="h-4.5 w-4.5" />
+              </button>
+              <p class="truncate text-sm font-semibold text-[var(--text-title)]">
+                {{ currentNavTitle }}
+              </p>
+            </div>
+
+            <div class="hidden lg:flex items-center gap-2">
               <SelectCurrency />
               <SelectLanguage />
             </div>
           </div>
-        </div>
-      </div>
-      <div
-        aria-hidden="true"
-        class="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-dark-700/25 via-dark-700/95 to-dark-700/25"
-      />
-    </header>
+        </header>
 
-    <main class="flex-1 min-h-0 overflow-hidden pt-14">
-      <div class="flex w-full 2xl:w-1/2 mx-auto h-full px-1.5" :class="{ 'pb-16': !isDesktop }">
-        <slot />
-      </div>
-    </main>
-
-    <nav class="mobile-nav-glass fixed bottom-0 left-0 right-0 z-30 h-14 border-t border-gray-700 md:hidden">
-      <div class="mobile-nav-scroll mx-auto h-full w-full overflow-x-auto overflow-y-hidden no-scrollbar touch-pan-x">
-        <div class="h-full min-w-full w-max flex items-center justify-start gap-1 px-2">
-        <router-link v-for="item in navItems" :key="item.id" :to="item.to"
-          class="flex h-11 min-w-[74px] max-w-[92px] snap-start flex-col items-center justify-center rounded-lg px-2 transition-all duration-300 relative group flex-shrink-0"
-          :class="isActiveRouteMobile(item)
-            ? 'bg-white/10 text-white'
-            : 'text-gray-400 hover:text-white hover:bg-white/5'">
-          <div class="icon-box flex items-center justify-center transition-colors duration-300 group-hover:text-white"
-            :class="isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400'">
-            <component :is="item.icon" :size="22" stroke-width="1.5" />
+        <main class="flex-1 min-h-0 overflow-hidden">
+          <div
+            class="h-full w-full px-1.5 lg:px-4 2xl:px-5"
+          >
+            <slot />
           </div>
-          <span
-            class="menu-label max-w-full truncate text-center text-[10px] font-light leading-none mt-1 transition-colors duration-300 group-hover:text-white"
-            :class="isActiveRouteMobile(item) ? 'text-white' : 'text-gray-400'">
-            {{ item.title }}
-          </span>
-        </router-link>
-        </div>
+        </main>
       </div>
-    </nav>
+    </div>
   </div>
 </template>
 
@@ -201,54 +383,23 @@ const navItems = computed(() => [
   height: 100dvh;
 }
 
-.mobile-nav-glass {
-  background-color: var(--glass-bg-dark);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
-  border-top-width: 1px;
-  border-top-color: var(--overlay-white-15);
-  box-shadow: 0 -8px 32px var(--shadow-black-40);
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
 }
 
-.mobile-nav-scroll {
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
-.icon-box {
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: transform 0.22s ease;
 }
 
-.icon-box svg {
-  display: block;
-  width: 22px;
-  height: 22px;
-  max-width: 22px;
-  max-height: 22px;
-  vertical-align: middle;
-  margin: 0;
-}
-
-.icon-box svg [stroke] {
-  stroke-width: 1.5;
-}
-
-.menu-label {
-  display: block;
-  line-height: 1;
-}
-
-/* Smooth transitions for all interactive elements */
-.router-link-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Improved hover effect */
-.group:hover {
-  transform: translateY(-1px);
+.slide-left-enter-from,
+.slide-left-leave-to {
+  transform: translateX(-100%);
 }
 </style>

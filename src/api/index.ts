@@ -27,6 +27,16 @@ function processQueue(error: any, token: string | null = null) {
 // Request interceptor
 httpClient.interceptors.request.use(
   (config) => {
+    const storedLanguage = typeof window !== 'undefined'
+      ? window.localStorage.getItem('user-language')
+      : null
+    const normalizedLanguage = storedLanguage?.toLowerCase().startsWith('ru') ? 'ru' : 'en'
+
+    config.headers = config.headers ?? {}
+    if (!config.headers['Accept-Language']) {
+      config.headers['Accept-Language'] = normalizedLanguage
+    }
+
     return config;
   },
   (error) => Promise.reject(error)

@@ -4,6 +4,13 @@ import { createVueApp } from './app'
 import { productService } from './api/product/ProductService'
 import { setUsdRubRate } from './utils/currency'
 
+if (typeof window !== 'undefined') {
+  const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname)
+  if (isLocalhost && window.location.protocol === 'https:') {
+    window.location.replace(`http://${window.location.host}${window.location.pathname}${window.location.search}${window.location.hash}`)
+  }
+}
+
 const { app, router } = createVueApp(false)
 
 async function bootstrapCurrencyRate() {
