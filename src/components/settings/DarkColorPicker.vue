@@ -201,28 +201,28 @@ function selectSwatch(color: string) {
 </script>
 
 <template>
-  <div class="w-44 rounded-lg border border-dark-600 bg-dark-900 p-2 shadow-lg">
+  <div class="w-44 rounded-lg border border-[rgb(var(--palette-dark-600))] bg-[rgb(var(--palette-dark-900))] p-2 shadow-lg">
     <div
       ref="saturationRef"
-      class="relative h-24 w-full cursor-crosshair rounded-md border border-dark-600"
+      class="relative h-24 w-full cursor-crosshair rounded-md border border-[rgb(var(--palette-dark-600))]"
       :style="{ backgroundColor: saturationBackground }"
       @pointerdown="startSaturationDrag"
     >
-      <div class="pointer-events-none absolute inset-0 rounded-md bg-gradient-to-r from-white to-transparent" />
-      <div class="pointer-events-none absolute inset-0 rounded-md bg-gradient-to-t from-black to-transparent" />
+      <div class="pointer-events-none absolute inset-0 rounded-md bg-gradient-to-r from-[rgb(var(--palette-white))] to-[var(--transparent)]" />
+      <div class="pointer-events-none absolute inset-0 rounded-md bg-gradient-to-t from-[rgb(var(--palette-black))] to-[var(--transparent)]" />
       <div
-        class="pointer-events-none absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow"
+        class="pointer-events-none absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[rgb(var(--palette-white))] shadow"
         :style="saturationCursorStyle"
       />
     </div>
 
     <div
       ref="hueRef"
-      class="relative mt-2 h-3 w-full cursor-ew-resize rounded-full border border-dark-600 bg-[linear-gradient(90deg,#ff0000_0%,#ffff00_16.66%,#00ff00_33.33%,#00ffff_50%,#0000ff_66.66%,#ff00ff_83.33%,#ff0000_100%)]"
+      class="relative mt-2 h-3 w-full cursor-ew-resize rounded-full border border-[rgb(var(--palette-dark-600))] bg-[var(--color-picker-hue-gradient)]"
       @pointerdown="startHueDrag"
     >
       <div
-        class="pointer-events-none absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-dark-900"
+        class="pointer-events-none absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[rgb(var(--palette-white))] bg-[rgb(var(--palette-dark-900))]"
         :style="hueCursorStyle"
       />
     </div>
@@ -232,7 +232,7 @@ function selectSwatch(color: string) {
         v-for="swatch in (props.swatches ?? [])"
         :key="swatch"
         type="button"
-        class="h-5 w-5 rounded-sm border border-dark-500 transition hover:border-blue-400/70"
+        class="h-5 w-5 rounded-sm border border-[rgb(var(--palette-dark-500))] transition hover:border-[rgb(var(--palette-blue-400)/0.7)]"
         :style="{ backgroundColor: swatch }"
         :title="swatch"
         @click="selectSwatch(swatch)"

@@ -26,6 +26,7 @@ import ConfirmWindow from '@/components/ConfirmWindow.vue'
 import CustomSelect from '@/components/CustomSelect.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { formatCurrencyAmount } from '@/utils/currency'
+import { getShortDealId } from '@/utils/dealId'
 import { buildSlugKey } from '@/utils/urlKeys'
 
 const { t } = useI18n()
@@ -44,6 +45,7 @@ const isLoading = ref(true)
 const processingDealId = ref<string | null>(null)
 const isMobile = ref(false)
 const isFetchingMore = ref(false)
+const isLoadingAllDealsForSearch = ref(false)
 const totalCount = ref(0)
 const listRef = ref<HTMLElement | null>(null)
 
@@ -80,23 +82,38 @@ function goToProduct(productId: string, productSlug?: string | null) {
   router.push(`/product/${productKey}`)
 }
 
-const normalizedQuery = computed(() => searchQuery.value.trim().toLowerCase())
+function normalizeSearchInput(value: string): string {
+  return value.trim().toLowerCase().replace(/^#/, '')
+}
+
+const normalizedQuery = computed(() => normalizeSearchInput(searchQuery.value))
+const normalizedDealToken = computed(() => normalizedQuery.value.replace(/[^a-z0-9]/g, '').replace(/^rm/, ''))
 
 const filteredDeals = computed(() => {
   return deals.value.filter(deal => {
-    const matchesQuery = normalizedQuery.value
+    const normalizedDealId = deal.id.toLowerCase()
+    const compactDealId = deal.id.replace(/-/g, '').toLowerCase()
+    const shortDealId = getShortDealId(deal.id).toLowerCase()
+    const matchesTextQuery = normalizedQuery.value
       ? [
           deal.product.title,
           deal.product.description,
           deal.product.category.name,
           deal.seller.username,
           deal.buyer.username,
-          deal.id,
+          normalizedDealId,
+          compactDealId,
+          shortDealId,
+          `rm${shortDealId}`,
         ]
           .join(' ')
           .toLowerCase()
           .includes(normalizedQuery.value)
       : true
+    const matchesDealToken = normalizedDealToken.value
+      ? compactDealId.includes(normalizedDealToken.value) || shortDealId.includes(normalizedDealToken.value)
+      : false
+    const matchesQuery = normalizedQuery.value ? (matchesTextQuery || matchesDealToken) : true
 
     const matchesStatus =
       statusFilter.value === 'all' ? true : deal.status === statusFilter.value
@@ -128,7 +145,7 @@ const sortedDeals = computed(() => {
 })
 
 const displayTotal = computed(() => {
-  if (normalizedQuery.value || statusFilter.value !== 'all') {
+  if (normalizedQuery.value) {
     return filteredDeals.value.length
   }
   return totalCount.value || deals.value.length
@@ -153,7 +170,11 @@ async function loadDeals(reset = false) {
 
   isLoading.value = true
   try {
-    const response: DealsList | false = await adminService.getAllDeals(currentPage.value, perPage.value)
+    const response: DealsList | false = await adminService.getAllDeals(
+      currentPage.value,
+      perPage.value,
+      statusFilter.value === 'all' ? undefined : statusFilter.value,
+    )
     if (response !== false) {
       const dealsData = response.deals || []
       if (reset) {
@@ -176,6 +197,51 @@ async function loadDeals(reset = false) {
   } finally {
     isLoading.value = false
     isFetchingMore.value = false
+    if (normalizedQuery.value) {
+      void ensureAllDealsLoadedForSearch()
+    }
+  }
+}
+
+async function ensureAllDealsLoadedForSearch() {
+  if (!normalizedQuery.value || isLoadingAllDealsForSearch.value) return
+  if (currentPage.value >= totalPages.value) return
+
+  isLoadingAllDealsForSearch.value = true
+  const querySnapshot = normalizedQuery.value
+  const statusSnapshot = statusFilter.value
+
+  try {
+    while (
+      normalizedQuery.value === querySnapshot
+      && statusFilter.value === statusSnapshot
+      && currentPage.value < totalPages.value
+    ) {
+      const nextPage = currentPage.value + 1
+      const response: DealsList | false = await adminService.getAllDeals(
+        nextPage,
+        perPage.value,
+        statusSnapshot === 'all' ? undefined : statusSnapshot,
+      )
+
+      if (response === false) {
+        break
+      }
+
+      const nextDeals = response.deals || []
+      deals.value = [...deals.value, ...nextDeals]
+      currentPage.value = nextPage
+      totalPages.value = response.total_pages || Math.ceil((response.total || 0) / perPage.value)
+      totalCount.value = response.total ?? totalCount.value
+
+      if (!nextDeals.length) {
+        break
+      }
+    }
+  } catch (error) {
+    console.error('Ошибка при догрузке сделок для поиска:', error)
+  } finally {
+    isLoadingAllDealsForSearch.value = false
   }
 }
 
@@ -359,6 +425,15 @@ onUnmounted(() => {
 watch([searchQuery, sortBy, statusFilter], () => {
   if (listRef.value) listRef.value.scrollTop = 0
 })
+
+watch(normalizedQuery, async (value) => {
+  if (!value) return
+  await ensureAllDealsLoadedForSearch()
+})
+
+watch(statusFilter, async () => {
+  await loadDeals(true)
+})
 </script>
 
 <template>
@@ -380,7 +455,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
         <button
           type="button"
           class="admin-btn admin-btn-ghost w-full justify-center"
-          :class="{ 'border-blue-500/40 text-blue-300': isMobileFiltersOpen }"
+          :class="{ 'border-[rgb(var(--palette-blue-500)/0.4)] text-[var(--text-link)]': isMobileFiltersOpen }"
           @click="isMobileFiltersOpen = !isMobileFiltersOpen"
         >
           <SlidersHorizontal class="w-4 h-4" />
@@ -394,7 +469,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
         </button>
       </div>
       <div
-        class="grid grid-cols-1 sm:grid-cols-2 gap-2"
+        class="admin-filter-panel grid grid-cols-1 gap-2 rounded-[1.5rem] p-3 sm:grid-cols-2"
         :class="{ 'hidden sm:grid': !isMobileFiltersOpen }"
       >
         <CustomSelect
@@ -428,13 +503,13 @@ watch([searchQuery, sortBy, statusFilter], () => {
     <!-- Список сделок -->
     <div class="flex-1 overflow-hidden">
       <div v-if="isLoading" class="flex items-center justify-center h-32">
-        <Loader2 class="h-5 w-5 sm:h-8 sm:w-8 animate-spin text-blue-500" />
-        <span class="ml-2 text-sm sm:text-lg text-gray-400">{{ $t('common.loading') }}</span>
+        <Loader2 class="h-5 w-5 sm:h-8 sm:w-8 animate-spin text-[var(--text-link)]" />
+        <span class="ml-2 text-sm sm:text-lg text-[var(--text-muted)]">{{ $t('common.loading') }}</span>
       </div>
 
       <div v-else-if="sortedDeals.length === 0" class="flex items-center justify-center h-32">
         <div class="text-center">
-          <div class="h-6 w-6 sm:h-12 sm:w-12 text-gray-500 mx-auto mb-1 flex items-center justify-center">
+          <div class="h-6 w-6 sm:h-12 sm:w-12 text-[var(--text-meta)] mx-auto mb-1 flex items-center justify-center">
             <span class="text-2xl">🤝</span>
           </div>
           <p class="text-text-secondary text-xs sm:text-base">{{ $t('common.noData') }}</p>
@@ -444,13 +519,13 @@ watch([searchQuery, sortBy, statusFilter], () => {
       <div ref="listRef" v-else class="h-full overflow-y-auto space-y-4">
         <!-- Карточка сделки -->
         <div v-for="deal in sortedDeals" :key="deal.id"
-          class="bg-dark-600 border border-dark-700 rounded-xl p-4 hover:border-dark-500 transition-all duration-200">
+          class="admin-surface-card rounded-[1.4rem] p-4">
           <div class="flex flex-col gap-4">
             <!-- Заголовок и статус -->
             <div class="flex justify-between items-start">
               <div class="flex items-center gap-3">
                 <DealStatusTag :deal-status="deal.status" />
-                <span class="text-xl font-bold text-green-400">{{ formatPrice(deal.price) }}</span>
+                <span class="text-xl font-bold text-[var(--text-success-strong)]">{{ formatPrice(deal.price) }}</span>
               </div>
               <div class="flex gap-2">
                 <button @click="goToChat(deal.chat_room_id)"
@@ -473,7 +548,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
             <div class="flex gap-4">
               <div class="flex-shrink-0">
                 <img :src="getProductImageUrl(deal)" :alt="deal.product.title"
-                  class="w-20 h-20 sm:w-24 sm:h-24 rounded-lg object-cover border border-dark-400 cursor-pointer"
+                  class="w-20 h-20 sm:w-24 sm:h-24 rounded-lg object-cover border border-[rgb(var(--palette-white)/0.1)] cursor-pointer"
                   @click="goToProduct(deal.product.id, deal.product.slug)" />
               </div>
               <div class="flex-1 min-w-0">
@@ -492,7 +567,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
             <!-- Участники сделки -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div @click="goToProfile(deal.seller.username)"
-                class="bg-dark-700 hover:bg-dark-700/80 transition rounded-lg p-3 cursor-pointer">
+                class="admin-surface-soft cursor-pointer rounded-lg p-3 transition hover:bg-[rgb(var(--palette-white)/0.04)]">
                 <div class="flex items-center gap-3">
                   <UserAvatar
                     :avatar-url="deal.seller.avatar_url"
@@ -510,7 +585,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
               </div>
 
               <div @click="goToProfile(deal.buyer.username)"
-                class="bg-dark-700 hover:bg-dark-700/80 transition rounded-lg p-3 cursor-pointer">
+                class="admin-surface-soft cursor-pointer rounded-lg p-3 transition hover:bg-[rgb(var(--palette-white)/0.04)]">
                 <div class="flex items-center gap-3">
                   <UserAvatar
                     :avatar-url="deal.buyer.avatar_url"
@@ -541,12 +616,12 @@ watch([searchQuery, sortBy, statusFilter], () => {
                 </div>
               </div>
               <div class="flex items-center gap-1">
-                <span>ID: {{ deal.id }}</span>
+                <span>ID: {{ getShortDealId(deal.id) }}</span>
               </div>
             </div>
 
             <!-- Кнопки управления -->
-            <div class="flex flex-col sm:flex-row sm:flex-wrap gap-2 pt-2 border-t border-dark-700">
+            <div class="flex flex-col sm:flex-row sm:flex-wrap gap-2 pt-2 border-t border-[rgb(var(--palette-white)/0.08)]">
               <button
                 @click="openDealStatusModal(deal)"
                 :disabled="processingDealId === deal.id"
@@ -582,21 +657,21 @@ watch([searchQuery, sortBy, statusFilter], () => {
               </template>
 
               <template v-else-if="deal.status === 'completed'">
-                <div class="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-600 text-gray-300 rounded-lg text-sm">
+                <div class="admin-surface-soft flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm text-[var(--text-body)]">
                   <CheckCircle class="w-4 h-4" />
                   <span>{{ $t('common.dealCompleted') }}</span>
                 </div>
               </template>
 
               <template v-else-if="deal.status === 'cancelled'">
-                <div class="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-600 text-gray-300 rounded-lg text-sm">
+                <div class="admin-surface-soft flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm text-[var(--text-body)]">
                   <XCircle class="w-4 h-4" />
                   <span>{{ $t('common.dealCancelled') }}</span>
                 </div>
               </template>
 
               <template v-else-if="deal.status === 'refunded'">
-                <div class="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-purple-300 rounded-lg text-sm">
+                <div class="flex flex-1 items-center justify-center gap-2 rounded-lg border border-[rgb(var(--palette-purple-500)/0.25)] bg-[rgb(var(--palette-purple-500)/0.1)] px-4 py-2 text-sm text-[var(--text-accent)]">
                   <Undo2 class="w-4 h-4" />
                   <span>{{ $t('common.refundCompleted') }}</span>
                 </div>
@@ -616,7 +691,7 @@ watch([searchQuery, sortBy, statusFilter], () => {
 
         <!-- Спиннер при подгрузке -->
         <div v-if="isFetchingMore" class="flex items-center justify-center py-4">
-          <Loader2 class="w-5 h-5 animate-spin text-blue-500" />
+          <Loader2 class="w-5 h-5 animate-spin text-[var(--text-link)]" />
         </div>
       </div>
     </div>
@@ -633,15 +708,15 @@ watch([searchQuery, sortBy, statusFilter], () => {
   >
     <template #body>
       <div v-if="showReasonField" class="space-y-2">
-        <label class="block text-sm text-gray-300">
+        <label class="block text-sm text-[var(--text-body)]">
           {{ $t('pages.admin.dealPage.disputeReasonLabel') }}
         </label>
         <textarea
           v-model="disputeReason"
-          class="w-full rounded-lg bg-dark-900 border border-dark-700 text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[110px]"
+          class="admin-input-surface w-full rounded-lg text-[var(--text-title)] px-3 py-2 resize-none min-h-[110px]"
           :placeholder="$t('pages.admin.dealPage.disputeReasonPlaceholder')"
         />
-        <p v-if="reasonError" class="text-red-400 text-sm">
+        <p v-if="reasonError" class="text-[var(--text-danger)] text-sm">
           {{ reasonError }}
         </p>
       </div>

@@ -8,11 +8,11 @@ const props = defineProps<{
 const statusClass = computed(() => {
     switch (props.is_active) {
         case true:
-            return 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
+            return 'text-[var(--text-success-strong)] bg-[rgb(var(--palette-emerald-400)/0.1)] border-[rgb(var(--palette-emerald-400)/0.2)]';
         case false:
-            return 'text-gray-400 bg-gray-400/10 border-gray-400/20';
+            return 'text-[var(--text-muted)] bg-[rgb(var(--palette-gray-400)/0.1)] border-[rgb(var(--palette-gray-400)/0.2)]';
         default:
-            return 'text-gray-400 bg-gray-400/10 border-gray-400/20';
+            return 'text-[var(--text-muted)] bg-[rgb(var(--palette-gray-400)/0.1)] border-[rgb(var(--palette-gray-400)/0.2)]';
     }
 })
 </script>

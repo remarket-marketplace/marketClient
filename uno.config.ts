@@ -3,6 +3,8 @@ import { defineConfig, presetUno, presetIcons } from 'unocss'
 const withAlpha = (token: string) => `rgb(var(--palette-${token}) / <alpha-value>)`
 
 const paletteColors = {
+  white: withAlpha('white'),
+  black: withAlpha('black'),
   dark: {
     200: withAlpha('dark-200'),
     400: withAlpha('dark-400'),
@@ -28,6 +30,13 @@ const paletteColors = {
     800: withAlpha('gray-800'),
     900: withAlpha('gray-900'),
   },
+  slate: {
+    100: withAlpha('slate-100'),
+    300: withAlpha('slate-300'),
+    500: withAlpha('slate-500'),
+    600: withAlpha('slate-600'),
+    700: withAlpha('slate-700'),
+  },
   zinc: {
     600: withAlpha('zinc-600'),
     700: withAlpha('zinc-700'),
@@ -44,6 +53,16 @@ const paletteColors = {
     700: withAlpha('blue-700'),
     800: withAlpha('blue-800'),
     900: withAlpha('blue-900'),
+    950: withAlpha('blue-950'),
+  },
+  sky: {
+    50: withAlpha('sky-50'),
+    100: withAlpha('sky-100'),
+    200: withAlpha('sky-200'),
+    300: withAlpha('sky-300'),
+    400: withAlpha('sky-400'),
+    500: withAlpha('sky-500'),
+    900: withAlpha('sky-900'),
   },
   cyan: {
     200: withAlpha('cyan-200'),
@@ -52,9 +71,22 @@ const paletteColors = {
     500: withAlpha('cyan-500'),
     900: withAlpha('cyan-900'),
   },
-  sky: { 500: withAlpha('sky-500') },
-  indigo: { 500: withAlpha('indigo-500') },
-  violet: { 500: withAlpha('violet-500') },
+  indigo: {
+    400: withAlpha('indigo-400'),
+    500: withAlpha('indigo-500'),
+    900: withAlpha('indigo-900'),
+  },
+  violet: {
+    200: withAlpha('violet-200'),
+    300: withAlpha('violet-300'),
+    500: withAlpha('violet-500'),
+    600: withAlpha('violet-600'),
+    950: withAlpha('violet-950'),
+  },
+  fuchsia: {
+    500: withAlpha('fuchsia-500'),
+    900: withAlpha('fuchsia-900'),
+  },
   purple: {
     300: withAlpha('purple-300'),
     400: withAlpha('purple-400'),
@@ -66,7 +98,13 @@ const paletteColors = {
     500: withAlpha('pink-500'),
     900: withAlpha('pink-900'),
   },
-  rose: { 400: withAlpha('rose-400') },
+  rose: {
+    100: withAlpha('rose-100'),
+    200: withAlpha('rose-200'),
+    300: withAlpha('rose-300'),
+    400: withAlpha('rose-400'),
+    500: withAlpha('rose-500'),
+  },
   emerald: {
     100: withAlpha('emerald-100'),
     200: withAlpha('emerald-200'),
@@ -84,6 +122,7 @@ const paletteColors = {
     500: withAlpha('green-500'),
     600: withAlpha('green-600'),
     700: withAlpha('green-700'),
+    950: withAlpha('green-950'),
   },
   lime: { 500: withAlpha('lime-500') },
   yellow: {
@@ -117,6 +156,7 @@ const paletteColors = {
     700: withAlpha('red-700'),
     800: withAlpha('red-800'),
     900: withAlpha('red-900'),
+    950: withAlpha('red-950'),
   },
 }
 

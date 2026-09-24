@@ -1,6 +1,7 @@
 import { ZodError } from "zod";
 import { httpClient } from "..";
 import { UserReadSchema, type UserRead } from "@/validation/user/userRead";
+import { LoginResponseSchema, type LoginResponse } from "@/validation/auth/login";
 import { useUserStore } from "@/stores/user";
 import { chatsService } from "@/api/chats/chatsService";
 
@@ -26,6 +27,19 @@ export const authService = {
     });
   },
 
+  async sendLoginCode(email: string, captchaToken: string) {
+    return await httpClient.post("/auth/send-login-code", {
+      email,
+      captcha_token: captchaToken
+    });
+  },
+
+  async resendLoginCode(email: string) {
+    return await httpClient.post("/auth/resend-login-code", {
+      email,
+    });
+  },
+
   async sendPasswordResetLetter(email: string, captchaToken: string) {
     return httpClient.post("/auth/password-reset-letter", {
       email: email,
@@ -46,23 +60,53 @@ export const authService = {
     });
   },
 
-  async signIn(email: string, password: string, captchaToken: string) {
+  async signIn(
+    email: string,
+    password: string,
+    captchaToken: string,
+  ): Promise<LoginResponse> {
     chatsService.disconnect();
     const response = await httpClient.post("/auth/login", {
       email,
       password,
       captcha_token: captchaToken
     });
+    const loginResponse = LoginResponseSchema.parse(response.data);
+
+    if (!loginResponse.two_factor_required && loginResponse.user) {
+      await useUserStore().setUser(loginResponse.user);
+    }
+
+    return loginResponse;
+  },
+
+  async confirmTwoFactorLogin(twoFactorToken: string, code: string): Promise<UserRead> {
+    chatsService.disconnect();
+    const response = await httpClient.post("/auth/login/2fa", {
+      two_factor_token: twoFactorToken,
+      code,
+    });
     const userData = UserReadSchema.parse(response.data);
     await useUserStore().setUser(userData);
-    return response;
+    return userData;
+  },
+
+  async confirmLoginCode(email: string, code: string): Promise<UserRead> {
+    chatsService.disconnect();
+    const response = await httpClient.post("/auth/confirm-login-code", {
+      email,
+      email_code: code,
+    });
+    const userData = UserReadSchema.parse(response.data);
+    await useUserStore().setUser(userData);
+    return userData;
   },
 
   async signUp(
     email: string,
-    password: string,
     username: string,
-    code: string
+    code: string,
+    referralCode?: string | null,
   ) {
     chatsService.disconnect();
     const response = await httpClient.post(
@@ -70,8 +114,8 @@ export const authService = {
       {
         email,
         username,
-        password,
         email_code: code,
+        referral_code: referralCode ?? null,
       }
     );
     const userData = UserReadSchema.parse(response.data);
@@ -104,18 +148,6 @@ export const authService = {
       return false;
     } finally {
       chatsService.disconnect();
-    }
-  },
-
-  async getMyUserId() {
-    try {
-      const response = await httpClient.get("/auth/get-my-user-id");
-      return response.data;
-    } catch (e) {
-      if (e instanceof ZodError) {
-        console.error(e.issues);
-      }
-      return false;
     }
   },
 

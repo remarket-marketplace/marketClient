@@ -5,43 +5,85 @@ import SuccessMessage from '@/components/SuccessMessage.vue'
 import TheButton from '../forms/TheButton.vue'
 import TheInput from '@/components/TheInput.vue'
 import { getErrorMessage } from '@/utils/errorsMap'
-import { computed, ref } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Captcha from '@/components/Captcha.vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { buildAuthModalLocation } from '@/utils/authRedirect'
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 
 const email = ref('')
 
 const errorMessage = ref('')
 const successMessage = ref('')
 
-const sended = ref(false)
+const isSending = ref(false)
 const captchaToken = ref('')
+const captchaRenderKey = ref(0)
+const resendSecondsLeft = ref(0)
+let resendTimer: ReturnType<typeof window.setInterval> | null = null
 
 const emailValid = computed(() => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return emailRegex.test(email.value)
 })
 
+function clearResendTimer() {
+    if (!resendTimer) return
+    window.clearInterval(resendTimer)
+    resendTimer = null
+}
+
+function startResendCooldown(seconds = 30) {
+    clearResendTimer()
+    resendSecondsLeft.value = seconds
+    resendTimer = window.setInterval(() => {
+        if (resendSecondsLeft.value <= 1) {
+            clearResendTimer()
+            resendSecondsLeft.value = 0
+            return
+        }
+        resendSecondsLeft.value -= 1
+    }, 1000)
+}
+
+function refreshCaptcha() {
+    captchaToken.value = ''
+    captchaRenderKey.value += 1
+}
+
 async function sendLetter() {
+    if (isSending.value || resendSecondsLeft.value > 0) return
+    if (!captchaToken.value) {
+        errorMessage.value = t('pages.auth.signIn.completeCaptcha')
+        return
+    }
     try {
-        sended.value = true
+        isSending.value = true
+        errorMessage.value = ''
         await authService.sendPasswordResetLetter(email.value, captchaToken.value)
         successMessage.value = t('pages.resetPassword.ResetLetterSuccessSended')
+        startResendCooldown()
     } catch (error: any) {
-        sended.value = false
         const detail = error?.response?.data?.detail
         errorMessage.value = getErrorMessage(detail, t)
+    } finally {
+        refreshCaptcha()
+        isSending.value = false
     }
 }
+
+onUnmounted(() => {
+    clearResendTimer()
+})
 </script>
 
 <template>
     <div class="h-full w-full flex flex-col items-center overflow-scroll pb-36 pt-10">
-        <div class="max-w-sm w-full border border-dark-700 rounded-2xl bg-background p-8 backdrop-blur-md space-y-6 my-auto">
+        <div class="max-w-sm w-full border border-[rgb(var(--palette-dark-700))] rounded-2xl bg-background p-8 backdrop-blur-md space-y-6 my-auto">
             <h1 class="text-center text-3xl text-mainText font-bold">
                 {{ $t('pages.resetPassword.title') }}
             </h1>
@@ -55,22 +97,36 @@ async function sendLetter() {
                 <div class="space-y-4">
                     <TheInput id="email" v-model="email" type="email" :placeholder="$t('common.emailPlaceholder')"
                         required autocomplete="email" :error="email.length > 0 && !emailValid" />
-                    <p v-if="email.length > 0 && !emailValid" class="mt-1 text-xs text-red-400">
+                    <p v-if="email.length > 0 && !emailValid" class="mt-1 text-xs text-[var(--text-danger)]">
                         {{ $t('validation.invalidEmail') }}
                     </p>
 
                     <div>
-                        <Captcha @verified="(token: string) => captchaToken = token" />
+                        <Captcha :key="captchaRenderKey" @verified="(token: string) => captchaToken = token" />
                     </div>
 
-                    <TheButton @click="sendLetter" :button-text="sended ? $t('common.sending') :
+                    <TheButton @click="sendLetter" :button-text="isSending ? $t('common.sending') :
                             $t('pages.passwordRecovery.changePassword')
-                        " :sended="sended" :disabled="!emailValid || sended" class="w-full" />
+                        " :sended="isSending" :disabled="!emailValid || !captchaToken || isSending || resendSecondsLeft > 0" class="w-full" />
+
+                    <button
+                        v-if="successMessage"
+                        type="button"
+                        class="w-full text-center text-sm text-text-link hover:underline disabled:cursor-not-allowed disabled:opacity-60 disabled:no-underline"
+                        :disabled="isSending || resendSecondsLeft > 0 || !captchaToken"
+                        @click="sendLetter"
+                    >
+                        {{
+                            resendSecondsLeft > 0
+                                ? $t('pages.resetPassword.resendIn', { seconds: resendSecondsLeft })
+                                : $t('pages.resetPassword.resend')
+                        }}
+                    </button>
                 </div>
 
 
             <p class="text-center text-sm text-text-secondaryDark">
-                <router-link to="/signin" class="text-text-link hover:underline">
+                <router-link :to="buildAuthModalLocation(route)" class="text-text-link hover:underline">
                     {{ $t('common.backToSignIn') }}
                 </router-link>
             </p>

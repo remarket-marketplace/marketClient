@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Search } from 'lucide-vue-next';
+
 const _props = defineProps<{
   modelValue: string
   placeholder?: string
@@ -19,24 +21,12 @@ function onInput(event: Event) {
 <template>
   <div class="w-full rounded-lg">
     <div class="relative">
-      <svg
-        class="absolute left-3 top-1/2 h-5 w-5 text-gray-400 -translate-y-1/2"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z"
-        />
-      </svg>
+      <Search class="absolute left-3 top-1/2 h-5 w-5 text-[var(--text-muted)] -translate-y-1/2"/>
 
       <input
         :value="modelValue"
         type="text"
-        class="w-full min-h-[44px] border border-dark-200 rounded-md bg-background py-2 pl-10 pr-3 text-sm text-mainText focus:outline-none placeholder-gray-400"
+        class="w-full min-h-[44px] border border-[rgb(var(--palette-dark-200))] rounded-md bg-background py-2 pl-10 pr-3 text-sm text-mainText focus:outline-none placeholder-[var(--text-placeholder)]"
         :placeholder="placeholder"
         @input="onInput"
       >

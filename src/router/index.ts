@@ -1,9 +1,11 @@
-import { createRouter, createWebHistory, createMemoryHistory } from "vue-router";
-import { authService } from "@/api/auth/AuthService";
+import { createRouter, createWebHistory, createMemoryHistory, type RouteRecordRaw } from "vue-router";
+import { useNavigationStore } from "@/stores/navigation";
+import { useUserStore } from "@/stores/user";
+import { buildAuthModalQuery, getAuthRedirectFromRoute } from "@/utils/authRedirect";
 
 const YANDEX_METRIKA_COUNTER_ID = 106828907;
 
-const routes = [
+const routes: RouteRecordRaw[] = [
     {
       path: "/",
       name: "home",
@@ -12,17 +14,28 @@ const routes = [
     {
       path: "/signin",
       name: "signIn",
-      component: () => import("@/views/SignIn.vue"),
-      meta: { requiredGuest: true },
+      redirect: (to) => ({
+        path: "/",
+        query: {
+          ...to.query,
+          auth: "signin",
+        },
+      }),
     },
     {
       path: "/signup",
       name: "signUp",
-      component: () => import("@/views/SignUp.vue"),
-      meta: { requiredGuest: true },
+      redirect: (to) => ({
+        path: "/",
+        query: {
+          ...to.query,
+          auth: "signup",
+        },
+      }),
     },
     {
-      path: "/password-reset-email",
+      path: "/password-reset",
+      alias: "/password-reset-email",
       name: "password reset email",
       component: () => import("@/views/resetPassword/EnterResetEmailView.vue"),
     },
@@ -40,6 +53,13 @@ const routes = [
       path: "/user/products/favorites",
       name: "favorites products",
       component: () => import("@/views/FavoritesProductsView.vue"),
+      meta: { requiredAuthorized: true },
+    },
+    {
+      path: "/user/products/archive",
+      name: "archived products",
+      component: () => import("@/views/ArchivedProductsView.vue"),
+      meta: { requiredAuthorized: true },
     },
     {
       path: "/product/create",
@@ -62,6 +82,18 @@ const routes = [
       path: "/category/:categoryId",
       name: "category page",
       component: () => import("@/views/CategoryView.vue"),
+    },
+    {
+      path: "/official",
+      name: "official store",
+      component: () => import("@/views/OfficialStoreView.vue"),
+    },
+    {
+      path: "/afterpayment",
+      alias: "/page/test",
+      name: "afterpayment",
+      component: () => import("@/views/OrderSuccessTestView.vue"),
+      meta: { requiredAuthorized: true },
     },
     {
       path: "/chats/:chatId?",
@@ -110,6 +142,24 @@ const routes = [
       meta: { requiredAdmin: true },
     },
     {
+      path: "/admin/payments",
+      name: "admin payments",
+      component: () => import("@/views/admin/AdminPaymentsView.vue"),
+      meta: { requiredAdmin: true },
+    },
+    {
+      path: "/admin/withdrawals",
+      name: "admin withdrawals",
+      component: () => import("@/views/admin/AdminWithdrawalsView.vue"),
+      meta: { requiredAdmin: true },
+    },
+    {
+      path: "/admin/promo-codes",
+      name: "admin promo codes",
+      component: () => import("@/views/admin/AdminPromoCodesView.vue"),
+      meta: { requiredAdmin: true },
+    },
+    {
       path: "/admin/deal/:id",
       name: "deal",
       component: () => import("@/views/admin/AdminDealView.vue"),
@@ -140,16 +190,40 @@ const routes = [
       meta: { requiredAdmin: true },
     },
     {
+      path: "/admin/complaints",
+      name: "admin complaints",
+      component: () => import("@/views/admin/AdminComplaintsView.vue"),
+      meta: { requiredAdmin: true },
+    },
+    {
+      path: "/admin/complaints/:complaintId",
+      name: "admin complaint",
+      component: () => import("@/views/admin/AdminComplaintView.vue"),
+      meta: { requiredAdmin: true },
+    },
+    {
       path: "/admin/activity-logs",
       name: "admin activity logs",
       component: () => import("@/views/admin/AdminActivityLogsView.vue"),
       meta: { requiredAdmin: true },
     },
     {
+      path: "/admin/broadcast",
+      name: "admin broadcast",
+      component: () => import("@/views/admin/AdminBroadcastView.vue"),
+      meta: { requiredAdmin: true },
+    },
+    {
       path: "/admin/categories/edit/:id",
       name: "edit category",
       component: () => import("@/views/admin/AdminEditCategoryView.vue"),
-      meta: { requiredAuthorized: true },
+      meta: { requiredAdmin: true },
+    },
+    {
+      path: "/admin/categories/create",
+      name: "create category",
+      component: () => import("@/views/admin/AdminCreateCategoryView.vue"),
+      meta: { requiredAdmin: true },
     },
     {
       path: "/admin/chats/:chatId",
@@ -170,9 +244,21 @@ const routes = [
       meta: { requiredAuthorized: true },
     },
     {
+      path: "/steam-topup",
+      name: "steam topup",
+      component: () => import("@/views/SteamTopUpView.vue"),
+      meta: { requiredAuthorized: true },
+    },
+    {
       path: "/settings",
       name: "settings",
       component: () => import("@/views/SettingsView.vue"),
+      meta: { requiredAuthorized: true },
+    },
+    {
+      path: "/referral",
+      name: "referral",
+      component: () => import("@/views/ReferralView.vue"),
       meta: { requiredAuthorized: true },
     },
     {
@@ -202,6 +288,11 @@ const routes = [
       component: () => import("@/views/AboutView.vue"),
     },
     {
+      path: "/rules",
+      name: "market rules",
+      component: () => import("@/views/MarketplaceRulesView.vue"),
+    },
+    {
       path: "/terms",
       name: "terms",
       component: () => import("@/views/TermsOfServiceView.vue"),
@@ -221,47 +312,170 @@ const routes = [
 
 export function createAppRouter(isSSR = false) {
   const history = isSSR ? createMemoryHistory() : createWebHistory(import.meta.env.BASE_URL)
+
+  const isProfileTabSwitch = (to: any, from: any) => (
+    to.name === 'profile'
+    && from.name === 'profile'
+    && to.path === from.path
+    && to.query.tab !== from.query.tab
+  )
+
+  const isSamePageQueryNavigation = (to: any, from: any) => (
+    to.path === from.path
+    && to.hash === from.hash
+    && to.fullPath !== from.fullPath
+  )
+
+  const getHashScrollContainer = (target: HTMLElement): HTMLElement | null => {
+    let current = target.parentElement
+
+    while (current && current !== document.body) {
+      const styles = window.getComputedStyle(current)
+      const canScrollY = ['auto', 'scroll', 'overlay'].includes(styles.overflowY)
+
+      if (canScrollY && current.scrollHeight > current.clientHeight) {
+        return current
+      }
+
+      current = current.parentElement
+    }
+
+    return null
+  }
+
+  const scrollToHashTarget = (hash: string) => {
+    if (!hash) return
+
+    const targetId = decodeURIComponent(hash.slice(1))
+    const target = document.getElementById(targetId)
+    if (!target) return
+
+    const scrollContainer = getHashScrollContainer(target)
+    if (scrollContainer) {
+      const containerRect = scrollContainer.getBoundingClientRect()
+      const targetRect = target.getBoundingClientRect()
+      scrollContainer.scrollTo({
+        top: scrollContainer.scrollTop + targetRect.top - containerRect.top - 16,
+        left: 0,
+        behavior: 'auto',
+      })
+      return
+    }
+
+    window.scrollTo({
+      left: 0,
+      top: window.scrollY + target.getBoundingClientRect().top - 96,
+      behavior: 'auto',
+    })
+  }
+
   const router = createRouter({
     history,
     routes,
-    scrollBehavior() {
+    scrollBehavior(to, from) {
+      if (isSamePageQueryNavigation(to, from)) {
+        return false
+      }
+
+      if (isProfileTabSwitch(to, from)) {
+        return false
+      }
+
       // Always open next page from the top.
       return { left: 0, top: 0, behavior: "auto" }
     },
   })
 
-  router.beforeEach(async (to, from, next) => {
-  const { requiredAdmin, requiredAuthorized, requiredGuest, requiredPartner } = to.meta;
-  
-  if (!requiredAdmin && !requiredAuthorized && !requiredGuest && !requiredPartner) {
-    return next();
-  }
+  router.beforeEach(async (to, from) => {
+    const navigationStore = useNavigationStore()
+    const userStore = useUserStore()
+    const { requiredAdmin, requiredAuthorized, requiredGuest, requiredPartner } = to.meta
+    navigationStore.startRoutePending()
 
-  const user = await authService.getUser();
+    if (!requiredAdmin && !requiredAuthorized && !requiredGuest && !requiredPartner) {
+      return true
+    }
 
-  if (requiredAdmin) {
-    return user?.role === 'admin' ? next() : next('/not-access');
-  }
+    if (!userStore.isResolved) {
+      await userStore.ensureUserLoaded()
+    }
 
-  if (requiredPartner) {
-    return user && (user.role === 'partner' || user.role === 'admin')
-      ? next()
-      : next('/not-access');
-  }
+    const user = userStore.user
+    const signInModalRedirect = () => (
+      from.name
+        ? {
+          path: from.path,
+          query: buildAuthModalQuery(to.fullPath, from.query),
+          hash: from.hash,
+        }
+        : {
+          path: '/',
+          query: buildAuthModalQuery(to.fullPath),
+        }
+    )
 
-  if (requiredAuthorized) {
-    return user ? next() : next('/signin');
-  }
+    if (requiredAdmin) {
+      if (!user) {
+        return signInModalRedirect()
+      }
 
-  if (requiredGuest) {
-    return user ? next('/') : next();
-  }
+      return user.role === 'admin' ? true : '/not-access'
+    }
 
-  next();
+    if (requiredPartner) {
+      if (!user) {
+        return signInModalRedirect()
+      }
+
+      // Admins always have access
+      if (user.role === 'admin') {
+        return true
+      }
+      // Check if user is partner and has correct partner type
+      if (user.role === 'partner') {
+        return true
+      }
+      // Not a partner or admin
+      return '/not-access'
+    }
+
+    if (requiredAuthorized) {
+      return user
+        ? true
+        : signInModalRedirect()
+    }
+
+    if (requiredGuest) {
+      return user ? getAuthRedirectFromRoute(to) : true
+    }
+
+    return true
   });
 
-  router.afterEach(() => {
+  router.afterEach((to, from) => {
+    useNavigationStore().finishRoutePending()
+
     if (typeof window === 'undefined') {
+      return
+    }
+
+    if (isProfileTabSwitch(to, from)) {
+      return
+    }
+
+    if (isSamePageQueryNavigation(to, from)) {
+      return
+    }
+
+    if (to.hash) {
+      const runHashScrollSequence = () => {
+        scrollToHashTarget(to.hash)
+        window.requestAnimationFrame(() => scrollToHashTarget(to.hash))
+      }
+
+      window.requestAnimationFrame(runHashScrollSequence)
+      window.setTimeout(runHashScrollSequence, 80)
+      window.setTimeout(runHashScrollSequence, 180)
       return
     }
 
@@ -308,6 +522,10 @@ export function createAppRouter(isSSR = false) {
       }
     );
   });
+
+  router.onError(() => {
+    useNavigationStore().finishRoutePending()
+  })
 
   return router
 }

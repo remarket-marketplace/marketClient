@@ -77,10 +77,10 @@ const filteredUsers = computed(() => {
     const matchesStatus =
       statusFilter.value === 'all'
         ? true
-        : statusFilter.value === 'active'
+        : statusFilter.value === 'online'
           ? user.is_active && !user.is_banned
-          : statusFilter.value === 'inactive'
-            ? !user.is_active
+          : statusFilter.value === 'offline'
+            ? !user.is_active && !user.is_banned
             : user.is_banned
 
     const matchesRole =
@@ -160,22 +160,22 @@ function navigateToEditUser(userId: string) {
 
 function getStatusBadge(user: UserRead) {
   if (user.is_banned) {
-    return { text: 'common.banned', class: 'bg-red-500/20 text-red-400 border-red-500/30' };
+    return { text: 'common.banned', class: 'bg-[rgb(var(--palette-red-500)/0.2)] text-[var(--text-danger)] border-[rgb(var(--palette-red-500)/0.3)]' };
   }
-  if (!user.is_active) {
-    return { text: 'pages.admin.usersPage.notActive', class: 'bg-gray-500/20 text-gray-400 border-gray-500/30' };
+  if (user.is_active) {
+    return { text: 'common.online', class: 'bg-[rgb(var(--palette-green-500)/0.2)] text-[var(--text-success-strong)] border-[rgb(var(--palette-green-500)/0.3)]' };
   }
-  return { text: 'common.productStatuses.active', class: 'bg-green-500/20 text-green-400 border-green-500/30' };
+  return { text: 'common.offline', class: 'bg-[rgb(var(--palette-gray-500)/0.2)] text-[var(--text-muted)] border-[rgb(var(--palette-gray-500)/0.3)]' };
 }
 
 function getRoleBadge(user: UserRead) {
   if (user.role === 'admin') {
-    return { text: 'common.admin', class: 'bg-purple-500/20 text-purple-400 border-purple-500/30' };
+    return { text: 'common.admin', class: 'bg-[rgb(var(--palette-purple-500)/0.2)] text-[var(--text-link)] border-[rgb(var(--palette-purple-500)/0.3)]' };
   }
   if (user.role === 'partner') {
-    return { text: 'common.partner', class: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' };
+    return { text: 'common.partner', class: 'bg-[rgb(var(--palette-cyan-500)/0.2)] text-[var(--text-link)] border-[rgb(var(--palette-cyan-500)/0.3)]' };
   }
-  return { text: 'common.user', class: 'bg-blue-500/20 text-blue-400 border-blue-500/30' };
+  return { text: 'common.user', class: 'bg-[rgb(var(--palette-blue-500)/0.2)] text-[var(--text-link)] border-[rgb(var(--palette-blue-500)/0.3)]' };
 }
 
 function showBanConfirm(userId: string) {
@@ -327,7 +327,7 @@ watch(sortedUsers, () => {
       <button
         type="button"
         class="admin-btn admin-btn-ghost w-full justify-center"
-        :class="{ 'border-blue-500/40 text-blue-300': isMobileFiltersOpen }"
+        :class="{ 'border-[rgb(var(--palette-blue-500)/0.4)] text-[var(--text-link)]': isMobileFiltersOpen }"
         @click="isMobileFiltersOpen = !isMobileFiltersOpen"
       >
         <SlidersHorizontal class="w-4 h-4" />
@@ -342,7 +342,7 @@ watch(sortedUsers, () => {
     </div>
 
     <div
-      class="grid grid-cols-1 sm:grid-cols-3 gap-2"
+      class="admin-filter-panel grid grid-cols-1 gap-2 rounded-[1.5rem] p-3 sm:grid-cols-3"
       :class="{ 'hidden sm:grid': !isMobileFiltersOpen }"
     >
       <CustomSelect
@@ -363,8 +363,8 @@ watch(sortedUsers, () => {
         v-model="statusFilter"
         :options="[
           { value: 'all', label: t('common.all') },
-          { value: 'active', label: t('common.filters.active') },
-          { value: 'inactive', label: t('common.filters.inactive') },
+          { value: 'online', label: t('common.online') },
+          { value: 'offline', label: t('common.offline') },
           { value: 'banned', label: t('common.filters.banned') },
         ]"
         :placeholder="$t('common.filters.status')"
@@ -385,8 +385,8 @@ watch(sortedUsers, () => {
     <div class="flex-1 overflow-hidden">
 
       <div v-if="isLoading" class="flex items-center justify-center h-32">
-        <Loader2 class="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-blue-500" />
-        <span class="ml-2 sm:ml-3 text-base sm:text-lg text-gray-400">{{ $t('common.loading') }}</span>
+        <Loader2 class="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-[var(--text-link)]" />
+        <span class="ml-2 sm:ml-3 text-base sm:text-lg text-[var(--text-muted)]">{{ $t('common.loading') }}</span>
       </div>
 
       <div ref="listRef" v-else class="h-full overflow-y-auto space-y-3">
@@ -394,7 +394,7 @@ watch(sortedUsers, () => {
         <div
           v-for="user in visibleUsers"
           :key="user.id"
-          class="bg-dark-600 border border-dark-700 rounded-lg sm:rounded-xl p-3 sm:p-4 hover:border-dark-500 transition-all duration-200"
+          class="admin-surface-card rounded-[1.4rem] p-3 sm:p-4"
         >
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div class="flex items-center gap-3 sm:gap-4">
@@ -403,11 +403,11 @@ watch(sortedUsers, () => {
                   <UserAvatar
                     :avatar-url="user.avatar_url"
                     :alt="user.username"
-                    class="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-dark-400"
+                    class="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-[rgb(var(--palette-white)/0.1)]"
                   />
                   <div
-                    class="absolute -bottom-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 rounded-full border-2 border-dark-600"
-                    :class="user.is_active && !user.is_banned ? 'bg-green-500' : 'bg-gray-500'"
+                    class="absolute -bottom-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 rounded-full border-2 border-background"
+                    :class="user.is_active && !user.is_banned ? 'bg-[rgb(var(--palette-green-500))]' : 'bg-[rgb(var(--palette-gray-500))]'"
                   />
                 </div>
               </div>
@@ -440,9 +440,9 @@ watch(sortedUsers, () => {
                       <span class="truncate text-xs">{{ user.email }}</span>
                     </div>
                     <div class="flex items-center gap-1">
-                      <span :class="user.has_frozen_balance ? 'text-orange-400' : 'text-green-400'">
+                      <span :class="user.has_frozen_balance ? 'text-[var(--text-warning-strong)]' : 'text-[var(--text-success-strong)]'">
                         {{ formatPrice(user.balance) }}
-                        <span v-if="user.has_frozen_balance" class="text-orange-300 text-xs">{{ $t('pages.admin.usersPage.freezedBalance') }}</span>
+                        <span v-if="user.has_frozen_balance" class="text-[var(--text-warning-strong)] text-xs">{{ $t('pages.admin.usersPage.freezedBalance') }}</span>
                       </span>
                     </div>
                   </div>
@@ -489,11 +489,11 @@ watch(sortedUsers, () => {
                 <!-- Dropdown контент -->
                 <div
                   v-if="dropdownOpenId === user.id"
-                  class="absolute right-0 top-full mt-1 w-48 bg-dark-700 border border-dark-600 rounded-lg shadow-lg z-10"
+                  class="admin-surface-soft absolute right-0 top-full z-10 mt-1 w-48 rounded-lg shadow-lg"
                 >
                   <button
                     @click="navigateToEditUser(user.id)"
-                    class="flex items-center gap-2 w-full px-4 py-2 text-sm text-mainText hover:bg-dark-600 transition-colors rounded-lg"
+                    class="flex items-center gap-2 w-full rounded-lg px-4 py-2 text-sm text-mainText transition-colors hover:bg-[rgb(var(--palette-white)/0.04)]"
                   >
                     <Edit class="w-4 h-4" />
                     <span>{{ $t('common.edit') }}</span>
@@ -503,7 +503,7 @@ watch(sortedUsers, () => {
             </div>
           </div>
 
-          <div class="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-dark-700 text-xs text-text-secondary">
+          <div class="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-[rgb(var(--palette-white)/0.08)] text-xs text-text-secondary">
             <div class="flex flex-col xs:flex-row gap-1 xs:gap-2 sm:gap-4">
               <div>{{ $t('common.memberSince') }} {{ new Date(user.created_at).toLocaleDateString('ru-RU') }}</div>
               <div v-if="user.description" class="truncate flex-1 hidden sm:block">
@@ -533,7 +533,7 @@ watch(sortedUsers, () => {
     >
       <template #body>
         <div v-if="isBanAction" class="space-y-3">
-          <label class="block text-sm text-gray-300">
+          <label class="block text-sm text-[var(--text-body)]">
             {{ $t('pages.admin.usersPage.banReasonLabel') }}
           </label>
           <CustomSelect
@@ -544,11 +544,11 @@ watch(sortedUsers, () => {
           <div v-if="selectedBanReasonCode === 'otherReason'" class="space-y-2">
             <textarea
               v-model="customBanReason"
-              class="w-full rounded-lg bg-dark-900 border border-dark-700 text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[110px]"
+              class="admin-input-surface w-full rounded-lg text-[var(--text-title)] px-3 py-2 resize-none min-h-[110px]"
               :placeholder="$t('pages.admin.usersPage.customBanReasonPlaceholder')"
             />
           </div>
-          <p v-if="banReasonError" class="text-red-400 text-sm">
+          <p v-if="banReasonError" class="text-[var(--text-danger)] text-sm">
             {{ banReasonError }}
           </p>
         </div>
