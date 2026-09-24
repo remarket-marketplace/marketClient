@@ -59,7 +59,7 @@ onBeforeUnmount(() => {
   <div ref="wrapperRef" class="relative shrink-0 flex items-center">
     <button
       type="button"
-      class="h-8 min-w-[58px] flex items-center justify-between gap-1.5 rounded-md border border-dark-700 bg-dark-600 px-2 py-1 text-mainText transition hover:border-dark-500 focus:outline-none"
+      class="h-8 min-w-[58px] flex items-center justify-between gap-1.5 rounded-md border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-600))] px-2 py-1 text-mainText transition hover:border-[rgb(var(--palette-dark-500))] focus:outline-none"
       :aria-expanded="isOpen"
       @click="toggle"
     >
@@ -75,7 +75,7 @@ onBeforeUnmount(() => {
     <transition name="fade">
       <ul
         v-show="isOpen"
-        class="absolute top-full right-0 z-50 mt-1.5 min-w-[58px] rounded-md border border-dark-700 bg-dark-800 overflow-hidden"
+        class="absolute top-full right-0 z-50 mt-1.5 min-w-[58px] rounded-md border border-[rgb(var(--palette-dark-700))] bg-[rgb(var(--palette-dark-800))] overflow-hidden"
         role="listbox"
       >
         <li
@@ -83,8 +83,8 @@ onBeforeUnmount(() => {
           :key="opt.value"
           class="cursor-pointer px-3 py-1.5 text-xs transition-colors first:rounded-t-md last:rounded-b-md"
           :class="selectedCurrency === opt.value
-            ? 'bg-blue-500/10 text-blue-400 font-medium'
-            : 'text-mainText hover:bg-dark-700'"
+            ? 'bg-[rgb(var(--palette-blue-500)/0.1)] text-[var(--text-link)] font-medium'
+            : 'text-mainText hover:bg-[rgb(var(--palette-dark-700))]'"
           @click="selectCurrency(opt.value)"
         >
           {{ opt.label }}

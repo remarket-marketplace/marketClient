@@ -1,10 +1,17 @@
 import { ZodError } from "zod";
 import { httpClient } from "..";
+import { ErrorHandler, type ApiError } from "../errorHandler";
 import {
   balanceSchema,
+  createWithdrawalOrderRequestSchema,
+  createWithdrawalOrderResponseSchema,
+  topUpBalanceRequestSchema,
   topUpBalanceResponse,
   transactionResponse,
+  walletHistoryResponse,
   type Balance,
+  type CreateWithdrawalOrderResponse,
+  type WalletTopUpProvider,
   type WalletHistoryResponse,
 } from "@/validation/wallet/wallet";
 
@@ -20,15 +27,20 @@ export const walletService = {
     }
   },
 
-  async TopUpUserBalance(amount: number) {
+  async TopUpUserBalance(amount: number, provider: WalletTopUpProvider) {
     try {
-      const response = await httpClient.post("/wallet/top-up-balance", {
-        amount,
-      });
-      return topUpBalanceResponse.parse(response.data);
+      const payload = topUpBalanceRequestSchema.parse({ amount, provider });
+      const response = await httpClient.post("/wallet/top-up-balance", payload);
+      return {
+        data: topUpBalanceResponse.parse(response.data),
+        error: null as ApiError | null,
+      };
     } catch (e) {
       if (e instanceof ZodError) console.error(e.issues);
-      return null;
+      return {
+        data: null,
+        error: ErrorHandler.handleApiError(e),
+      };
     }
   },
 
@@ -59,10 +71,33 @@ export const walletService = {
       const response = await httpClient.get("/wallet/history", {
         params: { page, per_page: perPage },
       });
-      return response.data as WalletHistoryResponse;
+      return walletHistoryResponse.parse(response.data);
     } catch (e) {
-      if (e instanceof ZodError) console.error(e);
+      if (e instanceof ZodError) console.error(e.issues);
       return null;
+    }
+  },
+
+  async createWithdrawalOrder(
+    amount: number,
+    cardNumber: string,
+  ): Promise<{ data: CreateWithdrawalOrderResponse | null; error: ApiError | null }> {
+    try {
+      const payload = createWithdrawalOrderRequestSchema.parse({
+        amount,
+        card_number: cardNumber,
+      });
+      const response = await httpClient.post("/wallet/withdraw-orders", payload);
+      return {
+        data: createWithdrawalOrderResponseSchema.parse(response.data),
+        error: null,
+      };
+    } catch (e) {
+      if (e instanceof ZodError) console.error(e.issues);
+      return {
+        data: null,
+        error: ErrorHandler.handleApiError(e),
+      };
     }
   },
 };

@@ -1,17 +1,18 @@
 import axios from "axios";
 import { ZodError } from "zod";
 import { httpClient } from "..";
-import { ProductSchema, type Product } from "@/validation/product/product";
+import { type Product } from "@/validation/product/product";
+import { CategorySchema, type Category } from "@/validation/category/category";
 import { ErrorHandler, type ApiError } from "../errorHandler";
+import { PRODUCT_IMAGE_MIME_TYPES } from "@/utils/imageUpload";
+import {
+  parseOptionalProduct,
+  parseProduct,
+  parseProductList,
+} from "./productTransform";
 
 const UPLOAD_REQUEST_TIMEOUT_MS = 120000;
-const DIRECT_UPLOAD_SUPPORTED_CONTENT_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/svg+xml",
-  "image/svg",
-]);
+const DIRECT_UPLOAD_SUPPORTED_CONTENT_TYPES = PRODUCT_IMAGE_MIME_TYPES;
 
 interface ProductDirectUploadRequestFile {
   filename: string;
@@ -38,6 +39,60 @@ interface ProductDirectUploadResponsePayload {
 export interface ProductsFilterParams {
   minPrice?: number;
   maxPrice?: number;
+  createdFrom?: string;
+  createdTo?: string;
+  sortStack?: Array<
+    "price_desc"
+    | "price_asc"
+    | "seller_rating_desc"
+    | "seller_rating_asc"
+    | "seller_reviews_desc"
+    | "seller_reviews_asc"
+    | "created_at_desc"
+    | "created_at_asc"
+  >;
+  sortBy?: "created_at" | "price" | "seller_rating" | "seller_reviews";
+  sortOrder?: "asc" | "desc";
+  sellerMinRating?: number;
+  sellersWithReviewsOnly?: boolean;
+  onlineSellersOnly?: boolean;
+  autoDeliveryOnly?: boolean;
+  isOfficialOnly?: boolean;
+  excludeOfficial?: boolean;
+  fortniteCountry?: string;
+  fortniteCanChangeEmail?: boolean;
+  fortniteFirstEmail?: boolean;
+  fortniteEmailConfirmed?: boolean;
+  fortniteParentalControl?: boolean;
+  fortniteTwoFactorEnabled?: boolean;
+  fortniteRegistrationDateFrom?: string;
+  fortniteRegistrationDateTo?: string;
+  fortniteLastEmailChangeFrom?: string;
+  fortniteLastEmailChangeTo?: string;
+  fortniteLastLoginFrom?: string;
+  fortniteLastLoginTo?: string;
+  fortniteLastDisplayNameChangeFrom?: string;
+  fortniteLastDisplayNameChangeTo?: string;
+  fortniteLastMatchDateFrom?: string;
+  fortniteLastMatchDateTo?: string;
+  fortniteSkinsCountMin?: number;
+  fortniteSkinsCountMax?: number;
+  fortniteBackpacksCountMin?: number;
+  fortniteBackpacksCountMax?: number;
+  fortnitePickaxesCountMin?: number;
+  fortnitePickaxesCountMax?: number;
+  fortniteEmotesCountMin?: number;
+  fortniteEmotesCountMax?: number;
+  fortniteGlidersCountMin?: number;
+  fortniteGlidersCountMax?: number;
+  fortniteWrapsCountMin?: number;
+  fortniteWrapsCountMax?: number;
+  fortniteBannersCountMin?: number;
+  fortniteBannersCountMax?: number;
+  fortniteSpraysCountMin?: number;
+  fortniteSpraysCountMax?: number;
+  fortniteExclusivesCountMin?: number;
+  fortniteExclusivesCountMax?: number;
 }
 
 export interface ProductCurrencyConfig {
@@ -51,13 +106,67 @@ export interface ProductCurrencyConfig {
   max_price_rub: number;
 }
 
+export interface OfficialStoreConfig {
+  hero_image_url: string | null;
+}
+
+export interface OfficialStoreOverview {
+  hero_image_url: string | null;
+  categories: Category[];
+}
+
 function buildProductsFilterParams(filters?: ProductsFilterParams) {
   if (!filters) return {};
 
-  const params: Record<string, string | number> = {};
+  const params: Record<string, string | number | boolean> = {};
 
   if (filters.minPrice !== undefined) params.min_price = filters.minPrice;
   if (filters.maxPrice !== undefined) params.max_price = filters.maxPrice;
+  if (filters.createdFrom) params.created_from = filters.createdFrom;
+  if (filters.createdTo) params.created_to = filters.createdTo;
+  if (filters.sortStack?.length) params.sort_stack = filters.sortStack.join(",");
+  if (filters.sortBy) params.sort_by = filters.sortBy;
+  if (filters.sortOrder) params.sort_order = filters.sortOrder;
+  if (filters.sellerMinRating !== undefined) params.seller_min_rating = filters.sellerMinRating;
+  if (filters.sellersWithReviewsOnly === true) params.sellers_with_reviews_only = true;
+  if (filters.onlineSellersOnly === true) params.online_sellers_only = true;
+  if (filters.autoDeliveryOnly === true) params.auto_delivery_only = true;
+  if (filters.isOfficialOnly === true) params.is_official_only = true;
+  if (filters.excludeOfficial === true) params.exclude_official = true;
+  if (filters.fortniteCountry) params.fortnite_country = filters.fortniteCountry;
+  if (filters.fortniteCanChangeEmail !== undefined) params.fortnite_can_change_email = filters.fortniteCanChangeEmail;
+  if (filters.fortniteFirstEmail !== undefined) params.fortnite_first_email = filters.fortniteFirstEmail;
+  if (filters.fortniteEmailConfirmed !== undefined) params.fortnite_email_confirmed = filters.fortniteEmailConfirmed;
+  if (filters.fortniteParentalControl !== undefined) params.fortnite_parental_control = filters.fortniteParentalControl;
+  if (filters.fortniteTwoFactorEnabled !== undefined) params.fortnite_two_factor_enabled = filters.fortniteTwoFactorEnabled;
+  if (filters.fortniteRegistrationDateFrom) params.fortnite_registration_date_from = filters.fortniteRegistrationDateFrom;
+  if (filters.fortniteRegistrationDateTo) params.fortnite_registration_date_to = filters.fortniteRegistrationDateTo;
+  if (filters.fortniteLastEmailChangeFrom) params.fortnite_last_email_change_from = filters.fortniteLastEmailChangeFrom;
+  if (filters.fortniteLastEmailChangeTo) params.fortnite_last_email_change_to = filters.fortniteLastEmailChangeTo;
+  if (filters.fortniteLastLoginFrom) params.fortnite_last_login_from = filters.fortniteLastLoginFrom;
+  if (filters.fortniteLastLoginTo) params.fortnite_last_login_to = filters.fortniteLastLoginTo;
+  if (filters.fortniteLastDisplayNameChangeFrom) params.fortnite_last_display_name_change_from = filters.fortniteLastDisplayNameChangeFrom;
+  if (filters.fortniteLastDisplayNameChangeTo) params.fortnite_last_display_name_change_to = filters.fortniteLastDisplayNameChangeTo;
+  if (filters.fortniteLastMatchDateFrom) params.fortnite_last_match_date_from = filters.fortniteLastMatchDateFrom;
+  if (filters.fortniteLastMatchDateTo) params.fortnite_last_match_date_to = filters.fortniteLastMatchDateTo;
+  if (filters.fortniteSkinsCountMin !== undefined) params.fortnite_skins_count_min = filters.fortniteSkinsCountMin;
+  if (filters.fortniteSkinsCountMax !== undefined) params.fortnite_skins_count_max = filters.fortniteSkinsCountMax;
+  if (filters.fortniteBackpacksCountMin !== undefined) params.fortnite_backpacks_count_min = filters.fortniteBackpacksCountMin;
+  if (filters.fortniteBackpacksCountMax !== undefined) params.fortnite_backpacks_count_max = filters.fortniteBackpacksCountMax;
+  if (filters.fortnitePickaxesCountMin !== undefined) params.fortnite_pickaxes_count_min = filters.fortnitePickaxesCountMin;
+  if (filters.fortnitePickaxesCountMax !== undefined) params.fortnite_pickaxes_count_max = filters.fortnitePickaxesCountMax;
+  if (filters.fortniteEmotesCountMin !== undefined) params.fortnite_emotes_count_min = filters.fortniteEmotesCountMin;
+  if (filters.fortniteEmotesCountMax !== undefined) params.fortnite_emotes_count_max = filters.fortniteEmotesCountMax;
+  if (filters.fortniteGlidersCountMin !== undefined) params.fortnite_gliders_count_min = filters.fortniteGlidersCountMin;
+  if (filters.fortniteGlidersCountMax !== undefined) params.fortnite_gliders_count_max = filters.fortniteGlidersCountMax;
+  if (filters.fortniteWrapsCountMin !== undefined) params.fortnite_wraps_count_min = filters.fortniteWrapsCountMin;
+  if (filters.fortniteWrapsCountMax !== undefined) params.fortnite_wraps_count_max = filters.fortniteWrapsCountMax;
+  if (filters.fortniteBannersCountMin !== undefined) params.fortnite_banners_count_min = filters.fortniteBannersCountMin;
+  if (filters.fortniteBannersCountMax !== undefined) params.fortnite_banners_count_max = filters.fortniteBannersCountMax;
+  if (filters.fortniteSpraysCountMin !== undefined) params.fortnite_sprays_count_min = filters.fortniteSpraysCountMin;
+  if (filters.fortniteSpraysCountMax !== undefined) params.fortnite_sprays_count_max = filters.fortniteSpraysCountMax;
+  if (filters.fortniteExclusivesCountMin !== undefined) params.fortnite_exclusives_count_min = filters.fortniteExclusivesCountMin;
+  if (filters.fortniteExclusivesCountMax !== undefined) params.fortnite_exclusives_count_max = filters.fortniteExclusivesCountMax;
 
   return params;
 }
@@ -69,6 +178,32 @@ export const productService = {
       return response.data as ProductCurrencyConfig;
     } catch (e) {
       console.error("Failed to load currency config:", e);
+      return null;
+    }
+  },
+
+  async getOfficialStoreConfig(): Promise<OfficialStoreConfig | null> {
+    try {
+      const response = await httpClient.get("/products/official-store/config");
+      return response.data as OfficialStoreConfig;
+    } catch (e) {
+      console.error("Failed to load official store config:", e);
+      return null;
+    }
+  },
+
+  async getOfficialStoreOverview(): Promise<OfficialStoreOverview | null> {
+    try {
+      const response = await httpClient.get("/products/official-store/overview");
+      return {
+        hero_image_url: response.data.hero_image_url ?? null,
+        categories: Array.isArray(response.data.categories)
+          ? response.data.categories.map((category: unknown) => CategorySchema.parse(category))
+          : [],
+      };
+    } catch (e) {
+      if (e instanceof ZodError) console.error(e.issues);
+      console.error("Failed to load official store overview:", e);
       return null;
     }
   },
@@ -87,22 +222,41 @@ export const productService = {
         },
       });
       return {
-        products: response.data.products.map((product: any) => {
-          const transformedProduct = {
-            ...product,
-            images: product.images.map((img: any) => ({
-              ...img,
-              url: img.url || img.image_url || "",
-            })),
-          };
-          return ProductSchema.parse(transformedProduct);
-        }),
+        products: parseProductList(response.data.products, "getAllProducts"),
         totalPages: response.data.total_pages,
         currentPage: response.data.page || page,
         total: response.data.total,
       };
     } catch (e) {
-      if (e instanceof ZodError) console.error(e.issues);
+      return { products: [], totalPages: 1, currentPage: 1, total: 0 };
+    }
+  },
+
+  async getPopularProducts(
+    page: number,
+    perPage: number,
+    filters?: ProductsFilterParams,
+  ): Promise<{
+    products: Product[];
+    totalPages: number;
+    currentPage: number;
+    total: number;
+  }> {
+    try {
+      const response = await httpClient.get("/products/popular", {
+        params: {
+          page,
+          per_page: perPage,
+          ...buildProductsFilterParams(filters),
+        },
+      });
+      return {
+        products: parseProductList(response.data.products, "getPopularProducts"),
+        totalPages: response.data.total_pages,
+        currentPage: response.data.page || page,
+        total: response.data.total,
+      };
+    } catch (e) {
       return { products: [], totalPages: 1, currentPage: 1, total: 0 };
     }
   },
@@ -110,19 +264,11 @@ export const productService = {
   async getProductById(id: string) {
     try {
       const response = await httpClient.get(`/products/${id}`);
-      const transformedProduct = {
-        ...response.data,
-        images: response.data.images.map((img: any) => ({
-          ...img,
-          url: img.url || img.image_url || "",
-        })),
-      };
-      return ProductSchema.parse(transformedProduct);
+      return parseOptionalProduct(response.data, "getProductById");
     } catch (e) {
       if (axios.isAxiosError(e) && e.response?.status === 404) {
         throw e;
       }
-      if (e instanceof ZodError) console.error(e.issues);
       return null;
     }
   },
@@ -130,16 +276,8 @@ export const productService = {
   async getProductEditDataById(id: string) {
     try {
       const response = await httpClient.get(`/products/${id}`);
-      const transformedProduct = {
-        ...response.data,
-        images: response.data.images.map((img: any) => ({
-          ...img,
-          url: img.url || img.image_url || "",
-        })),
-      };
-      return ProductSchema.parse(transformedProduct);
+      return parseOptionalProduct(response.data, "getProductEditDataById");
     } catch (e) {
-      if (e instanceof ZodError) console.error(e.issues);
       return null;
     }
   },
@@ -163,42 +301,16 @@ export const productService = {
       );
 
       return {
-        products: response.data.products.map((product: any) => {
-          const transformedProduct = {
-            ...product,
-            images: product.images.map((img: any) => ({
-              ...img,
-              url: img.url || img.image_url || "",
-            })),
-          };
-          return ProductSchema.parse(transformedProduct);
-        }),
+        products: parseProductList(
+          response.data.products,
+          "getProductsByCategory",
+        ),
         totalPages: response.data.total_pages,
         currentPage: response.data.page || page,
         total: response.data.total,
       };
     } catch (e) {
-      if (e instanceof ZodError) console.error(e.issues);
       return { products: [], totalPages: 1, currentPage: 1, total: 0 };
-    }
-  },
-
-  async getProductsCategoryFilter(game: string, category: string) {
-    try {
-      const response = await httpClient.get(`/products/${game}/${category}`);
-      return response.data.map((product: any) => {
-        const transformedProduct = {
-          ...product,
-          images: product.images.map((img: any) => ({
-            ...img,
-            url: img.url || img.image_url || "",
-          })),
-        };
-        return ProductSchema.parse(transformedProduct);
-      });
-    } catch (e) {
-      if (e instanceof ZodError) console.error(e.issues);
-      return [];
     }
   },
 
@@ -287,9 +399,19 @@ export const productService = {
       ) {
         formData.append("product_data", productData.product_data.trim());
       }
+      if (productData.fortnite_account_details) {
+        formData.append(
+          "fortnite_account_details",
+          JSON.stringify(productData.fortnite_account_details),
+        );
+      }
+      if (typeof productData.draft_id === "string" && productData.draft_id.trim().length > 0) {
+        formData.append("draft_id", productData.draft_id.trim());
+      }
       formData.append("category_id", productData.category_id);
       formData.append("count", productData.count);
       formData.append("auto_delivery", productData.auto_delivery);
+      formData.append("is_official", String(Boolean(productData.is_official)));
 
       [...draftImagesFromPayload, ...draftImagesFromDirectUpload].forEach(
         (imageUrl: string) => {
@@ -306,7 +428,7 @@ export const productService = {
         },
         timeout: UPLOAD_REQUEST_TIMEOUT_MS,
       });
-      return response.status >= 200 && response.status < 300;
+      return parseProduct(response.data);
     } catch (error) {
       console.error("Ошибка создания товара:", error);
       throw error;
@@ -335,9 +457,18 @@ export const productService = {
       formData.append("price_currency", productData.price_currency || "RUB");
       if (productData.auto_delivery && productData.product_data)
         formData.append("product_data", productData.product_data);
+      if (productData.fortnite_account_details) {
+        formData.append(
+          "fortnite_account_details",
+          JSON.stringify(productData.fortnite_account_details),
+        );
+      }
       if (productData.category_id)
         formData.append("category_id", productData.category_id);
       formData.append("auto_delivery", String(Boolean(productData.auto_delivery)));
+      if (typeof productData.is_official === "boolean") {
+        formData.append("is_official", String(productData.is_official));
+      }
       uploadedImages.forEach((image) => {
         formData.append("uploaded_images", image);
       });
@@ -370,23 +501,17 @@ export const productService = {
     }
   },
 
-  async approveProduct(productId: string) {
+  async buyProduct(
+    productId: string,
+  ): Promise<{ success: boolean; chatId?: string; error?: ApiError }> {
     try {
-      const response = await httpClient.post("/products/approve", {
+      const response = await httpClient.post(`/products/buy`, {
         product_id: productId,
       });
-      return response.status === 200;
-    } catch {
-      return false;
-    }
-  },
-
-  async buyProduct(productId: string) {
-    try {
-      await httpClient.post(`/products/buy`, {
-        product_id: productId,
-      });
-      return { success: true };
+      return {
+        success: true,
+        chatId: response.data?.chat_room_id ?? undefined,
+      };
     } catch (error) {
       const apiError = ErrorHandler.handleApiError(error);
       return {
@@ -452,23 +577,6 @@ export const productService = {
     }
   },
 
-  async getProductByChatId(chatId: string) {
-    try {
-      const response = await httpClient.get(`/products/get/chat/${chatId}`);
-      const transformedProduct = {
-        ...response.data,
-        images: response.data.images.map((img: any) => ({
-          ...img,
-          url: img.url || img.image_url || "",
-        })),
-      };
-      return ProductSchema.parse(transformedProduct);
-    } catch (e) {
-      if (e instanceof ZodError) console.error(e.issues);
-      return null;
-    }
-  },
-
   async confirmReceipt(dealId: string) {
     try {
       const response = await httpClient.patch(
@@ -477,6 +585,27 @@ export const productService = {
       return response.status === 200;
     } catch {
       return false;
+    }
+  },
+
+  async confirmFulfillment(dealId: string) {
+    try {
+      const response = await httpClient.patch(
+        `/deal/confirm-fulfillment/${dealId}`,
+      );
+      return response.status === 200;
+    } catch {
+      return false;
+    }
+  },
+
+  async getDealAutoCompleteDelaySeconds(): Promise<number | null> {
+    try {
+      const response = await httpClient.get(`/deal/auto-complete-delay`);
+      const delaySeconds = Number(response.data?.delay_seconds);
+      return Number.isFinite(delaySeconds) && delaySeconds > 0 ? delaySeconds : null;
+    } catch {
+      return null;
     }
   },
 
@@ -518,22 +647,12 @@ export const productService = {
       });
 
       return {
-        products: response.data.products.map((product: any) => {
-          const transformedProduct = {
-            ...product,
-            images: product.images.map((img: any) => ({
-              ...img,
-              url: img.url || img.image_url || "",
-            })),
-          };
-          return ProductSchema.parse(transformedProduct);
-        }),
+        products: parseProductList(response.data.products, "searchProducts"),
         currentPage: response.data.page || page,
         totalPages: response.data.total_pages,
         total: response.data.total,
       };
     } catch (e) {
-      if (e instanceof ZodError) console.error(e.issues);
       return { products: [], currentPage: 1, totalPages: 1, total: 0 };
     }
   },
@@ -541,18 +660,8 @@ export const productService = {
   async getUserProducts(userId: string) {
     try {
       const response = await httpClient.get(`/products/user/${userId}`);
-      return response.data.map((product: any) => {
-        const transformedProduct = {
-          ...product,
-          images: product.images.map((img: any) => ({
-            ...img,
-            url: img.url || img.image_url || "",
-          })),
-        };
-        return ProductSchema.parse(transformedProduct);
-      });
+      return parseProductList(response.data, "getUserProducts");
     } catch (e) {
-      if (e instanceof ZodError) console.error(e.issues);
       return [];
     }
   },
@@ -561,6 +670,7 @@ export const productService = {
     username: string,
     page = 1,
     perPage = 20,
+    status?: string,
   ): Promise<{
     products: Product[];
     total: number;
@@ -573,20 +683,15 @@ export const productService = {
           params: {
             page,
             per_page: perPage,
+            status,
           },
         },
       );
 
-      const products = response.data.products.map((product: any) => {
-        const transformedProduct = {
-          ...product,
-          images: product.images.map((img: any) => ({
-            ...img,
-            url: img.url || img.image_url || "",
-          })),
-        };
-        return ProductSchema.parse(transformedProduct);
-      });
+      const products = parseProductList(
+        response.data.products,
+        "getUserProductsByUsername",
+      );
 
       return {
         products,
@@ -612,21 +717,6 @@ export const productService = {
       return false;
     }
   },
-
-  async addProductToFavorite(product_id: string) {
-    //
-    // add product to favorite
-    //
-    try {
-      const response = await httpClient.patch("/products/to-favorite", {
-        product_id: product_id,
-      });
-      return response.status === 200;
-    } catch (e) {
-      return false;
-    }
-  },
-
 
   async addProductLike(product_id: string) {
     //
@@ -662,17 +752,10 @@ export const productService = {
 
       const productsData = response.data.products || response.data || [];
 
-      const favoriteProducts = productsData.map((product: any) => {
-        const transformedProduct = {
-          ...product,
-          images:
-            product.images?.map((img: any) => ({
-              ...img,
-              url: img.url || img.image_url || "",
-            })) || [],
-        };
-        return ProductSchema.parse(transformedProduct);
-      });
+      const favoriteProducts = parseProductList(
+        productsData,
+        "getFavoritesProducts",
+      );
 
       return {
         favoriteProducts,
@@ -690,6 +773,7 @@ export const productService = {
     }
   },
 
+  // TODO: [DEAD_API] endpoint не существует на бэкенде, требует ручного решения
   async getCommissionInterest() {
     //
     // get committion insterest

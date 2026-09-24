@@ -6,7 +6,7 @@ import type { AuditLog } from '@/validation/audit/activityLog'
 import BackButton from '@/components/navigation/BackButton.vue'
 import SearchField from '@/components/SearchField.vue'
 import CustomSelect from '@/components/CustomSelect.vue'
-import { Loader2, Link2, History } from 'lucide-vue-next'
+import { Loader2, Link2, History, SlidersHorizontal } from 'lucide-vue-next'
 
 const { t } = useI18n()
 
@@ -19,6 +19,7 @@ const currentPage = ref(1)
 const totalPages = ref(1)
 const total = ref(0)
 const perPage = 30
+const isFiltersVisible = ref(false)
 
 const userIdQuery = ref('')
 const usernameQuery = ref('')
@@ -208,117 +209,136 @@ onMounted(async () => {
           <h1 class="text-xl sm:text-2xl font-bold text-mainText">
             {{ $t('pages.admin.activityLogs.title') }}
           </h1>
-          <p class="text-xs sm:text-sm text-gray-400">
+          <p class="text-xs sm:text-sm text-[var(--text-muted)]">
             {{ $t('pages.admin.activityLogs.subtitle') }}
           </p>
         </div>
       </div>
-      <div class="inline-flex items-center gap-2 text-xs sm:text-base text-text-secondary">
-        <History class="h-4 w-4" />
-        <span>{{ $t('common.total') }} {{ total }}</span>
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          class="admin-btn admin-btn-sm text-xs"
+          @click="isFiltersVisible = !isFiltersVisible"
+        >
+          <SlidersHorizontal class="h-3.5 w-3.5" />
+          {{
+            isFiltersVisible
+              ? $t('pages.admin.activityLogs.hideFilters')
+              : $t('pages.admin.activityLogs.showFilters')
+          }}
+        </button>
+        <div class="inline-flex items-center gap-2 text-xs sm:text-base text-text-secondary">
+          <History class="h-4 w-4" />
+          <span>{{ $t('common.total') }} {{ total }}</span>
+        </div>
       </div>
     </div>
 
-    <SearchField
-      v-model="usernameQuery"
-      :placeholder="$t('pages.admin.activityLogs.searchByUsername')"
-    />
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-      <input
-        v-model="userIdQuery"
-        class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText focus:border-blue-500 focus:outline-none"
-        :placeholder="$t('pages.admin.activityLogs.searchByUserId')"
+    <div
+      v-if="isFiltersVisible"
+      class="admin-filter-panel space-y-2 rounded-[1.5rem] p-3"
+    >
+      <SearchField
+        v-model="usernameQuery"
+        :placeholder="$t('pages.admin.activityLogs.searchByUsername')"
       />
 
-      <CustomSelect
-        v-model="actionType"
-        :options="actionOptions"
-        :placeholder="$t('pages.admin.activityLogs.actionType')"
-      />
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        <input
+          v-model="userIdQuery"
+          class="admin-input-surface h-10 rounded-lg px-3 text-sm text-mainText"
+          :placeholder="$t('pages.admin.activityLogs.searchByUserId')"
+        />
 
-      <input
-        v-model="ipAddress"
-        class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText focus:border-blue-500 focus:outline-none"
-        :placeholder="$t('pages.admin.activityLogs.ipAddress')"
-      />
+        <CustomSelect
+          v-model="actionType"
+          :options="actionOptions"
+          :placeholder="$t('pages.admin.activityLogs.actionType')"
+        />
 
-      <input
-        v-model="countryCode"
-        maxlength="3"
-        class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm uppercase text-mainText focus:border-blue-500 focus:outline-none"
-        :placeholder="$t('pages.admin.activityLogs.countryCode')"
-      />
+        <input
+          v-model="ipAddress"
+          class="admin-input-surface h-10 rounded-lg px-3 text-sm text-mainText"
+          :placeholder="$t('pages.admin.activityLogs.ipAddress')"
+        />
 
-      <input
-        v-model="dateFrom"
-        type="datetime-local"
-        class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText focus:border-blue-500 focus:outline-none"
-      />
+        <input
+          v-model="countryCode"
+          maxlength="3"
+          class="admin-input-surface h-10 rounded-lg px-3 text-sm uppercase text-mainText"
+          :placeholder="$t('pages.admin.activityLogs.countryCode')"
+        />
 
-      <input
-        v-model="dateTo"
-        type="datetime-local"
-        class="h-10 rounded-lg border border-dark-700 bg-dark-700/40 px-3 text-sm text-mainText focus:border-blue-500 focus:outline-none"
-      />
+        <input
+          v-model="dateFrom"
+          type="datetime-local"
+          class="admin-input-surface h-10 rounded-lg px-3 text-sm text-mainText"
+        />
+
+        <input
+          v-model="dateTo"
+          type="datetime-local"
+          class="admin-input-surface h-10 rounded-lg px-3 text-sm text-mainText"
+        />
+      </div>
     </div>
 
     <div class="flex-1 overflow-hidden">
       <div v-if="isLoading" class="flex h-32 items-center justify-center">
-        <Loader2 class="h-6 w-6 animate-spin text-blue-500" />
-        <span class="ml-2 text-gray-400">{{ $t('common.loading') }}</span>
+        <Loader2 class="h-6 w-6 animate-spin text-[var(--text-link)]" />
+        <span class="ml-2 text-[var(--text-muted)]">{{ $t('common.loading') }}</span>
       </div>
 
       <div v-else-if="errorMessage" class="flex h-32 items-center justify-center">
-        <p class="text-red-400">{{ errorMessage }}</p>
+        <p class="text-[var(--text-danger)]">{{ errorMessage }}</p>
       </div>
 
       <div v-else-if="logs.length === 0" class="flex h-32 items-center justify-center">
-        <p class="text-gray-400">{{ $t('pages.admin.activityLogs.empty') }}</p>
+        <p class="text-[var(--text-muted)]">{{ $t('pages.admin.activityLogs.empty') }}</p>
       </div>
 
       <div v-else class="h-full overflow-y-auto space-y-3 pr-1 pb-4">
         <article
           v-for="log in logs"
           :key="log.id"
-          class="rounded-xl border border-dark-700 bg-dark-600 p-3 sm:p-4"
+          class="admin-surface-card rounded-[1.4rem] p-3 sm:p-4"
         >
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-center gap-2">
-              <span class="rounded-full border border-blue-500/30 bg-blue-500/15 px-2 py-1 text-xs text-blue-200">
+              <span class="rounded-full border border-[rgb(var(--palette-blue-500)/0.3)] bg-[rgb(var(--palette-blue-500)/0.15)] px-2 py-1 text-xs text-[var(--text-accent)]">
                 {{ getActionLabel(log.action_type) }}
               </span>
-              <span class="text-xs text-gray-400">{{ formatDate(log.created_at) }}</span>
+              <span class="text-xs text-[var(--text-muted)]">{{ formatDate(log.created_at) }}</span>
             </div>
-            <span class="text-[11px] text-gray-500">{{ log.http_method }} {{ log.endpoint }}</span>
+            <span class="text-[11px] text-[var(--text-meta)]">{{ log.http_method }} {{ log.endpoint }}</span>
           </div>
 
-          <div class="mt-3 grid grid-cols-1 gap-2 text-sm text-gray-200 sm:grid-cols-2 lg:grid-cols-3">
+          <div class="mt-3 grid grid-cols-1 gap-2 text-sm text-[var(--text-body-strong)] sm:grid-cols-2 lg:grid-cols-3">
             <div>
-              <span class="text-gray-400">{{ $t('common.username') }}:</span>
+              <span class="text-[var(--text-muted)]">{{ $t('common.username') }}:</span>
               <button
                 v-if="getUserProfileLink(log)"
                 type="button"
-                class="ml-1 font-medium text-blue-300 hover:text-blue-200 underline-offset-2 hover:underline"
+                class="ml-1 font-medium text-[var(--text-link)] hover:text-[var(--text-accent)] underline-offset-2 hover:underline"
                 @click="openLink(getUserProfileLink(log))"
               >
                 {{ getDisplayUsername(log) }}
               </button>
               <span v-else class="ml-1 font-medium">{{ getDisplayUsername(log) }}</span>
-              <div class="mt-1 text-[11px] text-gray-500">
+              <div class="mt-1 text-[11px] text-[var(--text-meta)]">
                 {{ $t('common.userId') }}: {{ log.user_id || '-' }}
               </div>
             </div>
             <div>
-              <span class="text-gray-400">{{ $t('pages.admin.activityLogs.ipAddress') }}:</span>
+              <span class="text-[var(--text-muted)]">{{ $t('pages.admin.activityLogs.ipAddress') }}:</span>
               <span class="ml-1 font-medium">{{ log.ip_address || '-' }}</span>
             </div>
             <div>
-              <span class="text-gray-400">{{ $t('pages.admin.activityLogs.country') }}:</span>
+              <span class="text-[var(--text-muted)]">{{ $t('pages.admin.activityLogs.country') }}:</span>
               <span class="ml-1 font-medium">{{ log.country_name || log.country_code || '-' }}</span>
             </div>
             <div>
-              <span class="text-gray-400">{{ $t('pages.admin.activityLogs.device') }}:</span>
+              <span class="text-[var(--text-muted)]">{{ $t('pages.admin.activityLogs.device') }}:</span>
               <span class="ml-1 font-medium">{{ log.device || '-' }}</span>
             </div>
           </div>
@@ -358,7 +378,7 @@ onMounted(async () => {
 
           <pre
             v-if="log.details"
-            class="mt-3 max-h-52 overflow-auto rounded-lg border border-dark-700 bg-dark-800/80 p-2 text-xs text-gray-300"
+            class="admin-surface-soft mt-3 max-h-52 overflow-auto rounded-lg p-2 text-xs text-[var(--text-body)]"
           >{{ detailsPreview(log.details) }}</pre>
         </article>
 

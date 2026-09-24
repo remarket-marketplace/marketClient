@@ -2,7 +2,6 @@ import { ProfileDataSchema } from "@/validation/user/userRead";
 import { ZodError } from "zod";
 import { httpClient } from "..";
 import { ReviewSchema, ReviewsListSchema } from "@/validation/review/review";
-import type { Deal } from "@/validation/deal/deal";
 
 export const reviewService = {
   async createReview(dealId: string, rating: number, body: string) {
@@ -28,38 +27,6 @@ export const reviewService = {
     } catch (e) {
       if (e instanceof ZodError) console.error(e.issues);
       return null;
-    }
-  },
-
-  async getUserPurchases(
-    userId: string,
-    page = 1,
-    perPage = 20
-  ): Promise<{
-    purchases: Deal[];
-    total: number;
-    totalPages: number;
-  }> {
-    try {
-      const response = await httpClient.get(`/users/${userId}/purchases`, {
-        params: {
-          page,
-          per_page: perPage,
-        },
-      });
-
-      return {
-        purchases: response.data.items,
-        total: response.data.total,
-        totalPages: response.data.total_pages,
-      };
-    } catch (error) {
-      console.error("Ошибка при загрузке покупок:", error);
-      return {
-        purchases: [],
-        total: 0,
-        totalPages: 1,
-      };
     }
   },
 
@@ -94,6 +61,16 @@ export const reviewService = {
         total: 0,
         totalPages: 1,
       };
+    }
+  },
+
+  async getUserReviewsCount(username: string): Promise<number> {
+    try {
+      const response = await httpClient.get(`/reviews/${username}/count`);
+      return Number(response.data?.total ?? 0);
+    } catch (error) {
+      console.error("Ошибка при загрузке количества отзывов:", error);
+      return 0;
     }
   },
 };
