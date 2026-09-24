@@ -4,6 +4,9 @@
    * bg-blue-600, text-gray-400, border-dark-700, etc.
    */
   --palette-brand: 30 64 175;
+  --palette-white: 255 255 255;
+  --palette-black: 0 0 0;
+  --pallette-background: 10 10 10;
   --palette-light-100: 245 245 245;
   --palette-light-200: 229 229 229;
 
@@ -14,6 +17,10 @@
   --palette-dark-700: 42 42 42;
   --palette-dark-800: 31 31 31;
   --palette-dark-900: 18 18 18;
+  --palette-night-800: 20 20 30;
+  --palette-navy-925: 5 8 15;
+  --palette-navy-900: 2 6 23;
+  --palette-navy-850: 12 17 24;
 
   --palette-gray-50: 249 250 251;
   --palette-gray-100: 243 244 246;
@@ -26,12 +33,22 @@
   --palette-gray-800: 31 41 55;
   --palette-gray-900: 17 24 39;
 
+  --palette-stone-400: 168 162 158;
+
+  --palette-slate-100: 241 245 249;
+  --palette-slate-300: 203 213 225;
+  --palette-slate-400: 148 163 184;
+  --palette-slate-500: 100 116 139;
+  --palette-slate-600: 71 85 105;
+  --palette-slate-700: 51 65 85;
+
   --palette-zinc-600: 82 82 91;
   --palette-zinc-700: 63 63 70;
   --palette-zinc-800: 39 39 42;
   --palette-zinc-900: 24 24 27;
 
   --palette-blue-100: 219 234 254;
+  --palette-blue-50: 239 246 255;
   --palette-blue-200: 191 219 254;
   --palette-blue-300: 147 197 253;
   --palette-blue-400: 96 165 250;
@@ -40,7 +57,14 @@
   --palette-blue-700: 29 78 216;
   --palette-blue-800: 30 64 175;
   --palette-blue-900: 30 58 138;
+  --palette-blue-950: 23 37 84;
 
+  --palette-sky-50: 240 249 255;
+  --palette-sky-100: 224 242 254;
+  --palette-sky-200: 186 230 253;
+  --palette-sky-300: 125 211 252;
+  --palette-sky-400: 56 189 248;
+  --palette-cyan-100: 207 250 254;
   --palette-cyan-200: 165 243 252;
   --palette-cyan-300: 103 232 249;
   --palette-cyan-400: 34 211 238;
@@ -48,16 +72,31 @@
   --palette-cyan-900: 22 78 99;
 
   --palette-sky-500: 14 165 233;
+  --palette-sky-25: 239 250 255;
+  --palette-sky-900: 12 74 110;
+  --palette-indigo-400: 129 140 248;
   --palette-indigo-500: 99 102 241;
+  --palette-indigo-900: 49 46 129;
+  --palette-violet-200: 221 214 254;
+  --palette-violet-300: 196 181 253;
   --palette-violet-500: 139 92 246;
+  --palette-violet-600: 124 58 237;
+  --palette-violet-950: 46 16 101;
+  --palette-fuchsia-500: 217 70 239;
+  --palette-fuchsia-900: 112 26 117;
   --palette-purple-300: 216 180 254;
+  --palette-purple-200: 233 213 255;
   --palette-purple-400: 192 132 252;
   --palette-purple-500: 168 85 247;
   --palette-purple-600: 147 51 234;
   --palette-pink-400: 244 114 182;
   --palette-pink-500: 236 72 153;
   --palette-pink-900: 131 24 67;
+  --palette-rose-100: 255 228 230;
+  --palette-rose-200: 254 205 211;
+  --palette-rose-300: 253 164 175;
   --palette-rose-400: 251 113 133;
+  --palette-rose-500: 244 63 94;
 
   --palette-emerald-100: 209 250 229;
   --palette-emerald-200: 167 243 208;
@@ -74,26 +113,34 @@
   --palette-green-500: 34 197 94;
   --palette-green-600: 22 163 74;
   --palette-green-700: 21 128 61;
+  --palette-green-950: 5 46 22;
 
   --palette-lime-500: 132 204 22;
 
+  --palette-yellow-100: 254 249 195;
   --palette-yellow-200: 254 240 138;
   --palette-yellow-300: 253 224 71;
   --palette-yellow-400: 250 204 21;
   --palette-yellow-500: 234 179 8;
 
+  --palette-amber-100: 254 243 199;
   --palette-amber-200: 253 230 138;
   --palette-amber-300: 252 211 77;
   --palette-amber-400: 251 191 36;
   --palette-amber-500: 245 158 11;
+  --palette-amber-600: 217 119 6;
   --palette-amber-700: 180 83 9;
   --palette-amber-900: 120 53 15;
 
+  --palette-orange-50: 255 247 237;
+  --palette-orange-100: 255 237 213;
+  --palette-orange-200: 254 215 170;
   --palette-orange-300: 253 186 116;
   --palette-orange-400: 251 146 60;
   --palette-orange-500: 249 115 22;
   --palette-orange-600: 234 88 12;
   --palette-orange-700: 194 65 12;
+  --palette-orange-900: 124 45 18;
 
   --palette-red-100: 254 226 226;
   --palette-red-200: 254 202 202;
@@ -104,31 +151,34 @@
   --palette-red-700: 185 28 28;
   --palette-red-800: 153 27 27;
   --palette-red-900: 127 29 29;
+  --palette-red-950: 69 10 10;
 
   /* Semantic app tokens (recommended for fast restyling) */
   --primary-color: rgb(var(--palette-blue-600)); /* Main accent across app (links, active accents). */
-  --background-color: rgb(var(--palette-dark-900)); /* Global page background. */
+  --transparent: transparent; /* Generic transparent paint token for utility classes. */
+  --background-color: rgb(var(--pallette-background)); /* Global page background. */
   --main-text: rgb(var(--palette-gray-50)); /* Main readable text color. */
+  --text-primary: rgb(var(--palette-gray-50)); /* Legacy content text alias used in static pages. */
   --link-text: rgb(var(--palette-blue-600)); /* Link color in text content. */
   --error-text: rgb(var(--palette-red-500)); /* Error text and validation states. */
   --secondary-text: rgb(var(--palette-gray-300)); /* Secondary text on cards/sections. */
   --secondary-dark-text: rgb(var(--palette-gray-500)); /* Muted helper text. */
   --color-button-primary: rgb(var(--palette-blue-600)); /* Primary button background. */
-  --color-button-hover: rgb(25 118 210); /* Primary button hover background. */
+  --color-button-hover: rgb(var(--palette-blue-700)); /* Primary button hover background. */
   --color-input: rgb(var(--palette-gray-500)); /* Input border/text accent tone. */
 
   /* Shared UI surface and overlay tokens */
-  --white-solid: rgb(255 255 255); /* Absolute white for icons/text on dark backgrounds. */
-  --overlay-white-03: rgb(255 255 255 / 0.03); /* Very subtle white overlay (grid/noise accents). */
-  --overlay-white-04: rgb(255 255 255 / 0.04); /* Soft white overlay for decorative patterns. */
-  --overlay-white-05: rgb(255 255 255 / 0.05); /* Light glass/ghost hover fill. */
-  --overlay-white-08: rgb(255 255 255 / 0.08); /* Chart grid and subtle separators. */
-  --overlay-white-12: rgb(255 255 255 / 0.12); /* Thin dividers in info sections. */
-  --overlay-white-15: rgb(255 255 255 / 0.15); /* Mobile nav top border and glass edges. */
-  --overlay-white-20: rgb(255 255 255 / 0.2); /* Soft scrollbar thumb and weak overlays. */
-  --overlay-white-30: rgb(255 255 255 / 0.3); /* Soft scrollbar hover and stronger overlay state. */
+  --white-solid: rgb(var(--palette-white)); /* Absolute white for icons/text on dark backgrounds. */
+  --overlay-white-03: rgb(var(--palette-white) / 0.03); /* Very subtle white overlay (grid/noise accents). */
+  --overlay-white-04: rgb(var(--palette-white) / 0.04); /* Soft white overlay for decorative patterns. */
+  --overlay-white-05: rgb(var(--palette-white) / 0.05); /* Light glass/ghost hover fill. */
+  --overlay-white-08: rgb(var(--palette-white) / 0.08); /* Chart grid and subtle separators. */
+  --overlay-white-12: rgb(var(--palette-white) / 0.12); /* Thin dividers in info sections. */
+  --overlay-white-15: rgb(var(--palette-white) / 0.15); /* Mobile nav top border and glass edges. */
+  --overlay-white-20: rgb(var(--palette-white) / 0.2); /* Soft scrollbar thumb and weak overlays. */
+  --overlay-white-30: rgb(var(--palette-white) / 0.3); /* Soft scrollbar hover and stronger overlay state. */
   --glass-bg-dark: rgb(23 23 23 / 0.2); /* Bottom mobile glass nav background. */
-  --shadow-black-40: rgb(0 0 0 / 0.4); /* Main dark floating shadow. */
+  --shadow-black-40: rgb(var(--palette-black) / 0.4); /* Main dark floating shadow. */
   --shadow-blue-600-30: rgb(var(--palette-blue-600) / 0.3); /* Hero blue button shadow on hover. */
   --shadow-blue-600-40: rgb(var(--palette-blue-600) / 0.4); /* 404 blue button shadow on hover. */
 
@@ -137,6 +187,122 @@
   --step-text: rgb(var(--palette-blue-200)); /* Text color inside step badges. */
   --body-copy-strong: rgb(var(--palette-gray-200)); /* Strong body copy on dark cards. */
   --text-hover-muted: rgb(var(--palette-gray-300)); /* Hover color for muted gray text. */
+  --text-primary-strong: rgb(var(--palette-white)); /* Strong text on feature pages and dense cards. */
+  --text-primary-soft: rgb(var(--palette-gray-100)); /* Softer primary text for ghost buttons and links. */
+  --text-secondary: rgb(var(--palette-gray-300)); /* Regular secondary copy. */
+  --text-muted: rgb(var(--palette-gray-400)); /* Muted descriptions, labels and helper copy. */
+  --text-subtle: rgb(var(--palette-gray-500)); /* Lowest-priority labels and disabled-like text. */
+  --text-tertiary: rgb(var(--palette-stone-400) / 0.82); /* Small tertiary rating/count text. */
+  --text-transparent: transparent; /* Transparent icon placeholder state. */
+
+  /* Typography roles (use these for text color decisions) */
+  --text-title-rgb: var(--palette-white); /* Large page titles, primary names and strongest headings. */
+  --text-heading-rgb: var(--palette-gray-100); /* Section headings and important labels below title level. */
+  --text-body-strong-rgb: var(--palette-gray-200); /* Strong readable body copy and table values. */
+  --text-body-rgb: var(--palette-gray-300); /* Default paragraphs, descriptions and form labels. */
+  --text-muted-rgb: var(--palette-gray-400); /* Secondary descriptions and quiet labels. */
+  --text-meta-rgb: var(--palette-gray-500); /* Timestamps, counters, disabled-like helper text. */
+  --text-placeholder-rgb: var(--palette-gray-500); /* Input placeholders. */
+  --text-link-rgb: var(--palette-blue-300); /* Inline links and low-emphasis clickable text. */
+  --text-accent-rgb: var(--palette-blue-200); /* Accent copy, badges, selected labels and key UI hints. */
+  --text-accent-strong-rgb: var(--palette-blue-100); /* Strong accent text on dark/selected surfaces. */
+  --text-on-action-rgb: var(--palette-white); /* Text on solid primary/action surfaces. */
+  --text-danger-rgb: var(--palette-red-400); /* Errors, destructive states and validation copy. */
+  --text-danger-soft-rgb: var(--palette-red-200); /* Error copy on tinted danger surfaces. */
+  --text-success-rgb: var(--palette-emerald-300); /* Successful and positive status copy. */
+  --text-success-strong-rgb: var(--palette-green-400); /* Strong positive numbers/statuses. */
+  --text-warning-rgb: var(--palette-amber-200); /* Warning and attention copy. */
+  --text-warning-strong-rgb: var(--palette-orange-300); /* Strong warning/attention values. */
+  --text-title: rgb(var(--text-title-rgb));
+  --text-heading: rgb(var(--text-heading-rgb));
+  --text-body-strong: rgb(var(--text-body-strong-rgb));
+  --text-body: rgb(var(--text-body-rgb));
+  --text-muted-copy: rgb(var(--text-muted-rgb));
+  --text-meta: rgb(var(--text-meta-rgb));
+  --text-placeholder: rgb(var(--text-placeholder-rgb));
+  --text-link: rgb(var(--text-link-rgb));
+  --text-accent: rgb(var(--text-accent-rgb));
+  --text-accent-copy: rgb(var(--text-accent-rgb));
+  --text-accent-strong: rgb(var(--text-accent-strong-rgb));
+  --text-on-action: rgb(var(--text-on-action-rgb));
+  --text-danger: rgb(var(--text-danger-rgb));
+  --text-danger-soft: rgb(var(--text-danger-soft-rgb));
+  --text-success: rgb(var(--text-success-rgb));
+  --text-success-strong: rgb(var(--text-success-strong-rgb));
+  --text-warning: rgb(var(--text-warning-rgb));
+  --text-warning-strong: rgb(var(--text-warning-strong-rgb));
+  --surface-panel-bg: var(--overlay-white-03); /* Main low-contrast card/container fill. */
+  --surface-muted-bg: rgb(var(--palette-black) / 0.12); /* Inner dark muted surface inside panels. */
+  --surface-ghost-bg: var(--overlay-white-04); /* Ghost buttons and small chips. */
+  --surface-ghost-hover-bg: var(--overlay-white-08); /* Ghost hover fill. */
+  --surface-ghost-soft-hover-bg: var(--overlay-white-05); /* Very soft hover fill. */
+  --surface-border: var(--overlay-white-08); /* Default subtle border. */
+  --surface-border-strong: rgb(var(--palette-white) / 0.1); /* Slightly stronger border. */
+  --surface-border-hover: rgb(var(--palette-white) / 0.18); /* Default hover border. */
+  --surface-border-muted: rgb(var(--palette-white) / 0.14); /* Muted control border. */
+  --accent-text: rgb(var(--palette-blue-200)); /* Accent labels and icons. */
+  --accent-text-soft: rgb(var(--palette-blue-100)); /* Soft accent text on dark backgrounds. */
+  --accent-surface: rgb(var(--palette-blue-500)); /* Solid accent selection fill. */
+  --accent-surface-soft: rgb(var(--palette-blue-500) / 0.14); /* Soft selected card fill. */
+  --accent-border: rgb(var(--palette-blue-300) / 0.6); /* Selected card border. */
+  --accent-check-border: rgb(var(--palette-blue-200)); /* Selected radio/check border. */
+  --danger-text-soft: rgb(var(--palette-red-300)); /* Inline error text on dark surfaces. */
+  --nav-link-active: var(--text-primary-strong); /* Active header/mobile navigation item. */
+  --nav-link-muted: var(--text-muted); /* Inactive header/mobile navigation item. */
+  --nav-link-hover: var(--text-secondary); /* Header/mobile navigation hover text. */
+  --nav-admin-text: rgb(var(--palette-purple-400)); /* Admin navigation icon tone. */
+  --nav-admin-text-soft: rgb(var(--palette-purple-300)); /* Admin navigation label tone. */
+  --nav-partner-text: rgb(var(--palette-cyan-300)); /* Partner navigation icon tone. */
+  --nav-partner-text-soft: rgb(var(--palette-cyan-200)); /* Partner navigation label tone. */
+  --nav-notification-bg: rgb(var(--palette-red-500)); /* Unread notification badge background. */
+  --nav-wallet-icon: rgb(var(--palette-blue-400)); /* Wallet icon in top navigation. */
+  --nav-chip-border: rgb(var(--palette-gray-700)); /* Header wallet/action chip border. */
+  --nav-chip-hover-border: rgb(var(--palette-gray-600)); /* Header wallet/action chip hover border. */
+  --mobile-nav-border: rgb(var(--palette-gray-700)); /* Mobile bottom navigation top border. */
+
+  /* Home hero */
+  --hero-banner-bg: rgb(var(--palette-navy-925)); /* Solid fallback behind the home banner image. */
+  --hero-banner-image-gradient: linear-gradient(90deg, rgb(var(--palette-navy-925) / 0.8) 0%, rgb(var(--palette-navy-925) / 0.68) 32%, rgb(var(--palette-navy-925) / 0.38) 68%, rgb(var(--palette-navy-925) / 0.16) 100%), linear-gradient(180deg, rgb(var(--palette-navy-925) / 0.12) 0%, rgb(var(--palette-navy-925) / 0.48) 100%); /* Readability tint over hero image. */
+  --hero-banner-overlay-desktop: linear-gradient(90deg, rgb(var(--palette-navy-925) / 0.68) 0%, rgb(var(--palette-navy-925) / 0.48) 36%, rgb(var(--palette-navy-925) / 0.2) 68%, rgb(var(--palette-navy-925) / 0.06) 100%); /* Desktop hero text contrast overlay. */
+  --hero-banner-overlay-mobile: linear-gradient(180deg, rgb(var(--palette-navy-925) / 0.64) 0%, rgb(var(--palette-navy-925) / 0.48) 34%, rgb(var(--palette-navy-925) / 0.28) 64%, rgb(var(--palette-navy-925) / 0.2) 100%); /* Mobile hero text contrast overlay. */
+  --hero-bullet-shadow: 0 0 20px rgb(var(--palette-cyan-400) / 0.45); /* Small cyan highlight glow in hero bullets. */
+
+  /* Official product carousel */
+  --official-showcase-bg: rgb(var(--palette-blue-500) / 0.14); /* Blue glass official carousel panel. */
+  --official-showcase-control-border: rgb(219 224 232 / 0.32); /* Official carousel control border. */
+  --official-showcase-control-bg: rgb(56 61 73 / 0.54); /* Official carousel control background. */
+  --official-showcase-control-border-hover: rgb(231 235 241 / 0.55); /* Official carousel control hover border. */
+  --official-showcase-control-bg-hover: rgb(70 76 91 / 0.78); /* Official carousel control hover background. */
+  --official-showcase-control-text: rgb(229 241 255 / 0.95); /* Official carousel control text. */
+  --official-showcase-arrow-text: rgb(229 241 255); /* Official carousel arrow icon. */
+  --official-showcase-arrow-bg: rgb(96 103 120 / 0.26); /* Official carousel arrow background. */
+  --official-showcase-arrow-border: rgb(215 222 235 / 0.24); /* Official carousel arrow border. */
+  --official-showcase-arrow-bg-hover: rgb(114 123 145 / 0.42); /* Official carousel arrow hover background. */
+  --official-showcase-arrow-border-hover: rgb(229 235 246 / 0.54); /* Official carousel arrow hover border. */
+  --official-showcase-badge-shadow: 0 0 0 1px rgb(var(--palette-blue-500) / 0.22) inset; /* Official badge inset edge. */
+  --official-carousel-card-glow: rgb(var(--palette-black) / 0); /* Official carousel card image overlay. */
+  --official-page-hero-fallback: radial-gradient(100% 120% at 0% 0%, rgb(56 105 255 / 0.35) 0%, rgb(56 105 255 / 0.03) 60%), linear-gradient(135deg, rgb(18 47 116 / 0.82), rgb(14 33 74 / 0.8)); /* Official store page fallback hero. */
+  --official-page-hero-bottom-fade: linear-gradient(to bottom, var(--transparent) 0%, var(--background-color) 90%); /* Official store hero bottom fade. */
+  --home-official-surface-bg: rgb(12 17 24 / 0.62); /* Home official curated rail glass surface. */
+  --home-official-surface-border: rgb(var(--palette-white) / 0.09); /* Home official rail quiet border. */
+  --home-official-title: rgb(var(--palette-white) / 0.96); /* Home official rail title. */
+  --home-official-control-bg: rgb(var(--palette-white) / 0.04); /* Home official controls surface. */
+  --home-official-control-border: rgb(var(--palette-white) / 0.08); /* Home official controls border. */
+  --home-official-control-text: rgb(var(--palette-gray-100) / 0.9); /* Home official controls text. */
+  --home-official-control-hover-bg: rgb(var(--palette-white) / 0.07); /* Home official controls hover surface. */
+  --home-official-control-hover-border: rgb(var(--palette-blue-300) / 0.2); /* Home official controls hover border. */
+  --home-official-control-hover-text: rgb(var(--palette-white)); /* Home official controls hover text. */
+  --home-official-card-bg: rgb(var(--palette-black) / 0.28); /* Home official product card surface. */
+  --home-official-card-border: rgb(var(--palette-white) / 0.08); /* Home official product card border. */
+  --home-official-card-media-bg: rgb(var(--palette-white) / 0.035); /* Home official product media fallback. */
+  --home-official-card-category-bg: rgb(var(--palette-navy-900) / 0.72); /* Home official card category chip. */
+  --home-official-card-category-border: rgb(var(--palette-white) / 0.1); /* Home official card category chip border. */
+  --home-official-card-price: rgb(var(--palette-white) / 0.96); /* Home official card price. */
+  --home-official-card-title: rgb(var(--palette-gray-100) / 0.92); /* Home official card title. */
+
+  /* Controls and editors */
+  --color-picker-hue-gradient: linear-gradient(90deg, #ff0000 0%, #ffff00 16.66%, #00ff00 33.33%, #00ffff 50%, #0000ff 66.66%, #ff00ff 83.33%, #ff0000 100%); /* Hue spectrum for custom color editor. */
+  --admin-table-sticky-bg: rgb(var(--palette-navy-850) / 0.95); /* Sticky admin table header background. */
 
   /* Scrollbars */
   --scrollbar-track: rgb(var(--palette-gray-800)); /* Scrollbar track background. */
@@ -148,6 +314,94 @@
   /* Product image overlays */
   --product-image-overlay-top: rgb(2 6 23 / 0.08); /* Top gradient tint on product hero image. */
   --product-image-overlay-bottom: rgb(2 6 23 / 0.5); /* Bottom gradient tint on product hero image. */
+  --product-card-image-placeholder-bg: rgb(var(--palette-dark-800)); /* Product card image placeholder before image paint. */
+  --product-price-label: rgb(var(--palette-gray-400)); /* Product page price caption. */
+  --product-price-value: rgb(var(--palette-white)); /* Product page main price value. */
+
+  /* Shared elevation and text motion tokens */
+  --route-progress-bar: var(--primary-color); /* Route progress indicator at top of app. */
+  --auth-welcome-text: rgb(var(--palette-gray-300) / 0.92); /* Intro typing headline color. */
+  --auth-welcome-caret: rgb(var(--palette-gray-300) / 0.82); /* Intro typing caret color. */
+  --auth-welcome-shadow: rgb(var(--palette-black) / 0.24); /* Intro typing text shadow. */
+  --page-hero-radial-blue: radial-gradient(65% 45% at 50% 0%, rgb(var(--palette-blue-500) / 0.08), transparent 75%); /* Soft blue page glow for empty/error states. */
+  --page-hero-radial-blue-strong: radial-gradient(circle at top, rgb(var(--palette-blue-600) / 0.16), transparent 62%); /* Stronger blue hero glow for dedicated feature pages. */
+  --category-hero-fallback-bg: radial-gradient(120% 120% at 10% 0%, rgb(var(--palette-sky-400) / 0.25) 0%, rgb(10 14 22 / 0.4) 45%, rgb(6 9 14 / 0.85) 100%), linear-gradient(130deg, rgb(var(--palette-blue-500) / 0.2) 0%, rgb(10 14 22 / 0.9) 62%); /* Fallback banner artwork for category hero. */
+  --category-hero-title-shadow: 0 3px 14px rgb(var(--palette-black) / 0.65); /* Category hero title legibility shadow. */
+  --glass-fab-shadow: 0 14px 34px -22px rgb(var(--palette-black) / 0.9); /* Floating round icon button shadow. */
+  --glass-compose-shadow: 0 18px 44px -28px rgb(var(--palette-black) / 0.95); /* Chat compose container shadow. */
+  --preview-remove-bg: rgb(var(--palette-black) / 0.7); /* Image preview remove chip background. */
+  --preview-remove-hover-bg: rgb(var(--palette-black)); /* Image preview remove chip hover background. */
+  --wallet-history-active-shadow: 0 20px 60px rgb(var(--palette-gray-900) / 0.28); /* Expanded wallet history item elevation. */
+  --wallet-icon-inset: inset 0 1px 0 rgb(var(--palette-white) / 0.04); /* Soft inset highlight for wallet icons. */
+
+  /* Steam promo chip and tooltip */
+  --steam-promo-chip-neon-bg: rgb(17 28 46); /* Home Steam promo chip neon surface. */
+  --steam-promo-chip-neon-hover-bg: rgb(22 38 64); /* Home Steam promo chip neon hover surface. */
+  --steam-promo-chip-neon-ring: 0 0 0 1px rgb(var(--palette-blue-400) / 0.15); /* Home Steam promo chip neon ring. */
+  --steam-promo-chip-neon-shadow: 0 10px 28px rgb(var(--palette-blue-800) / 0.35); /* Home Steam promo chip neon shadow. */
+  --steam-promo-chip-neon-icon-bg: rgb(11 18 32); /* Home Steam promo chip neon icon surface. */
+  --steam-promo-chip-glass-shadow: 0 8px 26px rgb(var(--palette-black) / 0.28); /* Home Steam promo chip glass shadow. */
+  --steam-promo-chip-minimal-bg: rgb(15 24 35 / 0.85); /* Home Steam promo chip minimal surface. */
+  --steam-promo-chip-minimal-hover-bg: rgb(19 32 48); /* Home Steam promo chip minimal hover surface. */
+  --steam-promo-chip-minimal-shadow: 0 8px 24px rgb(var(--palette-black) / 0.28); /* Home Steam promo chip minimal shadow. */
+  --steam-promo-chip-minimal-icon-bg: rgb(11 17 24); /* Home Steam promo chip minimal icon surface. */
+  --auto-delivery-tooltip-bg: rgb(10 21 40 / 0.88); /* Product auto-delivery tooltip surface. */
+  --auto-delivery-tooltip-shadow: 0 8px 20px rgb(2 8 23 / 0.55); /* Desktop auto-delivery tooltip shadow. */
+  --auto-delivery-tooltip-shadow-mobile: 0 10px 24px rgb(2 8 23 / 0.6); /* Mobile auto-delivery tooltip shadow. */
+
+  /* Search, checkout, and top-up surfaces */
+  --steam-checkout-modal-bg: linear-gradient(165deg, rgb(39 42 48 / 0.82) 0%, rgb(31 34 39 / 0.8) 52%, rgb(24 27 31 / 0.82) 100%); /* Home Steam checkout modal surface. */
+  --steam-checkout-modal-inset: inset 0 1px 0 rgb(var(--palette-white) / 0.05); /* Home Steam checkout modal inset edge. */
+  --home-search-glass-border: rgb(var(--palette-white) / 0.08); /* Home search field border. */
+  --home-search-glass-bg: rgb(var(--palette-white) / 0.03); /* Home search field fill. */
+  --home-search-glass-shadow: none; /* Home search field default shadow. */
+  --home-search-glass-focus-border: rgb(var(--palette-white) / 0.14); /* Home search field focus border. */
+  --home-search-glass-focus-shadow: none; /* Home search field focus shadow. */
+  --home-search-glass-icon: rgb(var(--palette-gray-400) / 0.78); /* Home search icon color. */
+  --steam-topup-panel-bg: linear-gradient(135deg, rgb(27 40 56) 0%, rgb(22 32 45) 52%, rgb(16 24 34) 100%); /* Steam top-up standalone page surface. */
+  --steam-topup-panel-shadow: 0 16px 40px rgb(var(--palette-black) / 0.38); /* Steam top-up standalone page shadow. */
+  --steam-topup-icon-bg: rgb(15 20 27 / 0.7); /* Steam top-up icon tile background. */
+  --steam-topup-field-bg: rgb(15 20 27 / 0.8); /* Steam top-up input field background. */
+  --steam-topup-field-border: rgb(var(--palette-dark-200) / 0.75); /* Steam top-up input field border. */
+  --steam-topup-field-focus: rgb(102 192 244 / 0.5); /* Steam top-up input focus border using Steam accent. */
+  --steam-topup-button-bg: rgb(26 36 49); /* Steam top-up submit button background. */
+  --steam-topup-button-border: rgb(var(--palette-slate-500) / 0.6); /* Steam top-up submit button border. */
+  --steam-topup-link: rgb(var(--palette-slate-300)); /* Steam top-up back link color. */
+  --profile-background-overlay: linear-gradient(180deg, rgb(8 12 19 / 0.82) 0%, rgb(8 12 19 / 0.94) 100%); /* Public profile header overlay above custom background image. */
+  --profile-background-preview-overlay: linear-gradient(180deg, rgb(8 12 19 / 0.45) 0%, rgb(8 12 19 / 0.75) 100%); /* Settings preview overlay above selected profile background image. */
+
+  /* Modal and settings emphasis states */
+  --modal-surface-strong: rgb(17 19 23 / 0.95); /* Strong dark modal panel surface. */
+  --modal-surface-strong-shadow: 0 32px 120px rgb(var(--palette-black) / 0.55); /* Strong dark modal panel shadow. */
+  --product-created-hero-bg: radial-gradient(circle at top left, rgb(var(--palette-blue-500) / 0.14), transparent 42%), radial-gradient(circle at 18% 14%, rgb(var(--palette-emerald-500) / 0.12), transparent 22%), linear-gradient(180deg, rgb(19 28 44 / 0.88) 0%, rgb(17 19 23 / 0.18) 38%, rgb(17 19 23 / 0) 62%); /* Created-product success modal header glow. */
+  --product-created-badge-shadow: 0 18px 40px rgb(var(--palette-blue-500) / 0.12); /* Created-product modal icon shadow. */
+  --settings-toggle-active-shadow: 0 8px 24px rgb(var(--palette-blue-600) / 0.28); /* Active settings segmented toggle shadow. */
+  --settings-toggle-danger-shadow: 0 8px 24px rgb(var(--palette-rose-500) / 0.14); /* Disabled/off settings segmented toggle shadow. */
+
+  /* User rating tones */
+  --rating-tone-excellent-star: rgb(var(--palette-white) / 0.92); /* Neutral white accent for excellent ratings. */
+  --rating-tone-good-star: rgb(var(--palette-white) / 0.86); /* Neutral white accent for good ratings. */
+  --rating-tone-fair-star: rgb(var(--palette-slate-300) / 0.7); /* Muted slate accent for average ratings. */
+  --rating-tone-low-star: rgb(var(--palette-rose-200) / 0.58); /* Dusty rose accent for low ratings. */
+
+  /* Admin filters and segmented controls */
+  --admin-filter-panel-bg: linear-gradient(180deg, rgb(var(--palette-gray-900) / 0.9), rgb(10 14 24 / 0.92)); /* Admin filter dropdown/panel background. */
+  --admin-filter-panel-shadow: 0 24px 80px rgb(var(--palette-black) / 0.28); /* Admin filter dropdown/panel shadow. */
+  --segmented-toggle-border: rgb(var(--palette-white) / 0.08); /* Admin promo segmented toggle border. */
+  --segmented-toggle-bg: rgb(var(--palette-white) / 0.03); /* Admin promo segmented toggle base background. */
+  --segmented-toggle-label: rgb(var(--palette-gray-200) / 0.74); /* Admin promo segmented toggle label color. */
+  --segmented-toggle-label-active: rgb(var(--palette-white)); /* Admin promo segmented toggle active label color. */
+  --segmented-toggle-blue-bg: rgb(var(--palette-blue-500) / 0.14); /* Admin promo blue thumb fill. */
+  --segmented-toggle-blue-shadow: inset 0 0 0 1px rgb(var(--palette-blue-400) / 0.2); /* Admin promo blue thumb edge. */
+  --segmented-toggle-emerald-bg: rgb(var(--palette-emerald-500) / 0.14); /* Admin promo emerald thumb fill. */
+  --segmented-toggle-emerald-shadow: inset 0 0 0 1px rgb(var(--palette-emerald-400) / 0.2); /* Admin promo emerald thumb edge. */
+
+  /* Legal content */
+  --legal-link: rgb(var(--palette-blue-200)); /* Inline legal text links. */
+  --legal-link-underline: rgb(var(--palette-blue-200) / 0.45); /* Inline legal text link underline. */
+  --legal-link-hover: rgb(var(--palette-sky-100)); /* Inline legal text link hover color. */
+  --legal-link-hover-underline: rgb(var(--palette-sky-100) / 0.9); /* Inline legal text link hover underline. */
+  --legal-accent-border: rgb(var(--palette-blue-400) / 0.7); /* Left accent border in legal callouts. */
 
   /* Error banner */
   --error-banner-icon: rgb(var(--palette-red-400)); /* Error icon background circle. */
@@ -169,14 +423,14 @@
   --chart-status-confirmed: rgb(var(--palette-cyan-400)); /* Confirmed deals bar color. */
   --chart-status-completed: rgb(var(--palette-green-500)); /* Completed deals bar color. */
   --chart-status-disputed: rgb(var(--palette-rose-400)); /* Disputed deals bar color. */
-  --chart-status-cancelled: rgb(148 163 184); /* Cancelled deals bar color. */
+  --chart-status-cancelled: rgb(var(--palette-slate-400)); /* Cancelled deals bar color. */
   --chart-status-refunded: rgb(var(--palette-orange-500)); /* Refunded deals bar color. */
   --chart-status-default: rgb(var(--palette-blue-400)); /* Fallback status bar color. */
   --chart-series-top-categories: rgb(var(--palette-emerald-400)); /* Top categories bar series color. */
 
   /* Admin controls */
-  --admin-btn-bg: rgb(var(--palette-gray-800)); /* Default admin button background. */
-  --admin-btn-border: rgb(var(--palette-gray-700)); /* Default admin button border. */
+  --admin-btn-bg: rgb(var(--palette-dark-600)); /* Default admin button background. */
+  --admin-btn-border: rgb(var(--palette-dark-700)); /* Default admin button border. */
   --admin-btn-text: rgb(var(--palette-gray-100)); /* Default admin button text color. */
   --admin-btn-hover-bg: rgb(39 50 68); /* Default admin button hover background. */
   --admin-btn-hover-border: rgb(var(--palette-gray-600)); /* Default admin button hover border. */

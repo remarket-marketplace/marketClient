@@ -88,12 +88,11 @@ type FormatCurrencyOptions = {
 }
 
 export function formatCurrencyAmount(amount: number, options: FormatCurrencyOptions = {}): string {
-  const {
-    currency = resolvePreferredCurrency(),
-    fromCurrency = 'RUB',
-    minimumFractionDigits = 0,
-    maximumFractionDigits = 0,
-  } = options
+  const currency = options.currency ?? resolvePreferredCurrency()
+  const fromCurrency = options.fromCurrency ?? 'RUB'
+  const defaultFractionDigits = currency === 'USD' ? 2 : 0
+  const minimumFractionDigits = options.minimumFractionDigits ?? defaultFractionDigits
+  const maximumFractionDigits = options.maximumFractionDigits ?? defaultFractionDigits
 
   const converted = convertCurrencyAmount(amount, fromCurrency, currency)
 
@@ -103,4 +102,26 @@ export function formatCurrencyAmount(amount: number, options: FormatCurrencyOpti
     minimumFractionDigits,
     maximumFractionDigits,
   }).format(converted)
+}
+
+export function formatCompactCurrencyAmount(amount: number, options: FormatCurrencyOptions = {}): string {
+  const currency = options.currency ?? resolvePreferredCurrency()
+  const fromCurrency = options.fromCurrency ?? 'RUB'
+  const maximumFractionDigits = options.maximumFractionDigits ?? 1
+
+  const converted = convertCurrencyAmount(amount, fromCurrency, currency)
+  const absoluteValue = Math.abs(converted)
+  const shouldUseCompact = absoluteValue >= 1000
+  const standardFractionDigits = currency === 'USD' ? 2 : 0
+
+  const numberLabel = new Intl.NumberFormat(getCurrencyLocale(currency), {
+    notation: shouldUseCompact ? 'compact' : 'standard',
+    compactDisplay: 'short',
+    minimumFractionDigits: shouldUseCompact ? 0 : standardFractionDigits,
+    maximumFractionDigits: shouldUseCompact ? maximumFractionDigits : standardFractionDigits,
+  }).format(converted)
+
+  return currency === 'USD'
+    ? `${getCurrencySymbol(currency)}${numberLabel}`
+    : `${numberLabel} ${getCurrencySymbol(currency)}`
 }

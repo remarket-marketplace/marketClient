@@ -60,105 +60,105 @@ const customInlineStyle = computed<CSSProperties | undefined>(() => {
 }
 
 .nick-style-neon_pulse {
-  color: #67e8f9;
+  color: rgb(var(--palette-cyan-300));
   text-shadow:
-    -2px 0 6px rgba(103, 232, 249, 0.36),
-    2px 0 6px rgba(103, 232, 249, 0.36),
-    0 0 14px rgba(34, 211, 238, 0.28);
+    -2px 0 6px rgb(var(--palette-cyan-300) / 0.36),
+    2px 0 6px rgb(var(--palette-cyan-300) / 0.36),
+    0 0 14px rgb(var(--palette-cyan-400) / 0.28);
   animation: nick-neon-pulse 2.2s ease-in-out infinite;
 }
 
 .nick-style-gold_royal {
-  background-image: linear-gradient(110deg, #fde68a 0%, #f59e0b 45%, #fef3c7 100%);
+  background-image: linear-gradient(110deg, rgb(var(--palette-amber-200)) 0%, rgb(var(--palette-amber-500)) 45%, rgb(var(--palette-yellow-200)) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 0 5px rgba(251, 191, 36, 0.4));
+  filter: drop-shadow(0 0 5px rgb(var(--palette-amber-400) / 0.4));
 }
 
 .nick-style-cyber_glitch {
-  color: #f5d0fe;
+  color: rgb(var(--palette-purple-300));
   text-shadow:
-    -1px 0 rgba(232, 121, 249, 0.7),
-    1px 0 rgba(34, 211, 238, 0.7),
-    0 0 10px rgba(217, 70, 239, 0.3);
+    -1px 0 rgb(var(--palette-pink-400) / 0.7),
+    1px 0 rgb(var(--palette-cyan-400) / 0.7),
+    0 0 10px rgb(var(--palette-fuchsia-500) / 0.3);
 }
 
 .nick-style-sunset_wave {
-  background-image: linear-gradient(110deg, #fb7185 0%, #fb923c 45%, #facc15 100%);
+  background-image: linear-gradient(110deg, rgb(var(--palette-rose-400)) 0%, rgb(var(--palette-orange-400)) 45%, rgb(var(--palette-yellow-400)) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
 .nick-style-ice_frost {
-  background-image: linear-gradient(115deg, #f0f9ff 0%, #7dd3fc 45%, #bae6fd 100%);
+  background-image: linear-gradient(115deg, rgb(var(--palette-sky-50)) 0%, rgb(var(--palette-sky-300)) 45%, rgb(var(--palette-sky-100)) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   text-shadow:
-    -2px 0 6px rgba(125, 211, 252, 0.3),
-    2px 0 6px rgba(125, 211, 252, 0.3),
-    0 0 10px rgba(125, 211, 252, 0.26);
+    -2px 0 6px rgb(var(--palette-sky-300) / 0.3),
+    2px 0 6px rgb(var(--palette-sky-300) / 0.3),
+    0 0 10px rgb(var(--palette-sky-300) / 0.26);
 }
 
 .nick-style-emerald_glow {
-  color: #6ee7b7;
+  color: rgb(var(--palette-emerald-300));
   text-shadow:
-    -2px 0 6px rgba(52, 211, 153, 0.38),
-    2px 0 6px rgba(52, 211, 153, 0.38),
-    0 0 14px rgba(5, 150, 105, 0.28);
+    -2px 0 6px rgb(var(--palette-emerald-400) / 0.38),
+    2px 0 6px rgb(var(--palette-emerald-400) / 0.38),
+    0 0 14px rgb(var(--palette-emerald-600) / 0.28);
 }
 
 .nick-style-lava_burst {
-  background-image: linear-gradient(115deg, #fca5a5 0%, #ef4444 40%, #f97316 100%);
+  background-image: linear-gradient(115deg, rgb(var(--palette-red-300)) 0%, rgb(var(--palette-red-500)) 40%, rgb(var(--palette-orange-500)) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   text-shadow:
-    -2px 0 7px rgba(239, 68, 68, 0.24),
-    2px 0 7px rgba(239, 68, 68, 0.24),
-    0 0 12px rgba(239, 68, 68, 0.25);
+    -2px 0 7px rgb(var(--palette-red-500) / 0.24),
+    2px 0 7px rgb(var(--palette-red-500) / 0.24),
+    0 0 12px rgb(var(--palette-red-500) / 0.25);
 }
 
 .nick-style-aurora_spectrum {
-  background-image: linear-gradient(120deg, #5eead4 0%, #818cf8 40%, #f472b6 78%, #facc15 100%);
+  background-image: linear-gradient(120deg, rgb(var(--palette-cyan-300)) 0%, rgb(var(--palette-indigo-400)) 40%, rgb(var(--palette-pink-400)) 78%, rgb(var(--palette-yellow-400)) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
 .nick-style-candy_pop {
-  background-image: linear-gradient(120deg, #f9a8d4 0%, #f472b6 35%, #c4b5fd 100%);
+  background-image: linear-gradient(120deg, rgb(var(--palette-pink-400)) 0%, rgb(var(--palette-pink-500)) 35%, rgb(var(--palette-violet-300)) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
 .nick-style-shadow_void {
-  background-image: linear-gradient(120deg, #a78bfa 0%, #f5d0fe 55%, #c4b5fd 100%);
+  background-image: linear-gradient(120deg, rgb(var(--palette-purple-400)) 0%, rgb(var(--palette-purple-300)) 55%, rgb(var(--palette-violet-300)) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   text-shadow:
-    -2px 0 8px rgba(139, 92, 246, 0.32),
-    2px 0 8px rgba(139, 92, 246, 0.32),
-    0 0 12px rgba(139, 92, 246, 0.4);
+    -2px 0 8px rgb(var(--palette-violet-500) / 0.32),
+    2px 0 8px rgb(var(--palette-violet-500) / 0.32),
+    0 0 12px rgb(var(--palette-violet-500) / 0.4);
 }
 
 .nick-style-sky_bolt {
-  background-image: linear-gradient(110deg, #93c5fd 0%, #38bdf8 50%, #bfdbfe 100%);
+  background-image: linear-gradient(110deg, rgb(var(--palette-blue-300)) 0%, rgb(var(--palette-sky-400)) 50%, rgb(var(--palette-blue-200)) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
 .nick-style-matrix_code {
-  color: #86efac;
+  color: rgb(var(--palette-green-300));
   text-shadow:
-    -2px 0 6px rgba(34, 197, 94, 0.34),
-    2px 0 6px rgba(34, 197, 94, 0.34),
-    0 0 8px rgba(34, 197, 94, 0.45);
+    -2px 0 6px rgb(var(--palette-green-500) / 0.34),
+    2px 0 6px rgb(var(--palette-green-500) / 0.34),
+    0 0 8px rgb(var(--palette-green-500) / 0.45);
   letter-spacing: 0.02em;
 }
 
@@ -166,15 +166,15 @@ const customInlineStyle = computed<CSSProperties | undefined>(() => {
   0%,
   100% {
     text-shadow:
-      -2px 0 5px rgba(103, 232, 249, 0.24),
-      2px 0 5px rgba(103, 232, 249, 0.24),
-      0 0 12px rgba(34, 211, 238, 0.18);
+      -2px 0 5px rgb(var(--palette-cyan-300) / 0.24),
+      2px 0 5px rgb(var(--palette-cyan-300) / 0.24),
+      0 0 12px rgb(var(--palette-cyan-400) / 0.18);
   }
   50% {
     text-shadow:
-      -2px 0 8px rgba(103, 232, 249, 0.5),
-      2px 0 8px rgba(103, 232, 249, 0.5),
-      0 0 16px rgba(34, 211, 238, 0.35);
+      -2px 0 8px rgb(var(--palette-cyan-300) / 0.5),
+      2px 0 8px rgb(var(--palette-cyan-300) / 0.5),
+      0 0 16px rgb(var(--palette-cyan-400) / 0.35);
   }
 }
 </style>

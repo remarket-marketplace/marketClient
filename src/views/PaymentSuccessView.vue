@@ -4,27 +4,27 @@ import { CheckCircle } from 'lucide-vue-next'
 
 <template>
     <div class="w-full min-h-[calc(100dvh-7rem)] md:min-h-[calc(100dvh-3.5rem)] flex items-center justify-center px-4">
-        <div class="max-w-md w-full bg-zinc-900/70 border border-zinc-800 rounded-2xl p-8 text-center shadow-xl">
+        <div class="max-w-md w-full bg-[rgb(var(--palette-zinc-900)/0.7)] border border-[rgb(var(--palette-zinc-800))] rounded-2xl p-8 text-center shadow-xl">
             <div class="flex justify-center mb-6">
-                <div class="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
-                    <CheckCircle class="w-10 h-10 text-green-500" />
+                <div class="w-16 h-16 rounded-full bg-[rgb(var(--palette-green-500)/0.1)] flex items-center justify-center">
+                    <CheckCircle class="w-10 h-10 text-[var(--text-success-strong)]" />
                 </div>
             </div>
 
-            <h1 class="text-2xl font-bold text-white mb-2">
+            <h1 class="text-2xl font-bold text-[var(--text-title)] mb-2">
                 {{ $t('pages.paymentSuccess.title') }}
             </h1>
 
-            <p class="text-gray-400 text-sm leading-relaxed">
+            <p class="text-[var(--text-muted)] text-sm leading-relaxed">
                 {{ $t('pages.paymentSuccess.description') }}
             </p>
 
             <button @click="$router.push('/wallet')"
-                class="mt-6 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition-all duration-200">
+                class="market-primary-surface market-primary-hover mt-6 w-full rounded-xl border border-[rgb(var(--palette-blue-500))] py-3 font-semibold text-[var(--text-title)] transition-all duration-200">
                 {{ $t('pages.paymentSuccess.toWallet') }}
             </button>
 
-            <p class="mt-4 text-xs text-gray-500">
+            <p class="mt-4 text-xs text-[var(--text-meta)]">
                 {{ $t('pages.paymentSuccess.hint') }}
             </p>
         </div>

@@ -1,0 +1,230 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { ArrowRight } from 'lucide-vue-next'
+import { Icon } from '@iconify/vue'
+
+const props = withDefaults(
+  defineProps<{
+    variant?: 'home' | 'compact'
+  }>(),
+  {
+    variant: 'home',
+  },
+)
+
+const { t } = useI18n()
+
+const isCompactVariant = computed(() => props.variant === 'compact')
+const spacingClass = computed(() => (isCompactVariant.value ? 'mt-3' : ''))
+</script>
+
+<template>
+  <section
+    class="steam-topup-entry"
+    :class="spacingClass"
+  >
+    <RouterLink to="/steam-topup" class="steam-topup-entry__link">
+      <span class="steam-topup-entry__logo-wrap" aria-hidden="true">
+        <span class="steam-topup-entry__logo">
+          <Icon icon="mdi:steam" class="h-5 w-5 text-[var(--text-title)]" />
+        </span>
+      </span>
+
+      <span class="steam-topup-entry__body">
+        <span class="steam-topup-entry__title">
+          {{ t('pages.index.steamTopUp.title') }}
+        </span>
+        <span class="steam-topup-entry__text">
+          {{ t('pages.index.steamTopUp.subtitle') }}
+        </span>
+      </span>
+
+      <span class="steam-topup-entry__tail">
+        <span class="steam-topup-entry__action">
+          <span class="hidden sm:inline">{{ t('pages.index.steamTopUp.action') }}</span>
+          <ArrowRight class="h-4 w-4" stroke-width="1.8" />
+        </span>
+      </span>
+    </RouterLink>
+  </section>
+</template>
+
+<style scoped>
+.steam-topup-entry {
+  width: 100%;
+  height: 100%;
+  color: var(--white-solid);
+}
+
+.steam-topup-entry__link {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 6rem;
+  align-items: stretch;
+  gap: 0.9rem;
+  overflow: hidden;
+  border: 1px solid rgb(var(--palette-white) / 0.08);
+  border-radius: 1.25rem;
+  background:
+    radial-gradient(circle at 84% 18%, rgb(102 192 244 / 0.08), transparent 28%),
+    linear-gradient(135deg, rgb(16 21 29 / 0.99) 0%, rgb(7 10 15 / 0.99) 100%);
+  padding: 0.75rem 0.9rem 0.75rem 0.95rem;
+  box-shadow: inset 0 1px 0 rgb(var(--palette-white) / 0.05);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.steam-topup-entry__link::before {
+  content: '';
+  position: absolute;
+  inset: auto -9% -48% auto;
+  width: 13rem;
+  height: 13rem;
+  border-radius: 9999px;
+  background: rgb(102 192 244 / 0.07);
+  filter: blur(48px);
+  pointer-events: none;
+}
+
+.steam-topup-entry__link:hover {
+  border-color: rgb(102 192 244 / 0.28);
+  background:
+    radial-gradient(circle at 84% 18%, rgb(102 192 244 / 0.11), transparent 30%),
+    linear-gradient(135deg, rgb(18 25 35 / 0.99) 0%, rgb(8 13 20 / 0.99) 100%);
+}
+
+.steam-topup-entry__logo-wrap {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+}
+
+.steam-topup-entry__logo {
+  display: flex;
+  height: 2.8rem;
+  width: 2.8rem;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 9999px;
+  background:
+    radial-gradient(circle at 35% 25%, rgb(102 192 244 / 0.18), transparent 42%),
+    linear-gradient(180deg, rgb(23 28 36) 0%, rgb(13 16 21) 100%);
+  border: 1px solid rgb(102 192 244 / 0.16);
+}
+
+.steam-topup-entry__body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.steam-topup-entry__title {
+  display: block;
+  color: var(--white-solid);
+  font-size: 1rem;
+  line-height: 1.2;
+  font-weight: 600;
+}
+
+.steam-topup-entry__text {
+  display: block;
+  margin-top: 0.28rem;
+  max-width: 34rem;
+  display: -webkit-box;
+  overflow: hidden;
+  color: rgb(var(--palette-gray-300) / 0.98);
+  font-size: 0.88rem;
+  line-height: 1.38;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.steam-topup-entry__tail {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  align-self: center;
+  gap: 0.7rem;
+}
+
+.steam-topup-entry__pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2rem;
+  min-width: 6.75rem;
+  padding: 0 0.75rem;
+  border: 1px solid rgb(var(--palette-white) / 0.08);
+  border-radius: 9999px;
+  background: rgb(var(--palette-white) / 0.04);
+  color: rgb(var(--palette-gray-100));
+  font-size: 0.75rem;
+  line-height: 1;
+  font-weight: 600;
+}
+
+.steam-topup-entry__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: rgb(var(--palette-gray-300));
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  transition: color 0.18s ease;
+}
+
+.steam-topup-entry__link:hover .steam-topup-entry__action {
+  color: var(--white-solid);
+}
+
+@media (max-width: 767px) {
+  .steam-topup-entry__link {
+    align-items: flex-start;
+    min-height: 4.55rem;
+    gap: 0.6rem;
+    border-radius: 1rem;
+    padding: 0.55rem 0.65rem;
+  }
+
+  .steam-topup-entry__logo {
+    height: 2.2rem;
+    width: 2.2rem;
+  }
+
+  .steam-topup-entry__title {
+    font-size: 0.9rem;
+    line-height: 1.15;
+  }
+
+  .steam-topup-entry__text {
+    margin-top: 0.2rem;
+    font-size: 0.76rem;
+    line-height: 1.28;
+  }
+
+  .steam-topup-entry__tail {
+    align-self: stretch;
+    align-items: flex-end;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.6rem;
+  }
+
+  .steam-topup-entry__pill {
+    display: none;
+  }
+}
+</style>

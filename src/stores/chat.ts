@@ -10,6 +10,7 @@ export const useChatStore = defineStore('chat', {
   }),
   getters: {
     unreadTotal: (state) => state.chats.reduce((sum, chat) => sum + (chat.unread_count ?? 0), 0),
+    unreadDialogTotal: (state) => state.chats.filter((chat) => (chat.unread_count ?? 0) > 0).length,
   },
   actions: {
     getMessageTimestamp(message?: ChatMessageUnion | null): number {
@@ -46,13 +47,30 @@ export const useChatStore = defineStore('chat', {
     updateChatFromSocket(update: ChatUpdateSchema) {
       const chat = this.chats.find((c) => c.id === update.chat_id)
       if (!chat) return
+      const unreadCount = this.activeChatId === update.chat_id ? 0 : update.unread_count
       if (update.last_message) {
         const incoming = update.last_message as ChatMessageUnion
+        if (incoming.message_type === 'update_deal_status_message') {
+          if (typeof unreadCount === 'number') chat.unread_count = unreadCount
+          return
+        }
         if (this.shouldApplyLastMessage(chat.last_message as ChatMessageUnion | null, incoming)) {
           chat.last_message = incoming
         }
       }
-      if (typeof update.unread_count === 'number') chat.unread_count = update.unread_count
+      if (typeof unreadCount === 'number') chat.unread_count = unreadCount
+      if (typeof update.support_ticket_status === 'string') {
+        chat.support_ticket_status = update.support_ticket_status
+      }
+      if (typeof update.support_status === 'string') {
+        chat.support_status = update.support_status
+      }
+      if (typeof update.is_closed === 'boolean') {
+        chat.is_closed = update.is_closed
+      }
+      if (typeof update.is_resolved === 'boolean') {
+        chat.is_resolved = update.is_resolved
+      }
     },
     resetUnread(chatId: string) {
       const chat = this.chats.find((c) => c.id === chatId)
